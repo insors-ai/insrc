@@ -293,12 +293,21 @@ export async function optimizeEntityVecIndex(
  * (see docs/plans/docs-module.md Section 6.4). The kinds form is
  * required by the docs retriever to scope ANN to `document |
  * section | config` without also including code entities.
+ *
+ * The object form may also carry `ids`: the search is then among those
+ * entities only, so its hits are the nearest OF THEM and not the nearest of
+ * the repo with the others dropped afterwards. An empty list matches nothing.
+ * One condition holds the whole list: measured on 2026-10-09 against a copy of
+ * this repository's stored table (78,218 rows, vector index present), a query
+ * with 12,442 ids, every document, section and config vector of the repo and
+ * so more than any directory of it holds, took 45 to 76 ms, and one with
+ * 36,117 ids took 103 ms. No list is cut or sent in parts.
  */
 export type EntityVecFilter =
 	| 'all'
 	| 'code'
 	| 'artifact'
-	| { readonly kinds: readonly string[] };
+	| { readonly kinds: readonly string[]; readonly ids?: readonly string[] | undefined };
 
 export async function searchEntityVecs(
 	queryVec: number[],
@@ -307,6 +316,9 @@ export async function searchEntityVecs(
 	filter: EntityVecFilter = 'all',
 ): Promise<EntityVecHit[]> {
 	if (queryVec.length === 0 || closureRepos.length === 0) return [];
+	// An empty list of kinds or of ids matches no row, and the query engine
+	// rejects an empty IN list: no hits, and no query is made.
+	if (typeof filter === 'object' && (filter.kinds.length === 0 || filter.ids?.length === 0)) return [];
 	const table = await getEntityVecTable();
 
 	const conditions: string[] = [];
@@ -317,13 +329,15 @@ export async function searchEntityVecs(
 	if (filter === 'code')     conditions.push('artifact = false');
 	if (filter === 'artifact') conditions.push('artifact = true');
 	if (typeof filter === 'object' && Array.isArray(filter.kinds)) {
-		// Empty kinds array means "no rows match" -- Lance's DataFusion
-		// backend rejects `kind IN ()`, so short-circuit here.
-		if (filter.kinds.length === 0) return [];
 		const list = filter.kinds
 			.map(k => `'${escapeLanceString(k)}'`)
 			.join(', ');
 		conditions.push(`kind IN (${list})`);
+		if (filter.ids !== undefined) {
+			// Every id, in one condition (see EntityVecFilter for the measurement).
+			const ids = filter.ids.map(id => `'${escapeLanceString(id)}'`).join(', ');
+			conditions.push(`id IN (${ids})`);
+		}
 	}
 	// Always exclude the seed sentinel from results
 	conditions.push("id != '_seed_entity_vec'");

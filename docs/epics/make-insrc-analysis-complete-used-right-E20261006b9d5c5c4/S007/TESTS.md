@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 34 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 51 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -182,3 +182,178 @@ Run at 2026-10-09T06:23:32.912Z on commit `5726792b`. Tests check: **passed**. 4
 | `src/analyze/runtimes/__tests__/dropped-or-failed.test.ts` | 0 | 3 | 0.9 s |  |
 | `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 3 | 0.4 s |  |
 | `src/analyze/runtimes/code/__tests__/scope-area.test.ts` | 0 | 2 | 0.8 s |  |
+
+## t6
+
+Run at 2026-10-09T06:30:49.274Z on commit `214914ce`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code | `src/analyze/runtimes/docs/__tests__/docs-scope.test.ts` |
+
+**integration: the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's | `src/analyze/runtimes/docs/__tests__/docs-scope.test.ts` |
+
+**unit: no docs runtime uses the scope's value as a repo path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | no docs runtime uses the scope's value as a repo path | `src/analyze/runtimes/__tests__/scope-sources.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 4 | 0.5 s |  |
+| `src/analyze/runtimes/docs/__tests__/docs-scope.test.ts` | 0 | 2 | 1.1 s |  |
+
+## t7
+
+Run at 2026-10-09T06:37:15.408Z on commit `7d2ada00`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare) | `src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts` | 0 | 1 | 1.4 s |  |
+
+## t8
+
+Run at 2026-10-09T06:50:14.917Z on commit `3dfa5044`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a docs task with a module scope whose sections are not among the repository's nearest matches still gets them from the vector pass (mutation: search the whole repository and drop what lies outside)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a docs task with a module scope whose sections are not among the repository's nearest matches still gets them from the vector pass (mutation: search the whole repository and drop what lies outside) | `src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts` |
+
+**integration: the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before | `src/db/lance/__tests__/entity-vec.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts` | 0 | 1 | 1 s |  |
+| `src/db/lance/__tests__/entity-vec.test.ts` | 0 | 22 | 1.2 s |  |
+
+## t9
+
+Run at 2026-10-09T06:54:27.128Z on commit `10b075c0`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent | `src/analyze/runtimes/shared/__tests__/aggregator.test.ts` |
+
+**integration: each of the five aggregate-report runtimes hands absentInputs to the aggregator**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | each of the five aggregate-report runtimes hands absentInputs to the aggregator | `src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts` | 0 | 1 | 0.6 s |  |
+| `src/analyze/runtimes/shared/__tests__/aggregator.test.ts` | 0 | 20 | 0.6 s |  |
+
+## t10
+
+Run at 2026-10-09T08:45:50.036Z on commit `7efc942b`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before) | `src/analyze/executor/__tests__/walker-aggregate.test.ts` |
+
+**integration: a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run | `src/analyze/executor/__tests__/walker-aggregate.test.ts` |
+
+**integration: a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing) | `src/analyze/executor/__tests__/walker-aggregate.test.ts` |
+
+**integration: a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path | `src/analyze/executor/__tests__/walker-aggregate.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/executor/__tests__/walker-aggregate.test.ts` | 0 | 4 | 0.9 s |  |
+
+## t11
+
+Run at 2026-10-09T09:00:08.514Z on commit `9d819dab`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates | `src/analyze/executor/__tests__/walker-walk-failure.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/executor/__tests__/walker-walk-failure.test.ts` | 0 | 1 | 0.7 s |  |
+
+## t12
+
+Run at 2026-10-09T09:16:33.476Z on commit `c8e52f4b`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler) | `src/analyze/orchestrator/__tests__/live-runs.test.ts` |
+
+**integration: a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count) | `src/analyze/orchestrator/__tests__/live-runs.test.ts` |
+
+**integration: with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape) | `src/analyze/orchestrator/__tests__/live-runs.test.ts` |
+
+**integration: a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite | `src/analyze/orchestrator/__tests__/live-runs.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/orchestrator/__tests__/live-runs.test.ts` | 0 | 4 | 1.1 s |  |

@@ -162,6 +162,49 @@ test('searchEntityVecs excludes the seed sentinel row', async () => {
 	}
 });
 
+test('the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before', async () => {
+	const REPO = '/repo/docs';
+	const q = Array.from(vec(1));
+	const SECTION = { kinds: ['section'] } as const;
+
+	// --- an empty list: no hits, and the table is not even opened ---
+	assert.deepEqual(await searchEntityVecs(q, [REPO], 10, { kinds: ['section'], ids: [] }), []);
+	assert.equal(existsSync(join(dir, 'lance', 'entity_vec.lance')), false, 'no table was opened, so no query was made');
+
+	// --- 3000 sections; the ids asked for are the 2000 FARTHEST from the query ---
+	const N = 3000;
+	await addEntityEmbeddings(Array.from({ length: N }, (_, i) => (
+		{ id: `s${i}`, embedding: vec(i + 1), repo: REPO, kind: 'section', artifact: true }
+	)));
+	const everything = await searchEntityVecs(q, [REPO], N, SECTION);
+	assert.equal(everything.length, N);
+	const ids = everything.slice(N - 2000).map(h => h.id);
+	const wanted = new Set(ids);
+
+	// The nearest of the repo are all outside the list: searching the repo and
+	// dropping what lies outside would leave nothing of it.
+	const nearestOfRepo = await searchEntityVecs(q, [REPO], 30, SECTION);
+	assert.deepEqual(nearestOfRepo.filter(h => wanted.has(h.id)), []);
+
+	// The search among the ids returns the nearest OF THEM, in order of distance.
+	const among = await searchEntityVecs(q, [REPO], 30, { kinds: ['section'], ids });
+	assert.deepEqual(among.map(h => h.id), everything.filter(h => wanted.has(h.id)).slice(0, 30).map(h => h.id));
+	for (let i = 1; i < among.length; i++) assert.ok(among[i]!.distance >= among[i - 1]!.distance, 'ordered by distance');
+	// No id of the list is left out: asked for as many hits as ids, every id comes back once.
+	const all = await searchEntityVecs(q, [REPO], ids.length, { kinds: ['section'], ids });
+	assert.deepEqual(all.map(h => h.id).sort(), [...ids].sort());
+	// The other conditions still hold beside the list: another repo, another kind.
+	assert.deepEqual(await searchEntityVecs(q, ['/repo/other'], 30, { kinds: ['section'], ids }), []);
+	assert.deepEqual(await searchEntityVecs(q, [REPO], 30, { kinds: ['document'], ids }), []);
+	// An id with a quote in it is escaped, not spliced.
+	assert.deepEqual(await searchEntityVecs(q, [REPO], 5, { kinds: ['section'], ids: ["it's"] }), []);
+
+	// --- no list: the query is as before ---
+	assert.deepEqual(await searchEntityVecs(q, [REPO], 30, { kinds: ['section'], ids: undefined }), nearestOfRepo);
+	assert.deepEqual((await searchEntityVecs(q, [REPO], 30, 'artifact')).map(h => h.id), nearestOfRepo.map(h => h.id));
+	assert.deepEqual(await searchEntityVecs(q, [REPO], 30, { kinds: [] }), []);
+});
+
 // ---------------------------------------------------------------------------
 // Delete
 // ---------------------------------------------------------------------------

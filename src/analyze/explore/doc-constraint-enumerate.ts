@@ -33,6 +33,7 @@ import type {
 } from '../../shared/types.js';
 
 import { retrieveDocSections } from '../docs-retrieval.js';
+import type { DocsArea } from '../docs-retrieval.js';
 import type { DocsRetrievalReport } from '../docs-retrieval.js';
 import type {
 	DocConstraintEnumerateOutput,
@@ -97,6 +98,9 @@ export interface RunDocConstraintEnumerateArgs {
 	readonly subject:     string;
 	readonly repoPath:    string;
 	readonly db:          DbClient;
+	/** The part of the repo to keep to; absent, the whole repo. Forwarded to
+	 *  retrieval, so sections are selected, ranked and counted within it. */
+	readonly area?:       DocsArea | undefined;
 	readonly maxSources?: number;
 	readonly runId?:      string;
 	readonly logContext?: string;
@@ -116,6 +120,8 @@ export async function runSharedDocConstraintEnumerate(
 		subject:    args.subject,
 		repoPath:   args.repoPath,
 		db:         args.db,
+		// Handed over explicitly: prepare is given a new object, built field by field.
+		...(args.area !== undefined ? { area: args.area } : {}),
 		...(args.maxSources !== undefined ? { maxSources: args.maxSources } : {}),
 		...(args.runId !== undefined ? { runId: args.runId } : {}),
 		...(args.logContext !== undefined ? { logContext: args.logContext } : {}),
@@ -208,6 +214,7 @@ export async function prepareDocConstraintEnumerate(
 		report,
 		query:        subject,
 		closureRepos: [args.repoPath],
+		...(args.area !== undefined ? { area: args.area } : {}),
 		maxResults:   maxSources,
 		kinds:        ['document', 'section'],
 		previewChars: 0,

@@ -36,6 +36,7 @@ import type {
 	AnalyzeTarget,
 } from '../../../shared/analyze-types.js';
 import type { LLMMessage, LLMProvider } from '../../../shared/types.js';
+import type { AbsentInput } from '../../executor/types.js';
 
 import {
 	AGGREGATE_LLM_SCHEMA,
@@ -65,6 +66,13 @@ export interface RunAggregatorArgs {
 	readonly focus?: string;
 	/** Optional provider override (tests only -- production uses analyze config). */
 	readonly provider?: LLMProvider;
+	/**
+	 * What the plan did not produce. Written into the prompt as its own
+	 * section after the outputs that exist, so the model knows what it has
+	 * NOT been given and states nothing about it. Absent or empty: the
+	 * prompt is as it always was.
+	 */
+	readonly absentInputs?: readonly AbsentInput[] | undefined;
 }
 
 /**
@@ -98,6 +106,7 @@ export async function runAggregator(args: RunAggregatorArgs): Promise<AggregateR
 		scope:           args.scope,
 		focus:           args.focus,
 		upstreamOutputs: args.upstreamOutputs,
+		absentInputs:    args.absentInputs,
 	});
 
 	let llmOutput: AggregateLLMOutput;
@@ -151,6 +160,7 @@ interface BuildMessagesArgs {
 	readonly scope:           AnalyzeScope;
 	readonly focus?:          string | undefined;
 	readonly upstreamOutputs: ReadonlyMap<string, unknown>;
+	readonly absentInputs?:   readonly AbsentInput[] | undefined;
 }
 
 function buildMessages(args: BuildMessagesArgs): LLMMessage[] {
@@ -165,6 +175,7 @@ function buildMessages(args: BuildMessagesArgs): LLMMessage[] {
 		focusSection +
 		`\n` +
 		upstreamSection +
+		renderAbsentSection(args.absentInputs) +
 		`\n\n` +
 		`Compose the aggregate report. Respond with ONLY the JSON object ` +
 		`matching the schema -- no markdown fences, no prose outside the JSON body.`;
@@ -194,6 +205,30 @@ function renderUpstreamSection(map: ReadonlyMap<string, unknown>): string {
 		}
 	}
 	return blocks.join('\n\n');
+}
+
+/**
+ * The inputs the plan did not produce, as their own section after the outputs
+ * that exist. Empty when nothing is absent, so the prompt is then unchanged.
+ * Each line carries the whole reason: nothing is shortened.
+ */
+function renderAbsentSection(absent: readonly AbsentInput[] | undefined): string {
+	if (absent === undefined || absent.length === 0) return '';
+	const lines = absent.map(a => {
+		const producer = a.producedBy === null
+			? 'no task of the plan produces it'
+			: `task ${a.producedBy} should have produced it`;
+		return `- ${a.name}: ${producer}. Reason: ${a.reason}`;
+	});
+	return (
+		`\n\nAbsent inputs (NOT available to you):\n` +
+		lines.join('\n') +
+		`\n\n` +
+		`These inputs were not produced, so you have nothing about them. In the summary and in the ` +
+		`findings, state nothing about an absent input except that it is absent, with the task that ` +
+		`should have produced it and the reason given above. Do not infer, estimate or describe what ` +
+		`it would have held, and do not present the report as covering it.`
+	);
 }
 
 /**
@@ -258,5 +293,6 @@ function classifyError(err: unknown): Error {
 
 export const _buildMessagesForTest        = buildMessages;
 export const _renderUpstreamSectionForTest = renderUpstreamSection;
+export const _renderAbsentSectionForTest   = renderAbsentSection;
 export const _stableStringifyForTest       = stableStringify;
 export const _classifyErrorForTest         = classifyError;

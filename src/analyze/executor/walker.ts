@@ -20,6 +20,9 @@
  *     1. Check `consumes` -- every name must be in `outputs`. If any
  *        consumed name's producer is in `failed`, this task is
  *        skipped with status='skipped-dependency-unavailable'.
+ *        The aggregate-report task (the last) differs: it is skipped
+ *        only when it consumes names and none was produced; otherwise
+ *        it runs on what exists and is given `absentInputs`.
  *     2. If kind='planner': look up the child plan in tree.children
  *        by taskId. Recurse into it via this same walk. The child's
  *        aggregator output (its terminal task's `report`) becomes
@@ -29,6 +32,8 @@
  *        Validate the returned outputs cover exactly the template's
  *        produces (ExecutorOutputShapeError if not).
  *     4. Persist the task record to <runRoot>/tasks/<taskId>.json.
+ *        A record that cannot be written fails that task, and the
+ *        walk goes on; an error not tied to a task propagates.
  *     5. Merge the task's outputs into `outputs`.
  *     6. If the aggregator (last task) succeeded, its `report` is
  *        the plan's finalReport.
@@ -49,6 +54,7 @@ import {
 	type ClassifiedIntent,
 	type ExecutorResult,
 	type FailedTask,
+	type AbsentInput,
 	type PlanExecutionResult,
 	type PlannedTask,
 	type PlanTreeNode,
@@ -131,8 +137,12 @@ async function executePlan(
 			...(parentTaskPath !== undefined ? { parentTaskPath } : {}),
 		});
 
-		// Step 1: dependency check
-		const unmet = unmetDependencies(task, outputs, failed);
+		// Step 1: dependency check. The aggregate-report task has its own rule:
+		// it runs on the inputs that exist and is told which are absent.
+		const absentInputs = isAggregator ? absentInputsFor(task, node.plan.tasks, outputs, perTask) : undefined;
+		const unmet = isAggregator
+			? aggregateUnmet(task, outputs)
+			: unmetDependencies(task, outputs, failed);
 		if (unmet !== null) {
 			const record: TaskExecutionRecord = {
 				taskId:      task.taskId,
@@ -143,7 +153,9 @@ async function executePlan(
 				error:       `dependency-unavailable: ${unmet}`,
 				completedAt: nowIso(),
 			};
-			writeTaskOutput(runId, record);
+			// The task is already a failure of the plan; a record that cannot be
+			// written does not change that, and the walk goes on.
+			persistTaskRecord(runId, task, record);
 			perTask.set(task.taskId, record);
 			failed.add(task.taskId);
 			tasksFailed.push({ taskId: task.taskId, reason: record.error! });
@@ -171,11 +183,12 @@ async function executePlan(
 				children.set(task.taskId, planRes.childResult);
 			}
 		} else {
-			result = await executeLeafTask(task, intent, runId, outputs);
+			result = await executeLeafTask(task, intent, runId, outputs, absentInputs);
 		}
 
-		// Step 4 + 5: persist + accumulate
-		writeTaskOutput(runId, result);
+		// Step 4 + 5: persist + accumulate. A record that cannot be written
+		// fails THIS task: its outputs are not handed on, and the walk goes on.
+		result = persistTaskRecord(runId, task, result);
 		perTask.set(task.taskId, result);
 
 		if (result.status === 'ok') {
@@ -219,6 +232,8 @@ async function executeLeafTask(
 	intent:  ClassifiedIntent,
 	runId:   string,
 	outputs: ReadonlyMap<string, unknown>,
+	/** For the aggregate-report task only: what the plan did not produce. */
+	absentInputs?: readonly AbsentInput[] | undefined,
 ): Promise<TaskExecutionRecord> {
 	const runtime = getRuntime(task.template);
 	if (runtime === undefined) {
@@ -231,7 +246,10 @@ async function executeLeafTask(
 
 	let result: TemplateExecuteResult;
 	try {
-		result = await runtime.execute({ task, intent, upstreamOutputs, runId });
+		result = await runtime.execute({
+			task, intent, upstreamOutputs, runId,
+			...(absentInputs !== undefined && absentInputs.length > 0 ? { absentInputs } : {}),
+		});
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		// A refused scope is a failure the caller can act on: it keeps the scope
@@ -355,6 +373,60 @@ function unmetDependencies(
 }
 
 /**
+ * The aggregate-report task's dependency rule. It is skipped in one case
+ * only: it consumes at least one name and NONE of them was produced, so it
+ * would have nothing to write from. With some of its inputs, or with an empty
+ * `consumes` list, it runs. Returns the first consumed name when it is to be
+ * skipped, else null.
+ */
+function aggregateUnmet(
+	task:    PlannedTask,
+	outputs: ReadonlyMap<string, unknown>,
+): string | null {
+	const consumes = task.consumes ?? [];
+	if (consumes.length === 0) return null;
+	if (consumes.some(name => outputs.has(name))) return null;
+	return consumes[0]!;
+}
+
+/**
+ * What the plan did not produce, for its aggregate-report task:
+ *   - one entry per name that a failed or skipped task before it would have
+ *     produced, with that task's id and its recorded reason;
+ *   - one entry, with no producing task, for a name the aggregate task
+ *     consumes that no task of the plan produces.
+ * Built from the plan's tasks and not only from the aggregate task's own
+ * `consumes` list: that list is written by the planner and may be empty.
+ * In plan order, then the consumed names nothing produces. Empty when the
+ * plan produced everything.
+ */
+function absentInputsFor(
+	task:    PlannedTask,
+	tasks:   readonly PlannedTask[],
+	outputs: ReadonlyMap<string, unknown>,
+	perTask: ReadonlyMap<string, TaskExecutionRecord>,
+): AbsentInput[] {
+	const absent: AbsentInput[] = [];
+	const producedByPlan = new Set<string>();
+	for (const other of tasks) {
+		if (other.taskId === task.taskId) continue;
+		for (const name of other.produces) producedByPlan.add(name);
+		const record = perTask.get(other.taskId);
+		if (record === undefined || record.status === 'ok') continue;
+		for (const name of other.produces) {
+			// Another task may have produced the same name; it is then not absent.
+			if (outputs.has(name)) continue;
+			absent.push({ name, producedBy: other.taskId, reason: record.error ?? record.status });
+		}
+	}
+	for (const name of task.consumes ?? []) {
+		if (outputs.has(name) || producedByPlan.has(name)) continue;
+		absent.push({ name, producedBy: null, reason: 'no task of the plan produces this name' });
+	}
+	return absent;
+}
+
+/**
  * Pull just the upstream names this task `consumes` out of the
  * full outputs map. Aggregator tasks (with `consumes` listing
  * everything they need) get the projected subset; the runtime
@@ -391,6 +463,32 @@ function checkOutputShape(
 
 	if (missing.length === 0 && extra.length === 0) return null;
 	return new ExecutorOutputShapeError(task.template, task.taskId, missing, extra);
+}
+
+/**
+ * Write a task's record. Writing is the walk's work, outside the task's
+ * runtime: when it fails, the error is the TASK's failure, not the walk's.
+ * Returns the record the plan's result holds: the one given when it was
+ * written, else a failed record with the error's message. That failed record
+ * is written too when it can be; when it cannot, the failure is still in the
+ * plan's result.
+ */
+function persistTaskRecord(runId: string, task: PlannedTask, record: TaskExecutionRecord): TaskExecutionRecord {
+	try {
+		writeTaskOutput(runId, record);
+		return record;
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		log.warn({ runId, taskId: task.taskId, status: record.status, err: msg }, "the task's record could not be written");
+		// A task that had already failed or been skipped keeps its own reason.
+		if (record.status !== 'ok') return record;
+		const failed = failedRecord(task, `task-record-unwritable: ${msg}`);
+		try { writeTaskOutput(runId, failed); }
+		catch (again) {
+			log.warn({ runId, taskId: task.taskId, err: (again as Error).message }, "the task's failure could not be written either; it is in the plan's result");
+		}
+		return failed;
+	}
 }
 
 function failedRecord(task: PlannedTask, error: string, code?: ScopeErrorCode): TaskExecutionRecord {
@@ -445,5 +543,7 @@ const appendTaskPath = taskPath;
 // ---------------------------------------------------------------------------
 
 export const _unmetDependenciesForTest = unmetDependencies;
+export const _aggregateUnmetForTest    = aggregateUnmet;
+export const _absentInputsForForTest   = absentInputsFor;
 export const _projectUpstreamForTest   = projectUpstream;
 export const _checkOutputShapeForTest  = checkOutputShape;

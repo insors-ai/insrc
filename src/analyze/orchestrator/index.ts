@@ -18,6 +18,7 @@
  */
 
 export { runAnalyze } from './driver.js';
+export { isRunLive } from './live-runs.js';
 export {
 	readRunRecord,
 	runRecordPathFor,

@@ -29,6 +29,7 @@ import { TARGET_TO_KINDS } from '../../classifier/validate.js';
 import { ensureNonEmptyClosure, ScopeKindTargetMismatchError } from '../../context/invariants.js';
 import { resolveScopeForTarget } from '../../context/scope.js';
 import type { KindsPerTarget, ResolvedScope, ScopeDeps } from '../../context/scope.js';
+import type { DocsArea } from '../../docs-retrieval.js';
 
 /** The four families whose plan tasks have a scope of their own. */
 export type TaskFamily = 'code' | 'docs' | 'infra' | 'data';
@@ -103,6 +104,18 @@ export function inAreaOf(scope: ResolvedScope): (entity: { readonly id: string; 
 	const dir = scope.lookupPath;
 	if (scope.kind !== 'module' && dir === graphRepoOf(scope)) return () => true;
 	return e => e.file === dir || e.file.startsWith(`${dir}/`);
+}
+
+/**
+ * The area of a docs scope, for a task that hands its selection to document
+ * retrieval: the file of a file scope, the directory of a module scope or of a
+ * directory inside the repo that is read. Undefined when the scope takes the
+ * whole repo, so that retrieval is called exactly as before.
+ */
+export function docsAreaOf(scope: ResolvedScope): DocsArea | undefined {
+	if (scope.kind === 'file' && scope.filePath !== undefined) return { file: scope.filePath };
+	if (scope.kind !== 'module' && scope.lookupPath === graphRepoOf(scope)) return undefined;
+	return { directory: scope.lookupPath };
 }
 
 /** The family a template belongs to: the first part of its id (`code.discovery.modules` -> `code`). */

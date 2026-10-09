@@ -40,6 +40,19 @@ import type { Entity } from '../shared/types.js';
 
 const log = getLogger('analyze:docs-retrieval');
 
+/** The two services the vector pass uses. */
+interface VectorPassDeps {
+	embedQuery:       typeof embedQuery;
+	searchEntityVecs: typeof searchEntityVecs;
+}
+const REAL_VECTOR_PASS: VectorPassDeps = { embedQuery, searchEntityVecs };
+let vectorPass: VectorPassDeps = REAL_VECTOR_PASS;
+/** Test seam: stand-ins for the embedding of the query and for the vector
+ *  search. Pass undefined to go back to the real ones. */
+export function _setVectorPassForTest(deps: Partial<VectorPassDeps> | undefined): void {
+	vectorPass = deps === undefined ? REAL_VECTOR_PASS : { ...REAL_VECTOR_PASS, ...deps };
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -75,8 +88,23 @@ export interface DocsRetrievalReport {
 	vectorPassSkipped?: string | undefined;
 }
 
+/**
+ * A part of a repo a retrieval keeps to: a directory (everything under it) or
+ * one file. Absent, the whole closure is searched.
+ */
+export type DocsArea = { readonly directory: string } | { readonly file: string };
+
+/** Whether a file lies in the area. */
+export function inDocsArea(area: DocsArea, file: string): boolean {
+	if ('file' in area) return file === area.file;
+	return file === area.directory || file.startsWith(`${area.directory}/`);
+}
+
 export interface DocsRetrievalArgs {
 	readonly db:             DbClient;
+	/** Keep to this part of the closure. The candidates are narrowed to it
+	 *  before either pass, so ranking and the result limit apply within it. */
+	readonly area?:          DocsArea | undefined;
 	/** Filled with what the retrieval could not do. A caller that states its completeness passes one. */
 	readonly report?:        DocsRetrievalReport | undefined;
 	readonly query:          string;
@@ -152,11 +180,12 @@ export async function retrieveDocSections(
 	const candidatesByRepo: Entity[] = [];
 	for (const repo of args.closureRepos) {
 		const inRepo = await listEntitiesByKinds(args.db, kinds, { repo });
-		candidatesByRepo.push(...inRepo);
+		const area = args.area;
+		candidatesByRepo.push(...(area === undefined ? inRepo : inRepo.filter(e => inDocsArea(area, e.file))));
 	}
 	if (candidatesByRepo.length === 0) {
 		log.debug(
-			{ query: args.query, closureRepos: args.closureRepos },
+			{ query: args.query, closureRepos: args.closureRepos, area: args.area },
 			'retrieveDocSections: no doc entities in closure',
 		);
 		return [];
@@ -170,7 +199,7 @@ export async function retrieveDocSections(
 	const vectorScores = new Map<string, number>();
 	let queryVec: number[];
 	try {
-		queryVec = await embedQuery(args.query);
+		queryVec = await vectorPass.embedQuery(args.query);
 	} catch (err) {
 		log.debug(
 			{ err: (err as Error).message },
@@ -186,11 +215,17 @@ export async function retrieveDocSections(
 	}
 	if (queryVec.length > 0) {
 		try {
-			const hits = await searchEntityVecs(
+			// With an area, the search is among the area's candidates, so its hits
+			// are the nearest within the area. Searching the repo and dropping what
+			// lies outside would leave a small area with few vector scores or none.
+			// With no area the query is the one it always was.
+			const hits = await vectorPass.searchEntityVecs(
 				queryVec,
 				args.closureRepos,
 				maxResults * VECTOR_DEPTH_MULT,
-				{ kinds: kinds as readonly string[] },
+				args.area === undefined
+					? { kinds: kinds as readonly string[] }
+					: { kinds: kinds as readonly string[], ids: [...candidateById.keys()] },
 			);
 			for (const h of hits) {
 				// Lance cosine distance is in [0, 2]; convert to similarity

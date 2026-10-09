@@ -45,6 +45,7 @@ export const codeAggregateReportRuntime: TemplateRuntime = {
 			runId:           args.runId,
 			upstreamOutputs: args.upstreamOutputs,
 			...(args.intent.focus !== undefined ? { focus: args.intent.focus } : {}),
+			...(args.absentInputs !== undefined ? { absentInputs: args.absentInputs } : {}),
 		});
 
 		return {

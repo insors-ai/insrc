@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T06:23:32.912Z"
+    "updatedAt": "2026-10-09T09:16:33.476Z"
   },
   "body": {
     "tasks": [
@@ -958,6 +958,627 @@
               },
               {
                 "title": "the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "214914ce",
+        "ranAt": "2026-10-09T06:30:49.274Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+                "title": "the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+                "title": "the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no docs runtime uses the scope's value as a repo path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+                "title": "no docs runtime uses the scope's value as a repo path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 549,
+            "titles": [
+              {
+                "title": "the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "no docs runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the unrelated resolveRepoPath under src/mcp is untouched",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1129,
+            "titles": [
+              {
+                "title": "the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code",
+                "result": "pass"
+              },
+              {
+                "title": "the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "7d2ada00",
+        "ranAt": "2026-10-09T06:37:15.408Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+                "title": "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1446,
+            "titles": [
+              {
+                "title": "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "3dfa5044",
+        "ranAt": "2026-10-09T06:50:14.917Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a docs task with a module scope whose sections are not among the repository's nearest matches still gets them from the vector pass (mutation: search the whole repository and drop what lies outside)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts",
+                "title": "a docs task with a module scope whose sections are not among the repository's nearest matches still gets them from the vector pass (mutation: search the whole repository and drop what lies outside)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/lance/__tests__/entity-vec.test.ts",
+                "title": "the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 967,
+            "titles": [
+              {
+                "title": "a docs task with a module scope whose sections are not among the repository's nearest matches still gets them from the vector pass (mutation: search the whole repository and drop what lies outside)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/lance/__tests__/entity-vec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1197,
+            "titles": [
+              {
+                "title": "writeEntityEmbedding stores a single row",
+                "result": "pass"
+              },
+              {
+                "title": "writeEntityEmbedding upsert: same id replaces row",
+                "result": "pass"
+              },
+              {
+                "title": "writeEntityEmbeddings bulk upsert",
+                "result": "pass"
+              },
+              {
+                "title": "writeEntityEmbeddings on empty array is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs returns ANN hits ordered by distance",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs respects closure-repo scope",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs filter=code excludes artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs filter=artifact returns only artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs returns [] for empty query vector",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs returns [] for empty closureRepos",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs excludes the seed sentinel row",
+                "result": "pass"
+              },
+              {
+                "title": "the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntityVec removes a single row",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntityVecsByIds bulk drop",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntityVecsForRepo removes all rows for a repo",
+                "result": "pass"
+              },
+              {
+                "title": "delete on empty input is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "strings with single quotes are escaped in delete + search",
+                "result": "pass"
+              },
+              {
+                "title": "rows survive close + reopen",
+                "result": "pass"
+              },
+              {
+                "title": "compactEntityVecTable reduces on-disk fragment count",
+                "result": "pass"
+              },
+              {
+                "title": "compactEntityVecTable preserves all rows + searchability",
+                "result": "pass"
+              },
+              {
+                "title": "compactEntityVecTable on a fresh / single-fragment table is a cheap no-op",
+                "result": "pass"
+              },
+              {
+                "title": "compactEntityVecTable result survives close + reopen",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "10b075c0",
+        "ranAt": "2026-10-09T06:54:27.128Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+                "title": "the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "each of the five aggregate-report runtimes hands absentInputs to the aggregator",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+                "title": "each of the five aggregate-report runtimes hands absentInputs to the aggregator",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 646,
+            "titles": [
+              {
+                "title": "each of the five aggregate-report runtimes hands absentInputs to the aggregator",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 584,
+            "titles": [
+              {
+                "title": "stableStringify: object keys sorted",
+                "result": "pass"
+              },
+              {
+                "title": "stableStringify: Map entries sorted + emitted as object",
+                "result": "pass"
+              },
+              {
+                "title": "stableStringify: arrays preserve order",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: empty map -> \"No upstream outputs\" sentinel",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: tasks emitted in sorted taskId order",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: null upstream rendered as unavailable note",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: JSON output rendered in fenced block",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: system has prompt content, user has Target/Scope/upstream",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: focus is included in the user message when present",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: focus omitted when undefined",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: Ollama-down patterns -> aggregator-llm-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: arbitrary error -> aggregator-schema-unrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: non-Error -> aggregator-internal wrapper",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: stub provider -> report carries LLM output + runtime metadata",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: focus passed through to the user message",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: provider throws ECONNREFUSED -> rethrown as aggregator-llm-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: provider throws arbitrary error -> aggregator-schema-unrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: missing prompt file -> \"aggregator prompt missing\"",
+                "result": "pass"
+              },
+              {
+                "title": "AGGREGATE_LLM_SCHEMA: requires summary + findings, additionalProperties false",
+                "result": "pass"
+              },
+              {
+                "title": "the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "7efc942b",
+        "ranAt": "2026-10-09T08:45:50.036Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 919,
+            "titles": [
+              {
+                "title": "a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)",
+                "result": "pass"
+              },
+              {
+                "title": "a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)",
+                "result": "pass"
+              },
+              {
+                "title": "a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "9d819dab",
+        "ranAt": "2026-10-09T09:00:08.514Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+                "title": "a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 695,
+            "titles": [
+              {
+                "title": "a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "c8e52f4b",
+        "ranAt": "2026-10-09T09:16:33.476Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+                "title": "an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+                "title": "a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+                "title": "with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+                "title": "a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1105,
+            "titles": [
+              {
+                "title": "an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)",
+                "result": "pass"
+              },
+              {
+                "title": "a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)",
+                "result": "pass"
+              },
+              {
+                "title": "with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)",
+                "result": "pass"
+              },
+              {
+                "title": "a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite",
                 "result": "pass"
               }
             ],

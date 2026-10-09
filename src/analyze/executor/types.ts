@@ -51,11 +51,26 @@ import type { PlanTreeNode } from '../planner/recursive.js';
  * "*" or the explicit per-task names. Aggregators decide how to
  * stitch.
  */
+/**
+ * A name the plan did not produce, for the aggregate-report task: the output
+ * a failed or skipped task would have produced, with that task's id and its
+ * recorded reason; or a name the aggregate task consumes that no task of the
+ * plan produces (`producedBy` is then null).
+ */
+export interface AbsentInput {
+	readonly name:       string;
+	readonly producedBy: string | null;
+	readonly reason:     string;
+}
+
 export interface TemplateExecuteArgs {
 	readonly task:            PlannedTask;
 	readonly intent:          ClassifiedIntent;
 	readonly upstreamOutputs: ReadonlyMap<string, unknown>;
 	readonly runId:           string;
+	/** For the aggregate-report task only, and only when some of its inputs
+	 *  are missing: what the plan did not produce. */
+	readonly absentInputs?:   readonly AbsentInput[] | undefined;
 }
 
 export interface TemplateExecuteResult {

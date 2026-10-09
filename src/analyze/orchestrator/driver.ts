@@ -71,6 +71,7 @@ import {
 	type AnswerReport,
 } from '../completeness.js';
 
+import { lowerRunLive, raiseRunLive } from './live-runs.js';
 import { readRunRecord, writeRunRecord } from './persistence.js';
 import type {
 	AnalyzeRunEvent,
@@ -90,6 +91,9 @@ import type {
 
 const log = getLogger('analyze:orchestrator:driver');
 
+/** The writer itself. Inside runStages the name `writeRunRecord` is the run's own, which also notes what was written. */
+const writeRunRecordToDisk = writeRunRecord;
+
 // ---------------------------------------------------------------------------
 // runAnalyze -- public entry point
 // ---------------------------------------------------------------------------
@@ -99,7 +103,7 @@ export async function runAnalyze(
 	opts: RunAnalyzeOpts = {},
 ): Promise<RunAnalyzeResult> {
 	const start = Date.now();
-	const { runId, userPrompt, scopeRef: initialScopeRef } = args;
+	const runId = args.runId;
 
 	// Local emit() that swallows callback exceptions so a broken
 	// subscriber can't take the run down. The `done` event is the
@@ -120,6 +124,81 @@ export async function runAnalyze(
 	const emitDoneAndReturn = (result: RunAnalyzeResult): RunAnalyzeResult => {
 		emit({ type: 'done', result });
 		return result;
+	};
+
+	// What the run has reached, for the handler of an error nothing else
+	// catches. The stage starts as 'classify', the first stage and the one the
+	// initial record carries, so an error raised before any stage has started
+	// is reported there.
+	const reached: RunReached = { stage: 'classify', record: undefined, intent: undefined };
+
+	// The run is live from here, before its first read of a record, until it
+	// returns or throws.
+	raiseRunLive(runId);
+	try {
+		return await runStages(args, opts, { start, emit, emitDoneAndReturn, reached });
+	} catch (err) {
+		// An error no stage's own handler caught. The run does not leave as a
+		// rejection: its record says failed at the stage reached, and that
+		// failure is returned.
+		const failure: RunFailure = { code: 'internal-error', message: err instanceof Error ? err.message : String(err) };
+		log.error({ runId, stage: reached.stage, err: failure.message }, 'runAnalyze: uncaught error; the run is recorded as failed');
+		try {
+			const base: RunRecord = reached.record ?? {
+				runId, createdAt: nowIso(), updatedAt: nowIso(),
+				userPrompt: args.userPrompt, initialScopeRef: args.scopeRef,
+				stage: reached.stage, status: 'in-progress',
+			};
+			writeRunRecord(patch(base, {
+				stage: reached.stage, status: 'failed', error: failure,
+				...(reached.intent !== undefined ? { intent: reached.intent } : {}),
+			}));
+		} catch (writeErr) {
+			// The disk may be the very cause of the first error. The record is left
+			// as it was; the run is no longer live, so a reader corrects it.
+			log.error({ runId, err: (writeErr as Error).message }, 'runAnalyze: the failed run record could not be written');
+		}
+		return emitDoneAndReturn(failResult(reached.stage, failure, reached.intent, start, runId));
+	} finally {
+		lowerRunLive(runId);
+	}
+}
+
+/** What a run has reached: kept current by runStages, read by runAnalyze's handler. */
+interface RunReached {
+	stage:  RunStage;
+	record: RunRecord | undefined;
+	intent: ClassifiedIntent | undefined;
+}
+
+interface RunStagesContext {
+	readonly start:             number;
+	readonly emit:              (event: AnalyzeRunEvent) => void;
+	readonly emitDoneAndReturn: (result: RunAnalyzeResult) => RunAnalyzeResult;
+	readonly reached:           RunReached;
+}
+
+/**
+ * The run's stages, from its first read of an existing record onward. Every
+ * failure a stage knows is turned into a returned failure here; anything else
+ * is thrown to runAnalyze's handler.
+ */
+async function runStages(
+	args: RunAnalyzeArgs,
+	opts: RunAnalyzeOpts,
+	ctx:  RunStagesContext,
+): Promise<RunAnalyzeResult> {
+	const { start, emit, emitDoneAndReturn, reached } = ctx;
+	const { runId, userPrompt, scopeRef: initialScopeRef } = args;
+
+	// Every write of the run record goes through here, so the handler knows
+	// the record last written and the stage the run is in.
+	const writeRunRecord = (r: RunRecord): string => {
+		const path = writeRunRecordToDisk(r);
+		reached.record = r;
+		if (r.status === 'in-progress' && r.stage !== 'done') reached.stage = r.stage;
+		if (r.intent !== undefined) reached.intent = r.intent;
+		return path;
 	};
 
 	// (resume) If <runRoot>/run.json shows a previously-completed run

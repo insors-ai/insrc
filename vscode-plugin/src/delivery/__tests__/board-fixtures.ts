@@ -39,8 +39,9 @@ export function evidence(artifactId: string, kind: DeliveryEvidenceEntry['kind']
 
 /**
  * The E2 s5 performance fixture: 500 work items formed from 1,000 records, deterministic. 20 epics of 20 stories each
- * (400 stories, two evidence entries apiece, spread across the six stages) and 80 standalone issues; every seventh
- * card needs attention.
+ * (400 stories, two evidence entries apiece, spread across the six stages, each with three planned tasks and recorded
+ * results so the cards' task summaries and the rollup's task counts are exercised) and 80 standalone issues; every
+ * seventh card needs attention.
  */
 export function largeSnapshot(): DeliverySnapshot {
   const stages = ['scoped', 'design-plan', 'ready-design-approved', 'ready-plan-approved', 'build-recorded', 'complete'];
@@ -59,6 +60,8 @@ export function largeSnapshot(): DeliverySnapshot {
       items.push(item({
         id, title: `Story ${n + 1} of epic ${e}`, parentId: epicId, stage: stages[n % 6]!, sourceIds: [`s${i + 1}`],
         evidence: [evidence(`LLD-${id}`, 'LLD'), evidence(`PLAN-${id}`, 'PLAN')], ...attention(),
+        tasks: [1, 2, 3].map(t => ({ taskItemId: `${id}:T00${t}`, result: t <= n % 4 ? 'passed' : 'unrecorded', planned: true })) as never,
+        validation: { passed: Math.min(3, n % 4), failed: 0, unrecorded: 3 - Math.min(3, n % 4), unplanned: 0 },
       }));
     });
   }

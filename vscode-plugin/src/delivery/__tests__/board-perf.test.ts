@@ -69,6 +69,7 @@ test('a 500-item, 1,000-record board renders within one second and each filter c
     first = Math.min(first, performance.now() - t0);
     assert.ok(cards(board.w) > 0, 'the board was rendered');
   }
+  assert.ok(cardsIn(board.w.el['board']!).some(c => c.children.some(k => k.attrs['class'] === 'card-tasks')), 'the cards carry their task summaries');
 
   // Each filter change on the last board: search, attention and scope, each best of three, reset between runs.
   const changes: { name: string; apply: unknown; reset: unknown }[] = [

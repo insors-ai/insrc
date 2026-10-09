@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s2",
     "createdAt": "2026-10-09T16:31:36.297Z",
-    "updatedAt": "2026-10-09T17:24:58.342Z",
+    "updatedAt": "2026-10-09T17:54:15.733Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -28,9 +28,13 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "Task t5 makes the plan tree and the daemon's requests use the measured size. runAnalyze calls measureRequestScope after either classification branch and before the run context is built, sets the intent's size from it and passes a stated size as the hint; pickScope is no longer called and the classify stage's step is 'measure'. The measure is on the classified event, in the run record and on the merged report. The recursive planner measures a child plan when it is spawned (the model's figure is the hint, never the fallback) and keeps the child's measure on its tree node. The daemon's plan and classify requests measure the intent's scope and return the measure; planDepthScope gives the size the depth cap is read for (measured at depth 0, the caller's root size at a greater depth). One addition the design did not name: runPlanner now stamps the plan's size from the intent, because the task band was read for the size the model wrote in its own plan. Two test seams were added (_setClassifyForTest, _setClassifierForTest) because the classifier's own context build is a tool loop on a local model. Existing tests changed: live-runs.test.ts holds its runs in the measuring pass (they were held in the size-picking call), recursive.test.ts gets a stand-in store, and two assertions that expected the stated size as the size now expect the measured one. Limit: at depth 0 no request can exceed a depth cap, so the depth-0 rule is asserted on planDepthScope and not through a refused request. 20 mutations were run and all are killed; the analyze, daemon and mcp suites match the Story baseline by test name.",
+    "summary": "Task t6 makes the context builder the one writer of the size in the lookup pipeline. Its run input takes an intent whose size is not read and an optional sizeHint; it measures the named area (measureResolvedScope) for the planning call and for the executor's new optional requestSize, measures the lookup results for the answer step, and passes that measure to reportFromLookups. The cache key leaves out the intent's size and the hint, and a cached bundle's measure is given the current call's hint. The one-shot tool sends an intent with no size and a stated size only as sizeHint; the workflow runner sends none; the daemon's buildRun request accepts an intent with no size and an optional sizeHint. Built in one commit with t7 (a2343fb2), because this Task's first named test also covers the step tool and the free-form lookup. One addition the design did not name: measureLookupResults no longer throws on an output that is not shaped as its type says (it names the lookup in the measure's note), since the measure is now taken in the pipeline between the lookups and the answer. Two small functions were extracted or exposed so the callers can be tested: oneShotRunParams in the MCP server and _groundingIntentForTest in the workflow runner. Existing tests whose expected values changed by design were updated (reports now carry a measure; the steps are handed the measured size; the cache key formula). 38 mutations were run across the Tasks' test files; five survived the first run, each was closed with a new assertion, and all are killed. The analyze, daemon and mcp suites match the Story baseline by test name.",
     "testRecord": {
       "md": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/TESTS.md"
     },
@@ -40,324 +44,443 @@
           "file": ".insrc/artifacts/PLAN-b9d5c5c40df5a574-s2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/analyze.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/config.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/daemon.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/mcp.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/vscode-plugin.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/__tests__/measure-pass.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/__tests__/measure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/__tests__/report-head.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/completeness.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/lookup-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/answer-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/executor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/freeform-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/measure.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/hinted-branch.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/run-measure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/__tests__/recursive.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/recursive.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/_shared.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/__tests__/walk-files.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/_shared.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/analyze-run-empty-prompt.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/analyze-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/list-complete.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/cassandra.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/clickhouse.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/dynamodb.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/etcd.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/mongodb.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/mssql.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/mysql.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/nats.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/oracle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/pg.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/redis.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/sqlite.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/db/list-files.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/daemon/workflow-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/analyze-step-answer-prompt-missing.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/analyze-step-bundle-report.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/analyze-step-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/mcp/analyze-step/answer-turn.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/analyze-step/phases/bundle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/analyze-step/phases/narrow.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/analyze-step/phases/plan.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/analyze-step/phases/start.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/analyze-step/scope.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/analyze-step/state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/mcp/bundle-md.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:54:15.733Z"
       },
       {
         "target": {
           "file": "src/shared/db-driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T17:24:58.342Z"
+        "timestamp": "2026-10-09T17:54:15.733Z"
       }
     ],
-    "commit": "64f0a0ff"
+    "commit": "a2343fb2"
   }
 }

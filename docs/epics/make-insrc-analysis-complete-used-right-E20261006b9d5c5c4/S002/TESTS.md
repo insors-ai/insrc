@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 28 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -185,3 +185,31 @@ Run at 2026-10-09T17:24:58.342Z on commit `64f0a0ff`. Tests check: **passed**. 3
 | `src/analyze/orchestrator/__tests__/run-measure.test.ts` | 0 | 1 | 1 s |  |
 | `src/analyze/planner/__tests__/recursive.test.ts` | 0 | 12 | 0.7 s |  |
 | `src/daemon/__tests__/analyze-rpc-measure.test.ts` | 0 | 1 | 0.8 s |  |
+
+## t6
+
+Run at 2026-10-09T17:54:15.733Z on commit `a2343fb2`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report, as do the step tool's bundle phase and answer turn; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report, as do the step tool's bundle phase and answer turn; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path | `src/analyze/context/__tests__/lookup-measure.test.ts` |
+| pass | the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path; it never takes a default | `src/analyze/context/__tests__/lookup-measure.test.ts` |
+| pass | the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes | `src/mcp/__tests__/analyze-step-measure.test.ts` |
+| pass | the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle | `src/daemon/__tests__/analyze-rpc-measure.test.ts` |
+
+**integration: the builder's cache key leaves out the intent's size and the size hint: a run and a plan request for the same scope share one cached run bundle**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the builder's cache key leaves out the intent's size and the size hint: a run and a plan request for the same scope share one cached run bundle | `src/analyze/context/__tests__/lookup-measure.test.ts` |
+| pass | the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle | `src/daemon/__tests__/analyze-rpc-measure.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/lookup-measure.test.ts` | 0 | 3 | 1 s |  |
+| `src/daemon/__tests__/analyze-rpc-measure.test.ts` | 0 | 2 | 1.2 s |  |
+| `src/mcp/__tests__/analyze-step-measure.test.ts` | 0 | 1 | 0.7 s |  |

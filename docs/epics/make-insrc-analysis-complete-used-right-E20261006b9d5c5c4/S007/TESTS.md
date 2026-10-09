@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 52 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 58 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -373,3 +373,45 @@ Run at 2026-10-09T09:21:08.946Z on commit `416609ba`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/orchestrator/__tests__/scope-before-plan.test.ts` | 0 | 1 | 0.9 s |  |
+
+## t14
+
+Run at 2026-10-09T09:28:21.278Z on commit `5b42df41`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a record in progress with no live run is rewritten as 'run-abandoned' by the status request, on disk too (mutation: return the record as read)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a record in progress with no live run is rewritten as 'run-abandoned' by the status request, on disk too (mutation: return the record as read) | `src/daemon/__tests__/analyze-run-abandoned.test.ts` |
+
+**integration: the daemon's purge request purges such a record without force; purgeRun with no liveness refuses it; a live run's record is returned unchanged and refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the daemon's purge request purges such a record without force; purgeRun with no liveness refuses it; a live run's record is returned unchanged and refused | `src/daemon/__tests__/analyze-run-abandoned.test.ts` |
+| pass | runPurge refuses on status=in-progress for a live run without force; force=true overrides | `src/daemon/__tests__/analyze-rpc.test.ts` |
+
+**integration: the daemon's handler writes the record and sends its stage, not 'classify', for a runAnalyze that throws, and sends both frames when the record cannot be written**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the daemon's handler writes the record and sends its stage, not 'classify', for a runAnalyze that throws, and sends both frames when the record cannot be written | `src/daemon/__tests__/analyze-run-abandoned.test.ts` |
+
+**integration: with a record that cannot be written the status request still says 'run-abandoned' and the purge still removes the directory (mutation: let the rewrite's error escape)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with a record that cannot be written the status request still says 'run-abandoned' and the purge still removes the directory (mutation: let the rewrite's error escape) | `src/daemon/__tests__/analyze-run-abandoned.test.ts` |
+
+**integration: no reader changes a record that is 'ok' or 'failed'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | no reader changes a record that is 'ok' or 'failed' | `src/daemon/__tests__/analyze-run-abandoned.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/analyze-rpc.test.ts` | 0 | 44 | 0.9 s |  |
+| `src/daemon/__tests__/analyze-run-abandoned.test.ts` | 0 | 5 | 0.8 s |  |

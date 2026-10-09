@@ -146,7 +146,9 @@ function badgesOf(item: CardItem, labels: DisplayLabels): readonly BadgeView[] {
   for (const n of item.notices) {
     if (codes.has(n.code)) continue;
     codes.add(n.code);
-    add('notice', labels.notice[n.code], n.attention ? 'warning' : 'neutral');
+    // A code this build has no label for (a newer daemon) shows its id rather than nothing.
+    const label = Object.hasOwn(labels.notice, n.code) ? labels.notice[n.code] : String(n.code);
+    add('notice', label, n.attention ? 'warning' : 'neutral');
   }
   return out;
 }

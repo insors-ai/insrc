@@ -185,5 +185,9 @@ test('a failed story-level result shows Validation failed, badges never repeat a
     validation: { passed: 2, failed: 0, unrecorded: 1, unplanned: 0 } })])), 'S9')!;
   assert.equal(standalone.title, 'S9', 'a null title shows the id');
   assert.deepEqual(standalone.badges, [{ kind: 'validation', label: 'Unrecorded', tone: 'neutral' }]);
+
+  const newer = cardOfId(build(snapshot([item({ id: 'N1', notices: [notice('from-a-newer-daemon', false)] as never })])), 'N1')!;
+  assert.deepEqual(newer.badges, [{ kind: 'notice', label: 'from-a-newer-daemon', tone: 'neutral' }], 'an unlabelled notice code shows its id, never undefined');
+  assert.doesNotMatch(newer.accessibleLabel, /undefined/);
   assert.equal(standalone.accessibleLabel, 'Issue: S9. Stage: Scoped. Standalone. Signals: Unrecorded.');
 });

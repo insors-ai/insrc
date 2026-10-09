@@ -346,6 +346,12 @@ test('the board controls post only board up-messages, the scope control lists ev
   deliver({ v: 1, payload: { type: 'board', model: none } });
   assert.equal(el['empty']!.textContent, 'Nothing on the board matches the search and filters.');
   assert.equal(scope.value, 'epic:EB', 'the scope control keeps its choice');
+
+  // A refresh that removes the scoped epic keeps it selectable, with a note, so the reader can see and clear it.
+  const gone = await boardModelFor(fixtureSnapshot([item({ id: 'S1', standalone: true })]));
+  deliver({ v: 1, payload: { type: 'board', model: gone } });
+  assert.equal(scope.value, 'epic:EB');
+  assert.deepEqual(scope.children.map(o => [o.value, o.textContent]), [['all', 'All work'], ['standalone', 'Standalone'], ['epic:EB', 'Epic no longer on the board']]);
   assert.equal(el['search']!.value, 'alpha');
 });
 
@@ -430,4 +436,20 @@ test('a selection change that cannot be rendered keeps the previous board and is
   assert.deepEqual(lastItems(ch), ['A', 'B']);
   ch.send({ v: 1, payload: { type: 'set-view', view: 'board' } });
   assert.equal(logs.error.length, 1, 'with the search unchanged, later intents render');
+});
+
+test('a refresh whose loading state cannot be shown is logged and asks the daemon nothing', async () => {
+  let explode = false;
+  const a = item({ id: 'A' });
+  Object.defineProperty(a, 'title', { get() { if (explode) throw new Error('title unreadable'); return 'Alpha'; } });
+  const { ch, calls, logs } = await openWith(fixtureSnapshot([a]));
+  assert.deepEqual(lastItems(ch), ['A']);
+  explode = true;
+  const before = ch.posted.length;
+  ch.send({ v: 1, payload: { type: 'refresh' } });
+  await flush();
+  assert.equal(calls.length, 1, 'no second snapshot request');
+  assert.equal(ch.posted.length, before);
+  assert.equal(logs.error.length, 1);
+  assert.match(logs.error[0]!, /refresh 2 could not start: title unreadable/);
 });

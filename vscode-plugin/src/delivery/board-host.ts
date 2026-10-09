@@ -84,6 +84,8 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `const add=function(value,text){const o=make('option',text);o.value=value;scope.appendChild(o);};`,
   `add('all','All work');add('standalone','Standalone');`,
   `for(const o of options)add('epic:'+o.epicItemId,o.title);`,
+  // An epic the reader scoped to that a refresh removed stays selectable, so the reader sees why nothing matches.
+  `if(current.indexOf('epic:')===0&&!options.some(function(o){return 'epic:'+o.epicItemId===current;}))add(current,'Epic no longer on the board');`,
   `scope.value=current;}`,
   `function renderCard(c){const li=make('li',undefined,'card');li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);`,
   `li.appendChild(make('div',KIND[c.kind]+' · '+c.title,'card-title'));`,
@@ -167,7 +169,13 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const gen = generation;
     const seq = ++nextSeq;
     const started = deps.now();
-    dispatch({ type: 'refresh-requested', seq });
+    try {
+      dispatch({ type: 'refresh-requested', seq });
+    } catch (err) {
+      // The loading state could not be shown; state is unchanged, so no request is made for it.
+      deps.logger.error(`delivery board: refresh ${seq} could not start: ${errorText(err)}`);
+      return;
+    }
     // The client resolves every failure to a typed result; a throw is turned into one so the board never stays on 'loading'.
     let result: DeliveryResult<DeliverySnapshot>;
     try {

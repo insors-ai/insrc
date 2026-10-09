@@ -18,7 +18,8 @@
  *   { entrypoints: Array<{ name, kind, file, startLine, endLine,
  *                          language, signature?, entityId }> }
  *
- * Supported scopeRef kinds: repo, manifest-dir.
+ * The scope is resolved by shared/task-scope.ts: every kind the code
+ * family accepts, kept to the area the scope names.
  * Output sorted by (file, startLine, name) for deterministic
  * plan-replay.
  *

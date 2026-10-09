@@ -126,6 +126,13 @@ test("a code task with a module scope uses only the entities under that director
 	assert.deepEqual(await tree(repo), ['pay', 'payments']);
 	assert.deepEqual(await tree(module_), ['pay']);
 	assert.deepEqual(await tree(file), []);
+	assert.deepEqual(await tree(symbol), []);
+
+	// A workspace scope on the repo's directory reads everything, as a repo scope does.
+	const workspace: AnalyzeScopeRef = { kind: 'workspace', value: REPO };
+	assert.deepEqual(await entry(workspace), await entry(repo));
+	assert.deepEqual(await mods(workspace), ['pay', 'payments']);
+	assert.deepEqual(await tree(workspace), ['pay', 'payments']);
 
 	// A directory scope that IS a module directory but is given as a manifest directory keeps to it too.
 	assert.deepEqual(await entry({ kind: 'manifest-dir', value: join(REPO, 'payments') }), ['reportRefunds']);

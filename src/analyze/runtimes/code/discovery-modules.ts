@@ -12,15 +12,10 @@
  * Output:
  *   { modules: Array<{ name, path, repo, fileCount? }> }
  *
- * Supported scopeRef kinds in this commit:
- *   - 'repo'      : list every kind='module' entity in the given repo
- *   - 'manifest-dir': resolve manifest dir -> repo path, then same as 'repo'
- *
- * Future scopeRef kinds ('module', 'file', 'symbol', 'workspace') get
- * folded in as the discovery family grows -- each requires its own
- * traversal pattern + test fixture. For now, an unsupported kind
- * surfaces as a runtime error so the template/inputSchema contract
- * stays the unique source of truth.
+ * The scope is resolved by shared/task-scope.ts: every kind the code
+ * family accepts (repo, module, file, symbol, manifest-dir, workspace).
+ * The modules listed are those of the area the scope names; a kind
+ * outside the family's row is refused there.
  *
  * Deterministic: no LLM involvement. Same graph state -> same output.
  */

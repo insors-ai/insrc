@@ -147,6 +147,17 @@ test("the source scan asserts one read of the repo's entities kept whole in disc
 	assert.equal(readFormProblem('const entities = await listEntitiesForRepo(db, repoPath);', 'area'), 'the read is not narrowed to the area at once');
 });
 
+test('the source scan asserts the new form for structure-module-tree.ts', () => {
+	// The test above is titled for the state after Story s8's second task, when the tree
+	// still narrowed its read at once. The third task moved the tree to the whole read.
+	const tree = sources('code').get('code/structure-module-tree.ts')!;
+	assert.equal(READ_FORM['code/structure-module-tree.ts'], 'whole');
+	assert.equal(readFormProblem(tree, 'whole'), null);
+	assert.equal(readFormProblem(tree, 'area'), 'the read is not narrowed to the area at once');
+	// Only the entry-points task, which lists no module, still narrows its read at once.
+	assert.deepEqual(Object.entries(READ_FORM).filter(([, form]) => form === 'area').map(([file]) => file), ['code/discovery-entrypoints.ts']);
+});
+
 test("no docs runtime uses the scope's value as a repo path", () => {
 	const docs = sources('docs');
 	assert.ok(docs.size >= 6, `the scan found the runtime files (${docs.size} docs)`);

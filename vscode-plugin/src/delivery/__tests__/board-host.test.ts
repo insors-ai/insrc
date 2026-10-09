@@ -453,3 +453,54 @@ test('a refresh whose loading state cannot be shown is logged and asks the daemo
   assert.equal(logs.error.length, 1);
   assert.match(logs.error[0]!, /refresh 2 could not start: title unreadable/);
 });
+
+const lastOf = <T extends BoardDownMessage['type']>(c: FakeChannel, type: T) => {
+  const m = payloads(c).filter((p): p is Extract<BoardDownMessage, { type: T }> => p.type === type).at(-1);
+  return m ?? null;
+};
+
+test('switching views posts the selected view with the same selection, and switching back keeps the board page', async () => {
+  const many = fixtureSnapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
+    ...Array.from({ length: 60 }, (_, n) => item({ id: `E1:S${String(n).padStart(3, '0')}`, parentId: 'E1', title: `Board story ${n}` })),
+    item({ id: 'I1', kind: 'issue', standalone: true, stage: 'design-plan', title: 'Board bug', correctsRef: { resolvedItemId: 'E1:S000' } as never }),
+    item({ id: 'S99', standalone: true, title: 'Unrelated' }),
+  ]);
+  const { ch, logs } = await openWith(many);
+  ch.send({ v: 1, payload: { type: 'set-search', search: 'board' } });
+  ch.send({ v: 1, payload: { type: 'show-more', stage: 'scoped' } });
+  assert.equal(column(ch, 'scoped')?.cards.length, 60);
+  const boardTotal = lastBoard(ch)?.totals.items;
+
+  const before = ch.posted.length;
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
+  const sent = payloads(ch).slice(before - ch.posted.length);
+  assert.deepEqual(sent.map(p => p.type), ['status', 'epics'], 'only the chosen view is posted');
+  const epics = lastOf(ch, 'epics')!.model;
+  assert.equal(epics.totals.items, boardTotal, 'the same search applies');
+  assert.deepEqual(epics.epics.map(e => e.completionLabel), ['0 of 60 stories complete']);
+
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
+  const iv = lastOf(ch, 'issues')!.model;
+  assert.deepEqual(iv.issues.map(e => [e.card.itemId, e.parent?.itemId]), [['I1', 'E1:S000']]);
+
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'board' } });
+  assert.deepEqual([column(ch, 'scoped')?.cards.length, column(ch, 'scoped')?.hiddenCount], [60, 0], 'switching back keeps the page');
+  assert.equal(lastBoard(ch)?.totals.items, boardTotal);
+  assert.deepEqual(logs, { warn: [], error: [] });
+});
+
+test('a follow link naming an item that is not on the board is ignored and logged', async () => {
+  const { ch, logs } = await openWith(fixtureSnapshot([item({ id: 'A' }), item({ id: 'B' })]));
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
+  const before = ch.posted.length;
+  ch.send({ v: 1, payload: { type: 'select-item', itemId: 'gone' } });
+  assert.equal(ch.posted.length, before, 'nothing is posted');
+  assert.equal(logs.warn.length, 1);
+  assert.match(logs.warn[0]!, /link to an item that is not on the board/);
+  assert.equal(lastOf(ch, 'issues')!.model.selectedItemId, null, 'the selection is unchanged');
+
+  ch.send({ v: 1, payload: { type: 'select-item', itemId: 'B' } });
+  assert.equal(lastOf(ch, 'issues')!.model.selectedItemId, 'B', 'an item on the board is selected');
+  assert.equal(logs.warn.length, 1);
+});

@@ -147,3 +147,37 @@ test('an issue with two fix stories lists each as its own child with its own sta
   const board = buildBoardViewModel(snap, sel({ search: 'slow' }), {}, DISPLAY_LABELS);
   assert.equal(m.totals.issues, board.columns.flatMap(c => c.cards).filter(c => c.kind === 'issue').length, 'the board shows the same issue cards');
 });
+
+test('with a search and an epic scope, the rollup and issue view count the same matches as the board', () => {
+  const snap = snapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
+    item({ id: 'E2', kind: 'epic', title: 'Other epic' }),
+    item({ id: 'E1:S001', parentId: 'E1', stage: 'complete', title: 'Board columns' }),
+    item({ id: 'E1:S002', parentId: 'E1', stage: 'scoped', title: 'Board cards', needsAttention: true }),
+    item({ id: 'E1:S003', parentId: 'E1', stage: 'scoped', title: 'Paging' }),
+    item({ id: 'E2:S001', parentId: 'E2', stage: 'scoped', title: 'Board counts' }),
+    item({ id: 'I1', kind: 'issue', standalone: true, stage: 'design-plan', title: 'Board overflow', correctsRef: { resolvedItemId: 'E1:S001' } as never }),
+    item({ id: 'I2', kind: 'issue', standalone: true, stage: 'design-plan', title: 'Board elsewhere', correctsRef: { resolvedItemId: 'E2:S001' } as never }),
+  ]);
+  for (const s of [
+    { search: 'board' },
+    { scope: { kind: 'epic' as const, epicItemId: 'E1' } },
+    { scope: { kind: 'epic' as const, epicItemId: 'E1' }, search: 'board' },
+    { scope: { kind: 'epic' as const, epicItemId: 'E1' }, search: 'board', needsAttentionOnly: true },
+  ]) {
+    const board = buildBoardViewModel(snap, sel(s), {}, DISPLAY_LABELS);
+    const cards = board.columns.flatMap(c => c.cards);
+    const r = rollup(snap, s);
+    const v = issues(snap, s);
+    assert.equal(r.totals.items, board.totals.items, JSON.stringify(s));
+    assert.equal(r.totals.needsAttention, board.totals.needsAttention, JSON.stringify(s));
+    assert.deepEqual([...r.epics, r.notInEpic].flatMap(g => g.stages.flatMap(st => st.cards.map(c => c.itemId))).sort(), cards.map(c => c.itemId).sort());
+    assert.deepEqual(v.issues.map(e => e.card.itemId), cards.filter(c => c.kind === 'issue').map(c => c.itemId), JSON.stringify(s));
+  }
+  // The scoped, searched selection: 'board' also matches E1's title, so all three E1 stories match, plus the
+  // issue correcting one of them (which counts in 'Not in an epic', being standalone).
+  const r = rollup(snap, { scope: { kind: 'epic', epicItemId: 'E1' }, search: 'board' });
+  assert.deepEqual(r.epics.map(e => [e.epicItemId, e.completionLabel]), [['E1', '1 of 3 stories complete']]);
+  assert.deepEqual(r.notInEpic.stages.flatMap(g => g.cards.map(c => c.itemId)), ['I1']);
+  assert.deepEqual(issues(snap, { scope: { kind: 'epic', epicItemId: 'E1' }, search: 'board' }).issues.map(e => e.card.itemId), ['I1']);
+});

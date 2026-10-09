@@ -226,6 +226,12 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     return shown !== null && shown.snapshot.items.some(i => i.kind === 'epic' && i.id === scope.epicItemId);
   }
 
+  /** A followed link must name an item in the shown snapshot. */
+  function onBoard(itemId: string): boolean {
+    const shown = shownSnapshot(state.status);
+    return shown !== null && shown.snapshot.items.some(i => i.id === itemId);
+  }
+
   function select(selection: BoardSelection, nextPaging: BoardPaging = paging): void {
     dispatch({ type: 'selection-changed', selection }, nextPaging);
   }
@@ -245,7 +251,13 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
         return;
       case 'set-search': select({ ...sel, search: msg.search }, {}); return;
       case 'set-attention': select({ ...sel, needsAttentionOnly: msg.on }, {}); return;
-      case 'select-item': select({ ...sel, selectedItemId: msg.itemId }); return;
+      case 'select-item':
+        if (!onBoard(msg.itemId)) {
+          deps.logger.warn('delivery board: ignored a link to an item that is not on the board');
+          return;
+        }
+        select({ ...sel, selectedItemId: msg.itemId });
+        return;
       case 'close-details': select({ ...sel, selectedItemId: null }); return;
       case 'set-density': select({ ...sel, density: msg.density }); return;
       case 'show-more': apply(state, showMore(paging, msg.stage)); return;

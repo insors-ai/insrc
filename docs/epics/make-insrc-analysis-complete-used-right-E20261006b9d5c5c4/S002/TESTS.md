@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 28 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -212,4 +212,22 @@ Run at 2026-10-09T17:54:15.733Z on commit `a2343fb2`. Tests check: **passed**. 6
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/context/__tests__/lookup-measure.test.ts` | 0 | 3 | 1 s |  |
 | `src/daemon/__tests__/analyze-rpc-measure.test.ts` | 0 | 2 | 1.2 s |  |
+| `src/mcp/__tests__/analyze-step-measure.test.ts` | 0 | 1 | 0.7 s |  |
+
+## t7
+
+Run at 2026-10-09T17:55:35.726Z on commit `555b9166`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes | `src/mcp/__tests__/analyze-step-measure.test.ts` |
+| pass | the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path; it never takes a default | `src/analyze/context/__tests__/lookup-measure.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/lookup-measure.test.ts` | 0 | 3 | 1 s |  |
 | `src/mcp/__tests__/analyze-step-measure.test.ts` | 0 | 1 | 0.7 s |  |

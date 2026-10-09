@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s2",
     "createdAt": "2026-10-09T16:31:36.297Z",
-    "updatedAt": "2026-10-09T17:54:15.733Z"
+    "updatedAt": "2026-10-09T17:55:35.726Z"
   },
   "body": {
     "tasks": [
@@ -627,6 +627,68 @@
               },
               {
                 "title": "the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/analyze-step-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 698,
+            "titles": [
+              {
+                "title": "the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "555b9166",
+        "ranAt": "2026-10-09T17:55:35.726Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/analyze-step-measure.test.ts",
+                "title": "the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/lookup-measure.test.ts",
+                "title": "the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path; it never takes a default",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/lookup-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 964,
+            "titles": [
+              {
+                "title": "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report, as do the step tool's bundle phase and answer turn; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the builder's cache key leaves out the intent's size and the size hint: a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              },
+              {
+                "title": "the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path; it never takes a default",
                 "result": "pass"
               }
             ],

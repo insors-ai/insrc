@@ -37,8 +37,9 @@ import type {
 import {
 	compareEntitiesByLocation,
 	readScopeRef,
-	resolveRepoPath,
 } from './_shared.js';
+import { graphRepoOf, inAreaOf, resolveTaskScope } from '../shared/task-scope.js';
+import type { AnalyzeScopeRef } from '../../../shared/analyze-types.js';
 import { graphCompleteness } from '../../explore/completeness-facts.js';
 
 const TEMPLATE_ID = 'code.discovery.entrypoints';
@@ -62,10 +63,13 @@ export const codeDiscoveryEntrypointsRuntime: TemplateRuntime = {
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
-		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
+		// The one scope function: the kinds a code task accepts, the repo whose
+		// graph it reads, and the area of that repo it keeps to.
+		const scope    = await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'code', TEMPLATE_ID);
+		const repoPath = graphRepoOf(scope);
 
 		const db       = await getDb();
-		const entities = await listEntitiesForRepo(db, repoPath);
+		const entities = (await listEntitiesForRepo(db, repoPath)).filter(inAreaOf(scope));
 
 		const filtered = entities.filter(
 			e => ENTRYPOINT_KINDS.has(e.kind) && e.isExported === true,

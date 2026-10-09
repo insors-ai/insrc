@@ -45,6 +45,8 @@ import { graphCompleteness, reachedLimit } from '../../explore/completeness-fact
 /** How many decisions and constraints the check asks the project context for. */
 const PROJECT_CONTEXT_LIMIT = 500;
 
+import { familyOfTemplate, graphRepoOf, resolveTaskScope } from './task-scope.js';
+
 const log = getLogger('analyze:runtimes:shared:adherence');
 
 // ---------------------------------------------------------------------------
@@ -216,7 +218,7 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 		);
 	}
 
-	const repoPath = executeArgs.intent.scopeRef.value;
+	const repoPath = await adherenceRepoPath(executeArgs, templateId);
 	const excerpts = await hydrateExcerpts(subject, repoPath, maxExcerpts);
 
 	if (excerpts.length === 0) {
@@ -312,6 +314,22 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 }
 
 // ---------------------------------------------------------------------------
+// The repo the check reads
+// ---------------------------------------------------------------------------
+
+/**
+ * The repo whose graph the check reads, from the request's scope, resolved by
+ * the one scope function for the family of the template the check runs as
+ * (the same check is registered as a code, a data and an infra template). A
+ * kind the family's row refuses is refused here; only the code family is
+ * checked for an index, so a data or an infra check on a directory that is
+ * not a registered repo goes on with that directory, as before.
+ */
+async function adherenceRepoPath(args: TemplateExecuteArgs, templateId: string): Promise<string> {
+	return graphRepoOf(await resolveTaskScope(args.intent.scopeRef, familyOfTemplate(templateId), templateId));
+}
+
+// ---------------------------------------------------------------------------
 // Constraint sourcing
 // ---------------------------------------------------------------------------
 
@@ -373,7 +391,7 @@ async function hydrateFromConstraintIds(
 	facts: ConstraintSourceFacts,
 ): Promise<ConstraintInput[]> {
 	const db = await getDb();
-	const repoPath = args.intent.scopeRef.value;
+	const repoPath = await adherenceRepoPath(args, args.task.template);
 	// Assemble the live context once to lift decisions/constraints
 	// with their citations pre-computed. This avoids per-id lookups
 	// against getDocSummary + entity hydration.

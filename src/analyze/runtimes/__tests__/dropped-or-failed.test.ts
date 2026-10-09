@@ -17,9 +17,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
+import { getDb } from '../../../db/client.js';
+import { upsertEntities } from '../../../db/entities.js';
 import { addRepo } from '../../../db/repos.js';
+import { makeEntityId } from '../../../indexer/parser/base.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
-import type { LLMProvider } from '../../../shared/types.js';
+import type { Entity, LLMProvider } from '../../../shared/types.js';
 import { runWithRoutingContext } from '../../context/shaper-provider.js';
 import type { RoutingSeamContext } from '../../context/shaper-provider.js';
 import { purgeAllTaskOutputs } from '../../executor/cache.js';
@@ -259,6 +262,13 @@ test('an adherence check whose model call fails is recorded by the walk as a fai
 	const modelDown = { completeStructured: async () => { throw new Error('model unavailable'); } } as unknown as LLMProvider;
 	const routing = { router: { resolveProviderForRole: () => ({ provider: modelDown }) } } as unknown as RoutingSeamContext;
 	const params = { codeSubject: 'settleRefund', constraints: [{ constraint: 'refunds MUST be issued within 30 days' }] };
+
+	// A code check reads the stored graph, so its scope has to be indexed.
+	const file = join(REPO, 'src/pay.ts');
+	await upsertEntities(await getDb(), [{
+		id: makeEntityId(REPO, file, 'function', 'payInvoice'), kind: 'function', name: 'payInvoice', language: 'typescript',
+		repoId: 0, repo: REPO, file, startLine: 1, endLine: 3, body: 'export function payInvoice() {}', embedding: [], indexedAt: NOW,
+	} as Entity]);
 
 	// At the runtime: it throws. It used to return every constraint as a missing implementation.
 	await assert.rejects(

@@ -59,6 +59,41 @@ test("the infra and data scope functions are gone and no infra or data runtime u
 	assert.ok(VALUE_READ.test('return sr.value;'));
 });
 
+test("the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path", () => {
+	const code = sources('code');
+	const shared = sources('shared');
+	assert.ok(code.size >= 8 && shared.size >= 2, `the scan found the runtime files (${code.size} code, ${shared.size} shared)`);
+
+	for (const [file, text] of [...code, ...shared]) {
+		// The removed function and the hook that exported it to tests: not declared, not imported, not called.
+		assert.ok(!/\bresolveRepoPath\b/.test(text), `${file}: resolveRepoPath`);
+		assert.ok(!/_resolveRepoPathForTest/.test(text), `${file}: _resolveRepoPathForTest`);
+		// No runtime reads the scope's value itself.
+		assert.ok(!VALUE_READ.test(text), `${file}: reads the scope's value`);
+	}
+	// Each code runtime that has a scope of its own resolves it through the one
+	// function, reads the repo it names and keeps to its area.
+	const callers = [...code].filter(([, text]) => /\breadScopeRef\(/.test(text) && !/export function readScopeRef/.test(text));
+	assert.deepEqual(callers.map(([f]) => f), [
+		'code/discovery-entrypoints.ts', 'code/discovery-modules.ts', 'code/structure-module-tree.ts',
+	]);
+	for (const [file, text] of callers) {
+		assert.match(text, /const scope\s+= await resolveTaskScope\(scopeRef as AnalyzeScopeRef, 'code', TEMPLATE_ID\);/, file);
+		assert.match(text, /const repoPath = graphRepoOf\(scope\);/, file);
+		assert.match(text, /listEntitiesForRepo\(db, repoPath\)\)\.filter\(inAreaOf\(scope\)\)/, file);
+		// The only read of the repo's entities is the one kept to the area.
+		assert.equal(text.match(/listEntitiesForRepo\(/g)!.length, 1, file);
+	}
+	// The adherence check, shared by three families: both of its readers take the
+	// repo from the one function, with the family of the template that runs.
+	const adherence = shared.get('shared/adherence.ts')!;
+	assert.match(adherence, /graphRepoOf\(await resolveTaskScope\(args\.intent\.scopeRef, familyOfTemplate\(templateId\), templateId\)\)/);
+	assert.equal(adherence.match(/const repoPath = await adherenceRepoPath\(/g)!.length, 2);
+	assert.equal(adherence.match(/\brepoPath\s*=/g)!.length, 2, 'no other source of a repo path in the adherence check');
+	// The docs task that used the code family's function takes the one function too.
+	assert.match(sources('docs').get('docs/discovery-inventory.ts')!, /graphRepoOf\(await resolveTaskScope\(scopeRef as AnalyzeScopeRef, 'docs', TEMPLATE_ID\)\)/);
+});
+
 test('the unrelated resolveRepoPath under src/mcp is untouched', () => {
 	const mcp = readFileSync(join(RUNTIMES, '..', '..', 'mcp', 'resolve-repo.ts'), 'utf8');
 	assert.match(mcp, /export (async )?function resolveRepoPath\(/);

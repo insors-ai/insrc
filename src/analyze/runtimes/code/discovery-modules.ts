@@ -34,7 +34,9 @@ import type {
 	TemplateExecuteResult,
 	TemplateRuntime,
 } from '../../executor/types.js';
-import { readScopeRef, resolveRepoPath } from './_shared.js';
+import { readScopeRef } from './_shared.js';
+import { graphRepoOf, inAreaOf, resolveTaskScope } from '../shared/task-scope.js';
+import type { AnalyzeScopeRef } from '../../../shared/analyze-types.js';
 
 const TEMPLATE_ID = 'code.discovery.modules';
 const log = getLogger('analyze:runtimes:code:discovery-modules');
@@ -51,10 +53,13 @@ export const codeDiscoveryModulesRuntime: TemplateRuntime = {
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
-		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
+		// The one scope function: the kinds a code task accepts, the repo whose
+		// graph it reads, and the area of that repo it keeps to.
+		const scope    = await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'code', TEMPLATE_ID);
+		const repoPath = graphRepoOf(scope);
 
 		const db       = await getDb();
-		const entities = await listEntitiesForRepo(db, repoPath);
+		const entities = (await listEntitiesForRepo(db, repoPath)).filter(inAreaOf(scope));
 		const modules: ModuleRecord[] = [];
 		for (const e of entities) {
 			if (e.kind !== 'module') continue;
@@ -92,8 +97,5 @@ export const codeDiscoveryModulesRuntime: TemplateRuntime = {
 // Test hooks (helpers themselves are exported from _shared.ts).
 // ---------------------------------------------------------------------------
 
-export {
-	readScopeRef as _readScopeRefForTest,
-	resolveRepoPath as _resolveRepoPathForTest,
-} from './_shared.js';
+export { readScopeRef as _readScopeRefForTest } from './_shared.js';
 import { graphCompleteness } from '../../explore/completeness-facts.js';

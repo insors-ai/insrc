@@ -74,3 +74,40 @@ export async function resolveTaskScope(
 	}
 	return scope;
 }
+
+// ---------------------------------------------------------------------------
+// What a task that reads the stored graph does with its resolved scope
+// ---------------------------------------------------------------------------
+
+/**
+ * The repo whose stored entities a task reads: the registered repo that
+ * contains the scope, or, where none is known (the registry could not be read
+ * or holds no repo), the scope's own directory, as before.
+ */
+export function graphRepoOf(scope: ResolvedScope): string {
+	return scope.repoPath ?? scope.lookupPath;
+}
+
+/**
+ * Whether an entity of that repo lies in the AREA the scope names:
+ *   - symbol: the one entity;
+ *   - file: the entities of that file;
+ *   - module: the entities whose file lies under the directory;
+ *   - repo, manifest directory, workspace: the directory too. When it IS the
+ *     repo that was read, every entity is kept untouched, exactly as before;
+ *     when it is a directory inside that repo, only what lies under it.
+ */
+export function inAreaOf(scope: ResolvedScope): (entity: { readonly id: string; readonly file: string }) => boolean {
+	if (scope.kind === 'symbol') return e => e.id === scope.entityId;
+	if (scope.kind === 'file') return e => e.file === scope.filePath;
+	const dir = scope.lookupPath;
+	if (scope.kind !== 'module' && dir === graphRepoOf(scope)) return () => true;
+	return e => e.file === dir || e.file.startsWith(`${dir}/`);
+}
+
+/** The family a template belongs to: the first part of its id (`code.discovery.modules` -> `code`). */
+export function familyOfTemplate(templateId: string): TaskFamily {
+	const family = templateId.split('.')[0];
+	if (family === 'code' || family === 'docs' || family === 'infra' || family === 'data') return family;
+	throw new Error(`${templateId}: the template's id does not begin with a family (code, docs, infra or data)`);
+}

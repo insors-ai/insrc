@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { deriveSectionIndex } from '../docs-sections.js';
-import { bodyStub, fire, type BodyStub } from './fake-dom.js';
+import { bodyStub, fire, textNode, type BodyStub } from './fake-dom.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
 import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
 import type { DocsArtifactSummary } from '../protocol.js';
@@ -1165,59 +1165,22 @@ test('t1: the emitted shell is byte-identical to the captured fixed-nonce baseli
 // by evaluating the source strings with `new Function`, and this extends it.
 // ---------------------------------------------------------------------------
 
-/** A node stub that records every property WRITE, so a test can prove a value
- *  reached the DOM via textContent and never through a markup-bearing property. */
-interface FrNode {
-  tag: string;
-  // The DOM's own property name, because the shipped source reads `n.tagName`
-  // (frIsHeading) — a stub that only had `tag` would silently answer undefined.
-  tagName: string;
-  className: string;
-  textContent: string;
-  children: FrNode[];
-  writes: Array<{ prop: string; value: unknown }>;
-  appendChild(c: FrNode): FrNode;
-}
-function frNode(tag: string): FrNode {
-  const writes: FrNode['writes'] = [];
-  const children: FrNode[] = [];
-  const n = {
-    tag, tagName: tag, children, writes,
-    _className: '', _text: '',
-    appendChild(c: FrNode) { children.push(c); return c; },
-  } as unknown as FrNode & { _className: string; _text: string };
-  Object.defineProperty(n, 'className', {
-    get() { return n._className; },
-    set(v: string) { n._className = v; writes.push({ prop: 'className', value: v }); },
-  });
-  Object.defineProperty(n, 'textContent', {
-    get() { return n._text; },
-    set(v: string) { n._text = v; writes.push({ prop: 'textContent', value: v }); },
-  });
-  // innerHTML / outerHTML exist ONLY to be caught: a write to either is recorded
-  // and asserted against, so "no markup assignment" is executed, not grepped.
-  for (const prop of ['innerHTML', 'outerHTML']) {
-    Object.defineProperty(n, prop, { set(v: unknown) { writes.push({ prop, value: v }); }, get() { return ''; } });
-  }
-  return n as FrNode;
-}
-
 /** Eval DOCS_FR_SOURCE with a stub `document`, returning renderFunctionalRequirements. */
-function loadFr(): (record: unknown) => { el: FrNode; degradation?: unknown } {
-  const doc = { createElement: (t: string) => frNode(t) };
+function loadFr(): (record: unknown) => { el: BodyStub; degradation?: unknown } {
+  const doc = { createElement: (t: string) => bodyStub(t) };
   // eslint-disable-next-line no-new-func
   const make = new Function('document', `${DOCS_FR_SOURCE}; return renderFunctionalRequirements;`);
   return make(doc) as ReturnType<typeof loadFr>;
 }
 
 /** Every node in the tree, root first. */
-function frAll(n: FrNode): FrNode[] {
+function frAll(n: BodyStub): BodyStub[] {
   return [n, ...n.children.flatMap(frAll)];
 }
-const frItems = (root: FrNode): FrNode[] => frAll(root).filter((n) => n.className === 'insrc-fr-item');
-const frIds = (root: FrNode): string[] =>
+const frItems = (root: BodyStub): BodyStub[] => frAll(root).filter((n) => n.className === 'insrc-fr-item');
+const frIds = (root: BodyStub): string[] =>
   frAll(root).filter((n) => n.className === 'insrc-fr-id').map((n) => n.textContent);
-const frGroupLabels = (root: FrNode): string[] =>
+const frGroupLabels = (root: BodyStub): string[] =>
   frAll(root).filter((n) => n.className === 'insrc-fr-group-label').map((n) => n.textContent);
 
 const REC = {
@@ -1388,7 +1351,7 @@ test('t2: the item CSS fragment references only --it-* variables', () => {
 
 /** Eval DOCS_FR_SOURCE and return frAnchorSlug. */
 function loadFrAnchor(): (sections: unknown) => string | undefined {
-  const doc = { createElement: (t: string) => frNode(t) };
+  const doc = { createElement: (t: string) => bodyStub(t) };
   // eslint-disable-next-line no-new-func
   const make = new Function('document', `${DOCS_FR_SOURCE}; return frAnchorSlug;`);
   return make(doc) as ReturnType<typeof loadFrAnchor>;
@@ -2070,7 +2033,7 @@ test('ac3: the same record rendered twice yields identical identifiers — the c
     'the same record yields the same identifiers in a second document');
 
   // Purity, which is WHY ac3 holds: same input, same output tree, every time.
-  const shape = (n: FrNode): unknown => [n.tagName, n.className, n.textContent, n.children.map(shape)];
+  const shape = (n: BodyStub): unknown => [n.tagName, n.className, n.textContent, n.children.map(shape)];
   assert.deepEqual(shape(downstream.el), shape(upstream.el),
     'the rendering is a pure function of the record');
 
@@ -2490,61 +2453,26 @@ test('t3: sc4 is TYPE-ONLY so far — nothing on the surface consumes it yet', (
 // "they agree" would be a comment rather than a property.
 // ---------------------------------------------------------------------------
 
-/** An SVG-aware recording node: captures every property write AND the namespace
- *  it was created in, so "built by createElementNS, labelled by textContent" is
- *  executed rather than grepped. */
-interface DgNode {
-  ns: string | null;
-  tag: string;
-  tagName: string;
-  textContent: string;
-  attrs: Record<string, string>;
-  children: DgNode[];
-  writes: Array<{ prop: string; value: unknown }>;
-  appendChild(c: DgNode): DgNode;
-  setAttribute(k: string, v: string): void;
-}
-function dgNode(tag: string, ns: string | null): DgNode {
-  const writes: DgNode['writes'] = [];
-  const children: DgNode[] = [];
-  const attrs: Record<string, string> = {};
-  const n = {
-    ns, tag, tagName: tag, children, writes, attrs,
-    _text: '',
-    appendChild(c: DgNode) { children.push(c); return c; },
-    setAttribute(k: string, v: string) { attrs[k] = String(v); writes.push({ prop: `attr:${k}`, value: v }); },
-  } as unknown as DgNode & { _text: string };
-  Object.defineProperty(n, 'textContent', {
-    get() { return n._text; },
-    set(v: string) { n._text = v; writes.push({ prop: 'textContent', value: v }); },
-  });
-  // Present ONLY to be caught: any write is recorded and asserted against.
-  for (const prop of ['innerHTML', 'outerHTML']) {
-    Object.defineProperty(n, prop, { set(v: unknown) { writes.push({ prop, value: v }); }, get() { return ''; } });
-  }
-  return n as DgNode;
-}
-
 interface DgApi {
   dgDeriveEr(rec: unknown): { nodes: { id: string; attrs: { name: string; range: string; dangling: boolean }[] }[]; edges: { id: string; from: string; to: string; label: string; token: string }[] } | null;
-  dgRenderEr(rec: unknown): { el: DgNode } | null;
+  dgRenderEr(rec: unknown): { el: BodyStub } | null;
   dgBuildDiagramSlot(records: unknown, ref: unknown, anchorSlug: string | undefined): Record<string, unknown>;
   dgDeriveSeq(rec: unknown): { nodes: { id: string; label: string }[]; edges: { id: string; from: string; to: string; index: number; kind: string; label: string; note: string }[]; truncations: { at: string; note: string }[] } | null;
-  dgRenderSeq(rec: unknown): { el: DgNode } | null;
+  dgRenderSeq(rec: unknown): { el: BodyStub } | null;
   dgCrowsFoot(slot: unknown): string;
-  created: DgNode[];
+  created: BodyStub[];
   createdHtml: string[];
 }
 
 /** Evaluate DOCS_DIAGRAM_SOURCE against a recording document stub. */
 function loadDg(): DgApi {
-  const created: DgNode[] = [];
+  const created: BodyStub[] = [];
   const createdHtml: string[] = [];
   const doc = {
-    createElementNS: (ns: string, t: string) => { const n = dgNode(t, ns); created.push(n); return n; },
+    createElementNS: (ns: string, t: string) => { const n = bodyStub(t, '', '', ns); created.push(n); return n; },
     // Present so a renderer reaching for the HTML factory is RECORDED rather than
     // crashing — an SVG renderer must never use it, and a test can prove it didn't.
-    createElement: (t: string) => { createdHtml.push(t); return dgNode(t, null); },
+    createElement: (t: string) => { createdHtml.push(t); return bodyStub(t); },
   };
   // eslint-disable-next-line no-new-func
   const make = new Function('document', `${DOCS_DIAGRAM_SOURCE}; return {dgDeriveEr:dgDeriveEr,dgRenderEr:dgRenderEr,dgBuildDiagramSlot:dgBuildDiagramSlot,dgCrowsFoot:dgCrowsFoot,dgDeriveSeq:dgDeriveSeq,dgRenderSeq:dgRenderSeq};`);
@@ -2553,7 +2481,7 @@ function loadDg(): DgApi {
 }
 
 /** Flatten a built tree for assertions. */
-function dgFlatten(n: DgNode, out: DgNode[] = []): DgNode[] {
+function dgFlatten(n: BodyStub, out: BodyStub[] = []): BodyStub[] {
   out.push(n);
   for (const c of n.children) dgFlatten(c, out);
   return out;
@@ -2830,7 +2758,7 @@ test('t4 gate: a ux-mock ref is not this factory\'s business — the experience 
   // for this factory. With no record either, that must be ABSENT — not an
   // unshowable diagram invented from someone else's companion.
   const dgApi = new Function('document', `${DOCS_DIAGRAM_SOURCE}; return dgPickRef;`)({
-    createElementNS: () => dgNode('x', 'ns'), createElement: () => dgNode('x', null),
+    createElementNS: () => bodyStub('x', '', '', 'ns'), createElement: () => bodyStub('x'),
   }) as (c: unknown) => unknown;
   assert.equal(dgApi(ux), undefined, 'a ux-mock ref is not a diagram ref');
   assert.equal(dgApi([{ kind: 'diagram-mermaid', relPath: 'a', title: 'b' }])?.constructor, Object);
@@ -3088,7 +3016,7 @@ test('t5: the factory dispatches on the RECORD present, never on the ref kind', 
   // whichever key happened to be enumerated first.
   const both = dg.dgBuildDiagramSlot({ erDefinition: ER, sequenceDefinition: SEQ }, ref, undefined);
   assert.equal(both['state'], 'rendered');
-  const flat = dgFlatten(both['body'] as DgNode);
+  const flat = dgFlatten(both['body'] as BodyStub);
   assert.ok(flat.some((n) => n.textContent === 'Order'), 'the entity model is the one drawn');
 });
 
@@ -3912,50 +3840,9 @@ test('t1: NO file under src/ is modified — the fact that makes S004 need no da
 const UX_PARITY_FIXTURES_FOR_TEST =
   UX_PARITY_FIXTURES.find((f) => f.name === 'every-member')!;
 
-/** A recording node: captures every property write, every attribute and every
- *  child, so the renderer's MECHANISM is observable. Mirrors S003's dgNode, with
- *  className and style added because this renderer is an HTML one. */
-interface UxNode {
-  tag: string;
-  className: string;
-  textContent: string;
-  style: Record<string, string>;
-  attrs: Record<string, string>;
-  children: Array<UxNode | UxTextNode>;
-  writes: Array<{ prop: string; value: unknown }>;
-  appendChild(c: UxNode | UxTextNode): UxNode | UxTextNode;
-  setAttribute(k: string, v: string): void;
-}
-interface UxTextNode { nodeType: 3; data: string }
-
-function isText(n: UxNode | UxTextNode): n is UxTextNode {
-  return (n as UxTextNode).nodeType === 3;
-}
-
-function uxNodeStub(tag: string): UxNode {
-  const writes: UxNode['writes'] = [];
-  const children: UxNode['children'] = [];
-  const attrs: Record<string, string> = {};
-  const style: Record<string, string> = {};
-  const n = {
-    tag, children, writes, attrs, style,
-    _text: '', _cls: '',
-    appendChild(c: UxNode | UxTextNode) { children.push(c); return c; },
-    setAttribute(k: string, v: string) { attrs[k] = String(v); writes.push({ prop: `attr:${k}`, value: v }); },
-  } as unknown as UxNode & { _text: string; _cls: string };
-  Object.defineProperty(n, 'textContent', {
-    get() { return n._text; },
-    set(v: string) { n._text = v; writes.push({ prop: 'textContent', value: v }); },
-  });
-  Object.defineProperty(n, 'className', {
-    get() { return n._cls; },
-    set(v: string) { n._cls = v; writes.push({ prop: 'className', value: v }); },
-  });
-  // Present ONLY to be caught: any write is recorded and asserted against.
-  for (const prop of ['innerHTML', 'outerHTML']) {
-    Object.defineProperty(n, prop, { set(v: unknown) { writes.push({ prop, value: v }); }, get() { return ''; } });
-  }
-  return n as UxNode;
+/** A text node of the shared fake (nodeType 3). */
+function isText(n: BodyStub): boolean {
+  return n.nodeType === 3;
 }
 
 interface UxSlot {
@@ -3963,33 +3850,33 @@ interface UxSlot {
   kind?: string;
   label?: string;
   reason?: string;
-  body?: UxNode;
+  body?: BodyStub;
   linkOut?: { relPath: string; title: string };
   anchorSlug?: string;
 }
 
 interface UxApi {
-  uxRenderCard(record: unknown): { el: UxNode };
-  uxElement(el: unknown, depth: number): UxNode;
+  uxRenderCard(record: unknown): { el: BodyStub };
+  uxElement(el: unknown, depth: number): BodyStub;
   uxPickRef(companions: unknown): { kind: string; title?: string; relPath?: string } | undefined;
   uxBuildMockSlot(record: unknown, ref: unknown, anchorSlug: string | undefined): UxSlot;
   setDepthMax(n: number | null): void;
   created: string[];
   texts: string[];
-  nodes: UxNode[];
+  nodes: BodyStub[];
 }
 
 /** Evaluate DOCS_UX_SOURCE against a recording document stub. */
 function loadUx(): UxApi {
   const created: string[] = [];
   const texts: string[] = [];
-  const nodes: UxNode[] = [];
+  const nodes: BodyStub[] = [];
   const doc = {
-    createElement: (t: string) => { created.push(t); const n = uxNodeStub(t); nodes.push(n); return n; },
-    createTextNode: (d: string) => { texts.push(d); return { nodeType: 3, data: d } as UxTextNode; },
+    createElement: (t: string) => { created.push(t); const n = bodyStub(t); nodes.push(n); return n; },
+    createTextNode: (d: string) => { texts.push(d); return textNode(d); },
     // Present so a renderer reaching for the SVG factory is RECORDED rather than
     // crashing — this renderer must never use it.
-    createElementNS: (_ns: string, t: string) => { created.push(`NS:${t}`); return uxNodeStub(t); },
+    createElementNS: (ns: string, t: string) => { created.push(`NS:${t}`); return bodyStub(t, '', '', ns); },
   };
   // eslint-disable-next-line no-new-func
   const make = new Function('document', `${DOCS_UX_SOURCE}; return {uxRenderCard:uxRenderCard,uxElement:uxElement,uxPickRef:uxPickRef,uxBuildMockSlot:uxBuildMockSlot,setDepthMax:function(n){UX_DEPTH_MAX=n;}};`);
@@ -3998,14 +3885,14 @@ function loadUx(): UxApi {
 }
 
 /** Every element in a rendered subtree, flattened — for "does each class appear". */
-function uxFlatten(n: UxNode): UxNode[] {
-  const out: UxNode[] = [n];
+function uxFlatten(n: BodyStub): BodyStub[] {
+  const out: BodyStub[] = [n];
   for (const c of n.children) if (!isText(c)) out.push(...uxFlatten(c));
   return out;
 }
 
 /** All text a subtree puts in the DOM, in order, from BOTH non-parsing channels. */
-function uxAllText(n: UxNode): string[] {
+function uxAllText(n: BodyStub): string[] {
   const out: string[] = [];
   if (n.textContent.length > 0) out.push(n.textContent);
   for (const c of n.children) out.push(...(isText(c) ? [c.data] : uxAllText(c)));
@@ -4027,7 +3914,7 @@ function uxAllText(n: UxNode): string[] {
 
 interface Shape { tag: string; cls: string; kids: Array<Shape | '#text'> }
 
-function shapeOfClient(n: UxNode): Shape {
+function shapeOfClient(n: BodyStub): Shape {
   // `textContent = 'x'` IS one text child in a real DOM — the recording stub keeps
   // it as a property because that is how the write was made, so the equivalence is
   // restored here. This is not normalising a difference away: the two produce the
@@ -4190,7 +4077,7 @@ test('t2: ColumnSet renders as ux-columnset with its Columns as children, in ord
 
 test('t2: Column honours a numeric width as the flex grow factor, a keyword falls back to 1, absent sets no style', () => {
   const ux = loadUx();
-  const col = (width?: unknown): UxNode =>
+  const col = (width?: unknown): BodyStub =>
     ux.uxElement(width === undefined ? { type: 'Column', items: [] } : { type: 'Column', width, items: [] }, 1);
 
   assert.equal(col(2).style['flex'], '2 1 0', 'a digits-only width IS the grow factor');
@@ -4259,11 +4146,11 @@ test('t2: Input.Text is a non-interactive affordance — a label and a styled sp
 test('t2: Input.Text multiline adds ux-input--multi; a missing label falls back to the id', () => {
   const ux = loadUx();
   const multi = ux.uxElement({ type: 'Input.Text', id: 'd', label: 'D', placeholder: 'p', isMultiline: true }, 1);
-  assert.equal((multi.children[1] as UxNode).className, 'ux-input ux-input--multi');
+  assert.equal((multi.children[1] as BodyStub).className, 'ux-input ux-input--multi');
 
   const noLabel = ux.uxElement({ type: 'Input.Text', id: 'fallback-id', placeholder: '' }, 1);
   assert.deepEqual(uxAllText(noLabel), ['fallback-id', ''].filter((t) => t.length > 0));
-  assert.equal((noLabel.children[0] as UxNode).textContent, 'fallback-id');
+  assert.equal((noLabel.children[0] as BodyStub).textContent, 'fallback-id');
 });
 
 test('t2: Input.ChoiceSet renders each choice as text with a mark — no select, no option', () => {
@@ -4276,11 +4163,11 @@ test('t2: Input.ChoiceSet renders each choice as text with a mark — no select,
   assert.equal(el.className, 'ux-field');
   assert.ok(!ux.created.includes('select'), 'no select element');
   assert.ok(!ux.created.includes('option'), 'no option element');
-  const choices = (el.children[1] as UxNode);
+  const choices = (el.children[1] as BodyStub);
   assert.equal(choices.className, 'ux-choices');
   assert.deepEqual(choices.children.map((c) => (isText(c) ? '#text' : c.className)), ['ux-choice', 'ux-choice']);
   // The title is a BARE text node beside the mark, exactly as the daemon emits it.
-  const first = choices.children[0] as UxNode;
+  const first = choices.children[0] as BodyStub;
   assert.deepEqual(first.children.map((c) => (isText(c) ? '#text' : c.className)), ['ux-choice__mark', '#text']);
   assert.deepEqual(uxAllText(el), ['Verdict', '○', 'Approve', '○', 'Request changes']);
 });
@@ -4311,8 +4198,8 @@ test('t2: ActionSet renders Submit and OpenUrl as chips that are TELLABLE APART,
   const kinds = el.children.map((c) => (isText(c) ? '#text' : c.className));
   assert.deepEqual(kinds, ['ux-btn ux-btn--submit', 'ux-btn ux-btn--link']);
   // The link carries the navigate glyph; the submit does not.
-  const submit = el.children[0] as UxNode;
-  const link = el.children[1] as UxNode;
+  const submit = el.children[0] as BodyStub;
+  const link = el.children[1] as BodyStub;
   assert.deepEqual(submit.children.map((c) => (isText(c) ? '#text' : c.className)), ['#text'],
     'a submit chip is its title and nothing else');
   // THE URL IS SHOWN, as visible text between the title and the glyph. The daemon
@@ -4323,7 +4210,7 @@ test('t2: ActionSet renders Submit and OpenUrl as chips that are TELLABLE APART,
   // The url is an ELEMENT and not a second text node, deliberately: two adjacent
   // text nodes merge into one anonymous flex item, so the chip's gap never applies
   // between them and the title runs into the url. The t3 visual read found that.
-  assert.equal((link.children[1] as UxNode).tag, 'span', 'the url is its own flex item');
+  assert.equal((link.children[1] as BodyStub).tag, 'span', 'the url is its own flex item');
   assert.deepEqual(uxAllText(link), ['Open companion', 'https://example.invalid/c.html', '\u2197']);
   // And the url reaches NO attribute anywhere — ac5 kept absolute, which is the
   // reason it is shown as text rather than mirrored into `title=`.
@@ -4435,13 +4322,13 @@ test('t2: a malformed element, a missing text and a non-array child list each de
     'ux-text', 'ux-unknown', 'ux-text', 'ux-unknown', 'ux-container', 'ux-columnset', 'ux-text',
   ]);
   // The siblings around the holes still rendered — the point of degrading in place.
-  assert.equal((card.children[0] as UxNode).textContent, 'before');
-  assert.equal((card.children[6] as UxNode).textContent, 'after');
+  assert.equal((card.children[0] as BodyStub).textContent, 'before');
+  assert.equal((card.children[6] as BodyStub).textContent, 'after');
   // A missing text is an EMPTY paragraph, not a crash and not a hole.
-  assert.equal((card.children[2] as UxNode).textContent, '');
+  assert.equal((card.children[2] as BodyStub).textContent, '');
   // A non-array child list degrades to an EMPTY region, as childrenOf does.
-  assert.equal((card.children[4] as UxNode).children.length, 0);
-  assert.equal((card.children[5] as UxNode).children.length, 0);
+  assert.equal((card.children[4] as BodyStub).children.length, 0);
+  assert.equal((card.children[5] as BodyStub).children.length, 0);
 });
 
 test('t2: a non-array body yields an empty card rather than throwing', () => {
@@ -5075,8 +4962,8 @@ test('t4: a synthetic over-deep structure TRIPS the guard, names depth as the re
   assert.match(cut[0]!.textContent, /nesting deeper than 24 levels/,
     'and it NAMES depth as the reason, so a reviewer can tell a guard from a truncation');
   // TERMINATES: the tree is bounded, not 40 deep.
-  const depthOf = (n: UxNode): number =>
-    1 + Math.max(0, ...n.children.filter((c): c is UxNode => !isText(c)).map(depthOf));
+  const depthOf = (n: BodyStub): number =>
+    1 + Math.max(0, ...n.children.filter((c): c is BodyStub => !isText(c)).map(depthOf));
   assert.ok(depthOf(el) <= 26, `the walk stopped (tree depth ${depthOf(el)})`);
 });
 
@@ -5184,7 +5071,7 @@ test('t5: the three sc4 states come back correctly from the factory in isolation
   assert.equal(rendered.kind, 'experience');
   assert.equal(rendered.label, 'Experience mock');
   assert.equal(rendered.anchorSlug, 'sec-1');
-  assert.equal((rendered.body as UxNode).className, 'ux-card');
+  assert.equal((rendered.body as BodyStub).className, 'ux-card');
   assert.deepEqual(rendered.linkOut, { relPath: UX_REF_T5.relPath, title: UX_REF_T5.title });
 
   // UNSHOWABLE — a ref naming a record this surface does not have.

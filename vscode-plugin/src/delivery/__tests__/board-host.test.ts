@@ -57,7 +57,7 @@ function controlledClient(): { client: DeliveryClient; calls: Deferred[] } {
 }
 
 /** Scoped stories with the given ids, in the given order. */
-function snapshot(ids: readonly string[], takenAt: string): DeliverySnapshot {
+function snapshotOf(ids: readonly string[], takenAt: string): DeliverySnapshot {
   return fixtureSnapshot(ids.map(id => item({ id })), { takenAt });
 }
 
@@ -97,7 +97,7 @@ test('opening the board creates one editor-tab panel with a CSP-locked document 
   assert.match(ch.html, /<script nonce="N0NCE">/);
 
   assert.equal(calls.length, 1, 'open starts a refresh');
-  calls[0]!.resolve({ ok: true, value: snapshot(['a', 'b'], '2026-10-09T11:59:00.000Z') });
+  calls[0]!.resolve({ ok: true, value: snapshotOf(['a', 'b'], '2026-10-09T11:59:00.000Z') });
   await flush();
   const status = payloads(ch).filter(p => p.type === 'status').at(-1);
   assert.equal(status?.type === 'status' ? status.status.state : null, 'ready');
@@ -116,10 +116,10 @@ test('when the earlier refresh answers after the later one, only the later snaps
   const ch = channels[0]!;
   ch.send({ v: 1, payload: { type: 'refresh' } });
   assert.equal(calls.length, 2);
-  calls[1]!.resolve({ ok: true, value: snapshot(['new'], '2026-10-09T11:00:02.000Z') });
+  calls[1]!.resolve({ ok: true, value: snapshotOf(['new'], '2026-10-09T11:00:02.000Z') });
   await flush();
   const before = ch.posted.length;
-  calls[0]!.resolve({ ok: true, value: snapshot(['old'], '2026-10-09T11:00:01.000Z') });
+  calls[0]!.resolve({ ok: true, value: snapshotOf(['old'], '2026-10-09T11:00:01.000Z') });
   await flush();
   assert.equal(ch.posted.length, before, 'the superseded answer posts nothing');
   assert.deepEqual(lastItems(ch), ['new']);
@@ -147,7 +147,7 @@ test('when the earlier refresh answers after the later one, only the later snaps
   // A snapshot the client accepts but that cannot be rendered never becomes the board's last snapshot.
   calls.length = 0;
   ch.send({ v: 1, payload: { type: 'refresh' } });
-  const bad = snapshot(['x'], '2026-10-09T11:00:05.000Z');
+  const bad = snapshotOf(['x'], '2026-10-09T11:00:05.000Z');
   Object.defineProperty(bad.items[0], 'stage', { get() { throw new Error('unrenderable item'); } });
   calls[0]!.resolve({ ok: true, value: bad });
   await flush();
@@ -155,7 +155,7 @@ test('when the earlier refresh answers after the later one, only the later snaps
   assert.equal(after?.type === 'status' ? after.status.state : null, 'failed');
   assert.deepEqual(lastItems(ch), ['new'], 'the previous good board is still the one shown');
   ch.send({ v: 1, payload: { type: 'refresh' } });
-  calls[1]!.resolve({ ok: true, value: snapshot(['fresh'], '2026-10-09T11:00:06.000Z') });
+  calls[1]!.resolve({ ok: true, value: snapshotOf(['fresh'], '2026-10-09T11:00:06.000Z') });
   await flush();
   assert.deepEqual(lastItems(ch), ['fresh'], 'and the next refresh recovers');
 });
@@ -185,7 +185,7 @@ test('an answer or timeout that arrives after the panel is closed is neither pos
   ch.send({ v: 1, payload: { type: 'refresh' } });
   ch.close();
   const before = ch.posted.length;
-  calls[0]!.resolve({ ok: true, value: snapshot(['a'], '2026-10-09T11:00:00.000Z') });
+  calls[0]!.resolve({ ok: true, value: snapshotOf(['a'], '2026-10-09T11:00:00.000Z') });
   calls[1]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'late' } });
   await flush();
   assert.equal(ch.posted.length, before);
@@ -195,13 +195,13 @@ test('an answer or timeout that arrives after the panel is closed is neither pos
   assert.equal(created.length, 2, 'the next open creates a new panel');
   const next = channels[1]!;
   assert.equal(calls.length, 3);
-  calls[2]!.resolve({ ok: true, value: snapshot(['b'], '2026-10-09T11:00:03.000Z') });
+  calls[2]!.resolve({ ok: true, value: snapshotOf(['b'], '2026-10-09T11:00:03.000Z') });
   await flush();
   assert.deepEqual(lastItems(next), ['b'], 'with a fresh state');
 
   host.dispose();
   host.open();
-  calls[3]!.resolve({ ok: true, value: snapshot(['c'], '2026-10-09T11:00:04.000Z') });
+  calls[3]!.resolve({ ok: true, value: snapshotOf(['c'], '2026-10-09T11:00:04.000Z') });
   await flush();
   assert.deepEqual(lastItems(next), ['b'], 'nothing reaches a panel closed through dispose()');
   assert.equal(created.length, 3);

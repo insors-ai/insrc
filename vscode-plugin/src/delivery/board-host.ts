@@ -395,6 +395,11 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     }
   }
 
+  /** Fire-and-forget refresh: every step after its await is already guarded, and anything else is still logged. */
+  function startRefresh(): void {
+    refresh().catch((err: unknown) => log.error(`delivery board: refresh failed unexpectedly: ${errorText(err)}`));
+  }
+
   /** One announcement per settled refresh (s5): the snapshot-wide counts when ready, else the status message. */
   function announceRefresh(seq: number): void {
     if (seq !== state.latestSeq || state.status.state === 'loading') return;
@@ -450,7 +455,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const sel = state.selection;
     switch (msg.type) {
       case 'ready': apply(state, paging); return;
-      case 'refresh': void refresh(); return;
+      case 'refresh': startRefresh(); return;
       case 'set-view': select({ ...sel, view: msg.view }); return;
       case 'set-scope':
         if (!knownScope(msg.scope)) {
@@ -493,7 +498,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     open(): void {
       if (channel !== undefined) {
         channel.reveal();
-        void refresh();
+        startRefresh();
         return;
       }
       const opened = deps.createPanel({ viewType: BOARD_VIEW_TYPE, title: BOARD_TITLE });
@@ -513,7 +518,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
         }
       });
       opened.setHtml(renderBoardDocument(deps.genNonce()));
-      void refresh();
+      startRefresh();
     },
     dispose(): void {
       const open = channel;

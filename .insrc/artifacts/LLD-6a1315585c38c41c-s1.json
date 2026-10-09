@@ -210,7 +210,9 @@
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-08T19:35:30.626Z"
+    "approvedAt": "2026-10-08T19:35:30.626Z",
+    "staleAckedAt": "2026-10-08T19:36:06.909Z",
+    "staleAckedReason": "The only change since approval is AMD-6a131558-1, which this LLD itself proposed (the interim 'items' down-message on sc3) and already designs against; nothing in the LLD depends on the pre-amendment HLD."
   },
   "body": {
     "summary": {

@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T14:37:06.508Z",
-    "updatedAt": "2026-10-09T09:00:08.514Z",
+    "updatedAt": "2026-10-09T09:16:33.476Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -52,831 +52,856 @@
       {
         "id": "t11",
         "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
       }
     ],
-    "summary": "When the plan walk cannot write a task's record, the task is recorded as failed with the error's message (task-record-unwritable), its outputs are not handed on, and the walk goes on. The failure is written when it can be and is in the plan's result either way; a task that had already failed or been skipped keeps its own reason. Reporting progress was already guarded against a throwing subscriber. An error not tied to a task (a plan or child plan that cannot be read) still propagates. The test makes the real writer fail by putting a directory where the record's file goes. Six mutations were each caught.",
+    "summary": "Live runs are a count per run id (orchestrator/live-runs.ts; isRunLive is exported). runAnalyze raises the count before its first read of a run record and lowers it when it returns or throws. Its stages moved into runStages, which runAnalyze guards from that first read: an uncaught error is written to the run record as failed at the stage reached with 'internal-error' and returned, 'done' fires once, the stage starts as 'classify', and the handler's own write is guarded. The tests run whole runs with no model (a stated source and size on a sandboxed store); an uncaught error is raised by a signal whose 'aborted' cannot be read, and an unwritable record by a directory where the record's file goes. Eleven mutations: ten caught (the three named ones among them), one a deliberate equivalent control; one surviving mutation (the handler ignoring the record last written) led to a stronger assertion and is now caught. Nothing reads isRunLive yet: the abandoned rule is task t14.",
     "changeLog": [
       {
         "target": {
           "file": ".insrc/artifacts/BUILD-9b4a74dcdf47852a-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/CR-9b4a74dcdf47852a-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-9b4a74dcdf47852a-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-9b4a74dcdf47852a-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TESTS-9b4a74dcdf47852a-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": ".insrc/build-start/9b4a74dcdf47852a-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/daemon.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/baseline/README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/baseline/analyze.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/baseline/daemon.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/baseline/mcp.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/baseline/workflow.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/measurements/vector-id-list.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/CR.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/TESTS.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/baseline/README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/baseline/mcp.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/baseline/vscode.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/baseline/workflow.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/tap-sample/sample-source.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/tap-sample/sample.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/invariants.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/prepare-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/context/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/context/invariants.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/context/scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/docs-retrieval.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/__tests__/walker-walk-failure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/__tests__/walker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/executor/walker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/doc-constraint-enumerate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/doc-decision-trace.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/run-report.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T09:16:33.476Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/live-runs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/__tests__/discovery-modules.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/__tests__/scope-area.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/_shared.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/aggregate-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/discovery-entrypoints.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/discovery-modules.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/structure-module-tree.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/_shared.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/aggregate-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/discovery-connections.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/discovery-objects.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/schema-table.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/__tests__/docs-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/aggregate-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/constraint-enumerate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/decision-trace.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/discovery-inventory.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/family-summarise.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/generic/aggregate-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/_shared.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/aggregate-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/discovery-families.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/inventory-ci.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/inventory-docker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/inventory-helm.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/inventory-kubernetes.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/inventory-terraform.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/__tests__/task-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/adherence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/aggregator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/task-scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/daemon/analyze-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/db/lance/__tests__/entity-vec.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/db/lance/entity-vec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/analyze-step/scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/__tests__/build-step.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/__tests__/fixtures/tap-sample.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/__tests__/render.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/__tests__/tap-results.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/__tests__/test-mapping.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/__tests__/validation-checks.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/phases/validate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/render.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/tap-results.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/test-mapping.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/validation-checks.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/mcp/server.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/prompts/build/implement-task.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/prompts/build/validate-task.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/prompts/steering-block.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/artifact-kinds.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/migrate-docs-tree.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/delivery/load.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/gates.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/migrate-docs-tree.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/path-scheme.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/build-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/completion-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/test-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/completion-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/own-files.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/standalone-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/test-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "src/workflow/storage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "vscode-plugin/assets/steering-block.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/panels/daemon-gateway.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T09:00:08.514Z"
+        "timestamp": "2026-10-09T09:16:33.476Z"
       }
     ],
-    "commit": "9d819dab",
+    "commit": "c8e52f4b",
     "testRecord": {
       "md": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/TESTS.md"
     }

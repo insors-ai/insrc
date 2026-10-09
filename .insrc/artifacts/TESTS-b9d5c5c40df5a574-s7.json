@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T09:00:08.514Z"
+    "updatedAt": "2026-10-09T09:16:33.476Z"
   },
   "body": {
     "tasks": [
@@ -1492,6 +1492,93 @@
             "titles": [
               {
                 "title": "a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "c8e52f4b",
+        "ranAt": "2026-10-09T09:16:33.476Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+                "title": "an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+                "title": "a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+                "title": "with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+                "title": "a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1105,
+            "titles": [
+              {
+                "title": "an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)",
+                "result": "pass"
+              },
+              {
+                "title": "a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)",
+                "result": "pass"
+              },
+              {
+                "title": "with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)",
+                "result": "pass"
+              },
+              {
+                "title": "a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite",
                 "result": "pass"
               }
             ],

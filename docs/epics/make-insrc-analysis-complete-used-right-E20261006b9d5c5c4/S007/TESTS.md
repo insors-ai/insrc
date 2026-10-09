@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 51 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -323,3 +323,37 @@ Run at 2026-10-09T09:00:08.514Z on commit `9d819dab`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/executor/__tests__/walker-walk-failure.test.ts` | 0 | 1 | 0.7 s |  |
+
+## t12
+
+Run at 2026-10-09T09:16:33.476Z on commit `c8e52f4b`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler) | `src/analyze/orchestrator/__tests__/live-runs.test.ts` |
+
+**integration: a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count) | `src/analyze/orchestrator/__tests__/live-runs.test.ts` |
+
+**integration: with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape) | `src/analyze/orchestrator/__tests__/live-runs.test.ts` |
+
+**integration: a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite | `src/analyze/orchestrator/__tests__/live-runs.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/orchestrator/__tests__/live-runs.test.ts` | 0 | 4 | 1.1 s |  |

@@ -13,6 +13,7 @@ import { BOARD_VIEW_TYPE, BOARD_WEBVIEW_SCRIPT, createDeliveryBoardHost, renderB
 import { parseBoardUpMessage, type BoardDownMessage, type Envelope } from '../board-protocol.js';
 import type { DeliveryClient, DeliveryResult } from '../delivery-client.js';
 import type { DeliveryItem, DeliverySnapshot } from '../delivery-contract.js';
+import { flush } from './flush.js';
 
 interface FakeChannel extends ChatPanelChannel {
   html: string;
@@ -73,7 +74,6 @@ function setup() {
   return { host, channels, created, logs, calls };
 }
 
-const flush = () => new Promise<void>(r => setImmediate(r));
 const payloads = (c: FakeChannel) => c.posted.map(e => e.payload);
 const lastItems = (c: FakeChannel) => {
   const m = payloads(c).filter(p => p.type === 'items').at(-1);

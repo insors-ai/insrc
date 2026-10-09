@@ -58,6 +58,7 @@ import { createDocsReviewHost } from './chat/docs-review-panel.js';
 import { createDocsReviewClient } from './chat/docs-review-client.js';
 import { createGitBaseline } from './chat/git-baseline.js';
 import { registerDeliveryBoard } from './delivery/board-wiring.js';
+import { webviewChannel } from './chat/webview-channel.js';
 import { execFile as nodeExecFile } from 'node:child_process';
 import { promises as nodeFsp } from 'node:fs';
 import { relative as pathRelative, isAbsolute as pathIsAbsolute, join as pathJoin } from 'node:path';
@@ -502,25 +503,7 @@ export function activate(context: vscode.ExtensionContext): void {
         dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon-dark.svg')),
       };
       chatGroupLock.attach(panel);
-      return {
-        setHtml: (html) => {
-          panel.webview.html = html;
-        },
-        postMessage: (message) => {
-          // Fire-and-forget: a post to a disposed/hidden panel must never reject inward.
-          panel.webview.postMessage(message).then(undefined, () => {
-            /* ignore */
-          });
-        },
-        onMessage: (listener) => {
-          panel.webview.onDidReceiveMessage((m) => listener(m));
-        },
-        onDidDispose: (listener) => {
-          panel.onDidDispose(listener);
-        },
-        reveal: () => panel.reveal(),
-        dispose: () => panel.dispose(),
-      };
+      return webviewChannel(panel);
     };
     const chatHost = createChatPanelHost({
       editGovernance: {
@@ -610,27 +593,8 @@ export function activate(context: vscode.ExtensionContext): void {
     // persists nothing extension-side (k3). Gated behind the same insrc.chat.enabled flag.
     const docsReviewHost = createDocsReviewHost({
       client: createDocsReviewClient(client),
-      createPanel: ({ viewType, title }) => {
-        const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
-        return {
-          setHtml: (html) => {
-            panel.webview.html = html;
-          },
-          postMessage: (message) => {
-            panel.webview.postMessage(message).then(undefined, () => {
-              /* ignore posts to a disposed/hidden panel */
-            });
-          },
-          onMessage: (listener) => {
-            panel.webview.onDidReceiveMessage((m) => listener(m));
-          },
-          onDidDispose: (listener) => {
-            panel.onDidDispose(listener);
-          },
-          reveal: () => panel.reveal(),
-          dispose: () => panel.dispose(),
-        };
-      },
+      createPanel: ({ viewType, title }) =>
+        webviewChannel(vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true })),
     });
     commands.register({ id: 'insrc.chat.docsReview', title: 'insrc: Review pending documents' }, async () => {
       docsReviewHost.open();

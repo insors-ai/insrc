@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 
 import type { CommandDescriptor, CommandRegistry } from '../../surfaces/command-registry.js';
 import { registerDeliveryBoard, type BoardWebviewPanel } from '../board-wiring.js';
+import { flush } from './flush.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const EXT = readFileSync(join(HERE, '..', '..', 'extension.ts'), 'utf8');
@@ -58,7 +59,6 @@ function chatGateSpan(src: string): readonly [number, number] {
   throw new Error('unbalanced chat gate');
 }
 
-const flush = () => new Promise<void>(r => setImmediate(r));
 
 test('extension.ts registers insrc.delivery.openBoard outside the chat gate with a warn-and-error logger and a repo-scoped delivery client', async () => {
   const cmd = PKG.contributes?.commands?.find(c => c.command === 'insrc.delivery.openBoard');

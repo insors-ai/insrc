@@ -235,9 +235,10 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     if (!result.ok) {
       deps.logger.error(`delivery board: refresh ${seq} ${result.failure.kind} after ${elapsedMs(started)} ms: ${result.failure.message}`);
     }
+    let applied = false;
     try {
       dispatch({ type: 'snapshot-arrived', seq, result, at });
-      if (result.ok) logUnknownStages(seq, result.value);
+      applied = true;
     } catch (err) {
       // A snapshot that slipped past the client's checks but cannot be rendered: state still holds the previous
       // board, so this shows a failed refresh over it rather than a frozen board.
@@ -248,6 +249,14 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
       } catch (again) {
         // Last resort: the board keeps whatever it last posted.
         deps.logger.error(`delivery board: refresh ${seq} failure could not be shown: ${errorText(again)}`);
+      }
+    }
+    // Outside the try: a failure to log must never turn a board that rendered into a failed refresh.
+    if (applied && result.ok) {
+      try {
+        logUnknownStages(seq, result.value);
+      } catch (err) {
+        deps.logger.error(`delivery board: refresh ${seq} unknown stages could not be listed: ${errorText(err)}`);
       }
     }
   }

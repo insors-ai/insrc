@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T05:22:18.063Z"
+    "updatedAt": "2026-10-09T05:34:32.198Z"
   },
   "body": {
     "tasks": [
@@ -322,6 +322,250 @@
               },
               {
                 "title": "an unreadable or empty registry does not refuse a path scope; a symbol scope fails as resolveScope decides (mutation: treat a null repo as not indexed)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "4ebed9de",
+        "ranAt": "2026-10-09T05:34:32.198Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+                "title": "one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+                "title": "one list of ten error classes gives the same code from the plan tree's and the daemon's mapping",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker.test.ts",
+                "title": "a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/executor/__tests__/walker.test.ts",
+                "title": "runExecutor: runtime throws -> failed status with reason; cascade",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/executor/__tests__/walker.test.ts",
+                "title": "the plan walk imports nothing from the run driver",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the plan's and the run's tasksFailed and the daemon's response carry the code",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-report.test.ts",
+                "title": "the plan's and the run's tasksFailed and the daemon's response carry the code",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/executor/__tests__/walker.test.ts",
+                "title": "a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/executor/__tests__/walker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 778,
+            "titles": [
+              {
+                "title": "unmetDependencies: no consumes -> null",
+                "result": "pass"
+              },
+              {
+                "title": "unmetDependencies: every consume present -> null",
+                "result": "pass"
+              },
+              {
+                "title": "unmetDependencies: first missing name reported",
+                "result": "pass"
+              },
+              {
+                "title": "projectUpstream: limits to consumed names only",
+                "result": "pass"
+              },
+              {
+                "title": "checkOutputShape: exact match -> null",
+                "result": "pass"
+              },
+              {
+                "title": "checkOutputShape: missing name reported",
+                "result": "pass"
+              },
+              {
+                "title": "checkOutputShape: extra name reported",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: 2-task happy path -- discovery + aggregator",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: missing runtime -> task fails; downstream cascades",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: runtime throws -> failed status with reason; cascade",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: runtime returns extra/missing produces -> output-shape-mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: planner-template task materialises child report as parent.report",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: planner task whose child build failed -> child-plan-unavailable + cascade",
+                "result": "pass"
+              },
+              {
+                "title": "taskOutputPathFor: lands under ~/.insrc/analyze/<runId>/tasks/<taskId>.json",
+                "result": "pass"
+              },
+              {
+                "title": "readTaskOutput: miss returns null",
+                "result": "pass"
+              },
+              {
+                "title": "purgeTaskOutput on a missing slot is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: 2-task happy path emits started+completed per task in plan order",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: failed task emits started + completed with status=\"failed\"",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: planner-template task -- child plan events fire BETWEEN parent started + completed, with parentTaskPath set",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: throwing subscriber does not crash the executor",
+                "result": "pass"
+              },
+              {
+                "title": "SINGLE-PASS: child plan tasks execute exactly once (regression for the executePlanNode double-walk)",
+                "result": "pass"
+              },
+              {
+                "title": "the plan walk copies the record to the task record, and a runtime that returns none is recorded as failed",
+                "result": "pass"
+              },
+              {
+                "title": "a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)",
+                "result": "pass"
+              },
+              {
+                "title": "the plan walk imports nothing from the run driver",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/run-report.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 953,
+            "titles": [
+              {
+                "title": "a run with one failed task and one limited task returns a report naming both, and its final report's text starts with the completeness line",
+                "result": "pass"
+              },
+              {
+                "title": "a run with a nested plan names an incomplete child task by its path; the planner-kind task and the aggregate-report task are not sources",
+                "result": "pass"
+              },
+              {
+                "title": "a run record written after the change resumes with its report (mutation: leave `report` out of the resume literal)",
+                "result": "pass"
+              },
+              {
+                "title": "a run record written without a report resumes with none and its text form carries the not-recorded line",
+                "result": "pass"
+              },
+              {
+                "title": "a run that completes stores its report in the run record, and resuming from that record returns the same report and the same text",
+                "result": "pass"
+              },
+              {
+                "title": "the plan's and the run's tasksFailed and the daemon's response carry the code",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 788,
+            "titles": [
+              {
+                "title": "both classifyShaperError functions map each of the five new error classes to its code",
+                "result": "pass"
+              },
+              {
+                "title": "one list of ten error classes gives the same code from the plan tree's and the daemon's mapping",
+                "result": "pass"
+              },
+              {
+                "title": "an error neither mapping knows stays internal-error on both sides",
+                "result": "pass"
+              },
+              {
+                "title": "the three new cause codes are declared in both lists",
+                "result": "pass"
+              },
+              {
+                "title": "both mapping functions return 'answer-step-failed' with the reason, the results and the report, and a failed planning call is still 'shaper-llm-unavailable'",
+                "result": "pass"
+              },
+              {
+                "title": "both mapping functions keep the code of a missing prompt and put the results and the report in its data only when the lookups ran",
+                "result": "pass"
+              },
+              {
+                "title": "one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)",
                 "result": "pass"
               }
             ],

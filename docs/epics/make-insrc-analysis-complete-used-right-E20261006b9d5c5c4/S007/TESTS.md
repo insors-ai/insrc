@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -79,3 +79,37 @@ Run at 2026-10-09T05:22:18.063Z on commit `4093c5fa`. Tests check: **passed**. 5
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/runtimes/shared/__tests__/task-scope.test.ts` | 0 | 5 | 0.7 s |  |
+
+## t3
+
+Run at 2026-10-09T05:34:32.198Z on commit `4ebed9de`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone) | `src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts` |
+| pass | one list of ten error classes gives the same code from the plan tree's and the daemon's mapping | `src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts` |
+
+**integration: a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check) | `src/analyze/executor/__tests__/walker.test.ts` |
+| pass | runExecutor: runtime throws -> failed status with reason; cascade | `src/analyze/executor/__tests__/walker.test.ts` |
+| pass | the plan walk imports nothing from the run driver | `src/analyze/executor/__tests__/walker.test.ts` |
+
+**integration: the plan's and the run's tasksFailed and the daemon's response carry the code**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the plan's and the run's tasksFailed and the daemon's response carry the code | `src/analyze/orchestrator/__tests__/run-report.test.ts` |
+| pass | a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check) | `src/analyze/executor/__tests__/walker.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/executor/__tests__/walker.test.ts` | 0 | 24 | 0.8 s |  |
+| `src/analyze/orchestrator/__tests__/run-report.test.ts` | 0 | 6 | 1 s |  |
+| `src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts` | 0 | 7 | 0.8 s |  |

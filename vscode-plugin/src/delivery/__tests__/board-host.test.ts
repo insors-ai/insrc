@@ -666,7 +666,7 @@ test('opening a story reads its plan once per snapshot and shows the dependencie
   const loading = detailsOf(ch).at(-1)!;
   assert.equal(loading.itemId, 'S1');
   assert.ok(loading.tasks.every(t => t.dependsOn === null), 'the plan is still loading');
-  assert.equal(payloads(ch).at(-1)!.type, 'details', 'details come after the view message');
+  assert.deepEqual(payloads(ch).slice(-3).map(p => p.type), ['board', 'details', 'announce'], 'details come after the view message, and the selection announcement last (s5)');
   assert.deepEqual(s.evidence.map(e => e.artifactId), ['PLAN-x'], 'one evidence read for the PLAN');
 
   s.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
@@ -969,4 +969,71 @@ test('a narrow pane stacks the columns into one list grouped by stage, and no ru
   assert.equal(sections.length, 6, 'one group per stage');
   assert.deepEqual(findAll(el['board']!, e => e.tag === 'li' && e.attrs['class'] === 'card').map(c => c.attrs['data-item-id']), ['S1', 'S2']);
   assert.ok(texts(el['board']!).includes('Rejected'), 'the warning badge is rendered');
+});
+
+test('a selection and a settled refresh are each announced once, and loading, superseded answers, reloads and other intents announce nothing', async () => {
+  const s = detailsSetup();
+  const announces = (c: FakeChannel) => payloads(c).filter(p => p.type === 'announce').map(p => (p.type === 'announce' ? p.text : ''));
+  s.host.open();
+  const ch = s.channels[0]!;
+  assert.deepEqual(announces(ch), [], 'loading announces nothing');
+  const snap = fixtureSnapshot([
+    item({ id: 'S1', title: 'Details', stage: 'build-recorded', needsAttention: true, attentionReasons: ['rejected'] }),
+    item({ id: 'S2', title: 'Second', stage: 'scoped' }),
+    item({ id: 'E1', kind: 'epic', title: 'Epic' }),
+  ]);
+  s.snapshots[0]!.resolve({ ok: true, value: snap });
+  await flush();
+  assert.deepEqual(announces(ch), ['Board refreshed: 2 items, 1 needing attention'], 'counted over the placeable items of the whole snapshot');
+  assert.equal(payloads(ch).at(-1)!.type, 'announce', 'after the status and the view');
+
+  // A selection that changes announces once, after the view and details; reselecting or a missing item says nothing.
+  send(ch, { type: 'select-item', itemId: 'S1' });
+  assert.deepEqual(payloads(ch).slice(-3).map(p => p.type), ['board', 'details', 'announce']);
+  assert.equal(announces(ch).at(-1), 'Selected: Details \u00b7 Build recorded');
+  send(ch, { type: 'select-item', itemId: 'S1' });
+  send(ch, { type: 'select-item', itemId: 'GONE' });
+  send(ch, { type: 'select-item', itemId: 'E1' });
+  assert.deepEqual(announces(ch).slice(1), ['Selected: Details \u00b7 Build recorded', 'Selected: Epic'], 'an item with no stage is named alone');
+
+  // Other intents and a webview reload announce nothing.
+  const before = announces(ch).length;
+  for (const p of [{ type: 'close-details' }, { type: 'set-view', view: 'epics' }, { type: 'set-view', view: 'board' }, { type: 'set-search', search: 'x' },
+    { type: 'set-search', search: '' }, { type: 'set-scope', scope: { kind: 'standalone' } }, { type: 'set-attention', on: true },
+    { type: 'set-density', density: 'compact' }, { type: 'show-more', stage: 'scoped' }, { type: 'ready' }]) send(ch, p);
+  assert.equal(announces(ch).length, before);
+
+  // A superseded answer announces nothing; the applied one announces once. A failure announces its message.
+  send(ch, { type: 'refresh' });
+  send(ch, { type: 'refresh' });
+  s.snapshots[2]!.resolve({ ok: true, value: snap });
+  await flush();
+  s.snapshots[1]!.resolve({ ok: true, value: snap });
+  await flush();
+  assert.equal(announces(ch).length, before + 1);
+  send(ch, { type: 'refresh' });
+  s.snapshots[3]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'took too long' } });
+  await flush();
+  assert.match(announces(ch).at(-1)!, /^The refresh failed at .*: took too long Showing the board from/);
+  assert.equal(announces(ch).length, before + 2);
+
+  // A closed panel's answer announces nothing.
+  send(ch, { type: 'refresh' });
+  ch.close();
+  s.snapshots[4]!.resolve({ ok: true, value: snap });
+  await flush();
+  assert.equal(announces(ch).length, before + 2);
+
+  // An announcement that cannot be posted is only logged; the refresh still counts as rendered.
+  const s2 = detailsSetup();
+  s2.host.open();
+  const ch2 = s2.channels[0]!;
+  const post = ch2.postMessage;
+  ch2.postMessage = (m) => { if ((m as Envelope<BoardDownMessage>).payload.type === 'announce') throw new Error('gone'); post(m); };
+  s2.snapshots[0]!.resolve({ ok: true, value: snap });
+  await flush();
+  assert.ok(s2.logs.error.some(e => /result could not be announced: gone/.test(e)));
+  const status = payloads(ch2).filter(p => p.type === 'status').at(-1);
+  assert.equal(status?.type === 'status' ? status.status.state : null, 'ready', 'the board stays rendered');
+  assert.deepEqual(lastItems(ch2), ['S2', 'S1']);
 });

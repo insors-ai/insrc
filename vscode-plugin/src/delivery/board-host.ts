@@ -32,10 +32,10 @@
 
 import { attr, type ChatPanelChannel, type ChatPanelLogger } from '../chat/chat-panel.js';
 import type { Envelope } from '../chat/protocol.js';
-import { showMore, unknownStages, type BoardPaging } from './board-model.js';
+import { isPlaceable, placeableCount, showMore, titleOf, unknownStages, type BoardPaging } from './board-model.js';
 import { parseBoardUpMessage, type BoardDownMessage, type BoardScope, type BoardUpMessage } from './board-protocol.js';
 import {
-  boardDownMessages, initialBoardState, reduceBoardState, shownSnapshot,
+  boardDownMessages, initialBoardState, reduceBoardState, shownSnapshot, statusView,
   type BoardEvent, type BoardSelection, type BoardState,
 } from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
@@ -354,6 +354,12 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
         log.error(`delivery board: refresh ${seq} failure could not be shown: ${errorText(again)}`);
       }
     }
+    // Outside the tries, like the stage log below: an announcement that cannot be posted is only logged.
+    try {
+      announceRefresh(seq);
+    } catch (err) {
+      log.error(`delivery board: refresh ${seq} result could not be announced: ${errorText(err)}`);
+    }
     // Outside the try: a failure to log must never turn a board that rendered into a failed refresh.
     if (applied && result.ok) {
       try {
@@ -362,6 +368,25 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
         log.error(`delivery board: refresh ${seq} unknown stages could not be listed: ${errorText(err)}`);
       }
     }
+  }
+
+  /** One announcement per settled refresh (s5): the snapshot-wide counts when ready, else the status message. */
+  function announceRefresh(seq: number): void {
+    if (seq !== state.latestSeq || state.status.state === 'loading') return;
+    const shown = shownSnapshot(state.status);
+    if (state.status.state === 'ready' && shown !== null) {
+      const n = placeableCount(shown.snapshot);
+      const attention = shown.snapshot.items.filter(i => isPlaceable(i) && i.needsAttention).length;
+      announce(`Board refreshed: ${n} item${n === 1 ? '' : 's'}, ${attention} needing attention`);
+      return;
+    }
+    const message = statusView(state.status).message;
+    if (message !== null) announce(message);
+  }
+
+  /** The sc3 'announce' message, written by the webview into its one live region. */
+  function announce(text: string): void {
+    channel?.postMessage({ v: 1, payload: { type: 'announce', text } });
   }
 
   /** Once per applied refresh: the items left off the board because their stage is not one of the six. */
@@ -383,6 +408,13 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   function onBoard(itemId: string): boolean {
     const shown = shownSnapshot(state.status);
     return shown !== null && shown.snapshot.items.some(i => i.id === itemId);
+  }
+
+  /** Posted after the state is kept, so a failure here is only logged by the message handler (s5). */
+  function announceSelection(itemId: string): void {
+    const item = shownSnapshot(state.status)?.snapshot.items.find(i => i.id === itemId);
+    if (item === undefined) return;
+    announce(`Selected: ${titleOf(item)}${item.stage === null ? '' : ` \u00b7 ${DISPLAY_LABELS.stage[item.stage.stage] ?? item.stage.stage}`}`);
   }
 
   function select(selection: BoardSelection, nextPaging: BoardPaging = paging): void {
@@ -410,6 +442,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
           return;
         }
         select({ ...sel, selectedItemId: msg.itemId });
+        if (msg.itemId !== sel.selectedItemId) announceSelection(msg.itemId);
         return;
       case 'close-details':
         select({ ...sel, selectedItemId: null });

@@ -1,0 +1,1590 @@
+{
+	"taskId": "t10",
+	"template": "code.surface.functional",
+	"kind": "leaf",
+	"produces": [
+		"functional-surface"
+	],
+	"status": "ok",
+	"outputs": {
+		"functional-surface": {
+			"module": {
+				"name": "src/analyze/runtimes",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes"
+			},
+			"exports": [
+				{
+					"name": "registerBuiltinRuntimes",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/bootstrap.ts",
+					"startLine": 44,
+					"endLine": 68,
+					"language": "typescript",
+					"signature": "registerBuiltinRuntimes(): void",
+					"entityId": "3000e92a190bee05c3239ad4fdc07c04"
+				},
+				{
+					"name": "_resetRuntimeBootstrapLatchForTests",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/bootstrap.ts",
+					"startLine": 74,
+					"endLine": 77,
+					"language": "typescript",
+					"signature": "_resetRuntimeBootstrapLatchForTests(): void",
+					"entityId": "a3ffa315005e57a63131c5ae41b58f89"
+				},
+				{
+					"name": "readScopeRef",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/_shared.ts",
+					"startLine": 34,
+					"endLine": 51,
+					"language": "typescript",
+					"signature": "readScopeRef(args: TemplateExecuteArgs, templateLabel: string): ScopeRef",
+					"entityId": "1c74f517da5af81383c1c6ceca3b4673"
+				},
+				{
+					"name": "compareEntitiesByLocation",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/_shared.ts",
+					"startLine": 58,
+					"endLine": 62,
+					"language": "typescript",
+					"signature": "compareEntitiesByLocation(a: Entity, b: Entity): number",
+					"entityId": "68c32af20d8006c2f9faaf33bddb2b9b"
+				},
+				{
+					"name": "modulePrefixOf",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/_shared.ts",
+					"startLine": 70,
+					"endLine": 74,
+					"language": "typescript",
+					"signature": "modulePrefixOf(moduleFile: string): string",
+					"entityId": "73b688a8d26bf7809e829d819bda1be7"
+				},
+				{
+					"name": "resolveDataScope",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+					"startLine": 39,
+					"endLine": 49,
+					"language": "typescript",
+					"signature": "resolveDataScope(\n\targs:          TemplateExecuteArgs,\n\ttemplateLabel: string,\n): Promise<DataScope>",
+					"entityId": "ae75106bddb3b0f1e356dc7bb9469c38"
+				},
+				{
+					"name": "connectionWithinScope",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+					"startLine": 55,
+					"endLine": 63,
+					"language": "typescript",
+					"signature": "connectionWithinScope(scope: DataScope, named: string, templateLabel: string): string",
+					"entityId": "23c26173330d47f4342981cdd80fd8bf"
+				},
+				{
+					"name": "requireStringParam",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+					"startLine": 69,
+					"endLine": 82,
+					"language": "typescript",
+					"signature": "requireStringParam(\n\targs:          TemplateExecuteArgs,\n\tkey:           string,\n\ttemplateLabel: string,\n): string",
+					"entityId": "a82e9905f71c0807637434d06e306384"
+				},
+				{
+					"name": "optionalStringParam",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+					"startLine": 88,
+					"endLine": 101,
+					"language": "typescript",
+					"signature": "optionalStringParam(\n\targs:          TemplateExecuteArgs,\n\tkey:           string,\n\ttemplateLabel: string,\n): string | undefined",
+					"entityId": "77077b12d2e3022be97131a83b9dbe29"
+				},
+				{
+					"name": "acquireDataPool",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+					"startLine": 111,
+					"endLine": 113,
+					"language": "typescript",
+					"signature": "acquireDataPool(repoPath: string): ReturnType<PoolSource>",
+					"entityId": "386461a15f19ffa365d0e22650252431"
+				},
+				{
+					"name": "_setDataPoolSourceForTest",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+					"startLine": 116,
+					"endLine": 118,
+					"language": "typescript",
+					"signature": "_setDataPoolSourceForTest(source: PoolSource | undefined): void",
+					"entityId": "fcb6a5765101bdf9d861c886ae59da94"
+				},
+				{
+					"name": "countedSkip",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/family-summarise.ts",
+					"startLine": 89,
+					"endLine": 93,
+					"language": "typescript",
+					"signature": "countedSkip(files: readonly string[], reason: string): SkippedItem[]",
+					"entityId": "5ef8f98a817bdc9d0b6bd5c8f3fb4840"
+				},
+				{
+					"name": "readScopeRef",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/_shared.ts",
+					"startLine": 30,
+					"endLine": 47,
+					"language": "typescript",
+					"signature": "readScopeRef(args: TemplateExecuteArgs, templateLabel: string): ScopeRef",
+					"entityId": "71b16d1850bf18df7818be5ec024c83f"
+				},
+				{
+					"name": "fileWalkCompleteness",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/_shared.ts",
+					"startLine": 86,
+					"endLine": 110,
+					"language": "typescript",
+					"signature": "fileWalkCompleteness(\n\treturned:  number,\n\ttruncated: boolean,\n\textra: {\n\t\treadonly limited?: readonly ReachedLimit[] | undefined;\n\t\treadonly skipped?: readonly SkippedItem[] | undefined;\n\t\treadonly cap?:     number | undefined;\n\t} = {},\n): Completeness",
+					"entityId": "d5d941e94760ff6dce695d7796aa175e"
+				},
+				{
+					"name": "unreadableFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/_shared.ts",
+					"startLine": 113,
+					"endLine": 115,
+					"language": "typescript",
+					"signature": "unreadableFile(relPath: string, err: unknown): SkippedItem",
+					"entityId": "f77ccbfd9c5039ef26e6c7c652133619"
+				},
+				{
+					"name": "walkFiles",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/_shared.ts",
+					"startLine": 132,
+					"endLine": 175,
+					"language": "typescript",
+					"signature": "walkFiles(\n\troot: string,\n\tcap:  number = DEFAULT_FILE_CAP,\n): Promise<{ files: readonly WalkedFile[]; truncated: boolean; unreadable: readonly SkippedItem[] }>",
+					"entityId": "095f40b993d3702a33604e8d8c4c062c"
+				},
+				{
+					"name": "runAdherenceCheck",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+					"startLine": 192,
+					"endLine": 314,
+					"language": "typescript",
+					"signature": "runAdherenceCheck(args: AdherenceRunArgs): Promise<AdherenceResult>",
+					"entityId": "56623d6f814d37a4649c983802045fdf"
+				},
+				{
+					"name": "_resolveConstraintsForTest",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+					"startLine": 535,
+					"endLine": 545,
+					"language": "typescript",
+					"signature": "_resolveConstraintsForTest(\n\targs:   TemplateExecuteArgs,\n\tparams: Record<string, unknown>,\n\tfacts?: { limited: ReachedLimit[]; partlyRead: PartlyReadItem[] },\n): Promise<ConstraintInput[]>",
+					"entityId": "1a32c87078b3a6c5374cb2843f8d16e5"
+				},
+				{
+					"name": "aggregateReportCompleteness",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/aggregator.ts",
+					"startLine": 85,
+					"endLine": 91,
+					"language": "typescript",
+					"signature": "aggregateReportCompleteness(): Completeness",
+					"entityId": "bb3f7dc77b0cc56c3c90f29a2e0ca67e"
+				},
+				{
+					"name": "runAggregator",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/aggregator.ts",
+					"startLine": 97,
+					"endLine": 151,
+					"language": "typescript",
+					"signature": "runAggregator(args: RunAggregatorArgs): Promise<AggregateReport>",
+					"entityId": "bc26c13741464db7ce33486dcfbf3952"
+				},
+				{
+					"name": "_setTaskScopeDepsForTest",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+					"startLine": 40,
+					"endLine": 42,
+					"language": "typescript",
+					"signature": "_setTaskScopeDepsForTest(deps: ScopeDeps | undefined): void",
+					"entityId": "1e5245109dfedc1ea1b5f3acb9499067"
+				},
+				{
+					"name": "resolveTaskScope",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+					"startLine": 56,
+					"endLine": 77,
+					"language": "typescript",
+					"signature": "resolveTaskScope(\n\tscopeRef:      AnalyzeScopeRef,\n\tfamily:        TaskFamily,\n\ttemplateLabel: string,\n\tdeps?:         ScopeDeps,\n\t/** A stand-in for the classifier's table, for a test; never passed in production. */\n\ttable:         KindsPerTarget = TARGET_TO_KINDS,\n): Promise<ResolvedScope>",
+					"entityId": "2472e0b2c5c1a760dbee4b7eef3468e8"
+				},
+				{
+					"name": "graphRepoOf",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+					"startLine": 88,
+					"endLine": 90,
+					"language": "typescript",
+					"signature": "graphRepoOf(scope: ResolvedScope): string",
+					"entityId": "221b2f59c0094dc5ebd823260e3352a8"
+				},
+				{
+					"name": "inAreaOf",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+					"startLine": 101,
+					"endLine": 107,
+					"language": "typescript",
+					"signature": "inAreaOf(scope: ResolvedScope): (entity: { readonly id: string; readonly file: string }) => boolean",
+					"entityId": "7db4b4d2f87d53a5f72e6d8b4d96ae57"
+				},
+				{
+					"name": "docsAreaOf",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+					"startLine": 115,
+					"endLine": 119,
+					"language": "typescript",
+					"signature": "docsAreaOf(scope: ResolvedScope): DocsArea | undefined",
+					"entityId": "a3a7566292cb448b86d51b5b825f29f8"
+				},
+				{
+					"name": "familyOfTemplate",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+					"startLine": 122,
+					"endLine": 126,
+					"language": "typescript",
+					"signature": "familyOfTemplate(templateId: string): TaskFamily",
+					"entityId": "2e571e6430b2b6b99e6b29124956b2ce"
+				}
+			],
+			"internalHelpers": [
+				{
+					"name": "promptOf",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+					"startLine": 34,
+					"endLine": 46,
+					"language": "typescript",
+					"signature": "promptOf(runtime: TemplateRuntime, absentInputs: readonly AbsentInput[] | undefined, omit = false): Promise<string>",
+					"entityId": "d26f2500322d1166e4cae3d5b88482fa"
+				},
+				{
+					"name": "ent",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+					"startLine": 47,
+					"endLine": 51,
+					"language": "typescript",
+					"signature": "ent(kind: EntityKind, name: string, rel: string, extra: Partial<Entity> = {}): Entity",
+					"entityId": "18d33c02d2577f91955d03fa31db58e5"
+				},
+				{
+					"name": "write",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+					"startLine": 53,
+					"endLine": 57,
+					"language": "typescript",
+					"signature": "write(rel: string, content: string): void",
+					"entityId": "0523757e21dce33a17d7c8317826bcdb"
+				},
+				{
+					"name": "summary",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+					"startLine": 59,
+					"endLine": 65,
+					"language": "typescript",
+					"signature": "summary(title: string, extra: Partial<DocSummary> = {}): DocSummary",
+					"entityId": "659108e60f34f7e21fccdd2898b128be"
+				},
+				{
+					"name": "intent",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+					"startLine": 67,
+					"endLine": 69,
+					"language": "typescript",
+					"signature": "intent(): ClassifiedIntent",
+					"entityId": "498fbaed7457171b943aa0640a721c3e"
+				},
+				{
+					"name": "args",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+					"startLine": 71,
+					"endLine": 74,
+					"language": "typescript",
+					"signature": "args(templateId: string, params: Record<string, unknown>, upstream: Record<string, unknown> = {}): TemplateExecuteArgs",
+					"entityId": "2b7a3b5f4aea9a1d54d5a4171db81868"
+				},
+				{
+					"name": "run",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+					"startLine": 87,
+					"endLine": 89,
+					"language": "typescript",
+					"signature": "run(runtime: TemplateRuntime, a: TemplateExecuteArgs): Promise<TemplateExecuteResult>",
+					"entityId": "5a12a64acc5b91095b05185e90ab7cd4"
+				},
+				{
+					"name": "standInPool",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+					"startLine": 92,
+					"endLine": 104,
+					"language": "typescript",
+					"signature": "standInPool(opts: { truncated?: boolean } = {}): Parameters<typeof _setDataPoolSourceForTest>[0]",
+					"entityId": "127ecd320b4c26303289f6bfebc05c3f"
+				},
+				{
+					"name": "rowFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+					"startLine": 109,
+					"endLine": 141,
+					"language": "typescript",
+					"signature": "rowFor(templateId: string): TemplateExecuteArgs",
+					"entityId": "2f2683fe615bed717772bf3f76116563"
+				},
+				{
+					"name": "runtimeFiles",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+					"startLine": 100,
+					"endLine": 109,
+					"language": "typescript",
+					"signature": "runtimeFiles(dir = RUNTIMES, prefix = ''): string[]",
+					"entityId": "c9dd294b1e74f4afc9ce1714e1d2db2d"
+				},
+				{
+					"name": "write",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+					"startLine": 147,
+					"endLine": 152,
+					"language": "typescript",
+					"signature": "write(rel: string, content: string): string",
+					"entityId": "c1bf2d23664583beba0ae0343dff5521"
+				},
+				{
+					"name": "intent",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+					"startLine": 154,
+					"endLine": 156,
+					"language": "typescript",
+					"signature": "intent(): ClassifiedIntent",
+					"entityId": "e3c4788265d9fcf06e95ac40a2f03d3a"
+				},
+				{
+					"name": "args",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+					"startLine": 158,
+					"endLine": 161,
+					"language": "typescript",
+					"signature": "args(templateId: string, params: Record<string, unknown> = { scopeRef: { kind: 'repo', value: REPO } }): TemplateExecuteArgs",
+					"entityId": "8408b9c9b73a394a3e37d633f1fc1843"
+				},
+				{
+					"name": "run",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+					"startLine": 203,
+					"endLine": 203,
+					"language": "typescript",
+					"signature": "run(runtime: TemplateRuntime): Promise<TemplateExecuteResult>",
+					"entityId": "a848089739f326ae5c3c3047fc8a0469"
+				},
+				{
+					"name": "skippedOf",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+					"startLine": 204,
+					"endLine": 204,
+					"language": "typescript",
+					"signature": "skippedOf(r: TemplateExecuteResult): string[]",
+					"entityId": "5e92d05803e78011374fdfeeaa60a10a"
+				},
+				{
+					"name": "index",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+					"startLine": 47,
+					"endLine": 57,
+					"language": "typescript",
+					"signature": "index(rel: string, source: string): Promise<Entity[]>",
+					"entityId": "2170ff24d2a54496e7955f2fff992b78"
+				},
+				{
+					"name": "indexFunction",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+					"startLine": 60,
+					"endLine": 70,
+					"language": "typescript",
+					"signature": "indexFunction(rel: string, name: string, body: string): Promise<Entity>",
+					"entityId": "a12f923c06fe6c1e0b599852ca6f5d19"
+				},
+				{
+					"name": "summary",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+					"startLine": 72,
+					"endLine": 78,
+					"language": "typescript",
+					"signature": "summary(title: string, extra: Partial<DocSummary> = {}): DocSummary",
+					"entityId": "233f5d42708ba54fd5515763655a586a"
+				},
+				{
+					"name": "args",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+					"startLine": 80,
+					"endLine": 84,
+					"language": "typescript",
+					"signature": "args(templateId: string, params: Record<string, unknown>): TemplateExecuteArgs",
+					"entityId": "a836e64a99bb3515fcdc98da02926b21"
+				},
+				{
+					"name": "run",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+					"startLine": 91,
+					"endLine": 93,
+					"language": "typescript",
+					"signature": "run(runtime: TemplateRuntime, a: TemplateExecuteArgs): Promise<TemplateExecuteResult>",
+					"entityId": "5d7f9762e873ed7308cb9ed4022aed01"
+				},
+				{
+					"name": "pick",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+					"startLine": 199,
+					"endLine": 199,
+					"language": "typescript",
+					"signature": "pick(es: Entity[]): Entity",
+					"entityId": "baa5a42d58cd4d8a0ef4fe70de17a87c"
+				},
+				{
+					"name": "sources",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__/scope-sources.test.ts",
+					"startLine": 17,
+					"endLine": 26,
+					"language": "typescript",
+					"signature": "sources(family: string): Map<string, string>",
+					"entityId": "c1cd821363f2f0b626d1f866f5f588d0"
+				},
+				{
+					"name": "mk",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts",
+					"startLine": 72,
+					"endLine": 76,
+					"language": "typescript",
+					"signature": "mk(file: string, startLine: number, name: string): Entity",
+					"entityId": "28f5323d747e41cc996e9d29e6410e4d"
+				},
+				{
+					"name": "mkTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts",
+					"startLine": 111,
+					"endLine": 124,
+					"language": "typescript",
+					"signature": "mkTask(\n\ttemplateId: string,\n\tparams:     Record<string, unknown>,\n\tproduces:   string[],\n): PlannedTask",
+					"entityId": "ca46c75962460cd588768524c15e9bf7"
+				},
+				{
+					"name": "mkArgs",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts",
+					"startLine": 126,
+					"endLine": 133,
+					"language": "typescript",
+					"signature": "mkArgs(task: PlannedTask, runId: string): TemplateExecuteArgs",
+					"entityId": "7bd8fd9c268d3b2197486b22ba5af28e"
+				},
+				{
+					"name": "mkEntity",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts",
+					"startLine": 156,
+					"endLine": 174,
+					"language": "typescript",
+					"signature": "mkEntity(\n\t\tfile: string, kind: Entity['kind'], name: string,\n\t\topts: Partial<Pick<Entity, 'isExported' | 'signature' | 'startLine' | 'endLine'>> = {},\n\t): Entity",
+					"entityId": "350b36932054b3813ddde34f8b92dfaa"
+				},
+				{
+					"name": "mkTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/discovery-modules.test.ts",
+					"startLine": 67,
+					"endLine": 76,
+					"language": "typescript",
+					"signature": "mkTask(params: Record<string, unknown>): PlannedTask",
+					"entityId": "9c1399d617dfc7b96d5986174be7495b"
+				},
+				{
+					"name": "mkArgs",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/discovery-modules.test.ts",
+					"startLine": 78,
+					"endLine": 91,
+					"language": "typescript",
+					"signature": "mkArgs(task: PlannedTask): TemplateExecuteArgs",
+					"entityId": "e5b92140ab02d5da4d63eb6591fb7775"
+				},
+				{
+					"name": "seedFixtureRepoWithModules",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/discovery-modules.test.ts",
+					"startLine": 166,
+					"endLine": 216,
+					"language": "typescript",
+					"signature": "seedFixtureRepoWithModules(\n\trepoPath:    string,\n\tmoduleNames: readonly string[],\n\textraFuncs:  readonly string[] = [],\n): Promise<void>",
+					"entityId": "d48a8696215c4227d3ed766db5ce4f5e"
+				},
+				{
+					"name": "ent",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+					"startLine": 41,
+					"endLine": 49,
+					"language": "typescript",
+					"signature": "ent(kind: EntityKind, name: string, rel: string, extra: Partial<Entity> = {}): Entity",
+					"entityId": "a748a8670d7bb7eaf67c65ce8862b809"
+				},
+				{
+					"name": "args",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+					"startLine": 51,
+					"endLine": 55,
+					"language": "typescript",
+					"signature": "args(templateId: string, scopeRef: AnalyzeScopeRef, params: Record<string, unknown> = { scopeRef }): TemplateExecuteArgs",
+					"entityId": "5c00fcc5f59d65fc5d68faccdeb68396"
+				},
+				{
+					"name": "names",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+					"startLine": 58,
+					"endLine": 61,
+					"language": "typescript",
+					"signature": "names(runtime: TemplateRuntime, scopeRef: AnalyzeScopeRef, output: string): Promise<string[]>",
+					"entityId": "00d6b4f6471c39b60cd6f1dc132f2bae"
+				},
+				{
+					"name": "treeNodes",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+					"startLine": 64,
+					"endLine": 67,
+					"language": "typescript",
+					"signature": "treeNodes(scopeRef: AnalyzeScopeRef): Promise<string[]>",
+					"entityId": "f2829845bdfe286f64722d8c656e8037"
+				},
+				{
+					"name": "entry",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+					"startLine": 107,
+					"endLine": 107,
+					"language": "typescript",
+					"signature": "entry(s: AnalyzeScopeRef)",
+					"entityId": "1a50d809486c952acf7aff3fdf1e55f9"
+				},
+				{
+					"name": "mods",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+					"startLine": 118,
+					"endLine": 118,
+					"language": "typescript",
+					"signature": "mods(s: AnalyzeScopeRef)",
+					"entityId": "d47eb0f1248939b163ca3ae0f5625c29"
+				},
+				{
+					"name": "tree",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+					"startLine": 125,
+					"endLine": 125,
+					"language": "typescript",
+					"signature": "tree(s: AnalyzeScopeRef)",
+					"entityId": "dbabc9816c49b19ef77c8a7cec289ea8"
+				},
+				{
+					"name": "recordingModel",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+					"startLine": 146,
+					"endLine": 155,
+					"language": "typescript",
+					"signature": "recordingModel(): { routing: RoutingSeamContext; prompts: string[] }",
+					"entityId": "30410c4c09389eefa4e23734bdd759dd"
+				},
+				{
+					"name": "hydrateCodeExcerpts",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/adherence-check.ts",
+					"startLine": 36,
+					"endLine": 84,
+					"language": "typescript",
+					"signature": "hydrateCodeExcerpts(\n\tcodeSubject: string,\n\trepoPath:    string,\n\tcap:         number,\n): Promise<readonly AdherenceExcerpt[]>",
+					"entityId": "d8f063634bb64b28c6d15a12fb65ea84"
+				},
+				{
+					"name": "entityToExcerpt",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/adherence-check.ts",
+					"startLine": 86,
+					"endLine": 96,
+					"language": "typescript",
+					"signature": "entityToExcerpt(e: Entity): AdherenceExcerpt",
+					"entityId": "d38e650ecf74d90b292fb4ae94676e79"
+				},
+				{
+					"name": "moduleForFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/structure-module-tree.ts",
+					"startLine": 108,
+					"endLine": 113,
+					"language": "typescript",
+					"signature": "moduleForFile(filePath: string): string | null",
+					"entityId": "2f38d64edd1be87020d35e7f1312cc7a"
+				},
+				{
+					"name": "mkIntent",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+					"startLine": 72,
+					"endLine": 80,
+					"language": "typescript",
+					"signature": "mkIntent(scopeRefKind: ClassifiedIntent['scopeRef']['kind'], value: string): ClassifiedIntent",
+					"entityId": "8497ef9562595f343759849718518de6"
+				},
+				{
+					"name": "mkTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+					"startLine": 82,
+					"endLine": 91,
+					"language": "typescript",
+					"signature": "mkTask(templateId: string, params: Record<string, unknown>, produces: string[]): PlannedTask",
+					"entityId": "dba6332d3f4b08397d691559b2bfeccc"
+				},
+				{
+					"name": "mkArgs",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+					"startLine": 93,
+					"endLine": 100,
+					"language": "typescript",
+					"signature": "mkArgs(intent: ClassifiedIntent, task: PlannedTask, runId: string): TemplateExecuteArgs",
+					"entityId": "718134225f2380d0667d32d0e931fbcf"
+				},
+				{
+					"name": "recordingPool",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+					"startLine": 118,
+					"endLine": 132,
+					"language": "typescript",
+					"signature": "recordingPool(): { opened: string[]; acquired: string[]; source: Parameters<typeof _setDataPoolSourceForTest>[0] }",
+					"entityId": "537efb3830a40cb276a411afba41f446"
+				},
+				{
+					"name": "withStandIns",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+					"startLine": 133,
+					"endLine": 138,
+					"language": "typescript",
+					"signature": "withStandIns(body: (p: ReturnType<typeof recordingPool>) => Promise<T>): Promise<T>",
+					"entityId": "a971f6e260ad740c4c2000d5d727c327"
+				},
+				{
+					"name": "connectionsTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+					"startLine": 139,
+					"endLine": 139,
+					"language": "typescript",
+					"signature": "connectionsTask(params: Record<string, unknown> = {}): PlannedTask",
+					"entityId": "8a3fb712a46b82c5dcad57a3d1b4603c"
+				},
+				{
+					"name": "idsOf",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+					"startLine": 140,
+					"endLine": 140,
+					"language": "typescript",
+					"signature": "idsOf(r: { outputs: ReadonlyMap<string, unknown> }): string[]",
+					"entityId": "b2ab34e0e2b0863bdbee42d6716b42b1"
+				},
+				{
+					"name": "resolveRelativeToInsrcRoot",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+					"startLine": 303,
+					"endLine": 308,
+					"language": "typescript",
+					"signature": "resolveRelativeToInsrcRoot(relPath: string): string",
+					"entityId": "ae6618377197afcafd1053c40dbbb7df"
+				},
+				{
+					"name": "buildSqliteFixture",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+					"startLine": 330,
+					"endLine": 350,
+					"language": "typescript",
+					"signature": "buildSqliteFixture(): Promise<string>",
+					"entityId": "72707a121598e634c0fbf7d29dd8984b"
+				},
+				{
+					"name": "isDataFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/adherence-check.ts",
+					"startLine": 48,
+					"endLine": 53,
+					"language": "typescript",
+					"signature": "isDataFile(file: string): boolean",
+					"entityId": "d17e720c5e1a37113330140f06fb358d"
+				},
+				{
+					"name": "hydrateDataExcerpts",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/adherence-check.ts",
+					"startLine": 55,
+					"endLine": 92,
+					"language": "typescript",
+					"signature": "hydrateDataExcerpts(\n\tdataSubject: string,\n\trepoPath:    string,\n\tcap:         number,\n): Promise<readonly AdherenceExcerpt[]>",
+					"entityId": "5a2d189cbe5e693d5df07e18882623cd"
+				},
+				{
+					"name": "entityToExcerpt",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/adherence-check.ts",
+					"startLine": 94,
+					"endLine": 104,
+					"language": "typescript",
+					"signature": "entityToExcerpt(e: Entity): AdherenceExcerpt",
+					"entityId": "8fd67f970565026f3912b7541da72703"
+				},
+				{
+					"name": "driverCut",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/discovery-objects.ts",
+					"startLine": 71,
+					"endLine": 76,
+					"language": "typescript",
+					"signature": "driverCut(what: string, listed: number): ReachedLimit",
+					"entityId": "faec09b4113251d940aa489422c0a1b6"
+				},
+				{
+					"name": "section",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+					"startLine": 45,
+					"endLine": 53,
+					"language": "typescript",
+					"signature": "section(name: string, rel: string, body: string): Entity",
+					"entityId": "451b69cbaf8a3955abb179ebe8b6585c"
+				},
+				{
+					"name": "runTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+					"startLine": 64,
+					"endLine": 69,
+					"language": "typescript",
+					"signature": "runTask(runtime: TemplateRuntime, scopeRef: AnalyzeScopeRef, params: Record<string, unknown>): Promise<TemplateExecuteResult>",
+					"entityId": "02ddcc2f3da2cfe321abc176ed6b47ae"
+				},
+				{
+					"name": "shown",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+					"startLine": 73,
+					"endLine": 73,
+					"language": "typescript",
+					"signature": "shown(prompt: string): string[]",
+					"entityId": "c01d24cf731270f70facdda43dcc084a"
+				},
+				{
+					"name": "limits",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+					"startLine": 74,
+					"endLine": 74,
+					"language": "typescript",
+					"signature": "limits(c: Completeness | undefined): Array<[string, number]>",
+					"entityId": "e6de610783abd9e8bbe801c00713aa22"
+				},
+				{
+					"name": "ask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+					"startLine": 114,
+					"endLine": 119,
+					"language": "typescript",
+					"signature": "ask(scopeRef: AnalyzeScopeRef, maxSources?: number)",
+					"entityId": "a52fe5f560ac0db5b99322d011f0eef7"
+				},
+				{
+					"name": "vec",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts",
+					"startLine": 42,
+					"endLine": 46,
+					"language": "typescript",
+					"signature": "vec(seed: number): Float32Array",
+					"entityId": "298cdba4318b565de581ead281e9860e"
+				},
+				{
+					"name": "section",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts",
+					"startLine": 54,
+					"endLine": 62,
+					"language": "typescript",
+					"signature": "section(name: string, rel: string, body: string): Entity",
+					"entityId": "cfd7300d832d0ee589a3e6f3ceb2f738"
+				},
+				{
+					"name": "runTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts",
+					"startLine": 72,
+					"endLine": 77,
+					"language": "typescript",
+					"signature": "runTask(runtime: TemplateRuntime, scopeRef: AnalyzeScopeRef, params: Record<string, unknown>): Promise<TemplateExecuteResult>",
+					"entityId": "1bf6854675d2901a4462bc7a3166d5e6"
+				},
+				{
+					"name": "areaShown",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts",
+					"startLine": 80,
+					"endLine": 80,
+					"language": "typescript",
+					"signature": "areaShown(prompt: string): string[]",
+					"entityId": "f8788abcaf1dc23368871c7b6f7368bf"
+				},
+				{
+					"name": "outsideShown",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts",
+					"startLine": 81,
+					"endLine": 81,
+					"language": "typescript",
+					"signature": "outsideShown(prompt: string): number",
+					"entityId": "dd8897d5e2be0c6548b4adb42d1ee9d3"
+				},
+				{
+					"name": "doc",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+					"startLine": 41,
+					"endLine": 49,
+					"language": "typescript",
+					"signature": "doc(name: string, rel: string, body: string, kind: EntityKind = 'section'): Entity",
+					"entityId": "17ed559f7b3a5f96d6ce22612752a498"
+				},
+				{
+					"name": "summary",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+					"startLine": 51,
+					"endLine": 57,
+					"language": "typescript",
+					"signature": "summary(title: string, constraint: string, extra: Partial<DocSummary> = {}): DocSummary",
+					"entityId": "61a977d4c97f0a3fbcfe649cc0db6294"
+				},
+				{
+					"name": "run",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+					"startLine": 76,
+					"endLine": 81,
+					"language": "typescript",
+					"signature": "run(runtime: TemplateRuntime, scopeRef: AnalyzeScopeRef, params: Record<string, unknown>): Promise<TemplateExecuteResult>",
+					"entityId": "160b127886a06b074d212f648e29de27"
+				},
+				{
+					"name": "familySummary",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+					"startLine": 91,
+					"endLine": 94,
+					"language": "typescript",
+					"signature": "familySummary(scopeRef: AnalyzeScopeRef): Promise<{ out: FamilySummary; result: TemplateExecuteResult }>",
+					"entityId": "ef00151f8d5a883028a10e22716de4e9"
+				},
+				{
+					"name": "rel",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+					"startLine": 96,
+					"endLine": 96,
+					"language": "typescript",
+					"signature": "rel(file: string): string",
+					"entityId": "73d6523112f9bb47572ff030fa659979"
+				},
+				{
+					"name": "inventory",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+					"startLine": 225,
+					"endLine": 228,
+					"language": "typescript",
+					"signature": "inventory(scopeRef: AnalyzeScopeRef): Promise<string[]>",
+					"entityId": "35576a48840cd883d560252bca935baf"
+				},
+				{
+					"name": "unsummarised",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/family-summarise.ts",
+					"startLine": 96,
+					"endLine": 112,
+					"language": "typescript",
+					"signature": "unsummarised(\n\tdb:         Awaited<ReturnType<typeof getDb>>,\n\trepoPath:   string,\n\tfamily:     DocFamily,\n\tsummarised: ReadonlySet<string>,\n\tinArea:     ReturnType<typeof inAreaOf>,\n): Promise<string[]>",
+					"entityId": "fb943e5ce2242afcefb4cc50ca562e2f"
+				},
+				{
+					"name": "resolveRelativeToInsrcRoot",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic/__tests__/aggregate-report.test.ts",
+					"startLine": 74,
+					"endLine": 83,
+					"language": "typescript",
+					"signature": "resolveRelativeToInsrcRoot(relPath: string): string",
+					"entityId": "36120147d5e292aa3a3cfe73f14d42c0"
+				},
+				{
+					"name": "mkTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+					"startLine": 107,
+					"endLine": 116,
+					"language": "typescript",
+					"signature": "mkTask(templateId: string, params: Record<string, unknown>, produces: string[]): PlannedTask",
+					"entityId": "599969f90ec2cd57f8d7429571d161a9"
+				},
+				{
+					"name": "mkArgs",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+					"startLine": 118,
+					"endLine": 125,
+					"language": "typescript",
+					"signature": "mkArgs(task: PlannedTask, runId: string): TemplateExecuteArgs",
+					"entityId": "ddc6f01b40d4f40b0eeb621df1bc9aee"
+				},
+				{
+					"name": "resolveRelativeToInsrcRoot",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+					"startLine": 301,
+					"endLine": 304,
+					"language": "typescript",
+					"signature": "resolveRelativeToInsrcRoot(relPath: string): string",
+					"entityId": "288a1bb0593127989e75d7e37f511647"
+				},
+				{
+					"name": "run",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+					"startLine": 493,
+					"endLine": 494,
+					"language": "typescript",
+					"signature": "run(kind: string, value = fixtureRoot)",
+					"entityId": "c7b70816b177260877d70107d59906e8"
+				},
+				{
+					"name": "sortKey",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+					"startLine": 589,
+					"endLine": 590,
+					"language": "typescript",
+					"signature": "sortKey(r: { file: string; kind: string; name: string }): string",
+					"entityId": "ce97fb48e07aa3c724baf702cc769880"
+				},
+				{
+					"name": "write",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+					"startLine": 756,
+					"endLine": 760,
+					"language": "typescript",
+					"signature": "write(rel: string, body: string): void",
+					"entityId": "ca85e436de7921b2b33b52482bd570a1"
+				},
+				{
+					"name": "ciArgs",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+					"startLine": 853,
+					"endLine": 855,
+					"language": "typescript",
+					"signature": "ciArgs(templateId: string, root: string, runId: string): TemplateExecuteArgs",
+					"entityId": "52c7db95542489ff459d37930c9a41da"
+				},
+				{
+					"name": "visit",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/_shared.ts",
+					"startLine": 140,
+					"endLine": 171,
+					"language": "typescript",
+					"signature": "visit(dir: string): Promise<void>",
+					"entityId": "3b5ad64029c6f9459811a5d15b3334b7"
+				},
+				{
+					"name": "isInfraFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/adherence-check.ts",
+					"startLine": 50,
+					"endLine": 55,
+					"language": "typescript",
+					"signature": "isInfraFile(file: string): boolean",
+					"entityId": "fd695c1f9b466ad8acd339eededcaff8"
+				},
+				{
+					"name": "hydrateInfraExcerpts",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/adherence-check.ts",
+					"startLine": 57,
+					"endLine": 81,
+					"language": "typescript",
+					"signature": "hydrateInfraExcerpts(\n\tinfraSubject: string,\n\trepoPath:     string,\n\tcap:          number,\n): Promise<readonly AdherenceExcerpt[]>",
+					"entityId": "2a7c86dbc76ddf76073ac24ce85c3dfc"
+				},
+				{
+					"name": "entityToExcerpt",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/adherence-check.ts",
+					"startLine": 83,
+					"endLine": 93,
+					"language": "typescript",
+					"signature": "entityToExcerpt(e: Entity): AdherenceExcerpt",
+					"entityId": "d0cc416825fd8ddd16fccb67de0256ed"
+				},
+				{
+					"name": "push",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/discovery-families.ts",
+					"startLine": 83,
+					"endLine": 87,
+					"language": "typescript",
+					"signature": "push(family: string, relPath: string): void",
+					"entityId": "98673b602e651600705d7e7fcd7a8316"
+				},
+				{
+					"name": "classifyFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/discovery-families.ts",
+					"startLine": 156,
+					"endLine": 191,
+					"language": "typescript",
+					"signature": "classifyFile(f: WalkedFile, skipped: SkippedItem[] = []): Promise<readonly string[]>",
+					"entityId": "f2379f2fb006de0a87bb1e98baef79ef"
+				},
+				{
+					"name": "baseName",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/discovery-families.ts",
+					"startLine": 193,
+					"endLine": 196,
+					"language": "typescript",
+					"signature": "baseName(relPath: string): string",
+					"entityId": "09fa50216daaae6eaa14b843891f281a"
+				},
+				{
+					"name": "peekIsKubernetes",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/discovery-families.ts",
+					"startLine": 199,
+					"endLine": 207,
+					"language": "typescript",
+					"signature": "peekIsKubernetes(absPath: string): Promise<boolean | Error>",
+					"entityId": "670f71a874774363470ccb128709dbf1"
+				},
+				{
+					"name": "asObject",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-ci.ts",
+					"startLine": 63,
+					"endLine": 64,
+					"language": "typescript",
+					"signature": "asObject(v: unknown): Record<string, unknown> | undefined",
+					"entityId": "6413411a3fcc98b0ad96f3ed2704975b"
+				},
+				{
+					"name": "normalizeTriggers",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-ci.ts",
+					"startLine": 68,
+					"endLine": 74,
+					"language": "typescript",
+					"signature": "normalizeTriggers(on: unknown): string[]",
+					"entityId": "681d9106f4c26525fec07d971bf84519"
+				},
+				{
+					"name": "parseGhaWorkflow",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-ci.ts",
+					"startLine": 76,
+					"endLine": 101,
+					"language": "typescript",
+					"signature": "parseGhaWorkflow(path: string, doc: unknown): GhaWorkflowRecord",
+					"entityId": "3e66c8e7a936f98ad09e6e09cf252953"
+				},
+				{
+					"name": "parseGitlabCi",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-ci.ts",
+					"startLine": 103,
+					"endLine": 116,
+					"language": "typescript",
+					"signature": "parseGitlabCi(path: string, doc: unknown): GitlabCiRecord",
+					"entityId": "8e74494933e4f2ab3b4a2606cb8c8b87"
+				},
+				{
+					"name": "baseName",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-docker.ts",
+					"startLine": 61,
+					"endLine": 64,
+					"language": "typescript",
+					"signature": "baseName(relPath: string): string",
+					"entityId": "4ad9919ff48e263c0f614558bae65c83"
+				},
+				{
+					"name": "parseDockerfile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-docker.ts",
+					"startLine": 66,
+					"endLine": 82,
+					"language": "typescript",
+					"signature": "parseDockerfile(path: string, text: string): DockerfileRecord",
+					"entityId": "de5408aab3e6945c881c3ef33e25df98"
+				},
+				{
+					"name": "portString",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-docker.ts",
+					"startLine": 86,
+					"endLine": 98,
+					"language": "typescript",
+					"signature": "portString(entry: unknown): string | undefined",
+					"entityId": "f56aab58654ef69d6ff6327040a7e209"
+				},
+				{
+					"name": "parseCompose",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-docker.ts",
+					"startLine": 100,
+					"endLine": 122,
+					"language": "typescript",
+					"signature": "parseCompose(path: string, doc: unknown): ComposeRecord",
+					"entityId": "50de62fda5614a285f765818bbbd4642"
+				},
+				{
+					"name": "dirOf",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-helm.ts",
+					"startLine": 74,
+					"endLine": 77,
+					"language": "typescript",
+					"signature": "dirOf(relPath: string): string",
+					"entityId": "b75ce43f9293bb9f1b470d7fcac5d776"
+				},
+				{
+					"name": "str",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-helm.ts",
+					"startLine": 79,
+					"endLine": 79,
+					"language": "typescript",
+					"signature": "str(v: unknown): string | undefined",
+					"entityId": "831485c3b5df5a6f40cf75005b69edf3"
+				},
+				{
+					"name": "extractDependencies",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-helm.ts",
+					"startLine": 81,
+					"endLine": 94,
+					"language": "typescript",
+					"signature": "extractDependencies(doc: Record<string, unknown>): HelmDependency[]",
+					"entityId": "eb0643c5c5d227c169329d9f20c2cfae"
+				},
+				{
+					"name": "readTopLevelKeys",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-helm.ts",
+					"startLine": 159,
+					"endLine": 172,
+					"language": "typescript",
+					"signature": "readTopLevelKeys(byPath: Map<string, WalkedFile>, chartDir: string, skipped: SkippedItem[]): Promise<string[]>",
+					"entityId": "eb05fbadc871859469ba93a51597cfc4"
+				},
+				{
+					"name": "extractResource",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-kubernetes.ts",
+					"startLine": 160,
+					"endLine": 198,
+					"language": "typescript",
+					"signature": "extractResource(filePath: string, doc: Record<string, unknown>): K8sResource | null",
+					"entityId": "5f5463117111fe5190c57b199c0572d7"
+				},
+				{
+					"name": "asBlockMap",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-terraform.ts",
+					"startLine": 74,
+					"endLine": 78,
+					"language": "typescript",
+					"signature": "asBlockMap(v: unknown): Record<string, unknown>",
+					"entityId": "75517a8d774378084a513ab13d315617"
+				},
+				{
+					"name": "bumpFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-terraform.ts",
+					"startLine": 118,
+					"endLine": 127,
+					"language": "typescript",
+					"signature": "bumpFile(path: string,\n\t\t\tfield: 'res' | 'data' | 'mod' | 'prov' | 'vars' | 'out',\n\t\t): void",
+					"entityId": "2b0a751f02f7fc20336619ecb98fafcf"
+				},
+				{
+					"name": "collectTwoLabel",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-terraform.ts",
+					"startLine": 132,
+					"endLine": 142,
+					"language": "typescript",
+					"signature": "collectTwoLabel(\n\t\t\tfile: string, group: unknown, sink: TfRefTwoLabel[],\n\t\t\tfield: 'res' | 'data',\n\t\t): void",
+					"entityId": "e027867c58d0ae4f09a543cd248e4aee"
+				},
+				{
+					"name": "collectOneLabel",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-terraform.ts",
+					"startLine": 146,
+					"endLine": 154,
+					"language": "typescript",
+					"signature": "collectOneLabel(\n\t\t\tfile: string, group: unknown, sink: TfRefOneLabel[],\n\t\t\tfield: 'mod' | 'prov' | 'vars' | 'out',\n\t\t): void",
+					"entityId": "98f81cc408f151f5679ecc45a0931af9"
+				},
+				{
+					"name": "cmpTwo",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-terraform.ts",
+					"startLine": 194,
+					"endLine": 198,
+					"language": "typescript",
+					"signature": "cmpTwo(a: TfRefTwoLabel, b: TfRefTwoLabel): number",
+					"entityId": "e40738ca4b25a6154ee5104813996727"
+				},
+				{
+					"name": "cmpOne",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/inventory-terraform.ts",
+					"startLine": 199,
+					"endLine": 202,
+					"language": "typescript",
+					"signature": "cmpOne(a: TfRefOneLabel, b: TfRefOneLabel): number",
+					"entityId": "233db05c663f27ae6d3cf0577d00202e"
+				},
+				{
+					"name": "makeEntityId",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+					"startLine": 38,
+					"endLine": 43,
+					"language": "typescript",
+					"signature": "makeEntityId(repo: string, file: string, kind: string, name: string): string",
+					"entityId": "aab1cf1da8363e073780e0290ca037a4"
+				},
+				{
+					"name": "makeDoc",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+					"startLine": 45,
+					"endLine": 61,
+					"language": "typescript",
+					"signature": "makeDoc(file: string, name: string): Entity",
+					"entityId": "276a503e01dfd1a8f4c9a6f54312370b"
+				},
+				{
+					"name": "makeSummary",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+					"startLine": 63,
+					"endLine": 79,
+					"language": "typescript",
+					"signature": "makeSummary(overrides: Partial<DocSummary> = {}): DocSummary",
+					"entityId": "13985e307f7f942b9dd7eb8506eabdfc"
+				},
+				{
+					"name": "makeExecuteArgs",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+					"startLine": 81,
+					"endLine": 104,
+					"language": "typescript",
+					"signature": "makeExecuteArgs(params: Record<string, unknown>): TemplateExecuteArgs",
+					"entityId": "9f85b6f5392124de2c5b07d64ccfd7d8"
+				},
+				{
+					"name": "stubProvider",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+					"startLine": 35,
+					"endLine": 56,
+					"language": "typescript",
+					"signature": "stubProvider(structuredReply: AggregateLLMOutput, capture?: {\n\tmessages?: import('../../../../shared/types.js').LLMMessage[];\n\tschema?:   Record<string, unknown>;\n}): LLMProvider",
+					"entityId": "fcedb92b76a521de86a5e4aa7c2b55c0"
+				},
+				{
+					"name": "throwingProvider",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+					"startLine": 58,
+					"endLine": 70,
+					"language": "typescript",
+					"signature": "throwingProvider(message: string): LLMProvider",
+					"entityId": "3d50a29e7a4d816d6976870a96586398"
+				},
+				{
+					"name": "ask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+					"startLine": 320,
+					"endLine": 328,
+					"language": "typescript",
+					"signature": "ask(absentInputs?: Parameters<typeof runAggregator>[0]['absentInputs'], omit = false)",
+					"entityId": "b97a6176868fd37ab4f300c45b18a5ea"
+				},
+				{
+					"name": "ref",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+					"startLine": 27,
+					"endLine": 27,
+					"language": "typescript",
+					"signature": "ref(kind: AnalyzeScopeRef['kind'], value = VALUE[kind]): AnalyzeScopeRef",
+					"entityId": "41820994f47cc97268f396bf37eb7286"
+				},
+				{
+					"name": "deps",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+					"startLine": 35,
+					"endLine": 54,
+					"language": "typescript",
+					"signature": "deps(f: Fixture = {}): ScopeDeps & { calls: string[] }",
+					"entityId": "674ae65df68895d2c7a200d3416415c3"
+				},
+				{
+					"name": "rejection",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+					"startLine": 55,
+					"endLine": 58,
+					"language": "typescript",
+					"signature": "rejection(run: () => Promise<unknown>): Promise<Error>",
+					"entityId": "377af46906224d19439aeada65c8a50c"
+				},
+				{
+					"name": "buildAdherenceSchema",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+					"startLine": 116,
+					"endLine": 186,
+					"language": "typescript",
+					"signature": "buildAdherenceSchema(subjectKey: string): StructuredSchema",
+					"entityId": "1414ae14cfa8632ffb7d446924f21f4a"
+				},
+				{
+					"name": "adherenceRepoPath",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+					"startLine": 328,
+					"endLine": 330,
+					"language": "typescript",
+					"signature": "adherenceRepoPath(args: TemplateExecuteArgs, templateId: string): Promise<string>",
+					"entityId": "bf10ac82fdc14f44a213b60d0051b589"
+				},
+				{
+					"name": "resolveConstraints",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+					"startLine": 343,
+					"endLine": 380,
+					"language": "typescript",
+					"signature": "resolveConstraints(\n\targs:   TemplateExecuteArgs,\n\tparams: Record<string, unknown>,\n\tfacts:  ConstraintSourceFacts,\n): Promise<ConstraintInput[]>",
+					"entityId": "c429db1de54d5493a4972d264a0db9be"
+				},
+				{
+					"name": "hydrateFromConstraintIds",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+					"startLine": 388,
+					"endLine": 445,
+					"language": "typescript",
+					"signature": "hydrateFromConstraintIds(\n\targs:  TemplateExecuteArgs,\n\tids:   readonly string[],\n\tfacts: ConstraintSourceFacts,\n): Promise<ConstraintInput[]>",
+					"entityId": "223a6e689e1c55935ee94519aa84de96"
+				},
+				{
+					"name": "normaliseConstraints",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+					"startLine": 447,
+					"endLine": 462,
+					"language": "typescript",
+					"signature": "normaliseConstraints(raw: readonly unknown[]): ConstraintInput[]",
+					"entityId": "1149941dd17ae0df6f81e42a8a74991e"
+				},
+				{
+					"name": "buildMessages",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+					"startLine": 468,
+					"endLine": 514,
+					"language": "typescript",
+					"signature": "buildMessages(\n\tpromptContent: string,\n\tsubjectLabel:  string,\n\tsubject:       string,\n\tconstraints:   readonly ConstraintInput[],\n\texcerpts:      readonly AdherenceExcerpt[],\n): LLMMessage[]",
+					"entityId": "9053ce8de60280aa8c40215d4d9b0ce3"
+				},
+				{
+					"name": "loadPromptFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+					"startLine": 516,
+					"endLine": 521,
+					"language": "typescript",
+					"signature": "loadPromptFile(relPath: string): string",
+					"entityId": "4b45df100e3967cc792a4df0b40714e9"
+				},
+				{
+					"name": "resolveRelativeToInsrcRoot",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+					"startLine": 523,
+					"endLine": 528,
+					"language": "typescript",
+					"signature": "resolveRelativeToInsrcRoot(relativePath: string): string",
+					"entityId": "52865d4dcc33356d37121a0beca77459"
+				},
+				{
+					"name": "buildMessages",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/aggregator.ts",
+					"startLine": 166,
+					"endLine": 187,
+					"language": "typescript",
+					"signature": "buildMessages(args: BuildMessagesArgs): LLMMessage[]",
+					"entityId": "991ffd8c3ca2ce64177991f5c5373f30"
+				},
+				{
+					"name": "renderUpstreamSection",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/aggregator.ts",
+					"startLine": 189,
+					"endLine": 208,
+					"language": "typescript",
+					"signature": "renderUpstreamSection(map: ReadonlyMap<string, unknown>): string",
+					"entityId": "a30ebfa4a286808e297fa95a751714d6"
+				},
+				{
+					"name": "renderAbsentSection",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/aggregator.ts",
+					"startLine": 215,
+					"endLine": 232,
+					"language": "typescript",
+					"signature": "renderAbsentSection(absent: readonly AbsentInput[] | undefined): string",
+					"entityId": "72feaefad69bc09d96dd0cf2d96599db"
+				},
+				{
+					"name": "stableStringify",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/aggregator.ts",
+					"startLine": 238,
+					"endLine": 256,
+					"language": "typescript",
+					"signature": "stableStringify(value: unknown): string",
+					"entityId": "7eb16ed6c827ecce0983314f44b52c2e"
+				},
+				{
+					"name": "loadPromptFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/aggregator.ts",
+					"startLine": 262,
+					"endLine": 272,
+					"language": "typescript",
+					"signature": "loadPromptFile(relPath: string): string",
+					"entityId": "9914ed1ced2d30e51e89079650a6b1a0"
+				},
+				{
+					"name": "resolveRelativeToInsrcRoot",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/aggregator.ts",
+					"startLine": 274,
+					"endLine": 278,
+					"language": "typescript",
+					"signature": "resolveRelativeToInsrcRoot(relativePath: string): string",
+					"entityId": "32a02d82b3cb54279f6e6dd1a40a1aae"
+				},
+				{
+					"name": "classifyError",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/aggregator.ts",
+					"startLine": 284,
+					"endLine": 288,
+					"language": "typescript",
+					"signature": "classifyError(err: unknown): Error",
+					"entityId": "ea5c23bc9ba976def12168c84cbde6af"
+				}
+			]
+		}
+	},
+	"completedAt": "2026-10-09T13:37:36.068Z",
+	"completeness": {
+		"complete": true,
+		"total": 156,
+		"returned": 156,
+		"basis": "graph",
+		"basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established. The surface lists the functions, methods and classes of every stored source file under the module's directory, including its sub-directories."
+	}
+}

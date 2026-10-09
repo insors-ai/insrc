@@ -1,0 +1,199 @@
+{
+	"planId": "analyze-framework-structure-s",
+	"goal": "Explain how the analyze framework under src/analyze is structured: its sub-modules, entrypoints, dependency tree and per-module functional surface.",
+	"target": "code",
+	"scope": "S",
+	"tasks": [
+		{
+			"taskId": "t01",
+			"template": "code.discovery.modules",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src/analyze"
+				}
+			},
+			"produces": [
+				"modules"
+			],
+			"rationale": "Enumerate every source-holding directory under src/analyze so the per-module surface tasks and the aggregator work from a verified module list."
+		},
+		{
+			"taskId": "t02",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src/analyze"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "The module profile returned zero exports and symbol.locate was skipped; enumerate entrypoints (index.ts, runAnalyze) to establish the public surface."
+		},
+		{
+			"taskId": "t03",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src/analyze"
+				},
+				"maxDepth": 4
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "Walk the dependency graph rooted at src/analyze to show how its nine subdirectories depend on each other and on shared/db/config."
+		},
+		{
+			"taskId": "t04",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "The orchestrator holds runAnalyze (driver.ts) and RunAnalyzeArgs; its surface shows how the pipeline stages are sequenced end to end."
+		},
+		{
+			"taskId": "t05",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of the classifier sub-module, the stage that turns a request into a classified intent (target, scope, focus)."
+		},
+		{
+			"taskId": "t06",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "The context sub-module defines AnalyzeContextBundle and the boot validator; its surface explains how the context bundle is built."
+		},
+		{
+			"taskId": "t07",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of the explore sub-module, which holds the exploration recipes (concept.resolve, module.profile, import.graph and others)."
+		},
+		{
+			"taskId": "t08",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of the planner sub-module, which builds and validates the Plan Task from the intent, bundle and task catalog."
+		},
+		{
+			"taskId": "t09",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of the executor sub-module, which runs the planned tasks serially and materialises their outputs for the aggregator."
+		},
+		{
+			"taskId": "t10",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of the runtimes sub-module, to show which per-template task runtimes exist and how the executor reaches them."
+		},
+		{
+			"taskId": "t11",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of the summariser sub-module, the post-indexing summary stage that feeds doc summaries into analyze runs."
+		},
+		{
+			"taskId": "t12",
+			"template": "code.aggregate.report",
+			"kind": "leaf",
+			"params": {},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"modules",
+				"entrypoints",
+				"module-tree",
+				"functional-surface"
+			],
+			"rationale": "Stitch the module list, entrypoints, dependency tree and the eight per-module surfaces into one structural report of the analyze framework."
+		}
+	],
+	"reasoning": "Focused S-scope structural question anchored on src/analyze. Three discovery/structure tasks establish the module list, entrypoints (the profile returned no exports) and the dependency tree; then one functional-surface task per non-test subdirectory (orchestrator, classifier, context, explore, planner, executor, runtimes, summariser), deep on the four that carry the pipeline's core types. The aggregator stitches all of it. Omitted: __tests__, adherence checks (no doc constraints asked for), and planner-kind deep-dives, which S scope does not warrant."
+}

@@ -1,0 +1,497 @@
+{
+	"taskId": "t09",
+	"template": "code.surface.functional",
+	"kind": "leaf",
+	"produces": [
+		"functional-surface"
+	],
+	"status": "ok",
+	"outputs": {
+		"functional-surface": {
+			"module": {
+				"name": "src/analyze/executor",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor"
+			},
+			"exports": [
+				{
+					"name": "taskOutputPathFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/cache.ts",
+					"startLine": 43,
+					"endLine": 45,
+					"language": "typescript",
+					"signature": "taskOutputPathFor(runId: string, taskId: string): string",
+					"entityId": "88e46de58cc0cfef9c2e4887295d3f82"
+				},
+				{
+					"name": "writeTaskOutput",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/cache.ts",
+					"startLine": 47,
+					"endLine": 55,
+					"language": "typescript",
+					"signature": "writeTaskOutput(runId: string, record: TaskExecutionRecord): string",
+					"entityId": "44dd235999a59a283d928f9b73a47c1e"
+				},
+				{
+					"name": "readTaskOutput",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/cache.ts",
+					"startLine": 57,
+					"endLine": 66,
+					"language": "typescript",
+					"signature": "readTaskOutput(runId: string, taskId: string): TaskExecutionRecord | null",
+					"entityId": "ba18b2d069dfd436865799a38b90d48e"
+				},
+				{
+					"name": "purgeTaskOutput",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/cache.ts",
+					"startLine": 69,
+					"endLine": 77,
+					"language": "typescript",
+					"signature": "purgeTaskOutput(runId: string, taskId: string): void",
+					"entityId": "406cc1a7660f423c371335a11f7e9065"
+				},
+				{
+					"name": "purgeAllTaskOutputs",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/cache.ts",
+					"startLine": 80,
+					"endLine": 91,
+					"language": "typescript",
+					"signature": "purgeAllTaskOutputs(runId: string): void",
+					"entityId": "ef78127a310aa7d9f51b8a932b55bec7"
+				},
+				{
+					"name": "taskPath",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/plan-sources.ts",
+					"startLine": 32,
+					"endLine": 34,
+					"language": "typescript",
+					"signature": "taskPath(parent: string | undefined, taskId: string): string",
+					"entityId": "6a85d47369593e0f138049d682e7bb4f"
+				},
+				{
+					"name": "collectPlanSources",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/plan-sources.ts",
+					"startLine": 43,
+					"endLine": 87,
+					"language": "typescript",
+					"signature": "collectPlanSources(\n\ttree:       PlanTreeNode,\n\texecuted:   ExecutorResult,\n\tparentPath?: string,\n): ReportSource[]",
+					"entityId": "6f4ac35f267c1a162c9ba90f5d9285fc"
+				},
+				{
+					"name": "TemplateRuntimeRegistrationError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/registry.ts",
+					"startLine": 26,
+					"endLine": 31,
+					"language": "typescript",
+					"entityId": "2994255f3c499896a391f26055768d72"
+				},
+				{
+					"name": "registerTemplateRuntime",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/registry.ts",
+					"startLine": 39,
+					"endLine": 47,
+					"language": "typescript",
+					"signature": "registerTemplateRuntime(runtime: TemplateRuntime): void",
+					"entityId": "2968caad31048bf92098904e9760574b"
+				},
+				{
+					"name": "getRuntime",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/registry.ts",
+					"startLine": 49,
+					"endLine": 51,
+					"language": "typescript",
+					"signature": "getRuntime(templateId: string): TemplateRuntime | undefined",
+					"entityId": "08745b389ff241c69a73d34c46ac3b4b"
+				},
+				{
+					"name": "listRegisteredRuntimes",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/registry.ts",
+					"startLine": 53,
+					"endLine": 55,
+					"language": "typescript",
+					"signature": "listRegisteredRuntimes(): readonly string[]",
+					"entityId": "bc49aed077952ddfb0e543c9cac925a7"
+				},
+				{
+					"name": "_resetRuntimeRegistryForTests",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/registry.ts",
+					"startLine": 58,
+					"endLine": 60,
+					"language": "typescript",
+					"signature": "_resetRuntimeRegistryForTests(): void",
+					"entityId": "25878822f9b55de765fac12aef738ff6"
+				},
+				{
+					"name": "ExecutorRuntimeMissingError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/types.ts",
+					"startLine": 199,
+					"endLine": 210,
+					"language": "typescript",
+					"entityId": "76f027094e8867a2778343ebe93cd23c"
+				},
+				{
+					"name": "ExecutorOutputShapeError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/types.ts",
+					"startLine": 212,
+					"endLine": 235,
+					"language": "typescript",
+					"entityId": "24c0aac464c4f5dc6edf1661be459acc"
+				},
+				{
+					"name": "runExecutor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 79,
+					"endLine": 83,
+					"language": "typescript",
+					"signature": "runExecutor(args: RunExecutorArgs): Promise<ExecutorResult>",
+					"entityId": "8325c21e1e9a95d0dc43fd4dc853cd18"
+				}
+			],
+			"internalHelpers": [
+				{
+					"name": "uniqueRunId",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-aggregate.test.ts",
+					"startLine": 40,
+					"endLine": 40,
+					"language": "typescript",
+					"signature": "uniqueRunId(label: string): string",
+					"entityId": "b1f10297b25bddeef1fe112397dd0e66"
+				},
+				{
+					"name": "task",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-aggregate.test.ts",
+					"startLine": 42,
+					"endLine": 44,
+					"language": "typescript",
+					"signature": "task(over: Partial<PlannedTask> & { taskId: string }): PlannedTask",
+					"entityId": "63409a618796c7ad8ba6a17f44aa7c4b"
+				},
+				{
+					"name": "plan",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-aggregate.test.ts",
+					"startLine": 45,
+					"endLine": 47,
+					"language": "typescript",
+					"signature": "plan(tasks: PlannedTask[]): PlanTask",
+					"entityId": "7bb5605e8b94a7e321636664a6c7b86d"
+				},
+				{
+					"name": "node",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-aggregate.test.ts",
+					"startLine": 48,
+					"endLine": 50,
+					"language": "typescript",
+					"signature": "node(p: PlanTask, children = new Map<string, PlanTreeNode>()): PlanTreeNode",
+					"entityId": "685362be6fe487206958f199395dbdb5"
+				},
+				{
+					"name": "aggregate",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-aggregate.test.ts",
+					"startLine": 70,
+					"endLine": 81,
+					"language": "typescript",
+					"signature": "aggregate(templateId: string, report: unknown = REPORT): TemplateRuntime",
+					"entityId": "badca1c8c5fed18f32cd44aa2b64730a"
+				},
+				{
+					"name": "register",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-aggregate.test.ts",
+					"startLine": 83,
+					"endLine": 88,
+					"language": "typescript",
+					"signature": "register(...extra: TemplateRuntime[]): void",
+					"entityId": "de0e81178499941e16e3567d3df1083e"
+				},
+				{
+					"name": "walk",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-aggregate.test.ts",
+					"startLine": 90,
+					"endLine": 94,
+					"language": "typescript",
+					"signature": "walk(tree: PlanTreeNode, label: string)",
+					"entityId": "0f2810aee39f87ed0d939d06d7671f21"
+				},
+				{
+					"name": "uniqueRunId",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+					"startLine": 37,
+					"endLine": 37,
+					"language": "typescript",
+					"signature": "uniqueRunId(label: string): string",
+					"entityId": "978b488f9994fe925a6881ddfabbbc35"
+				},
+				{
+					"name": "task",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+					"startLine": 39,
+					"endLine": 41,
+					"language": "typescript",
+					"signature": "task(over: Partial<PlannedTask> & { taskId: string }): PlannedTask",
+					"entityId": "c70a094bc56fa6f4062af1a201ac0d53"
+				},
+				{
+					"name": "plan",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+					"startLine": 42,
+					"endLine": 44,
+					"language": "typescript",
+					"signature": "plan(tasks: PlannedTask[]): PlanTask",
+					"entityId": "00f6a1deb02f9561464716f40b3e58cd"
+				},
+				{
+					"name": "node",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+					"startLine": 45,
+					"endLine": 47,
+					"language": "typescript",
+					"signature": "node(p: PlanTask, children = new Map<string, PlanTreeNode>()): PlanTreeNode",
+					"entityId": "c98574bbce495eae66dbdf22fa006335"
+				},
+				{
+					"name": "register",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+					"startLine": 53,
+					"endLine": 78,
+					"language": "typescript",
+					"signature": "register(): void",
+					"entityId": "63cb227a9c28db1fc6040e16430d17c4"
+				},
+				{
+					"name": "blockRecord",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+					"startLine": 81,
+					"endLine": 85,
+					"language": "typescript",
+					"signature": "blockRecord(runId: string, taskId: string): string",
+					"entityId": "ecdc7d53d18baa863e731594c1421715"
+				},
+				{
+					"name": "uniqueRunId",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker.test.ts",
+					"startLine": 60,
+					"endLine": 63,
+					"language": "typescript",
+					"signature": "uniqueRunId(label: string): string",
+					"entityId": "0e1b7fd5fcd765171a838da12ad31acc"
+				},
+				{
+					"name": "mkTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker.test.ts",
+					"startLine": 73,
+					"endLine": 83,
+					"language": "typescript",
+					"signature": "mkTask(over: Partial<PlannedTask> & { taskId: string }): PlannedTask",
+					"entityId": "d29753e7d89424ff1d4d2f37bb2753ae"
+				},
+				{
+					"name": "mkPlan",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker.test.ts",
+					"startLine": 85,
+					"endLine": 94,
+					"language": "typescript",
+					"signature": "mkPlan(tasks: PlannedTask[]): PlanTask",
+					"entityId": "a2c74f075ddc08cdd13684e1b91fc8a1"
+				},
+				{
+					"name": "mkNode",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker.test.ts",
+					"startLine": 96,
+					"endLine": 98,
+					"language": "typescript",
+					"signature": "mkNode(plan: PlanTask, children = new Map<string, PlanTreeNode>()): PlanTreeNode",
+					"entityId": "db5e7c3471b31c7b96efb2ccd13623e6"
+				},
+				{
+					"name": "stubRuntime",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker.test.ts",
+					"startLine": 103,
+					"endLine": 111,
+					"language": "typescript",
+					"signature": "stubRuntime(templateId: string, outputs: Record<string, unknown>): TemplateRuntime",
+					"entityId": "f0e4f2111568047c4fa2fa39745a11f7"
+				},
+				{
+					"name": "throwingRuntime",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__/walker.test.ts",
+					"startLine": 113,
+					"endLine": 118,
+					"language": "typescript",
+					"signature": "throwingRuntime(templateId: string, errMessage: string): TemplateRuntime",
+					"entityId": "854aacc66caddb6d0275ddd4f126cf1c"
+				},
+				{
+					"name": "atomicWriteJson",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/cache.ts",
+					"startLine": 93,
+					"endLine": 99,
+					"language": "typescript",
+					"signature": "atomicWriteJson(path: string, value: unknown): void",
+					"entityId": "366ae72c5a0dca82ff8a0ecaba4dc44f"
+				},
+				{
+					"name": "executePlan",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 103,
+					"endLine": 224,
+					"language": "typescript",
+					"signature": "executePlan(\n\tnode:   PlanTreeNode,\n\tintent: ClassifiedIntent,\n\trunId:  string,\n\topts:   WalkOpts,\n): Promise<ExecutorResult>",
+					"entityId": "88a2c51dae5f37c5ce57e64e0881987b"
+				},
+				{
+					"name": "executeLeafTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 230,
+					"endLine": 297,
+					"language": "typescript",
+					"signature": "executeLeafTask(\n\ttask:    PlannedTask,\n\tintent:  ClassifiedIntent,\n\trunId:   string,\n\toutputs: ReadonlyMap<string, unknown>,\n\t/** For the aggregate-report task only: what the plan did not produce. */\n\tabsentInputs?: readonly AbsentInput[] | undefined,\n): Promise<TaskExecutionRecord>",
+					"entityId": "6ddf059b963b28d9aaacfcd7f346b7a1"
+				},
+				{
+					"name": "executePlannerTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 304,
+					"endLine": 345,
+					"language": "typescript",
+					"signature": "executePlannerTask(\n\ttask:   PlannedTask,\n\tparent: PlanTreeNode,\n\tintent: ClassifiedIntent,\n\trunId:  string,\n\topts:   WalkOpts,\n): Promise<PlannerTaskResult>",
+					"entityId": "20c04b1c31fa868af2fc9eddc8b951c0"
+				},
+				{
+					"name": "unmetDependencies",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 356,
+					"endLine": 373,
+					"language": "typescript",
+					"signature": "unmetDependencies(\n\ttask:    PlannedTask,\n\toutputs: ReadonlyMap<string, unknown>,\n\tfailed:  ReadonlySet<string>,\n): string | null",
+					"entityId": "f700e1a64a34accf9cbe4cef5ed58378"
+				},
+				{
+					"name": "aggregateUnmet",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 382,
+					"endLine": 390,
+					"language": "typescript",
+					"signature": "aggregateUnmet(\n\ttask:    PlannedTask,\n\toutputs: ReadonlyMap<string, unknown>,\n): string | null",
+					"entityId": "a939b22921e924660657eb41033ff22f"
+				},
+				{
+					"name": "absentInputsFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 403,
+					"endLine": 427,
+					"language": "typescript",
+					"signature": "absentInputsFor(\n\ttask:    PlannedTask,\n\ttasks:   readonly PlannedTask[],\n\toutputs: ReadonlyMap<string, unknown>,\n\tperTask: ReadonlyMap<string, TaskExecutionRecord>,\n): AbsentInput[]",
+					"entityId": "0110f4943267b205fff9d0fee7da4b4b"
+				},
+				{
+					"name": "projectUpstream",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 435,
+					"endLine": 446,
+					"language": "typescript",
+					"signature": "projectUpstream(\n\ttask:    PlannedTask,\n\toutputs: ReadonlyMap<string, unknown>,\n): ReadonlyMap<string, unknown>",
+					"entityId": "cecf1682a7403464a270247188d7cead"
+				},
+				{
+					"name": "checkOutputShape",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 448,
+					"endLine": 466,
+					"language": "typescript",
+					"signature": "checkOutputShape(\n\ttask:   PlannedTask,\n\tresult: TemplateExecuteResult,\n): ExecutorOutputShapeError | null",
+					"entityId": "c555ac0af833b11631e5399044cb6f5b"
+				},
+				{
+					"name": "persistTaskRecord",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 476,
+					"endLine": 492,
+					"language": "typescript",
+					"signature": "persistTaskRecord(runId: string, task: PlannedTask, record: TaskExecutionRecord): TaskExecutionRecord",
+					"entityId": "eddbfa2f3fa7bf6d03cea40ed62aa2b8"
+				},
+				{
+					"name": "failedRecord",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 494,
+					"endLine": 505,
+					"language": "typescript",
+					"signature": "failedRecord(task: PlannedTask, error: string, code?: ScopeErrorCode): TaskExecutionRecord",
+					"entityId": "dc5d7ab1a1c93fffef1b209382b7fb24"
+				},
+				{
+					"name": "nowIso",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 512,
+					"endLine": 514,
+					"language": "typescript",
+					"signature": "nowIso(): string",
+					"entityId": "ec25cf0622484b11be857ef27c65d2be"
+				},
+				{
+					"name": "emit",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+					"startLine": 521,
+					"endLine": 530,
+					"language": "typescript",
+					"signature": "emit(opts: WalkOpts, event: TaskExecutionEvent): void",
+					"entityId": "085260421c56afb595ef8c36da064d95"
+				}
+			]
+		}
+	},
+	"completedAt": "2026-10-09T13:37:35.466Z",
+	"completeness": {
+		"complete": true,
+		"total": 47,
+		"returned": 47,
+		"basis": "graph",
+		"basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established. The surface lists the functions, methods and classes of every stored source file under the module's directory, including its sub-directories."
+	}
+}

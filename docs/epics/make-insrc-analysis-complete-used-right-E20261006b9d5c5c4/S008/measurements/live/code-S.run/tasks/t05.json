@@ -1,0 +1,363 @@
+{
+	"taskId": "t05",
+	"template": "code.surface.functional",
+	"kind": "leaf",
+	"produces": [
+		"functional-surface"
+	],
+	"status": "ok",
+	"outputs": {
+		"functional-surface": {
+			"module": {
+				"name": "src/analyze/classifier",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier"
+			},
+			"exports": [
+				{
+					"name": "ClassifierLlmUnavailableError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+					"startLine": 69,
+					"endLine": 76,
+					"language": "typescript",
+					"entityId": "f9992e75574e13e44fb60a35f52b5290"
+				},
+				{
+					"name": "ClassifierSchemaUnrecoverable",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+					"startLine": 78,
+					"endLine": 83,
+					"language": "typescript",
+					"entityId": "c81e03772a76273c80d7eb3c47a74b52"
+				},
+				{
+					"name": "ClassifierValidationExhausted",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+					"startLine": 85,
+					"endLine": 96,
+					"language": "typescript",
+					"entityId": "ae9b6d5bb6218826d7d8502d40d73bc0"
+				},
+				{
+					"name": "ClassifierPromptMissingError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+					"startLine": 98,
+					"endLine": 103,
+					"language": "typescript",
+					"entityId": "6a05eac45cf7b2cac0b0ad37e13d0f9d"
+				},
+				{
+					"name": "connectionCheckFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+					"startLine": 121,
+					"endLine": 125,
+					"language": "typescript",
+					"signature": "connectionCheckFor(\n\targs: Pick<ClassifyDriverArgs, 'connectionExists'>,\n): (id: string) => Promise<boolean>",
+					"entityId": "e6d9dab97ae220004bd498dbc7491bdd"
+				},
+				{
+					"name": "classify",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+					"startLine": 127,
+					"endLine": 203,
+					"language": "typescript",
+					"signature": "classify(args: ClassifyDriverArgs): Promise<ClassifiedIntent>",
+					"entityId": "4f0ffb9c8d4ff8920e8d68def35937b0"
+				},
+				{
+					"name": "validateIntentShape",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/schema.ts",
+					"startLine": 86,
+					"endLine": 89,
+					"language": "typescript",
+					"signature": "validateIntentShape(value: unknown): value is ClassifiedIntent",
+					"entityId": "3cf45d06681ea27b4cf5fe4f8558a5fa"
+				},
+				{
+					"name": "validateIntentShapeWithErrors",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/schema.ts",
+					"startLine": 91,
+					"endLine": 99,
+					"language": "typescript",
+					"signature": "validateIntentShapeWithErrors(value: unknown): IntentValidationResult",
+					"entityId": "fd78ed084bc4e9a36367f4f511582b37"
+				},
+				{
+					"name": "ScopePickerLlmUnavailableError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+					"startLine": 82,
+					"endLine": 89,
+					"language": "typescript",
+					"entityId": "d5a26778de265e3c16d5d76865184af1"
+				},
+				{
+					"name": "ScopePickerSchemaUnrecoverable",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+					"startLine": 91,
+					"endLine": 96,
+					"language": "typescript",
+					"entityId": "4457ccb10d475753c4cb40975925297f"
+				},
+				{
+					"name": "ScopePickerPromptMissingError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+					"startLine": 98,
+					"endLine": 103,
+					"language": "typescript",
+					"entityId": "f0017277d61fe417a181c02330596433"
+				},
+				{
+					"name": "pickScope",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+					"startLine": 124,
+					"endLine": 179,
+					"language": "typescript",
+					"signature": "pickScope(args: PickScopeArgs): Promise<PickScopeResult>",
+					"entityId": "fb836cba3c96f50c1bbcc0715ddadc74"
+				},
+				{
+					"name": "validateIntentSemantics",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/validate.ts",
+					"startLine": 91,
+					"endLine": 102,
+					"language": "typescript",
+					"signature": "validateIntentSemantics(\n\tintent: ClassifiedIntent,\n\tconnectionExists?: (id: string) => Promise<boolean>,\n): Promise<ValidationFailure | null>",
+					"entityId": "32dbeee4001fa732a4cf93601f63d360"
+				},
+				{
+					"name": "isKindCompatibleWithTarget",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/validate.ts",
+					"startLine": 105,
+					"endLine": 111,
+					"language": "typescript",
+					"signature": "isKindCompatibleWithTarget(\n\ttarget: AnalyzeTarget,\n\tkind:   AnalyzeScopeRef['kind'],\n): boolean",
+					"entityId": "038d741743d56f700052b1c10cf279a4"
+				}
+			],
+			"internalHelpers": [
+				{
+					"name": "uniqueRunId",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/__tests__/classify.live.test.ts",
+					"startLine": 88,
+					"endLine": 91,
+					"language": "typescript",
+					"signature": "uniqueRunId(label: string): string",
+					"entityId": "3d70b3a89dcf825f25c7acd859ea30b9"
+				},
+				{
+					"name": "classifyAt",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/__tests__/classify.live.test.ts",
+					"startLine": 93,
+					"endLine": 106,
+					"language": "typescript",
+					"signature": "classifyAt(\n\tscopeValue: string,\n\tuserPrompt: string,\n\tlabel:      string,\n): Promise<{ intent: Awaited<ReturnType<typeof classify>>; runId: string }>",
+					"entityId": "45af67f849a5d932e05fd045316cac06"
+				},
+				{
+					"name": "intent",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/__tests__/validate.test.ts",
+					"startLine": 90,
+					"endLine": 105,
+					"language": "typescript",
+					"signature": "intent(\n\ttarget:    AnalyzeTarget,\n\tkind:      AnalyzeScopeRef['kind'],\n\tvalue:     string,\n\tfocused = false,\n): ClassifiedIntent",
+					"entityId": "fea3aa2f9306b9d1280a010edb6b8937"
+				},
+				{
+					"name": "exists",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/__tests__/validate.test.ts",
+					"startLine": 276,
+					"endLine": 276,
+					"language": "typescript",
+					"signature": "exists(id: string): Promise<boolean>",
+					"entityId": "1f18d6a71ba7faf7c673142bc5d8dbbb"
+				},
+				{
+					"name": "buildInitialMessages",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+					"startLine": 209,
+					"endLine": 244,
+					"language": "typescript",
+					"signature": "buildInitialMessages(\n\tpromptContent: string,\n\tbundleMd:      string,\n\tinput:         ClassifyInput,\n): LLMMessage[]",
+					"entityId": "94af1235cdfd4cc02ac6afce2360d47f"
+				},
+				{
+					"name": "appendCorrectionTurn",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+					"startLine": 246,
+					"endLine": 270,
+					"language": "typescript",
+					"signature": "appendCorrectionTurn(\n\tprior:    LLMMessage[],\n\trejected: ClassifiedIntent,\n\tfailure:  ValidationFailure,\n): LLMMessage[]",
+					"entityId": "c7f07b1fd3a44fdd135c108b31e5bafc"
+				},
+				{
+					"name": "loadPromptFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+					"startLine": 276,
+					"endLine": 288,
+					"language": "typescript",
+					"signature": "loadPromptFile(): string",
+					"entityId": "27363120f34e4a62f481bfbe221f0845"
+				},
+				{
+					"name": "resolveRelativeToInsrcRoot",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+					"startLine": 290,
+					"endLine": 295,
+					"language": "typescript",
+					"signature": "resolveRelativeToInsrcRoot(relativePath: string): string",
+					"entityId": "33c2a60fa580863d52c1d89d759e5bb7"
+				},
+				{
+					"name": "classifyError",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+					"startLine": 301,
+					"endLine": 307,
+					"language": "typescript",
+					"signature": "classifyError(err: unknown): Error",
+					"entityId": "148ccf31aca497ec1b54c0bfc1cb5219"
+				},
+				{
+					"name": "getValidator",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/schema.ts",
+					"startLine": 74,
+					"endLine": 79,
+					"language": "typescript",
+					"signature": "getValidator(): ValidateFunction",
+					"entityId": "fb18c8c8ec090b8707c9591a7da2ec5a"
+				},
+				{
+					"name": "formatError",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/schema.ts",
+					"startLine": 101,
+					"endLine": 105,
+					"language": "typescript",
+					"signature": "formatError(e: ErrorObject): string",
+					"entityId": "73bc3ac8d4f5002603d4752337e0031c"
+				},
+				{
+					"name": "gatherWorkspaceSignals",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+					"startLine": 191,
+					"endLine": 222,
+					"language": "typescript",
+					"signature": "gatherWorkspaceSignals(scopeRef: AnalyzeScopeRef): Promise<WorkspaceSignals>",
+					"entityId": "b7de218f38bc1451da6820a18ccd95fb"
+				},
+				{
+					"name": "renderSignals",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+					"startLine": 224,
+					"endLine": 237,
+					"language": "typescript",
+					"signature": "renderSignals(signals: WorkspaceSignals | null): string",
+					"entityId": "19ced056077b7d5702715e5af4afc204"
+				},
+				{
+					"name": "buildMessages",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+					"startLine": 243,
+					"endLine": 271,
+					"language": "typescript",
+					"signature": "buildMessages(\n\tpromptContent: string,\n\targs:          PickScopeArgs,\n\tsignals:       WorkspaceSignals | null,\n): LLMMessage[]",
+					"entityId": "23cae257ddd69094dd65ee3bd34a1aa1"
+				},
+				{
+					"name": "loadPromptFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+					"startLine": 277,
+					"endLine": 289,
+					"language": "typescript",
+					"signature": "loadPromptFile(): string",
+					"entityId": "6e268b5e14662082d2008180a07b3ef6"
+				},
+				{
+					"name": "resolveRelativeToInsrcRoot",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+					"startLine": 291,
+					"endLine": 296,
+					"language": "typescript",
+					"signature": "resolveRelativeToInsrcRoot(relativePath: string): string",
+					"entityId": "ec5403f5b5c3fe98317ec706f05264c2"
+				},
+				{
+					"name": "classifyError",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+					"startLine": 302,
+					"endLine": 306,
+					"language": "typescript",
+					"signature": "classifyError(err: unknown): Error",
+					"entityId": "c3dbc44de4a53fd0dc69f11f59eee4b1"
+				},
+				{
+					"name": "checkKindTargetMatch",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/validate.ts",
+					"startLine": 113,
+					"endLine": 125,
+					"language": "typescript",
+					"signature": "checkKindTargetMatch(\n\ttarget: AnalyzeTarget,\n\tkind:   AnalyzeScopeRef['kind'],\n): ValidationFailure | null",
+					"entityId": "d53a52597280a9c48abb0a321703d809"
+				},
+				{
+					"name": "checkScopeRefResolves",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/validate.ts",
+					"startLine": 127,
+					"endLine": 198,
+					"language": "typescript",
+					"signature": "checkScopeRefResolves(\n\tscopeRef: AnalyzeScopeRef,\n\tconnectionExists?: (id: string) => Promise<boolean>,\n): Promise<ValidationFailure | null>",
+					"entityId": "750c408a95b353d7b449cf0c712f2b99"
+				},
+				{
+					"name": "checkSymbolValue",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/validate.ts",
+					"startLine": 200,
+					"endLine": 224,
+					"language": "typescript",
+					"signature": "checkSymbolValue(value: string): ValidationFailure | null",
+					"entityId": "6896442936202272cd64e3c3931c66f9"
+				}
+			]
+		}
+	},
+	"completedAt": "2026-10-09T13:37:32.962Z",
+	"completeness": {
+		"complete": true,
+		"total": 34,
+		"returned": 34,
+		"basis": "graph",
+		"basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established. The surface lists the functions, methods and classes of every stored source file under the module's directory, including its sub-directories."
+	}
+}

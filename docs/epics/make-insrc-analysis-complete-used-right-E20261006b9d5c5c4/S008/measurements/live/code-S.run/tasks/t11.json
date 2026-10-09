@@ -1,0 +1,119 @@
+{
+	"taskId": "t11",
+	"template": "code.surface.functional",
+	"kind": "leaf",
+	"produces": [
+		"functional-surface"
+	],
+	"status": "ok",
+	"outputs": {
+		"functional-surface": {
+			"module": {
+				"name": "src/analyze/summariser",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser"
+			},
+			"exports": [
+				{
+					"name": "DocSummariserPromptMissingError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/driver.ts",
+					"startLine": 68,
+					"endLine": 73,
+					"language": "typescript",
+					"entityId": "23df2bbc6d4ca17ceb7a29ae29899e69"
+				},
+				{
+					"name": "summariseDoc",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/driver.ts",
+					"startLine": 179,
+					"endLine": 299,
+					"language": "typescript",
+					"signature": "summariseDoc(args: SummariseDocArgs): Promise<SummariseDocResult>",
+					"entityId": "2d12b3b45d7d505577ce5fd33b9b57b8"
+				},
+				{
+					"name": "inferDocFamily",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/family.ts",
+					"startLine": 101,
+					"endLine": 109,
+					"language": "typescript",
+					"signature": "inferDocFamily(file: string): DocFamily",
+					"entityId": "6444d581ac0560f7041e572c44ffd2d1"
+				}
+			],
+			"internalHelpers": [
+				{
+					"name": "buildMessages",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/driver.ts",
+					"startLine": 305,
+					"endLine": 336,
+					"language": "typescript",
+					"signature": "buildMessages(args: {\n\tpromptContent:    string;\n\tentity:           Entity;\n\tfamily:           DocFamily;\n\tidentifierHints:  readonly string[];\n}): LLMMessage[]",
+					"entityId": "22c9e4b23ad2dbf7515fd828aefbce0e"
+				},
+				{
+					"name": "buildPlaceholder",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/driver.ts",
+					"startLine": 338,
+					"endLine": 360,
+					"language": "typescript",
+					"signature": "buildPlaceholder(\n\tfamily:      DocFamily,\n\tentity:      Entity,\n\tmodelId:     string,\n\tcontentHash: string,\n\terrorCode:   string,\n): DocSummary",
+					"entityId": "238e0d1771f12069a98cd514a683618a"
+				},
+				{
+					"name": "sha256",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/driver.ts",
+					"startLine": 362,
+					"endLine": 364,
+					"language": "typescript",
+					"signature": "sha256(s: string): string",
+					"entityId": "ef4ccca94380e4ecff64778e8c4bb19f"
+				},
+				{
+					"name": "classifyErrorCode",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/driver.ts",
+					"startLine": 366,
+					"endLine": 374,
+					"language": "typescript",
+					"signature": "classifyErrorCode(err: unknown): string",
+					"entityId": "2b2f2f019a55f61079245699a531f22e"
+				},
+				{
+					"name": "loadPromptFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/driver.ts",
+					"startLine": 384,
+					"endLine": 396,
+					"language": "typescript",
+					"signature": "loadPromptFile(): string",
+					"entityId": "eadce91c161ccabaa5b063c6305bd1d7"
+				},
+				{
+					"name": "resolveRelativeToInsrcRoot",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/driver.ts",
+					"startLine": 398,
+					"endLine": 403,
+					"language": "typescript",
+					"signature": "resolveRelativeToInsrcRoot(relativePath: string): string",
+					"entityId": "e4f24adf6a8ca498d0958c1a0c59f611"
+				}
+			]
+		}
+	},
+	"completedAt": "2026-10-09T13:37:36.697Z",
+	"completeness": {
+		"complete": true,
+		"total": 9,
+		"returned": 9,
+		"basis": "graph",
+		"basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established. The surface lists the functions, methods and classes of every stored source file under the module's directory, including its sub-directories."
+	}
+}

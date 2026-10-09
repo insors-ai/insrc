@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791541894963-m1ut96",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T10:31:34.963Z",
+    "model": "claude:opus",
+    "elapsedMs": 45433,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f07f59c76f70149",
+    "storyId": "S001",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2f07f59c76f70149",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:1",
+            "message": "Present but unverified: every changed symbol is in this test file. They are fixtures and helpers (fakeChannel, fakeClient, openRaceHarness, runWebview, loadFr, loadDg, loadUx, shape/flatten utilities and others), not production behaviour. An empty testsReaching on a top-level helper such as openRaceHarness, openAndGetContent, runWebview or loadPlace is expected: the anonymous test()/it() blocks that call these helpers are not indexed as graph entities. This is therefore not a coverage gap, and no HIGH breach is raised for test-internal symbols. There is no build record, so this suite's pass-state cannot be confirmed. Run it to verify that it is green. The production symbols the suite exercises (e.g. createDocsReviewHost and the webview renderer/placement/diagram modules) are not in this Story's changed set, so their coverage is out of scope here.",
+            "expectationRef": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts (suite pass-state)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:961",
+            "message": "openWithContent duplicates openAndGetContent: both build a host with createDocsReviewHost over fakeChannel + fakeClient, post an env(...) message, await tick(), and return the content payload. The only difference is whether the input is a markdown string or a full DocsContent. Make openAndGetContent a thin wrapper that calls openWithContent, so the open/handshake sequence lives in one place and cannot drift between the two.",
+            "counterpartRef": "openAndGetContent",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:4161",
+            "message": "Four near-identical recursive collectors flatten a stub tree into a node list: uxFlatten, dgFlatten (2716), allOf (3306) and frAll (1248). Each targets its own stub type. Use one generic flatten<T extends { children: T[] }> instead, so a fix to the traversal (for example, text-node handling) doesn't have to be made four times.",
+            "counterpartRef": "allOf",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:4095",
+            "message": "Five separate DOM-stub factories with overlapping shapes exist in this one file: uxNodeStub, dgNode (2667), frNode (1215), bodyStub (1540) and node (715), each paired with its own interface. Each suite's renderer runs against a slightly different fake DOM. A behavior one stub implements, such as appendChild, textContent or setAttribute, can be missing or different in another, so a test can pass against its own stub while the real webview behaves differently. Use one shared stub element.",
+            "counterpartRef": "bodyStub",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:2447",
+            "message": "typecheckAgainstPanel and git(...) shell out to the TypeScript compiler and to git from inside a unit test. These tests depend on the environment: a shallow CI clone, a source tarball, or a missing tsc binary makes them fail for reasons unrelated to the panel. If the subprocess throws, that error is not turned into a clear skip or a diagnostic. Guard on tool and history availability, and skip with a reason when either is missing.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:1",
+            "message": "A single test file of about 5,740 lines defines more than 70 helpers spanning several feature areas: the review host, sections/anchors, the FR list, the diagram renderer, UX cards and placement. Splitting it into one file per area would make the stub families and duplicated helpers above easier to see. This is a maintainability note, not a defect.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 4,
+      "low": 2
+    }
+  }
+}

@@ -479,6 +479,8 @@ First story: rewrite BOARD_STYLE and the document chrome, restyle existing eleme
   - **resolved**: Accept the LLD deviation (wrap empty labels inline) — Confirmed by the user in chat on 2026-10-09; recorded on the LLD review as fix-targets-defect.1 resolved. _(2026-10-09T16:45:38.059Z)_
 - `qb1dffdca` — Standalone bugfix stories carry no acceptance criteria (6f31771d); ac1-ac8 in the test strategy are derived from ISSUE-b2687832's fix intent. Confirm they stand in for the story's criteria.
   - **resolved**: Accept ac1-ac8 as the story's criteria — Standalone bugfix stories carry no criteria (6f31771d); ac1-ac8 trace one-to-one to the approved ISSUE-b2687832 fix intent. _(2026-10-09T16:45:58.325Z)_
+- `q9e02bf13` — cd3/dm2 audit partials: errors are log-and-keep-state rather than typed throws, and the rollup/conflict field-modify entries rely on the AC-09 invariant stated in postconditions and s5 rather than in the dataModel entry.
+  - **resolved**: Accept as-is, carry note into plan — AC-09 (rollup totals equal board totals) is already proven by an ac2 test, and log-and-keep-state is the board's existing error model (s5); no LLD change needed. _(2026-10-09T16:46:10.430Z)_
 
 ## Citations
 

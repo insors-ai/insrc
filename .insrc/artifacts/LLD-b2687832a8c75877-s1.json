@@ -182,6 +182,13 @@
         "choice": "Accept ac1-ac8 as the story's criteria",
         "rationale": "Standalone bugfix stories carry no criteria (6f31771d); ac1-ac8 trace one-to-one to the approved ISSUE-b2687832 fix intent.",
         "resolvedAt": "2026-10-09T16:45:58.325Z"
+      },
+      "q9e02bf13": {
+        "question": "cd3/dm2 audit partials: errors are log-and-keep-state rather than typed throws, and the rollup/conflict field-modify entries rely on the AC-09 invariant stated in postconditions and s5 rather than in the dataModel entry.",
+        "status": "resolved",
+        "choice": "Accept as-is, carry note into plan",
+        "rationale": "AC-09 (rollup totals equal board totals) is already proven by an ac2 test, and log-and-keep-state is the board's existing error model (s5); no LLD change needed.",
+        "resolvedAt": "2026-10-09T16:46:10.430Z"
       }
     }
   },

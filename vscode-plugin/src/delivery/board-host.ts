@@ -318,9 +318,10 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
    */
   function apply(next: BoardState, nextPaging: BoardPaging): void {
     const details = detailsMessage(next);
+    const now = deps.now();
     const messages = details === null
-      ? boardDownMessages(next, DISPLAY_LABELS, nextPaging)
-      : [...boardDownMessages(next, DISPLAY_LABELS, nextPaging), details];
+      ? boardDownMessages(next, DISPLAY_LABELS, nextPaging, now)
+      : [...boardDownMessages(next, DISPLAY_LABELS, nextPaging, now), details];
     state = next;
     paging = nextPaging;
     memory.kept(shownSnapshot(next.status)?.snapshot ?? null, next.selection.selectedItemId);
@@ -412,7 +413,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
       announce(`Board refreshed: ${n} item${n === 1 ? '' : 's'}, ${attention} needing attention`);
       return;
     }
-    const message = statusView(state.status).message;
+    const message = statusView(state.status, deps.now()).message;
     if (message !== null) announce(message);
   }
 

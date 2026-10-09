@@ -1170,3 +1170,22 @@ test('density is restored from the webview state, saved on change and mirrored t
   assert.deepEqual(rendered[0], rendered[1], 'the same content at either density');
   assert.ok(rendered[0]!.texts.includes('Review blocked') && rendered[0]!.texts.includes('Unplanned task'));
 });
+
+test('the refresh announcement text is unchanged after statusView takes now', async () => {
+  const host = await openWith(fixtureSnapshot([
+    item({ id: 'S1', stage: 'scoped', needsAttention: true }), item({ id: 'S2', stage: 'complete' }), item({ id: 'E1', kind: 'epic' }),
+  ]));
+  const posted = payloads(host.ch);
+  const announced = posted.filter(p => p.type === 'announce').map(p => (p.type === 'announce' ? p.text : ''));
+  assert.deepEqual(announced, ['Board refreshed: 2 items, 1 needing attention']);
+  const status = posted.filter(p => p.type === 'status').at(-1);
+  assert.ok(status !== undefined && status.type === 'status');
+  assert.equal(status.status.freshnessLabel, 'Updated 2026-10-09 10:00 UTC', 'phrased against deps.now() (12:00) for a 10:00 snapshot');
+
+  send(host.ch, { type: 'refresh' });
+  host.calls[1]!.resolve({ ok: false, failure: { kind: 'read-failed', message: 'bad store' } });
+  await flush();
+  const last = payloads(host.ch).filter(p => p.type === 'announce').at(-1);
+  assert.ok(last !== undefined && last.type === 'announce');
+  assert.match(last.text, /^The refresh failed at 2026-10-09T12:00:00.000Z: bad store Showing the board from 2026-10-09T10:00:00.000Z\.$/);
+});

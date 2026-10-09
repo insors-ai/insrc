@@ -24,12 +24,28 @@ import { STAGE_ORDER } from './labels.js';
 
 export type { Envelope };
 
+/** A titled state panel (s5 mock F): an empty store, an unavailable daemon, a failed refresh, or partial evidence. */
+export interface StatePanelView {
+  readonly kind: 'empty' | 'unavailable' | 'refresh-failed' | 'partial';
+  readonly title: string;
+  readonly text: string;
+  /** 'retry' posts refresh. */
+  readonly action: 'retry' | null;
+  /** True when the last good board is still shown behind the panel. */
+  readonly stale: boolean;
+  /** What could not be read: each store notice with its records, and the unreadable-record count. */
+  readonly affected: readonly { readonly artifactIds: readonly string[]; readonly text: string }[];
+}
+
 export interface StatusView {
   readonly state: 'loading' | 'ready' | 'empty' | 'unavailable' | 'failed';
   readonly takenAt: string | null;
   readonly message: string | null;
   readonly partialNotice: string | null;
   readonly stale: boolean;
+  /** 'Updated just now', 'Updated N minutes ago' or 'Updated <date and time>'; null when no snapshot is shown. */
+  readonly freshnessLabel: string | null;
+  readonly panel: StatePanelView | null;
 }
 
 export interface ItemListEntry {

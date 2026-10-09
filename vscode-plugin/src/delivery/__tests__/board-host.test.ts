@@ -76,7 +76,9 @@ function setup() {
   return { host, channels, created, logs, calls };
 }
 
-const payloads = (c: FakeChannel) => c.posted.map(e => e.payload);
+/** The payloads of posted envelopes, in order; payloads() reads a fake channel's, payloadsOf() any posted list. */
+const payloadsOf = (posted: readonly unknown[]) => posted.map(m => (m as Envelope<BoardDownMessage>).payload);
+const payloads = (c: FakeChannel) => payloadsOf(c.posted);
 const lastBoard = (c: FakeChannel) => {
   const m = payloads(c).filter(p => p.type === 'board').at(-1);
   return m?.type === 'board' ? m.model : null;
@@ -1128,7 +1130,6 @@ test('the announce region is the only live region and is set once per message', 
 });
 
 test('density is restored from the webview state, saved on change and mirrored to the host, and both densities render every badge, warning and label', async () => {
-  const payloadsOf = (posted: unknown[]) => posted.map(m => (m as { payload: unknown }).payload);
   // Restored from saved state.
   const restored = runScript({ state: { density: 'compact', other: 1 } });
   assert.equal(restored.el['body']!.attrs['data-density'], 'compact');

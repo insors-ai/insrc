@@ -4,8 +4,9 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s8",
     "createdAt": "2026-10-09T13:06:19.852Z",
-    "updatedAt": "2026-10-09T13:39:55.182Z",
-    "authoredBy": "controller"
+    "updatedAt": "2026-10-09T14:28:43.659Z",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-09T14:28:43.920Z"
   },
   "body": {
     "tasks": [
@@ -37,250 +38,264 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/CR-b9d5c5c40df5a574-s8.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T14:28:43.659Z"
+      },
+      {
+        "target": {
           "file": "docs/daemon.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/analyze.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/deterministic-runtimes.gated.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/after/analyze.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/after/deterministic-runtimes.gated.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/baseline-comparison-t5.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live-run-t5.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.frames.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.meta.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/plan.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/run.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t01.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t02.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t03.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t04.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t05.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t06.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t07.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t08.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t09.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t10.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t11.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t12.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/templates/code/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/__tests__/module-directories.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/discovery-modules.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/structure-module-tree.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/surface-functional.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/__tests__/source-modules.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/source-modules.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:39:55.182Z"
+        "timestamp": "2026-10-09T14:28:43.659Z"
       }
     ],
-    "commit": "76fe7b55"
+    "commit": "1b6dbb99"
   }
 }

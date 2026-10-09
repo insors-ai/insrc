@@ -1,0 +1,157 @@
+{
+	"planId": "vscode-plugin-daemon-connection-m",
+	"goal": "Establish what the VS Code plugin does and how it connects to the insrc daemon and core, from the plugin's own discovery.",
+	"target": "code",
+	"scope": "M",
+	"tasks": [
+		{
+			"taskId": "t01",
+			"template": "code.discovery.modules",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/vscode-plugin"
+				}
+			},
+			"produces": [
+				"modules"
+			],
+			"rationale": "The bundle has no live detail under vscode-plugin; enumerate its source directories so the report names the plugin's real parts."
+		},
+		{
+			"taskId": "t02",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/vscode-plugin"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "Find the plugin's activation entry, registered commands and views, which state what the plugin does for the user."
+		},
+		{
+			"taskId": "t03",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/vscode-plugin"
+				},
+				"maxDepth": 6
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "Walk the dependency tree rooted at vscode-plugin to show which plugin parts depend on which, and any edges leaving the plugin."
+		},
+		{
+			"taskId": "t04",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/vscode-plugin",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"rationale": "Extract everything the whole vscode-plugin directory exposes, including daemon clients and chat surfaces, to ground the 'what it does' answer."
+		},
+		{
+			"taskId": "t05",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"rationale": "Narrow the surface to vscode-plugin/src, the only plugin source path the bundle confirms, so source exports are not diluted by build files."
+		},
+		{
+			"taskId": "t06",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "Enumerate the entry points of the core src directory (daemon, RPC handlers, MCP binaries) that the plugin would connect to."
+		},
+		{
+			"taskId": "t07",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"rationale": "Shallow surface of the core src directory gives the daemon-side endpoints to match against the plugin's outgoing calls."
+		},
+		{
+			"taskId": "t08",
+			"template": "code.discovery.modules",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src"
+				}
+			},
+			"produces": [
+				"modules"
+			],
+			"rationale": "Enumerate the core src modules so the report can name which daemon and core directories the plugin's connection lands in."
+		},
+		{
+			"taskId": "t09",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src"
+				},
+				"maxDepth": 4
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "Dependency tree of the core src directory shows how the daemon-side endpoint modules reach the core the plugin ultimately uses."
+		},
+		{
+			"taskId": "t10",
+			"template": "code.aggregate.report",
+			"kind": "leaf",
+			"params": {},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"modules",
+				"entrypoints",
+				"module-tree",
+				"functional-surface"
+			],
+			"rationale": "Stitch plugin and core modules, entry points, dependency trees and surfaces into one answer on plugin purpose and its daemon/core connection."
+		}
+	],
+	"reasoning": "The bundle profiles only the repo root and holds no live detail for vscode-plugin, so the plan starts from the plugin's own discovery (modules, entry points, dependency tree) and takes its surface at two levels: the whole plugin directory and vscode-plugin/src, the only plugin source path the bundle confirms. For the connection half of the focus it covers the core src directory with the same four views (modules, entry points, dependency tree, shallow surface), so the plugin's outgoing calls can be matched to daemon-side endpoints and the core modules behind them. Per-module surface tasks for plugin sub-directories are deliberately omitted: their names are not in the bundle (the two indexed files under src/chat are gone from disk) and inventing paths would break the plan. No deep-dive sub-plan and no adherence check are used, since no doc constraints were supplied. Task count is 10, inside the M band of 10 to 40.",
+	"parentTaskPath": "t20"
+}

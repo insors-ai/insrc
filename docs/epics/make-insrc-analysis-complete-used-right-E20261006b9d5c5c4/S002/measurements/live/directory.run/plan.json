@@ -1,0 +1,91 @@
+{
+	"planId": "plan-analyze-classifier-structure-s",
+	"goal": "Explain what the analyze classifier module does and how its five files (index, driver, schema, types, validate) connect.",
+	"target": "code",
+	"scope": "S",
+	"tasks": [
+		{
+			"taskId": "t01",
+			"template": "code.discovery.modules",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier"
+				}
+			},
+			"produces": [
+				"modules"
+			],
+			"rationale": "Enumerate the source-holding directories under the classifier module (root plus __tests__), since the bundle's graph profile reported zero entities."
+		},
+		{
+			"taskId": "t02",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "Establish what index.ts re-exports and any other top-level exports, because the bundle recognised the entry point by file name only."
+		},
+		{
+			"taskId": "t03",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier"
+				},
+				"maxDepth": 3
+			},
+			"produces": [
+				"module-tree"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Walk the dependency tree rooted at the classifier to show how driver.ts, schema.ts, types.ts and validate.ts connect; the bundle's import graph was empty."
+		},
+		{
+			"taskId": "t04",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules",
+				"entrypoints"
+			],
+			"rationale": "Extract the classifier's functional surface in depth (driver, schema, types, validate exports) to answer what the code does; exports were not established."
+		},
+		{
+			"taskId": "t05",
+			"template": "code.aggregate.report",
+			"kind": "leaf",
+			"params": {},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"modules",
+				"entrypoints",
+				"module-tree",
+				"functional-surface"
+			],
+			"rationale": "Stitch the module list, entry points, dependency tree and functional surface into one report on what the classifier does and how its parts connect."
+		}
+	],
+	"reasoning": "The bundle established only the file layout: the stored graph returned no entities, exports, imports or tests for the classifier directory, so the plan re-derives each of those. Discovery (modules, entrypoints) comes first, then the dependency tree for the 'how are parts connected' half of the focus and a deep functional surface for the 'what does it do' half, then the aggregator. The module is a single small directory of five files, so one surface task covers it and no deep-dive sub-plan is used. Adherence checking is omitted because the focus names no doc constraints. Five tasks fits the focused S band."
+}

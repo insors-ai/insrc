@@ -1,0 +1,204 @@
+{
+	"runId": "s2-live-repo-mv1edxtn",
+	"createdAt": "2026-10-09T20:08:13.695Z",
+	"updatedAt": "2026-10-09T20:16:38.010Z",
+	"userPrompt": "What does this code do, and how are its parts connected?",
+	"initialScopeRef": {
+		"kind": "repo",
+		"value": "/Users/subhagho/work/projects/insors/insrc"
+	},
+	"stage": "done",
+	"status": "ok",
+	"intent": {
+		"target": "code",
+		"focused": true,
+		"focus": "What does this code do, and how are its parts connected?",
+		"scopeRef": {
+			"kind": "repo",
+			"value": "/Users/subhagho/work/projects/insors/insrc"
+		},
+		"reasoning": "target hinted via slash command (classifier skipped)",
+		"scope": "XL"
+	},
+	"measure": {
+		"source": "named-area",
+		"items": 41943,
+		"files": 4584,
+		"characters": null,
+		"size": "XL",
+		"determined": true,
+		"sizeHint": "M"
+	},
+	"finalReport": {
+		"summary": "Incomplete: 3 incomplete: run context / module.profile [e1] — skipped /Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/chat/__tests__/chat-view-channel.test.ts (the file is in the index and no longer on disk; totalBytes does not count it), /Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/chat/chat-view-channel.ts (the file is in the index and no longer on disk; totalBytes does not count it), /Users/subhagho/work/projects/insors/insrc/daemon-restart.tmp.ts (the file is in the index and no longer on disk; totalBytes does not count it), /Users/subhagho/work/projects/insors/insrc/tmp/pdfs/build_pdf.py (the file is in the index and no longer on disk; totalBytes does not count it) | run context / concept.resolve [e4] — limit of 20 matches reached (229 matches were found and 20 are kept) | run context / doc.mention [e5] — limit of 15 document sections reached (the lookup stops at 15 document sections; how many exist is not known); partly read /Users/subhagho/work/projects/insors/insrc/docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/run.json § run.json (8192 of 22278 characters). 5 failed: run context / symbol.locate [e6] — skipped: placeholder(s) [$e1.profile.exports[0..2]] resolved to empty/undefined against prior outputs. The dependent exploration produced no data for these accessors. | t16 — runtime-threw: code.surface.functional: the module value 'scripts' names the directory '/Users/subhagho/work/projects/insors/insrc/scripts', and no stored source file lies under it in the repo '/Users/subhagho/work/projects/insors/insrc'. | t18 — child-plan-unavailable: child aggregator produced no report | t20 — child-plan-unavailable: child aggregator produced no report | t21 — child-plan-unavailable: child aggregator produced no report. Note: Entry points are recognised by file name, and by a marker in the first 4,096 characters of a file whose content the index stores; the index stores no content for a source file itself, so such a file is recognised by name only. this result holds what the stored code graph has; the graph's own coverage of the code is not established this result holds what the stored code graph has; the graph's own coverage of the code is not established. Directories more than 8 levels below the repository root are not candidates. A document or section longer than 8,192 characters is indexed, and so searched, by its first 8,192 characters only. this result holds what the stored code graph has; the graph's own coverage of the code is not established. A module is a stored module entity in the area, or a directory that directly holds at least one source file the index stores and lies neither in nor under a stored module entity's directory. A directory whose files the index does not hold is not listed. Under a scope of one file or one symbol no directory is listed. this result holds what the stored code graph has; the graph's own coverage of the code is not established. A module is a stored module entity in the area, or a directory that directly holds at least one source file the index stores and lies neither in nor under a stored module entity's directory. A directory whose files the index does not hold is not listed. Under a scope of one file or one symbol no directory is listed. A file whose module is not in the area is not part of the tree, and neither are its imports. An import whose target lies outside the area is not an edge. this result holds what the stored code graph has; the graph's own coverage of the code is not established. The surface lists the functions, methods and classes of every stored source file under the module's directory, including its sub-directories.\nSize: XL, measured from the area the request names: 4,584 files, 41,943 entities. The caller asked for M.\n\nTarget: code, scope XL, on the repo `/Users/subhagho/work/projects/insors/insrc`. The goal was to say what the code does and how its parts connect. The upstream outputs answer this only partially: the module inventory (`modules`) covers the whole repo, but the three other tasks each cover a small corner of it. `entrypoints` returned symbols only from the Python `camon` package and its tests, `functional-surface` profiled only the `site` module, and `module-tree` returned two modules and one edge.\n\nFrom the inventory, the repo is a multi-part monorepo: a main `src/` tree (agent providers, analyze, cli, config, daemon, db, docgen, indexer, mcp, shared, workflow) with a mirrored `out/` tree, two IDE plugins (`jetbrains-plugin`, `vscode-plugin`), a Python package `camon`, and a small `site/js` front end. The only part whose behaviour is grounded in symbols is `camon`: a mitmproxy-addon-based monitor that records AI-agent traffic usage (provider, agent, token usage), stores it, and exposes it through a CLI, a TUI, reports and exports.\n\nHow the parts connect is largely unanswered. The only graph-derived edge is `camon/tests` → `camon/src/camon` (16 imports). No dependency edges, entrypoints or exports were returned for `src/`, `out/`, the plugins or `site`, so any statement about how the main backend, the plugins and `camon` relate would be ungrounded and is omitted.",
+		"findings": [
+			{
+				"title": "Repo layout: main `src/` tree, mirrored `out/` tree, two IDE plugins, a Python package and a site",
+				"detail": "Per `modules`, the repo `/Users/subhagho/work/projects/insors/insrc` contains these module families:\n\n- **`src/`** — the main tree, with `src/agent/providers`, `src/analyze` (classifier, context, executor, explore, orchestrator, planner + templates, runtimes for code/data/docs/generic/infra/shared, summariser), `src/cli` (hooks, panes, services, ui), `src/config`, `src/daemon` (artifacts, db + drivers + converters, tools + builtins), `src/db` (graph, lance), `src/docgen` (extract, render), `src/indexer` (parser, target-resolution), `src/mcp`, `src/shared`, `src/types`, `src/workflow`, `src/bin`, `src/assets/docgen`.\n- **`out/`** — a tree whose directories mirror `src/` (e.g. `out/analyze/explore`, `out/daemon/tools/builtins/git`, `out/workflow/runners/build`). It contains no `__tests__` directories, and lacks some newer `src/` areas such as `docgen`, `workflow/code-review`, `workflow/review`, `workflow/bugfix` and `mcp/review-step`.\n- **`jetbrains-plugin`** — sources under `src/main/kotlin/ai/insors/insrc/jetbrains` (actions, daemon, debug, freshness, host, lifecycle, onboarding, ops, platform, review, settings, steering, ui, workflow) with a matching `src/test/kotlin` tree, plus `build/` outputs.\n- **`vscode-plugin`** — `vscode-plugin/src` (chat, config, daemon, delivery, freshness, hosts, models, onboarding, panels, surfaces, workspace), `vscode-plugin/out`, and indexed third-party code under `vscode-plugin/node_modules/esbuild` and `vscode-plugin/node_modules/marked`.\n- **`camon`** — `camon/src/camon` (15 files) and `camon/tests` (9 files).\n- **`site/js`** (1 file), **`tmp/pdfs`** (1 file) and the repo root (2 files).\n\nThe inventory gives directories and file counts only; it carries no purpose descriptions, so what each `src/` area does is inferred from its name alone.",
+				"sources": [
+					"modules"
+				]
+			},
+			{
+				"title": "`src/daemon/tools/builtins` is a broad set of tool groups",
+				"detail": "Per `modules`, `src/daemon/tools/builtins` has one subdirectory per group: `cloud` (`aws` 14 files, `az` 10, `gcp` 11), `code` (with `migration` and `orm`), `data`, `db`, `docs`, `file` (11), `gh` (8), `git` (24), `graph`, `http`, `k8s`, `notify`, `pkg`, `search` (5), `shell` (6), `ssh`, `test`, `web`. `git` is the largest group. No symbols from these directories were returned, so their individual behaviour is not described.",
+				"sources": [
+					"modules"
+				]
+			},
+			{
+				"title": "`src/mcp` and `src/workflow` are organised as per-step and per-runner modules",
+				"detail": "Per `modules`:\n\n- `src/mcp` has step-style subdirectories: `analyze-step` (+ `phases`), `build-step` (+ `phases`), `code-review-step`, `deploy-step`, `review-step` (+ `phases`), `triage-step` (+ `phases`), `workflow-step` (+ `phases`), plus `docgen`, `guide`, `schema`.\n- `src/workflow` has `amendments`, `artifacts` (companion, format, provenance), `bugfix`, `code-review` (+ `dimensions`, with `diagram/handlers` and `ux`), `config`, `delivery`, `locate`, `review`, `tracker`, `triage`, and `runners` for `brainstorm`, `build`, `define`, `design-epic`, `design-story`, `issue`, `plan`, `stub`, `tracker`.\n- Test weight is concentrated in `src/workflow/__tests__` (56 files), `src/analyze/context/__tests__` (42), `src/daemon/__tests__` (34) and `src/mcp/__tests__` (21).\n\nThe parallel naming suggests each `src/mcp/*-step` module fronts a `src/workflow` area, but no import or call edge in the upstream confirms it.",
+				"sources": [
+					"modules"
+				]
+			},
+			{
+				"title": "`camon`: a mitmproxy-addon monitor for AI-agent traffic and token usage",
+				"detail": "Per `entrypoints`, all returned symbols are in `camon/src/camon` and `camon/tests`. By file:\n\n- `addon_runtime.py` — classes `CamonAddon` and `AddonStorage`; helpers `_provider(host)`, `_agent(user_agent)`, `_usage(content)`, `_default_database_path()`, `_retention_days()`.\n- `extract.py` — `provider_for_host`, `usage_from_json`, `estimate_tokens`, `safe_url_parts`.\n- `attribution.py` — `classify_text(text, rules)` and class `ProcessAttributor`.\n- `models.py` — `Attribution`, `UsageEvent`, `AddonStatus`.\n- `config.py` — `AppConfig`, `AgentRule`, `default_data_dir`.\n- `storage.py` — class `Storage`.\n- `registration.py` — `register_local_addon`, `_register_macos`, `_register_linux`, `_update_macos_program_arguments`, `addon_path`, `addon_mitmdump`, `addon_database`.\n- `runtime.py` — `ProxyState`, `detect_mitmproxy`, `restart_managed`, `_known_service_pid`.\n- `setup.py` — `AgentSetup`, `detect_agents(proxy_url)`, `setup_agent(...)`, `_write_claude_settings`, `_claude_settings_configured`, `launcher_path`, `mitmproxy_ca_cert_path`.\n- `reporting.py` — `render_report(storage, days)` and `export(storage, target, format, days)` with format `json` or `csv`.\n- `tui.py` — class `CamonApp` plus formatting helpers (`_sparkline`, `_format_token_count`, `_format_bytes`, `_format_uptime`).\n- `cli.py` — `main` (with a `--background-color` option) and commands `status`, `register`, `restart`, `report`, `export`.\n\nTest names in `camon/tests` describe the intended behaviour: recording a completed flow without mutating it, writing and rotating per-agent traffic logs, extracting usage without persisting the body, purging data outside a retention window, recording request/session/daily usage, rejecting a non-local agent at registration, rejecting restart of an unmanaged proxy, creating an opt-in proxy launcher, and merging proxy environment into Claude settings.",
+				"sources": [
+					"entrypoints",
+					"modules"
+				]
+			},
+			{
+				"title": "Connections inside `camon`, as far as signatures show them",
+				"detail": "No call graph was returned for `camon`; these links are read from signatures in `entrypoints` only:\n\n- `cli._services()` returns `tuple[AppConfig, Storage]`, so the CLI depends on `config.py` and `storage.py`.\n- `reporting.render_report` and `reporting.export` both take a `Storage`; the CLI has `report` and `export` commands with matching `days` (and `format`) parameters.\n- `runtime.restart_managed(config: AppConfig)` takes the config type; the CLI has a `restart` command.\n- `attribution.classify_text` takes `Iterable[AgentRule]`, tying attribution to `config.py`.\n- `registration.register_local_addon(retention_days)` fans out to `_register_macos` / `_register_linux`, which share the `(addon, retention_days)` shape; the CLI has a `register` command.\n- `addon_runtime.py` carries its own `AddonStorage` class and its own `_provider` / `_usage` helpers alongside `Storage` in `storage.py` and `provider_for_host` / `usage_from_json` in `extract.py`. Whether the addon reuses or duplicates those is not determinable from the upstream.\n\nThe one graph-derived edge, per `module-tree`, is `camon/tests` → `camon/src/camon` via 16 imports.",
+				"sources": [
+					"entrypoints",
+					"module-tree"
+				]
+			},
+			{
+				"title": "`site`: one browser script of page-behaviour initialisers, no exports",
+				"detail": "Per `functional-surface`, the `site` module has an empty `exports` list and 17 internal helpers, all in `site/js/tui.js`. They are initialisers and their nested helpers: `initTheme` (with `currentTheme`, `paintToggle`), `initNav`, `initNavOverflow` (with `closeMenu`, `openMenu`, `layout`, `bar`, `schedule`), `initCopy` (with `done`), `initAnchors`, `initType`, `initTabs` (with `select`, `fromHash`). `modules` lists `site/js` with a single file. Nothing in the upstream links `site` to any other module.",
+				"sources": [
+					"functional-surface",
+					"modules"
+				]
+			},
+			{
+				"title": "Gap: entrypoints cover only `camon`, not the main `src/` tree or the plugins",
+				"detail": "`entrypoints` returned symbols from `camon/src/camon` and `camon/tests` only. Many are private helpers (`_integer`, `_format_bytes`, `_backup`) and test functions, so the list reads as a symbol dump of one package and not a set of real entrypoints. No entrypoint was returned for `src/bin`, `src/daemon`, `src/mcp`, `src/cli`, `jetbrains-plugin` or `vscode-plugin`. What the main backend and the plugins actually do is therefore not grounded in any symbol in this run.",
+				"sources": [
+					"entrypoints",
+					"modules"
+				]
+			},
+			{
+				"title": "Gap: the dependency graph has one edge, so cross-module connections are unanswered",
+				"detail": "`module-tree` returned two modules (`camon/src/camon`, `camon/tests`) and one edge between them, against several hundred modules in `modules`. There are no edges among `src/` modules, none between `src/` and `out/`, and none from `jetbrains-plugin`, `vscode-plugin`, `camon` or `site` to the main tree. The second half of the focus question (how the parts are connected) cannot be answered beyond `camon`'s own test-to-source edge. A rerun scoped to `src/` would be needed for the main backend's topology.",
+				"sources": [
+					"module-tree",
+					"modules"
+				]
+			},
+			{
+				"title": "Gap: functional surface was profiled for `site` only",
+				"detail": "`functional-surface` profiled a single module, `site`, and found no exports. No public surface was returned for any `src/` module, either plugin, or `camon`, so the exported API of the main code is not described here.",
+				"sources": [
+					"functional-surface"
+				]
+			},
+			{
+				"title": "Inventory includes build output and vendored code",
+				"detail": "Per `modules`, the indexed set includes non-source directories: the whole `out/` tree, `vscode-plugin/out`, `jetbrains-plugin/build/reports/tests/test/js`, `jetbrains-plugin/build/resources/main/insrc-review`, `vscode-plugin/node_modules/esbuild` (+ `lib`), `vscode-plugin/node_modules/marked` (`bin`, `lib`, `src`) and `tmp/pdfs`. Module and file counts for the repo are inflated by these, and they should be excluded when reading the inventory as a picture of authored code.",
+				"sources": [
+					"modules"
+				]
+			}
+		],
+		"metadata": {
+			"target": "code",
+			"scope": "XL",
+			"runId": "s2-live-repo-mv1edxtn",
+			"tasksAnalyzed": 4
+		}
+	},
+	"report": {
+		"completeness": {
+			"complete": false,
+			"incomplete": [
+				{
+					"sourceId": "run context / module.profile [e1]",
+					"sourceKind": "lookup",
+					"reason": "skipped /Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/chat/__tests__/chat-view-channel.test.ts (the file is in the index and no longer on disk; totalBytes does not count it), /Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/chat/chat-view-channel.ts (the file is in the index and no longer on disk; totalBytes does not count it), /Users/subhagho/work/projects/insors/insrc/daemon-restart.tmp.ts (the file is in the index and no longer on disk; totalBytes does not count it), /Users/subhagho/work/projects/insors/insrc/tmp/pdfs/build_pdf.py (the file is in the index and no longer on disk; totalBytes does not count it)"
+				},
+				{
+					"sourceId": "run context / concept.resolve [e4]",
+					"sourceKind": "lookup",
+					"reason": "limit of 20 matches reached (229 matches were found and 20 are kept)"
+				},
+				{
+					"sourceId": "run context / doc.mention [e5]",
+					"sourceKind": "lookup",
+					"reason": "limit of 15 document sections reached (the lookup stops at 15 document sections; how many exist is not known); partly read /Users/subhagho/work/projects/insors/insrc/docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/run.json § run.json (8192 of 22278 characters)"
+				}
+			],
+			"failed": [
+				{
+					"sourceId": "run context / symbol.locate [e6]",
+					"sourceKind": "lookup",
+					"reason": "skipped: placeholder(s) [$e1.profile.exports[0..2]] resolved to empty/undefined against prior outputs. The dependent exploration produced no data for these accessors."
+				},
+				{
+					"sourceId": "t16",
+					"sourceKind": "plan-task",
+					"reason": "runtime-threw: code.surface.functional: the module value 'scripts' names the directory '/Users/subhagho/work/projects/insors/insrc/scripts', and no stored source file lies under it in the repo '/Users/subhagho/work/projects/insors/insrc'."
+				},
+				{
+					"sourceId": "t18",
+					"sourceKind": "plan-task",
+					"reason": "child-plan-unavailable: child aggregator produced no report"
+				},
+				{
+					"sourceId": "t20",
+					"sourceKind": "plan-task",
+					"reason": "child-plan-unavailable: child aggregator produced no report"
+				},
+				{
+					"sourceId": "t21",
+					"sourceKind": "plan-task",
+					"reason": "child-plan-unavailable: child aggregator produced no report"
+				}
+			],
+			"basisNotes": [
+				"Entry points are recognised by file name, and by a marker in the first 4,096 characters of a file whose content the index stores; the index stores no content for a source file itself, so such a file is recognised by name only.",
+				"this result holds what the stored code graph has; the graph's own coverage of the code is not established",
+				"this result holds what the stored code graph has; the graph's own coverage of the code is not established. Directories more than 8 levels below the repository root are not candidates.",
+				"A document or section longer than 8,192 characters is indexed, and so searched, by its first 8,192 characters only.",
+				"this result holds what the stored code graph has; the graph's own coverage of the code is not established. A module is a stored module entity in the area, or a directory that directly holds at least one source file the index stores and lies neither in nor under a stored module entity's directory. A directory whose files the index does not hold is not listed. Under a scope of one file or one symbol no directory is listed.",
+				"this result holds what the stored code graph has; the graph's own coverage of the code is not established. A module is a stored module entity in the area, or a directory that directly holds at least one source file the index stores and lies neither in nor under a stored module entity's directory. A directory whose files the index does not hold is not listed. Under a scope of one file or one symbol no directory is listed. A file whose module is not in the area is not part of the tree, and neither are its imports. An import whose target lies outside the area is not an edge.",
+				"this result holds what the stored code graph has; the graph's own coverage of the code is not established. The surface lists the functions, methods and classes of every stored source file under the module's directory, including its sub-directories."
+			]
+		},
+		"measure": {
+			"source": "named-area",
+			"items": 41943,
+			"files": 4584,
+			"characters": null,
+			"size": "XL",
+			"determined": true,
+			"sizeHint": "M"
+		}
+	},
+	"tasksCompleted": 18,
+	"tasksFailed": [
+		{
+			"taskId": "t16",
+			"reason": "runtime-threw: code.surface.functional: the module value 'scripts' names the directory '/Users/subhagho/work/projects/insors/insrc/scripts', and no stored source file lies under it in the repo '/Users/subhagho/work/projects/insors/insrc'."
+		},
+		{
+			"taskId": "t18",
+			"reason": "child-plan-unavailable: child aggregator produced no report"
+		},
+		{
+			"taskId": "t20",
+			"reason": "child-plan-unavailable: child aggregator produced no report"
+		},
+		{
+			"taskId": "t21",
+			"reason": "child-plan-unavailable: child aggregator produced no report"
+		}
+	]
+}

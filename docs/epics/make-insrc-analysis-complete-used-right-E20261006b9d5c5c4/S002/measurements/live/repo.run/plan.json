@@ -1,0 +1,395 @@
+{
+	"planId": "insrc-repo-structural-map-xl",
+	"goal": "Establish what the insrc repo does and how its top-level parts (src, jetbrains-plugin, vscode-plugin, camon, scripts, site) connect.",
+	"target": "code",
+	"scope": "XL",
+	"tasks": [
+		{
+			"taskId": "t01",
+			"template": "code.discovery.modules",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"modules"
+			],
+			"rationale": "Enumerate every source-holding directory of the repo; the bundle profiled only the 8 immediate subdirectories."
+		},
+		{
+			"taskId": "t02",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "The bundle recognised 0 entrypoints at the repo root by file name only; enumerate CLI, RPC and export entrypoints repo-wide."
+		},
+		{
+			"taskId": "t03",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				},
+				"maxDepth": 4
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "The root import graph returned 0 in / 0 out; walk the module-dependency tree to recover edges between the subdirectories."
+		},
+		{
+			"taskId": "t04",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src"
+				},
+				"maxDepth": 5
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "Dependency tree inside src/, the TypeScript core, to show how its internal modules depend on each other."
+		},
+		{
+			"taskId": "t05",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin"
+				},
+				"maxDepth": 8
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "Dependency tree of jetbrains-plugin, whose Kotlin packages (actions, daemon, host, lifecycle, review, settings) sit deep under src/main/kotlin."
+		},
+		{
+			"taskId": "t06",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/vscode-plugin"
+				},
+				"maxDepth": 5
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "Dependency tree of vscode-plugin, which had no live detail in the bundle beyond two stale chat files."
+		},
+		{
+			"taskId": "t07",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/camon"
+				},
+				"maxDepth": 5
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "Dependency tree of camon, the Python package surfaced only through camon/src/camon/__main__.py."
+		},
+		{
+			"taskId": "t08",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "Enumerate entrypoints under src/ (binaries, IPC handlers, MCP tools) that root-level recognition missed."
+		},
+		{
+			"taskId": "t09",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "Confirm or reject the low-confidence candidates composeServerEntry, defaultDaemonEntry and DaemonGateway as real plugin entrypoints."
+		},
+		{
+			"taskId": "t10",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/vscode-plugin"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "Enumerate the VS Code extension's activation and command entrypoints, which the bundle did not surface at all."
+		},
+		{
+			"taskId": "t11",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/camon"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "Confirm camon/src/camon/__main__.py (score 0.17) as the CLI entry and list any other camon entrypoints."
+		},
+		{
+			"taskId": "t12",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "src",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Extract the exported APIs of src/, the core backend, to state what the main codebase does."
+		},
+		{
+			"taskId": "t13",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "jetbrains-plugin",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Extract the jetbrains-plugin surface, including the ProjectContext and DaemonGateway seams named in the HLD."
+		},
+		{
+			"taskId": "t14",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "vscode-plugin",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Extract the vscode-plugin surface to compare how it reaches the daemon against the JetBrains plugin."
+		},
+		{
+			"taskId": "t15",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "camon",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Extract the camon Python package surface; its purpose is not established anywhere in the bundle."
+		},
+		{
+			"taskId": "t16",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "scripts",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Shallow surface of scripts/ to record what build or maintenance tooling it provides to the other parts."
+		},
+		{
+			"taskId": "t17",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "site",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Shallow surface of site/ to establish whether it holds code that connects to the rest or is standalone."
+		},
+		{
+			"taskId": "t18",
+			"template": "code.subrun.deep-dive",
+			"kind": "planner",
+			"params": {
+				"childIntent": {
+					"target": "code",
+					"scope": "L",
+					"focused": true,
+					"focus": "What does src/ do, and how are its modules connected to each other?",
+					"scopeRef": {
+						"kind": "module",
+						"value": "/Users/subhagho/work/projects/insors/insrc/src"
+					},
+					"reasoning": "src/ is the core codebase and too large for a single surface leaf; it needs its own per-module plan."
+				}
+			},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"modules",
+				"module-tree"
+			],
+			"rationale": "Child plan over src/, the largest part, giving per-module summaries and internal connections."
+		},
+		{
+			"taskId": "t19",
+			"template": "code.subrun.deep-dive",
+			"kind": "planner",
+			"params": {
+				"childIntent": {
+					"target": "code",
+					"scope": "M",
+					"focused": true,
+					"focus": "What does the JetBrains plugin do, and how do its packages connect to each other and to the insrc daemon?",
+					"scopeRef": {
+						"kind": "module",
+						"value": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin"
+					},
+					"reasoning": "Eight Kotlin subpackages (actions, daemon, debug, freshness, host, lifecycle, review, settings) deserve per-package analysis."
+				}
+			},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"modules",
+				"module-tree"
+			],
+			"rationale": "Child plan over jetbrains-plugin's eight packages and their link to the daemon through DaemonGateway."
+		},
+		{
+			"taskId": "t20",
+			"template": "code.subrun.deep-dive",
+			"kind": "planner",
+			"params": {
+				"childIntent": {
+					"target": "code",
+					"scope": "M",
+					"focused": true,
+					"focus": "What does the VS Code plugin do, and how does it connect to the insrc daemon and core?",
+					"scopeRef": {
+						"kind": "module",
+						"value": "/Users/subhagho/work/projects/insors/insrc/vscode-plugin"
+					},
+					"reasoning": "The bundle holds no live detail for vscode-plugin, so its structure must be planned from its own discovery."
+				}
+			},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"modules",
+				"module-tree"
+			],
+			"rationale": "Child plan over vscode-plugin, the part with the least coverage in the context bundle."
+		},
+		{
+			"taskId": "t21",
+			"template": "code.subrun.deep-dive",
+			"kind": "planner",
+			"params": {
+				"childIntent": {
+					"target": "code",
+					"scope": "M",
+					"focused": true,
+					"focus": "What does camon do, and how does it relate to the rest of the insrc repository?",
+					"scopeRef": {
+						"kind": "module",
+						"value": "/Users/subhagho/work/projects/insors/insrc/camon"
+					},
+					"reasoning": "camon is a separate Python package whose role and links to the TypeScript and Kotlin parts are unknown."
+				}
+			},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"modules",
+				"module-tree"
+			],
+			"rationale": "Child plan over camon to establish its purpose and whether it shares anything with the other parts."
+		},
+		{
+			"taskId": "t22",
+			"template": "code.aggregate.report",
+			"kind": "leaf",
+			"params": {},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"modules",
+				"entrypoints",
+				"module-tree",
+				"functional-surface"
+			],
+			"rationale": "Stitch discovery, dependency trees, entrypoints and surfaces, alongside the upstream deep-dive outputs, into one repo map."
+		}
+	],
+	"reasoning": "The bundle left both halves of the question open: no purpose statement and an empty root import graph. The plan therefore runs repo-wide discovery (modules, entrypoints, module tree), then repeats module-tree and entrypoint discovery for the four code-bearing parts (src, jetbrains-plugin, vscode-plugin, camon), extracts a functional surface for each of the six code directories, and delegates the four substantial parts to child plans. design/ and docs/ are omitted because they hold documents, not code, and no doc-constraint task exists upstream for an adherence check. The aggregator no longer lists 'report' in consumes, since it produces that name itself."
+}

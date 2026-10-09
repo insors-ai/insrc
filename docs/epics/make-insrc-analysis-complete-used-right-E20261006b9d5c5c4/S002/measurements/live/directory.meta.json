@@ -1,0 +1,18 @@
+{
+  "label": "directory",
+  "runId": "s2-live-directory-mv1ebo2b",
+  "params": {
+    "runId": "s2-live-directory-mv1ebo2b",
+    "userPrompt": "What does this code do, and how are its parts connected?",
+    "scopeRef": {
+      "kind": "module",
+      "value": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier"
+    },
+    "targetHint": "code",
+    "scopeHint": "M"
+  },
+  "startedAt": "2026-10-09T20:06:27.731Z",
+  "endedAt": "2026-10-09T20:07:55.044Z",
+  "seconds": 87,
+  "frames": 17
+}

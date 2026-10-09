@@ -1,0 +1,11 @@
+{
+	"taskId": "t20",
+	"template": "code.subrun.deep-dive",
+	"kind": "planner",
+	"produces": [
+		"report"
+	],
+	"status": "failed",
+	"error": "child-plan-unavailable: child aggregator produced no report",
+	"completedAt": "2026-10-09T20:15:35.289Z"
+}

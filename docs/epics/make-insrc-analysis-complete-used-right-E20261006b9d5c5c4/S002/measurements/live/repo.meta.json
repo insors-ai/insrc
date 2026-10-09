@@ -1,0 +1,18 @@
+{
+  "label": "repo",
+  "runId": "s2-live-repo-mv1edxtn",
+  "params": {
+    "runId": "s2-live-repo-mv1edxtn",
+    "userPrompt": "What does this code do, and how are its parts connected?",
+    "scopeRef": {
+      "kind": "repo",
+      "value": "/Users/subhagho/work/projects/insors/insrc"
+    },
+    "targetHint": "code",
+    "scopeHint": "M"
+  },
+  "startedAt": "2026-10-09T20:08:13.691Z",
+  "endedAt": "2026-10-09T20:16:38.014Z",
+  "seconds": 504,
+  "frames": 157
+}

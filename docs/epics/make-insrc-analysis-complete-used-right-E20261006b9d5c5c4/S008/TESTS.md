@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -129,3 +129,63 @@ Run at 2026-10-09T13:22:16.899Z on commit `5ece4484`. Tests check: **passed**. 6
 | `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 5 | 0.6 s |  |
 | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` | 0 | 7 | 3.5 s |  |
 | `src/analyze/runtimes/code/__tests__/scope-area.test.ts` | 0 | 2 | 1.6 s |  |
+
+## t4
+
+Run at 2026-10-09T13:31:43.007Z on commit `ba4b5014`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the functional-surface task given a directory path returns the exports and helpers of every source file under it, including sub-directories, and names the directory in its output (mutation: require a stored module entity, as before)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the functional-surface task given a directory path returns the exports and helpers of every source file under it, including sub-directories, and names the directory in its output (mutation: require a stored module entity, as before) | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+
+**integration: the functional-surface task given a directory that holds source only in its sub-directories returns their surface**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the functional-surface task given a directory that holds source only in its sub-directories returns their surface | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+
+**integration: the functional-surface task given a value that names nothing fails with a reason that says no stored source file lies under it, and the plan walk records the task as failed, not as an empty module**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the functional-surface task given a value that names nothing fails with a reason that says no stored source file lies under it, and the plan walk records the task as failed, not as an empty module | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+
+**integration: a stored module entity's id returns the surface it returned before under every kind of scope and resolves no scope: with the scope function's readers set to throw the id still answers and a directory path fails (mutation: resolve the scope before the id is looked up)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a stored module entity's id returns the surface it returned before under every kind of scope and resolves no scope: with the scope function's readers set to throw the id still answers and a directory path fails (mutation: resolve the scope before the id is looked up) | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+
+**integration: a functional-surface task that names a directory outside the area of a module scope is refused, and a directory path under a file scope or a symbol scope is refused (mutation: test a directory against the area with the entity predicate)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a functional-surface task that names a directory outside the area of a module scope is refused, and a directory path under a file scope or a symbol scope is refused (mutation: test a directory against the area with the entity predicate) | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+
+**integration: a table test over every registered plan-task runtime still finds a completeness record on each result, with the functional-surface task given a directory path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a table test over every registered plan-task runtime still finds a completeness record on each result, with the functional-surface task given a directory path | `src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts` |
+
+**unit: the source scan asserts that surface-functional.ts resolves the run's scope through the one scope function for a directory path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the source scan asserts that surface-functional.ts resolves the run's scope through the one scope function for a directory path | `src/analyze/runtimes/__tests__/scope-sources.test.ts` |
+
+**integration: the gated test of an unknown module value fails with the message that no stored source file lies under it**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an unknown module value fails with the message that no stored source file lies under it | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts` | 0 | 7 | 1.9 s |  |
+| `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 7 | 0.4 s |  |
+| `src/analyze/runtimes/code/__tests__/module-directories.test.ts` | 0 | 13 | 2 s |  |

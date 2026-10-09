@@ -1533,7 +1533,7 @@ function loadPlace(opts: { throwOnCall?: number | undefined; getElementById?: ((
   const make = new Function('document', `${DOCS_FR_SOURCE}; return placeFunctionalRequirements;`);
   return {
     place: make(doc) as (b: unknown, r: unknown, s: unknown, d: boolean) =>
-      { placed: string; degradation?: { degraded: boolean; notice: string } },
+      { placed: string; degradation?: { degraded: boolean; notice: string } | undefined },
     made,
   };
 }
@@ -4328,7 +4328,7 @@ test('t2: each of the FOUR real ledger uxDefinitions renders COMPLETELY', async 
     // record rather than from the output, so a renderer that silently skipped a
     // branch would come up short rather than merely look plausible.
     const countRecord = (list: readonly unknown[]): number => list.reduce<number>((n, e) => {
-      const o = e as { type?: string; items?: unknown; columns?: unknown };
+      const o = e as { type?: string | undefined; items?: unknown; columns?: unknown };
       const kids = o.type === 'ColumnSet' ? o.columns : o.items;
       return n + 1 + (Array.isArray(kids) ? countRecord(kids) : 0);
     }, 0);

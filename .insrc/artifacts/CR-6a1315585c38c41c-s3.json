@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791538382981-83jelt",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T09:33:02.981Z",
+    "model": "claude:opus",
+    "elapsedMs": 85516,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s3",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s3",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-model.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+        "vscode-plugin/src/delivery/board-host.ts",
+        "vscode-plugin/src/delivery/board-model.ts",
+        "vscode-plugin/src/delivery/board-protocol.ts",
+        "vscode-plugin/src/delivery/board-state.ts",
+        "vscode-plugin/src/delivery/board-views.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-protocol.ts:107",
+            "message": "EpicRollupViewModel (line 107) and IssueViewModel (line 137) each have an extra `scopeOptions` field that the approved interfaces don't list. buildEpicRollup and buildIssueView fill it from scopeOptionsOf. The change only adds a field, which keeps the scope control current on the Epics and Issues tabs. Even so, the shapes no longer match the LLD exactly, so the LLD's interface sketch should be amended to record the field.",
+            "expectationRef": "PLAN t1 acceptance check: 'EpicRollupViewModel and IssueViewModel match the LLD's interfaces'; LLD contractDetails.api EpicRollupViewModel / IssueViewModel signatures"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-views.ts:1",
+            "message": "The graph grounding has no test edges for any source symbol in board-host.ts, board-model.ts, board-protocol.ts, board-state.ts or board-views.ts. Every testsReaching list is empty except for test-file helpers, so the grounding cannot show coverage on its own. I checked coverage directly instead, and nothing is missing. All 9 promised tests are in the test files: board-model.test.ts:195, board-views.test.ts:35/64/99/131/156 and board-host.test.ts:462/494/509. The tests import the changed entry points directly: buildEpicRollup, buildIssueView, buildBoardViewModel, selectMatches, showMore, unknownStages, placeableCount, createDeliveryBoardHost, renderBoardDocument and parseBoardUpMessage. The internal helpers are reached through those. Running `npx tsx --test 'src/delivery/__tests__/*.test.ts'` gave 40 tests, 40 passed, 0 failed. There is no build record, so this pass result comes from my own run, not from the build. This is a note about the grounding, not a coverage gap.",
+            "expectationRef": "graph testsReaching grounding (hollow for changed source symbols)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

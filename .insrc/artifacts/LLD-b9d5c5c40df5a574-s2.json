@@ -235,6 +235,11 @@
       "reviewedAt": "2026-10-09T15:46:01.519Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-09T16:10:55.869Z",
+    "reviewOverride": {
+      "reason": "Stakeholder's decision of 2026-10-09 (\"B. Approve by override now\"), after five daemon reviews. The review stamp is the fifth review's block (2 medium, 0 high, 14 premises hold): both findings (a pure rule from a resolved scope to a data scope; every place the classifier names a size) were addressed in the design at cc91cf72 and were not reviewed again. The four earlier reviews' findings (1 high and 13 medium in all) were each addressed and held in the following review.",
+      "at": "2026-10-09T16:10:55.868Z"
     }
   },
   "body": {
@@ -392,7 +397,7 @@
           "internal": "Private implementation of s8: The code tasks of a broad analysis work on a repository whose graph has no modules for its directories"
         }
       ],
-      "rolloutPhase": "Phase D \u2014 measured sizing",
+      "rolloutPhase": "Phase D — measured sizing",
       "nonFunctional": {
         "performance": "A request small enough for one pass makes the same model calls as today, and one fewer on the plan tree, where the model call that picked a size is replaced by a count from the graph store. A request handled in parts makes one call per part plus the combination, serially; that time is accepted because accuracy comes before cost. After the limits are removed, a complete text search over a large repository is the cost of a text lookup.",
         "observability": "Every answer on both paths states its completeness, its measured size and counts, and its handling method and part count; each lookup and plan-task result states its own completeness. A failed lookup, part or answer-writing step carries its reason.",

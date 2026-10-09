@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -86,3 +86,46 @@ Run at 2026-10-09T13:13:50.489Z on commit `5fdce3d2`. Tests check: **passed**. 5
 | `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 5 | 0.4 s |  |
 | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` | 0 | 3 | 0.7 s |  |
 | `src/analyze/runtimes/code/__tests__/scope-area.test.ts` | 0 | 2 | 0.9 s |  |
+
+## t3
+
+Run at 2026-10-09T13:22:16.899Z on commit `5ece4484`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: on the same graph the module tree has a node per source directory and an edge for an import between two directories, and none for an import inside one**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | on the same graph the module tree has a node per source directory and an edge for an import between two directories, and none for an import inside one | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+
+**integration: with two stored module entities and source in a sub-directory of the first, the tree has the two nodes and the one edge between them with its count, and the sub-directory is not a node (mutation: make a directory module of the sub-directory)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with two stored module entities and source in a sub-directory of the first, the tree has the two nodes and the one edge between them with its count, and the sub-directory is not a node (mutation: make a directory module of the sub-directory) | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+
+**integration: under a module scope the tree keeps to the area, a file whose owning stored module lies above the area is left out, and under a file scope on a source file and a symbol scope the tree is empty**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | under a module scope the tree keeps to the area, a file whose owning stored module lies above the area is left out, and under a file scope on a source file and a symbol scope the tree is empty | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+| pass | a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity | `src/analyze/runtimes/code/__tests__/scope-area.test.ts` |
+
+**unit: the source scan asserts the new form for structure-module-tree.ts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time) | `src/analyze/runtimes/__tests__/scope-sources.test.ts` |
+
+**integration: the gated test of a repository with no module entity and one source file gives one node '.' and no edge**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a repository with no module entity and one source file gives one node '.' and no edge | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 5 | 0.6 s |  |
+| `src/analyze/runtimes/code/__tests__/module-directories.test.ts` | 0 | 7 | 3.5 s |  |
+| `src/analyze/runtimes/code/__tests__/scope-area.test.ts` | 0 | 2 | 1.6 s |  |

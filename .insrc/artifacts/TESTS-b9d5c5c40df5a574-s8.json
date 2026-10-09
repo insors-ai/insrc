@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s8",
     "createdAt": "2026-10-09T13:06:19.852Z",
-    "updatedAt": "2026-10-09T13:13:50.489Z"
+    "updatedAt": "2026-10-09T13:22:16.899Z"
   },
   "body": {
     "tasks": [
@@ -243,6 +243,169 @@
             "exitCode": 0,
             "timedOut": false,
             "durationMs": 863,
+            "titles": [
+              {
+                "title": "a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity",
+                "result": "pass"
+              },
+              {
+                "title": "the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "5ece4484",
+        "ranAt": "2026-10-09T13:22:16.899Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "on the same graph the module tree has a node per source directory and an edge for an import between two directories, and none for an import inside one",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/code/__tests__/module-directories.test.ts",
+                "title": "on the same graph the module tree has a node per source directory and an edge for an import between two directories, and none for an import inside one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "with two stored module entities and source in a sub-directory of the first, the tree has the two nodes and the one edge between them with its count, and the sub-directory is not a node (mutation: make a directory module of the sub-directory)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/code/__tests__/module-directories.test.ts",
+                "title": "with two stored module entities and source in a sub-directory of the first, the tree has the two nodes and the one edge between them with its count, and the sub-directory is not a node (mutation: make a directory module of the sub-directory)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "under a module scope the tree keeps to the area, a file whose owning stored module lies above the area is left out, and under a file scope on a source file and a symbol scope the tree is empty",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/code/__tests__/module-directories.test.ts",
+                "title": "under a module scope the tree keeps to the area, a file whose owning stored module lies above the area is left out, and under a file scope on a source file and a symbol scope the tree is empty",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+                "title": "a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the source scan asserts the new form for structure-module-tree.ts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+                "title": "the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the gated test of a repository with no module entity and one source file gives one node '.' and no edge",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/code/__tests__/module-directories.test.ts",
+                "title": "a repository with no module entity and one source file gives one node '.' and no edge",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 552,
+            "titles": [
+              {
+                "title": "the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time)",
+                "result": "pass"
+              },
+              {
+                "title": "no docs runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the unrelated resolveRepoPath under src/mcp is untouched",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/code/__tests__/module-directories.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3512,
+            "titles": [
+              {
+                "title": "on a graph with no module entity for the repository's directories, the module list returns the directories that hold source, and its record's rule says what a module is (mutation: keep only entities of kind 'module', as before)",
+                "result": "pass"
+              },
+              {
+                "title": "the module list keeps a stored module entity with the fields it had and lists no directory in or under its directory; a file scope that names a module entity's own file returns that module; a run scoped under a stored module's directory lists none (mutation: make a directory module of the sub-directory)",
+                "result": "pass"
+              },
+              {
+                "title": "under a module scope the module list keeps to the area, and under a file scope on a source file and a symbol scope it is empty",
+                "result": "pass"
+              },
+              {
+                "title": "on the same graph the module tree has a node per source directory and an edge for an import between two directories, and none for an import inside one",
+                "result": "pass"
+              },
+              {
+                "title": "with two stored module entities and source in a sub-directory of the first, the tree has the two nodes and the one edge between them with its count, and the sub-directory is not a node (mutation: make a directory module of the sub-directory)",
+                "result": "pass"
+              },
+              {
+                "title": "under a module scope the tree keeps to the area, a file whose owning stored module lies above the area is left out, and under a file scope on a source file and a symbol scope the tree is empty",
+                "result": "pass"
+              },
+              {
+                "title": "a repository with no module entity and one source file gives one node '.' and no edge",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1599,
             "titles": [
               {
                 "title": "a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity",

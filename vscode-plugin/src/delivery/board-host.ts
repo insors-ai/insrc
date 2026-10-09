@@ -164,7 +164,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `details.appendChild(button('Close details',function(){send({type:'close-details'});}));`,
   `if(m.stageLabel!==null)details.appendChild(make('p','Stage: '+m.stageLabel,'details-stage'));`,
   `if(m.stageReason!==null)details.appendChild(make('p',m.stageReason.text+(m.stageReason.artifactIds.length>0?' ('+m.stageReason.artifactIds.join(', ')+')':''),'details-reason'));`,
-  `if(m.conflict!==null)details.appendChild(make('p',m.conflict,'details-conflict'));`,
+  `if(m.conflict!==null){const box=make('div',undefined,'details-conflict');box.setAttribute('role','note');box.appendChild(make('strong',m.conflict.headline));box.appendChild(make('p',m.conflict.text));details.appendChild(box);}`,
   `if(m.tasks.length>0||m.taskCounts!==null){details.appendChild(make('h3','Tasks'));`,
   `if(m.taskCounts!==null){const k=m.taskCounts;details.appendChild(make('p',k.passed+' passed, '+k.failed+' failed, '+k.unrecorded+' unrecorded, '+k.unplanned+' unplanned','task-counts'));}`,
   `const ul=make('ul');ul.setAttribute('aria-label','Tasks');`,

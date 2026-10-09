@@ -99,13 +99,13 @@ test('an approved build with failed tasks shows the approval, the failed rows an
     evidence: [ev('BUILD-x', 'BUILD')], conflict: { failedTaskItemIds: ['E1:S001:T002'], storyLevelFailed: false } };
   const snap = snapshot([...base.items.filter(i => i.id !== 'E1:S001'), story]);
   const d = buildItemDetails(snap, 'E1:S001', NONE, null, DISPLAY_LABELS)!;
-  assert.equal(d.conflict, 'The build is approved while 1 task result failed (Builder).');
+  assert.deepEqual(d.conflict, { headline: 'Two records disagree', text: 'The build is approved while 1 task result failed (Builder).' });
   assert.deepEqual(d.evidence.map(e => [e.artifactId, e.kindLabel, e.approvalLabel]), [['BUILD-x', 'BUILD', 'Approved']]);
   assert.deepEqual(d.tasks.filter(t => t.resultLabel === 'Failed').map(t => t.title), ['Builder']);
 
   const both = { ...story, conflict: { failedTaskItemIds: ['E1:S001:T002', 'E1:S001:T003'], storyLevelFailed: true } };
   const snap2 = snapshot([...base.items.filter(i => i.id !== 'E1:S001'), both]);
-  assert.equal(buildItemDetails(snap2, 'E1:S001', NONE, null, DISPLAY_LABELS)!.conflict,
+  assert.equal(buildItemDetails(snap2, 'E1:S001', NONE, null, DISPLAY_LABELS)!.conflict?.text,
     'The build is approved while 2 task results failed (Builder, Host) and the story-level result failed.');
 });
 
@@ -144,4 +144,74 @@ test('a code review with no build keeps its stage, lists the review-without-buil
   const opened = { artifactId: 'CR-x', text: '# CR' };
   assert.deepEqual(buildItemDetails(snap, 'S1', NONE, opened, DISPLAY_LABELS)!.openedRecord, opened);
   assert.equal(buildItemDetails(snap, 'S1', NONE, { artifactId: 'BUILD-y', text: 'x' }, DISPLAY_LABELS)!.openedRecord, null);
+});
+
+/** A story on the given route with the given evidence; its stage carries the route. */
+function routed(id: string, route: string, evidence: readonly DeliveryEvidenceEntry[], over: Record<string, unknown> = {}) {
+  const base = item({ id, stage: 'design-plan', evidence: evidence as never, ...over });
+  return { ...base, stage: { ...base.stage!, route } } as typeof base;
+}
+const chainOf = (snap: ReturnType<typeof snapshot>, id: string) =>
+  buildItemDetails(snap, id, NONE, null, DISPLAY_LABELS)!.chain.map(r => [r.kind, r.status === 'recorded' ? r.artifactId : r.label]);
+
+test('chain rows per route \u2014 full-chain story shows DEF/HLD from its epic plus LLD/PLAN/BUILD; small story has no PLAN row; small-bugfix has ISSUE and BUILD only; trivial has BUILD only; unknown lists recorded kinds only; a missing expected kind is \'Not recorded\'; two BUILDs give two rows', () => {
+  const snap = snapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Epic', evidence: [ev('DEF-e', 'DEF'), ev('HLD-e', 'HLD')] as never }),
+    routed('E1:S001', 'full-chain', [ev('LLD-a', 'LLD'), ev('PLAN-a', 'PLAN', { approval: { state: 'pending', at: null } })], { parentId: 'E1' }),
+    routed('F1', 'feature', [ev('LLD-f', 'LLD')], { standalone: true }),
+    routed('SM1', 'small', [ev('LLD-s', 'LLD')], { standalone: true }),
+    routed('SB1', 'small-bugfix', [ev('ISSUE-b', 'ISSUE')], { kind: 'issue', standalone: true }),
+    routed('ZB1', 'sized-bugfix', [ev('ISSUE-z', 'ISSUE'), ev('LLD-z', 'LLD')], { kind: 'issue', standalone: true }),
+    routed('TR1', 'trivial', [ev('BUILD-t2', 'BUILD'), ev('BUILD-t1', 'BUILD')], { standalone: true }),
+    routed('UN1', 'unknown', [ev('PLAN-u', 'PLAN')], { standalone: true }),
+  ]);
+  assert.deepEqual(chainOf(snap, 'E1:S001'), [['DEF', 'DEF-e'], ['HLD', 'HLD-e'], ['LLD', 'LLD-a'], ['PLAN', 'PLAN-a'], ['BUILD', 'Not recorded']],
+    "DEF and HLD come from the epic's evidence; a missing BUILD is Not recorded");
+  const full = buildItemDetails(snap, 'E1:S001', NONE, null, DISPLAY_LABELS)!.chain;
+  assert.deepEqual(full.map(r => [r.label, r.tone]), [['Approved', 'success'], ['Approved', 'success'], ['Approved', 'success'], ['Pending', 'warning'], ['Not recorded', 'neutral']]);
+  assert.deepEqual(chainOf(snap, 'F1'), [['LLD', 'LLD-f'], ['PLAN', 'Not recorded'], ['BUILD', 'Not recorded']]);
+  assert.deepEqual(chainOf(snap, 'SM1'), [['LLD', 'LLD-s'], ['BUILD', 'Not recorded']], 'a small story has no PLAN row');
+  assert.deepEqual(chainOf(snap, 'SB1'), [['ISSUE', 'ISSUE-b'], ['BUILD', 'Not recorded']], 'a small bugfix has ISSUE and BUILD only');
+  assert.deepEqual(chainOf(snap, 'ZB1'), [['ISSUE', 'ISSUE-z'], ['LLD', 'LLD-z'], ['PLAN', 'Not recorded'], ['BUILD', 'Not recorded']]);
+  assert.deepEqual(chainOf(snap, 'TR1'), [['BUILD', 'BUILD-t1'], ['BUILD', 'BUILD-t2']], 'trivial: BUILD only, two BUILDs give two rows in artifactId order');
+  assert.deepEqual(chainOf(snap, 'UN1'), [['PLAN', 'PLAN-u']], 'unknown lists recorded kinds only and never claims a record is missing');
+});
+
+test('a story with CR, SPEC, EXT and AMD evidence gets a chain without those kinds, they remain in Records, and buildItemDetails does not throw', () => {
+  const snap = snapshot([routed('S1', 'full-chain', [
+    ev('AMD-x', 'AMD'), ev('CR-x', 'CR'), ev('EXT-x', 'EXT'), ev('LLD-x', 'LLD'), ev('SPEC-x', 'SPEC'),
+  ], { standalone: true })]);
+  const d = buildItemDetails(snap, 'S1', NONE, null, DISPLAY_LABELS)!;
+  assert.deepEqual(d.chain.map(r => r.kind), ['DEF', 'HLD', 'LLD', 'PLAN', 'BUILD']);
+  assert.deepEqual(d.chain.filter(r => r.status === 'recorded').map(r => r.artifactId), ['LLD-x']);
+  assert.deepEqual(d.evidence.map(e => e.artifactId), ['AMD-x', 'CR-x', 'EXT-x', 'LLD-x', 'SPEC-x'], 'every record stays in Records');
+});
+
+test('conflict is { headline: \'Two records disagree\', text } exactly when item.conflict is set', () => {
+  const snap = snapshot([
+    item({ id: 'S1', stage: 'complete', conflict: { failedTaskItemIds: [], storyLevelFailed: true } as never }),
+    item({ id: 'S2', stage: 'complete' }),
+  ]);
+  assert.deepEqual(buildItemDetails(snap, 'S1', NONE, null, DISPLAY_LABELS)!.conflict,
+    { headline: 'Two records disagree', text: 'The build is approved while the story-level result failed.' });
+  assert.equal(buildItemDetails(snap, 'S2', NONE, null, DISPLAY_LABELS)!.conflict, null);
+});
+
+test('kicker, chips and TaskRowView.resultTone', () => {
+  const base = taskedSnapshot();
+  const story = { ...base.items.find(i => i.id === 'E1:S001')!, id: 'E20261009abcdef01:S001' };
+  const snap = snapshot([...base.items.filter(i => i.id !== 'E1:S001'), story,
+    item({ id: 'E20261009abcdef01', kind: 'epic', title: 'Epic' })]);
+  const d = buildItemDetails(snap, 'E20261009abcdef01:S001', NONE, null, DISPLAY_LABELS)!;
+  assert.equal(d.kicker, 'STORY \u00b7 ABCDEF01 / S001');
+  assert.deepEqual(d.chips.slice(0, 2), [
+    { kind: 'stage', label: 'Build recorded', tone: 'neutral' },
+    { kind: 'tasks', label: '1/3 tasks passed', tone: 'danger' },
+  ], 'the stage pill, then the task summary (danger while a task failed)');
+  assert.deepEqual(d.chips.slice(2).map(c => c.label), ['Validation failed'], 'then the card badges');
+  assert.deepEqual(d.tasks.map(t => [t.resultLabel, t.resultTone]), [
+    ['Passed', 'success'], ['Failed', 'danger'], ['Unrecorded', 'neutral'], ['Unplanned', 'neutral'],
+  ]);
+  assert.equal(buildItemDetails(snap, 'E20261009abcdef01', NONE, null, DISPLAY_LABELS)!.kicker, 'EPIC \u00b7 ABCDEF01');
+  assert.deepEqual(buildItemDetails(snap, 'E20261009abcdef01', NONE, null, DISPLAY_LABELS)!.chips, [], 'an epic has no stage, tasks or badges');
 });

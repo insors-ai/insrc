@@ -41,7 +41,8 @@ export interface ItemListEntry {
 
 /** One text-labelled signal on a card (sc5); colour comes from tone but the label always carries the meaning. */
 export interface BadgeView {
-  readonly kind: 'approval' | 'review' | 'validation' | 'conflict' | 'attention' | 'notice';
+  /** 'stage' and 'tasks' appear only among the details chips. */
+  readonly kind: 'approval' | 'review' | 'validation' | 'conflict' | 'attention' | 'notice' | 'stage' | 'tasks';
   /** Text from sc4; always present. */
   readonly label: string;
   readonly tone: 'neutral' | 'warning' | 'danger' | 'success';
@@ -151,6 +152,23 @@ export interface TaskRowView {
   /** From the story's PLAN, read through workflow.deliveryEvidence; null when no PLAN or it could not be read. */
   readonly dependsOn: readonly string[] | null;
   readonly acceptanceChecks: readonly string[] | null;
+  /** Passed success, Failed danger, Unrecorded and Unplanned neutral. */
+  readonly resultTone: BadgeView['tone'];
+}
+
+/**
+ * One row of the selected item's artifact chain (s4): a recorded DEF, HLD, ISSUE, LLD, PLAN or BUILD, or a kind the
+ * item's route expects that has no record. Records of any other kind are not chain rows; they stay in the evidence.
+ */
+export interface ChainRowView {
+  readonly kind: 'DEF' | 'HLD' | 'ISSUE' | 'LLD' | 'PLAN' | 'BUILD';
+  readonly status: 'recorded' | 'not-recorded';
+  readonly artifactId: string | null;
+  /** The approval label for a recorded row; the not-recorded label otherwise. */
+  readonly label: string;
+  readonly tone: BadgeView['tone'];
+  /** The review label, when the record carries a review. */
+  readonly note: string | null;
 }
 
 /** One evidence record of the selected item (s4), and where opening it goes. */
@@ -166,12 +184,19 @@ export interface EvidenceRowView {
 /** The details of the selected item (s4, sc6), built from the shown snapshot alone. */
 export interface ItemDetailsViewModel {
   readonly itemId: string;
+  /** '<KIND> · <compact id>', e.g. 'STORY · ABCDEF01 / S001'. */
+  readonly kicker: string;
   readonly title: string;
   readonly stageLabel: string | null;
   readonly stageReason: { readonly text: string; readonly artifactIds: readonly string[] } | null;
+  /** The stage, the task summary and the item's card badges, in that order. */
+  readonly chips: readonly BadgeView[];
+  /** DEF, HLD, ISSUE, LLD, PLAN, BUILD in that order, as the item's route expects or records them. */
+  readonly chain: readonly ChainRowView[];
   readonly tasks: readonly TaskRowView[];
   readonly taskCounts: { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number } | null;
-  readonly conflict: string | null;
+  /** Set exactly when the daemon reports a validation conflict. */
+  readonly conflict: { readonly headline: string; readonly text: string } | null;
   readonly evidence: readonly EvidenceRowView[];
   readonly notices: readonly string[];
   readonly linked: readonly { readonly itemId: string; readonly title: string; readonly relation: 'parent' | 'child' | 'corrects' }[];

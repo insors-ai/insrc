@@ -28,6 +28,12 @@ export interface DisplayLabels {
   readonly approval: Readonly<Record<ApprovalState, string>>;
   readonly reviewVerdict: Readonly<Record<ReviewVerdict, string>>;
   readonly unplanned: string;
+  /** The artifact chain's row for an expected record that does not exist. */
+  readonly chain: { readonly notRecorded: string };
+  /** The heading of the details' validation-conflict warning. */
+  readonly conflictHeadline: string;
+  /** The title of the panel shown when a view's selection matches nothing. */
+  readonly noMatchesTitle: string;
 }
 
 /** The six stages in workflow order, the order the board shows its columns. */
@@ -86,4 +92,7 @@ export const DISPLAY_LABELS: DisplayLabels = {
     'block': 'Review blocked',
   },
   unplanned: 'Unplanned',
+  chain: { notRecorded: 'Not recorded' },
+  conflictHeadline: 'Two records disagree',
+  noMatchesTitle: 'Nothing matches this view',
 };

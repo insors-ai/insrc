@@ -35,7 +35,7 @@ export function showMore(paging: BoardPaging, stage: DeliveryStage): BoardPaging
 const KNOWN_STAGES: ReadonlySet<string> = new Set(STAGE_ORDER);
 
 /** A story or issue: the kinds the daemon assigns a stage to. */
-function isCardKind(item: DeliveryItemView): item is DeliveryItemView & { readonly kind: 'story' | 'issue' } {
+export function isCardKind(item: DeliveryItemView): item is DeliveryItemView & { readonly kind: 'story' | 'issue' } {
   return item.kind === 'story' || item.kind === 'issue';
 }
 
@@ -90,7 +90,7 @@ function matchesSearch(item: DeliveryItemView, epic: DeliveryItemView | null, ne
   return haystacks.some(h => h.toLowerCase().includes(needle));
 }
 
-type CardItem = DeliveryItemView & { readonly kind: 'story' | 'issue' };
+export type CardItem = DeliveryItemView & { readonly kind: 'story' | 'issue' };
 type Tone = BadgeView['tone'];
 
 const APPROVAL_RANK = { rejected: 0, pending: 1, approved: 2 } as const;
@@ -111,7 +111,7 @@ const isAttentionReason = (r: string, labels: DisplayLabels): r is AttentionReas
  * attention, notice. Each reads a published field only; a badge whose label is
  * already on the card is dropped.
  */
-function badgesOf(item: CardItem, labels: DisplayLabels): readonly BadgeView[] {
+export function badgesOf(item: CardItem, labels: DisplayLabels): readonly BadgeView[] {
   const out: BadgeView[] = [];
   const add = (kind: BadgeView['kind'], label: string, tone: Tone): void => {
     if (!out.some(b => b.label === label)) out.push({ kind, label, tone });
@@ -177,7 +177,7 @@ export function compactIdOf(id: string): string {
 }
 
 /** The recorded task results as 'n/N tasks passed'; unplanned tasks are not counted, and no recorded task gives null. */
-function taskSummaryOf(item: DeliveryItemView): CardView['taskSummary'] {
+export function taskSummaryOf(item: DeliveryItemView): CardView['taskSummary'] {
   const v = item.validation;
   if (v === null) return null;
   const total = v.passed + v.failed + v.unrecorded;

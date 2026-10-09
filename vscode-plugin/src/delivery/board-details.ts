@@ -16,8 +16,8 @@
 
 import type { DeliveryEvidenceView, DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
 import type { DisplayLabels } from './labels.js';
-import type { EvidenceRowView, ItemDetailsViewModel, TaskRowView } from './board-protocol.js';
-import { indexItems, titleOf, type ItemIndex } from './board-model.js';
+import type { BadgeView, ChainRowView, EvidenceRowView, ItemDetailsViewModel, TaskRowView } from './board-protocol.js';
+import { badgesOf, compactIdOf, indexItems, isCardKind, taskSummaryOf, titleOf, type ItemIndex } from './board-model.js';
 
 export interface PlanTaskView {
   readonly id: string;
@@ -53,6 +53,7 @@ function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, label
       title: taskItem?.title ?? null,
       resultLabel: t.planned ? labelOf(labels.taskResult, t.result) : labels.unplanned,
       planned: t.planned,
+      resultTone: !t.planned ? 'neutral' : t.result === 'passed' ? 'success' : t.result === 'failed' ? 'danger' : 'neutral',
       dependsOn: planTask === undefined ? null : planTask.dependsOn.map(d => {
         const dep = itemForPlanId(d);
         return dep === undefined ? d : titleOf(dep);
@@ -92,6 +93,74 @@ function evidenceRow(entry: DeliveryEvidenceView, labels: DisplayLabels): Eviden
   };
 }
 
+type ChainKind = ChainRowView['kind'];
+type DeliveryRoute = NonNullable<DeliveryItemView['stage']>['route'];
+
+/** The chain's kinds, in the order they are shown. */
+const CHAIN_ORDER: readonly ChainKind[] = ['DEF', 'HLD', 'ISSUE', 'LLD', 'PLAN', 'BUILD'];
+
+/** The records each route expects; 'unknown' expects none, so it never claims a record is missing. */
+const EXPECTED_BY_ROUTE: Readonly<Record<DeliveryRoute, readonly ChainKind[]>> = {
+  'full-chain':   ['DEF', 'HLD', 'LLD', 'PLAN', 'BUILD'],
+  'feature':      ['LLD', 'PLAN', 'BUILD'],
+  'small':        ['LLD', 'BUILD'],
+  'small-bugfix': ['ISSUE', 'BUILD'],
+  'sized-bugfix': ['ISSUE', 'LLD', 'PLAN', 'BUILD'],
+  'trivial':      ['BUILD'],
+  'unknown':      [],
+};
+
+const isChainKind = (kind: string): kind is ChainKind => (CHAIN_ORDER as readonly string[]).includes(kind);
+
+const APPROVAL_TONE: Readonly<Record<DeliveryEvidenceView['approval']['state'], BadgeView['tone']>> = { approved: 'success', pending: 'warning', rejected: 'danger' };
+
+/**
+ * The item's artifact chain: its own DEF/HLD/ISSUE/LLD/PLAN/BUILD records plus the DEF, HLD and ISSUE records of its
+ * epic or issue parent, one row per record (by artifactId within a kind), and a not-recorded row for each kind the
+ * route expects but nothing records. Records of any other kind (SPEC, CR, EXT, AMD) are skipped here.
+ */
+function chainOf(item: DeliveryItemView, byId: ItemIndex, labels: DisplayLabels): ChainRowView[] {
+  const parent = item.parentId === null ? undefined : byId.get(item.parentId);
+  const inherited = parent !== undefined && (parent.kind === 'epic' || parent.kind === 'issue')
+    ? parent.evidence.filter(e => e.kind === 'DEF' || e.kind === 'HLD' || e.kind === 'ISSUE')
+    : [];
+  const records = new Map<string, DeliveryEvidenceView>();
+  for (const e of [...item.evidence, ...inherited]) if (isChainKind(e.kind) && !records.has(e.artifactId)) records.set(e.artifactId, e);
+  const route = item.stage?.route;
+  const expected = new Set<ChainKind>(route !== undefined && Object.hasOwn(EXPECTED_BY_ROUTE, route) ? EXPECTED_BY_ROUTE[route] : []);
+  const rows: ChainRowView[] = [];
+  for (const kind of CHAIN_ORDER) {
+    const ofKind = [...records.values()].filter(e => e.kind === kind).sort((a, b) => (a.artifactId < b.artifactId ? -1 : a.artifactId > b.artifactId ? 1 : 0));
+    for (const e of ofKind) {
+      rows.push({
+        kind, status: 'recorded', artifactId: e.artifactId,
+        label: labelOf(labels.approval, e.approval.state),
+        tone: Object.hasOwn(APPROVAL_TONE, e.approval.state) ? APPROVAL_TONE[e.approval.state] : 'neutral',
+        note: e.review === null ? null : labelOf(labels.reviewVerdict, e.review.verdict),
+      });
+    }
+    if (ofKind.length === 0 && expected.has(kind)) {
+      rows.push({ kind, status: 'not-recorded', artifactId: null, label: labels.chain.notRecorded, tone: 'neutral', note: null });
+    }
+  }
+  return rows;
+}
+
+/** The stage pill, the task summary and, for a story or issue, its card badges. */
+function chipsOf(item: DeliveryItemView, labels: DisplayLabels): BadgeView[] {
+  const chips: BadgeView[] = [];
+  if (item.stage !== null) chips.push({ kind: 'stage', label: labelOf(labels.stage, item.stage.stage), tone: 'neutral' });
+  const summary = taskSummaryOf(item);
+  if (summary !== null) {
+    const failed = (item.validation?.failed ?? 0) > 0;
+    chips.push({ kind: 'tasks', label: summary.label, tone: failed ? 'danger' : summary.passed === summary.total ? 'success' : 'neutral' });
+  }
+  if (isCardKind(item)) chips.push(...badgesOf(item, labels));
+  return chips;
+}
+
+const KICKER_KIND = { epic: 'EPIC', story: 'STORY', task: 'TASK', issue: 'ISSUE' } as const;
+
 function linkedItems(item: DeliveryItemView, byId: ItemIndex): ItemDetailsViewModel['linked'] {
   const linked: { itemId: string; title: string; relation: 'parent' | 'child' | 'corrects' }[] = [];
   const add = (id: string | null, relation: 'parent' | 'child' | 'corrects'): void => {
@@ -116,14 +185,18 @@ export function buildItemDetails(
   const item = byId.get(itemId);
   if (item === undefined) return null;
   const stage = item.stage;
+  const conflictText = conflictSentence(item, byId);
   return {
     itemId: item.id,
+    kicker: `${KICKER_KIND[item.kind]} \u00b7 ${compactIdOf(item.id)}`,
     title: titleOf(item),
     stageLabel: stage === null ? null : labelOf(labels.stage, stage.stage),
     stageReason: stage === null ? null : { text: stage.reason.text, artifactIds: [...stage.reason.artifactIds] },
+    chips: chipsOf(item, labels),
+    chain: chainOf(item, byId, labels),
     tasks: taskRows(item, plan, byId, labels),
     taskCounts: item.validation === null ? null : { ...item.validation },
-    conflict: conflictSentence(item, byId),
+    conflict: conflictText === null ? null : { headline: labels.conflictHeadline, text: conflictText },
     evidence: item.evidence.map(e => evidenceRow(e, labels)),
     notices: item.notices.map(n => `${labelOf(labels.notice, n.code)}: ${n.message}`),
     linked: linkedItems(item, byId),

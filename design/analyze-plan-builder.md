@@ -170,13 +170,13 @@ Concretely:
       "params": { "partitionId": "@t01.partitions[0]" },
       "consumes": ["partitions"],
       "produces": ["report"],
-      "rationale": "deep analyze of repo A; child Plan classified as L" },
+      "rationale": "deep analyze of repo A; child Plan expected to be L (its size is measured when it is spawned)" },
     { "taskId": "t03", "template": "code.subrun.analyze-repo",
       "kind": "planner",
       "params": { "partitionId": "@t01.partitions[1]" },
       "consumes": ["partitions"],
       "produces": ["report"],
-      "rationale": "deep analyze of repo B; child Plan classified as L" },
+      "rationale": "deep analyze of repo B; child Plan expected to be L (its size is measured when it is spawned)" },
     // ... one planner-template task per repo ...
     { "taskId": "tNN", "template": "code.aggregate.cross-partition",
       "kind": "leaf",
@@ -189,7 +189,7 @@ Concretely:
 
 The executor runs these serially. When it reaches `t02`, it invokes the Plan Builder with the task's child-Plan context; the result is `t02`'s child Plan (target=code, scope=L, parentTaskPath=t02). That child Plan executes top-to-bottom; its terminal aggregator's output becomes the value materialized at `t02.json`'s `produces` slot. Then the executor moves on to `t03`, and so on.
 
-**The same shape applies at every scope** — not just XL. An L plan analyzing a complex module might emit a planner-template task to deep-dive on a particularly opaque sub-component. An M plan might do the same for its central component. The cap on tree depth is **scope-contextual** and keyed on the root Run's classified scope (see overall framework doc's `models.analyze.maxPlanDepth`): XS → 2, S → 3, M → 4, L → 5, XL → 6 by default. The cap is the absolute ceiling across the whole tree; each Plan Builder invocation knows its `currentDepth` and refuses to invoke when `currentDepth + 1` would exceed the root's ceiling. The parent task then fails with `max-plan-depth-exceeded` and downstream consumers see it as `dependency-unavailable`.
+**The same shape applies at every scope** — not just XL. An L plan analyzing a complex module might emit a planner-template task to deep-dive on a particularly opaque sub-component. An M plan might do the same for its central component. The cap on tree depth is **scope-contextual** and keyed on the root Run's measured scope (see overall framework doc's `models.analyze.maxPlanDepth`): XS → 2, S → 3, M → 4, L → 5, XL → 6 by default. The cap is the absolute ceiling across the whole tree; each Plan Builder invocation knows its `currentDepth` and refuses to invoke when `currentDepth + 1` would exceed the root's ceiling. The parent task then fails with `max-plan-depth-exceeded` and downstream consumers see it as `dependency-unavailable`.
 
 ### Param resolution from context
 

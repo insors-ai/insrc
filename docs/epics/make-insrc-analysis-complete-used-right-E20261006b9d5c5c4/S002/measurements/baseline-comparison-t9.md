@@ -52,3 +52,7 @@ The Story changes what several existing tests observe. Each was changed in the T
 ## One run that did not finish, and its rerun
 
 The first run of the daemon suite for this comparison hung in `src/daemon/__tests__/model-catalog.test.ts` while the VS Code extension's suite was running beside it. Run alone the file passes in seconds, and the daemon suite rerun on its own finished with the result in the table. The file is not touched by the Story. The figures above are from the rerun.
+
+## After the wording fixes
+
+The runs above were taken before two later commits of task t9, `3ae59391` and the one after it, which change only the wording of design pages, prompts and comments. The analyze, daemon, mcp and config suites were rerun after `3ae59391`: every result line is the same as in `after/`, by name and by result.

@@ -1,0 +1,995 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791563353258-a8f9df",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T16:36:41.894Z",
+    "epicCreatedAt": "2026-10-09T16:21:30.736Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 448635,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2687832a8c75877",
+    "epicSlug": "defect-against-epic-e2-6a131558-vs",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1791563353258-a8f9df",
+    "hldEffectiveHash": "286bdb2c6cb9485de7034fb73231a6cc1d269de2dc0c242970844ef3011ebbac",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The LLD delivers every point of the ISSUE's fix intent, including 'narrow-pane count chips with folded empty stages' (Mock E).",
+          "evidence": "ISSUE fix intent: 'narrow-pane count chips with folded empty stages'; Mock E expects 'count chips, and empty stages folded into \"Other stages · 0 matching\"'. The LLD replaces the fold with 'empty stage labels wrap onto one compact line' (BOARD_STYLE postcondition; Open question 2). Nothing in the LLD says non-empty stage headings get a count chip. Today board-host.ts:146 renders the heading as plain text, make('h2',col.label+' ('+col.total+')'). The only BOARD_WEBVIEW_SCRIPT postcondition on counts is for empty sections ('label and 0'). Most of the fix intent is covered (app bar, tone pills, compact id plus task count, six columns, rollup rows, details chain with 'Not recorded', conflict box, four panels). This one item is changed (no fold) and partly left unspecified (count chips on non-empty groups). [files: docs/standalone/defect-against-epic-e2-6a131558-vs-E20261009b2687832/ISSUE.md, vscode-plugin/src/delivery/board-host.ts]",
+          "action": "Either get the fold deviation confirmed as a deliberate change to the fix intent, or deliver a fold that does not hide content (for example a disclosure that is open by default). In both cases, state in the script postconditions that every narrow-pane stage heading renders its count as a chip, and add a test for it.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today StatusView carries only message/partialNotice, the empty, failed and partial states go to single #status, #notice and #empty lines, #details is an <aside> after #board, and the Epics tab renders EpicGroupView stage groups of cards through renderGroup.",
+          "evidence": "board-protocol.ts:27-33 StatusView {state, takenAt, message, partialNotice, stale}. board-host.ts:269-271 renders `<p id=\"empty\"></p><div id=\"board\" class=\"board\"></div><aside id=\"details\" ... hidden></aside>`. board-host.ts:257 renders `<p id=\"notice\"></p>`. board-host.ts:119-128 has renderGroup over m.epics and m.notInEpic. board-views.ts:29-46 groupOf builds the StageGroupView[] of cards. CardView (board-protocol.ts:50-60) has no compact id and no task summary. The LLD's description of today's code is accurate. [files: vscode-plugin/src/delivery/board-state.ts, vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/delivery/board-protocol.ts, vscode-plugin/src/delivery/board-views.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The new values can be derived from fields the plugin already reads: item.stage.route for the route-aware chain, validation for taskSummary, tasks for taskCount, and evidence kinds.",
+          "evidence": "delivery-contract.ts:59-61 DeliveryItemView picks 'stage', 'evidence', 'tasks', 'validation', 'storyLevelResult' and 'conflict'. types.ts:294 has stage: { stage; route: DeliveryRoute; reason }. types.ts:157 DeliveryRoute = 'full-chain' | 'feature' | 'small' | 'small-bugfix' | 'sized-bugfix' | 'trivial' | 'unknown'. types.ts:214 validation has {passed, failed, unrecorded, unplanned}. No change to the daemon contract is needed. [files: vscode-plugin/src/delivery/delivery-contract.ts, src/workflow/delivery/types.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The listed change sites for threading `now` into statusView are complete: createDeliveryBoardHost only 'passes deps.now() into boardDownMessages'.",
+          "evidence": "statusView has a second caller that the LLD does not name: board-host.ts:413 announceRefresh, `const message = statusView(state.status).message;`. The new signature statusView(status, now) makes that call fail the typecheck. The existing tests board-state.test.ts:29 and :36 also call boardDownMessages(state, DISPLAY_LABELS, {}) with three arguments. The 2.10 postcondition names only the boardDownMessages call path. [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/delivery/board-state.ts]",
+          "action": "Add announceRefresh's statusView call (board-host.ts:413) and the existing board-state.test.ts call sites to the change list. Alternatively make `now` optional, with freshnessLabel null when it is omitted.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The AC-09 invariant is real and survives the rollup rewrite: board, rollup and issue views all derive from selectMatches, and every match falls into exactly one rollup group, so the row totals sum to the board's totals.items.",
+          "evidence": "board-views.ts:61-72 calls selectMatches and routes each match either to notInEpic (standalone or epic === null) or to byEpic. board-model.ts:240-248 builds the board totals.items from the same selectMatches. The LLD keeps buildEpicRollup's listing rule ('unnarrowed' at board-views.ts:49-51) and only changes groupOf's output shape, so the partition is unchanged. [files: vscode-plugin/src/delivery/board-views.ts, vscode-plugin/src/delivery/board-model.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.2",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The new route-aware chain cannot break the details view or refresh on published data: ChainRowView.kind is 'DEF'|'HLD'|'ISSUE'|'LLD'|'PLAN'|'BUILD', yet the chain lists 'every kind actually recorded', and the error-path table expects a throw on 'an evidence kind the plugin does not know'.",
+          "evidence": "types.ts:23 DeliveryArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'ISSUE' | 'EXT' | 'AMD'. Items routinely carry CR evidence (fixtures CR-dfc0371b7200f5b5-S001) and SPEC/EXT/AMD records. Those are published kinds, not malformed data. The LLD never says whether the chain drops them. If the 'every kind actually recorded' postcondition is followed, or the error path's throw is taken, any reviewed story's details would fail. board-host.ts:317-321 builds detailsMessage inside apply(), and refresh() at 366-380 turns a throw there into a failed refresh over the previous board. That breaks the promise that the board renders all published data. [files: src/workflow/delivery/types.ts, vscode-plugin/src/delivery/board-host.ts]",
+          "action": "State explicitly that the chain shows only the six chain kinds and ignores SPEC, CR, EXT and AMD evidence, which stays in Records. Remove 'unknown evidence kind' from the throw cases. Add a test that a story with CR and SPEC evidence gets a chain without those kinds and no error.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The unit fixtures pin the compactId rule against the real canonical id format ('E20261009abcdef01-S001').",
+          "evidence": "types.ts:83: 'Canonical work-item id (\"E<date><hash8>[:S<nnn>][:T<nnn>]\"); an H-form or \":R(<raw>)\" fallback'. graph.ts:299 mints `H${hash}:S${pad(ordinal)}`. The separator is ':', not '-'. If the fixture and the ac1 test use '-S001', a compactId parser written to pass them would fall back to the full id for every real story card. The test would pass while the board shows the wrong thing. H-form ids also carry ':S<nnn>' with a hash, so whether they count as 'no 8-hex hash' needs pinning. [files: src/workflow/delivery/types.ts, src/workflow/delivery/graph.ts]",
+          "action": "Change the fixture to 'E20261009abcdef01:S001' and spell the parse rule out against types.ts:83. Add cases for task ids (':T<nnn>'), H-form ids ('H<hash>:S001') and ':R(<raw>)' fallback ids.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The new acceptance tests would fail without the fix. Example: ac6 expects parseBoardUpMessage to accept {type:'clear-filters'}, and ac2 expects rollup rows carrying taskCount and attentionCount.",
+          "evidence": "board-protocol.ts:222-253: the parser switch has no 'clear-filters' case, so the default returns null. board-views.ts:36-45: EpicGroupView has no taskCount, attentionCount or attentionLabel. ItemDetailsViewModel.conflict is a string today (board-protocol.ts:172), and the existing test asserts a string at board-details.test.ts:102. So the ac2, ac3, ac4 and ac6 unit tests fail on today's code. One inconsistency: the ac6 'rejects it with extra fields' check introduces strictness that no other up-message has, since the existing cases ignore extra fields. It is deliberate and testable, but not required by the fix. [files: vscode-plugin/src/delivery/board-protocol.ts, vscode-plugin/src/delivery/board-views.ts]",
+          "action": "Optional: either drop the 'rejects extra fields' assertion to match how the other up-messages are parsed, or note in the LLD that clear-filters is deliberately stricter than the rest.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 4,
+        "low": 4,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-09T16:36:55.060Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "change-sites.2": {
+        "findingId": "change-sites.2",
+        "status": "resolved",
+        "note": "Applied. statusView's preconditions now name both callers: boardDownMessages and the host's announceRefresh (board-host.ts:413). createDeliveryBoardHost's returns passes deps.now() into both. Migration step 4 also covers updating the existing three-argument boardDownMessages calls in board-state.test.ts and the other tests, and board-state.test.ts joins StatusView's call sites.",
+        "resolvedAt": "2026-10-09T16:41:08.047Z"
+      },
+      "preserved-behaviour.2": {
+        "findingId": "preserved-behaviour.2",
+        "status": "resolved",
+        "note": "Applied. The ChainRowView data model and buildItemDetails' postconditions now state that only DEF, HLD, ISSUE, LLD, PLAN and BUILD become chain rows. Evidence of the other published kinds (SPEC, CR, EXT, AMD) is skipped by the chain and stays under Records, so it can never throw. The 'unknown evidence kind' example is removed from the error cases. A new edge case and an ac3 test cover a story with CR, SPEC, EXT and AMD evidence getting a chain without them and no error.",
+        "resolvedAt": "2026-10-09T16:41:08.048Z"
+      },
+      "tests.1": {
+        "findingId": "tests.1",
+        "status": "resolved",
+        "note": "Applied. The compactId rule is now spelled out against types.ts:83 (\"E<date><hash8>[:S<nnn>][:T<nnn>]\", H-form, ':R(<raw>)'), with worked examples. The fixtures use 'E20261009abcdef01:S001', the epic-level 'E20261009abcdef01', the H-form 'Habcdef0123456789:S002' and a ':R(<raw>)' id. The ac1 test asserts each case. ':T<nnn>' is noted as never reaching a card, because cards are stories and issues.",
+        "resolvedAt": "2026-10-09T16:41:08.049Z"
+      },
+      "fix-targets-defect.1": {
+        "findingId": "fix-targets-defect.1",
+        "status": "resolved",
+        "note": "Deviation confirmed by the user (2026-10-09). Narrow panes list the non-empty stage groups first, then wrap the empty stage labels, each with its 0 count chip, onto one compact line. There is no 'Other stages · 0 matching' disclosure, because the same DOM serves the wide board, where the PRD keeps empty columns visible, and S005's no-hiding rule forbids collapsing them. Applied: the BOARD_WEBVIEW_SCRIPT postconditions now require every stage heading (wide and narrow) to render its total as a count chip, and ac5 gains a test for it.",
+        "resolvedAt": "2026-10-09T16:42:47.219Z"
+      }
+    },
+    "approvedAt": "2026-10-09T16:44:44.705Z",
+    "rangeBase": "eeb63777d4c94ea17645f65034cc7ec97c6f0da8",
+    "questionResolutions": {
+      "q20f1064b": {
+        "question": "Mock E folds empty stages under an 'Other stages · 0 matching' disclosure; this LLD instead wraps empty stage labels (each with its 0 count chip) onto one compact line in narrow panes, because the same DOM serves the wide board where empty columns must stay visible and the no-hiding rule forbids collapsing them. Confirm this deviation from the ISSUE's fix intent.",
+        "status": "resolved",
+        "choice": "Accept the LLD deviation (wrap empty labels inline)",
+        "rationale": "Confirmed by the user in chat on 2026-10-09; recorded on the LLD review as fix-targets-defect.1 resolved.",
+        "resolvedAt": "2026-10-09T16:45:38.059Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The delivery board keeps its data and behaviour but gains the PRD's look: an app bar with a readable freshness line, underline tabs, chip filters, tone pills, and cards that show a compact identifier and task results. The Epics tab becomes a list of rollup rows with progress meters, and choosing an epic opens its board. The details panel opens where the reader can see it, with chips, expandable tasks, a 'Why this stage?' box and the full artifact chain, and the empty, no-match, failed and partial states each get their own panel. Every new value is computed in the board's pure view models; the webview only lays them out.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Make the VS Code delivery board match the PRD's UX mocks A–F"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "buildBoardViewModel",
+          "signature": "function buildBoardViewModel(snapshot: DeliverySnapshot, selection: BoardSelection, paging: BoardPaging, labels: DisplayLabels): BoardViewModel",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "DeliverySnapshot",
+              "purpose": "The shown snapshot.",
+              "optional": false
+            },
+            {
+              "name": "selection",
+              "type": "BoardSelection",
+              "purpose": "Scope, search, attention filter and view.",
+              "optional": false
+            },
+            {
+              "name": "paging",
+              "type": "BoardPaging",
+              "purpose": "Per-column visible limit.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "Display text for every code.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BoardViewModel",
+            "meaning": "Six columns in STAGE_ORDER, each card now carrying compactId and taskSummary (see dataModel CardView). Signature unchanged."
+          },
+          "errors": [],
+          "preconditions": [
+            "snapshot is a schemaVersion-1 snapshot already accepted by the delivery client"
+          ],
+          "postconditions": [
+            "All six columns are present, including empty ones",
+            "Every card's compactId and taskSummary are derived from published fields only",
+            "The same arguments give an equal model"
+          ]
+        },
+        {
+          "name": "buildEpicRollup",
+          "signature": "function buildEpicRollup(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): EpicRollupViewModel",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "DeliverySnapshot",
+              "purpose": "The shown snapshot.",
+              "optional": false
+            },
+            {
+              "name": "selection",
+              "type": "BoardSelection",
+              "purpose": "Scope, search and attention filter.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "Display text.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "EpicRollupViewModel",
+            "meaning": "One EpicRollupRowView per listed epic in snapshot order, then the 'Not in an epic' row; rows carry counts, not card lists."
+          },
+          "errors": [],
+          "preconditions": [
+            "Built from selectMatches, as today"
+          ],
+          "postconditions": [
+            "The listing rule is unchanged: every epic when nothing narrows the selection, otherwise epics with matches plus the scoped epic",
+            "Sum of row match totals equals the board's totals.items for the same selection (AC-09)",
+            "storiesComplete counts stories at stage 'complete'; completionLabel names its denominator",
+            "taskCount counts planned tasks of the row's matching stories; attentionCount counts matches with needsAttention"
+          ]
+        },
+        {
+          "name": "buildIssueView",
+          "signature": "function buildIssueView(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): IssueViewModel",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "DeliverySnapshot",
+              "purpose": "The shown snapshot.",
+              "optional": false
+            },
+            {
+              "name": "selection",
+              "type": "BoardSelection",
+              "purpose": "Scope, search and attention filter.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "Display text.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "IssueViewModel",
+            "meaning": "Unchanged shape; each entry's card gains compactId and taskSummary through the shared cardOf."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Parent, parentNotice and fixStories rules unchanged"
+          ]
+        },
+        {
+          "name": "buildItemDetails",
+          "signature": "function buildItemDetails(snapshot: DeliverySnapshot, itemId: string, plan: PlanRead, opened: OpenedRecord | null, labels: DisplayLabels, byId?: ItemIndex): ItemDetailsViewModel | null",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "DeliverySnapshot",
+              "purpose": "The shown snapshot.",
+              "optional": false
+            },
+            {
+              "name": "itemId",
+              "type": "string",
+              "purpose": "The selected item.",
+              "optional": false
+            },
+            {
+              "name": "plan",
+              "type": "PlanRead",
+              "purpose": "The selected story's PLAN read.",
+              "optional": false
+            },
+            {
+              "name": "opened",
+              "type": "OpenedRecord | null",
+              "purpose": "The record the reader opened read-only.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "Display text.",
+              "optional": false
+            },
+            {
+              "name": "byId",
+              "type": "ItemIndex",
+              "purpose": "Pre-built id index.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ItemDetailsViewModel | null",
+            "meaning": "Today's fields plus kicker, chips, chain and a structured conflict (see dataModel); null when itemId is not in the snapshot."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "chain lists, in the order DEF, HLD, ISSUE, LLD, PLAN, BUILD, every one of those six kinds the item's route expects plus every one of those six kinds actually recorded; DEF/HLD come from the parent epic's evidence",
+            "A kind the route expects with no record is 'not-recorded'; a kind the route does not use is listed only if recorded; route 'unknown' lists recorded kinds only and never claims 'not-recorded'",
+            "Evidence of kinds outside the six (SPEC, CR, EXT, AMD) never becomes a chain row and never throws; it stays in evidence (Records)",
+            "conflict is non-null exactly when item.conflict is non-null",
+            "evidence (Records), notices, linked, sourceIds and openedRecord keep today's rules"
+          ]
+        },
+        {
+          "name": "statusView",
+          "signature": "function statusView(status: LoadStatus, now: string): StatusView",
+          "parameters": [
+            {
+              "name": "status",
+              "type": "LoadStatus",
+              "purpose": "The board's load status.",
+              "optional": false
+            },
+            {
+              "name": "now",
+              "type": "string",
+              "purpose": "ISO time used to phrase the freshness line.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "StatusView",
+            "meaning": "Today's fields plus freshnessLabel and panel (see dataModel StatusView)."
+          },
+          "errors": [],
+          "preconditions": [
+            "now is the host clock (deps.now())",
+            "Every caller passes now: boardDownMessages, and the host's announceRefresh (board-host.ts, which reads statusView(...).message for the refresh announcement)"
+          ],
+          "postconditions": [
+            "freshnessLabel is null when no snapshot is shown; otherwise 'Updated just now' under one minute, 'Updated N minutes ago' under one hour, else 'Updated <takenAt date and time>'",
+            "panel is 'empty' for an empty store, 'unavailable' or 'refresh-failed' (with retry, and stale when a snapshot is still shown), 'partial' when the shown snapshot has unreadable records or store notices, else null"
+          ]
+        },
+        {
+          "name": "boardDownMessages",
+          "signature": "function boardDownMessages(state: BoardState, labels: DisplayLabels, paging: BoardPaging, now: string): readonly Envelope<BoardDownMessage>[]",
+          "parameters": [
+            {
+              "name": "state",
+              "type": "BoardState",
+              "purpose": "Board state.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "Display text.",
+              "optional": false
+            },
+            {
+              "name": "paging",
+              "type": "BoardPaging",
+              "purpose": "Per-column limits.",
+              "optional": false
+            },
+            {
+              "name": "now",
+              "type": "string",
+              "purpose": "Forwarded to statusView.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly Envelope<BoardDownMessage>[]",
+            "meaning": "Status first, then the selected view's model, as today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Message order and kinds unchanged"
+          ]
+        },
+        {
+          "name": "renderBoardDocument",
+          "signature": "function renderBoardDocument(nonce: string): string",
+          "parameters": [
+            {
+              "name": "nonce",
+              "type": "string",
+              "purpose": "Script nonce.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The board document with the PRD chrome: an app bar (insrc wordmark, 'Workspace / Delivery' breadcrumb, #status freshness line and Read-only marker, Refresh and density controls), a role=tablist of underline tabs (role=tab, aria-selected), a chip toolbar (search input, scope chips, Needs attention chip as aria-pressed buttons), #totals, the #announce live region, #panel for state panels, then a layout region holding <aside id=details> before #board."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "CSP unchanged: default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-…'",
+            "Exactly one aria-live region (#announce)",
+            "#details precedes #board in the DOM so a narrow pane shows it first; the wide layout places it as a side column by CSS grid, with nothing hidden"
+          ]
+        },
+        {
+          "name": "BOARD_STYLE",
+          "signature": "const BOARD_STYLE: string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The one stylesheet, rewritten to the mocks' structure."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Only var(--vscode-*) colours; no literal colour",
+            "No display:none, visibility:hidden or clipping rule",
+            ".board keeps display:grid with six equal columns at wide widths (repeat(6,minmax(0,1fr))) and one stage-grouped list below 600 px",
+            "Tone pills: success/warning/danger/neutral map to --vscode-testing-iconPassed, --vscode-editorWarning-foreground, --vscode-errorForeground and --vscode-descriptionForeground on --vscode-badge-background / --vscode-editorWidget-background",
+            "Below 600 px empty stage sections wrap onto one compact line after the non-empty groups (CSS order), each still showing its label and its 0 count chip. This is a deliberate deviation from mock E's 'Other stages · 0 matching' disclosure: the same DOM serves the wide board, where the PRD requires empty columns to stay visible, and the no-hiding rule forbids collapsing them; it awaits the user's confirmation (open question).",
+            "Both density rules and the :focus-visible outline kept"
+          ]
+        },
+        {
+          "name": "BOARD_WEBVIEW_SCRIPT",
+          "signature": "const BOARD_WEBVIEW_SCRIPT: string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The webview renderer, still textContent-only and posting only BoardUpMessage envelopes."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Cards render kicker '<KIND> · <compactId>', title, epic line, task summary and tone pills",
+            "Every stage heading, in the wide board and in the narrow grouped list, renders the stage label followed by its total as a count chip (an element carrying the number, with the label and count also in the section's aria-label), replacing today's 'Label (n)' text",
+            "Epics tab renders rollup rows: kicker, title button (posts set-scope to the epic, or standalone for the 'Not in an epic' row, then set-view board), story count, meter with completionLabel as its text label and aria-valuenow/max, task count, attention chip",
+            "Details render kicker, title, chips, the conflict box first when present, tasks as <details> rows with result and dependency chips and acceptance checks, a 'Why this stage?' highlight, the chain rows and the existing Records/Notices/Linked sections",
+            "#panel renders the status panel or, when the view's emptySelection is true, a 'Nothing matches this view' panel with a Clear filters button (posts clear-filters); a retry action posts refresh; a partial panel lists affected records in a <details> 'Inspect affected records'",
+            "Keyboard: cards, tabs (arrow keys move between tabs), chips and row titles are focusable; Escape closes details; focus return and the single announcer unchanged"
+          ]
+        },
+        {
+          "name": "createDeliveryBoardHost",
+          "signature": "function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBoardHost",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "DeliveryBoardHostDeps",
+              "purpose": "Panel factory, client, logger, clock, nonce, review pane.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DeliveryBoardHost",
+            "meaning": "Unchanged surface; its message handler also accepts clear-filters, and it passes deps.now() into boardDownMessages and into announceRefresh's statusView call."
+          },
+          "errors": [
+            {
+              "type": "logged warning",
+              "condition": "A set-scope from a rollup row names an epic not on the board (existing knownScope check)"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "clear-filters resets search to '' and needsAttentionOnly to false, keeps scope and view, and resets paging, like the other filter changes"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "CardView",
+        "change": "field-add",
+        "details": "compactId: string — parsed from the canonical work-item id format published in src/workflow/delivery/types.ts (\"E<date><hash8>[:S<nnn>][:T<nnn>]\", or an H-form / \":R(<raw>)\" fallback): for 'E<8-digit date><8 hex>' ids, the 8 hex characters in upper case; for 'H<hash>' ids, the hash's first 8 characters in upper case; then ' / S<nnn>' when the id carries a ':S<nnn>' segment (cards are stories and issues, so ':T<nnn>' never reaches a card). An id containing ':R(' or matching neither form gives the full item id. Examples: 'E20261009abcdef01:S001' -> 'ABCDEF01 / S001'; 'E20261009abcdef01' -> 'ABCDEF01'; 'Habcdef0123456789:S002' -> 'ABCDEF01 / S002'; 'E20261009abcdef01:R(x)' -> the full id. taskSummary: { passed: number; total: number; label: string } | null — from item.validation: passed = validation.passed, total = passed + failed + unrecorded; label 'n/N tasks passed'; null when the item has no validation or total is 0. accessibleLabel gains the compactId and task summary.",
+        "schemaDiff": "+ readonly compactId: string;\n+ readonly taskSummary: { readonly passed: number; readonly total: number; readonly label: string } | null;",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-model.ts",
+          "vscode-plugin/src/delivery/board-views.ts",
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "EpicRollupRowView",
+        "change": "new",
+        "details": "Replaces EpicGroupView in the Epics tab: { epicItemId: string | null; compactId: string | null; title: string; storiesTotal: number; storiesComplete: number; completionLabel: string; taskCount: number; issueCount: number; total: number; attentionCount: number; attentionLabel: string; attentionTone: 'warning' | 'success' } with attentionLabel 'N need attention' (1: '1 needs attention') or 'No open gates'.",
+        "schemaDiff": "+ interface EpicRollupRowView { ... }",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-views.ts",
+          "vscode-plugin/src/delivery/board-protocol.ts",
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "EpicRollupViewModel",
+        "change": "field-modify",
+        "details": "epics: readonly EpicRollupRowView[] (was EpicGroupView[]); notInEpic: EpicRollupRowView (was EpicGroupView). EpicGroupView and StageGroupView are removed with their only consumer (renderGroup).",
+        "schemaDiff": "- readonly epics: readonly EpicGroupView[];\n+ readonly epics: readonly EpicRollupRowView[];\n- readonly notInEpic: EpicGroupView;\n+ readonly notInEpic: EpicRollupRowView;",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-views.ts",
+          "vscode-plugin/src/delivery/board-state.ts",
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "ChainRowView",
+        "change": "new",
+        "details": "{ kind: 'DEF' | 'HLD' | 'ISSUE' | 'LLD' | 'PLAN' | 'BUILD'; status: 'recorded' | 'not-recorded'; artifactId: string | null; label: string; tone: BadgeView['tone']; note: string | null }. Only these six chain kinds are ever chain rows: evidence of any other published kind (SPEC, CR, EXT, AMD) is skipped by the chain and stays listed under Records, so no published kind can make the chain throw. label is the approval label for a recorded row and DisplayLabels.chain.notRecorded otherwise; note carries the review label when present. One row per recorded artifact (two BUILDs give two rows).",
+        "schemaDiff": "+ interface ChainRowView { ... }",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-details.ts",
+          "vscode-plugin/src/delivery/board-protocol.ts"
+        ]
+      },
+      {
+        "entity": "ItemDetailsViewModel",
+        "change": "field-add",
+        "details": "kicker: string ('<KIND> · <compactId>'); chips: readonly BadgeView[] (stage pill, task summary, the card's badges); chain: readonly ChainRowView[]; conflict changes from string | null to { headline: 'Two records disagree'; text: string } | null (text is today's sentence). TaskRowView gains resultTone: BadgeView['tone'] (Passed success, Failed danger, Unrecorded/Unplanned neutral).",
+        "schemaDiff": "+ readonly kicker: string;\n+ readonly chips: readonly BadgeView[];\n+ readonly chain: readonly ChainRowView[];\n- readonly conflict: string | null;\n+ readonly conflict: { readonly headline: string; readonly text: string } | null;",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-details.ts",
+          "vscode-plugin/src/delivery/details-memory.ts",
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "StatusView",
+        "change": "field-add",
+        "details": "freshnessLabel: string | null; panel: { kind: 'empty' | 'unavailable' | 'refresh-failed' | 'partial'; title: string; text: string; action: 'retry' | null; stale: boolean; affected: readonly { artifactIds: readonly string[]; text: string }[] } | null. Titles: 'No work items yet', 'The delivery board is unavailable', 'Showing the last successful snapshot' (or 'The refresh failed' with no snapshot), 'Some evidence could not be read'. affected lists the snapshot's store notices and an unreadable-count line.",
+        "schemaDiff": "+ readonly freshnessLabel: string | null;\n+ readonly panel: StatePanelView | null;",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-state.ts",
+          "vscode-plugin/src/delivery/board-host.ts",
+          "vscode-plugin/src/delivery/__tests__/board-state.test.ts"
+        ]
+      },
+      {
+        "entity": "BoardUpMessage",
+        "change": "field-add",
+        "details": "New member { type: 'clear-filters' }; parseBoardUpMessage accepts it with no other fields.",
+        "schemaDiff": "+ | { readonly type: 'clear-filters' }",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-protocol.ts",
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "DisplayLabels",
+        "change": "field-add",
+        "details": "chain: { notRecorded: 'Not recorded' }; conflictHeadline: 'Two records disagree'; noMatchesTitle: 'Nothing matches this view'.",
+        "schemaDiff": "+ readonly chain: { readonly notRecorded: string };\n+ readonly conflictHeadline: string;\n+ readonly noMatchesTitle: string;",
+        "callSites": [
+          "vscode-plugin/src/delivery/labels.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A rollup row's title posts set-scope for an epic a refresh has since removed.",
+          "detection": "The host's knownScope check finds no epic item with that id in the shown snapshot.",
+          "response": "The message is ignored and a warning is logged (existing behaviour); the set-view that follows still switches to the board with the current scope.",
+          "userImpact": "The board opens unscoped instead of on the vanished epic; nothing is changed on disk.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The webview sends clear-filters while no snapshot is shown (loading with no previous board, or unavailable with none).",
+          "detection": "handle() dispatches selection-changed; boardDownMessages finds shownSnapshot null and emits only the status message.",
+          "response": "The selection is reset and kept; no view model is posted until a snapshot arrives.",
+          "userImpact": "None visible beyond the status panel; filters are clear when data arrives.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A view-model builder throws while deriving the new fields (a malformed snapshot that slipped past the delivery client's checks, for example an evidence entry with no artifactId).",
+          "detection": "apply() derives messages before keeping state; the throw is caught by the message handler or by refresh()'s apply try.",
+          "response": "State and paging stay as they were; the error is logged; a throw during a refresh is shown as a failed refresh over the previous board (existing path).",
+          "userImpact": "The previous board stays on screen with a refresh-failed panel.",
+          "recoverable": true
+        },
+        {
+          "scenario": "deps.now() returns an unparseable time, or takenAt is unparseable.",
+          "detection": "statusView finds Date.parse(now) or Date.parse(takenAt) is NaN.",
+          "response": "freshnessLabel falls back to 'Updated <takenAt>' with the raw string (or null when no snapshot); no throw.",
+          "userImpact": "A less friendly freshness line; the board still renders.",
+          "recoverable": true
+        },
+        {
+          "scenario": "parseBoardUpMessage receives clear-filters with extra or wrong-typed fields, or an unknown type.",
+          "detection": "The parser's per-type shape check rejects it and returns null.",
+          "response": "The host logs 'ignored a malformed webview message' (existing).",
+          "userImpact": "None.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A story whose id is an H-form or raw fallback id (no 8-hex hash or no story ordinal).",
+          "expected": "compactId is the full item id; the card still renders its kicker."
+        },
+        {
+          "input": "A story with validation null, or with passed + failed + unrecorded = 0 (only unplanned tasks).",
+          "expected": "taskSummary is null and no task summary line is shown."
+        },
+        {
+          "input": "An epic with no matching work when nothing narrows the selection.",
+          "expected": "Its rollup row is listed with 0 stories, '0 of 0 stories complete', an empty meter and 'No open gates'."
+        },
+        {
+          "input": "Only standalone work in the snapshot.",
+          "expected": "The Epics tab lists only the 'Not in an epic' row; its title opens the standalone scope."
+        },
+        {
+          "input": "A small-route story with an approved LLD and no PLAN (AC-15).",
+          "expected": "Chain shows LLD recorded and BUILD not recorded; no PLAN row and no missing-plan wording."
+        },
+        {
+          "input": "A small-bugfix issue with an approved ISSUE and no LLD.",
+          "expected": "Chain shows ISSUE recorded and BUILD not recorded; no LLD or PLAN rows."
+        },
+        {
+          "input": "A trivial-route item that appears with only its BUILD.",
+          "expected": "Chain shows just the BUILD row(s)."
+        },
+        {
+          "input": "Route 'unknown'.",
+          "expected": "Chain lists only recorded kinds and no 'Not recorded' row; the existing unknown-route notice remains in Notices."
+        },
+        {
+          "input": "A story under an epic whose DEF and HLD exist, and a standalone story with no parent epic.",
+          "expected": "The first shows DEF and HLD rows from the epic's evidence; the second shows none (standalone routes do not expect them)."
+        },
+        {
+          "input": "Two BUILD records on one story.",
+          "expected": "Two BUILD chain rows, in evidence order (artifactId)."
+        },
+        {
+          "input": "An approved BUILD with a failed task (AC-04).",
+          "expected": "Item stays in Complete; details show the 'Two records disagree' box above the tasks, with today's sentence."
+        },
+        {
+          "input": "All six stages empty except one, in a pane below 600 px.",
+          "expected": "The one non-empty group is listed first; the five empty stage labels with 0 wrap onto one compact line after it; nothing is hidden."
+        },
+        {
+          "input": "A partial snapshot with unreadableCount > 0 and no store notices.",
+          "expected": "Partial panel with one affected line for the unreadable count and an empty artifact list."
+        },
+        {
+          "input": "A view with emptySelection true while the status panel is also 'partial'.",
+          "expected": "Both panels show: the partial panel first, then 'Nothing matches this view' with Clear filters."
+        },
+        {
+          "input": "Density compact.",
+          "expected": "Pills, chips, rows and meters shrink spacing and font only; every label stays visible."
+        },
+        {
+          "input": "A story whose evidence includes CR, SPEC, EXT or AMD records.",
+          "expected": "The chain lists only its DEF/HLD/ISSUE/LLD/PLAN/BUILD rows; the CR, SPEC, EXT and AMD records appear under Records only; no error."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The document stays CSP-locked (default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-…') and the script sets text only through textContent.",
+          "source": "c1"
+        },
+        {
+          "text": "Every colour in BOARD_STYLE is a var(--vscode-*) reference; there is no literal colour and no display:none, visibility:hidden or clipping rule.",
+          "source": "c5"
+        },
+        {
+          "text": "The board, rollup and issue views all derive from selectMatches, so their counts agree for the same snapshot and selection (AC-09).",
+          "source": "c4"
+        },
+        {
+          "text": "Nothing the daemon decided (stage, route, attention, conflict, review effect) is recomputed in the plugin; new fields only relabel or count published values.",
+          "source": "c3"
+        },
+        {
+          "text": "One aria-live region (#announce); #status keeps role=status without aria-live; focus returns to the item's card on close, else to the shown view's tab.",
+          "source": "c1"
+        },
+        {
+          "text": "First render within 1 s and each filter change within 150 ms on the 500-item / 1,000-record fixture, best of three.",
+          "source": "c6"
+        },
+        {
+          "text": "The webview posts only BoardUpMessage envelopes; every message the host acts on is validated (knownScope, onBoard, parseBoardUpMessage).",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via tsx (npx tsx --test), with the shared fake DOM in __tests__/board-webview-harness.ts booting the real BOARD_WEBVIEW_SCRIPT",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin every new view-model value on the pure builders: card compactId and taskSummary, rollup rows and their counts, chain rows per route, structured conflict, kicker and chips, statusView freshness and panels, the clear-filters parser case and the new labels.",
+          "subjects": [
+            "board-model.ts cardOf via buildBoardViewModel / selectMatches",
+            "board-views.ts buildEpicRollup / buildIssueView",
+            "board-details.ts buildItemDetails",
+            "board-state.ts statusView / boardDownMessages",
+            "board-protocol.ts parseBoardUpMessage",
+            "labels.ts DISPLAY_LABELS"
+          ],
+          "fixturesNeeded": [
+            "board-fixtures.ts items with canonical ids in the published format ('E20261009abcdef01:S001', epic 'E20261009abcdef01'), H-form ids ('Habcdef0123456789:S002'), ':R(<raw>)' fallback ids, and each DeliveryRoute",
+            "an epic with DEF and HLD evidence and child stories on full-chain, a standalone small story, a small-bugfix and a sized-bugfix issue, a trivial item, an unknown-route item",
+            "a story with two BUILDs and one with an approved BUILD and a failed task",
+            "snapshots with unreadableCount > 0 and with store notices carrying artifactIds",
+            "stories carrying CR, SPEC, EXT and AMD evidence alongside LLD/PLAN/BUILD"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Run the real host and real webview script through the fake DOM: document chrome, stylesheet rules, rendered cards, rollup rows and their scope navigation, details placement and content, conflict box order, panels and their actions, keyboard and focus, and that only BoardUpMessage envelopes are posted.",
+          "subjects": [
+            "board-host.ts renderBoardDocument / BOARD_STYLE / BOARD_WEBVIEW_SCRIPT / createDeliveryBoardHost"
+          ],
+          "fixturesNeeded": [
+            "board-webview-harness.ts extended with role/aria-selected queries and <details> elements"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Keep the measured performance targets with the richer DOM.",
+          "subjects": [
+            "board-perf.test.ts 500-item / 1,000-record fixture through the real host and script"
+          ],
+          "fixturesNeeded": [
+            "existing perf fixture, with tasks and validation on its stories so taskSummary and rollup task counts are exercised"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "board-model.test.ts: compactId is 'ABCDEF01 / S001' for 'E20261009abcdef01:S001', 'ABCDEF01' for an epic-level 'E20261009abcdef01', 'ABCDEF01 / S002' for the H-form 'Habcdef0123456789:S002', and the full id for a ':R(<raw>)' fallback id",
+            "board-model.test.ts: taskSummary is 'n/N tasks passed' from validation and null when validation is null or has no recorded tasks",
+            "board-host.test.ts: a rendered card shows its kicker, title, epic line, task summary and tone pills (data-tone) in the six-column board"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "board-views.test.ts: buildEpicRollup returns one row per listed epic plus 'Not in an epic' with story, complete, task, issue and attention counts, and the row totals sum to the board's totals.items for the same selection",
+            "board-views.test.ts: attentionLabel is 'No open gates' at 0, '1 needs attention' at 1, 'N need attention' otherwise",
+            "board-host.test.ts: clicking a rollup row title posts set-scope for that epic (standalone for 'Not in an epic') and then set-view board, and the meter exposes completionLabel and aria-valuenow/max"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "board-details.test.ts: chain rows per route — full-chain story shows DEF/HLD from its epic plus LLD/PLAN/BUILD; small story has no PLAN row; small-bugfix has ISSUE and BUILD only; trivial has BUILD only; unknown lists recorded kinds only; a missing expected kind is 'Not recorded'; two BUILDs give two rows",
+            "board-details.test.ts: a story with CR, SPEC, EXT and AMD evidence gets a chain without those kinds, they remain in Records, and buildItemDetails does not throw",
+            "board-details.test.ts: kicker, chips and TaskRowView.resultTone",
+            "board-host.test.ts: opening a card shows #details before #board in DOM order with its heading focused, tasks as <details> rows with checks and dependency chips, and a 'Why this stage?' highlight with the stage reason"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "board-details.test.ts: conflict is { headline: 'Two records disagree', text } exactly when item.conflict is set",
+            "board-host.test.ts: the conflict box is the first element after the details chips, before the task list"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "board-host.test.ts: every board column heading renders its label and a count chip holding the column total, for empty and non-empty stages alike",
+            "board-host.test.ts: BOARD_STYLE's 600 px block orders empty stage sections after non-empty ones and contains no hiding rule; each empty section still renders its label and a 0 count chip"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "board-state.test.ts: statusView panel kinds — empty, unavailable, refresh-failed (stale with a shown snapshot, retry action), partial with affected entries from store notices and the unreadable count; freshnessLabel phrasing and NaN fallback",
+            "board-protocol.test.ts: parseBoardUpMessage accepts { type: 'clear-filters' } and rejects it with extra fields",
+            "board-host.test.ts: a view with emptySelection renders 'Nothing matches this view' with Clear filters; Clear filters posts clear-filters and the host resets search and attention, keeps scope and view, and resets paging; Retry posts refresh; the partial panel's 'Inspect affected records' lists artifact ids"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "board-host.test.ts: CSP string unchanged; the script uses textContent only; BOARD_STYLE has only var(--vscode-*) colours and no display:none/visibility:hidden/clip; exactly one aria-live region; density rules and :focus-visible kept; tabs are role=tab with aria-selected and arrow-key movement; Escape closes details and focus returns to the card or the tab"
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "board-perf.test.ts: first render under 1 s and each filter change under 150 ms, best of three, on the 500-item / 1,000-record fixture with the new DOM"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per the s1 structural map and type bundles: the board document has a plain header, toggle-button tabs, a <select> scope and a checkbox filter; BOARD_STYLE holds about 20 rules (auto-fit grid, outlined badges, density, focus); cards carry no compact id or task summary; the Epics tab renders EpicGroupView stage groups of cards; details are flat text in an <aside> placed after #board; StatusView carries only a message and partialNotice; the empty and no-match states are single #empty / #status / #notice lines.",
+      "stateAfter": "The document carries the PRD chrome (app bar with freshness line, role=tablist underline tabs, chip toolbar, #panel); cards carry compactId and taskSummary; the Epics tab renders EpicRollupRowView rows whose titles open the scoped board; details sit before #board in the DOM with kicker, chips, conflict box, task disclosures, 'Why this stage?' and the route-aware chain; StatusView carries freshnessLabel and a typed panel; a clear-filters up-message exists. Colours remain --vscode-* only and the CSP is unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new view-model fields and types (CardView compactId/taskSummary, EpicRollupRowView, ChainRowView, details kicker/chips/chain/structured conflict, StatusView freshnessLabel/panel, clear-filters message, new labels) and derive them in the pure builders, keeping existing fields in place.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Switch EpicRollupViewModel.epics / notInEpic to EpicRollupRowView and remove EpicGroupView / StageGroupView once their only consumer (renderGroup) is replaced in the same change.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Rewrite renderBoardDocument, BOARD_STYLE and the webview DOM builders to the new structure; move #details before #board; replace #empty/#notice with #panel.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Thread deps.now() through boardDownMessages into statusView and through announceRefresh's statusView call (both in board-host.ts), update the existing three-argument boardDownMessages calls in board-state.test.ts and the other tests, and handle clear-filters in the host.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Update and extend the board tests and re-run the performance fixture; rebuild and reinstall the VS Code extension package.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Internal only: board-protocol.ts types travel between the host and its own webview script, both shipped in the same extension build, so there is no cross-version consumer. No daemon IPC, setting, persisted state or command id changes. The webview's saved state keeps only density, which is unchanged. The removed EpicGroupView / StageGroupView have no consumer outside vscode-plugin/src/delivery.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Model-first: extend view models, then restyle the renderer",
+        "oneLineSummary": "Add every value the mocks show to the pure view models (board-protocol types), and have the webview script and stylesheet only lay them out.",
+        "approach": "Keep the split the module already has: pure builders derive every displayed value from the snapshot, and the webview renders text. CardView gains a compact identifier and a task-validation summary. EpicGroupView is replaced, for the Epics tab, by a rollup-row model carrying story, complete, task and attention counts plus the epic id, with no per-stage card lists. ItemDetailsViewModel gains an ordered artifact chain for the route, with one row per expected kind (recorded, not recorded, or not applicable), drawing DEF/HLD from the parent epic's evidence. ColumnView and the stage groups carry whether a stage is empty so the narrow pane can fold them. StatusView gains a typed state panel (empty, no-matches, refresh-failed, partial with affected record ids). The webview's DOM builders and BOARD_STYLE are rewritten to the mocks' structure using --vscode-* variables only: app bar, underline tabs (role=tablist), chip filters (buttons with aria-pressed, keeping the existing set-scope/set-attention messages), tone pills, six-column grid, rollup rows whose title posts set-scope + set-view, details as a side panel when wide and full-width above the board when narrow, and state panels with clear-filters and retry buttons. One new up-message, clear-filters, is added; retry reuses refresh.",
+        "pros": [
+          "Every value shown is computed and unit-tested in the pure builders; the script stays a thin text renderer, as E2 required",
+          "Determinism and the counts-agree rule (AC-09) are tested on the models, not the DOM",
+          "The daemon fields from ISSUE-7224d0d4 slot in later as new model fields without touching layout logic"
+        ],
+        "cons": [
+          "Touches the protocol types, so every model test and the host's message tests change",
+          "Largest diff of the options"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Renderer-only: derive the extra values in the webview script",
+        "oneLineSummary": "Leave the view models as they are and compute identifiers, rollup counts, chain rows and state panels inside BOARD_WEBVIEW_SCRIPT.",
+        "approach": "The script already receives the board, epics, issues and details models. It would compute rollup counts by walking the stage groups it is sent, the compact identifier from the item id string, the chain by comparing evidence kinds against a hard-coded per-route list, and the state panel from the status message and #empty text. Only BOARD_STYLE and the script's DOM builders change.",
+        "pros": [
+          "No protocol or builder changes; model tests stay untouched",
+          "Smallest change on the host side"
+        ],
+        "cons": [
+          "Moves interpretation into the untyped, string-built script, which E2 deliberately kept as a pure renderer",
+          "Task counts are not in the rollup model, so the script cannot compute them without the full snapshot",
+          "Chain 'not applicable' needs the route, which the details model does not carry; logic would be duplicated and only testable through the fake DOM",
+          "Risks the 150 ms filter target by doing per-render aggregation in the webview"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Cannot fully present mock A or B (k1 partial) and moves interpretation into the untyped script."
+      },
+      {
+        "id": "a3",
+        "name": "Split delivery: presentation pass now, rollup and details models in a second story",
+        "oneLineSummary": "Ship stylesheet, chrome, chips, pills, six columns, conflict box and state panels first; rework the rollup and details models separately.",
+        "approach": "First story: rewrite BOARD_STYLE and the document chrome, restyle existing elements (badges as pills, tabs, chips), fix details placement, add state panels from existing StatusView fields, and add the card identifier and task count. Second story: replace the Epics tab with rollup rows and add the artifact chain with 'Not recorded' rows, both needing model changes. The two stories share the same tests and files.",
+        "pros": [
+          "The visible look improves sooner",
+          "Each review is smaller"
+        ],
+        "cons": [
+          "Both halves edit the same files (board-host.ts, board-protocol.ts, board-host.test.ts) and the same tests, so they would conflict or serialise anyway",
+          "Mock A (the biggest miss) waits for the second story",
+          "Splits one approved issue across two ledger stories without an independent value boundary"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Same end state as a1 but k1 only partial within this story, and both halves edit the same files."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Standalone bugfix stories carry no acceptance criteria (6f31771d); ac1-ac8 in the test strategy are derived from ISSUE-b2687832's fix intent. Confirm they stand in for the story's criteria.",
+      "Mock E folds empty stages under an 'Other stages · 0 matching' disclosure; this LLD instead wraps empty stage labels (each with its 0 count chip) onto one compact line in narrow panes, because the same DOM serves the wide board where empty columns must stay visible and the no-hiding rule forbids collapsing them. Confirm this deviation from the ISSUE's fix intent.",
+      "cd3/dm2 audit partials: errors are log-and-keep-state rather than typed throws, and the rollup/conflict field-modify entries rely on the AC-09 invariant stated in postconditions and s5 rather than in the dataModel entry."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 structural-map: vscode-plugin/src/delivery module layout and consumers"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: view-model types in vscode-plugin/src/delivery/board-protocol.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace: DeliveryItemView pick (vscode-plugin/src/delivery/delivery-contract.ts, src/workflow/delivery/types.ts)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example: builders and their callers (board-state.ts, board-views.ts, board-model.ts, details-memory.ts, board-host.ts)"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 search.text: stylesheet / DOM constraints pinned in vscode-plugin/src/delivery/__tests__/board-host.test.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate: vscode-plugin/src/delivery/__tests__ suites incl. board-perf.test.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Cards show type, human title, compact stable identifier, epic context, recorded size when present, and task-validation count."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/defect-against-epic-e2-6a131558-vs-E20261009b2687832/ISSUE.md"
+    }
+  ]
+}

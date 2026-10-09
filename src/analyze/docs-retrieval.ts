@@ -75,8 +75,23 @@ export interface DocsRetrievalReport {
 	vectorPassSkipped?: string | undefined;
 }
 
+/**
+ * A part of a repo a retrieval keeps to: a directory (everything under it) or
+ * one file. Absent, the whole closure is searched.
+ */
+export type DocsArea = { readonly directory: string } | { readonly file: string };
+
+/** Whether a file lies in the area. */
+export function inDocsArea(area: DocsArea, file: string): boolean {
+	if ('file' in area) return file === area.file;
+	return file === area.directory || file.startsWith(`${area.directory}/`);
+}
+
 export interface DocsRetrievalArgs {
 	readonly db:             DbClient;
+	/** Keep to this part of the closure. The candidates are narrowed to it
+	 *  before either pass, so ranking and the result limit apply within it. */
+	readonly area?:          DocsArea | undefined;
 	/** Filled with what the retrieval could not do. A caller that states its completeness passes one. */
 	readonly report?:        DocsRetrievalReport | undefined;
 	readonly query:          string;
@@ -152,11 +167,12 @@ export async function retrieveDocSections(
 	const candidatesByRepo: Entity[] = [];
 	for (const repo of args.closureRepos) {
 		const inRepo = await listEntitiesByKinds(args.db, kinds, { repo });
-		candidatesByRepo.push(...inRepo);
+		const area = args.area;
+		candidatesByRepo.push(...(area === undefined ? inRepo : inRepo.filter(e => inDocsArea(area, e.file))));
 	}
 	if (candidatesByRepo.length === 0) {
 		log.debug(
-			{ query: args.query, closureRepos: args.closureRepos },
+			{ query: args.query, closureRepos: args.closureRepos, area: args.area },
 			'retrieveDocSections: no doc entities in closure',
 		);
 		return [];

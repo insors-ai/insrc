@@ -25,7 +25,7 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 
-import { graphRepoOf, resolveTaskScope } from '../shared/task-scope.js';
+import { docsAreaOf, graphRepoOf, resolveTaskScope } from '../shared/task-scope.js';
 
 const TEMPLATE_ID = 'docs.decision.trace';
 
@@ -42,15 +42,18 @@ export const docsDecisionTraceRuntime: TemplateRuntime = {
 			? params['maxSources'] as number
 			: undefined;
 
-		// The one scope function: the kinds a docs task accepts and the repo whose
-		// documents it reads. What it retrieves is not yet narrowed to the area.
-		const repoPath = graphRepoOf(await resolveTaskScope(args.intent.scopeRef, 'docs', TEMPLATE_ID));
+		// The one scope function: the kinds a docs task accepts, the repo whose
+		// documents it reads, and the area of that repo retrieval keeps to.
+		const scope    = await resolveTaskScope(args.intent.scopeRef, 'docs', TEMPLATE_ID);
+		const repoPath = graphRepoOf(scope);
+		const area     = docsAreaOf(scope);
 
 		const db = await getDb();
 		const output = await runSharedDocDecisionTrace({
 			topic:      topic.trim(),
 			repoPath,
 			db,
+			...(area !== undefined ? { area } : {}),
 			...(maxSources !== undefined ? { maxSources } : {}),
 			runId:      args.runId,
 			logContext: `template:${args.task.taskId}`,

@@ -692,6 +692,10 @@ no data task accepted a `connection`.
 - A data task with a `connection` scope works on that connection alone. For
   the other kinds it opens the connection pool at the scope's own directory,
   as before.
+  The connection-listing task's optional `scopeRefValue` parameter decides
+  where the pool is opened and nothing else: the scope's kind is still
+  checked, and under a `connection` scope the task still lists that
+  connection alone.
 - A code or docs task needs its scope indexed. An infra or data task does not
   read the stored graph and is not checked for an index.
 
@@ -745,7 +749,9 @@ A child plan with a failed task still returns its report to its parent.
   record reading `in-progress`: the record is written as `failed` at the stage
   the run had reached, with `internal-error` and the error's message, and that
   failure is the run's result. An error before any stage has started is
-  reported at `classify`.
+  reported at `classify`. A record that already says how its run ended
+  (`ok` or `failed`) is left as it is, and so is a record shared with another
+  run still going under the same id: that run writes it.
 - `run-abandoned`: a run record that is `in-progress` means a run is live in
   the daemon. A record left `in-progress` with no live run behind it (the
   daemon was restarted, or the run's process died) is **abandoned**. The

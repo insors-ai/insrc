@@ -28,9 +28,9 @@ const ref = (kind: AnalyzeScopeRef['kind'], value = VALUE[kind]): AnalyzeScopeRe
 
 interface Fixture {
 	/** The registry: the repos it holds, or 'unreadable'. */
-	registry?: readonly string[] | 'unreadable';
+	registry?: readonly string[] | 'unreadable' | undefined;
 	/** Whether a registered repo has stored entities. */
-	indexed?: boolean;
+	indexed?: boolean | undefined;
 }
 function deps(f: Fixture = {}): ScopeDeps & { calls: string[] } {
 	const registry = f.registry ?? [REPO];

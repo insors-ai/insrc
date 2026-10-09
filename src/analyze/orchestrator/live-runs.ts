@@ -30,7 +30,12 @@ export function lowerRunLive(runId: string): void {
 	else liveCount.set(runId, count - 1);
 }
 
+/** How many runs are going under this id in this process. */
+export function liveRunCount(runId: string): number {
+	return liveCount.get(runId) ?? 0;
+}
+
 /** Whether at least one run is going under this id in this process. */
 export function isRunLive(runId: string): boolean {
-	return (liveCount.get(runId) ?? 0) > 0;
+	return liveRunCount(runId) > 0;
 }

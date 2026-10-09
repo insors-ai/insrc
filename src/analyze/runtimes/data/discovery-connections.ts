@@ -58,11 +58,13 @@ export const dataDiscoveryConnectionsRuntime: TemplateRuntime = {
 	templateId: TEMPLATE_ID,
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
-		// An explicit repo path in the task's params takes precedence, as before;
-		// otherwise the request's scope decides where the pool is opened.
+		// The request's scope is always resolved: the kinds a data task accepts,
+		// and the one connection a connection scope holds the task to. An explicit
+		// repo path in the task's params takes precedence over WHERE the pool is
+		// opened, as before, and over nothing else: it lifts neither check.
 		const explicit = optionalStringParam(args, 'scopeRefValue', TEMPLATE_ID);
-		const scope    = explicit !== undefined ? { poolPath: explicit } : await resolveDataScope(args, TEMPLATE_ID);
-		const repoPath = scope.poolPath;
+		const scope    = await resolveDataScope(args, TEMPLATE_ID);
+		const repoPath = explicit ?? scope.poolPath;
 
 		const pool = await acquireDataPool(repoPath);
 		// reload() is idempotent + cheap; ensures we see edits made to

@@ -72,7 +72,7 @@ import {
 	type AnswerReport,
 } from '../completeness.js';
 
-import { lowerRunLive, raiseRunLive } from './live-runs.js';
+import { liveRunCount, lowerRunLive, raiseRunLive } from './live-runs.js';
 import { readRunRecord, writeRunRecord } from './persistence.js';
 import type {
 	AnalyzeRunEvent,
@@ -91,9 +91,6 @@ import type {
 } from '../../shared/analyze-types.js';
 
 const log = getLogger('analyze:orchestrator:driver');
-
-/** The writer itself. Inside runStages the name `writeRunRecord` is the run's own, which also notes what was written. */
-const writeRunRecordToDisk = writeRunRecord;
 
 // ---------------------------------------------------------------------------
 // runAnalyze -- public entry point
@@ -145,15 +142,27 @@ export async function runAnalyze(
 		const failure: RunFailure = { code: 'internal-error', message: err instanceof Error ? err.message : String(err) };
 		log.error({ runId, stage: reached.stage, err: failure.message }, 'runAnalyze: uncaught error; the run is recorded as failed');
 		try {
-			const base: RunRecord = reached.record ?? {
-				runId, createdAt: nowIso(), updatedAt: nowIso(),
-				userPrompt: args.userPrompt, initialScopeRef: args.scopeRef,
-				stage: reached.stage, status: 'in-progress',
-			};
-			writeRunRecord(patch(base, {
-				stage: reached.stage, status: 'failed', error: failure,
-				...(reached.intent !== undefined ? { intent: reached.intent } : {}),
-			}));
+			// The record is marked failed only when it is this run's to mark:
+			//   - a record that already says how a run ended ('ok' or 'failed') is
+			//     left as it is, also when the error was raised after that write;
+			//   - while another run is going under the same id the record is shared
+			//     and the run still going writes it, so this run leaves it alone.
+			const onDisk = readRunRecord(runId);
+			if (onDisk !== null && onDisk.status !== 'in-progress') {
+				log.warn({ runId, status: onDisk.status, stage: onDisk.stage }, 'runAnalyze: the run record already says how the run ended; it is left as it is');
+			} else if (liveRunCount(runId) > 1) {
+				log.warn({ runId }, 'runAnalyze: another run is going under this id; the shared run record is left to it');
+			} else {
+				const base: RunRecord = reached.record ?? {
+					runId, createdAt: nowIso(), updatedAt: nowIso(),
+					userPrompt: args.userPrompt, initialScopeRef: args.scopeRef,
+					stage: reached.stage, status: 'in-progress',
+				};
+				writeRunRecord(patch(base, {
+					stage: reached.stage, status: 'failed', error: failure,
+					...(reached.intent !== undefined ? { intent: reached.intent } : {}),
+				}));
+			}
 		} catch (writeErr) {
 			// The disk may be the very cause of the first error. The record is left
 			// as it was; the run is no longer live, so a reader corrects it.
@@ -192,10 +201,10 @@ async function runStages(
 	const { start, emit, emitDoneAndReturn, reached } = ctx;
 	const { runId, userPrompt, scopeRef: initialScopeRef } = args;
 
-	// Every write of the run record goes through here, so the handler knows
-	// the record last written and the stage the run is in.
-	const writeRunRecord = (r: RunRecord): string => {
-		const path = writeRunRecordToDisk(r);
+	// Every write of the run record by a stage goes through here, so the
+	// handler knows the record last written and the stage the run is in.
+	const saveRunRecord = (r: RunRecord): string => {
+		const path = writeRunRecord(r);
 		reached.record = r;
 		if (r.status === 'in-progress' && r.stage !== 'done') reached.stage = r.stage;
 		if (r.intent !== undefined) reached.intent = r.intent;
@@ -229,7 +238,7 @@ async function runStages(
 		stage: 'classify',
 		status: 'in-progress',
 	};
-	writeRunRecord(record);
+	saveRunRecord(record);
 
 	// Pre-stage abort check helper. Returns a terminal fail result
 	// when aborted; caller short-circuits with it.
@@ -245,7 +254,7 @@ async function runStages(
 			error: failure,
 			...(intent !== undefined ? { intent } : {}),
 		});
-		writeRunRecord(record);
+		saveRunRecord(record);
 		log.info({ runId, stage }, 'runAnalyze: aborted via signal');
 		return failResult(stage, failure, intent, start, runId);
 	};
@@ -266,7 +275,7 @@ async function runStages(
 		const hinted = await hintedIntentBase(args.targetHint, userPrompt, initialScopeRef);
 		if (!hinted.ok) {
 			record = patch(record, { stage: 'classify', status: 'failed', error: hinted.failure });
-			writeRunRecord(record);
+			saveRunRecord(record);
 			log.warn({ runId, code: hinted.failure.code }, 'runAnalyze: hinted request failed validation');
 			return emitDoneAndReturn(failResult('classify', hinted.failure, undefined, start, runId));
 		}
@@ -336,14 +345,14 @@ async function runStages(
 		} catch (err) {
 			const failure = classifyClassifierError(err);
 			record = patch(record, { stage: 'classify', status: 'failed', error: failure });
-			writeRunRecord(record);
+			saveRunRecord(record);
 			log.warn({ runId, code: failure.code }, 'runAnalyze: classify failed');
 			return emitDoneAndReturn(failResult('classify', failure, undefined, start, runId));
 		}
 	}
 	emit({ type: 'classified', intent });
 	record = patch(record, { stage: 'plan', intent });
-	writeRunRecord(record);
+	saveRunRecord(record);
 	log.info({ runId, target: intent.target, scope: intent.scope }, 'runAnalyze: classified');
 
 	// ----- (2) Build run-level context bundle + (3) plan -----
@@ -376,7 +385,7 @@ async function runStages(
 	} catch (err) {
 		const failure = classifyShaperError(err);
 		record = patch(record, { stage: 'plan', status: 'failed', error: failure });
-		writeRunRecord(record);
+		saveRunRecord(record);
 		log.warn({ runId, code: failure.code }, 'runAnalyze: bundle build failed');
 		return emitDoneAndReturn(failResult('plan', failure, intent, start, runId));
 	}
@@ -397,7 +406,7 @@ async function runStages(
 			// for a scope that is not indexed, the scope's path and its registration.
 			const failure: RunFailure = scoped;
 			record = patch(record, { stage: 'plan', status: 'failed', error: failure });
-			writeRunRecord(record);
+			saveRunRecord(record);
 			log.warn({ runId, code: failure.code }, "runAnalyze: the run's scope was refused before planning");
 			return emitDoneAndReturn(failResult('plan', failure, intent, start, runId));
 		}
@@ -430,7 +439,7 @@ async function runStages(
 	} catch (err) {
 		const failure = classifyPlannerError(err);
 		record = patch(record, { stage: 'plan', status: 'failed', error: failure });
-		writeRunRecord(record);
+		saveRunRecord(record);
 		log.warn({ runId, code: failure.code }, 'runAnalyze: plan build failed');
 		return emitDoneAndReturn(failResult('plan', failure, intent, start, runId));
 	}
@@ -440,7 +449,7 @@ async function runStages(
 		planId: tree.plan.planId,
 	});
 	record = patch(record, { stage: 'execute' });
-	writeRunRecord(record);
+	saveRunRecord(record);
 
 	// ----- (4) Execute -----
 	{
@@ -496,7 +505,7 @@ async function runStages(
 			tasksCompleted: rootPlan.tasksCompleted,
 			tasksFailed: rootPlan.tasksFailed,
 		});
-		writeRunRecord(record);
+		saveRunRecord(record);
 		log.warn({ runId, tasksFailed: rootPlan.tasksFailed.length }, 'runAnalyze: aggregator failed');
 		return emitDoneAndReturn(failResult('execute', failure, intent, start, runId));
 	}

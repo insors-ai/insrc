@@ -33,6 +33,13 @@ import type { KindsPerTarget, ResolvedScope, ScopeDeps } from '../../context/sco
 /** The four families whose plan tasks have a scope of their own. */
 export type TaskFamily = 'code' | 'docs' | 'infra' | 'data';
 
+/** Test seam: the readers every runtime's call uses when it passes none (a
+ *  runtime never passes any). Pass undefined to go back to the real stores. */
+let depsForTest: ScopeDeps | undefined;
+export function _setTaskScopeDepsForTest(deps: ScopeDeps | undefined): void {
+	depsForTest = deps;
+}
+
 /** The families whose tasks read the stored graph, and so need the scope indexed. */
 const GRAPH_FAMILIES: ReadonlySet<TaskFamily> = new Set(['code', 'docs']);
 
@@ -53,16 +60,17 @@ export async function resolveTaskScope(
 	/** A stand-in for the classifier's table, for a test; never passed in production. */
 	table:         KindsPerTarget = TARGET_TO_KINDS,
 ): Promise<ResolvedScope> {
+	const readers = deps ?? depsForTest;
 	let scope: ResolvedScope;
 	try {
-		scope = await resolveScopeForTarget(scopeRef, family, deps, table);
+		scope = await resolveScopeForTarget(scopeRef, family, readers, table);
 	} catch (err) {
 		// Say which template refused; the class, and so the code, is unchanged.
 		if (err instanceof ScopeKindTargetMismatchError) err.message = `${templateLabel}: ${err.message}`;
 		throw err;
 	}
 	if (GRAPH_FAMILIES.has(family)) {
-		await ensureNonEmptyClosure(scope, deps);
+		await ensureNonEmptyClosure(scope, readers);
 	}
 	return scope;
 }

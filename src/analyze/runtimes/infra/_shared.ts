@@ -7,8 +7,8 @@
  * Shared helpers for the infra-target deterministic runtimes
  * (discovery-families / inventory-kubernetes / inventory-terraform).
  *
- * Mirrors the code/_shared.ts pattern: scopeRef reading + repo
- * path resolution + a filesystem walker. Internal to infra/.
+ * scopeRef reading + a filesystem walker. Internal to infra/. A task's scope
+ * is resolved by the one scope function, shared/task-scope.ts.
  */
 
 import { readdir } from 'node:fs/promises';
@@ -19,7 +19,7 @@ import { buildCompleteness } from '../../completeness.js';
 import type { Completeness, ReachedLimit, SkippedItem } from '../../completeness.js';
 
 // ---------------------------------------------------------------------------
-// scopeRef reading + repo path resolution (mirrors code helpers)
+// scopeRef reading
 // ---------------------------------------------------------------------------
 
 export interface ScopeRef {
@@ -44,20 +44,6 @@ export function readScopeRef(args: TemplateExecuteArgs, templateLabel: string): 
 		);
 	}
 	return { kind, value };
-}
-
-export function resolveRepoPath(scopeRef: ScopeRef, templateLabel: string): string {
-	switch (scopeRef.kind) {
-		case 'repo':
-		case 'manifest-dir':
-		case 'workspace':
-			return scopeRef.value;
-		default:
-			throw new Error(
-				`${templateLabel}: scopeRef.kind='${scopeRef.kind}' not supported yet. ` +
-					'Supported in this revision: repo, manifest-dir, workspace.',
-			);
-	}
 }
 
 // ---------------------------------------------------------------------------

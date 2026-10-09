@@ -36,11 +36,12 @@ import type {
 } from '../../executor/types.js';
 import {
 	readScopeRef,
-	resolveRepoPath,
 	fileWalkCompleteness,
 	unreadableFile,
 	walkFiles,
 } from './_shared.js';
+import { resolveTaskScope } from '../shared/task-scope.js';
+import type { AnalyzeScopeRef } from '../../../shared/analyze-types.js';
 import type { SkippedItem } from '../../completeness.js';
 
 const TEMPLATE_ID = 'infra.inventory.ci';
@@ -119,7 +120,8 @@ export const infraInventoryCiRuntime: TemplateRuntime = {
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
-		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
+		// The one scope function: the kinds an infra task accepts, and the directory it walks.
+		const repoPath = (await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'infra', TEMPLATE_ID)).lookupPath;
 
 		const { files: walked, truncated, unreadable } = await walkFiles(repoPath);
 		// Files the inventory could not read or parse, and directories the walk could not enter.

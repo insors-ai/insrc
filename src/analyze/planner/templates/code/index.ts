@@ -88,7 +88,11 @@ export const codeSurfaceFunctional: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['module'],
 		properties: {
-			module: { type: 'string', minLength: 1 },
+			module: {
+				type:        'string',
+				minLength:   1,
+				description: 'The module to describe. Write a directory of the repository: its absolute path, or its path relative to the repo (the `directory` or the `name` that code.discovery.modules returns). A directory that holds source only in its sub-directories is accepted, and its surface is everything under it. The entity id of a stored module entity is accepted too.',
+			},
 			depth:  { type: 'string', enum: ['shallow', 'deep'] },
 		},
 	},

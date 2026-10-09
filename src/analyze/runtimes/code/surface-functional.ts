@@ -10,11 +10,21 @@
  *   - exports         : externally-visible symbols (isExported=true)
  *   - internalHelpers : non-exported functions / methods / classes
  *
- * The `module` param is the entity ID of a module entity (the
- * `entityId` field that code.discovery.modules emits). The runtime
- * uses the module entity's file to determine the module's directory
- * prefix, then collects every function / method / class entity in
- * the same repo whose `file` lives under that prefix.
+ * The `module` param names the module in one of three forms:
+ *   - a directory of the repository, as an absolute path;
+ *   - a directory of the repository, relative to the repo;
+ *   - the entity id of a stored module entity.
+ * A plan writes a directory path: the planner cannot know an entity
+ * id, and no parser stores a module entity for a repository's own
+ * directories. The value is read in shared/source-modules.ts.
+ *
+ * An entity id is read exactly as before Story s8: no scope is
+ * resolved, the entity's own repo is read whole, and the surface is
+ * every function / method / class under the directory of the
+ * entity's file. Any other value is a directory path under the
+ * run's scope: the repo of that scope is read, narrowed to the
+ * scope's area, and the surface is everything under the directory,
+ * at any depth.
  *
  * For `depth: 'shallow'` (default), `body` is omitted from the
  * output (signature + location only). For `depth: 'deep'`, body
@@ -22,14 +32,16 @@
  *
  * Output:
  *   { functional-surface: {
- *       module:          { name, path, entityId },
+ *       module:          { name, path, directory, entityId? },
  *       exports:         SurfaceSymbol[],
  *       internalHelpers: SurfaceSymbol[]
  *     } }
  *
  * Deterministic. Throws on:
  *   - missing params.module
- *   - params.module not a known entity OR not a module entity
+ *   - an entity id of an entity that is not a module entity
+ *   - a directory path under a file or symbol scope, outside the
+ *     area of the run's scope, or with no stored source file under it
  */
 
 import { getLogger } from '../../../shared/logger.js';
@@ -41,13 +53,21 @@ import type {
 	TemplateExecuteResult,
 	TemplateRuntime,
 } from '../../executor/types.js';
+import type { Entity } from '../../../shared/types.js';
 import { compareEntitiesByLocation, modulePrefixOf } from './_shared.js';
+import { liesUnder, moduleOfDirectory, moduleOfEntityId } from '../shared/source-modules.js';
+import type { NamedModule } from '../shared/source-modules.js';
+import { graphRepoOf, inAreaOf, resolveTaskScope } from '../shared/task-scope.js';
 import { graphCompleteness } from '../../explore/completeness-facts.js';
 
 const TEMPLATE_ID = 'code.surface.functional';
 const log = getLogger('analyze:runtimes:code:surface-functional');
 
 const SURFACE_KINDS = new Set(['function', 'method', 'class']);
+
+/** What the surface rests on, for its completeness record. */
+export const SURFACE_RULE =
+	"The surface lists the functions, methods and classes of every stored source file under the module's directory, including its sub-directories.";
 
 interface SurfaceSymbol {
 	readonly name:       string;
@@ -78,24 +98,28 @@ export const codeSurfaceFunctionalRuntime: TemplateRuntime = {
 		}
 
 		const db = await getDb();
-		const moduleEntity = await getEntity(db, moduleId);
-		if (moduleEntity === null) {
-			throw new Error(
-				`${TEMPLATE_ID}: module entity '${moduleId}' not found in the graph (taskId=${args.task.taskId})`,
-			);
-		}
-		if (moduleEntity.kind !== 'module') {
-			throw new Error(
-				`${TEMPLATE_ID}: entity '${moduleId}' has kind='${moduleEntity.kind}', expected 'module' (taskId=${args.task.taskId})`,
-			);
-		}
 
-		const prefix   = modulePrefixOf(moduleEntity.file);
-		const entities = await listEntitiesForRepo(db, moduleEntity.repo);
+		// Step 1: is the value the id of a stored entity? Asked before any scope
+		// is resolved, so an id is read exactly as before this Story.
+		const byId = await moduleOfEntityId(moduleId, id => getEntity(db, id), args.task.taskId);
 
-		const inModule = entities.filter(
-			e => SURFACE_KINDS.has(e.kind) && e.file.startsWith(prefix),
-		);
+		let named:    NamedModule;
+		let inModule: Entity[];
+		if (byId !== null) {
+			// The entity's own repo, whole, and everything under the directory of its file.
+			named = byId;
+			const prefix   = modulePrefixOf(byId.path);
+			const entities = await listEntitiesForRepo(db, byId.entity!.repo);
+			inModule = entities.filter(e => SURFACE_KINDS.has(e.kind) && e.file.startsWith(prefix));
+		} else {
+			// Step 2: a directory path, under the run's scope. The one scope function
+			// gives the repo to read and the area to keep to.
+			const scope    = await resolveTaskScope(args.intent.scopeRef, 'code', TEMPLATE_ID);
+			const entities = (await listEntitiesForRepo(db, graphRepoOf(scope))).filter(inAreaOf(scope));
+			named = moduleOfDirectory(moduleId, scope, entities);
+			const directory = named.directory;
+			inModule = entities.filter(e => SURFACE_KINDS.has(e.kind) && liesUnder(directory, e.file));
+		}
 		inModule.sort(compareEntitiesByLocation);
 
 		const exports:         SurfaceSymbol[] = [];
@@ -119,9 +143,11 @@ export const codeSurfaceFunctionalRuntime: TemplateRuntime = {
 
 		const surface = {
 			module: {
-				name:     moduleEntity.name,
-				path:     moduleEntity.file,
-				entityId: moduleEntity.id,
+				name:      named.name,
+				path:      named.path,
+				directory: named.directory,
+				// Only a stored module entity has an id; a directory is known by its path.
+				...(named.entity !== undefined ? { entityId: named.entity.id } : {}),
 			},
 			exports,
 			internalHelpers,
@@ -132,7 +158,7 @@ export const codeSurfaceFunctionalRuntime: TemplateRuntime = {
 				runId:                args.runId,
 				taskId:               args.task.taskId,
 				moduleId,
-				modulePrefix:         prefix,
+				moduleDirectory:      named.directory,
 				exportCount:          exports.length,
 				internalHelperCount:  internalHelpers.length,
 				depth:                deep ? 'deep' : 'shallow',
@@ -142,8 +168,8 @@ export const codeSurfaceFunctionalRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['functional-surface', surface]]),
-			// Every surface symbol under the module's path is listed.
-			completeness: graphCompleteness({ returned: exports.length + internalHelpers.length }),
+			// Every surface symbol under the module's directory is listed.
+			completeness: graphCompleteness({ returned: exports.length + internalHelpers.length, rule: SURFACE_RULE }),
 		};
 	},
 };

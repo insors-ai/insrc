@@ -158,6 +158,30 @@ test('the source scan asserts the new form for structure-module-tree.ts', () => 
 	assert.deepEqual(Object.entries(READ_FORM).filter(([, form]) => form === 'area').map(([file]) => file), ['code/discovery-entrypoints.ts']);
 });
 
+test("the source scan asserts that surface-functional.ts resolves the run's scope through the one scope function for a directory path", () => {
+	const text = sources('code').get('code/surface-functional.ts')!;
+	// The task has no scope parameter of its own: it does not call readScopeRef, so the
+	// scan's list of runtimes with a scope does not find it. It takes the run's scope.
+	assert.ok(!/\breadScopeRef\(/.test(text));
+	assert.equal(text.match(/\bresolveTaskScope\(/g)!.length, 1);
+	assert.match(text, /const scope\s+= await resolveTaskScope\(args\.intent\.scopeRef, 'code', TEMPLATE_ID\);/);
+	assert.ok(!VALUE_READ.test(text), "reads the scope's value");
+
+	// The id is asked first, and the scope is resolved only on the branch where it was not an id.
+	const idAt    = text.indexOf('await moduleOfEntityId(moduleId, id => getEntity(db, id), args.task.taskId)');
+	const branch  = text.indexOf('if (byId !== null) {');
+	const elseAt  = text.indexOf('} else {', branch);
+	const scopeAt = text.indexOf('await resolveTaskScope(');
+	assert.ok(idAt > 0 && branch > idAt && elseAt > branch && scopeAt > elseAt, 'the scope is resolved after the id lookup, in the else branch');
+	// On the id branch the entity's own repo is read whole; on the directory branch the scope's repo, narrowed to its area.
+	const idBranch = text.slice(branch, elseAt);
+	const dirBranch = text.slice(elseAt, text.indexOf('inModule.sort('));
+	assert.match(idBranch, /await listEntitiesForRepo\(db, byId\.entity!\.repo\);/);
+	assert.ok(!/inAreaOf|resolveTaskScope|graphRepoOf/.test(idBranch), 'the id branch reads no scope');
+	assert.match(dirBranch, /\(await listEntitiesForRepo\(db, graphRepoOf\(scope\)\)\)\.filter\(inAreaOf\(scope\)\);/);
+	assert.match(dirBranch, /named = moduleOfDirectory\(moduleId, scope, entities\);/);
+});
+
 test("no docs runtime uses the scope's value as a repo path", () => {
 	const docs = sources('docs');
 	assert.ok(docs.size >= 6, `the scan found the runtime files (${docs.size} docs)`);

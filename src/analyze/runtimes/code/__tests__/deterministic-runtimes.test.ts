@@ -304,14 +304,16 @@ test('surface.functional: shallow depth omits body, deep includes it',
 	}
 });
 
-test('surface.functional: unknown module entity id -> throws',
+test('the gated test of an unknown module value fails with the message that no stored source file lies under it',
 { skip: !GATE }, async () => {
 	const task = mkTask('code.surface.functional',
 		{ module: '0'.repeat(32) },
 		['functional-surface']);
 	await assert.rejects(
 		codeSurfaceFunctionalRuntime.execute(mkArgs(task, 'rt-det-surf-missing')),
-		/module entity '0+' not found/,
+		// A value that is no stored entity's id is read as a directory of the repo
+		// (before Story s8 it failed as "module entity '<id>' not found in the graph").
+		/^Error: code\.surface\.functional: the module value '0{32}' names the directory '.*\/0{32}', and no stored source file lies under it in the repo '/,
 	);
 });
 

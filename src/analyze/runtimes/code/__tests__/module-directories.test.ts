@@ -27,8 +27,14 @@ import type { Entity, EntityKind, Relation } from '../../../../shared/types.js';
 import type { Completeness } from '../../../completeness.js';
 import type { PlannedTask, TemplateExecuteArgs, TemplateExecuteResult, TemplateRuntime } from '../../../executor/types.js';
 import { MODULE_RULE } from '../../shared/source-modules.js';
+import { _setTaskScopeDepsForTest } from '../../shared/task-scope.js';
+import { buildCompleteness } from '../../../completeness.js';
+import { purgeAllTaskOutputs, registerTemplateRuntime, runExecutor, _resetRuntimeRegistryForTests } from '../../../executor/index.js';
+import type { PlanTask } from '../../../executor/types.js';
+import type { ScopeDeps } from '../../../context/scope.js';
 import { codeDiscoveryModulesRuntime } from '../discovery-modules.js';
 import { codeStructureModuleTreeRuntime, MODULE_TREE_RULE } from '../structure-module-tree.js';
+import { codeSurfaceFunctionalRuntime, SURFACE_RULE } from '../surface-functional.js';
 
 const NOW = '2026-10-09T10:00:00.000Z';
 
@@ -110,6 +116,8 @@ test.beforeEach(async () => {
 });
 
 test.afterEach(async () => {
+	_setTaskScopeDepsForTest(undefined);
+	_resetRuntimeRegistryForTests();
 	await closeGraphStore();
 	rmSync(dir, { recursive: true, force: true });
 });
@@ -331,4 +339,204 @@ test("a repository with no module entity and one source file gives one node '.' 
 		await closeGraphStore();
 		rmSync(empty, { recursive: true, force: true });
 	}
+});
+
+// ---------------------------------------------------------------------------
+// code.surface.functional
+// ---------------------------------------------------------------------------
+
+interface Surface {
+	module: { name: string; path: string; directory: string; entityId?: string };
+	exports: Array<{ name: string; kind: string; file: string; body?: string }>;
+	internalHelpers: Array<{ name: string; kind: string; file: string }>;
+}
+async function surfaceOf(value: string, scopeRef: AnalyzeScopeRef = repoScope(), extra: Record<string, unknown> = {}): Promise<{ surface: Surface; completeness: Completeness }> {
+	const result = await run(codeSurfaceFunctionalRuntime, scopeRef, { module: value, ...extra });
+	return { surface: result.outputs.get('functional-surface') as Surface, completeness: result.completeness };
+}
+/** The surface as [exports, internal helpers], each a list of names. */
+const namesOf = (s: Surface): [string[], string[]] => [s.exports.map(e => e.name), s.internalHelpers.map(e => e.name)];
+async function refusal(value: string, scopeRef: AnalyzeScopeRef = repoScope()): Promise<string> {
+	try { await surfaceOf(value, scopeRef); } catch (err) { return (err as Error).message; }
+	return 'NOT REFUSED';
+}
+
+test('the functional-surface task given a directory path returns the exports and helpers of every source file under it, including sub-directories, and names the directory in its output (mutation: require a stored module entity, as before)', async () => {
+	await seed([
+		...parsedRepo(),
+		ent('method', 'Ledger.post', 'src/pay/ledger.ts', { startLine: 9 }),
+		// A symbol of `src/payments`, whose name only shares the prefix of `src/pay`.
+		ent('function', 'chargeCard', 'src/payments/card.ts', { isExported: true }),
+	]);
+	const directory = join(REPO, 'src/pay');
+
+	// The planner writes an absolute directory path; a path relative to the repo names the same module.
+	for (const value of [directory, `${directory}/`, 'src/pay', './src/pay']) {
+		const { surface, completeness } = await surfaceOf(value);
+		// The directory is named; it has no entity, so no entity id.
+		assert.deepEqual(surface.module, { name: 'src/pay', path: directory, directory }, value);
+		// Exports and internal helpers of every source file under it, at any depth, sorted by location:
+		// functions, classes and methods, the sub-directory src/pay/rules included.
+		assert.deepEqual(namesOf(surface), [['Ledger', 'settleRefund'], ['Ledger.post', 'lateFee']], value);
+		assert.ok(surface.internalHelpers.some(h => h.file === join(REPO, 'src/pay/rules/late.ts')), 'a symbol of the sub-directory');
+		// Nothing of `src/payments`, whose name only shares the prefix.
+		assert.ok([...surface.exports, ...surface.internalHelpers].every(x => x.file.startsWith(`${directory}/`)), value);
+		// The record: the stored graph, every symbol returned, and that sub-directories are included.
+		assert.deepEqual([completeness.basis, completeness.returned, completeness.complete], ['graph', 4, true], value);
+		assert.ok(completeness.basisNote?.endsWith(SURFACE_RULE), completeness.basisNote);
+	}
+	assert.match(SURFACE_RULE, /including its sub-directories/);
+
+	// A sub-directory on its own, and the depth parameter as before.
+	assert.deepEqual(namesOf((await surfaceOf('src/pay/rules')).surface), [[], ['lateFee']]);
+	const deep = await surfaceOf('src/pay', repoScope(), { depth: 'deep' });
+	assert.ok(deep.surface.exports.every(e => typeof e.body === 'string'));
+	assert.ok((await surfaceOf('src/pay')).surface.exports.every(e => !('body' in e)));
+
+	// A source directory in which no function, method or class is stored: an empty surface, and complete.
+	const empty = await surfaceOf('src/ship');
+	assert.deepEqual(namesOf(empty.surface), [[], []]);
+	assert.deepEqual([empty.completeness.returned, empty.completeness.complete], [0, true]);
+});
+
+test('the functional-surface task given a directory that holds source only in its sub-directories returns their surface', async () => {
+	await seed([...parsedRepo(), ent('function', 'track', 'src/ship/track.ts', { isExported: true })]);
+	// `src` holds no file directly and is not in the module list ...
+	assert.ok(!(await names(repoScope())).includes('src'));
+	// ... and it is a valid module value: everything under it, in every sub-directory.
+	const { surface, completeness } = await surfaceOf('src');
+	assert.deepEqual(surface.module, { name: 'src', path: join(REPO, 'src'), directory: join(REPO, 'src') });
+	assert.deepEqual(namesOf(surface), [['Ledger', 'settleRefund', 'track'], ['lateFee']]);
+	assert.equal(completeness.returned, 4);
+	// The repo's own directory, as '.' and as its path.
+	for (const value of ['.', REPO]) {
+		const root = await surfaceOf(value);
+		assert.deepEqual(root.surface.module, { name: '.', path: REPO, directory: REPO }, value);
+		assert.equal(root.completeness.returned, 4, value);
+	}
+});
+
+test('the functional-surface task given a value that names nothing fails with a reason that says no stored source file lies under it, and the plan walk records the task as failed, not as an empty module', async () => {
+	await seed(parsedRepo());
+	// A directory that does not exist, one that holds a document only, and a bare name.
+	for (const [value, directory] of [['src/none', join(REPO, 'src/none')], ['docs', join(REPO, 'docs')], ['analyze', join(REPO, 'analyze')]] as const) {
+		assert.equal(await refusal(value),
+			`code.surface.functional: the module value '${value}' names the directory '${directory}', and no stored source file lies under it in the repo '${REPO}'.`);
+	}
+	// A missing value keeps the message it had.
+	await assert.rejects(run(codeSurfaceFunctionalRuntime, repoScope(), {}), /task\.params\.module missing or not a string \(taskId=t01\)/);
+
+	// Through the plan walk: the task is failed with the reason, and has no output. It is not an empty module.
+	_resetRuntimeRegistryForTests();
+	registerTemplateRuntime(codeSurfaceFunctionalRuntime);
+	registerTemplateRuntime({
+		templateId: 'demo.aggregate',
+		execute: async () => ({ outputs: new Map([['report', { summary: 's', findings: [] }]]), completeness: buildCompleteness({ returned: 1, basis: 'model-directed' }) }),
+	});
+	const plan = {
+		planId: 'p', goal: 'g', target: 'code', scope: 'S', reasoning: 'fixture plan for the functional-surface task',
+		tasks: [
+			{ taskId: 't01', template: 'code.surface.functional', kind: 'leaf', params: { module: join(REPO, 'src/none') }, produces: ['functional-surface'], rationale: 'the surface of a directory that does not exist' },
+			{ taskId: 't02', template: 'code.surface.functional', kind: 'leaf', params: { module: join(REPO, 'src/ship') }, produces: ['functional-surface'], rationale: 'the surface of a directory with no symbol' },
+			{ taskId: 't03', template: 'demo.aggregate', kind: 'leaf', params: {}, produces: ['report'], rationale: 'the report of the plan' },
+		],
+	} as unknown as PlanTask;
+	const runId = `module-directories-${Math.floor(Math.random() * 1e9).toString(16)}`;
+	try {
+		const intent: ClassifiedIntent = { target: 'code', scope: 'S', focused: false, scopeRef: repoScope(), reasoning: 'test' };
+		const executed = await runExecutor({ tree: { plan, children: new Map(), childErrors: new Map() }, intent, runId });
+		const failed = executed.root.perTask.get('t01')!;
+		assert.equal(failed.status, 'failed');
+		assert.equal(failed.error, `runtime-threw: code.surface.functional: the module value '${join(REPO, 'src/none')}' names the directory '${join(REPO, 'src/none')}', and no stored source file lies under it in the repo '${REPO}'.`);
+		assert.equal(failed.outputs, undefined, 'no surface is recorded for a module that names nothing');
+		assert.equal(failed.completeness, undefined);
+		assert.deepEqual(executed.root.tasksFailed.map(f => f.taskId), ['t01']);
+		// Beside it, a directory that exists and offers nothing IS an empty module: 'ok', with a complete record.
+		const emptyModule = executed.root.perTask.get('t02')!;
+		assert.equal(emptyModule.status, 'ok');
+		assert.equal(emptyModule.completeness?.returned, 0);
+	} finally {
+		purgeAllTaskOutputs(runId);
+	}
+});
+
+test("a stored module entity's id returns the surface it returned before under every kind of scope and resolves no scope: with the scope function's readers set to throw the id still answers and a directory path fails (mutation: resolve the scope before the id is looked up)", async () => {
+	const pay = ent('module', 'pay-pkg', 'src/pay/package.json');
+	await seed([...parsedRepo(), pay]);
+	// What the id gave before this Story: every function, method and class under the directory of the
+	// module entity's file, with the entity's name, file and id. `directory` is the one added field.
+	const expected = {
+		module: { name: 'pay-pkg', path: pay.file, directory: join(REPO, 'src/pay'), entityId: pay.id },
+		names: [['Ledger', 'settleRefund'], ['lateFee']],
+	};
+	const check = async (scopeRef: AnalyzeScopeRef, label: string): Promise<void> => {
+		const { surface, completeness } = await surfaceOf(pay.id, scopeRef);
+		assert.deepEqual(surface.module, expected.module, label);
+		assert.deepEqual(namesOf(surface), expected.names, label);
+		assert.equal(completeness.returned, 3, label);
+	};
+	// Under every kind of scope, also one whose area does not contain the module ...
+	await check(repoScope(), 'a repo scope');
+	await check(moduleScope('src/ship'), 'a module scope on another directory');
+	await check(fileScope('src/ship/track.ts'), 'a file scope');
+	await check({ kind: 'symbol', value: `${join(REPO, 'src/pay/settle.ts')}#settleRefund` }, 'a symbol scope');
+	// ... one the code family refuses, and one that does not resolve: no scope is resolved for an id.
+	await check({ kind: 'connection', value: 'ledger-db' }, 'a connection scope, which the code family refuses');
+	await check({ kind: 'repo', value: join(dir, 'not-registered') }, 'a scope in no registered repo');
+
+	// With the scope function's readers set to throw, the id still answers under every kind of scope ...
+	const symbolScope: AnalyzeScopeRef = { kind: 'symbol', value: `${join(REPO, 'src/pay/settle.ts')}#settleRefund` };
+	let calls = 0;
+	const throwing = (): never => { calls += 1; throw new Error('the scope readers must not be called for an entity id'); };
+	_setTaskScopeDepsForTest({ listRepos: throwing, findEntitiesByFile: throwing, listEntitiesForRepo: throwing, loadConnections: throwing } as unknown as ScopeDeps);
+	await check(repoScope(), 'a repo scope, with throwing scope readers');
+	await check(symbolScope, 'a symbol scope, with throwing scope readers');
+	assert.equal(calls, 0, 'an entity id calls no reader of the scope function');
+	// ... and a directory path, which does resolve the scope, fails with the reader's error. (Under a
+	// symbol scope: resolving a repo scope tolerates a registry that cannot be read, so there the
+	// readers are called and their error is not the task's.)
+	assert.equal(await refusal('src/pay', symbolScope), 'the scope readers must not be called for an entity id');
+	assert.ok(calls > 0);
+	calls = 0;
+	await surfaceOf('src/pay');
+	assert.ok(calls > 0, 'a directory path under a repo scope calls the readers of the scope function');
+	_setTaskScopeDepsForTest(undefined);
+
+	// The id of an entity of another kind: the message it had before, word for word.
+	const fn = makeEntityId(REPO, join(REPO, 'src/pay/settle.ts'), 'function', 'settleRefund');
+	assert.equal(await refusal(fn), `code.surface.functional: entity '${fn}' has kind='function', expected 'module' (taskId=t01)`);
+});
+
+test('a functional-surface task that names a directory outside the area of a module scope is refused, and a directory path under a file scope or a symbol scope is refused (mutation: test a directory against the area with the entity predicate)', async () => {
+	await seed([...parsedRepo(), ent('function', 'track', 'src/ship/track.ts', { isExported: true })]);
+	const payScope = moduleScope('src/pay');
+	// Inside the area: the area's own directory and one under it.
+	assert.deepEqual(namesOf((await surfaceOf('src/pay', payScope)).surface), [['Ledger', 'settleRefund'], ['lateFee']]);
+	assert.deepEqual(namesOf((await surfaceOf('src/pay/rules', payScope)).surface), [[], ['lateFee']]);
+	// Outside it: a sibling that holds source, the parent of the area, and a directory outside the repo.
+	for (const [value, directory] of [['src/ship', join(REPO, 'src/ship')], ['src', join(REPO, 'src')], ['/elsewhere/src', '/elsewhere/src']] as const) {
+		assert.equal(await refusal(value, payScope),
+			`code.surface.functional: the module value '${value}' names the directory '${directory}', which lies outside the area of the run's scope ('${join(REPO, 'src/pay')}').`);
+	}
+	// `src/payments` shares the area's prefix and is outside it.
+	assert.match(await refusal('src/payments', payScope), /lies outside the area of the run's scope/);
+
+	// Under a file scope or a symbol scope a directory path is refused, whatever it names:
+	// also the directory of the scope's own file.
+	for (const scopeRef of [fileScope('src/pay/settle.ts'), { kind: 'symbol', value: `${join(REPO, 'src/pay/settle.ts')}#settleRefund` } as AnalyzeScopeRef]) {
+		for (const value of ['src/pay', join(REPO, 'src/pay'), 'src/none']) {
+			assert.equal(await refusal(value, scopeRef),
+				`code.surface.functional: the module value '${value}' is a directory path, and the run's scope is a ${scopeRef.kind} scope. A scope of one file or one symbol holds no directory to describe.`);
+		}
+	}
+	// A scope the code family refuses fails a directory path with the scope's own typed error.
+	assert.match(await refusal('src/pay', { kind: 'connection', value: 'ledger-db' }), /scopeRef\.kind='connection' is incompatible with target='code'/);
+});
+
+test('an unknown module value fails with the message that no stored source file lies under it', async () => {
+	// The case of the gated test in deterministic-runtimes.test.ts, which the build gate cannot run.
+	await seed(parsedRepo());
+	const unknown = '0'.repeat(32);
+	assert.equal(await refusal(unknown),
+		`code.surface.functional: the module value '${unknown}' names the directory '${join(REPO, unknown)}', and no stored source file lies under it in the repo '${REPO}'.`);
 });

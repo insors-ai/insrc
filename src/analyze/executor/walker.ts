@@ -20,6 +20,9 @@
  *     1. Check `consumes` -- every name must be in `outputs`. If any
  *        consumed name's producer is in `failed`, this task is
  *        skipped with status='skipped-dependency-unavailable'.
+ *        The aggregate-report task (the last) differs: it is skipped
+ *        only when it consumes names and none was produced; otherwise
+ *        it runs on what exists and is given `absentInputs`.
  *     2. If kind='planner': look up the child plan in tree.children
  *        by taskId. Recurse into it via this same walk. The child's
  *        aggregator output (its terminal task's `report`) becomes
@@ -49,6 +52,7 @@ import {
 	type ClassifiedIntent,
 	type ExecutorResult,
 	type FailedTask,
+	type AbsentInput,
 	type PlanExecutionResult,
 	type PlannedTask,
 	type PlanTreeNode,
@@ -131,8 +135,12 @@ async function executePlan(
 			...(parentTaskPath !== undefined ? { parentTaskPath } : {}),
 		});
 
-		// Step 1: dependency check
-		const unmet = unmetDependencies(task, outputs, failed);
+		// Step 1: dependency check. The aggregate-report task has its own rule:
+		// it runs on the inputs that exist and is told which are absent.
+		const absentInputs = isAggregator ? absentInputsFor(task, node.plan.tasks, outputs, perTask) : undefined;
+		const unmet = isAggregator
+			? aggregateUnmet(task, outputs)
+			: unmetDependencies(task, outputs, failed);
 		if (unmet !== null) {
 			const record: TaskExecutionRecord = {
 				taskId:      task.taskId,
@@ -171,7 +179,7 @@ async function executePlan(
 				children.set(task.taskId, planRes.childResult);
 			}
 		} else {
-			result = await executeLeafTask(task, intent, runId, outputs);
+			result = await executeLeafTask(task, intent, runId, outputs, absentInputs);
 		}
 
 		// Step 4 + 5: persist + accumulate
@@ -219,6 +227,8 @@ async function executeLeafTask(
 	intent:  ClassifiedIntent,
 	runId:   string,
 	outputs: ReadonlyMap<string, unknown>,
+	/** For the aggregate-report task only: what the plan did not produce. */
+	absentInputs?: readonly AbsentInput[] | undefined,
 ): Promise<TaskExecutionRecord> {
 	const runtime = getRuntime(task.template);
 	if (runtime === undefined) {
@@ -231,7 +241,10 @@ async function executeLeafTask(
 
 	let result: TemplateExecuteResult;
 	try {
-		result = await runtime.execute({ task, intent, upstreamOutputs, runId });
+		result = await runtime.execute({
+			task, intent, upstreamOutputs, runId,
+			...(absentInputs !== undefined && absentInputs.length > 0 ? { absentInputs } : {}),
+		});
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		// A refused scope is a failure the caller can act on: it keeps the scope
@@ -355,6 +368,60 @@ function unmetDependencies(
 }
 
 /**
+ * The aggregate-report task's dependency rule. It is skipped in one case
+ * only: it consumes at least one name and NONE of them was produced, so it
+ * would have nothing to write from. With some of its inputs, or with an empty
+ * `consumes` list, it runs. Returns the first consumed name when it is to be
+ * skipped, else null.
+ */
+function aggregateUnmet(
+	task:    PlannedTask,
+	outputs: ReadonlyMap<string, unknown>,
+): string | null {
+	const consumes = task.consumes ?? [];
+	if (consumes.length === 0) return null;
+	if (consumes.some(name => outputs.has(name))) return null;
+	return consumes[0]!;
+}
+
+/**
+ * What the plan did not produce, for its aggregate-report task:
+ *   - one entry per name that a failed or skipped task before it would have
+ *     produced, with that task's id and its recorded reason;
+ *   - one entry, with no producing task, for a name the aggregate task
+ *     consumes that no task of the plan produces.
+ * Built from the plan's tasks and not only from the aggregate task's own
+ * `consumes` list: that list is written by the planner and may be empty.
+ * In plan order, then the consumed names nothing produces. Empty when the
+ * plan produced everything.
+ */
+function absentInputsFor(
+	task:    PlannedTask,
+	tasks:   readonly PlannedTask[],
+	outputs: ReadonlyMap<string, unknown>,
+	perTask: ReadonlyMap<string, TaskExecutionRecord>,
+): AbsentInput[] {
+	const absent: AbsentInput[] = [];
+	const producedByPlan = new Set<string>();
+	for (const other of tasks) {
+		if (other.taskId === task.taskId) continue;
+		for (const name of other.produces) producedByPlan.add(name);
+		const record = perTask.get(other.taskId);
+		if (record === undefined || record.status === 'ok') continue;
+		for (const name of other.produces) {
+			// Another task may have produced the same name; it is then not absent.
+			if (outputs.has(name)) continue;
+			absent.push({ name, producedBy: other.taskId, reason: record.error ?? record.status });
+		}
+	}
+	for (const name of task.consumes ?? []) {
+		if (outputs.has(name) || producedByPlan.has(name)) continue;
+		absent.push({ name, producedBy: null, reason: 'no task of the plan produces this name' });
+	}
+	return absent;
+}
+
+/**
  * Pull just the upstream names this task `consumes` out of the
  * full outputs map. Aggregator tasks (with `consumes` listing
  * everything they need) get the projected subset; the runtime
@@ -445,5 +512,7 @@ const appendTaskPath = taskPath;
 // ---------------------------------------------------------------------------
 
 export const _unmetDependenciesForTest = unmetDependencies;
+export const _aggregateUnmetForTest    = aggregateUnmet;
+export const _absentInputsForForTest   = absentInputsFor;
 export const _projectUpstreamForTest   = projectUpstream;
 export const _checkOutputShapeForTest  = checkOutputShape;

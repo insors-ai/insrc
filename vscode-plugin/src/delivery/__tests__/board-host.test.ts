@@ -724,11 +724,18 @@ test('a review-view record opens in the review pane and a build record opens rea
   await flush();
   assert.deepEqual(detailsOf(ch).at(-1)!.openedRecord, { artifactId: 'BUILD-x', text: '# Build' }, 'the earlier open answering later is dropped');
 
+  // A rejected open does not cancel a read still in flight.
+  send(ch, { type: 'open-evidence', itemId: 'S1', artifactId: 'PLAN-x' });
+  send(ch, { type: 'open-evidence', itemId: 'S1', artifactId: 'NOT-HERE' });
+  s.evidence[4]!.resolve({ ok: true, value: { ...planRecord(PLAN_BODY), renderedMarkdown: '# Plan' } });
+  await flush();
+  assert.deepEqual(detailsOf(ch).at(-1)!.openedRecord, { artifactId: 'PLAN-x', text: '# Plan' }, 'the accepted open is still shown');
+
   // A record that is not the selected item's evidence is ignored and logged.
   send(ch, { type: 'open-evidence', itemId: 'S1', artifactId: 'CR-elsewhere' });
   send(ch, { type: 'open-evidence', itemId: 'S2', artifactId: 'BUILD-x' });
-  assert.equal(s.evidence.length, 4);
-  assert.equal(s.logs.warn.filter(w => /not the selected item's evidence/.test(w)).length, 2);
+  assert.equal(s.evidence.length, 5);
+  assert.equal(s.logs.warn.filter(w => /not the selected item's evidence/.test(w)).length, 3);
 
   // close-details clears the opened record.
   send(ch, { type: 'close-details' });
@@ -797,6 +804,18 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
   s4.evidence[1]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
   await flush();
   assert.deepEqual(detailsOf(ch4).at(-1)!.tasks[1]!.dependsOn, ['Types'], 'the new snapshot\'s own read is');
+
+  // A board that cannot be re-shown when an answer arrives logs the failure instead of rejecting unseen.
+  const s6 = detailsSetup();
+  const ch6 = await openOn(s6, storySnapshot());
+  send(ch6, { type: 'select-item', itemId: 'S1' });
+  send(ch6, { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' });
+  ch6.postMessage = () => { throw new Error('webview gone'); };
+  s6.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
+  s6.evidence[1]!.resolve({ ok: true, value: { artifactId: 'BUILD-x', kind: 'BUILD', meta: {}, body: {}, renderedMarkdown: '# Build' } });
+  await flush();
+  assert.ok(s6.logs.error.some(e => /plan PLAN-x could not be shown: webview gone/.test(e)));
+  assert.ok(s6.logs.error.some(e => /record BUILD-x could not be shown: webview gone/.test(e)));
 
   const s5 = detailsSetup();
   const ch5 = await openOn(s5, storySnapshot());

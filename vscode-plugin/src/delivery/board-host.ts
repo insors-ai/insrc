@@ -328,12 +328,20 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
       read = { state: 'failed', message: result.failure.message };
     }
     plans.set(planId, read);
-    if (planIdOf(selectedIn(state)?.item) === planId) apply(state, paging);
+    if (planIdOf(selectedIn(state)?.item) === planId) applyAfterRead(`plan ${planId}`);
+  }
+
+  /** A re-derive after an answer arrives; a throw is logged, and apply() leaves the board as it was. */
+  function applyAfterRead(what: string): void {
+    try {
+      apply(state, paging);
+    } catch (err) {
+      log.error(`delivery board: ${what} could not be shown: ${errorText(err)}`);
+    }
   }
 
   /** open-evidence: only one of the selected item's own records; a review-view record goes to the review pane. */
   function openEvidence(itemId: string, artifactId: string): void {
-    const seq = ++recordSeq;
     const sel = selectedIn(state);
     const entry = sel !== null && sel.item !== undefined && sel.item.id === itemId
       ? sel.item.evidence.find(e => e.artifactId === artifactId) : undefined;
@@ -341,6 +349,8 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
       log.warn('delivery board: ignored a request to open a record that is not the selected item\'s evidence');
       return;
     }
+    // Only an accepted open supersedes a read still in flight.
+    const seq = ++recordSeq;
     if (entry.openWith === 'review-view' && entry.mdPath !== null && deps.reviewPane !== undefined) {
       deps.reviewPane.openArtifact({ artifactId, mdPath: entry.mdPath });
       return;
@@ -360,7 +370,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
       text = `Could not read ${artifactId}: ${result.failure.message}`;
     }
     opened = { itemId, artifactId, text };
-    apply(state, paging);
+    applyAfterRead(`record ${artifactId}`);
   }
 
   /**

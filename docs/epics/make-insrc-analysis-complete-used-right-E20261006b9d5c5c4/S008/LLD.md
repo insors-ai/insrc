@@ -330,6 +330,8 @@ Have code.discovery.modules walk the scope's directory on disk with the same ign
 
 - `qee1b0b54` — The module list returns every directory that directly holds a stored source file, with no grouping: this repository has 209. A directory that holds source only in its sub-directories (such as 'src') is not in the list, though it is accepted as a module value. Is a flat list of source directories what a broad analysis should be given as its modules, or should the list also carry the parent directories?
   - **resolved**: Keep the flat list of source directories — Stakeholder took the recommendation on 2026-10-09: the module list is every directory that directly holds a stored source file, with no parent directories added. A directory that holds source only in its sub-directories stays out of the list and stays a valid module value for the functional-surface task. _(2026-10-09T10:51:09.719Z)_
+- `qb758a68d` — The Define's criterion ac3 says 'a repository whose graph does hold module entities, as for a language whose parser emits them'. None of the six parsers stores a module entity for a repository's own directories: each stores one only for an imported module, in a shared namespace with an empty repo and file. This design reads ac3 as: a graph that holds module entities inside the repository, however written, loses nothing. Should the Define's wording be corrected to say that?
+  - **resolved**: Correct the Define's wording — Stakeholder took the recommendation on 2026-10-09: criterion ac3 of Story s8 now says that no parser stores a module entity for a repository's own directories today and that a graph written by other means may hold them. The design's reading of ac3 stands: such a graph loses nothing. _(2026-10-09T10:52:01.384Z)_
 
 ## Citations
 

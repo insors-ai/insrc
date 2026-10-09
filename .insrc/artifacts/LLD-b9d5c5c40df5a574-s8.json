@@ -34,6 +34,13 @@
         "choice": "Keep the flat list of source directories",
         "rationale": "Stakeholder took the recommendation on 2026-10-09: the module list is every directory that directly holds a stored source file, with no parent directories added. A directory that holds source only in its sub-directories stays out of the list and stays a valid module value for the functional-surface task.",
         "resolvedAt": "2026-10-09T10:51:09.719Z"
+      },
+      "qb758a68d": {
+        "question": "The Define's criterion ac3 says 'a repository whose graph does hold module entities, as for a language whose parser emits them'. None of the six parsers stores a module entity for a repository's own directories: each stores one only for an imported module, in a shared namespace with an empty repo and file. This design reads ac3 as: a graph that holds module entities inside the repository, however written, loses nothing. Should the Define's wording be corrected to say that?",
+        "status": "resolved",
+        "choice": "Correct the Define's wording",
+        "rationale": "Stakeholder took the recommendation on 2026-10-09: criterion ac3 of Story s8 now says that no parser stores a module entity for a repository's own directories today and that a graph written by other means may hold them. The design's reading of ac3 stands: such a graph loses nothing.",
+        "resolvedAt": "2026-10-09T10:52:01.384Z"
       }
     }
   },

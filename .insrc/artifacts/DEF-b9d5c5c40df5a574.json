@@ -28,11 +28,6 @@
         "rationale": "The user confirmed on 2026-10-07 that the script is a legacy artifact on one machine and is absent from other machines where insrc is installed. It is registered only in that machine's ~/.claude/settings.json (UserPromptSubmit), dated 2026-07-24, and this repository never shipped it. Story s5 changes the steering block, which is the only guidance insrc installs; the per-turn reminder is not a product surface.",
         "resolvedAt": "2026-10-06T18:55:19.772Z"
       }
-    },
-    "approvedAt": "2026-10-08T13:05:16.115Z",
-    "reviewOverride": {
-      "reason": "User-approved override, 2026-10-08. The Define's approval was cleared by in-place edits the user directed today: Story s8 was appended through the define workflow's extend path; Story s3 gained the criterion (ac7) and requirement that close the docs-family exception accepted on Story s7; Story s7 records that exception. The edits record stakeholder decisions of 2026-10-08. No fresh daemon review was run on the amended text; the user chose to approve by override.",
-      "at": "2026-10-08T13:05:16.115Z"
     }
   },
   "body": {
@@ -697,7 +692,7 @@
           },
           {
             "id": "ac3",
-            "given": "a repository whose graph does hold module entities, as for a language whose parser emits them",
+            "given": "a repository whose graph does hold entities of kind 'module' for its own directories (no parser stores them today: each stores a module only for an imported module; a graph written by other means may hold them)",
             "when": "the same tasks run",
             "then": "they return at least what they return today",
             "operationalizes": []

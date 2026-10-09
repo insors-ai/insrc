@@ -14,6 +14,7 @@ import { parseBoardUpMessage, type BoardDownMessage, type Envelope } from '../bo
 import type { DeliveryClient, DeliveryResult } from '../delivery-client.js';
 import type { DeliveryEvidenceRecord, DeliverySnapshot } from '../delivery-contract.js';
 import { evidence as ev, item, snapshot as fixtureSnapshot } from './board-fixtures.js';
+import { findAll, focusState, keyEvent, runScript, texts, type FakeEl } from './board-webview-harness.js';
 import { flush } from './flush.js';
 
 interface FakeChannel extends ChatPanelChannel {
@@ -203,87 +204,6 @@ test('an answer or timeout that arrives after the panel is closed is neither pos
   assert.deepEqual(lastItems(next), ['b'], 'nothing reaches a panel closed through dispose()');
   assert.equal(created.length, 3);
 });
-
-/** A fake DOM element: records text, attributes, children, listeners and form values; innerHTML throws. */
-interface FakeEl {
-  tag: string;
-  textContent: string;
-  value?: string;
-  checked?: boolean;
-  children: FakeEl[];
-  attrs: Record<string, string>;
-  listeners: Record<string, (e?: FakeEvent) => void>;
-  readonly firstChild: FakeEl | null;
-  removeChild(c: FakeEl): void;
-  appendChild(c: FakeEl): void;
-  removeAttribute(k: string): void;
-  setAttribute(k: string, v: string): void;
-  addEventListener(k: string, f: (e?: FakeEvent) => void): void;
-  getAttribute(k: string): string | null;
-  focus(): void;
-  /** Only the 'tag.class' form the board script uses. */
-  querySelectorAll(selector: string): FakeEl[];
-}
-
-/** A key event as the script reads it; prevented records preventDefault. */
-interface FakeEvent { readonly key: string; prevented: boolean; preventDefault(): void }
-const keyEvent = (key: string): FakeEvent => {
-  const e: FakeEvent = { key, prevented: false, preventDefault() { e.prevented = true; } };
-  return e;
-};
-
-/** The element the fake DOM last focused; reset by every runScript. */
-const focusState: { active: FakeEl | null } = { active: null };
-
-function makeEl(tag: string): FakeEl {
-  const e: FakeEl = {
-    tag, textContent: '', children: [], attrs: {}, listeners: {},
-    get firstChild() { return e.children[0] ?? null; },
-    removeChild(c) { e.children = e.children.filter(x => x !== c); },
-    appendChild(c) { e.children.push(c); },
-    setAttribute(k, v) { e.attrs[k] = v; },
-    removeAttribute(k) { delete e.attrs[k]; },
-    addEventListener(k, f) { e.listeners[k] = f; },
-    getAttribute(k) { return Object.hasOwn(e.attrs, k) ? e.attrs[k]! : null; },
-    focus() { focusState.active = e; },
-    querySelectorAll(selector) {
-      const [t, cls] = selector.split('.');
-      return findAll(e, x => x !== e && x.tag === t && (cls === undefined || (x.attrs['class'] ?? '').split(' ').includes(cls)));
-    },
-  };
-  Object.defineProperty(e, 'innerHTML', { set() { throw new Error('innerHTML used'); }, get() { throw new Error('innerHTML used'); } });
-  return e;
-}
-
-/** Every text in an element's subtree, depth first. */
-const texts = (e: FakeEl): string[] => [e.textContent, ...e.children.flatMap(texts)].filter(t => t.length > 0);
-const findAll = (e: FakeEl, pred: (x: FakeEl) => boolean): FakeEl[] => [...(pred(e) ? [e] : []), ...e.children.flatMap(c => findAll(c, pred))];
-
-/** Run the webview script against the fake DOM; elements are created on first lookup by id. */
-/** state is the webview state VS Code hands back on boot; stateThrows makes getState throw. */
-function runScript(opts: { state?: unknown; stateThrows?: boolean } = {}): {
-  posted: unknown[]; deliver(msg: unknown): void; el: Record<string, FakeEl>; saved(): unknown;
-} {
-  const el: Record<string, FakeEl> = {};
-  const posted: unknown[] = [];
-  focusState.active = null;
-  let onMessage: ((e: { data: unknown }) => void) | undefined;
-  const document = {
-    getElementById: (id: string) => (el[id] ??= makeEl(id)), createElement: (tag: string) => makeEl(tag),
-    body: (el['body'] = makeEl('body')),
-    get activeElement() { return focusState.active; },
-  };
-  const window = { addEventListener: (_k: string, f: (e: { data: unknown }) => void) => { onMessage = f; } };
-  let state: unknown = opts.state;
-  const acquireVsCodeApi = () => ({
-    postMessage: (m: unknown) => posted.push(m),
-    getState: () => { if (opts.stateThrows === true) throw new Error('no state'); return state; },
-    setState: (v: unknown) => { state = v; },
-  });
-  new Function('document', 'window', 'acquireVsCodeApi', BOARD_WEBVIEW_SCRIPT)(document, window, acquireVsCodeApi);
-  el['refresh']!.listeners['click']!();
-  return { posted, deliver: m => onMessage?.({ data: m }), el, saved: () => state };
-}
 
 /** A board model for the webview tests, built by the real host from a fixture snapshot. */
 async function boardModelFor(snap: DeliverySnapshot) {

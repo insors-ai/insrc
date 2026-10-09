@@ -36,3 +36,34 @@ export function evidence(artifactId: string, kind: DeliveryEvidenceEntry['kind']
     approval: { state: 'approved', at: null }, review: null, reviewCurrency: null, ...over,
   };
 }
+
+/**
+ * The E2 s5 performance fixture: 500 work items formed from 1,000 records, deterministic. 20 epics of 20 stories each
+ * (400 stories, two evidence entries apiece, spread across the six stages) and 80 standalone issues; every seventh
+ * card needs attention.
+ */
+export function largeSnapshot(): DeliverySnapshot {
+  const stages = ['scoped', 'design-plan', 'ready-design-approved', 'ready-plan-approved', 'build-recorded', 'complete'];
+  const pad = (n: number, w: number) => String(n).padStart(w, '0');
+  const items: DeliveryItem[] = [];
+  let card = 0;
+  const attention = () => (card++ % 7 === 0
+    ? { needsAttention: true, attentionReasons: ['pending-decision'] as never }
+    : {});
+  for (let e = 1; e <= 20; e++) {
+    const epicId = `E${pad(e, 2)}`;
+    const storyIds = Array.from({ length: 20 }, (_, i) => `${epicId}:S${pad(i + 1, 3)}`);
+    items.push(item({ id: epicId, kind: 'epic', title: `Epic ${e}`, childIds: storyIds }));
+    storyIds.forEach((id, i) => {
+      const n = (e - 1) * 20 + i;
+      items.push(item({
+        id, title: `Story ${n + 1} of epic ${e}`, parentId: epicId, stage: stages[n % 6]!, sourceIds: [`s${i + 1}`],
+        evidence: [evidence(`LLD-${id}`, 'LLD'), evidence(`PLAN-${id}`, 'PLAN')], ...attention(),
+      }));
+    });
+  }
+  for (let i = 1; i <= 80; i++) {
+    items.push(item({ id: `I${pad(i, 3)}`, kind: 'issue', title: `Issue ${i}`, standalone: true, stage: stages[i % 6]!, ...attention() }));
+  }
+  return snapshot(items, { recordCount: 1000 });
+}

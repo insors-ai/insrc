@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 34 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 37 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -182,3 +182,32 @@ Run at 2026-10-09T06:23:32.912Z on commit `5726792b`. Tests check: **passed**. 4
 | `src/analyze/runtimes/__tests__/dropped-or-failed.test.ts` | 0 | 3 | 0.9 s |  |
 | `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 3 | 0.4 s |  |
 | `src/analyze/runtimes/code/__tests__/scope-area.test.ts` | 0 | 2 | 0.8 s |  |
+
+## t6
+
+Run at 2026-10-09T06:30:49.274Z on commit `214914ce`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code | `src/analyze/runtimes/docs/__tests__/docs-scope.test.ts` |
+
+**integration: the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's | `src/analyze/runtimes/docs/__tests__/docs-scope.test.ts` |
+
+**unit: no docs runtime uses the scope's value as a repo path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | no docs runtime uses the scope's value as a repo path | `src/analyze/runtimes/__tests__/scope-sources.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 4 | 0.5 s |  |
+| `src/analyze/runtimes/docs/__tests__/docs-scope.test.ts` | 0 | 2 | 1.1 s |  |

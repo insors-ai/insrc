@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T06:23:32.912Z"
+    "updatedAt": "2026-10-09T06:30:49.274Z"
   },
   "body": {
     "tasks": [
@@ -958,6 +958,97 @@
               },
               {
                 "title": "the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "214914ce",
+        "ranAt": "2026-10-09T06:30:49.274Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+                "title": "the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+                "title": "the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no docs runtime uses the scope's value as a repo path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+                "title": "no docs runtime uses the scope's value as a repo path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 549,
+            "titles": [
+              {
+                "title": "the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "no docs runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the unrelated resolveRepoPath under src/mcp is untouched",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1129,
+            "titles": [
+              {
+                "title": "the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code",
+                "result": "pass"
+              },
+              {
+                "title": "the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's",
                 "result": "pass"
               }
             ],

@@ -21,6 +21,7 @@ import type {
 	ClassifiedIntent,
 } from '../../shared/analyze-types.js';
 import type { AnswerReport } from '../completeness.js';
+import type { RequestMeasure } from '../measure.js';
 import type { FailedTask } from '../executor/types.js';
 
 // ---------------------------------------------------------------------------
@@ -128,6 +129,8 @@ export type AnalyzeRunEvent =
 	| {
 		readonly type: 'classified';
 		readonly intent: ClassifiedIntent;
+		/** What the request's scope was counted to hold; the intent's size is this measure's. */
+		readonly measure?: RequestMeasure | undefined;
 	}
 	| {
 		/**
@@ -324,6 +327,8 @@ export interface RunRecord {
 	readonly error?: RunFailure | undefined;
 	readonly tasksCompleted?: number | undefined;
 	readonly tasksFailed?: ReadonlyArray<FailedTask> | undefined;
+	/** The measure the intent's size came from. Absent on a record stored before the measure existed. */
+	readonly measure?: RequestMeasure | undefined;
 	/** The run's answer report. Absent on a record stored before the report existed. */
 	readonly report?: AnswerReport | undefined;
 }

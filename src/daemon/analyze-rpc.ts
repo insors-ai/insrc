@@ -108,6 +108,8 @@ import type {
 	PlannedTask,
 } from '../shared/analyze-types.js';
 import type { AnswerReport } from '../analyze/completeness.js';
+import { measureRequestScope } from '../analyze/measure.js';
+import type { RequestMeasure } from '../analyze/measure.js';
 
 const log = getLogger('analyze-rpc');
 
@@ -173,7 +175,10 @@ export type AnalyzeRpcErrorCode =
 
 export interface ClassifyRpcOk {
 	readonly ok: true;
+	/** The classifier's result, with the measured size as its `scope`. */
 	readonly intent: ClassifiedIntent;
+	/** The measure the size came from. */
+	readonly measure: RequestMeasure;
 }
 
 export type ClassifyRpcResponse = ClassifyRpcOk | AnalyzeRpcErr;
@@ -185,7 +190,10 @@ export type ClassifyRpcResponse = ClassifyRpcOk | AnalyzeRpcErr;
 
 export interface PlanRpcOk {
 	readonly ok: true;
+	/** Built for the measured size: the plan's `scope` is the measure's. */
 	readonly plan: PlanTask;
+	/** The measure of the scope the request's intent names. */
+	readonly measure: RequestMeasure;
 }
 
 export type PlanRpcResponse = PlanRpcOk | AnalyzeRpcErr;
@@ -334,9 +342,12 @@ export async function classify(params: unknown): Promise<ClassifyRpcResponse> {
 	const opts: ClassifyOpts = { runId: parsed.runId };
 
 	try {
-		const intent = await runClassifier({ input, opts });
-		log.debug({ runId: parsed.runId }, 'analyze.classify complete');
-		return { ok: true, intent };
+		// The size is not the classifier's to state: it is counted from the scope
+		// the classifier named. The response keeps the field, with the measured size.
+		const { scope: _modelSize, ...unsized } = await classifierImpl({ input, opts });
+		const measure = await measureRequestScope(unsized.scopeRef, unsized.target);
+		log.debug({ runId: parsed.runId, size: measure.size, determined: measure.determined }, 'analyze.classify complete');
+		return { ok: true, intent: { ...unsized, scope: measure.size }, measure };
 	} catch (err) {
 		const payload = classifyClassifierError(err);
 		log.info(
@@ -407,6 +418,18 @@ function classifyClassifierError(err: unknown): AnalyzeRpcErrorPayload {
  *   Shaper-side errors (from the bundle build) fall through to
  *     classifyShaperError so the wire codes stay stable.
  */
+/**
+ * The size a plan request's depth cap is read for: the root's.
+ *
+ *   - depth 0: the request's intent is the root, so its measured size;
+ *   - a greater depth: the root's size as the caller handed it down, and the
+ *     child's own measured size when the caller gave none.
+ */
+export function planDepthScope(currentDepth: number, handedDown: AnalyzeScope | undefined, measured: AnalyzeScope): AnalyzeScope {
+	if (currentDepth === 0) return measured;
+	return handedDown ?? measured;
+}
+
 export async function plan(params: unknown): Promise<PlanRpcResponse> {
 	let parsed: PlanParams;
 	try {
@@ -423,7 +446,24 @@ export async function plan(params: unknown): Promise<PlanRpcResponse> {
 		const { loadAnalyzeConfig } = await import('../config/analyze.js');
 		const cfg = loadAnalyzeConfig();
 		const currentDepth = parsed.currentDepth ?? 0;
-		const rootScope = parsed.rootScope ?? parsed.intent.scope;
+		// A nested request with the root's size handed down is refused on that
+		// size alone, before anything is counted.
+		if (currentDepth > 0 && parsed.rootScope !== undefined) {
+			const handedDown = cfg.maxPlanDepth[parsed.rootScope];
+			if (currentDepth + 1 > handedDown) {
+				throw new MaxPlanDepthExceededError(currentDepth, parsed.rootScope, handedDown);
+			}
+		}
+
+		// The size on the request's intent is a hint. The size the plan is built
+		// for is counted from the scope the intent names.
+		const measure = await measureRequestScope(parsed.intent.scopeRef, parsed.intent.target, parsed.intent.scope);
+		const intent: ClassifiedIntent = { ...parsed.intent, scope: measure.size };
+		// The depth cap is the root's. At depth 0 the intent IS the root, so its
+		// measured size decides and a `rootScope` in the request is a hint. At a
+		// greater depth the intent is a child's: the root's size is the one the
+		// caller hands down, and the child's measured size only where none is given.
+		const rootScope = planDepthScope(currentDepth, parsed.rootScope, measure.size);
 		const cap = cfg.maxPlanDepth[rootScope];
 		if (currentDepth + 1 > cap) {
 			throw new MaxPlanDepthExceededError(currentDepth, rootScope, cap);
@@ -431,27 +471,27 @@ export async function plan(params: unknown): Promise<PlanRpcResponse> {
 
 		// (1) Build (or read-from-cache) the run-level bundle. Shaper
 		// errors propagate to the outer catch + classifyShaperError.
-		const shaper = shaperFor('run', parsed.intent.target);
+		const shaper = shaperFor('run', intent.target);
 		const contextBundle = await shaper.buildRunBundle(
-			{ intent: parsed.intent },
+			{ intent },
 			{ runId: parsed.runId },
 		);
 
 		// (2) + (3) Run the planner.
-		const catalog = getTemplatesForTarget(parsed.intent.target);
+		const catalog = getTemplatesForTarget(intent.target);
 		const input: PlanBuilderInput = {
-			intent: parsed.intent,
+			intent,
 			contextBundle,
 			catalog,
 			...(parsed.parentTaskPath !== undefined ? { parentTaskPath: parsed.parentTaskPath } : {}),
 			...(parsed.currentDepth !== undefined ? { currentDepth: parsed.currentDepth } : {}),
-			...(parsed.rootScope !== undefined ? { rootScope: parsed.rootScope } : {}),
+			rootScope,
 		};
 		const opts: PlanBuilderOpts = { runId: parsed.runId };
 
 		const planResult = await runPlanner({ input, opts });
-		log.debug({ runId: parsed.runId, taskCount: planResult.tasks.length }, 'analyze.plan.build complete');
-		return { ok: true, plan: planResult };
+		log.debug({ runId: parsed.runId, taskCount: planResult.tasks.length, size: measure.size }, 'analyze.plan.build complete');
+		return { ok: true, plan: planResult, measure };
 	} catch (err) {
 		const payload = classifyPlannerError(err);
 		log.info(
@@ -981,6 +1021,13 @@ export const _classifyPlannerErrorForTest = classifyPlannerError;
 
 /** Test hook: the run's result as the daemon's terminal response. */
 export const _shapeTerminalFrameForTest = shapeTerminalFrame;
+
+/** The classifier the classify request calls; a test stands one in, as its context build is a tool loop on a local model. */
+let classifierImpl: typeof runClassifier = runClassifier;
+/** Test seam: pass undefined to go back to the real classifier. */
+export function _setClassifierForTest(impl: typeof runClassifier | undefined): void {
+	classifierImpl = impl ?? runClassifier;
+}
 
 /** The run function the daemon's run handler calls. */
 let runAnalyzeImpl: typeof runAnalyze = runAnalyze;

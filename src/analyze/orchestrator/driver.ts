@@ -29,7 +29,7 @@
 
 import { getLogger } from '../../shared/logger.js';
 
-import { classify, pickScope } from '../classifier/index.js';
+import { classify } from '../classifier/index.js';
 import { validateIntentSemantics } from '../classifier/validate.js';
 import { connectionIsRegistered } from '../context/scope.js';
 import {
@@ -71,7 +71,8 @@ import {
 	RUN_COMPLETENESS_NOT_RECORDED,
 	type AnswerReport,
 } from '../completeness.js';
-import type { RequestMeasure } from '../measure.js';
+import { measureRequestScope } from '../measure.js';
+import type { RequestMeasure, UnsizedIntent } from '../measure.js';
 
 import { liveRunCount, lowerRunLive, raiseRunLive } from './live-runs.js';
 import { readRunRecord, writeRunRecord } from './persistence.js';
@@ -267,7 +268,9 @@ async function runStages(
 	}
 	emit({ type: 'stage-started', stage: 'classify' });
 
-	let intent: ClassifiedIntent;
+	// What the request is, before its size is known. The size is never taken
+	// from a model or from the caller: it is measured below, on both branches.
+	let unsized: UnsizedIntent;
 	if (args.targetHint !== undefined) {
 		// No classifier runs on this branch, so no validator does either.
 		// Make its two checks here, before any model call: the pairing of
@@ -282,67 +285,17 @@ async function runStages(
 		}
 		// Skip the full classifier -- caller (chat panel slash command)
 		// has explicitly picked the target. Saves the ~3-min classifier
-		// round-trip. But the classifier ALSO picks the scope band; if
-		// the slash command didn't append :xs|:s|:m|:l|:xl we run a
-		// cheap scope-only picker (~30 s) instead of hardcoding 'M'
-		// (ISSUES.md I-001). The picker sees a compact workspace-signals
-		// block + the user prompt and returns a scope enum + reasoning.
-		// Falls back to 'M' if the picker throws.
-		let pickedScope: AnalyzeScope;
-		let pickReasoning: string;
-		if (args.scopeHint !== undefined) {
-			pickedScope = args.scopeHint;
-			pickReasoning = 'scope hinted via slash command suffix';
-		} else {
-			emit({
-				type: 'stage-substep',
-				stage: 'classify',
-				substep: 'scope-picker',
-				detail: 'picking scope band',
-			});
-			try {
-				const picked = await pickScope({
-					userPrompt,
-					target:   args.targetHint,
-					scopeRef: initialScopeRef,
-					runId,
-				});
-				pickedScope   = picked.scope;
-				pickReasoning = picked.reasoning;
-			} catch (err) {
-				// Preserve the slash-command promise: don't fail the whole
-				// run just because the picker had a hiccup. Fall back to
-				// M with a note in the reasoning so downstream stages
-				// (and the run.json) can see why.
-				pickedScope   = 'M';
-				pickReasoning = `scope-picker failed (${(err as Error).message}); ` +
-					'falling back to default scope=M';
-				log.warn(
-					{ runId, err: (err as Error).message },
-					'runAnalyze: scope-picker failed; falling back to M',
-				);
-			}
-		}
-		intent = {
-			...hinted.base,
-			scope:  pickedScope,
-			reasoning: `target hinted via slash command (classifier skipped); ${pickReasoning}`,
-		};
-		log.info(
-			{
-				runId,
-				target: intent.target,
-				scope:  intent.scope,
-				source: args.scopeHint !== undefined ? 'scopeHint' : 'scope-picker',
-			},
-			'runAnalyze: classifier skipped via targetHint',
-		);
+		// round-trip.
+		unsized = { ...hinted.base, reasoning: 'target hinted via slash command (classifier skipped)' };
+		log.info({ runId, target: unsized.target }, 'runAnalyze: classifier skipped via targetHint');
 	} else {
 		try {
-			intent = await classify({
+			// The classifier still returns a size of its own; it is not used.
+			const { scope: _modelSize, ...classified } = await classifyImpl({
 				input: { userPrompt, scopeRef: initialScopeRef },
 				opts: { runId },
 			});
+			unsized = classified;
 		} catch (err) {
 			const failure = classifyClassifierError(err);
 			record = patch(record, { stage: 'classify', status: 'failed', error: failure });
@@ -351,8 +304,26 @@ async function runStages(
 			return emitDoneAndReturn(failResult('classify', failure, undefined, start, runId));
 		}
 	}
-	emit({ type: 'classified', intent });
-	record = patch(record, { stage: 'plan', intent });
+
+	// The request's size: counted from what its scope names, by code. A size
+	// the caller stated (a slash command's suffix) is kept as the hint and
+	// never becomes the size. The pass never throws: a scope it cannot count
+	// is the largest size, with the reason, and the scope checks below refuse
+	// the request where they did before.
+	emit({
+		type: 'stage-substep',
+		stage: 'classify',
+		substep: 'measure',
+		detail: 'measuring what the request names',
+	});
+	const measure = await measureRequestScope(unsized.scopeRef, unsized.target, args.scopeHint);
+	const intent: ClassifiedIntent = { ...unsized, scope: measure.size };
+	log.info(
+		{ runId, size: measure.size, determined: measure.determined, files: measure.files, items: measure.items, sizeHint: measure.sizeHint, note: measure.note },
+		'runAnalyze: the request was measured',
+	);
+	emit({ type: 'classified', intent, measure });
+	record = patch(record, { stage: 'plan', intent, measure });
 	saveRunRecord(record);
 	log.info({ runId, target: intent.target, scope: intent.scope }, 'runAnalyze: classified');
 
@@ -514,7 +485,14 @@ async function runStages(
 	// ----- (done) -----
 	// The answer report, derived by code from the run context's report and
 	// from each plan task's own record; its line heads the final report's text.
-	return emitDoneAndReturn(completeRun({ record, intent, tree, executed: execResult, contextReport: contextBundle.report, start }));
+	return emitDoneAndReturn(completeRun({ record, intent, tree, executed: execResult, contextReport: contextBundle.report, measure, start }));
+}
+
+/** The classifier a run calls. Its own context build is a tool loop on a local model, so a test stands one in. */
+let classifyImpl: typeof classify = classify;
+/** Test seam: pass undefined to go back to the real classifier. */
+export function _setClassifyForTest(impl: typeof classify | undefined): void {
+	classifyImpl = impl ?? classify;
 }
 
 // ---------------------------------------------------------------------------

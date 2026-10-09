@@ -29,7 +29,7 @@ import {
 	maxDepth,
 	runRecursivePlanner,
 } from '../recursive.js';
-import { MaxPlanDepthExceededError } from '../driver.js';
+import { MaxPlanDepthExceededError, PlanBuilderExhausted } from '../driver.js';
 import {
 	_resetTemplateRegistryForTests,
 	getTemplatesForTarget,
@@ -47,17 +47,45 @@ import type {
 } from '../types.js';
 import type { AnalyzeContextBundle } from '../../context/types.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
-import type { LLMProvider } from '../../../shared/types.js';
+import type { Entity, LLMProvider } from '../../../shared/types.js';
+import { _setMeasureDepsForTest } from '../../measure.js';
 
 // ---------------------------------------------------------------------------
 // Suite setup
 // ---------------------------------------------------------------------------
+
+/**
+ * A child plan's size is measured from the area its intent names. These tests
+ * are about the tree and the depth cap, so a stand-in store gives each size a
+ * repo that measures to it (`/r-xs` holds 1 file, `/r-s` 5, and so on), and
+ * each fixture intent names the repo of its size.
+ */
+const FILES_PER_SIZE: Record<ClassifiedIntent['scope'], number> = { XS: 1, S: 5, M: 30, L: 300, XL: 2000 };
+const repoOfSize = (scope: ClassifiedIntent['scope']): string => `/r-${scope.toLowerCase()}`;
+function storedEntities(repo: string): Entity[] {
+	const size = (Object.keys(FILES_PER_SIZE) as Array<ClassifiedIntent['scope']>).find(k => repoOfSize(k) === repo);
+	if (size === undefined) return [];
+	return Array.from({ length: FILES_PER_SIZE[size] }, (_, i) => ({ id: `${repo}#${i}`, repo, file: `${repo}/f${i}.ts`, kind: 'file', name: `f${i}.ts` }) as unknown as Entity);
+}
 
 test.before(() => {
 	_resetAnalyzeConfigCacheForTests();
 	_resetTemplateBootstrapLatchForTests();
 	_resetTemplateRegistryForTests();
 	registerBuiltinTemplates();
+	_setMeasureDepsForTest({
+		scope: {
+			listRepos:           async () => (Object.keys(FILES_PER_SIZE) as Array<ClassifiedIntent['scope']>).map(k => ({ path: repoOfSize(k), name: k, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' as const })),
+			findEntitiesByFile:  async () => [],
+			listEntitiesForRepo: async repo => storedEntities(repo),
+			loadConnections:     async () => ({ file: { connections: [] }, resolved: [], warnings: [] }) as never,
+		},
+		listEntities: async repo => storedEntities(repo),
+	});
+});
+
+test.after(() => {
+	_setMeasureDepsForTest(undefined);
 });
 
 // ---------------------------------------------------------------------------
@@ -200,7 +228,7 @@ function rootIntent(scope: ClassifiedIntent['scope']): ClassifiedIntent {
 		target:    'code',
 		scope,
 		focused:   false,
-		scopeRef:  { kind: 'repo', value: '/r' },
+		scopeRef:  { kind: 'repo', value: repoOfSize(scope) },
 		reasoning: 'recursive planner test root intent',
 	};
 }
@@ -434,5 +462,92 @@ test('runRecursivePlanner: child plans inherit rootScope for the depth cap', asy
 	} finally {
 		purgePlan({ runId });
 		purgePlan({ runId, parentTaskPath: 't02' });
+	}
+});
+
+// ---------------------------------------------------------------------------
+// The measured size (LLD-b9d5c5c40df5a574-s2, task t5)
+// ---------------------------------------------------------------------------
+
+/** A plan as the model returned it, with the size the model wrote in it. */
+const statingSize = (plan: PlanTask, scope: ClassifiedIntent['scope']): PlanTask => ({ ...plan, scope });
+
+test("a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)", async () => {
+	const ids: string[] = [];
+	const runId = (tag: string): string => { const id = `recursive-measure-${tag}-${Math.floor(Math.random() * 1e9).toString(16)}`; ids.push(id); return id; };
+	const build = (id: string, intent: ClassifiedIntent, queue: PlanTask[]) => runRecursivePlanner({
+		input: { intent, contextBundle: EMPTY_BUNDLE, catalog: getTemplatesForTarget('code') },
+		opts: { runId: id },
+		provider: makeStubProvider(queue),
+	});
+	try {
+		// --- The band is the intent's size, whatever size the model writes in its plan. ---
+		// The intent is S (10 to 20 tasks). A plan of 12 tasks is accepted though the model wrote "XL" in it, and the
+		// plan that is kept states the intent's size.
+		const accepted = await build(runId('band'), rootIntent('S'), [statingSize(makeLeafOnlyPlan('S'), 'XL')]);
+		assert.equal(accepted.plan.tasks.length, 12);
+		assert.equal(accepted.plan.scope, 'S', "the plan's size is the intent's, not the model's");
+		// A plan of 4 tasks, in which the model wrote "XS" (whose band would accept it), is refused for the intent's S.
+		const four = statingSize(makeLeafOnlyPlan('XS'), 'XS');
+		await assert.rejects(build(runId('band-refused'), rootIntent('S'), [four, four, four]), (err: Error) => {
+			assert.ok(err instanceof PlanBuilderExhausted, err.message);
+			assert.equal(err.lastFailure.invariantId, 'INV-13');
+			assert.match(err.lastFailure.message, /task count 4 is outside the scope band for S/);
+			return true;
+		});
+
+		// --- A child plan is measured from the area it names; the model's figure is the hint. ---
+		// The root is M. Its planner task names the repo of one file and the model wrote "L" for it. The child is
+		// measured XS, so its plan of 4 tasks is accepted: for the model's L (30 to 60 tasks) it would be refused.
+		const childIntent: ClassifiedIntent = { ...rootIntent('XS'), scope: 'L' };
+		const tree = await build(runId('child'), rootIntent('M'), [makeRootPlanWithOnePlannerTask('M', childIntent), statingSize(makeLeafOnlyPlan('XS'), 'L')]);
+		assert.equal(tree.childErrors.size, 0, [...tree.childErrors.values()].map(e => e.message).join('; '));
+		const child = tree.children.get('t02');
+		assert.ok(child !== undefined);
+		assert.deepEqual(child.measure, { source: 'named-area', items: 1, files: 1, characters: null, size: 'XS', determined: true, sizeHint: 'L' });
+		assert.equal(child.plan.scope, 'XS');
+		assert.equal(child.plan.tasks.length, 4);
+		// The root's own measure is the run's: the tree does not hold one for it.
+		assert.equal(tree.measure, undefined);
+
+		// The model's figure is never the fallback. The child names a path the index does not hold and the model wrote
+		// "XS" for it: the size is the largest, so only a plan in the band of XL (40 to 80 tasks) is accepted.
+		const unknownArea: ClassifiedIntent = { ...rootIntent('XS'), scope: 'XS', scopeRef: { kind: 'repo', value: '/nowhere' } };
+		const fallback = await build(runId('fallback'), rootIntent('M'), [makeRootPlanWithOnePlannerTask('M', unknownArea), statingSize(makeLeafOnlyPlan('XL'), 'XS')]);
+		assert.equal(fallback.childErrors.size, 0, [...fallback.childErrors.values()].map(e => e.message).join('; '));
+		const unmeasured = fallback.children.get('t02')!;
+		assert.deepEqual([unmeasured.measure?.size, unmeasured.measure?.determined, unmeasured.measure?.sizeHint, unmeasured.measure?.items], ['XL', false, 'XS', 0]);
+		assert.ok(unmeasured.measure!.note!.includes('/nowhere'), unmeasured.measure!.note);
+		assert.equal(unmeasured.plan.scope, 'XL');
+		assert.equal(unmeasured.plan.tasks.length, 45);
+
+		// --- The depth cap is the root's measured size, at every level, whatever the children measure. ---
+		// The root is XS (two levels). Its child names the largest repo and is measured XL, whose own cap would be
+		// six; the child's planner task is still refused at the third level, for the root's XS.
+		const large: ClassifiedIntent = rootIntent('XL');
+		const deep = await build(runId('depth'), rootIntent('XS'), [
+			makeRootPlanWithOnePlannerTask('XS', large),
+			makeRootPlanWithOnePlannerTask('XL', rootIntent('XS')),
+		]);
+		const level2 = deep.children.get('t02')!;
+		assert.equal(level2.measure?.size, 'XL');
+		assert.equal(level2.plan.tasks.length, 45, "the child's band is its own measured size");
+		const refused = level2.childErrors.get('t02');
+		assert.ok(refused instanceof MaxPlanDepthExceededError, String(refused));
+		assert.deepEqual([refused.rootScope, refused.cap, refused.currentDepth], ['XS', 2, 2]);
+		// The same tree under a root measured XL goes one level further.
+		const deeper = await build(runId('depth-xl'), rootIntent('XL'), [
+			makeRootPlanWithOnePlannerTask('XL', large),
+			makeRootPlanWithOnePlannerTask('XL', rootIntent('XS')),
+			makeLeafOnlyPlan('XS'),
+		]);
+		assert.equal(deeper.children.get('t02')!.childErrors.size, 0);
+		assert.equal(deeper.children.get('t02')!.children.get('t02')!.measure?.size, 'XS');
+	} finally {
+		for (const id of ids) {
+			purgePlan({ runId: id });
+			purgePlan({ runId: id, parentTaskPath: 't02' });
+			purgePlan({ runId: id, parentTaskPath: 't02.t02' });
+		}
 	}
 });

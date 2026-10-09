@@ -37,6 +37,8 @@
 import { getLogger } from '../../shared/logger.js';
 import type { ClassifiedIntent } from '../../shared/analyze-types.js';
 
+import { measureRequestScope } from '../measure.js';
+import type { RequestMeasure } from '../measure.js';
 import { MaxPlanDepthExceededError, runPlanner } from './driver.js';
 import { getTemplatesForTarget } from './templates/registry.js';
 import type {
@@ -63,6 +65,8 @@ export interface PlanTreeNode {
 	 * `dependency-unavailable`.
 	 */
 	readonly childErrors: ReadonlyMap<string, Error>;
+	/** For a child plan: the measure its size came from. The root's is the run's. */
+	readonly measure?: RequestMeasure | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -106,6 +110,7 @@ async function walk(
 	opts:      PlanBuilderOpts,
 	provider:  PlanBuilderArgs['provider'],
 	rootScope: 'XS' | 'S' | 'M' | 'L' | 'XL',
+	measure?:  RequestMeasure,
 ): Promise<PlanTreeNode> {
 	const planArgs: PlanBuilderArgs = provider !== undefined
 		? { input, opts, provider }
@@ -128,9 +133,20 @@ async function walk(
 			continue;
 		}
 
+		// The child's size is counted from the area it names, as the root's
+		// was. The figure the planner model wrote is the measure's hint: it
+		// is never the size, and never the fallback when the count cannot
+		// be taken (the size is then the largest).
+		const childMeasure = await measureRequestScope(childIntent.scopeRef, childIntent.target, childIntent.scope);
+		const measuredChild: ClassifiedIntent = { ...childIntent, scope: childMeasure.size };
+		log.info(
+			{ runId: opts.runId, taskId: task.taskId, size: childMeasure.size, determined: childMeasure.determined, sizeHint: childMeasure.sizeHint, note: childMeasure.note },
+			'recursive planner: the child plan was measured',
+		);
+
 		const parentTaskPath = buildParentTaskPath(input.parentTaskPath, task.taskId);
 		const childInput: PlanBuilderInput = {
-			intent:        childIntent,
+			intent:        measuredChild,
 			contextBundle: input.contextBundle,
 			catalog:       getTemplatesForTarget(childIntent.target),
 			parentTaskPath,
@@ -139,7 +155,7 @@ async function walk(
 		};
 
 		try {
-			const childNode = await walk(childInput, opts, provider, rootScope);
+			const childNode = await walk(childInput, opts, provider, rootScope, childMeasure);
 			children.set(task.taskId, childNode);
 		} catch (err) {
 			if (err instanceof MaxPlanDepthExceededError) {
@@ -166,7 +182,7 @@ async function walk(
 		}
 	}
 
-	return { plan, children, childErrors };
+	return { plan, children, childErrors, ...(measure !== undefined ? { measure } : {}) };
 }
 
 /**

@@ -7,7 +7,7 @@
  * Runtime: infra.discovery.families
  *
  * Detect every IaC family present in scope by walking the
- * filesystem under scopeRef.value and classifying files by
+ * filesystem under the scope's directory and classifying files by
  * name + extension (with a tiny content peek for ambiguous
  * cases like generic .yaml).
  *
@@ -42,12 +42,13 @@ import type {
 } from '../../executor/types.js';
 import {
 	readScopeRef,
-	resolveRepoPath,
 	fileWalkCompleteness,
 	unreadableFile,
 	walkFiles,
 	type WalkedFile,
 } from './_shared.js';
+import { resolveTaskScope } from '../shared/task-scope.js';
+import type { AnalyzeScopeRef } from '../../../shared/analyze-types.js';
 import type { SkippedItem } from '../../completeness.js';
 
 const TEMPLATE_ID = 'infra.discovery.families';
@@ -66,7 +67,8 @@ export const infraDiscoveryFamiliesRuntime: TemplateRuntime = {
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
-		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
+		// The one scope function: the kinds an infra task accepts, and the directory it walks.
+		const repoPath = (await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'infra', TEMPLATE_ID)).lookupPath;
 
 		const { files, truncated, unreadable } = await walkFiles(repoPath);
 		const skipped: SkippedItem[] = [...unreadable];

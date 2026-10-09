@@ -36,7 +36,9 @@ import type {
 	TemplateExecuteResult,
 	TemplateRuntime,
 } from '../../executor/types.js';
-import { readScopeRef, resolveRepoPath } from '../code/_shared.js';
+import { readScopeRef } from '../code/_shared.js';
+import { graphRepoOf, resolveTaskScope } from '../shared/task-scope.js';
+import type { AnalyzeScopeRef } from '../../../shared/analyze-types.js';
 import { buildCompleteness } from '../../completeness.js';
 import type { PartlyReadItem, SkippedItem } from '../../completeness.js';
 import { DOC_INDEX_RULE } from '../../explore/completeness-facts.js';
@@ -72,7 +74,7 @@ export const docsDiscoveryInventoryRuntime: TemplateRuntime = {
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
-		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
+		const repoPath = graphRepoOf(await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'docs', TEMPLATE_ID));
 
 		const db = await getDb();
 

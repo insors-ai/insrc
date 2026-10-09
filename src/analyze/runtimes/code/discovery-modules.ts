@@ -12,15 +12,10 @@
  * Output:
  *   { modules: Array<{ name, path, repo, fileCount? }> }
  *
- * Supported scopeRef kinds in this commit:
- *   - 'repo'      : list every kind='module' entity in the given repo
- *   - 'manifest-dir': resolve manifest dir -> repo path, then same as 'repo'
- *
- * Future scopeRef kinds ('module', 'file', 'symbol', 'workspace') get
- * folded in as the discovery family grows -- each requires its own
- * traversal pattern + test fixture. For now, an unsupported kind
- * surfaces as a runtime error so the template/inputSchema contract
- * stays the unique source of truth.
+ * The scope is resolved by shared/task-scope.ts: every kind the code
+ * family accepts (repo, module, file, symbol, manifest-dir, workspace).
+ * The modules listed are those of the area the scope names; a kind
+ * outside the family's row is refused there.
  *
  * Deterministic: no LLM involvement. Same graph state -> same output.
  */
@@ -34,7 +29,9 @@ import type {
 	TemplateExecuteResult,
 	TemplateRuntime,
 } from '../../executor/types.js';
-import { readScopeRef, resolveRepoPath } from './_shared.js';
+import { readScopeRef } from './_shared.js';
+import { graphRepoOf, inAreaOf, resolveTaskScope } from '../shared/task-scope.js';
+import type { AnalyzeScopeRef } from '../../../shared/analyze-types.js';
 
 const TEMPLATE_ID = 'code.discovery.modules';
 const log = getLogger('analyze:runtimes:code:discovery-modules');
@@ -51,10 +48,13 @@ export const codeDiscoveryModulesRuntime: TemplateRuntime = {
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
-		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
+		// The one scope function: the kinds a code task accepts, the repo whose
+		// graph it reads, and the area of that repo it keeps to.
+		const scope    = await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'code', TEMPLATE_ID);
+		const repoPath = graphRepoOf(scope);
 
 		const db       = await getDb();
-		const entities = await listEntitiesForRepo(db, repoPath);
+		const entities = (await listEntitiesForRepo(db, repoPath)).filter(inAreaOf(scope));
 		const modules: ModuleRecord[] = [];
 		for (const e of entities) {
 			if (e.kind !== 'module') continue;
@@ -92,8 +92,5 @@ export const codeDiscoveryModulesRuntime: TemplateRuntime = {
 // Test hooks (helpers themselves are exported from _shared.ts).
 // ---------------------------------------------------------------------------
 
-export {
-	readScopeRef as _readScopeRefForTest,
-	resolveRepoPath as _resolveRepoPathForTest,
-} from './_shared.js';
+export { readScopeRef as _readScopeRefForTest } from './_shared.js';
 import { graphCompleteness } from '../../explore/completeness-facts.js';

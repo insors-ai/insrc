@@ -25,6 +25,7 @@
  */
 
 import type { Completeness } from '../completeness.js';
+import type { ScopeErrorCode } from '../context/invariants.js';
 import type {
 	ClassifiedIntent,
 	PlanTask,
@@ -139,7 +140,15 @@ export interface PlanExecutionResult {
 	/** Total tasks that completed without error. */
 	readonly tasksCompleted: number;
 	/** Tasks that failed (template runtime threw, upstream unavailable, etc.). */
-	readonly tasksFailed:    ReadonlyArray<{ taskId: string; reason: string }>;
+	readonly tasksFailed:    ReadonlyArray<FailedTask>;
+}
+
+/** One failed or skipped task of a plan. `code` is present when the task failed
+ *  on a refused scope: the scope error's code, as a request's failure states it. */
+export interface FailedTask {
+	readonly taskId: string;
+	readonly reason: string;
+	readonly code?:  ScopeErrorCode | undefined;
 }
 
 export interface TaskExecutionRecord {
@@ -150,6 +159,9 @@ export interface TaskExecutionRecord {
 	readonly status:       'ok' | 'failed' | 'skipped-dependency-unavailable';
 	readonly outputs?:     Readonly<Record<string, unknown>>;
 	readonly error?:       string;
+	/** Present when the task failed because its scope was refused: the scope
+	 *  error's code. `error` is then the error's own message, with no prefix. */
+	readonly code?:        ScopeErrorCode | undefined;
 	readonly completedAt?: string;
 	/**
 	 * The runtime's completeness record, for a task that ran. Absent on a

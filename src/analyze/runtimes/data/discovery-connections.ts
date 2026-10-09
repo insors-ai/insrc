@@ -16,10 +16,12 @@
  *       id, kind, family?, label?, hasUrl, hasPath, ephemeral?
  *     }> }
  *
- * Repo path resolution:
- *   - task.params.scopeRefValue (optional override) takes precedence
- *   - else, intent.scopeRef.value when scopeRef.kind in
- *     {workspace, repo, manifest-dir}
+ * Where the pool is opened:
+ *   - task.params.scopeRefValue (optional override) takes precedence, as a path
+ *   - else the request's scope, resolved by the one scope function: the
+ *     scope's own path for a workspace, a repo and a manifest directory, and
+ *     for a connection scope the repo that declares it, listing that
+ *     connection only
  *
  * Deterministic. No LLM. Sorts by connection id for plan-replay.
  */
@@ -35,7 +37,7 @@ import type {
 import {
 	acquireDataPool,
 	optionalStringParam,
-	resolveRepoPathFromIntent,
+	resolveDataScope,
 } from './_shared.js';
 import { buildCompleteness } from '../../completeness.js';
 
@@ -56,14 +58,18 @@ export const dataDiscoveryConnectionsRuntime: TemplateRuntime = {
 	templateId: TEMPLATE_ID,
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
+		// An explicit repo path in the task's params takes precedence, as before;
+		// otherwise the request's scope decides where the pool is opened.
 		const explicit = optionalStringParam(args, 'scopeRefValue', TEMPLATE_ID);
-		const repoPath = explicit ?? resolveRepoPathFromIntent(args, TEMPLATE_ID);
+		const scope    = explicit !== undefined ? { poolPath: explicit } : await resolveDataScope(args, TEMPLATE_ID);
+		const repoPath = scope.poolPath;
 
 		const pool = await acquireDataPool(repoPath);
 		// reload() is idempotent + cheap; ensures we see edits made to
 		// db-connections.json after the pool was first acquired.
 		await pool.reload();
-		const configs = pool.list();
+		// Under a connection scope, that connection only.
+		const configs = pool.list().filter(c => scope.connectionId === undefined || c.id === scope.connectionId);
 
 		const connections: ConnectionRecord[] = configs.map(c => ({
 			id:       c.id,

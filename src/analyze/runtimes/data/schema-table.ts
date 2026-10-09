@@ -48,7 +48,8 @@ import {
 	acquireDataPool,
 	optionalStringParam,
 	requireStringParam,
-	resolveRepoPathFromIntent,
+	connectionWithinScope,
+	resolveDataScope,
 } from './_shared.js';
 import { buildCompleteness } from '../../completeness.js';
 import type { SkippedItem } from '../../completeness.js';
@@ -60,8 +61,9 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 	templateId: TEMPLATE_ID,
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
-		const repoPath     = resolveRepoPathFromIntent(args, TEMPLATE_ID);
-		const connectionId = requireStringParam(args, 'connectionId', TEMPLATE_ID);
+		const scope        = await resolveDataScope(args, TEMPLATE_ID);
+		const repoPath     = scope.poolPath;
+		const connectionId = connectionWithinScope(scope, requireStringParam(args, 'connectionId', TEMPLATE_ID), TEMPLATE_ID);
 		const table        = requireStringParam(args, 'table',        TEMPLATE_ID);
 		const depthOpt     = optionalStringParam(args, 'depth',       TEMPLATE_ID);
 		const deep         = depthOpt === 'deep';

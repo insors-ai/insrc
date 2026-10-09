@@ -7,38 +7,59 @@
  * Shared helpers for the data-target deterministic runtimes
  * (discovery-connections / discovery-objects / schema-table).
  *
- * Internal to the data/ runtime family. Differs from the code
- * helpers because data runtimes derive the repoPath from
- * intent.scopeRef rather than task.params.scopeRef -- data
+ * Internal to the data/ runtime family. Data runtimes take their scope
+ * from intent.scopeRef rather than task.params.scopeRef -- data
  * templates carry connection-scoped params (connectionId / table /
  * kind), not whole scope refs.
  */
 
 import type { TemplateExecuteArgs } from '../../executor/types.js';
 import { acquirePool } from '../../../daemon/db/index.js';
+import { resolveTaskScope } from '../shared/task-scope.js';
+
+/** Where a data task opens its connection pool, and the one connection it is
+ *  held to when its scope is a connection. */
+export interface DataScope {
+	/** The directory whose connections file the pool is opened at. */
+	readonly poolPath:      string;
+	/** Present for a connection scope: the task works on this connection only. */
+	readonly connectionId?: string | undefined;
+}
 
 /**
- * Pull the active workspace path off args.intent.scopeRef. Data
- * runtimes need a repoPath to address the per-repo driver pool;
- * the planner is expected to scope data plans at the workspace /
- * repo / manifest-dir level.
+ * A data task's scope, from the intent (data templates carry connection-scoped
+ * params, not a scope of their own), resolved by the one scope function.
+ *
+ * For a repo, a manifest directory and a workspace the pool is opened at the
+ * scope's OWN path, whether or not that directory is a registered repo, and
+ * not at the repo that contains it: a manifest directory inside a registered
+ * repo keeps its own connections file. Only a connection scope uses the repo
+ * that declares the connection, and the task is then held to that connection.
  */
-export function resolveRepoPathFromIntent(
+export async function resolveDataScope(
 	args:          TemplateExecuteArgs,
 	templateLabel: string,
-): string {
-	const sr = args.intent.scopeRef;
-	switch (sr.kind) {
-		case 'workspace':
-		case 'repo':
-		case 'manifest-dir':
-			return sr.value;
-		default:
-			throw new Error(
-				`${templateLabel}: intent.scopeRef.kind='${sr.kind}' not supported. ` +
-					'Data runtimes require workspace, repo, or manifest-dir scope.',
-			);
+): Promise<DataScope> {
+	const scope = await resolveTaskScope(args.intent.scopeRef, 'data', templateLabel);
+	if (scope.kind === 'connection') {
+		// resolveScope gives a connection scope the one registered repo that declares it.
+		return { poolPath: scope.lookupPath, connectionId: scope.connectionId };
 	}
+	return { poolPath: scope.value };
+}
+
+/**
+ * The connection a task works on: the one its params name, which under a
+ * connection scope must be the scope's own.
+ */
+export function connectionWithinScope(scope: DataScope, named: string, templateLabel: string): string {
+	if (scope.connectionId !== undefined && scope.connectionId !== named) {
+		throw new Error(
+			`${templateLabel}: the request's scope is the connection '${scope.connectionId}', ` +
+				`and this task names the connection '${named}'. A task under a connection scope works on that connection only.`,
+		);
+	}
+	return named;
 }
 
 /**

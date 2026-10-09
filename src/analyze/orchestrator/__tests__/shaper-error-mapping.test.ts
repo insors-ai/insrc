@@ -150,3 +150,40 @@ test('both mapping functions keep the code of a missing prompt and put the resul
 		assert.deepEqual(classify(beforeLookups), { code: 'shaper-prompt-missing', message: 'Shaper prompt file missing: /x/plan.md' });
 	}
 });
+
+// ---------------------------------------------------------------------------
+// Story s7, task t3: one mapping for the three scope error classes
+// ---------------------------------------------------------------------------
+
+test('one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)', async () => {
+	const { scopeErrorMapping } = await import('../../context/invariants.js');
+	const notIndexed = new ScopeNotIndexedError('/r/app/src', '/r/app', 'registered repo has zero indexed entities (status: indexing)');
+	const nowhere = new ScopeNotIndexedError('/r/elsewhere', undefined, 'no registered repo contains the scope path');
+	const unresolved = new ScopeRefUnresolvedError("kind='symbol': no stored entity named 'x' in '/r/app/a.ts'.");
+	const mismatch = new ScopeKindTargetMismatchError('connection', 'code', ['repo', 'module']);
+
+	// What each of the two mapping functions returned before this task, written out.
+	const before: ReadonlyArray<readonly [Error, Record<string, unknown>]> = [
+		[notIndexed, { code: 'scope-not-indexed', message: notIndexed.message, data: { scopePath: '/r/app/src', registeredAs: '/r/app' } }],
+		[nowhere,    { code: 'scope-not-indexed', message: nowhere.message, data: { scopePath: '/r/elsewhere', registeredAs: undefined } }],
+		[unresolved, { code: 'scope-ref-unresolved', message: unresolved.message }],
+		[mismatch,   { code: 'scope-ref-kind-target-mismatch', message: mismatch.message }],
+	];
+	for (const [err, expected] of before) {
+		// The shared function gives it ...
+		assert.deepEqual(scopeErrorMapping(err), expected, `shared: ${err.name}`);
+		// ... and both mapping functions return exactly that: the data included,
+		// and no `data` key at all where there was none.
+		assert.deepEqual(planTreeClassify(err), expected, `plan tree: ${err.name}`);
+		assert.deepEqual(daemonClassify(err), expected, `daemon: ${err.name}`);
+		assert.equal('data' in planTreeClassify(err), 'data' in expected, `plan tree data key: ${err.name}`);
+		assert.equal('data' in daemonClassify(err), 'data' in expected, `daemon data key: ${err.name}`);
+	}
+	// Any other error is not a scope error: the shared function says so, and the
+	// two mappings go on to their own cases.
+	for (const other of [new Error('boom'), new ShaperLlmUnavailableError('down'), 'a string', undefined, null]) {
+		assert.equal(scopeErrorMapping(other), undefined);
+	}
+	assert.equal(planTreeClassify(new ShaperLlmUnavailableError('down')).code, 'shaper-llm-unavailable');
+	assert.equal(daemonClassify(new Error('boom')).code, 'internal-error');
+});

@@ -44,7 +44,6 @@ import { makeEntityId } from '../../../../indexer/parser/base.js';
 
 import {
 	_readScopeRefForTest,
-	_resolveRepoPathForTest,
 	codeDiscoveryModulesRuntime,
 } from '../discovery-modules.js';
 import {
@@ -110,20 +109,6 @@ test('readScopeRef: scopeRef with wrong shape -> throws', () => {
 	);
 });
 
-test('resolveRepoPath: repo kind -> value passthrough', () => {
-	assert.equal(_resolveRepoPathForTest({ kind: 'repo', value: '/r' }, 'code.discovery.modules'), '/r');
-});
-
-test('resolveRepoPath: manifest-dir kind -> value passthrough', () => {
-	assert.equal(_resolveRepoPathForTest({ kind: 'manifest-dir', value: '/r/mod' }, 'code.discovery.modules'), '/r/mod');
-});
-
-test('resolveRepoPath: unsupported kind -> throws with supported-list hint', () => {
-	assert.throws(
-		() => _resolveRepoPathForTest({ kind: 'symbol', value: 'foo' }, 'code.discovery.modules'),
-		/not supported yet.*repo, manifest-dir/,
-	);
-});
 
 // ---------------------------------------------------------------------------
 // Bootstrap registration (always runs)
@@ -314,21 +299,21 @@ test('integration: manifest-dir scopeRef -> resolved to repo path',
 	assert.equal(modules[0]!.name, 'only-mod');
 });
 
-test('integration: unsupported scopeRef.kind (symbol) -> runtime throws',
+test('integration: a kind the code family does not accept (connection) -> refused, naming the template and the kinds allowed',
 { skip: !GATE }, async () => {
 	await assert.rejects(
 		codeDiscoveryModulesRuntime.execute({
-			task: mkTask({ scopeRef: { kind: 'symbol', value: 'foo' } }),
+			task: mkTask({ scopeRef: { kind: 'connection', value: 'ledger-db' } }),
 			intent: {
 				target:    'code',
 				scope:     'XS',
 				focused:   false,
-				scopeRef:  { kind: 'symbol', value: 'foo' },
+				scopeRef:  { kind: 'connection', value: 'ledger-db' },
 				reasoning: 'integration test',
 			},
 			upstreamOutputs: new Map(),
 			runId:           'rt-integration-4',
 		}),
-		/not supported yet/,
+		/^ScopeKindTargetMismatchError: code\.discovery\.modules: scopeRef\.kind='connection' is incompatible with target='code'\. Allowed kinds for this target: repo, module, file, symbol, manifest-dir, workspace\.$/,
 	);
 });

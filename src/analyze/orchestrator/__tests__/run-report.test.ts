@@ -328,3 +328,33 @@ test('a run that completes stores its report in the run record, and resuming fro
 		purgeRunForTests(runId);
 	}
 });
+
+// ---------------------------------------------------------------------------
+// Story s7, task t3: the code of a refused scope reaches the caller
+// ---------------------------------------------------------------------------
+
+test("the plan's and the run's tasksFailed and the daemon's response carry the code", async () => {
+	const failed = [
+		{ taskId: 't01', reason: 'Scope /r/app/src produced an empty graph closure.', code: 'scope-not-indexed' as const },
+		{ taskId: 't02', reason: 'runtime-threw: BOOM' },
+	];
+	const runId = uniqueRunId('scope-code');
+	try {
+		// The run record stores the plan's list as the walk returned it ...
+		writeRunRecord(storedRecord(runId, { finalReport: FINAL, tasksCompleted: 1, tasksFailed: failed }));
+		assert.deepEqual(readRunRecord(runId)?.tasksFailed, failed, 'the record keeps the code');
+
+		// ... the run's result hands it on ...
+		const result = await runAnalyze({ runId, userPrompt: 'ignored on resume', scopeRef: { kind: 'repo', value: '/r' } });
+		assert.ok(result.ok);
+		assert.deepEqual(result.tasksFailed, failed);
+		assert.equal(result.tasksFailed[0]!.code, 'scope-not-indexed');
+		assert.ok(!('code' in result.tasksFailed[1]!), 'an entry with no code has no code key');
+
+		// ... and so does the daemon's response.
+		const frame = shapeTerminalFrame(result) as { tasksFailed: readonly { taskId: string; reason: string; code?: string }[] };
+		assert.deepEqual(frame.tasksFailed, failed);
+	} finally {
+		purgeRunForTests(runId);
+	}
+});

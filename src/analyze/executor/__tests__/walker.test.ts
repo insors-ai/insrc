@@ -744,3 +744,71 @@ test('the plan walk copies the record to the task record, and a runtime that ret
 		purgeAllTaskOutputs(runId);
 	}
 });
+
+// ---------------------------------------------------------------------------
+// Story s7, task t3: a refused scope is a coded failure on the task record
+// ---------------------------------------------------------------------------
+
+test("a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)", async () => {
+	const { ScopeKindTargetMismatchError, ScopeNotIndexedError, ScopeRefUnresolvedError } = await import('../../context/invariants.js');
+	const { readTaskOutput } = await import('../cache.js');
+	const thrown: ReadonlyArray<readonly [string, Error, string | undefined]> = [
+		['t01', new ScopeNotIndexedError('/r/app/src', undefined, 'no registered repo contains the scope path'), 'scope-not-indexed'],
+		['t02', new ScopeRefUnresolvedError("kind='symbol': no stored entity named 'x' in '/r/app/a.ts'."), 'scope-ref-unresolved'],
+		['t03', new ScopeKindTargetMismatchError('symbol', 'docs', ['repo', 'module', 'file', 'workspace']), 'scope-ref-kind-target-mismatch'],
+		['t04', new Error('BOOM'), undefined],
+		// A class that only LOOKS like one of them by name is not one.
+		['t05', Object.assign(new Error('not really'), { name: 'ScopeNotIndexedError' }), undefined],
+	];
+	_resetRuntimeRegistryForTests();
+	for (const [taskId, err] of thrown) {
+		registerTemplateRuntime({ templateId: `demo.${taskId}`, execute: async () => { throw err; } });
+	}
+	registerTemplateRuntime(stubRuntime('demo.aggregator', { report: 'r' }));
+
+	const runId = uniqueRunId('scope-codes');
+	const plan = mkPlan([
+		...thrown.map(([taskId]) => mkTask({ taskId, template: `demo.${taskId}`, produces: [`out-${taskId}`] })),
+		mkTask({ taskId: 't06', template: 'demo.aggregator', produces: ['report'], consumes: thrown.map(([taskId]) => `out-${taskId}`) }),
+	]);
+	try {
+		const result = await runExecutor({ tree: mkNode(plan), intent: SAMPLE_INTENT, runId });
+		for (const [taskId, err, code] of thrown) {
+			const rec = result.root.perTask.get(taskId)!;
+			assert.equal(rec.status, 'failed', taskId);
+			if (code !== undefined) {
+				// The scope error's code, and its own message with nothing in front.
+				assert.equal(rec.code, code, taskId);
+				assert.equal(rec.error, err.message, taskId);
+				assert.ok(!rec.error!.includes('runtime-threw'), taskId);
+			} else {
+				assert.ok(!('code' in rec), `${taskId}: no code key`);
+				assert.equal(rec.error, `runtime-threw: ${err.message}`, taskId);
+			}
+			// The record on disk says the same.
+			const stored = readTaskOutput(runId, taskId) as { code?: string; error?: string } | null;
+			assert.deepEqual([stored?.code, stored?.error], [rec.code, rec.error], `${taskId} on disk`);
+		}
+		// The plan's list of failed tasks carries the code, entry by entry.
+		assert.deepEqual(result.root.tasksFailed.slice(0, 5), [
+			{ taskId: 't01', reason: thrown[0]![1].message, code: 'scope-not-indexed' },
+			{ taskId: 't02', reason: thrown[1]![1].message, code: 'scope-ref-unresolved' },
+			{ taskId: 't03', reason: thrown[2]![1].message, code: 'scope-ref-kind-target-mismatch' },
+			{ taskId: 't04', reason: 'runtime-threw: BOOM' },
+			{ taskId: 't05', reason: 'runtime-threw: not really' },
+		]);
+		// A task skipped for a missing input has no code.
+		assert.ok(!('code' in result.root.tasksFailed[5]!));
+	} finally {
+		purgeAllTaskOutputs(runId);
+	}
+});
+
+test('the plan walk imports nothing from the run driver', async () => {
+	const { readFileSync } = await import('node:fs');
+	const { fileURLToPath } = await import('node:url');
+	const src = readFileSync(fileURLToPath(new URL('../walker.ts', import.meta.url)), 'utf8');
+	const imports = [...src.matchAll(/^import[^;]*?from\s+'([^']+)';/gms)].map(m => m[1]!);
+	assert.ok(imports.includes('../context/invariants.js'), 'the shared mapping comes from beside the error classes');
+	assert.deepEqual(imports.filter(i => i.includes('orchestrator')), []);
+});

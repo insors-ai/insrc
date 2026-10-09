@@ -52,8 +52,9 @@ import type {
 import {
 	modulePrefixOf,
 	readScopeRef,
-	resolveRepoPath,
 } from './_shared.js';
+import { graphRepoOf, inAreaOf, resolveTaskScope } from '../shared/task-scope.js';
+import type { AnalyzeScopeRef } from '../../../shared/analyze-types.js';
 import type { SkippedItem } from '../../completeness.js';
 import { graphCompleteness } from '../../explore/completeness-facts.js';
 
@@ -78,10 +79,13 @@ export const codeStructureModuleTreeRuntime: TemplateRuntime = {
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
-		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
+		// The one scope function: the kinds a code task accepts, the repo whose
+		// graph it reads, and the area of that repo it keeps to.
+		const scope    = await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'code', TEMPLATE_ID);
+		const repoPath = graphRepoOf(scope);
 
 		const db       = await getDb();
-		const entities = await listEntitiesForRepo(db, repoPath);
+		const entities = (await listEntitiesForRepo(db, repoPath)).filter(inAreaOf(scope));
 
 		// (1) Module entities -> nodes.
 		const modules = entities.filter(e => e.kind === 'module');

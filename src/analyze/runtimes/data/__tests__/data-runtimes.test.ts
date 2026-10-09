@@ -49,10 +49,15 @@ import {
 	dataSchemaTableRuntime,
 } from '../index.js';
 import {
+	_setDataPoolSourceForTest,
 	optionalStringParam,
 	requireStringParam,
-	resolveRepoPathFromIntent,
 } from '../_shared.js';
+import { _setTaskScopeDepsForTest } from '../../shared/task-scope.js';
+import { buildCompleteness } from '../../../completeness.js';
+import { scopeErrorMapping, ScopeRefUnresolvedError } from '../../../context/invariants.js';
+import type { ScopeDeps } from '../../../context/scope.js';
+import type { RegisteredRepo } from '../../../../shared/types.js';
 
 import type {
 	PlannedTask,
@@ -98,35 +103,133 @@ function mkArgs(intent: ClassifiedIntent, task: PlannedTask, runId: string): Tem
 // Pure helpers (always run)
 // ---------------------------------------------------------------------------
 
-test('resolveRepoPathFromIntent: workspace kind -> value', () => {
-	const args = mkArgs(mkIntent('workspace', '/r/svc'),
-		mkTask('data.discovery.connections', {}, ['connections']),
-		'unit-1');
-	assert.equal(resolveRepoPathFromIntent(args, 'test'), '/r/svc');
+// The scope of a data task (Story s7, task t4). resolveRepoPathFromIntent is
+// gone; these replace its four tests. Stand-in pool and stand-in scope readers.
+
+const REG_REPO = '/r/registered';
+/** Readers: one registered repo, which declares the connections 'ledger-db' and 'audit-db'. */
+const scopeReaders: ScopeDeps = {
+	listRepos:           async () => [{ path: REG_REPO, status: 'ready' } as unknown as RegisteredRepo],
+	findEntitiesByFile:  async () => [],
+	listEntitiesForRepo: async () => [],
+	loadConnections:     async () => ({ file: { connections: [] }, resolved: [{ id: 'ledger-db', kind: 'sqlite' }, { id: 'audit-db', kind: 'sqlite' }], warnings: [] }) as never,
+};
+/** A pool with two connections that records where it was opened and what was acquired. */
+function recordingPool(): { opened: string[]; acquired: string[]; source: Parameters<typeof _setDataPoolSourceForTest>[0] } {
+	const opened: string[] = [];
+	const acquired: string[] = [];
+	const driver = {
+		family: 'rdbms', kind: 'sqlite',
+		listTables: async () => ({ tables: [{ name: 'payments', kind: 'table' }], truncated: false }),
+		describe:   async () => ({ columns: [{ name: 'id', type: 'INTEGER' }], source: 'catalog' }),
+	};
+	const pool = {
+		reload:  async () => undefined,
+		list:    () => [{ id: 'ledger-db', kind: 'sqlite', family: 'rdbms', label: 'ledger' }, { id: 'audit-db', kind: 'sqlite', family: 'rdbms', label: 'audit' }],
+		acquire: async (id: string) => { acquired.push(id); return driver; },
+	};
+	return { opened, acquired, source: (async (path: string) => { opened.push(path); return pool; }) as never };
+}
+async function withStandIns<T>(body: (p: ReturnType<typeof recordingPool>) => Promise<T>): Promise<T> {
+	const p = recordingPool();
+	_setDataPoolSourceForTest(p.source);
+	_setTaskScopeDepsForTest(scopeReaders);
+	try { return await body(p); } finally { _setDataPoolSourceForTest(undefined); _setTaskScopeDepsForTest(undefined); }
+}
+const connectionsTask = (params: Record<string, unknown> = {}): PlannedTask => mkTask('data.discovery.connections', params, ['connections']);
+const idsOf = (r: { outputs: ReadonlyMap<string, unknown> }): string[] => (r.outputs.get('connections') as { id: string }[]).map(c => c.id);
+
+test('a data task with a connection scope works on that connection only', async () => {
+	await withStandIns(async (p) => {
+		const intent = mkIntent('connection', 'ledger-db');
+		// The listing holds that connection and no other, from the repo that declares it.
+		const listed = await dataDiscoveryConnectionsRuntime.execute(mkArgs(intent, connectionsTask(), 'conn-1'));
+		assert.deepEqual(idsOf(listed), ['ledger-db']);
+		assert.deepEqual(p.opened, [REG_REPO]);
+
+		// A task that names the scope's connection works on it ...
+		const objects = await dataDiscoveryObjectsRuntime.execute(mkArgs(intent, mkTask('data.discovery.objects', { connectionId: 'ledger-db' }, ['objects']), 'conn-2'));
+		assert.equal((objects.outputs.get('objects') as unknown[]).length, 1);
+		await dataSchemaTableRuntime.execute(mkArgs(intent, mkTask('data.schema.table', { connectionId: 'ledger-db', table: 'payments' }, ['schema']), 'conn-3'));
+		assert.deepEqual(p.acquired, ['ledger-db', 'ledger-db']);
+
+		// ... and one that names another connection is refused before the pool hands it over.
+		for (const [runtime, task] of [
+			[dataDiscoveryObjectsRuntime, mkTask('data.discovery.objects', { connectionId: 'audit-db' }, ['objects'])],
+			[dataSchemaTableRuntime, mkTask('data.schema.table', { connectionId: 'audit-db', table: 'x' }, ['schema'])],
+		] as const) {
+			await assert.rejects(() => runtime.execute(mkArgs(intent, task, 'conn-4')),
+				/the request's scope is the connection 'ledger-db', and this task names the connection 'audit-db'/);
+		}
+		assert.deepEqual(p.acquired, ['ledger-db', 'ledger-db'], 'the other connection was never acquired');
+
+		// A connection no registered repo declares does not resolve.
+		await assert.rejects(() => dataDiscoveryConnectionsRuntime.execute(mkArgs(mkIntent('connection', 'no-such-db'), connectionsTask(), 'conn-5')),
+			(err: unknown) => err instanceof ScopeRefUnresolvedError);
+		// Under a repo scope both connections are listed, as before.
+		assert.deepEqual(idsOf(await dataDiscoveryConnectionsRuntime.execute(mkArgs(mkIntent('repo', REG_REPO), connectionsTask(), 'conn-6'))), ['audit-db', 'ledger-db']);
+	});
 });
 
-test('resolveRepoPathFromIntent: repo kind -> value', () => {
-	const args = mkArgs(mkIntent('repo', '/r/svc'),
-		mkTask('data.discovery.connections', {}, ['connections']),
-		'unit-2');
-	assert.equal(resolveRepoPathFromIntent(args, 'test'), '/r/svc');
+test('a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)', async () => {
+	await withStandIns(async (p) => {
+		const cases: ReadonlyArray<readonly [ClassifiedIntent['scopeRef']['kind'], string]> = [
+			['repo', '/r/not-registered'],                 // a repo scope on a directory no registered repo contains
+			['manifest-dir', `${REG_REPO}/services/pay`],  // a manifest directory INSIDE a registered repo
+			['workspace', `${REG_REPO}/services`],
+			['workspace', '/r/elsewhere'],
+			['repo', REG_REPO],
+		];
+		for (const [kind, value] of cases) {
+			const intent = mkIntent(kind, value);
+			await dataDiscoveryConnectionsRuntime.execute(mkArgs(intent, connectionsTask(), 'pool-1'));
+			await dataDiscoveryObjectsRuntime.execute(mkArgs(intent, mkTask('data.discovery.objects', { connectionId: 'ledger-db' }, ['objects']), 'pool-2'));
+			await dataSchemaTableRuntime.execute(mkArgs(intent, mkTask('data.schema.table', { connectionId: 'audit-db', table: 't' }, ['schema']), 'pool-3'));
+		}
+		// Every pool was opened at the scope's OWN path: the same value three times per case.
+		assert.deepEqual(p.opened, cases.flatMap(([, value]) => [value, value, value]));
+		// No connection is singled out: a task may name either.
+		assert.ok(p.acquired.includes('audit-db') && p.acquired.includes('ledger-db'));
+	});
 });
 
-test('resolveRepoPathFromIntent: manifest-dir kind -> value', () => {
-	const args = mkArgs(mkIntent('manifest-dir', '/r/svc/sub'),
-		mkTask('data.discovery.connections', {}, ['connections']),
-		'unit-3');
-	assert.equal(resolveRepoPathFromIntent(args, 'test'), '/r/svc/sub');
-});
+test('the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code', async () => {
+	await withStandIns(async (p) => {
+		const before = [
+			{ id: 'audit-db', kind: 'sqlite', family: 'rdbms', label: 'audit', hasUrl: false, hasPath: false },
+			{ id: 'ledger-db', kind: 'sqlite', family: 'rdbms', label: 'ledger', hasUrl: false, hasPath: false },
+		];
+		for (const kind of ['repo', 'workspace', 'manifest-dir'] as const) {
+			const r = await dataDiscoveryConnectionsRuntime.execute(mkArgs(mkIntent(kind, '/r/svc'), connectionsTask(), 'same-1'));
+			assert.deepEqual(r.outputs.get('connections'), before, kind);
+			assert.deepEqual(r.completeness, buildCompleteness({ returned: 2, basis: 'data-source' }), kind);
+		}
+		assert.deepEqual(p.opened, ['/r/svc', '/r/svc', '/r/svc']);
 
-test('resolveRepoPathFromIntent: unsupported kind -> throws with supported-list hint', () => {
-	const args = mkArgs(mkIntent('symbol', 'foo'),
-		mkTask('data.discovery.connections', {}, ['connections']),
-		'unit-4');
-	assert.throws(
-		() => resolveRepoPathFromIntent(args, 'test-label'),
-		/test-label.*scopeRef\.kind='symbol'.*workspace, repo, or manifest-dir/,
-	);
+		// The explicit path wins over the scope: also over one the data row refuses,
+		// and over a connection scope (no connection is then singled out).
+		p.opened.length = 0;
+		for (const intent of [mkIntent('repo', '/r/svc'), mkIntent('symbol', 'foo'), mkIntent('connection', 'ledger-db')]) {
+			const r = await dataDiscoveryConnectionsRuntime.execute(mkArgs(intent, connectionsTask({ scopeRefValue: '/r/override' }), 'same-2'));
+			assert.deepEqual(idsOf(r), ['audit-db', 'ledger-db']);
+		}
+		assert.deepEqual(p.opened, ['/r/override', '/r/override', '/r/override']);
+
+		// A kind outside the data row: the typed error, whose code is the mismatch code.
+		for (const kind of ['file', 'module', 'symbol'] as const) {
+			for (const [runtime, task] of [
+				[dataDiscoveryConnectionsRuntime, connectionsTask()],
+				[dataDiscoveryObjectsRuntime, mkTask('data.discovery.objects', { connectionId: 'ledger-db' }, ['objects'])],
+				[dataSchemaTableRuntime, mkTask('data.schema.table', { connectionId: 'ledger-db', table: 't' }, ['schema'])],
+			] as const) {
+				await assert.rejects(() => runtime.execute(mkArgs(mkIntent(kind, '/r/svc/a.ts'), task, 'same-3')), (err: unknown) => {
+					assert.equal(scopeErrorMapping(err)?.code, 'scope-ref-kind-target-mismatch', `${runtime.templateId}+${kind}`);
+					assert.match((err as Error).message, new RegExp(`^${runtime.templateId.replace(/\./g, '\\.')}: scopeRef\\.kind='${kind}' is incompatible with target='data'\\. Allowed kinds for this target: connection, repo, manifest-dir, workspace\\.$`));
+					return true;
+				});
+			}
+		}
+	});
 });
 
 test('requireStringParam: present non-empty -> returns; missing -> throws INV-5', () => {

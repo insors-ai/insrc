@@ -17,7 +17,7 @@ import type { Entity } from '../../../shared/types.js';
 import type { TemplateExecuteArgs } from '../../executor/types.js';
 
 // ---------------------------------------------------------------------------
-// scopeRef reading + repo path resolution
+// scopeRef reading (a task's scope is resolved by shared/task-scope.ts)
 // ---------------------------------------------------------------------------
 
 export interface ScopeRef {
@@ -48,24 +48,6 @@ export function readScopeRef(args: TemplateExecuteArgs, templateLabel: string): 
 		);
 	}
 	return { kind, value };
-}
-
-/**
- * Map a ScopeRef to a repo path the graph layer can address. Only
- * the kinds the deterministic code runtimes can currently support
- * are accepted; future kinds add cases here as the surface grows.
- */
-export function resolveRepoPath(scopeRef: ScopeRef, templateLabel: string): string {
-	switch (scopeRef.kind) {
-		case 'repo':
-		case 'manifest-dir':
-			return scopeRef.value;
-		default:
-			throw new Error(
-				`${templateLabel}: scopeRef.kind='${scopeRef.kind}' not supported yet. ` +
-					'Supported in this revision: repo, manifest-dir.',
-			);
-	}
 }
 
 // ---------------------------------------------------------------------------

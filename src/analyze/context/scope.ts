@@ -33,7 +33,7 @@ import type { AnalyzeScopeRef, AnalyzeTarget } from '../../shared/analyze-types.
 import { getLogger } from '../../shared/logger.js';
 import type { Entity, RegisteredRepo } from '../../shared/types.js';
 
-import { isKindCompatibleWithTarget, TARGET_TO_KINDS } from '../classifier/validate.js';
+import { TARGET_TO_KINDS } from '../classifier/validate.js';
 
 import {
 	ScopeKindTargetMismatchError,
@@ -112,6 +112,9 @@ export async function resolveScope(
 	}
 }
 
+/** The kinds of scope each kind of source accepts: the shape of `TARGET_TO_KINDS`. */
+export type KindsPerTarget = Readonly<Record<AnalyzeTarget, ReadonlyArray<AnalyzeScopeRef['kind']>>>;
+
 /**
  * Check that a kind of scope goes with a kind of source, then resolve
  * the scope. The pairing is tested against the classifier's table
@@ -121,9 +124,12 @@ export async function resolveScopeForTarget(
 	ref:    AnalyzeScopeRef,
 	target: AnalyzeTarget,
 	deps?:  ScopeDeps,
+	/** The table of kinds per kind of source. Always the classifier's; a test
+	 *  passes a stand-in to show that no other list is consulted. */
+	table:  KindsPerTarget = TARGET_TO_KINDS,
 ): Promise<ResolvedScope> {
-	if (!isKindCompatibleWithTarget(target, ref.kind)) {
-		throw new ScopeKindTargetMismatchError(ref.kind, target, TARGET_TO_KINDS[target]);
+	if (!table[target].includes(ref.kind)) {
+		throw new ScopeKindTargetMismatchError(ref.kind, target, table[target]);
 	}
 	return deps !== undefined ? resolveScope(ref, deps) : resolveScope(ref);
 }

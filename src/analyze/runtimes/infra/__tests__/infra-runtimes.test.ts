@@ -43,9 +43,12 @@ import {
 	registerBuiltinRuntimes,
 } from '../../bootstrap.js';
 import {
+	_resetRuntimeRegistryForTests,
 	getRuntime,
 	listRegisteredRuntimes,
+	registerTemplateRuntime,
 } from '../../../executor/registry.js';
+import { _setTaskScopeDepsForTest } from '../../shared/task-scope.js';
 
 import {
 	INFRA_AGGREGATE_PROMPT_PATH,
@@ -68,9 +71,11 @@ import {
 import { _extractResourceForTest } from '../inventory-kubernetes.js';
 import {
 	readScopeRef,
-	resolveRepoPath,
 	walkFiles,
 } from '../_shared.js';
+import { scopeErrorMapping, ScopeKindTargetMismatchError } from '../../../context/invariants.js';
+import { purgeAllTaskOutputs } from '../../../executor/cache.js';
+import { runExecutor } from '../../../executor/walker.js';
 
 import type {
 	PlannedTask,
@@ -89,6 +94,15 @@ const INTENT: ClassifiedIntent = {
 	scopeRef:  { kind: 'repo', value: '/synthetic/placeholder' },
 	reasoning: 'infra runtime tests',
 };
+
+// An infra task's scope is resolved through the one scope function. These tests
+// give it stand-in readers (an empty registry), so no test reads the real store.
+_setTaskScopeDepsForTest({
+	listRepos:           async () => [],
+	findEntitiesByFile:  async () => [],
+	listEntitiesForRepo: async () => [],
+	loadConnections:     async () => ({ file: { connections: [] }, resolved: [], warnings: [] }) as never,
+});
 
 function mkTask(templateId: string, params: Record<string, unknown>, produces: string[]): PlannedTask {
 	return {
@@ -127,15 +141,9 @@ test('readScopeRef: missing -> throws INV-5', () => {
 	assert.throws(() => readScopeRef(args, 'tpl'), /tpl: task\.params\.scopeRef missing/);
 });
 
-test('resolveRepoPath: workspace + repo + manifest-dir all pass through; symbol -> throws', () => {
-	for (const kind of ['workspace', 'repo', 'manifest-dir']) {
-		assert.equal(resolveRepoPath({ kind, value: '/r' }, 'tpl'), '/r');
-	}
-	assert.throws(
-		() => resolveRepoPath({ kind: 'symbol', value: 'foo' }, 'tpl'),
-		/scopeRef\.kind='symbol'.*workspace/,
-	);
-});
+// (The infra copy of resolveRepoPath is gone, Story s7 task t4: an infra task's
+// scope is resolved by the one scope function. Its test is replaced by the
+// one below, which runs the runtimes.)
 
 // ---------------------------------------------------------------------------
 // discovery-families: classifier unit tests (no walk)
@@ -469,6 +477,50 @@ test('walkFiles: node_modules is skipped (SKIP_DIRS); other files visible', asyn
 		assert.ok(!p.startsWith('node_modules/'),
 			`node_modules content must be skipped; found ${p}`);
 	}
+});
+
+// ---------------------------------------------------------------------------
+// The scope of an infra task (Story s7, task t4)
+// ---------------------------------------------------------------------------
+
+test('an infra task accepts its three kinds and refuses a file scope with the mismatch code; the connection-listing task gives the same result for a repo scope as before', async () => {
+	const runtimes = [
+		[infraDiscoveryFamiliesRuntime, 'families'], [infraInventoryKubernetesRuntime, 'resources'], [infraInventoryTerraformRuntime, 'terraform'],
+		[infraInventoryHelmRuntime, 'charts'], [infraInventoryDockerRuntime, 'docker'], [infraInventoryCiRuntime, 'pipelines'],
+	] as const;
+	for (const [runtime] of runtimes) {
+		const produces = INFRA_TEMPLATES.find(t => t.id === runtime.templateId)!.produces;
+		const run = (kind: string, value = fixtureRoot) =>
+			runtime.execute(mkArgs(mkTask(runtime.templateId, { scopeRef: { kind, value } }, [...produces]), 'scope-1'));
+		// The three kinds of the infra row give one and the same result: the directory is walked.
+		const asRepo = await run('repo');
+		for (const kind of ['manifest-dir', 'workspace']) {
+			assert.deepEqual([...(await run(kind)).outputs.entries()], [...asRepo.outputs.entries()], `${runtime.templateId}+${kind}`);
+		}
+		// Any other kind is refused with the typed error, whose code is the mismatch code.
+		for (const kind of ['file', 'module', 'symbol', 'connection', 'no-such-kind']) {
+			await assert.rejects(() => run(kind, join(fixtureRoot, 'main.tf')), (err: unknown) => {
+				assert.ok(err instanceof ScopeKindTargetMismatchError, `${runtime.templateId}+${kind}: got ${(err as Error).name}`);
+				assert.equal(scopeErrorMapping(err)?.code, 'scope-ref-kind-target-mismatch');
+				assert.equal((err as Error).message,
+					`${runtime.templateId}: scopeRef.kind='${kind}' is incompatible with target='infra'. Allowed kinds for this target: repo, manifest-dir, workspace.`);
+				return true;
+			});
+		}
+	}
+	// Through the plan walk the refusal is a failed task that carries the code.
+	_resetRuntimeRegistryForTests();
+	registerTemplateRuntime(infraDiscoveryFamiliesRuntime);
+	const runId = `infra-scope-${Math.floor(Math.random() * 1e9).toString(16)}`;
+	try {
+		const plan = { schemaVersion: 1, target: 'infra', scope: 'S', tasks: [
+			mkTask('infra.discovery.families', { scopeRef: { kind: 'file', value: join(fixtureRoot, 'main.tf') } }, ['families']),
+		] };
+		const result = await runExecutor({ tree: { plan, children: new Map() } as never, intent: INTENT, runId });
+		const rec = result.root.perTask.get('t01')!;
+		assert.deepEqual([rec.status, rec.code], ['failed', 'scope-ref-kind-target-mismatch']);
+		assert.ok(!rec.error!.startsWith('runtime-threw'));
+	} finally { purgeAllTaskOutputs(runId); }
 });
 
 // ---------------------------------------------------------------------------

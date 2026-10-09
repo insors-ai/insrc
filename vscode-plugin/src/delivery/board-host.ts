@@ -193,7 +193,19 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `if(p.type==='epics'){renderEpics(p.model);return;}`,
   `if(p.type==='issues'){renderIssues(p.model);return;}`,
   `if(p.type==='details'){renderDetails(p.model);return;}`,
+  // The one live region (s5): cleared, then set, so a repeated text is announced again.
+  `if(p.type==='announce'){announceEl.textContent='';announceEl.textContent=String(p.text);return;}`,
   `});`,
+  // Density (s5) lives in the webview's own state, kept by VS Code across reloads, and is mirrored to the host.
+  `const announceEl=byId('announce');`,
+  `const DENSITIES=['compact','comfortable'];`,
+  `const savedState=function(){try{const st=vs.getState();return st&&typeof st==='object'?st:{};}catch(e){return {};}};`,
+  `const applyDensity=function(d){document.body.setAttribute('data-density',d);for(const x of DENSITIES)byId('density-'+x).setAttribute('aria-pressed',x===d?'true':'false');};`,
+  `const chooseDensity=function(d){applyDensity(d);try{vs.setState(Object.assign({},savedState(),{density:d}));}catch(e){}send({type:'set-density',density:d});};`,
+  `for(const d of DENSITIES)byId('density-'+d).addEventListener('click',function(){chooseDensity(d);});`,
+  `const restored=savedState().density;`,
+  `const initialDensity=restored==='compact'||restored==='comfortable'?restored:'comfortable';`,
+  `applyDensity(initialDensity);send({type:'set-density',density:initialDensity});`,
   `send({type:'ready'});`,
   `})();`,
 ].join('');

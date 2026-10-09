@@ -260,7 +260,10 @@ const texts = (e: FakeEl): string[] => [e.textContent, ...e.children.flatMap(tex
 const findAll = (e: FakeEl, pred: (x: FakeEl) => boolean): FakeEl[] => [...(pred(e) ? [e] : []), ...e.children.flatMap(c => findAll(c, pred))];
 
 /** Run the webview script against the fake DOM; elements are created on first lookup by id. */
-function runScript(): { posted: unknown[]; deliver(msg: unknown): void; el: Record<string, FakeEl> } {
+/** state is the webview state VS Code hands back on boot; stateThrows makes getState throw. */
+function runScript(opts: { state?: unknown; stateThrows?: boolean } = {}): {
+  posted: unknown[]; deliver(msg: unknown): void; el: Record<string, FakeEl>; saved(): unknown;
+} {
   const el: Record<string, FakeEl> = {};
   const posted: unknown[] = [];
   focusState.active = null;
@@ -271,10 +274,15 @@ function runScript(): { posted: unknown[]; deliver(msg: unknown): void; el: Reco
     get activeElement() { return focusState.active; },
   };
   const window = { addEventListener: (_k: string, f: (e: { data: unknown }) => void) => { onMessage = f; } };
-  const acquireVsCodeApi = () => ({ postMessage: (m: unknown) => posted.push(m) });
+  let state: unknown = opts.state;
+  const acquireVsCodeApi = () => ({
+    postMessage: (m: unknown) => posted.push(m),
+    getState: () => { if (opts.stateThrows === true) throw new Error('no state'); return state; },
+    setState: (v: unknown) => { state = v; },
+  });
   new Function('document', 'window', 'acquireVsCodeApi', BOARD_WEBVIEW_SCRIPT)(document, window, acquireVsCodeApi);
   el['refresh']!.listeners['click']!();
-  return { posted, deliver: m => onMessage?.({ data: m }), el };
+  return { posted, deliver: m => onMessage?.({ data: m }), el, saved: () => state };
 }
 
 /** A board model for the webview tests, built by the real host from a fixture snapshot. */
@@ -293,7 +301,8 @@ test('the board document inserts text only through textContent and posts only bo
   const { posted, deliver, el } = runScript();
   assert.ok(posted.length >= 2);
   for (const m of posted) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
-  assert.deepEqual(posted.map(m => (m as { payload: { type: string } }).payload.type), ['ready', 'refresh']);
+  // Boot mirrors the webview's density to the host before 'ready' (s5); the harness then clicks refresh.
+  assert.deepEqual(posted.map(m => (m as { payload: { type: string } }).payload.type), ['set-density', 'ready', 'refresh']);
 
   const hostile = '<img src=x onerror=alert(1)>';
   deliver({ v: 1, payload: { type: 'status', status: { state: 'failed', takenAt: '2026-10-09T11:00:00.000Z', message: hostile, partialNotice: hostile, stale: true } } });
@@ -353,7 +362,7 @@ test('the board controls post only board up-messages, the scope control lists ev
     scope.value = v;
     scope.listeners['change']!();
   }
-  const sent = posted.slice(2);
+  const sent = posted.slice(3);   // after the boot posts: set-density, ready and the harness's refresh
   for (const m of sent) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
   assert.deepEqual(sent.map(m => (m as { payload: unknown }).payload), [
     { type: 'show-more', stage: 'design-plan' },
@@ -579,7 +588,7 @@ test('the epic rollup and issue view render as text, and their tabs and links po
   assert.deepEqual(links.map(l => l.attrs['data-item-id']), ['E1:S001', 'I1:S001', 'I1:S002']);
   for (const l of links) l.listeners['click']!();
   for (const t of ['tab-board', 'tab-epics', 'tab-issues']) el[t]!.listeners['click']!();
-  const sent = posted.slice(2);
+  const sent = posted.slice(3);   // after the boot posts: set-density, ready and the harness's refresh
   for (const m of sent) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
   assert.deepEqual(sent.map(m => (m as { payload: unknown }).payload), [
     { type: 'select-item', itemId: 'E1:S001' }, { type: 'select-item', itemId: 'I1:S001' }, { type: 'select-item', itemId: 'I1:S002' },
@@ -1175,4 +1184,68 @@ test('when the card that opened the details is gone, closing them focuses the sh
   b.w.el['details']!.listeners['keydown']!(keyEvent('Escape'));
   b.relay();
   assert.equal(focusState.active, b.w.el['tab-issues']);
+});
+
+test('the announce region is the only live region and is set once per message', async () => {
+  const doc = renderBoardDocument('N0NCE');
+  assert.equal((doc.match(/aria-live=/g) ?? []).length, 1);
+  assert.match(doc, /id="announce"[^>]*aria-live="polite"/);
+  const b = await liveBoard(keyboardSnapshot());
+  const region = b.w.el['announce']!;
+  assert.equal(region.textContent, 'Board refreshed: 4 items, 0 needing attention', 'the first refresh is announced');
+  // Each message replaces the region's text with its own; the region is cleared first so a repeat is spoken again.
+  const writes: string[] = [];
+  Object.defineProperty(region, 'textContent', { get() { return writes.at(-1) ?? ''; }, set(v: string) { writes.push(v); }, configurable: true });
+  b.w.deliver({ v: 1, payload: { type: 'announce', text: 'Selected: First' } });
+  assert.deepEqual(writes, ['', 'Selected: First']);
+  b.w.deliver({ v: 1, payload: { type: 'announce', text: 'Selected: First' } });
+  assert.deepEqual(writes, ['', 'Selected: First', '', 'Selected: First']);
+  // A selection through the real host lands in the region once.
+  cardOf(b.w.el['board']!, 'S2').listeners['keydown']!(keyEvent('Enter'));
+  b.relay();
+  assert.deepEqual(writes.slice(4), ['', 'Selected: Second \u00b7 Scoped']);
+  // The status line shows status but is not a live region.
+  assert.equal(b.w.el['status']!.attrs['aria-live'], undefined);
+});
+
+test('density is restored from the webview state, saved on change and mirrored to the host, and both densities render every badge, warning and label', async () => {
+  const payloadsOf = (posted: unknown[]) => posted.map(m => (m as { payload: unknown }).payload);
+  // Restored from saved state.
+  const restored = runScript({ state: { density: 'compact', other: 1 } });
+  assert.equal(restored.el['body']!.attrs['data-density'], 'compact');
+  assert.equal(restored.el['density-compact']!.attrs['aria-pressed'], 'true');
+  assert.equal(restored.el['density-comfortable']!.attrs['aria-pressed'], 'false');
+  assert.deepEqual(payloadsOf(restored.posted)[0], { type: 'set-density', density: 'compact' }, 'mirrored to the host on boot');
+  // Missing, invalid and throwing state all read as comfortable.
+  for (const opts of [{}, { state: { density: 'huge' } }, { state: 'nonsense' }, { stateThrows: true }]) {
+    const w = runScript(opts);
+    assert.equal(w.el['body']!.attrs['data-density'], 'comfortable', JSON.stringify(opts));
+    assert.deepEqual(payloadsOf(w.posted)[0], { type: 'set-density', density: 'comfortable' });
+  }
+  // A change is applied, saved (keeping other state) and posted.
+  restored.posted.length = 0;
+  restored.el['density-comfortable']!.listeners['click']!();
+  assert.equal(restored.el['body']!.attrs['data-density'], 'comfortable');
+  assert.equal(restored.el['density-comfortable']!.attrs['aria-pressed'], 'true');
+  assert.deepEqual(restored.saved(), { density: 'comfortable', other: 1 });
+  assert.deepEqual(payloadsOf(restored.posted), [{ type: 'set-density', density: 'comfortable' }]);
+  for (const m of restored.posted) assert.notEqual(parseBoardUpMessage(m), null);
+
+  // The host mirrors it, and both densities render the same cards, badges, warnings and labels.
+  const snap = fixtureSnapshot([
+    item({ id: 'S1', title: 'Warned', stage: 'scoped', needsAttention: true, attentionReasons: ['review-blocked'],
+      notices: [{ code: 'unplanned-task', message: 'odd', itemIds: ['S1'], artifactIds: [], fileNames: [] }] as never }),
+    item({ id: 'S2', title: 'Plain', stage: 'complete' }),
+  ]);
+  const rendered: { texts: string[]; labels: string[] }[] = [];
+  for (const density of ['compact', 'comfortable'] as const) {
+    const b = await liveBoard(snap);
+    b.w.el[`density-${density}`]!.listeners['click']!();
+    b.relay();
+    assert.equal(b.w.el['body']!.attrs['data-density'], density);
+    const board = b.w.el['board']!;
+    rendered.push({ texts: texts(board), labels: cardsIn(board).map(c => c.attrs['aria-label']!) });
+  }
+  assert.deepEqual(rendered[0], rendered[1], 'the same content at either density');
+  assert.ok(rendered[0]!.texts.includes('Review blocked') && rendered[0]!.texts.includes('Unplanned task'));
 });

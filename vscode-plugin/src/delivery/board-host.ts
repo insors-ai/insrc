@@ -94,16 +94,23 @@ export const BOARD_WEBVIEW_SCRIPT = [
   // An epic the reader scoped to that a refresh removed stays selectable, so the reader sees why nothing matches.
   `if(current.indexOf('epic:')===0&&!options.some(function(o){return 'epic:'+o.epicItemId===current;}))add(current,'Epic no longer on the board');`,
   `scope.value=current;}`,
-  `function renderCard(c){const li=make('li',undefined,'card');li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);`,
+  // Keyboard (s5): every card is focusable; Enter or Space selects it, the arrows move between the cards in document order.
+  `const cardsOnBoard=function(){return Array.prototype.slice.call(board.querySelectorAll('li.card'));};`,
+  `const moveFocus=function(from,step){const cards=cardsOnBoard();const next=cards[cards.indexOf(from)+step];if(next)next.focus();};`,
+  `const onCardKey=function(li,id){return function(e){`,
+  `if(e.key==='Enter'||e.key===' '){e.preventDefault();send({type:'select-item',itemId:id});}`,
+  `else if(e.key==='ArrowDown'){e.preventDefault();moveFocus(li,1);}else if(e.key==='ArrowUp'){e.preventDefault();moveFocus(li,-1);}};};`,
+  `function renderCard(c){const li=make('li',undefined,'card');li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);li.setAttribute('tabindex','0');`,
   `li.appendChild(make('div',KIND[c.kind]+' · '+c.title,'card-title'));`,
   `li.appendChild(make('div',c.standalone?'Standalone':c.epicTitle===null?'':'Epic: '+c.epicTitle,'card-epic'));`,
   `const badges=make('ul',undefined,'badges');`,
   `for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}`,
-  `li.appendChild(badges);li.addEventListener('click',function(){send({type:'select-item',itemId:c.itemId});});return li;}`,
+  `li.appendChild(badges);li.addEventListener('click',function(){send({type:'select-item',itemId:c.itemId});});li.addEventListener('keydown',onCardKey(li,c.itemId));return li;}`,
   // View tabs: each posts set-view; the shown view's tab is marked pressed.
   `const TABS={board:byId('tab-board'),epics:byId('tab-epics'),issues:byId('tab-issues')};`,
   `for(const v of ['board','epics','issues'])TABS[v].addEventListener('click',function(){send({type:'set-view',view:v});});`,
-  `function markTab(view){for(const v of ['board','epics','issues'])TABS[v].setAttribute('aria-pressed',v===view?'true':'false');}`,
+  `let shownView='board';`,
+  `function markTab(view){shownView=view;for(const v of ['board','epics','issues'])TABS[v].setAttribute('aria-pressed',v===view?'true':'false');}`,
   `const EMPTY='Nothing on the board matches the search and filters.';`,
   `const plural=function(n,one,many){return n+' '+(n===1?one:many);};`,
   // A follow link: a button whose text names the item; clicking it posts select-item with the item's id.
@@ -145,8 +152,13 @@ export const BOARD_WEBVIEW_SCRIPT = [
   // The details pane (s4): every field as text, the opened record in a <pre>; a null model clears it.
   `const RELATION={parent:'Parent',child:'Child',corrects:'Corrects'};`,
   `const button=function(text,onClick){const b=make('button',text);b.setAttribute('type','button');b.addEventListener('click',onClick);return b;};`,
-  `function renderDetails(m){clear(details);if(m===null){details.setAttribute('hidden','');return;}details.removeAttribute('hidden');`,
-  `details.setAttribute('data-item-id',m.itemId);details.appendChild(make('h2',m.title));`,
+  // Focus (s5): opening an item's details focuses their heading; closing them returns focus to that item's card, or to
+  // the shown view's tab when the card is gone. Escape inside the details closes them.
+  `let detailsOf=null;`,
+  `details.addEventListener('keydown',function(e){if(e.key==='Escape'){e.preventDefault();send({type:'close-details'});}});`,
+  `const returnFocus=function(id){const card=cardsOnBoard().filter(function(c){return c.getAttribute('data-item-id')===id;})[0];if(card)card.focus();else TABS[shownView].focus();};`,
+  `function renderDetails(m){clear(details);if(m===null){details.setAttribute('hidden','');if(detailsOf!==null){const id=detailsOf;detailsOf=null;returnFocus(id);}return;}details.removeAttribute('hidden');`,
+  `const heading=make('h2',m.title);heading.setAttribute('tabindex','-1');details.setAttribute('data-item-id',m.itemId);details.appendChild(heading);`,
   `details.appendChild(button('Close details',function(){send({type:'close-details'});}));`,
   `if(m.stageLabel!==null)details.appendChild(make('p','Stage: '+m.stageLabel,'details-stage'));`,
   `if(m.stageReason!==null)details.appendChild(make('p',m.stageReason.text+(m.stageReason.artifactIds.length>0?' ('+m.stageReason.artifactIds.join(', ')+')':''),'details-reason'));`,
@@ -168,7 +180,8 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `if(m.linked.length>0){details.appendChild(make('h3','Linked'));const ul=make('ul');`,
   `for(const l of m.linked){const li=make('li');li.appendChild(button(RELATION[l.relation]+': '+l.title,function(){send({type:'select-item',itemId:l.itemId});}));ul.appendChild(li);}details.appendChild(ul);}`,
   `if(m.sourceIds.length>0)details.appendChild(make('p','Sources: '+m.sourceIds.join(', '),'source-ids'));`,
-  `if(m.openedRecord!==null){details.appendChild(make('h3','Record '+m.openedRecord.artifactId));details.appendChild(make('pre',m.openedRecord.text,'opened-record'));}}`,
+  `if(m.openedRecord!==null){details.appendChild(make('h3','Record '+m.openedRecord.artifactId));details.appendChild(make('pre',m.openedRecord.text,'opened-record'));}`,
+  `if(m.itemId!==detailsOf){detailsOf=m.itemId;heading.focus();}}`,
   `window.addEventListener('message',function(e){`,
   `const m=e.data;if(!m||m.v!==1||!m.payload)return;const p=m.payload;`,
   `if(p.type==='status'){const s=p.status;`,

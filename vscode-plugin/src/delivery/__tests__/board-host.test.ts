@@ -212,14 +212,28 @@ interface FakeEl {
   checked?: boolean;
   children: FakeEl[];
   attrs: Record<string, string>;
-  listeners: Record<string, () => void>;
+  listeners: Record<string, (e?: FakeEvent) => void>;
   readonly firstChild: FakeEl | null;
   removeChild(c: FakeEl): void;
   appendChild(c: FakeEl): void;
   removeAttribute(k: string): void;
   setAttribute(k: string, v: string): void;
-  addEventListener(k: string, f: () => void): void;
+  addEventListener(k: string, f: (e?: FakeEvent) => void): void;
+  getAttribute(k: string): string | null;
+  focus(): void;
+  /** Only the 'tag.class' form the board script uses. */
+  querySelectorAll(selector: string): FakeEl[];
 }
+
+/** A key event as the script reads it; prevented records preventDefault. */
+interface FakeEvent { readonly key: string; prevented: boolean; preventDefault(): void }
+const keyEvent = (key: string): FakeEvent => {
+  const e: FakeEvent = { key, prevented: false, preventDefault() { e.prevented = true; } };
+  return e;
+};
+
+/** The element the fake DOM last focused; reset by every runScript. */
+const focusState: { active: FakeEl | null } = { active: null };
 
 function makeEl(tag: string): FakeEl {
   const e: FakeEl = {
@@ -230,6 +244,12 @@ function makeEl(tag: string): FakeEl {
     setAttribute(k, v) { e.attrs[k] = v; },
     removeAttribute(k) { delete e.attrs[k]; },
     addEventListener(k, f) { e.listeners[k] = f; },
+    getAttribute(k) { return Object.hasOwn(e.attrs, k) ? e.attrs[k]! : null; },
+    focus() { focusState.active = e; },
+    querySelectorAll(selector) {
+      const [t, cls] = selector.split('.');
+      return findAll(e, x => x !== e && x.tag === t && (cls === undefined || (x.attrs['class'] ?? '').split(' ').includes(cls)));
+    },
   };
   Object.defineProperty(e, 'innerHTML', { set() { throw new Error('innerHTML used'); }, get() { throw new Error('innerHTML used'); } });
   return e;
@@ -243,8 +263,13 @@ const findAll = (e: FakeEl, pred: (x: FakeEl) => boolean): FakeEl[] => [...(pred
 function runScript(): { posted: unknown[]; deliver(msg: unknown): void; el: Record<string, FakeEl> } {
   const el: Record<string, FakeEl> = {};
   const posted: unknown[] = [];
+  focusState.active = null;
   let onMessage: ((e: { data: unknown }) => void) | undefined;
-  const document = { getElementById: (id: string) => (el[id] ??= makeEl(id)), createElement: (tag: string) => makeEl(tag) };
+  const document = {
+    getElementById: (id: string) => (el[id] ??= makeEl(id)), createElement: (tag: string) => makeEl(tag),
+    body: (el['body'] = makeEl('body')),
+    get activeElement() { return focusState.active; },
+  };
   const window = { addEventListener: (_k: string, f: (e: { data: unknown }) => void) => { onMessage = f; } };
   const acquireVsCodeApi = () => ({ postMessage: (m: unknown) => posted.push(m) });
   new Function('document', 'window', 'acquireVsCodeApi', BOARD_WEBVIEW_SCRIPT)(document, window, acquireVsCodeApi);
@@ -1036,4 +1061,118 @@ test('a selection and a settled refresh are each announced once, and loading, su
   const status = payloads(ch2).filter(p => p.type === 'status').at(-1);
   assert.equal(status?.type === 'status' ? status.status.state : null, 'ready', 'the board stays rendered');
   assert.deepEqual(lastItems(ch2), ['S2', 'S1']);
+});
+
+/** A board, rollup and issue snapshot whose cards the keyboard tests walk. */
+function keyboardSnapshot(): DeliverySnapshot {
+  return fixtureSnapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Epic', childIds: ['S1', 'S2'] }),
+    item({ id: 'S1', title: 'First', parentId: 'E1', stage: 'scoped' }),
+    item({ id: 'S2', title: 'Second', parentId: 'E1', stage: 'scoped' }),
+    item({ id: 'S3', title: 'Third', stage: 'complete' }),
+    item({ id: 'I1', kind: 'issue', title: 'Bug', stage: 'scoped', standalone: true }),
+  ]);
+}
+
+/** The webview script driven by the real host: every down-message the host posts is delivered to the script. */
+async function liveBoard(snap: DeliverySnapshot) {
+  const s = detailsSetup();
+  const ch = await openOn(s, snap);
+  const w = runScript();
+  let delivered = 0;
+  const pump = () => { for (; delivered < ch.posted.length; delivered++) w.deliver(ch.posted[delivered]); };
+  pump();
+  /** Send what the script posted since the last call to the host, then deliver the host's answers. */
+  const relay = () => { for (const m of w.posted.splice(0)) ch.send(m); pump(); };
+  w.posted.length = 0;
+  return { s, ch, w, pump, relay };
+}
+
+const cardsIn = (root: FakeEl) => findAll(root, e => e.tag === 'li' && e.attrs['class'] === 'card');
+const cardOf = (root: FakeEl, id: string) => cardsIn(root).find(c => c.attrs['data-item-id'] === id)!;
+
+test('every card is focusable and opens with Enter or Space, arrows move between cards, and closing the details returns focus to the card', async () => {
+  const b = await liveBoard(keyboardSnapshot());
+  const board = b.w.el['board']!;
+  // Every card in all three views is focusable and keeps its accessible label.
+  for (const view of ['board', 'epics', 'issues'] as const) {
+    b.ch.send({ v: 1, payload: { type: 'set-view', view } });
+    b.pump();
+    const cards = cardsIn(board);
+    assert.ok(cards.length > 0, `${view} has cards`);
+    for (const c of cards) {
+      assert.equal(c.attrs['tabindex'], '0', `${view}: ${c.attrs['data-item-id']} is focusable`);
+      assert.ok((c.attrs['aria-label'] ?? '').length > 0, 'and keeps its accessible label');
+    }
+  }
+  b.ch.send({ v: 1, payload: { type: 'set-view', view: 'board' } });
+  b.pump();
+
+  // Arrows move in document order, without wrapping, and prevent the pane scrolling.
+  const order = cardsIn(board).map(c => c.attrs['data-item-id']);
+  assert.deepEqual(order, ['I1', 'S1', 'S2', 'S3']);
+  const first = cardOf(board, 'I1');
+  first.focus();
+  const down = keyEvent('ArrowDown');
+  first.listeners['keydown']!(down);
+  assert.equal(down.prevented, true);
+  assert.equal(focusState.active?.attrs['data-item-id'], 'S1');
+  focusState.active!.listeners['keydown']!(keyEvent('ArrowUp'));
+  assert.equal(focusState.active?.attrs['data-item-id'], 'I1');
+  focusState.active!.listeners['keydown']!(keyEvent('ArrowUp'));
+  assert.equal(focusState.active?.attrs['data-item-id'], 'I1', 'no wrap at the first card');
+  const last = cardOf(board, 'S3');
+  last.focus();
+  last.listeners['keydown']!(keyEvent('ArrowDown'));
+  assert.equal(focusState.active?.attrs['data-item-id'], 'S3', 'no wrap at the last card');
+
+  // Enter and Space select, as a click does; opening the details focuses their heading.
+  const enter = keyEvent('Enter');
+  cardOf(board, 'S1').listeners['keydown']!(enter);
+  assert.equal(enter.prevented, true);
+  assert.deepEqual(b.w.posted.map(m => (m as { payload: unknown }).payload), [{ type: 'select-item', itemId: 'S1' }]);
+  b.relay();
+  const details = b.w.el['details']!;
+  const heading = details.children.find(c => c.tag === 'h2')!;
+  assert.equal(heading.attrs['tabindex'], '-1');
+  assert.equal(focusState.active, heading, 'focus moves to the details heading');
+  cardOf(board, 'S2').listeners['keydown']!(keyEvent(' '));
+  assert.deepEqual(b.w.posted.map(m => (m as { payload: unknown }).payload), [{ type: 'select-item', itemId: 'S2' }]);
+  b.relay();
+  assert.equal(focusState.active, details.children.find(c => c.tag === 'h2'), 'a newly opened item focuses its own heading');
+
+  // Escape inside the details closes them, and focus returns to the card that opened them.
+  const esc = keyEvent('Escape');
+  details.listeners['keydown']!(esc);
+  assert.equal(esc.prevented, true);
+  assert.deepEqual(b.w.posted.map(m => (m as { payload: unknown }).payload), [{ type: 'close-details' }]);
+  b.relay();
+  assert.equal(focusState.active, cardOf(board, 'S2'), 'focus is back on the card');
+  assert.equal('hidden' in details.attrs, true);
+});
+
+test('when the card that opened the details is gone, closing them focuses the shown view\'s tab', async () => {
+  const b = await liveBoard(keyboardSnapshot());
+  const board = b.w.el['board']!;
+  cardOf(board, 'S3').listeners['keydown']!(keyEvent('Enter'));
+  b.relay();
+  // A search that S3 does not match removes its card; closing the details then has no card to return to.
+  b.ch.send({ v: 1, payload: { type: 'set-search', search: 'first' } });
+  b.pump();
+  assert.equal(cardsIn(board).some(c => c.attrs['data-item-id'] === 'S3'), false);
+  b.w.el['details']!.listeners['keydown']!(keyEvent('Escape'));
+  b.relay();
+  assert.equal(focusState.active, b.w.el['tab-board'], 'focus lands on the shown view\'s tab');
+  // And in another view, that view's tab.
+  b.ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
+  b.pump();
+  b.ch.send({ v: 1, payload: { type: 'set-search', search: '' } });
+  b.pump();
+  cardOf(board, 'I1').listeners['keydown']!(keyEvent('Enter'));
+  b.relay();
+  b.ch.send({ v: 1, payload: { type: 'set-search', search: 'nothing matches' } });
+  b.pump();
+  b.w.el['details']!.listeners['keydown']!(keyEvent('Escape'));
+  b.relay();
+  assert.equal(focusState.active, b.w.el['tab-issues']);
 });

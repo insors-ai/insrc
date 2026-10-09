@@ -24,12 +24,29 @@ import { STAGE_ORDER } from './labels.js';
 
 export type { Envelope };
 
+/** A titled state panel (s5 mock F): an empty store, an unavailable daemon, a failed refresh, or partial evidence. */
+export interface StatePanelView {
+  /** The status panels, and the views' 'no-matches' and 'no-issues' panels. */
+  readonly kind: 'empty' | 'unavailable' | 'refresh-failed' | 'partial' | 'no-matches' | 'no-issues';
+  readonly title: string;
+  readonly text: string;
+  /** 'retry' posts refresh; 'clear-filters' clears the search and attention filter. */
+  readonly action: 'retry' | 'clear-filters' | null;
+  /** True when the last good board is still shown behind the panel. */
+  readonly stale: boolean;
+  /** What could not be read: each store notice with its records, and the unreadable-record count. */
+  readonly affected: readonly { readonly artifactIds: readonly string[]; readonly text: string }[];
+}
+
 export interface StatusView {
   readonly state: 'loading' | 'ready' | 'empty' | 'unavailable' | 'failed';
   readonly takenAt: string | null;
   readonly message: string | null;
   readonly partialNotice: string | null;
   readonly stale: boolean;
+  /** 'Updated just now', 'Updated N minutes ago' or 'Updated <date and time>'; null when no snapshot is shown. */
+  readonly freshnessLabel: string | null;
+  readonly panel: StatePanelView | null;
 }
 
 export interface ItemListEntry {
@@ -41,7 +58,8 @@ export interface ItemListEntry {
 
 /** One text-labelled signal on a card (sc5); colour comes from tone but the label always carries the meaning. */
 export interface BadgeView {
-  readonly kind: 'approval' | 'review' | 'validation' | 'conflict' | 'attention' | 'notice';
+  /** 'stage' and 'tasks' appear only among the details chips. */
+  readonly kind: 'approval' | 'review' | 'validation' | 'conflict' | 'attention' | 'notice' | 'stage' | 'tasks';
   /** Text from sc4; always present. */
   readonly label: string;
   readonly tone: 'neutral' | 'warning' | 'danger' | 'success';
@@ -53,9 +71,13 @@ export interface CardView {
   readonly title: string;
   readonly standalone: boolean;
   readonly epicTitle: string | null;
+  /** The item id in short form ('ABCDEF01 / S001'), or the full id when it has no canonical or H-form hash. */
+  readonly compactId: string;
+  /** Recorded task results ('n/N tasks passed'); null when the item records none. */
+  readonly taskSummary: { readonly passed: number; readonly total: number; readonly label: string } | null;
   readonly badges: readonly BadgeView[];
   readonly needsAttention: boolean;
-  /** One line naming every badge, for screen readers. */
+  /** One line naming the id, the task summary and every badge, for screen readers. */
   readonly accessibleLabel: string;
 }
 
@@ -74,39 +96,41 @@ export interface BoardViewModel {
   readonly totals: { readonly items: number; readonly needsAttention: number };
   readonly scopeOptions: readonly { readonly epicItemId: string; readonly title: string }[];
   readonly emptySelection: boolean;
+  /** The panel the view shows instead of matches: no matches (with Clear filters), or, for issues, none on the board. */
+  readonly emptyPanel: StatePanelView | null;
 }
 
-/** One stage's cards inside an epic group (s3). */
-export interface StageGroupView {
-  readonly stage: DeliveryStage;
-  readonly label: string;
-  readonly cards: readonly CardView[];
-}
-
-export interface EpicGroupView {
-  /** null for the 'Not in an epic' group. */
+/** One epic's rollup row (s3): counts only, no cards. The 'Not in an epic' row has no epic id and no compact id. */
+export interface EpicRollupRowView {
   readonly epicItemId: string | null;
+  readonly compactId: string | null;
   readonly title: string;
+  readonly storiesTotal: number;
+  readonly storiesComplete: number;
   /** e.g. '2 of 5 stories complete'; names its denominator. */
   readonly completionLabel: string;
-  readonly storiesComplete: number;
-  readonly storiesTotal: number;
+  /** Planned tasks of the row's matching stories. */
+  readonly taskCount: number;
   readonly issueCount: number;
-  /** Matching cards in this group. */
+  /** Matching cards counted in this row. */
   readonly total: number;
-  /** Non-empty stages only, in STAGE_ORDER. */
-  readonly stages: readonly StageGroupView[];
+  readonly attentionCount: number;
+  /** 'No open gates', '1 needs attention' or 'N need attention'. */
+  readonly attentionLabel: string;
+  readonly attentionTone: 'warning' | 'success';
 }
 
-/** The epic rollup (s3): one group per listed epic, then the work that counts towards no epic. */
+/** The epic rollup (s3): one row per listed epic, then the work that counts towards no epic. */
 export interface EpicRollupViewModel {
-  readonly epics: readonly EpicGroupView[];
-  readonly notInEpic: EpicGroupView;
+  readonly epics: readonly EpicRollupRowView[];
+  readonly notInEpic: EpicRollupRowView;
   readonly totals: { readonly items: number; readonly needsAttention: number };
   /** The epics the scope control offers, as on the board, so the control stays current on every tab. */
   readonly scopeOptions: BoardViewModel['scopeOptions'];
   readonly selectedItemId: string | null;
   readonly emptySelection: boolean;
+  /** The panel the view shows instead of matches: no matches (with Clear filters), or, for issues, none on the board. */
+  readonly emptyPanel: StatePanelView | null;
 }
 
 /** A followable reference to another work item; ids only, resolved by the host. */
@@ -137,6 +161,8 @@ export interface IssueViewModel {
   readonly scopeOptions: BoardViewModel['scopeOptions'];
   readonly selectedItemId: string | null;
   readonly emptySelection: boolean;
+  /** The panel the view shows instead of matches: no matches (with Clear filters), or, for issues, none on the board. */
+  readonly emptyPanel: StatePanelView | null;
 }
 
 /** One task of the selected story (s4): its result, and its dependencies and checks from the story's PLAN. */
@@ -149,6 +175,23 @@ export interface TaskRowView {
   /** From the story's PLAN, read through workflow.deliveryEvidence; null when no PLAN or it could not be read. */
   readonly dependsOn: readonly string[] | null;
   readonly acceptanceChecks: readonly string[] | null;
+  /** Passed success, Failed danger, Unrecorded and Unplanned neutral. */
+  readonly resultTone: BadgeView['tone'];
+}
+
+/**
+ * One row of the selected item's artifact chain (s4): a recorded DEF, HLD, ISSUE, LLD, PLAN or BUILD, or a kind the
+ * item's route expects that has no record. Records of any other kind are not chain rows; they stay in the evidence.
+ */
+export interface ChainRowView {
+  readonly kind: 'DEF' | 'HLD' | 'ISSUE' | 'LLD' | 'PLAN' | 'BUILD';
+  readonly status: 'recorded' | 'not-recorded';
+  readonly artifactId: string | null;
+  /** The approval label for a recorded row; the not-recorded label otherwise. */
+  readonly label: string;
+  readonly tone: BadgeView['tone'];
+  /** The review label, when the record carries a review. */
+  readonly note: string | null;
 }
 
 /** One evidence record of the selected item (s4), and where opening it goes. */
@@ -164,12 +207,19 @@ export interface EvidenceRowView {
 /** The details of the selected item (s4, sc6), built from the shown snapshot alone. */
 export interface ItemDetailsViewModel {
   readonly itemId: string;
+  /** '<KIND> · <compact id>', e.g. 'STORY · ABCDEF01 / S001'. */
+  readonly kicker: string;
   readonly title: string;
   readonly stageLabel: string | null;
   readonly stageReason: { readonly text: string; readonly artifactIds: readonly string[] } | null;
+  /** The stage, the task summary and the item's card badges, in that order. */
+  readonly chips: readonly BadgeView[];
+  /** DEF, HLD, ISSUE, LLD, PLAN, BUILD in that order, as the item's route expects or records them. */
+  readonly chain: readonly ChainRowView[];
   readonly tasks: readonly TaskRowView[];
   readonly taskCounts: { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number } | null;
-  readonly conflict: string | null;
+  /** Set exactly when the daemon reports a validation conflict. */
+  readonly conflict: { readonly headline: string; readonly text: string } | null;
   readonly evidence: readonly EvidenceRowView[];
   readonly notices: readonly string[];
   readonly linked: readonly { readonly itemId: string; readonly title: string; readonly relation: 'parent' | 'child' | 'corrects' }[];
@@ -206,7 +256,8 @@ export type BoardUpMessage =
   | { readonly type: 'close-details' }
   | { readonly type: 'open-evidence'; readonly itemId: string; readonly artifactId: string }
   | { readonly type: 'set-density'; readonly density: Density }
-  | { readonly type: 'show-more'; readonly stage: DeliveryStage };
+  | { readonly type: 'show-more'; readonly stage: DeliveryStage }
+  | { readonly type: 'clear-filters' };
 
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
 
@@ -248,6 +299,9 @@ export function parseBoardUpMessage(raw: unknown): BoardUpMessage | null {
       const stage = STAGE_ORDER.find(st => st === p['stage']);
       return stage === undefined ? null : { type: 'show-more', stage };
     }
+    // Carries nothing but its type; anything more is not a clear-filters message.
+    case 'clear-filters':
+      return Object.keys(p).length === 1 ? { type: 'clear-filters' } : null;
     default:
       return null;
   }

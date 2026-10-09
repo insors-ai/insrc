@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "3b6bd6b5fa3c30d1",
+    "storyId": "S001",
+    "createdAt": "2026-10-09T13:40:22.149Z",
+    "updatedAt": "2026-10-09T15:41:35.394Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "approvedAt": "2026-10-09T15:41:36.811Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "t6 done, in commits e0c56326 and its follow-up. Two guards were added near the top of docs-review-panel.test.ts.\n\n`git(t: Skipper, need: { commits?, window?: { from, to } }, root = REPO_ROOT)` returns a git runner, or null after calling t.skip with the reason. It skips when:\n- the directory is not a work tree ('not a git work tree: <root>');\n- the clone is shallow (`rev-parse --is-shallow-repository`; 'shallow clone: history needed for <what>');\n- a named commit is missing (`cat-file -e sha^{commit}`; 'commit <sha> is not in this history');\n- the window has no real span: an end with no commit, equal ends, or no ancestry by `merge-base --is-ancestor`. The reason is 'no build window between <from> and <to>: <why>'.\n\n`tscOrSkip(t, path = TSC)` skips with 'TypeScript compiler not installed at <path>'.\n\nEvery check is routed through them:\n- The t3 contract test uses git(t, {commits: ['09e6efa']}).\n- The first t6 uses git(t, {commits: ['8908338']}).\n- The t1 src/ guard drops its local git helper for git(t, {window: S004 PLAN.md→BUILD.md}).\n- The second t6 drops its direct log/diff execFileSync calls for the same window.\n- typecheckAgainstPanel(t, snippet) now returns null after a skip, and its callers return.\n- The never-witness probe uses tscOrSkip.\n\nWhen the history is present, each check runs the same git commands and assertions it ran before.\n\nNew test: 'history and compiler checks skip with a stated reason when what they need is missing, and never run on an empty window'. It uses a recording {skip} context against tmp directories and asserts the exact reason for each case:\n- a non-work-tree directory;\n- a one-commit repo, which gives equal window ends;\n- an end that no commit touches;\n- a missing commit;\n- an inverted window, after a second commit;\n- a missing compiler path.\nIts positive controls are a real two-commit window, which runs with no skip, and the installed tsc, which is returned with no skip. It also scans the source and finds no `execFileSync('git', [`, no local `const git = (`, exactly one `function git(`, and no `existsSync(tsc)`.\n\nResults:\n- Full clone: 202/202 pass, 0 skipped.\n- Fresh `git clone --depth 1` of the commit: 198 pass, 0 fail, 4 skipped. The four are the t3 contract test, both t6 tests and t1, and each skip states its reason. Before this task the shallow clone had 3 failures plus a vacuous pass.\n- Plugin suite: 901 pass, the 1 known manifest-catalog failure, and 4 skips, all of them env-gated live CLI tests.\n- Both typechecks are clean, and strict errors stay at the baseline of 10.",
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T15:41:35.394Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fake-dom.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T15:41:35.394Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fake-dom.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T15:41:35.394Z"
+      }
+    ],
+    "commit": "e1f3e1f0"
+  }
+}

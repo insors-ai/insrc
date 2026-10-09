@@ -60,3 +60,11 @@ test('show-more is accepted only for one of the six stages', () => {
     assert.equal(parseBoardUpMessage(env(bad)), null, JSON.stringify(bad));
   }
 });
+
+test('parseBoardUpMessage accepts { type: \'clear-filters\' } and rejects it with extra fields', () => {
+  assert.deepEqual(parseBoardUpMessage(env({ type: 'clear-filters' })), { type: 'clear-filters' });
+  for (const bad of [{ type: 'clear-filters', search: '' }, { type: 'clear-filters', scope: { kind: 'all' } }, { type: 'clear-filters', on: false }]) {
+    assert.equal(parseBoardUpMessage(env(bad)), null, JSON.stringify(bad));
+  }
+  assert.equal(parseBoardUpMessage(env({ type: 'clear-filters' }, 2)), null, 'a wrong version is still rejected');
+});

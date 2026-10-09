@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791567286431-vwdtcn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T17:34:46.431Z",
+    "model": "claude:opus",
+    "elapsedMs": 110128,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2687832a8c75877",
+    "storyId": "s1",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b2687832a8c75877",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-fixtures.ts",
+        "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-model.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-perf.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+        "vscode-plugin/src/delivery/__tests__/labels.test.ts",
+        "vscode-plugin/src/delivery/board-details.ts",
+        "vscode-plugin/src/delivery/board-host.ts",
+        "vscode-plugin/src/delivery/board-model.ts",
+        "vscode-plugin/src/delivery/board-protocol.ts",
+        "vscode-plugin/src/delivery/board-state.ts",
+        "vscode-plugin/src/delivery/board-views.ts",
+        "vscode-plugin/src/delivery/labels.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-details.ts:1",
+            "message": "The graph grounding is hollow. Every production symbol in the changed set has an empty testsReaching list (for example buildItemDetails, chainOf, buildBoardViewModel, createDeliveryBoardHost, parseBoardUpMessage, taskResultTone and verdictTone), and the only test edges recorded run from test helpers to fixtures. So I did not use empty testsReaching as evidence of a gap. Instead I ran the suite directly (`npx tsx --test src/delivery/__tests__/*.test.ts`): 91 tests ran, 91 passed and 0 failed. The passing tests call these entry points by name (buildItemDetails in board-details.test.ts, buildBoardViewModel and compactId/taskSummary in board-model.test.ts, buildEpicRollup/buildIssueView in board-views.test.ts, statusView/boardDownMessages in board-state.test.ts, parseBoardUpMessage in board-protocol.test.ts, and the host and webview in board-host.test.ts). The suite run is the coverage evidence here, not the graph edges.",
+            "expectationRef": "testsReaching grounding (production symbols)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/__tests__/board-perf.test.ts:1",
+            "message": "The promised smoke test is present and passing, but under a different name: 'a 500-item, 1,000-record board renders within one second and each filter change within 150 ms, best of three'. Its name does not contain 'with the new DOM'. From the test name alone I cannot confirm that it runs against the new card and details DOM. The perf test calls largeSnapshot through runScript, so it probably does.",
+            "expectationRef": "board-perf.test.ts: first render under 1 s and each filter change under 150 ms, best of three, on the 500-item / 1,000-record fixture with the new DOM",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/__tests__/board-model.test.ts:130",
+            "message": "Duplication: the `review` builder here hand-writes the same DeliveryEvidenceEntry['review'] shape (verdict/reviewedAt/reviewedBy/counts/override/resolvedFindings/effectiveVerdict/blocking) as `review` in board-details.test.ts. Its result is also cast `as never` in `ev`, so if the review shape changes, the two builders can drift apart and the type checker won't flag it. Move one typed `review(over)` builder into board-fixtures.ts next to `evidence`, as was already done for items and evidence. Test-only code, so it does not block.",
+            "counterpartRef": "review (vscode-plugin/src/delivery/__tests__/board-details.test.ts:20)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-host.ts:388",
+            "message": "Complexity: createDeliveryBoardHost is one factory closure that holds about 20 nested routines (dispatch, apply, applyAfterRead, refresh/startRefresh, announce*, knownScope, onBoard, select, handle, reset) and the mutable state (paging, memory, board state) they share. The routines are each small and the reducer and view builders are already pure, so this is a maintainability observation rather than a defect. Pulling the refresh/announce cluster out into its own helper would make the factory easier to follow.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 4
+    }
+  }
+}

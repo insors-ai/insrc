@@ -9,15 +9,17 @@
  * Run: npx tsx --test vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts
  */
 import { test } from 'node:test';
+import type { TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE, companionVisualKind } from '../docs-review-panel.js';
 import type { StructuredRenderer, CompanionSlotState, CompanionRefKind } from '../docs-review-panel.js';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { deriveSectionIndex } from '../docs-sections.js';
+import { allOf, bodyStub, fire, textNode, type BodyStub } from './fake-dom.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
 import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
 import type { DocsArtifactSummary } from '../protocol.js';
@@ -27,6 +29,81 @@ import type { WorkflowApproveResult } from '../../../../src/workflow/gates.js';
 // authors' intentions. They live in the plugin test tree because S004 must touch
 // no file under src/.
 import { UX_PARITY_FIXTURES, UX_RENESTED_FIXTURE } from './fixtures/ux-parity.js';
+
+// ---------------------------------------------------------------------------
+// ISSUE-3b6bd6b5 — some checks read git history or run the root's TypeScript
+// compiler, and a checkout may have neither: a source tarball, a --depth 1 clone,
+// a rewritten history, an uninstalled tree. Each such check goes through one of
+// the two guards below, which skip it with the reason instead of letting it fail
+// on a raw subprocess error or pass on an empty window.
+// ---------------------------------------------------------------------------
+
+const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
+const TSC = fileURLToPath(new URL('../../../../node_modules/typescript/bin/tsc', import.meta.url));
+
+/** The part of a test context the guards use, so their own test can record the skip. */
+type Skipper = Pick<TestContext, 'skip'>;
+
+/** What history a check relies on. */
+interface GitNeed {
+  /** Commits it reads, which must exist. */
+  readonly commits?: readonly string[] | undefined;
+  /** A window between the last commits touching two files: two distinct commits, from an ancestor of to. */
+  readonly window?: { readonly from: string; readonly to: string } | undefined;
+}
+
+/** The one place this file spawns git: a runner bound to `root`. History checks reach it only through git(t, need). */
+function gitIn(root: string, env: NodeJS.ProcessEnv = process.env): (...args: string[]) => string {
+  return (...args) =>
+    execFileSync('git', args, { cwd: root, env, encoding: 'utf8', maxBuffer: 1 << 24, stdio: ['ignore', 'pipe', 'pipe'] });
+}
+
+/** A git runner bound to `root`, or null after skipping the test with the reason its history is missing. */
+function git(t: Skipper, need: GitNeed, root: string = REPO_ROOT): ((...args: string[]) => string) | null {
+  const run = gitIn(root);
+  const succeeds = (...args: string[]): boolean => {
+    try { run(...args); return true; } catch { return false; }
+  };
+  const skip = (reason: string): null => { t.skip(reason); return null; };
+
+  let inside = false;
+  try { inside = run('rev-parse', '--is-inside-work-tree').trim() === 'true'; } catch { /* not a repository */ }
+  if (!inside) return skip(`not a git work tree: ${root}`);
+  let shallow = '';
+  try { shallow = run('rev-parse', '--is-shallow-repository').trim(); } catch { /* reported below */ }
+  // A git too old for the flag echoes it back; anything but 'false' cannot be trusted to have the history.
+  if (shallow !== 'false' && shallow !== 'true') return skip(`cannot tell whether ${root} is a shallow clone`);
+  if (shallow === 'true') {
+    const what = [...(need.commits ?? []), ...(need.window ? [`${need.window.from} .. ${need.window.to}`] : [])];
+    return skip(`shallow clone: history needed for ${what.join(', ') || 'this check'}`);
+  }
+  for (const sha of need.commits ?? []) {
+    if (!succeeds('cat-file', '-e', `${sha}^{commit}`)) return skip(`commit ${sha} is not in this history`);
+  }
+  if (need.window) {
+    const { from, to } = need.window;
+    const noWindow = (why: string): null => skip(`no build window between ${from} and ${to}: ${why}`);
+    // A failing git log is reported as itself, not mistaken for a file no commit touches.
+    const last = (file: string): string | Error => {
+      try { return run('log', '--format=%H', '-1', '--', file).trim(); } catch (err) { return err as Error; }
+    };
+    const a = last(from);
+    const b = last(to);
+    if (a instanceof Error) return noWindow(`git log failed for ${from}: ${a.message.split('\n')[0]}`);
+    if (b instanceof Error) return noWindow(`git log failed for ${to}: ${b.message.split('\n')[0]}`);
+    if (a === '' || b === '') return noWindow(`no commit touches ${a === '' ? from : to}`);
+    if (a === b) return noWindow('both ends are the same commit');
+    if (!succeeds('merge-base', '--is-ancestor', a, b)) return noWindow(`the ${from} commit is not an ancestor of the ${to} commit`);
+  }
+  return run;
+}
+
+/** The compiler's path, or null after skipping the test because it is not installed there. */
+function tscOrSkip(t: Skipper, path: string = TSC): string | null {
+  if (existsSync(path)) return path;
+  t.skip(`TypeScript compiler not installed at ${path}`);
+  return null;
+}
 
 interface FakeChannel {
   channel: ChatPanelChannel;
@@ -65,12 +142,12 @@ interface ClientCalls {
   approve: string[];
   comment: Array<{ id: string; note: string }>;
 }
-function fakeClient(over: Partial<{
-  pending: () => DocsArtifactSummary[];
-  content: (id: string) => DocsContent;
-  approve: (id: string) => WorkflowApproveResult;
-  comment: (id: string, note: string) => void;
-}> = {}): { client: DocsReviewClient; calls: ClientCalls } {
+function fakeClient(over: {
+  pending?: (() => DocsArtifactSummary[]) | undefined;
+  content?: ((id: string) => DocsContent) | undefined;
+  approve?: ((id: string) => WorkflowApproveResult) | undefined;
+  comment?: ((id: string, note: string) => void) | undefined;
+} = {}): { client: DocsReviewClient; calls: ClientCalls } {
   const calls: ClientCalls = { pending: 0, content: [], approve: [], comment: [] };
   const defPending: DocsArtifactSummary[] = [
     { id: 'LLD-abc-s7', kind: 'LLD', title: 'Docs review pane', status: 'pending' },
@@ -431,21 +508,10 @@ test('the docs-review host + client modules are vscode-free', async () => {
 // the behaviour was wrong, so the degradation path is executed here.
 // ---------------------------------------------------------------------------
 
-/** A minimal element stub: enough for innerHTML/textContent/className and the
- *  querySelectorAll('a'|'img') guardMd walks. */
-function stubEl(): Record<string, unknown> {
-  return {
-    innerHTML: '',
-    textContent: '',
-    className: '',
-    querySelectorAll: () => [] as unknown[],
-  };
-}
-
 /** Evaluate DOCS_BODY_RENDERER_SOURCE with a chosen `marked` global and return
  *  its renderMarkdownBody. */
 function loadRenderer(marked: unknown): (el: unknown, src: string) => {
-  el: unknown; degradation: { degraded: boolean; notice?: string };
+  el: unknown; degradation: { degraded: boolean; notice?: string | undefined };
 } {
   // eslint-disable-next-line no-new-func
   const make = new Function('marked', `${DOCS_BODY_RENDERER_SOURCE}; return renderMarkdownBody;`);
@@ -457,7 +523,7 @@ test('t4: the happy path parses through the vendored renderer and scrubs with gu
   const marked = {
     parse: (src: string, opts: unknown) => { calls.push(opts); return `<h1>${src}</h1>`; },
   };
-  const el = stubEl();
+  const el = bodyStub('div');
   const out = loadRenderer(marked)(el, '# Title');
 
   assert.equal(el['innerHTML'], '<h1># Title</h1>', 'markup came from the vendored parse');
@@ -471,7 +537,7 @@ test('t4: the happy path parses through the vendored renderer and scrubs with gu
 
 test('t4: a PARSE FAILURE falls back to textContent with the FULL body present and degradation { degraded: true, notice }', () => {
   const body = '# Title\n\n- a\n- b\n\nparagraph with **emphasis**';
-  const el = stubEl();
+  const el = bodyStub('div');
   const out = loadRenderer({ parse: () => { throw new Error('boom'); } })(el, body);
 
   assert.equal(el['textContent'], body, 'the FULL body text is present — degraded is plainer, never partial');
@@ -484,16 +550,16 @@ test('t4: a PARSE FAILURE falls back to textContent with the FULL body present a
 test('t4: a MISSING vendored global takes the SAME fallback path as a parse throw — one code path, one message', () => {
   const body = '# Title\n\nbody text';
 
-  const thrown = loadRenderer({ parse: () => { throw new Error('boom'); } })(stubEl(), body);
-  const missing = loadRenderer(undefined)(stubEl(), body);
-  const notAFunction = loadRenderer({})(stubEl(), body);
+  const thrown = loadRenderer({ parse: () => { throw new Error('boom'); } })(bodyStub('div'), body);
+  const missing = loadRenderer(undefined)(bodyStub('div'), body);
+  const notAFunction = loadRenderer({})(bodyStub('div'), body);
 
   // Identical degradation from all three, which is what "one path, one message" means.
   assert.deepEqual(missing.degradation, thrown.degradation);
   assert.deepEqual(notAFunction.degradation, thrown.degradation);
   assert.equal(missing.degradation.notice, DEGRADE_NOTICE);
 
-  const el = stubEl();
+  const el = bodyStub('div');
   loadRenderer(undefined)(el, body);
   assert.equal(el['textContent'], body, 'the full body still shows with no renderer at all');
 });
@@ -603,9 +669,12 @@ test('t6 (contract): StructuredRenderer is still exported and now implemented in
 
 const DOC_MD = ['# Title', '', 'prose', '', '## Section two', '', '### Deeper'].join('\n');
 
-async function openAndGetContent(markdown: string): Promise<Record<string, unknown>> {
+/** Open a document whose client returns `content`, and give back the posted payload.
+ *  A markdown string is served as `{ markdown, openQuestions: [], blocked: false }`. */
+async function openWithContent(content: DocsContent | string): Promise<Record<string, unknown>> {
+  const served: DocsContent = typeof content === 'string' ? { markdown: content, openQuestions: [], blocked: false } : content;
   const fc = fakeChannel();
-  const { client } = fakeClient({ content: () => ({ markdown, openQuestions: [], blocked: false }) });
+  const { client } = fakeClient({ content: () => served });
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
@@ -617,8 +686,25 @@ async function openAndGetContent(markdown: string): Promise<Record<string, unkno
   return msg!.payload;
 }
 
+test('the file builds no fake DOM and declares no tree flatten of its own — both come from fake-dom.ts', () => {
+  const src = readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  for (const name of ['stubEl', 'node', 'frNode', 'dgNode', 'uxNodeStub', 'bodyStub', 'frAll', 'dgFlatten', 'uxFlatten', 'allOf']) {
+    assert.equal(new RegExp(`function ${name}\\(|const ${name} = \\(`).test(src), false, `${name} is not declared here`);
+  }
+  assert.match(src, /import \{ allOf, bodyStub, [^}]*\} from '\.\/fake-dom\.js';/, 'the builder and the flatten are imported');
+});
+
+test('there is one document opener, and a markdown string and the same markdown as DocsContent open to identical payloads', async () => {
+  const src = readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  assert.equal(src.split('openAnd' + 'GetContent').length - 1, 0, 'the second opener is gone');
+  assert.equal(src.split('async function ' + 'openWithContent(').length - 1, 1, 'exactly one opener is defined');
+  const fromString = await openWithContent(DOC_MD);
+  const fromContent = await openWithContent({ markdown: DOC_MD, openQuestions: [], blocked: false });
+  assert.deepEqual(fromString, fromContent);
+});
+
 test('t5: opening a document posts docs-content carrying BOTH the markdown and a sections index derived from it', async () => {
-  const payload = await openAndGetContent(DOC_MD);
+  const payload = await openWithContent(DOC_MD);
 
   assert.equal(payload['markdown'], DOC_MD, 'the markdown is on the message');
   const sections = payload['sections'] as { anchors: Array<{ slug: string; title: string; level: number }> };
@@ -634,7 +720,7 @@ test('t5: the index is derived from THE MARKDOWN ON THAT MESSAGE — the two can
   // Open two different documents and check each message is internally consistent:
   // deriving the index from the message's own markdown reproduces the posted index.
   for (const md of [DOC_MD, ['# Other doc', '## Only section'].join('\n')]) {
-    const payload = await openAndGetContent(md);
+    const payload = await openWithContent(md);
     const posted = payload['sections'] as { anchors: unknown[] };
     const rederived = deriveSectionIndex(String(payload['markdown']));
     assert.deepEqual(posted, rederived, 'the posted index is exactly what this message’s markdown yields');
@@ -642,7 +728,7 @@ test('t5: the index is derived from THE MARKDOWN ON THAT MESSAGE — the two can
 });
 
 test('t5: a document with NO headings posts an empty anchors array', async () => {
-  const payload = await openAndGetContent('just prose, no headings at all\n');
+  const payload = await openWithContent('just prose, no headings at all\n');
   assert.deepEqual((payload['sections'] as { anchors: unknown[] }).anchors, [],
     'empty, so t6 omits the chooser entirely rather than rendering an empty control');
 });
@@ -663,7 +749,7 @@ test('t5: a degraded index posts degradation and does NOT set blocked; a fetch f
     'a fetch failure claims NO render degradation — the reviewer saw nothing, which is a different state');
 
   // (b) A successful open: not blocked, and no degradation either.
-  const ok = await openAndGetContent(DOC_MD);
+  const ok = await openWithContent(DOC_MD);
   assert.equal(ok['blocked'], false);
   assert.equal(ok['degradation'], undefined, 'a clean render posts no degradation at all');
 });
@@ -686,7 +772,7 @@ test('t5: source-scan — the index rides the EXISTING docs-content variant; no 
 });
 
 test('t5: the pre-existing SIX members of the docs-content variant keep their meaning', async () => {
-  const payload = await openAndGetContent(DOC_MD);
+  const payload = await openWithContent(DOC_MD);
   assert.equal(payload['type'], 'docs-content');
   assert.equal(payload['artifactId'], 'LLD-abc-s7');
   assert.equal(payload['markdown'], DOC_MD);
@@ -702,49 +788,25 @@ test('t5: the pre-existing SIX members of the docs-content variant keep their me
 // its markup.
 // ---------------------------------------------------------------------------
 
-interface StubNode {
-  tagName: string; id: string; className: string; textContent: string; value: string;
-  children: StubNode[]; attrs: Record<string, string>; listeners: Record<string, () => void>;
-  scrolled: boolean;
-  appendChild(c: StubNode): void; removeChild(c: StubNode): void;
-  setAttribute(k: string, v: string): void;
-  addEventListener(k: string, fn: () => void): void;
-  scrollIntoView(): void;
-  readonly firstChild: StubNode | undefined;
-}
-function node(tagName = 'div'): StubNode {
-  const n: StubNode = {
-    tagName, id: '', className: '', textContent: '', value: '',
-    children: [], attrs: {}, listeners: {}, scrolled: false,
-    appendChild(c) { this.children.push(c); },
-    removeChild(c) { this.children = this.children.filter((x) => x !== c); },
-    setAttribute(k, v) { this.attrs[k] = v; },
-    addEventListener(k, fn) { this.listeners[k] = fn; },
-    scrollIntoView() { this.scrolled = true; },
-    get firstChild() { return this.children[0]; },
-  };
-  return n;
-}
-
 /** Eval DOCS_SECTIONS_SOURCE with a stub `document`, returning its three functions. */
-function loadSections(byId: Record<string, StubNode> = {}) {
+function loadSections(byId: Record<string, BodyStub> = {}) {
   const doc = {
-    createElement: (t: string) => node(t),
+    createElement: (t: string) => bodyStub(t),
     getElementById: (id: string) => byId[id],
   };
   // eslint-disable-next-line no-new-func
   const make = new Function('document', `${DOCS_SECTIONS_SOURCE}; return {stampSlugs:stampSlugs,renderSectionChooser:renderSectionChooser,jumpToSection:jumpToSection,renderDegradationNotice:renderDegradationNotice};`);
   return make(doc) as {
     stampSlugs(root: unknown, sections: unknown): number;
-    renderSectionChooser(host: StubNode, sections: unknown, onPick: (s: string) => void): boolean;
+    renderSectionChooser(host: BodyStub, sections: unknown, onPick: (s: string) => void): boolean;
     jumpToSection(slug: string): boolean;
-    renderDegradationNotice(host: StubNode, d: unknown): boolean;
+    renderDegradationNotice(host: BodyStub, d: unknown): boolean;
   };
 }
 
 /** A body stub whose querySelectorAll('h1..h6') returns the given headings. */
-function bodyWithHeadings(titles: string[]): { root: { querySelectorAll(s: string): StubNode[] }; heads: StubNode[] } {
-  const heads = titles.map((t) => { const h = node('h2'); h.textContent = t; return h; });
+function bodyWithHeadings(titles: string[]): { root: { querySelectorAll(s: string): BodyStub[] }; heads: BodyStub[] } {
+  const heads = titles.map((t) => { const h = bodyStub('h2'); h.textContent = t; return h; });
   return { root: { querySelectorAll: () => heads }, heads };
 }
 
@@ -778,7 +840,7 @@ test('t6: a heading the deriver never indexed is left UNSTAMPED rather than mis-
 });
 
 test('t6: a document with NO headings renders no chooser AT ALL — not an empty control', () => {
-  const host = node();
+  const host = bodyStub('div');
   const rendered = loadSections().renderSectionChooser(host, deriveSectionIndex('just prose'), () => {});
   assert.equal(rendered, false);
   assert.equal(host.children.length, 0, 'no select, no placeholder, no empty control');
@@ -788,7 +850,7 @@ test('t6: the chooser labels each entry with the heading VERBATIM and jumps to t
   const md = ['# Low-level design', '## Contract details', '### Error paths'].join('\n');
   const index = deriveSectionIndex(md);
 
-  const host = node();
+  const host = bodyStub('div');
   const picked: string[] = [];
   const api = loadSections();
   assert.equal(api.renderSectionChooser(host, index, (s) => picked.push(s)), true);
@@ -804,11 +866,11 @@ test('t6: the chooser labels each entry with the heading VERBATIM and jumps to t
 
   // choosing one relays its slug...
   sel.value = 'contract-details';
-  sel.listeners['change']!();
+  fire(sel, 'change');
   assert.deepEqual(picked, ['contract-details']);
 
   // ...and the jump moves the view DIRECTLY to that element.
-  const target = node('h2');
+  const target = bodyStub('h2');
   const jumped = loadSections({ 'contract-details': target }).jumpToSection('contract-details');
   assert.equal(jumped, true);
   assert.equal(target.scrolled, true, 'scrolled straight to the section');
@@ -817,20 +879,20 @@ test('t6: the chooser labels each entry with the heading VERBATIM and jumps to t
 });
 
 test('t6: the chooser placeholder selection does NOT fire a jump', () => {
-  const host = node();
+  const host = bodyStub('div');
   const picked: string[] = [];
   const api = loadSections();
   api.renderSectionChooser(host, deriveSectionIndex('# One'), (s) => picked.push(s));
   const sel = host.children[0]!;
   sel.value = '';              // the 'jump to section…' placeholder
-  sel.listeners['change']!();
+  fire(sel, 'change');
   assert.deepEqual(picked, [], 'picking the placeholder is not a navigation');
 });
 
 test('t6: the ac3 notice appears when degraded and is ABSENT when not', () => {
   const api = loadSections();
 
-  const host = node();
+  const host = bodyStub('div');
   assert.equal(api.renderDegradationNotice(host, { degraded: true, notice: DEGRADE_NOTICE }), true);
   assert.equal(host.children.length, 1);
   assert.equal(host.children[0]!.textContent, DEGRADE_NOTICE, 'set by textContent, never markup');
@@ -935,7 +997,7 @@ test('t6: a DEGRADED body renders NO chooser — entries whose targets do not ex
     'the chooser is gated on the stamped count, so a degraded body renders no chooser');
 
   // And the gate's downstream behaviour: an empty index renders nothing at all.
-  const host = node();
+  const host = bodyStub('div');
   const rendered = loadSections().renderSectionChooser(host, { anchors: [] }, () => {});
   assert.equal(rendered, false);
   assert.equal(host.children.length, 0);
@@ -956,21 +1018,6 @@ const FR_RECORD = {
     { id: 'E20260929bfe98ff7:S002:FR002', statement: 'Each shows its identifier, unchanged.', scope: 'item' as const, itemRef: 's2' },
   ],
 };
-
-/** Open a document whose client returns `content`, and give back the posted payload. */
-async function openWithContent(content: DocsContent): Promise<Record<string, unknown>> {
-  const fc = fakeChannel();
-  const { client } = fakeClient({ content: () => content });
-  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
-  host.open();
-  await tick();
-  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
-  await tick();
-  const msg = fc.posted.filter((p) => p.payload.type === 'docs-content')
-    .find((p) => p.payload.artifactId === 'LLD-abc-s7');
-  assert.ok(msg, 'posted docs-content for the opened artifact');
-  return msg!.payload;
-}
 
 test('t1: a client returning a record posts docs-content carrying functionalDefinition as the SAME reference, unreshaped', async () => {
   const payload = await openWithContent({
@@ -1199,60 +1246,19 @@ test('t1: the emitted shell is byte-identical to the captured fixed-nonce baseli
 // by evaluating the source strings with `new Function`, and this extends it.
 // ---------------------------------------------------------------------------
 
-/** A node stub that records every property WRITE, so a test can prove a value
- *  reached the DOM via textContent and never through a markup-bearing property. */
-interface FrNode {
-  tag: string;
-  // The DOM's own property name, because the shipped source reads `n.tagName`
-  // (frIsHeading) — a stub that only had `tag` would silently answer undefined.
-  tagName: string;
-  className: string;
-  textContent: string;
-  children: FrNode[];
-  writes: Array<{ prop: string; value: unknown }>;
-  appendChild(c: FrNode): FrNode;
-}
-function frNode(tag: string): FrNode {
-  const writes: FrNode['writes'] = [];
-  const children: FrNode[] = [];
-  const n = {
-    tag, tagName: tag, children, writes,
-    _className: '', _text: '',
-    appendChild(c: FrNode) { children.push(c); return c; },
-  } as unknown as FrNode & { _className: string; _text: string };
-  Object.defineProperty(n, 'className', {
-    get() { return n._className; },
-    set(v: string) { n._className = v; writes.push({ prop: 'className', value: v }); },
-  });
-  Object.defineProperty(n, 'textContent', {
-    get() { return n._text; },
-    set(v: string) { n._text = v; writes.push({ prop: 'textContent', value: v }); },
-  });
-  // innerHTML / outerHTML exist ONLY to be caught: a write to either is recorded
-  // and asserted against, so "no markup assignment" is executed, not grepped.
-  for (const prop of ['innerHTML', 'outerHTML']) {
-    Object.defineProperty(n, prop, { set(v: unknown) { writes.push({ prop, value: v }); }, get() { return ''; } });
-  }
-  return n as FrNode;
-}
-
 /** Eval DOCS_FR_SOURCE with a stub `document`, returning renderFunctionalRequirements. */
-function loadFr(): (record: unknown) => { el: FrNode; degradation?: unknown } {
-  const doc = { createElement: (t: string) => frNode(t) };
+function loadFr(): (record: unknown) => { el: BodyStub; degradation?: unknown } {
+  const doc = { createElement: (t: string) => bodyStub(t) };
   // eslint-disable-next-line no-new-func
   const make = new Function('document', `${DOCS_FR_SOURCE}; return renderFunctionalRequirements;`);
   return make(doc) as ReturnType<typeof loadFr>;
 }
 
-/** Every node in the tree, root first. */
-function frAll(n: FrNode): FrNode[] {
-  return [n, ...n.children.flatMap(frAll)];
-}
-const frItems = (root: FrNode): FrNode[] => frAll(root).filter((n) => n.className === 'insrc-fr-item');
-const frIds = (root: FrNode): string[] =>
-  frAll(root).filter((n) => n.className === 'insrc-fr-id').map((n) => n.textContent);
-const frGroupLabels = (root: FrNode): string[] =>
-  frAll(root).filter((n) => n.className === 'insrc-fr-group-label').map((n) => n.textContent);
+const frItems = (root: BodyStub): BodyStub[] => allOf(root).filter((n) => n.className === 'insrc-fr-item');
+const frIds = (root: BodyStub): string[] =>
+  allOf(root).filter((n) => n.className === 'insrc-fr-id').map((n) => n.textContent);
+const frGroupLabels = (root: BodyStub): string[] =>
+  allOf(root).filter((n) => n.className === 'insrc-fr-group-label').map((n) => n.textContent);
 
 const REC = {
   requirements: [
@@ -1280,14 +1286,14 @@ test('t2: one discrete element per requirement, every string via textContent, id
 
   // All three displayable fields survive, so the substitution is lossless against
   // the markdown form it replaces.
-  const texts = frAll(el).map((n) => n.textContent);
+  const texts = allOf(el).map((n) => n.textContent);
   assert.ok(texts.includes('Doc-level one.'));
   assert.ok(texts.includes('because one'), 'the rationale is carried');
-  assert.equal(frAll(el).filter((n) => n.className === 'insrc-fr-why').length, 1,
+  assert.equal(allOf(el).filter((n) => n.className === 'insrc-fr-why').length, 1,
     'and only where the record has one');
 
   // EXECUTED, not grepped: every write that put a string on screen was textContent.
-  const written = frAll(el).flatMap((n) => n.writes);
+  const written = allOf(el).flatMap((n) => n.writes);
   assert.ok(written.length > 0, 'the stub recorded writes');
   assert.deepEqual([...new Set(written.map((w) => w.prop))].sort(), ['className', 'textContent'],
     'no markup-bearing property was ever assigned');
@@ -1304,13 +1310,13 @@ test('t2: hostile content — an id with * _ ` [ and a statement with <script> c
   // markdown path (prose generation -> marked -> guardMd) can be reformatted;
   // this one cannot, because it is copied and never parsed.
   assert.deepEqual(frIds(el), [HOSTILE_ID], 'the identifier is byte-identical to the record value');
-  const stmt = frAll(el).find((n) => n.className === 'insrc-fr-stmt');
+  const stmt = allOf(el).find((n) => n.className === 'insrc-fr-stmt');
   assert.ok(stmt);
   assert.equal(stmt!.textContent, HOSTILE_STMT, 'the statement is text, not markup');
 
   // The <script> became TEXT, not a node: one id span + one statement span only.
   assert.equal(frItems(el)[0]!.children.length, 2, 'no element was created from the markup');
-  assert.equal(frAll(el).flatMap((n) => n.writes).filter((w) => w.prop !== 'className' && w.prop !== 'textContent').length, 0,
+  assert.equal(allOf(el).flatMap((n) => n.writes).filter((w) => w.prop !== 'className' && w.prop !== 'textContent').length, 0,
     'nothing was assigned through innerHTML/outerHTML');
 });
 
@@ -1361,7 +1367,7 @@ test("t2: malformed record table — non-array requirements, non-object entry, n
   });
   assert.deepEqual(frIds(dup.el), ['E:FR001', 'E:FR001'], 'a duplicate is shown, not silently collapsed');
   assert.deepEqual(
-    frAll(dup.el).filter((n) => n.className === 'insrc-fr-stmt').map((n) => n.textContent),
+    allOf(dup.el).filter((n) => n.className === 'insrc-fr-stmt').map((n) => n.textContent),
     ['First.', 'Second, same id.'], 'and both statements survive, in record order');
 });
 
@@ -1422,7 +1428,7 @@ test('t2: the item CSS fragment references only --it-* variables', () => {
 
 /** Eval DOCS_FR_SOURCE and return frAnchorSlug. */
 function loadFrAnchor(): (sections: unknown) => string | undefined {
-  const doc = { createElement: (t: string) => frNode(t) };
+  const doc = { createElement: (t: string) => bodyStub(t) };
   // eslint-disable-next-line no-new-func
   const make = new Function('document', `${DOCS_FR_SOURCE}; return frAnchorSlug;`);
   return make(doc) as ReturnType<typeof loadFrAnchor>;
@@ -1480,9 +1486,8 @@ test('t3: a heading inside a fenced code block produces no anchor in the posted 
   assert.ok(real.anchors.some((a) => a.slug === slug), 'the slug is one sc3 produced, not one this task minted');
 });
 
-test('t3 (contract): docs-sections.ts is unchanged and still has zero imports', async () => {
+test('t3 (contract): docs-sections.ts is unchanged and still has zero imports', async (t) => {
   const { readFileSync } = await import('node:fs');
-  const { execFileSync } = await import('node:child_process');
   const { fileURLToPath } = await import('node:url');
   const { dirname, join, resolve } = await import('node:path');
   const here = dirname(fileURLToPath(import.meta.url));
@@ -1496,9 +1501,10 @@ test('t3 (contract): docs-sections.ts is unchanged and still has zero imports', 
   // UNCHANGED by this Story, not merely import-free: compare against the commit
   // that opened S002's build. This Story consumes section identity and never
   // edits its source — an edit here would be a scope breach onto s1's contract.
-  const repo = resolve(here, '..', '..', '..', '..');
+  const run = git(t, { commits: ['09e6efa'] }, resolve(here, '..', '..', '..', '..'));
+  if (!run) return;
   const rel = 'vscode-plugin/src/chat/docs-sections.ts';
-  const atBase = execFileSync('git', ['show', `09e6efa:${rel}`], { cwd: repo, encoding: 'utf8', maxBuffer: 1 << 24 });
+  const atBase = run('show', `09e6efa:${rel}`);
   assert.equal(src, atBase, 'docs-sections.ts is byte-identical to its pre-S002 state');
 });
 
@@ -1508,134 +1514,8 @@ test('t3 (contract): docs-sections.ts is unchanged and still has zero imports', 
 // document content the reviewer is about to approve.
 // ---------------------------------------------------------------------------
 
-/** A body-container stub with ORDERED children, insertBefore/removeChild/firstChild
- *  and a querySelectorAll that finds headings — enough for the sibling walk and
- *  the bounded removal, and no more. Counts createElement calls so "zero DOM
- *  activity" is assertable as an absence rather than inferred from the tree. */
-interface BodyStub {
-  tagName: string;
-  id: string;
-  textContent: string;
-  children: BodyStub[];
-  insertBefore(n: BodyStub, ref: BodyStub | null): BodyStub;
-  removeChild(n: BodyStub): BodyStub;
-  appendChild(n: BodyStub): BodyStub;
-  querySelectorAll(sel: string): BodyStub[];
-  // S003/t6 — the mount anchors via `#slug` and inserts after the heading, so
-  // the stub must model the parent link and the sibling order too. A stub
-  // missing these would make the anchored path silently take the fallback.
-  querySelector(sel: string): BodyStub | null;
-  parentNode: BodyStub | null;
-  readonly nextSibling: BodyStub | null;
-  readonly firstChild: BodyStub | null;
-  // Present so the REAL bootstrap can run against these stubs: the body renderer
-  // assigns innerHTML, the notice sets role, and the controls attach listeners.
-  innerHTML: string;
-  className: string;
-  setAttribute(k: string, v: string): void;
-  addEventListener(t: string, l: () => void): void;
-  attrs: Record<string, string>;
-  listeners: Record<string, Array<() => void>>;
-}
-function bodyStub(tagName: string, id = '', text = ''): BodyStub {
-  const children: BodyStub[] = [];
-  const attrs: Record<string, string> = {};
-  const listeners: Record<string, Array<() => void>> = {};
-  let html = '';
-  let txt = text;
-  const n: BodyStub = {
-    tagName, id, children, attrs, listeners,
-    className: '',
-    // THE REAL DOM CONTRACT, modelled because the idempotence check depends on
-    // it: assigning innerHTML or textContent REPLACES every child. That is what
-    // makes renderContent's per-message rebuild clear a previously placed block
-    // rather than merely not re-add one — and a stub that kept its children
-    // would make that test prove nothing.
-    get innerHTML() { return html; },
-    set innerHTML(v: string) {
-      html = v;
-      children.length = 0;
-      // Parse the harness's `TAG\ttext` convention into real child elements, so
-      // the shipped bootstrap walks a tree rather than an opaque string.
-      for (const line of v.split('\n')) {
-        const i = line.indexOf('\t');
-        if (i > 0) children.push(bodyStub(line.slice(0, i), '', line.slice(i + 1)));
-      }
-    },
-    get textContent() { return txt; },
-    set textContent(v: string) { txt = v; html = ''; children.length = 0; },
-    setAttribute(k, v) { attrs[k] = v; },
-    addEventListener(t, l) { (listeners[t] ??= []).push(l); },
-    get firstChild() { return children[0] ?? null; },
-    appendChild(c) { children.push(c); return c; },
-    insertBefore(c, ref) {
-      const i = ref === null ? children.length : children.indexOf(ref);
-      children.splice(i < 0 ? children.length : i, 0, c);
-      return c;
-    },
-    removeChild(c) {
-      const i = children.indexOf(c);
-      assert.ok(i >= 0, 'removeChild was called with a node that is not a child');
-      children.splice(i, 1);
-      return c;
-    },
-    querySelectorAll(sel) {
-      const want = new Set(sel.split(',').map((t) => t.trim().toLowerCase()));
-      const walk = (x: BodyStub): BodyStub[] =>
-        x.children.flatMap((c) => [...(want.has(c.tagName.toLowerCase()) ? [c] : []), ...walk(c)]);
-      return walk(n);
-    },
-    // Only `#id` is supported, which is all the mount uses. Anything else returns
-    // null rather than guessing, so an unsupported selector shows up as a failing
-    // anchor rather than a silently wrong match.
-    //
-    // AND IT THROWS WHERE A REAL BROWSER THROWS. A bare CSS identifier may not
-    // begin with a digit, so `querySelector('#2-contract-details')` is a
-    // SyntaxError (verified in Chrome). The permissive stub that simply matched
-    // the string is precisely why a selector-based mount passed every test here
-    // while being unable to anchor on ANY numbered heading — which is every real
-    // insrc document.
-    querySelector(sel) {
-      if (!sel.startsWith('#')) return null;
-      const want = sel.slice(1);
-      if (/^[0-9]/.test(want)) {
-        throw Object.assign(new Error(`'${sel}' is not a valid selector`), { name: 'SyntaxError' });
-      }
-      const walk = (x: BodyStub): BodyStub | null => {
-        for (const c of x.children) {
-          if (c.id === want) return c;
-          const found = walk(c);
-          if (found) return found;
-        }
-        return null;
-      };
-      return walk(n);
-    },
-    parentNode: null,
-    get nextSibling() {
-      const p = n.parentNode;
-      if (!p) return null;
-      const i = p.children.indexOf(n);
-      return i >= 0 ? (p.children[i + 1] ?? null) : null;
-    },
-  };
-  // Keep the parent link current however children arrive, since the mount reads
-  // `h.parentNode` and `h.nextSibling` off a heading the body renderer created.
-  const adopt = (c: BodyStub): BodyStub => { c.parentNode = n; return c; };
-  const origAppend = n.appendChild.bind(n);
-  const origInsert = n.insertBefore.bind(n);
-  n.appendChild = (c) => origAppend(adopt(c));
-  n.insertBefore = (c, ref) => origInsert(adopt(c), ref);
-  const desc = Object.getOwnPropertyDescriptor(n, 'innerHTML')!;
-  Object.defineProperty(n, 'innerHTML', {
-    get: desc.get!,
-    set(v: string) { desc.set!.call(n, v); for (const c of children) c.parentNode = n; },
-  });
-  return n;
-}
-
 /** Eval DOCS_FR_SOURCE and return placeFunctionalRequirements + the createElement count. */
-function loadPlace(opts: { throwOnCall?: number; getElementById?: (id: string) => BodyStub | undefined } = {}) {
+function loadPlace(opts: { throwOnCall?: number | undefined; getElementById?: ((id: string) => BodyStub | undefined) | undefined } = {}) {
   const made: string[] = [];
   const doc = {
     // Present so a document-wide-lookup mutation can actually FIND something and
@@ -1653,7 +1533,7 @@ function loadPlace(opts: { throwOnCall?: number; getElementById?: (id: string) =
   const make = new Function('document', `${DOCS_FR_SOURCE}; return placeFunctionalRequirements;`);
   return {
     place: make(doc) as (b: unknown, r: unknown, s: unknown, d: boolean) =>
-      { placed: string; degradation?: { degraded: boolean; notice: string } },
+      { placed: string; degradation?: { degraded: boolean; notice: string } | undefined },
     made,
   };
 }
@@ -1899,7 +1779,7 @@ interface WebviewRun {
   deliver(payload: Record<string, unknown>): void;
 }
 /** Evaluate the REAL bootstrap from the emitted shell against DOM stubs. */
-function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean; breakDiagram?: boolean; breakExperience?: boolean; countCreates?: boolean } = {}): WebviewRun {
+function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?: boolean | undefined; breakDiagram?: boolean | undefined; breakExperience?: boolean | undefined; countCreates?: boolean | undefined } = {}): WebviewRun {
   const fc = fakeChannel();
   const { client } = fakeClient();
   createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'WV' }).open();
@@ -2230,7 +2110,7 @@ test('ac3: the same record rendered twice yields identical identifiers — the c
     'the same record yields the same identifiers in a second document');
 
   // Purity, which is WHY ac3 holds: same input, same output tree, every time.
-  const shape = (n: FrNode): unknown => [n.tagName, n.className, n.textContent, n.children.map(shape)];
+  const shape = (n: BodyStub): unknown => [n.tagName, n.className, n.textContent, n.children.map(shape)];
   assert.deepEqual(shape(downstream.el), shape(upstream.el),
     'the rendering is a pure function of the record');
 
@@ -2276,7 +2156,7 @@ test('the functional-requirement items carry LIST semantics, not just visual sep
   // The per-story grouping is programmatic too: a group is an li carrying a
   // label and a NESTED list, so the structure a screen reader reports matches
   // the structure the record carries.
-  const groups = frAll(el).filter((n) => n.className === 'insrc-fr-group');
+  const groups = allOf(el).filter((n) => n.className === 'insrc-fr-group');
   assert.equal(groups.length, 2);
   for (const g of groups) {
     assert.equal(g.tagName, 'li');
@@ -2442,11 +2322,12 @@ test('t2 (contract): protocol.ts indexes all three off DocsContent rather than r
  * `tsc --noEmit` never sees this file and any `@ts-expect-error` written here is
  * INERT — it would decorate a test without checking anything. A type-level
  * guarantee is only real if something executes the check, so the probe writes a
- * file next to the module (relative import resolves) and runs tsc over it.
+ * file next to the module (relative import resolves) and runs tsc over it. When
+ * the compiler is not installed it skips the test and returns null.
  */
-function typecheckAgainstPanel(snippet: string): { ok: boolean; out: string } {
-  const tsc = fileURLToPath(new URL('../../../../node_modules/typescript/bin/tsc', import.meta.url));
-  assert.ok(existsSync(tsc), `tsc must be resolvable for this probe to mean anything (looked at ${tsc})`);
+function typecheckAgainstPanel(t: Skipper, snippet: string): { ok: boolean; out: string } | null {
+  const tsc = tscOrSkip(t);
+  if (!tsc) return null;
   const probe = fileURLToPath(new URL(`../__sc4probe_${process.pid}_${Math.random().toString(36).slice(2)}__.ts`, import.meta.url));
   try {
     writeFileSync(probe, snippet);
@@ -2466,7 +2347,7 @@ function typecheckAgainstPanel(snippet: string): { ok: boolean; out: string } {
   }
 }
 
-test("t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime", () => {
+test("t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime", (t) => {
   const absent: CompanionSlotState = { state: 'absent' };
   // Runtime shape: exactly one own key.
   assert.deepEqual(Object.keys(absent), ['state']);
@@ -2476,23 +2357,26 @@ test("t3: the 'absent' state carries NO member other than state — enforced by 
   // accident. Reading any other member off the narrowed absent arm must be a
   // COMPILE error against the real published union.
   for (const member of ['label', 'body', 'linkOut', 'kind', 'reason']) {
-    const { ok, out } = typecheckAgainstPanel(`
+    const probe = typecheckAgainstPanel(t, `
       import type { CompanionSlotState } from './docs-review-panel.js';
       export function probe(s: CompanionSlotState): unknown {
         if (s.state === 'absent') return s.${member};
         return undefined;
       }
     `);
+    if (!probe) return;
+    const { ok, out } = probe;
     assert.equal(ok, false, `reading '${member}' off the absent arm must NOT compile`);
     assert.match(out, /Property '.*' does not exist on type/, `and fail because '${member}' is absent from the arm`);
   }
 
   // The positive control: `state` itself IS readable, so the probe is capable of
   // passing and the failures above are about the members, not a broken probe.
-  const control = typecheckAgainstPanel(`
+  const control = typecheckAgainstPanel(t, `
     import type { CompanionSlotState } from './docs-review-panel.js';
     export function probe(s: CompanionSlotState): string { return s.state; }
   `);
+  if (!control) return;
   assert.equal(control.ok, true, `the probe must accept valid code too — got: ${control.out}`);
 });
 
@@ -2515,7 +2399,7 @@ test('t3: companionVisualKind maps the closed union TOTALLY — both diagram kin
   assert.equal(Object.keys(every).length, 3, 'the union is three members wide');
 });
 
-test('t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot', () => {
+test('t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot', (t) => {
   // The exhaustiveness guarantee is invisible at runtime: a bare `default` would
   // pass every assertion above while silently swallowing a new kind. So compile a
   // copy of the mapping with one branch removed and require tsc to REJECT it.
@@ -2541,12 +2425,12 @@ test('t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot
     writeFileSync(file, src);
     // tsc lives at the REPO ROOT, not under vscode-plugin. Resolved relative to
     // this file so the probe does not depend on the cwd the suite was started
-    // from — and asserted to exist first, because a missing binary ALSO exits
+    // from — and checked to exist first, because a missing binary ALSO exits
     // non-zero and would make the "tsc rejected it" assertion pass for entirely
     // the wrong reason. (It did, on the first run; the message assertion below is
-    // what caught it.)
-    const tsc = fileURLToPath(new URL('../../../../node_modules/typescript/bin/tsc', import.meta.url));
-    assert.ok(existsSync(tsc), `tsc must be resolvable for this probe to mean anything (looked at ${tsc})`);
+    // what caught it.) Missing, the test skips with that reason.
+    const tsc = tscOrSkip(t);
+    if (!tsc) return;
 
     const r = spawnSync(process.execPath, [tsc, '--noEmit', '--strict', file], { encoding: 'utf8' });
     const out = `${r.stdout}${r.stderr}`;
@@ -2650,73 +2534,31 @@ test('t3: sc4 is TYPE-ONLY so far — nothing on the surface consumes it yet', (
 // "they agree" would be a comment rather than a property.
 // ---------------------------------------------------------------------------
 
-/** An SVG-aware recording node: captures every property write AND the namespace
- *  it was created in, so "built by createElementNS, labelled by textContent" is
- *  executed rather than grepped. */
-interface DgNode {
-  ns: string | null;
-  tag: string;
-  tagName: string;
-  textContent: string;
-  attrs: Record<string, string>;
-  children: DgNode[];
-  writes: Array<{ prop: string; value: unknown }>;
-  appendChild(c: DgNode): DgNode;
-  setAttribute(k: string, v: string): void;
-}
-function dgNode(tag: string, ns: string | null): DgNode {
-  const writes: DgNode['writes'] = [];
-  const children: DgNode[] = [];
-  const attrs: Record<string, string> = {};
-  const n = {
-    ns, tag, tagName: tag, children, writes, attrs,
-    _text: '',
-    appendChild(c: DgNode) { children.push(c); return c; },
-    setAttribute(k: string, v: string) { attrs[k] = String(v); writes.push({ prop: `attr:${k}`, value: v }); },
-  } as unknown as DgNode & { _text: string };
-  Object.defineProperty(n, 'textContent', {
-    get() { return n._text; },
-    set(v: string) { n._text = v; writes.push({ prop: 'textContent', value: v }); },
-  });
-  // Present ONLY to be caught: any write is recorded and asserted against.
-  for (const prop of ['innerHTML', 'outerHTML']) {
-    Object.defineProperty(n, prop, { set(v: unknown) { writes.push({ prop, value: v }); }, get() { return ''; } });
-  }
-  return n as DgNode;
-}
-
 interface DgApi {
   dgDeriveEr(rec: unknown): { nodes: { id: string; attrs: { name: string; range: string; dangling: boolean }[] }[]; edges: { id: string; from: string; to: string; label: string; token: string }[] } | null;
-  dgRenderEr(rec: unknown): { el: DgNode } | null;
+  dgRenderEr(rec: unknown): { el: BodyStub } | null;
   dgBuildDiagramSlot(records: unknown, ref: unknown, anchorSlug: string | undefined): Record<string, unknown>;
   dgDeriveSeq(rec: unknown): { nodes: { id: string; label: string }[]; edges: { id: string; from: string; to: string; index: number; kind: string; label: string; note: string }[]; truncations: { at: string; note: string }[] } | null;
-  dgRenderSeq(rec: unknown): { el: DgNode } | null;
+  dgRenderSeq(rec: unknown): { el: BodyStub } | null;
   dgCrowsFoot(slot: unknown): string;
-  created: DgNode[];
+  created: BodyStub[];
   createdHtml: string[];
 }
 
 /** Evaluate DOCS_DIAGRAM_SOURCE against a recording document stub. */
 function loadDg(): DgApi {
-  const created: DgNode[] = [];
+  const created: BodyStub[] = [];
   const createdHtml: string[] = [];
   const doc = {
-    createElementNS: (ns: string, t: string) => { const n = dgNode(t, ns); created.push(n); return n; },
+    createElementNS: (ns: string, t: string) => { const n = bodyStub(t, '', '', ns); created.push(n); return n; },
     // Present so a renderer reaching for the HTML factory is RECORDED rather than
     // crashing — an SVG renderer must never use it, and a test can prove it didn't.
-    createElement: (t: string) => { createdHtml.push(t); return dgNode(t, null); },
+    createElement: (t: string) => { createdHtml.push(t); return bodyStub(t); },
   };
   // eslint-disable-next-line no-new-func
   const make = new Function('document', `${DOCS_DIAGRAM_SOURCE}; return {dgDeriveEr:dgDeriveEr,dgRenderEr:dgRenderEr,dgBuildDiagramSlot:dgBuildDiagramSlot,dgCrowsFoot:dgCrowsFoot,dgDeriveSeq:dgDeriveSeq,dgRenderSeq:dgRenderSeq};`);
   const api = make(doc) as Omit<DgApi, 'created' | 'createdHtml'>;
   return { ...api, created, createdHtml };
-}
-
-/** Flatten a built tree for assertions. */
-function dgFlatten(n: DgNode, out: DgNode[] = []): DgNode[] {
-  out.push(n);
-  for (const c of n.children) dgFlatten(c, out);
-  return out;
 }
 
 /** Rebuild the DAEMON's node-label format from the client's derived attributes, so
@@ -2830,19 +2672,20 @@ test('t4: a self-reference and a 3-cycle both terminate and draw — layout iter
 
   // A self-edge is drawn as a visible loop rather than silently dropped or
   // collapsed to a zero-length line.
-  const flat = dgFlatten(selfRef!.el);
+  const flat = allOf(selfRef!.el);
   const lines = flat.filter((n) => n.tag === 'line');
   const degenerate = lines.filter((l) => l.attrs['x1'] === l.attrs['x2'] && l.attrs['y1'] === l.attrs['y2']);
   assert.equal(degenerate.length, 0, 'no zero-length line stands in for a self-reference');
   assert.ok(lines.length >= 3, 'the self-reference is drawn as a multi-segment loop');
 });
 
+/** A drawn diagram as one line per element — namespace, tag, class, attributes, text — for the checks that it renders identically. */
+const dgShape = (el: BodyStub): string =>
+  allOf(el).map((n) => `${n.ns ?? '-'}|${n.tag}|${n.className}|${JSON.stringify(n.attrs)}|${n.textContent}`).join('\n');
+
 test('t4: determinism — the same record renders an identical element tree every time', () => {
   const rec = { classes: { Order: { attributes: { id: { range: 'string' }, by: { range: 'Customer' } } }, Customer: { attributes: { id: { range: 'string' } } } } };
-  const shape = (api: DgApi): string =>
-    dgFlatten(api.dgRenderEr(rec)!.el)
-      .map((n) => `${n.ns ?? '-'}|${n.tag}|${JSON.stringify(n.attrs)}|${n.textContent}`)
-      .join('\n');
+  const shape = (api: DgApi): string => dgShape(api.dgRenderEr(rec)!.el);
   // Two independent evaluations, so no cached state can make them agree.
   assert.equal(shape(loadDg()), shape(loadDg()), 'no randomness, no measurement-dependent reflow');
 });
@@ -2852,7 +2695,7 @@ test('t4 ac4: every element is createElementNS in the SVG namespace and every la
   const built = dg.dgRenderEr({
     classes: { Order: { attributes: { id: { range: 'string' }, by: { range: 'Customer' } } }, Customer: { attributes: { id: { range: 'string' } } } },
   })!;
-  const flat = dgFlatten(built.el);
+  const flat = allOf(built.el);
   assert.ok(flat.length > 5, 'a non-trivial tree was built');
 
   // Namespace on EVERY node, and the HTML factory never touched.
@@ -2875,7 +2718,7 @@ test('t4 ac4: hostile class and slot names survive character-for-character and r
   const hostile = '<script>alert(1)</script>';
   const slot = 'a & b';
   const built = dg.dgRenderEr({ classes: { [hostile]: { attributes: { [slot]: { range: 'string' }, ref: { range: 'Plain' } } }, Plain: {} } })!;
-  const flat = dgFlatten(built.el);
+  const flat = allOf(built.el);
 
   const texts = flat.map((n) => n.textContent);
   assert.ok(texts.includes(hostile), 'the class name is present verbatim as TEXT');
@@ -2990,7 +2833,7 @@ test('t4 gate: a ux-mock ref is not this factory\'s business — the experience 
   // for this factory. With no record either, that must be ABSENT — not an
   // unshowable diagram invented from someone else's companion.
   const dgApi = new Function('document', `${DOCS_DIAGRAM_SOURCE}; return dgPickRef;`)({
-    createElementNS: () => dgNode('x', 'ns'), createElement: () => dgNode('x', null),
+    createElementNS: () => bodyStub('x', '', '', 'ns'), createElement: () => bodyStub('x'),
   }) as (c: unknown) => unknown;
   assert.equal(dgApi(ux), undefined, 'a ux-mock ref is not a diagram ref');
   assert.equal(dgApi([{ kind: 'diagram-mermaid', relPath: 'a', title: 'b' }])?.constructor, Object);
@@ -3171,7 +3014,7 @@ test('t5: every participant and every message from the REAL record is rendered, 
   const rec = realSeqRecord();
   const model = dg.dgDeriveSeq(rec)!;
   const built = dg.dgRenderSeq(rec)!;
-  const flat = dgFlatten(built.el);
+  const flat = allOf(built.el);
   const texts = flat.map((n) => n.textContent);
 
   for (const p of model.nodes) {
@@ -3195,7 +3038,7 @@ test('t5: every participant and every message from the REAL record is rendered, 
 test('t5: the sequence renderer reuses t4 primitives — SVG namespace, textContent, no markup', () => {
   const dg = loadDg();
   const built = dg.dgRenderSeq(realSeqRecord())!;
-  const flat = dgFlatten(built.el);
+  const flat = allOf(built.el);
   for (const n of flat) {
     assert.equal(n.ns, 'http://www.w3.org/2000/svg', `${n.tag} created in the SVG namespace`);
   }
@@ -3222,8 +3065,7 @@ test('t5: an empty or malformed sequence record is ABSENT and creates no element
 
 test('t5: determinism — the same sequence record renders an identical tree every time', () => {
   const rec = realSeqRecord();
-  const shape = (api: DgApi): string =>
-    dgFlatten(api.dgRenderSeq(rec)!.el).map((n) => `${n.ns}|${n.tag}|${JSON.stringify(n.attrs)}|${n.textContent}`).join('\n');
+  const shape = (api: DgApi): string => dgShape(api.dgRenderSeq(rec)!.el);
   assert.equal(shape(loadDg()), shape(loadDg()));
 });
 
@@ -3248,7 +3090,7 @@ test('t5: the factory dispatches on the RECORD present, never on the ref kind', 
   // whichever key happened to be enumerated first.
   const both = dg.dgBuildDiagramSlot({ erDefinition: ER, sequenceDefinition: SEQ }, ref, undefined);
   assert.equal(both['state'], 'rendered');
-  const flat = dgFlatten(both['body'] as DgNode);
+  const flat = allOf(both['body'] as BodyStub);
   assert.ok(flat.some((n) => n.textContent === 'Order'), 'the entity model is the one drawn');
 });
 
@@ -3266,7 +3108,7 @@ test('t5 layout: no caption escapes the canvas and no two participant heads over
   const vb = built.el.attrs['viewBox'].split(' ').map(Number);
   const [, , width, height] = vb as [number, number, number, number];
 
-  const heads = dgFlatten(built.el).filter((n) => n.tag === 'rect');
+  const heads = allOf(built.el).filter((n) => n.tag === 'rect');
   assert.ok(heads.length >= 2, 'participant heads are drawn');
   for (let i = 0; i < heads.length; i++) {
     for (let j = i + 1; j < heads.length; j++) {
@@ -3278,7 +3120,7 @@ test('t5 layout: no caption escapes the canvas and no two participant heads over
   }
   // Every caption fits inside the canvas — the ER renderer's clipping defect in the
   // other geometry.
-  for (const t of dgFlatten(built.el).filter((n) => n.tag === 'text')) {
+  for (const t of allOf(built.el).filter((n) => n.tag === 'text')) {
     const cx = Number(t.attrs['x']);
     const half = (t.attrs['text-anchor'] === 'start' ? 0 : t.textContent.length * 6.75 / 2);
     assert.ok(cx - half >= -1, `"${t.textContent.slice(0, 30)}" escapes the left edge`);
@@ -3302,38 +3144,35 @@ const DG_ER = { classes: { Order: { attributes: { id: { range: 'string' }, by: {
 const DG_SEQ = { participants: [{ id: 'a', label: 'Host' }, { id: 'b', label: 'Webview' }], messages: [{ from: 'a', to: 'b', label: 'post' }] };
 const DG_REF = { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S003/er.html', title: 'Entity model' };
 
-/** Every node under a stub, root first. */
-function allOf(n: BodyStub): BodyStub[] { return [n, ...n.children.flatMap(allOf)]; }
-const slotsIn = (r: WebviewRun): BodyStub[] =>
-  [...allOf(r.diagram), ...allOf(r.experience), ...allOf(r.body)]
-    .filter((n) => n.className === 'insrc-dg-slot');
 /** The EXPERIENCE slot, found by its kind modifier wherever it ended up — the host
  *  when unanchored, the BODY when it anchored beside a heading. Looking only in the
  *  host would miss exactly the anchored case these tests exist to cover. */
 const uxSlotsIn = (r: WebviewRun): BodyStub[] =>
   [...allOf(r.experience), ...allOf(r.body)]
     .filter((n) => n.className === 'insrc-dg-slot insrc-dg-slot--experience');
-/** The DIAGRAM slot keeps the bare class it has always had. */
+/** The DIAGRAM slot keeps the bare class it has always had. Every host is searched,
+ *  the experience host included, so a diagram slot mounted in the wrong host still
+ *  counts against "exactly one" and "none". */
 const dgSlotsIn = (r: WebviewRun): BodyStub[] =>
-  [...allOf(r.diagram), ...allOf(r.body)].filter((n) => n.className === 'insrc-dg-slot');
+  [...allOf(r.diagram), ...allOf(r.experience), ...allOf(r.body)].filter((n) => n.className === 'insrc-dg-slot');
 
 test('t6 gate: the four-combination table, driven through the SHIPPED bootstrap', () => {
   // ref absent + record absent -> nothing anywhere
   let r = runWebview();
   r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
-  assert.equal(slotsIn(r).length, 0, 'no ref + no record -> no slot');
+  assert.equal(dgSlotsIn(r).length, 0, 'no ref + no record -> no slot');
 
   // ref present + record present -> rendered
   r = runWebview();
   r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, erDefinition: DG_ER, companions: [DG_REF] });
-  let slot = slotsIn(r)[0];
+  let slot = dgSlotsIn(r)[0];
   assert.ok(slot, 'ref + record -> a slot');
   assert.ok(allOf(slot!).some((n) => n.tagName === 'svg'), 'and it carries a drawn diagram');
 
   // ref present + record absent -> unshowable, NAMED
   r = runWebview();
   r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, companions: [DG_REF] });
-  slot = slotsIn(r)[0];
+  slot = dgSlotsIn(r)[0];
   assert.ok(slot, 'ref alone -> a slot');
   const why = allOf(slot!).find((n) => n.className === 'insrc-dg-slot-why')!;
   assert.match(why.textContent, /could not be shown here/);
@@ -3343,7 +3182,7 @@ test('t6 gate: the four-combination table, driven through the SHIPPED bootstrap'
   // ref ABSENT + record present -> RENDERED (the contested row, q7f574776)
   r = runWebview();
   r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, erDefinition: DG_ER });
-  slot = slotsIn(r)[0];
+  slot = dgSlotsIn(r)[0];
   assert.ok(slot, 'a record with no companion ref still draws — record gates content');
   assert.ok(allOf(slot!).some((n) => n.tagName === 'svg'));
   assert.equal(allOf(slot!).some((n) => n.className === 'insrc-dg-slot-link'), false, 'and offers no link');
@@ -3370,7 +3209,7 @@ test('t6 ac2: the dominant path does ZERO DOM work and leaves the body region un
   // The slot path created nothing: no svg namespace call at all, and no slot div.
   assert.equal(bare.created.filter((t) => t.startsWith('ns:')).length, 0, 'not one createElementNS call');
   assert.equal(bare.diagram.children.length, 0, 'the slot host is empty');
-  assert.equal(slotsIn(bare).length, 0);
+  assert.equal(dgSlotsIn(bare).length, 0);
   assert.ok(bare.created.length > before, 'the rest of the surface still rendered');
 
   // And the BODY REGION is what it would be without this Story: the slot never
@@ -3388,7 +3227,7 @@ test("t6: `classes: {}` and an empty sequence record are ABSENT, not an empty fr
   ]) {
     const r = runWebview();
     r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, ...records });
-    assert.equal(slotsIn(r).length, 0, `${JSON.stringify(records)} must reserve no space`);
+    assert.equal(dgSlotsIn(r).length, 0, `${JSON.stringify(records)} must reserve no space`);
     assert.equal(r.created.filter((t) => t.startsWith('ns:')).length, 0);
   }
 });
@@ -3400,7 +3239,7 @@ test('t6: diagram-html routes to the stated failure (lc1), never a silent nothin
     erDefinition: DG_ER,
     companions: [{ kind: 'diagram-html', relPath: 'docs/x/t.html', title: 'Some diagram' }],
   });
-  const slot = slotsIn(r)[0];
+  const slot = dgSlotsIn(r)[0];
   assert.ok(slot, 'a declared-but-unproduced kind still produces a slot');
   assert.match(allOf(slot!).find((n) => n.className === 'insrc-dg-slot-why')!.textContent, /diagram-html/);
   assert.ok(allOf(slot!).some((n) => n.className === 'insrc-dg-slot-link'), 'the authentic file stays reachable');
@@ -3412,7 +3251,7 @@ test('t6: the link-out is offered in the FAILURE state, where it matters most', 
     artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
     companions: [{ kind: 'diagram-mermaid', relPath: 'docs/x/S002/sequence-diagram.html', title: 'Sequence diagram' }],
   });
-  const slot = slotsIn(r)[0]!;
+  const slot = dgSlotsIn(r)[0]!;
   const link = allOf(slot).find((n) => n.className === 'insrc-dg-slot-link');
   assert.ok(link, 'a reviewer who cannot see the diagram is the one who most needs the file');
   assert.match(link!.textContent, /sequence-diagram\.html/);
@@ -3459,7 +3298,7 @@ test('t6 placement: a resolving anchor mounts beside that heading; a stale one f
     artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
     erDefinition: DG_ER, companions: [DG_REF], diagramAnchorSlug: 'no-such-section',
   });
-  assert.equal(slotsIn(stale).length, 1, 'the visual is NOT dropped');
+  assert.equal(dgSlotsIn(stale).length, 1, 'the visual is NOT dropped');
   assert.equal(stale.diagram.children.length, 1, 'it falls back to the default position');
 });
 
@@ -3467,12 +3306,12 @@ test('t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third car
   const r = runWebview();
   const msg = { artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, erDefinition: DG_ER, companions: [DG_REF] };
   r.deliver(msg);
-  const first = slotsIn(r).length;
+  const first = dgSlotsIn(r).length;
   r.deliver(msg);
   assert.equal(first, 1, 'one slot after the first message');
-  assert.equal(slotsIn(r).length, 1, 'still exactly one after the second — the host is cleared, not appended to');
+  assert.equal(dgSlotsIn(r).length, 1, 'still exactly one after the second — the host is cleared, not appended to');
   r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
-  assert.equal(slotsIn(r).length, 0, 'and a message carrying neither clears it');
+  assert.equal(dgSlotsIn(r).length, 0, 'and a message carrying neither clears it');
 
   // The same, ANCHORED into the body, where the body rebuild is what clears it.
   const probe = runWebview();
@@ -3481,7 +3320,7 @@ test('t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third car
   const a = runWebview();
   const anchoredMsg = { ...msg, diagramAnchorSlug: slug };
   a.deliver(anchoredMsg); a.deliver(anchoredMsg);
-  assert.equal(slotsIn(a).length, 1, 'one slot in the body after two identical renders');
+  assert.equal(dgSlotsIn(a).length, 1, 'one slot in the body after two identical renders');
 });
 
 test('t6 resilience: a forced throw in the slot build leaves all five other surfaces intact', () => {
@@ -3497,7 +3336,7 @@ test('t6 resilience: a forced throw in the slot build leaves all five other surf
   assert.equal(r.oq.children.length, 1, 'the open question still rendered');
   const labels = r.actions.children.map((c) => c.textContent);
   assert.deepEqual(labels, ['approve', 'request changes'], 'both controls still rendered');
-  assert.equal(slotsIn(r).length, 0, 'and no half-built slot was left behind');
+  assert.equal(dgSlotsIn(r).length, 0, 'and no half-built slot was left behind');
 });
 
 test('t6 regression: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked banner are unchanged', () => {
@@ -3537,7 +3376,7 @@ test('t6: the fail-closed arm shows the blocked banner and NO slot', () => {
   // too — a reviewer who never saw the body is never shown a diagram drawn from it.
   const r = runWebview();
   r.deliver({ artifactId: 'LLD-x', markdown: 'unavailable: daemon unreachable', openQuestions: [], blocked: true, commentable: true });
-  assert.equal(slotsIn(r).length, 0);
+  assert.equal(dgSlotsIn(r).length, 0);
   assert.equal(r.actions.children[0]!.textContent, 'blocked — not approvable');
 });
 
@@ -3559,12 +3398,12 @@ test('t6: DOCS_DIAGRAM_SOURCE is inlined in the single nonce\'d script and the c
   assert.ok(mount < chooser, 'and BEFORE the chooser');
 });
 
-test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity', async () => {
-  const { execFileSync } = await import('node:child_process');
-  const repo = fileURLToPath(new URL('../../../../', import.meta.url));
+test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity', (t) => {
   // Compared against the commit BEFORE this Epic's S003 work began, so the claim is
   // about the whole Story and not just this task.
-  const shipped = execFileSync('git', ['show', '8908338:vscode-plugin/src/chat/docs-sections.ts'], { cwd: repo, encoding: 'utf8' });
+  const run = git(t, { commits: ['8908338'] });
+  if (!run) return;
+  const shipped = run('show', '8908338:vscode-plugin/src/chat/docs-sections.ts');
   const now = readFileSync(new URL('../docs-sections.ts', import.meta.url), 'utf8');
   assert.equal(now, shipped, 'sc3 is CONSUMED as shipped; the resolver is called, never reimplemented');
 });
@@ -4001,14 +3840,9 @@ test('t2: the pin moved by EXACTLY the declared source string and CSS fragment �
   }
 });
 
-test('t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild', async () => {
-  const { execFileSync } = await import('node:child_process');
-  const { fileURLToPath } = await import('node:url');
-  const { dirname, join } = await import('node:path');
-  const here = dirname(fileURLToPath(import.meta.url));
-  const repoRoot = join(here, '..', '..', '..', '..');
-  const git = (...args: string[]): string =>
-    execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+test('t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild', (t) => {
+  const run = git(t, { window: { from: 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md', to: 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md' } });
+  if (!run) return;
 
   // Read the Story's COMMITTED change set, not the working tree. An earlier
   // version of this test read `git status --porcelain`, which passed only while
@@ -4020,14 +3854,14 @@ test('t1: NO file under src/ is modified — the fact that makes S004 need no da
   // pasted here. It ends at the BUILD approval, not HEAD: the Story is complete,
   // and a window left open at HEAD (and the working tree) checked every later
   // change in the repo against this Story's rule (ISSUE-2f07f59c).
-  const planCommit = git('log', '--format=%H', '-1', '--',
+  const planCommit = run('log', '--format=%H', '-1', '--',
     'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md').trim();
   assert.match(planCommit, /^[0-9a-f]{40}$/, 'the PLAN commit is the build-window boundary');
-  const buildCommit = git('log', '--format=%H', '-1', '--',
+  const buildCommit = run('log', '--format=%H', '-1', '--',
     'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md').trim();
   assert.match(buildCommit, /^[0-9a-f]{40}$/, 'the BUILD approval commit closes the build window');
 
-  const committed = git('diff', '--name-only', `${planCommit}..${buildCommit}`)
+  const committed = run('diff', '--name-only', `${planCommit}..${buildCommit}`)
     .split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
   const paths = committed;
 
@@ -4072,84 +3906,43 @@ test('t1: NO file under src/ is modified — the fact that makes S004 need no da
 const UX_PARITY_FIXTURES_FOR_TEST =
   UX_PARITY_FIXTURES.find((f) => f.name === 'every-member')!;
 
-/** A recording node: captures every property write, every attribute and every
- *  child, so the renderer's MECHANISM is observable. Mirrors S003's dgNode, with
- *  className and style added because this renderer is an HTML one. */
-interface UxNode {
-  tag: string;
-  className: string;
-  textContent: string;
-  style: Record<string, string>;
-  attrs: Record<string, string>;
-  children: Array<UxNode | UxTextNode>;
-  writes: Array<{ prop: string; value: unknown }>;
-  appendChild(c: UxNode | UxTextNode): UxNode | UxTextNode;
-  setAttribute(k: string, v: string): void;
-}
-interface UxTextNode { nodeType: 3; data: string }
-
-function isText(n: UxNode | UxTextNode): n is UxTextNode {
-  return (n as UxTextNode).nodeType === 3;
-}
-
-function uxNodeStub(tag: string): UxNode {
-  const writes: UxNode['writes'] = [];
-  const children: UxNode['children'] = [];
-  const attrs: Record<string, string> = {};
-  const style: Record<string, string> = {};
-  const n = {
-    tag, children, writes, attrs, style,
-    _text: '', _cls: '',
-    appendChild(c: UxNode | UxTextNode) { children.push(c); return c; },
-    setAttribute(k: string, v: string) { attrs[k] = String(v); writes.push({ prop: `attr:${k}`, value: v }); },
-  } as unknown as UxNode & { _text: string; _cls: string };
-  Object.defineProperty(n, 'textContent', {
-    get() { return n._text; },
-    set(v: string) { n._text = v; writes.push({ prop: 'textContent', value: v }); },
-  });
-  Object.defineProperty(n, 'className', {
-    get() { return n._cls; },
-    set(v: string) { n._cls = v; writes.push({ prop: 'className', value: v }); },
-  });
-  // Present ONLY to be caught: any write is recorded and asserted against.
-  for (const prop of ['innerHTML', 'outerHTML']) {
-    Object.defineProperty(n, prop, { set(v: unknown) { writes.push({ prop, value: v }); }, get() { return ''; } });
-  }
-  return n as UxNode;
+/** A text node of the shared fake (nodeType 3). */
+function isText(n: BodyStub): boolean {
+  return n.nodeType === 3;
 }
 
 interface UxSlot {
   state: 'absent' | 'rendered' | 'unshowable';
-  kind?: string;
-  label?: string;
-  reason?: string;
-  body?: UxNode;
-  linkOut?: { relPath: string; title: string };
-  anchorSlug?: string;
+  kind?: string | undefined;
+  label?: string | undefined;
+  reason?: string | undefined;
+  body?: BodyStub | undefined;
+  linkOut?: { relPath: string; title: string } | undefined;
+  anchorSlug?: string | undefined;
 }
 
 interface UxApi {
-  uxRenderCard(record: unknown): { el: UxNode };
-  uxElement(el: unknown, depth: number): UxNode;
+  uxRenderCard(record: unknown): { el: BodyStub };
+  uxElement(el: unknown, depth: number): BodyStub;
   uxPickRef(companions: unknown): { kind: string; title?: string; relPath?: string } | undefined;
   uxBuildMockSlot(record: unknown, ref: unknown, anchorSlug: string | undefined): UxSlot;
   setDepthMax(n: number | null): void;
   created: string[];
   texts: string[];
-  nodes: UxNode[];
+  nodes: BodyStub[];
 }
 
 /** Evaluate DOCS_UX_SOURCE against a recording document stub. */
 function loadUx(): UxApi {
   const created: string[] = [];
   const texts: string[] = [];
-  const nodes: UxNode[] = [];
+  const nodes: BodyStub[] = [];
   const doc = {
-    createElement: (t: string) => { created.push(t); const n = uxNodeStub(t); nodes.push(n); return n; },
-    createTextNode: (d: string) => { texts.push(d); return { nodeType: 3, data: d } as UxTextNode; },
+    createElement: (t: string) => { created.push(t); const n = bodyStub(t); nodes.push(n); return n; },
+    createTextNode: (d: string) => { texts.push(d); return textNode(d); },
     // Present so a renderer reaching for the SVG factory is RECORDED rather than
     // crashing — this renderer must never use it.
-    createElementNS: (_ns: string, t: string) => { created.push(`NS:${t}`); return uxNodeStub(t); },
+    createElementNS: (ns: string, t: string) => { created.push(`NS:${t}`); return bodyStub(t, '', '', ns); },
   };
   // eslint-disable-next-line no-new-func
   const make = new Function('document', `${DOCS_UX_SOURCE}; return {uxRenderCard:uxRenderCard,uxElement:uxElement,uxPickRef:uxPickRef,uxBuildMockSlot:uxBuildMockSlot,setDepthMax:function(n){UX_DEPTH_MAX=n;}};`);
@@ -4157,15 +3950,9 @@ function loadUx(): UxApi {
   return { ...api, created, texts, nodes };
 }
 
-/** Every element in a rendered subtree, flattened — for "does each class appear". */
-function uxFlatten(n: UxNode): UxNode[] {
-  const out: UxNode[] = [n];
-  for (const c of n.children) if (!isText(c)) out.push(...uxFlatten(c));
-  return out;
-}
 
 /** All text a subtree puts in the DOM, in order, from BOTH non-parsing channels. */
-function uxAllText(n: UxNode): string[] {
+function uxAllText(n: BodyStub): string[] {
   const out: string[] = [];
   if (n.textContent.length > 0) out.push(n.textContent);
   for (const c of n.children) out.push(...(isText(c) ? [c.data] : uxAllText(c)));
@@ -4187,7 +3974,7 @@ function uxAllText(n: UxNode): string[] {
 
 interface Shape { tag: string; cls: string; kids: Array<Shape | '#text'> }
 
-function shapeOfClient(n: UxNode): Shape {
+function shapeOfClient(n: BodyStub): Shape {
   // `textContent = 'x'` IS one text child in a real DOM — the recording stub keeps
   // it as a property because that is how the write was made, so the equivalence is
   // restored here. This is not normalising a difference away: the two produce the
@@ -4350,7 +4137,7 @@ test('t2: ColumnSet renders as ux-columnset with its Columns as children, in ord
 
 test('t2: Column honours a numeric width as the flex grow factor, a keyword falls back to 1, absent sets no style', () => {
   const ux = loadUx();
-  const col = (width?: unknown): UxNode =>
+  const col = (width?: unknown): BodyStub =>
     ux.uxElement(width === undefined ? { type: 'Column', items: [] } : { type: 'Column', width, items: [] }, 1);
 
   assert.equal(col(2).style['flex'], '2 1 0', 'a digits-only width IS the grow factor');
@@ -4382,7 +4169,7 @@ test('t2: Image shows its url as TEXT — no img element, no src, nothing fetcha
   // THE invariant, structurally: no img was ever created, anywhere in the run.
   assert.ok(!ux.created.includes('img'), 'no img element is created');
   assert.ok(!ux.created.some((t) => t.startsWith('NS:')), 'and no SVG image either');
-  for (const n of uxFlatten(el)) {
+  for (const n of allOf(el)) {
     assert.equal(n.attrs['src'], undefined, 'no src attribute on any node');
     assert.equal(n.attrs['href'], undefined);
   }
@@ -4419,11 +4206,11 @@ test('t2: Input.Text is a non-interactive affordance — a label and a styled sp
 test('t2: Input.Text multiline adds ux-input--multi; a missing label falls back to the id', () => {
   const ux = loadUx();
   const multi = ux.uxElement({ type: 'Input.Text', id: 'd', label: 'D', placeholder: 'p', isMultiline: true }, 1);
-  assert.equal((multi.children[1] as UxNode).className, 'ux-input ux-input--multi');
+  assert.equal((multi.children[1] as BodyStub).className, 'ux-input ux-input--multi');
 
   const noLabel = ux.uxElement({ type: 'Input.Text', id: 'fallback-id', placeholder: '' }, 1);
   assert.deepEqual(uxAllText(noLabel), ['fallback-id', ''].filter((t) => t.length > 0));
-  assert.equal((noLabel.children[0] as UxNode).textContent, 'fallback-id');
+  assert.equal((noLabel.children[0] as BodyStub).textContent, 'fallback-id');
 });
 
 test('t2: Input.ChoiceSet renders each choice as text with a mark — no select, no option', () => {
@@ -4436,11 +4223,11 @@ test('t2: Input.ChoiceSet renders each choice as text with a mark — no select,
   assert.equal(el.className, 'ux-field');
   assert.ok(!ux.created.includes('select'), 'no select element');
   assert.ok(!ux.created.includes('option'), 'no option element');
-  const choices = (el.children[1] as UxNode);
+  const choices = (el.children[1] as BodyStub);
   assert.equal(choices.className, 'ux-choices');
   assert.deepEqual(choices.children.map((c) => (isText(c) ? '#text' : c.className)), ['ux-choice', 'ux-choice']);
   // The title is a BARE text node beside the mark, exactly as the daemon emits it.
-  const first = choices.children[0] as UxNode;
+  const first = choices.children[0] as BodyStub;
   assert.deepEqual(first.children.map((c) => (isText(c) ? '#text' : c.className)), ['ux-choice__mark', '#text']);
   assert.deepEqual(uxAllText(el), ['Verdict', '○', 'Approve', '○', 'Request changes']);
 });
@@ -4471,8 +4258,8 @@ test('t2: ActionSet renders Submit and OpenUrl as chips that are TELLABLE APART,
   const kinds = el.children.map((c) => (isText(c) ? '#text' : c.className));
   assert.deepEqual(kinds, ['ux-btn ux-btn--submit', 'ux-btn ux-btn--link']);
   // The link carries the navigate glyph; the submit does not.
-  const submit = el.children[0] as UxNode;
-  const link = el.children[1] as UxNode;
+  const submit = el.children[0] as BodyStub;
+  const link = el.children[1] as BodyStub;
   assert.deepEqual(submit.children.map((c) => (isText(c) ? '#text' : c.className)), ['#text'],
     'a submit chip is its title and nothing else');
   // THE URL IS SHOWN, as visible text between the title and the glyph. The daemon
@@ -4483,11 +4270,11 @@ test('t2: ActionSet renders Submit and OpenUrl as chips that are TELLABLE APART,
   // The url is an ELEMENT and not a second text node, deliberately: two adjacent
   // text nodes merge into one anonymous flex item, so the chip's gap never applies
   // between them and the title runs into the url. The t3 visual read found that.
-  assert.equal((link.children[1] as UxNode).tag, 'span', 'the url is its own flex item');
+  assert.equal((link.children[1] as BodyStub).tag, 'span', 'the url is its own flex item');
   assert.deepEqual(uxAllText(link), ['Open companion', 'https://example.invalid/c.html', '\u2197']);
   // And the url reaches NO attribute anywhere — ac5 kept absolute, which is the
   // reason it is shown as text rather than mirrored into `title=`.
-  for (const n of uxFlatten(el)) {
+  for (const n of allOf(el)) {
     for (const v of Object.values(n.attrs)) {
       assert.ok(!v.includes('example.invalid'), 'no record text in any attribute value');
     }
@@ -4541,19 +4328,19 @@ test('t2: each of the FOUR real ledger uxDefinitions renders COMPLETELY', async 
     // record rather than from the output, so a renderer that silently skipped a
     // branch would come up short rather than merely look plausible.
     const countRecord = (list: readonly unknown[]): number => list.reduce<number>((n, e) => {
-      const o = e as { type?: string; items?: unknown; columns?: unknown };
+      const o = e as { type?: string | undefined; items?: unknown; columns?: unknown };
       const kids = o.type === 'ColumnSet' ? o.columns : o.items;
       return n + 1 + (Array.isArray(kids) ? countRecord(kids) : 0);
     }, 0);
     const expected = countRecord(record.body);
     // One DOM element per record element at minimum (several members render a
     // small subtree), and crucially NOT FEWER.
-    const rendered = uxFlatten(el).length - 1; // minus the ux-card wrapper
+    const rendered = allOf(el).length - 1; // minus the ux-card wrapper
     assert.ok(rendered >= expected,
       `${f}: ${expected} record elements must all appear; the tree has ${rendered} elements`);
     // And nothing degraded: a real, valid record must produce no ux-unknown.
     assert.equal(
-      uxFlatten(el).filter((n) => n.className === 'ux-unknown').length, 0,
+      allOf(el).filter((n) => n.className === 'ux-unknown').length, 0,
       `${f} renders with no unrenderable element`,
     );
     checked += 1;
@@ -4595,13 +4382,13 @@ test('t2: a malformed element, a missing text and a non-array child list each de
     'ux-text', 'ux-unknown', 'ux-text', 'ux-unknown', 'ux-container', 'ux-columnset', 'ux-text',
   ]);
   // The siblings around the holes still rendered — the point of degrading in place.
-  assert.equal((card.children[0] as UxNode).textContent, 'before');
-  assert.equal((card.children[6] as UxNode).textContent, 'after');
+  assert.equal((card.children[0] as BodyStub).textContent, 'before');
+  assert.equal((card.children[6] as BodyStub).textContent, 'after');
   // A missing text is an EMPTY paragraph, not a crash and not a hole.
-  assert.equal((card.children[2] as UxNode).textContent, '');
+  assert.equal((card.children[2] as BodyStub).textContent, '');
   // A non-array child list degrades to an EMPTY region, as childrenOf does.
-  assert.equal((card.children[4] as UxNode).children.length, 0);
-  assert.equal((card.children[5] as UxNode).children.length, 0);
+  assert.equal((card.children[4] as BodyStub).children.length, 0);
+  assert.equal((card.children[5] as BodyStub).children.length, 0);
 });
 
 test('t2: a non-array body yields an empty card rather than throwing', () => {
@@ -4621,7 +4408,7 @@ test('t2: every element is created with createElement and every string written w
 
   // EXECUTED, not grepped: every node in the tree came from createElement, and the
   // only property writes anywhere are className, textContent and style/attributes.
-  const all = uxFlatten(el);
+  const all = allOf(el);
   assert.ok(all.length > 5, 'a non-trivial tree to inspect');
   for (const n of all) {
     for (const w of n.writes) {
@@ -4661,7 +4448,7 @@ test('t2: hostile text renders character-for-character and creates no element an
   // No element was conjured out of the text, and no attribute carries any of it.
   assert.ok(!ux.created.includes('img'), 'the <img ...> in the text created no img');
   assert.ok(!ux.created.includes('script'), 'and no script');
-  for (const n of uxFlatten(el)) {
+  for (const n of allOf(el)) {
     for (const [k, v] of Object.entries(n.attrs)) {
       assert.ok(!v.includes('alert') && !v.includes('javascript:'),
         `attribute ${k} must not carry record text, got: ${v}`);
@@ -4684,7 +4471,7 @@ test('t2: no attribute value anywhere is built from record text', () => {
     ],
   });
 
-  for (const n of uxFlatten(el)) {
+  for (const n of allOf(el)) {
     for (const [k, v] of Object.entries(n.attrs)) {
       assert.ok(!v.includes(marker), `attribute ${k}="${v}" was built from record text`);
     }
@@ -4695,7 +4482,7 @@ test('t2: no attribute value anywhere is built from record text', () => {
   // size/color DO reach the className — which is a class name, not an attribute
   // value carrying free text, and is exactly what the daemon does. Stated here so
   // the distinction is deliberate rather than an oversight.
-  assert.ok(uxFlatten(el).some((n) => n.className.includes(`ux-size-${marker}`)),
+  assert.ok(allOf(el).some((n) => n.className.includes(`ux-size-${marker}`)),
     'the size modifier reaches the class, as the daemon does');
 });
 
@@ -4707,7 +4494,7 @@ test('t2: the renderer emits NO node/edge construct — the uxDefinitionToIr reg
   // node-and-edge DocumentIR, and publishing that as an "experience mock" produced
   // ~3.37 MB of graph picture where a 7 KB interface belonged. The nearest existing
   // function is the wrong one, and this guard is what stops someone reaching for it.
-  const classes = uxFlatten(el).map((n) => n.className).join(' ');
+  const classes = allOf(el).map((n) => n.className).join(' ');
   for (const bad of ['node', 'edge', 'graph', 'mermaid', 'flowchart']) {
     assert.ok(!classes.includes(bad), `no ${bad} construct in the rendered classes`);
   }
@@ -4803,7 +4590,7 @@ test('t2 PARITY of vocabulary: every ux-* class the client emits is one the daem
 
   const emitted = new Set<string>();
   for (const fx of [...UX_PARITY_FIXTURES, UX_RENESTED_FIXTURE]) {
-    for (const n of uxFlatten(loadUx().uxRenderCard(fx.card).el)) {
+    for (const n of allOf(loadUx().uxRenderCard(fx.card).el)) {
       for (const c of n.className.split(/\s+/)) if (c.length > 0) emitted.add(c);
     }
   }
@@ -5216,7 +5003,7 @@ test('t4: EVERY one of the four real records renders UNTRUNCATED — the bound n
     const record = JSON.parse(readFileSync(p, 'utf8')).body.uxDefinition;
     const { el } = loadUx().uxRenderCard(record);
     // The guard's own degradation names depth. NONE may appear.
-    const truncated = uxFlatten(el).filter((n) => n.className === 'ux-unknown' && /nesting deeper/.test(n.textContent));
+    const truncated = allOf(el).filter((n) => n.className === 'ux-unknown' && /nesting deeper/.test(n.textContent));
     assert.deepEqual(truncated.map((n) => n.textContent), [], `${f} renders untruncated`);
     checked += 1;
   }
@@ -5230,13 +5017,13 @@ test('t4: a synthetic over-deep structure TRIPS the guard, names depth as the re
   for (let i = 0; i < 40; i += 1) deep = { type: 'Container', items: [deep] };
 
   const { el } = loadUx().uxRenderCard({ type: 'AdaptiveCard', body: [deep] });
-  const cut = uxFlatten(el).filter((n) => n.className === 'ux-unknown');
+  const cut = allOf(el).filter((n) => n.className === 'ux-unknown');
   assert.equal(cut.length, 1, 'exactly one cut point, at the bound');
   assert.match(cut[0]!.textContent, /nesting deeper than 24 levels/,
     'and it NAMES depth as the reason, so a reviewer can tell a guard from a truncation');
   // TERMINATES: the tree is bounded, not 40 deep.
-  const depthOf = (n: UxNode): number =>
-    1 + Math.max(0, ...n.children.filter((c): c is UxNode => !isText(c)).map(depthOf));
+  const depthOf = (n: BodyStub): number =>
+    1 + Math.max(0, ...n.children.filter((c): c is BodyStub => !isText(c)).map(depthOf));
   assert.ok(depthOf(el) <= 26, `the walk stopped (tree depth ${depthOf(el)})`);
 });
 
@@ -5248,7 +5035,7 @@ test('t4: a CYCLIC structure terminates — the case that would hang without a b
   cyclic['items'] = [cyclic];
 
   const { el } = loadUx().uxRenderCard({ type: 'AdaptiveCard', body: [cyclic] });
-  const cut = uxFlatten(el).filter((n) => n.className === 'ux-unknown');
+  const cut = allOf(el).filter((n) => n.className === 'ux-unknown');
   assert.equal(cut.length, 1, 'the cycle is cut exactly once');
   assert.match(cut[0]!.textContent, /nesting deeper than 24 levels/);
 });
@@ -5344,7 +5131,7 @@ test('t5: the three sc4 states come back correctly from the factory in isolation
   assert.equal(rendered.kind, 'experience');
   assert.equal(rendered.label, 'Experience mock');
   assert.equal(rendered.anchorSlug, 'sec-1');
-  assert.equal((rendered.body as UxNode).className, 'ux-card');
+  assert.equal((rendered.body as BodyStub).className, 'ux-card');
   assert.deepEqual(rendered.linkOut, { relPath: UX_REF_T5.relPath, title: UX_REF_T5.title });
 
   // UNSHOWABLE — a ref naming a record this surface does not have.
@@ -5516,16 +5303,13 @@ test('t6: adding the experience slot leaves the DIAGRAM slot BYTE-IDENTICAL to w
     artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
     erDefinition: DG_ER, companions: [DG_REF],
   };
-  const shapeOf = (n: BodyStub): string =>
-    JSON.stringify(allOf(n).map((x) => [x.tagName, x.className, x.textContent]));
-
   const diagramOnly = runWebview();
   diagramOnly.deliver(base);
 
   const withExperience = runWebview();
   withExperience.deliver({ ...base, uxDefinition: UX_CARD_T6, companions: [DG_REF, UX_REF_T6] });
 
-  assert.equal(shapeOf(withExperience.diagram), shapeOf(diagramOnly.diagram),
+  assert.equal(dgShape(withExperience.diagram), dgShape(diagramOnly.diagram),
     'the diagram host renders identically whether or not a mock is present');
   assert.equal(uxSlotsIn(withExperience).length, 1, 'while the experience slot did appear');
 });
@@ -5639,20 +5423,13 @@ test('t6: the mount REUSES s3’s dgMountSlot, so the digit-leading-slug fix is 
   assert.doesNotMatch(html, /querySelector\('#'\+/, 'and the selector form is nowhere in the shell');
 });
 
-test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity', async () => {
-  const { execFileSync } = await import('node:child_process');
-  const { fileURLToPath } = await import('node:url');
-  const { dirname, join } = await import('node:path');
-  const here = dirname(fileURLToPath(import.meta.url));
-  const repoRoot = join(here, '..', '..', '..', '..');
-  const planCommit = execFileSync('git', ['log', '--format=%H', '-1', '--',
-    'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md'],
-    { cwd: repoRoot, encoding: 'utf8' }).trim();
+test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity', (t) => {
+  const run = git(t, { window: { from: 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md', to: 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md' } });
+  if (!run) return;
+  const planCommit = run('log', '--format=%H', '-1', '--', 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md').trim();
   // Closed at the Story's BUILD approval, as the src/ guard above is (ISSUE-2f07f59c).
-  const buildCommit = execFileSync('git', ['log', '--format=%H', '-1', '--',
-    'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md'],
-    { cwd: repoRoot, encoding: 'utf8' }).trim();
-  const changed = execFileSync('git', ['diff', '--name-only', `${planCommit}..${buildCommit}`], { cwd: repoRoot, encoding: 'utf8' });
+  const buildCommit = run('log', '--format=%H', '-1', '--', 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md').trim();
+  const changed = run('diff', '--name-only', `${planCommit}..${buildCommit}`);
   assert.ok(!changed.includes('docs-sections.ts'),
     'S004 consumes sc3 and mints none of its own section identity');
 });
@@ -5737,4 +5514,84 @@ test('openArtifact on a cold pane decides pending from its own pending read, eve
   const notices = fc2.posted.filter((p) => p.payload.type === 'docs-content').map((p) => p.payload.markdown);
   assert.match(String(notices[0]), /^docs-review unavailable: daemon down/);
   assert.equal(fc2.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!.payload['readOnly'], true);
+});
+
+// ISSUE-3b6bd6b5 — the guards themselves, against directories built for each case.
+test('history and compiler checks skip with a stated reason when what they need is missing, and never run on an empty window', (t) => {
+  const recorder = (): Skipper & { reasons: string[] } => {
+    const reasons: string[] = [];
+    return { reasons, skip: (reason?: string) => { reasons.push(reason ?? ''); } };
+  };
+  // The guards are tested against directories built here, so only the git binary is needed, not this repo's history.
+  try { gitIn(tmpdir())('--version'); } catch { t.skip('git is not installed'); return; }
+
+  const bare = mkdtempSync(join(tmpdir(), 'insrc-guard-plain-'));
+  const repo = mkdtempSync(join(tmpdir(), 'insrc-guard-git-'));
+  try {
+    // Not a work tree.
+    const plain = recorder();
+    assert.equal(git(plain, { commits: ['HEAD'] }, bare), null);
+    assert.deepEqual(plain.reasons, [`not a git work tree: ${bare}`]);
+
+    // A one-commit repository: both files' last commit is that one commit.
+    // The fixture ignores the host's git config, so signing, hooks or a missing identity cannot fail it.
+    const fixture = gitIn(repo, { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' });
+    const sh = (...args: string[]): string =>
+      fixture('-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', ...args);
+    sh('init', '-q');
+    writeFileSync(join(repo, 'PLAN.md'), 'plan\n');
+    writeFileSync(join(repo, 'BUILD.md'), 'build\n');
+    sh('add', '.');
+    sh('commit', '-q', '-m', 'one');
+    const head = sh('rev-parse', 'HEAD').trim();
+
+    const equal = recorder();
+    assert.equal(git(equal, { window: { from: 'PLAN.md', to: 'BUILD.md' } }, repo), null, 'an equal window never runs');
+    assert.deepEqual(equal.reasons, ['no build window between PLAN.md and BUILD.md: both ends are the same commit']);
+
+    const unborn = recorder();
+    assert.equal(git(unborn, { window: { from: 'PLAN.md', to: 'NOWHERE.md' } }, repo), null);
+    assert.deepEqual(unborn.reasons, ['no build window between PLAN.md and NOWHERE.md: no commit touches NOWHERE.md']);
+
+    const missing = recorder();
+    assert.equal(git(missing, { commits: ['0123456789abcdef0123456789abcdef01234567'] }, repo), null);
+    assert.deepEqual(missing.reasons, ['commit 0123456789abcdef0123456789abcdef01234567 is not in this history']);
+
+    // Out of order: a second commit, then a window whose start is the later one.
+    writeFileSync(join(repo, 'PLAN.md'), 'plan, revised\n');
+    sh('commit', '-q', '-am', 'two');
+    const inverted = recorder();
+    assert.equal(git(inverted, { window: { from: 'PLAN.md', to: 'BUILD.md' } }, repo), null);
+    assert.deepEqual(inverted.reasons, ['no build window between PLAN.md and BUILD.md: the PLAN.md commit is not an ancestor of the BUILD.md commit']);
+
+    // Positive control: with the history present, it runs and skips nothing.
+    const present = recorder();
+    const run = git(present, { commits: [head], window: { from: 'BUILD.md', to: 'PLAN.md' } }, repo);
+    assert.ok(run, 'a real window between existing commits runs');
+    assert.deepEqual(present.reasons, []);
+    assert.equal(run('rev-parse', 'HEAD~1').trim(), head);
+
+    // A missing compiler.
+    const nocomp = recorder();
+    const absent = join(bare, 'node_modules', 'typescript', 'bin', 'tsc');
+    assert.equal(tscOrSkip(nocomp, absent), null);
+    assert.deepEqual(nocomp.reasons, [`TypeScript compiler not installed at ${absent}`]);
+    if (existsSync(TSC)) {
+      const found = recorder();
+      assert.equal(tscOrSkip(found, TSC), TSC, 'an installed compiler is returned');
+      assert.deepEqual(found.reasons, []);
+    }
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+    rmSync(repo, { recursive: true, force: true });
+  }
+
+  // No history or compiler check bypasses the guards.
+  const src = readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  const count = (re: RegExp): number => (src.match(re) ?? []).length;
+  const q = '[\'"`]';
+  assert.equal(count(new RegExp(`\\b(?:execFileSync|execSync|spawnSync|spawn|exec)\\(\\s*${q}git\\b`, 'g')), 1, 'git is spawned in one place, gitIn');
+  assert.equal(count(/\bgitIn\(/g), 4, 'gitIn is declared once and bound only by git(t, need), and by this test for the git binary and its fixture');
+  assert.equal(count(/\b(?:const|let|function)\s+git\b/g), 1, 'git(t, need) is the one history runner');
+  assert.equal(count(/existsSync\(\s*tsc\b/g), 0, 'no test asserts the compiler is present');
 });

@@ -8,12 +8,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { boardDownMessages, initialBoardState, INITIAL_SELECTION, reduceBoardState, type BoardEvent, type BoardState } from '../board-state.js';
+import { boardDownMessages, initialBoardState, INITIAL_SELECTION, reduceBoardState, statusView, type BoardEvent, type BoardState } from '../board-state.js';
 import type { BoardDownMessage, StatusView } from '../board-protocol.js';
 import type { DeliveryItem, DeliverySnapshot } from '../delivery-contract.js';
 import type { DeliveryFailureKind } from '../delivery-client.js';
 import { DISPLAY_LABELS } from '../labels.js';
 import { item as fixtureItem, snapshot } from './board-fixtures.js';
+
+/** The host clock the tests derive with: 30 s after the fixtures' takenAt. */
+const NOW = '2026-10-09T10:00:30.000Z';
 
 const item = (id: string, title: string, stage: string | null = 'scoped'): DeliveryItem => fixtureItem({ id, title, stage });
 
@@ -26,14 +29,14 @@ function run(events: readonly BoardEvent[], from: BoardState = initialBoardState
 }
 
 function statusOf(state: BoardState): StatusView {
-  const first = boardDownMessages(state, DISPLAY_LABELS, {})[0]?.payload;
+  const first = boardDownMessages(state, DISPLAY_LABELS, {}, NOW)[0]?.payload;
   assert.ok(first !== undefined && first.type === 'status', 'the status message comes first');
   return first.status;
 }
 
 /** The board message's model, or null when no snapshot is shown. */
 function boardOf(state: BoardState): Extract<BoardDownMessage, { type: 'board' }>['model'] | null {
-  const m = boardDownMessages(state, DISPLAY_LABELS, {}).map(e => e.payload).find((p): p is Extract<BoardDownMessage, { type: 'board' }> => p.type === 'board');
+  const m = boardDownMessages(state, DISPLAY_LABELS, {}, NOW).map(e => e.payload).find((p): p is Extract<BoardDownMessage, { type: 'board' }> => p.type === 'board');
   return m === undefined ? null : m.model;
 }
 
@@ -126,4 +129,55 @@ test('a refresh keeps the selection, and clears a selected item that is gone wit
 
   const failedRefresh = run([{ type: 'refresh-requested', seq: 4 }, failed(4, 'read-failed', 'x')], kept);
   assert.deepEqual(failedRefresh.selection, selection, 'a failed refresh does not touch the selection');
+});
+
+test('statusView panel kinds \u2014 empty, unavailable, refresh-failed (stale with a shown snapshot, retry action), partial with affected entries from store notices and the unreadable count; freshnessLabel phrasing and NaN fallback', () => {
+  const at = (state: BoardState, now = NOW) => statusView(state.status, now);
+  const loaded = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A')]))]);
+
+  // Freshness: phrased against the host clock; the fixtures' takenAt is 10:00:00.
+  assert.equal(at(initialBoardState()).freshnessLabel, null, 'no snapshot shown, no freshness line');
+  assert.equal(at(loaded, '2026-10-09T10:00:59.000Z').freshnessLabel, 'Updated just now');
+  assert.equal(at(loaded, '2026-10-09T10:01:00.000Z').freshnessLabel, 'Updated 1 minute ago');
+  assert.equal(at(loaded, '2026-10-09T10:59:00.000Z').freshnessLabel, 'Updated 59 minutes ago');
+  assert.equal(at(loaded, '2026-10-09T12:00:00.000Z').freshnessLabel, 'Updated 2026-10-09 10:00 UTC');
+  assert.equal(at(loaded, 'not a time').freshnessLabel, 'Updated 2026-10-09T10:00:00.000Z', 'an unparseable clock shows the raw takenAt');
+  const oddTaken = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A')], { takenAt: 'sometime' }))]);
+  assert.equal(at(oddTaken).freshnessLabel, 'Updated sometime', 'an unparseable takenAt is shown as recorded, with no throw');
+
+  // Panels.
+  assert.equal(at(loaded).panel, null, 'a complete snapshot needs no panel');
+  const empty = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([]))]);
+  assert.deepEqual(at(empty).panel, {
+    kind: 'empty', title: 'No work items yet', text: 'The workspace was read successfully. No epic, story or issue records were found.',
+    action: null, stale: false, affected: [],
+  });
+
+  const down = at(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'daemon-unavailable', 'daemon is not running')])).panel!;
+  assert.deepEqual([down.kind, down.title, down.text, down.action, down.stale], ['unavailable', 'The delivery board is unavailable', 'daemon is not running', 'retry', false]);
+  const firstFail = at(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'read-failed', 'bad store')])).panel!;
+  assert.deepEqual([firstFail.kind, firstFail.title, firstFail.stale], ['refresh-failed', 'The refresh failed', false], 'no board to fall back on');
+  const staleFail = at(run([{ type: 'refresh-requested', seq: 2 }, failed(2, 'timed-out', 'took too long')], loaded)).panel!;
+  assert.deepEqual([staleFail.kind, staleFail.title, staleFail.action, staleFail.stale], ['refresh-failed', 'Showing the last successful snapshot', 'retry', true]);
+  assert.equal(staleFail.text, 'The refresh failed: took too long. Your board and selection are preserved.');
+
+  const notice = { code: 'store-incomplete', message: 'PLAN-x could not be parsed.', itemIds: [], artifactIds: ['PLAN-x'], fileNames: [] } as unknown as DeliverySnapshot['notices'][number];
+  const partial = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A')], { unreadableCount: 2, notices: [notice] }))]);
+  assert.deepEqual(at(partial).panel, {
+    kind: 'partial', title: 'Some evidence could not be read', text: 'Every readable item is shown; counts may not cover every record.',
+    action: null, stale: false,
+    affected: [{ artifactIds: [], text: '2 records could not be read.' }, { artifactIds: ['PLAN-x'], text: 'PLAN-x could not be parsed.' }],
+  });
+});
+
+test('boardDownMessages with now keeps status first and the selected view\'s model second', () => {
+  const loaded = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A')]))]);
+  for (const view of ['board', 'epics', 'issues'] as const) {
+    const msgs = boardDownMessages({ ...loaded, selection: { ...loaded.selection, view } }, DISPLAY_LABELS, {}, NOW).map(e => e.payload.type);
+    assert.deepEqual(msgs, ['status', view]);
+  }
+  const first = boardDownMessages(loaded, DISPLAY_LABELS, {}, NOW)[0]!.payload;
+  assert.ok(first.type === 'status');
+  assert.equal(first.status.freshnessLabel, 'Updated just now', 'the status is phrased against the clock it is given');
+  assert.deepEqual(boardDownMessages(initialBoardState(), DISPLAY_LABELS, {}, NOW).map(e => e.payload.type), ['status'], 'no snapshot, status only');
 });

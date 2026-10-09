@@ -22,7 +22,7 @@ import type { DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
 import { buildBoardViewModel, type BoardPaging } from './board-model.js';
 import { buildEpicRollup, buildIssueView } from './board-views.js';
-import type { BoardDownMessage, BoardScope, BoardView, Density, Envelope, StatusView } from './board-protocol.js';
+import type { BoardDownMessage, BoardScope, BoardView, Density, Envelope, StatePanelView, StatusView } from './board-protocol.js';
 import type { DisplayLabels } from './labels.js';
 
 export interface AppliedSnapshot {
@@ -132,34 +132,83 @@ function partialNotice(s: DeliverySnapshot): string | null {
   return parts.join(' ');
 }
 
-/** The status bar's view of a load status; also the source of the refresh announcement's text (s5). */
-export function statusView(status: LoadStatus): StatusView {
+/** An ISO time as 'YYYY-MM-DD HH:MM UTC', or the string itself when it is not one. */
+function readableTime(iso: string): string {
+  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(iso);
+  return m === null ? iso : `${m[1]} ${m[2]} UTC`;
+}
+
+/** How long ago the shown snapshot was taken, phrased for the app bar; an unparseable time is shown as recorded. */
+function freshnessLabel(takenAt: string | null, now: string): string | null {
+  if (takenAt === null) return null;
+  const ms = Date.parse(now) - Date.parse(takenAt);
+  if (!Number.isFinite(ms)) return `Updated ${takenAt}`;
+  if (ms < 60_000) return 'Updated just now';
+  if (ms < 3_600_000) {
+    const minutes = Math.floor(ms / 60_000);
+    return `Updated ${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  }
+  return `Updated ${readableTime(takenAt)}`;
+}
+
+/** The partial-evidence panel for a snapshot with unreadable records or store notices; null otherwise. */
+function partialPanel(s: DeliverySnapshot): StatePanelView | null {
+  if (!isPartial(s)) return null;
+  const affected: { artifactIds: readonly string[]; text: string }[] = [];
+  if (s.unreadableCount > 0) {
+    affected.push({ artifactIds: [], text: `${s.unreadableCount} record${s.unreadableCount === 1 ? '' : 's'} could not be read.` });
+  }
+  for (const n of s.notices) affected.push({ artifactIds: [...n.artifactIds], text: n.message });
+  return {
+    kind: 'partial', title: 'Some evidence could not be read',
+    text: 'Every readable item is shown; counts may not cover every record.',
+    action: null, stale: false, affected,
+  };
+}
+
+/**
+ * The status bar's view of a load status, with its freshness line and state panel; also the source of the refresh
+ * announcement's text (s5). `now` is the host clock, used only to phrase the freshness line.
+ */
+export function statusView(status: LoadStatus, now: string): StatusView {
   const shown = shownSnapshot(status);
   const takenAt = shown?.snapshot.takenAt ?? null;
   const partial = shown === null ? null : partialNotice(shown.snapshot);
+  const freshness = freshnessLabel(takenAt, now);
+  const partialP = shown === null ? null : partialPanel(shown.snapshot);
   switch (status.state) {
     case 'loading':
-      return { state: 'loading', takenAt, message: 'Refreshing the delivery board…', partialNotice: partial, stale: false };
+      return { state: 'loading', takenAt, message: 'Refreshing the delivery board…', partialNotice: partial, stale: false, freshnessLabel: freshness, panel: partialP };
     case 'ready':
-      return { state: 'ready', takenAt, message: null, partialNotice: partial, stale: false };
+      return { state: 'ready', takenAt, message: null, partialNotice: partial, stale: false, freshnessLabel: freshness, panel: partialP };
     case 'empty':
-      return { state: 'empty', takenAt, message: 'This workspace has no recorded delivery work yet.', partialNotice: null, stale: false };
+      return {
+        state: 'empty', takenAt, message: 'This workspace has no recorded delivery work yet.', partialNotice: null, stale: false, freshnessLabel: freshness,
+        panel: { kind: 'empty', title: 'No work items yet', text: 'The workspace was read successfully. No epic, story or issue records were found.', action: null, stale: false, affected: [] },
+      };
     case 'unavailable':
     case 'failed': {
       const prefix = status.state === 'unavailable' ? 'The delivery board is unavailable' : 'The refresh failed';
       const since = shown === null ? '' : ` Showing the board from ${shown.snapshot.takenAt}.`;
-      return { state: status.state, takenAt, message: `${prefix} at ${status.at}: ${status.message}${since}`, partialNotice: partial, stale: shown !== null };
+      const stale = shown !== null;
+      const panel: StatePanelView = {
+        kind: status.state === 'unavailable' ? 'unavailable' : 'refresh-failed',
+        title: stale ? 'Showing the last successful snapshot' : prefix,
+        text: stale ? `${prefix}: ${status.message}. Your board and selection are preserved.` : status.message,
+        action: 'retry', stale, affected: [],
+      };
+      return { state: status.state, takenAt, message: `${prefix} at ${status.at}: ${status.message}${since}`, partialNotice: partial, stale, freshnessLabel: freshness, panel };
     }
   }
 }
 
 /**
- * The status message first, then (when a snapshot is shown) the model of the view the selection names: the board
+ * The status message first (its freshness phrased against `now`), then (when a snapshot is shown) the model of the view the selection names: the board
  * (with the host's paging), the epic rollup or the issue view. The interim 'items' message is no longer sent
  * (AMD-6a1315585c38c41c-1).
  */
-export function boardDownMessages(state: BoardState, labels: DisplayLabels, paging: BoardPaging): readonly Envelope<BoardDownMessage>[] {
-  const out: Envelope<BoardDownMessage>[] = [{ v: 1, payload: { type: 'status', status: statusView(state.status) } }];
+export function boardDownMessages(state: BoardState, labels: DisplayLabels, paging: BoardPaging, now: string): readonly Envelope<BoardDownMessage>[] {
+  const out: Envelope<BoardDownMessage>[] = [{ v: 1, payload: { type: 'status', status: statusView(state.status, now) } }];
   const shown = shownSnapshot(state.status);
   if (shown !== null) {
     // Only the view the reader has chosen is built and posted (s3).

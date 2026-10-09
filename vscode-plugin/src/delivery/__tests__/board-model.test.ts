@@ -8,11 +8,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BOARD_PAGE_SIZE, buildBoardViewModel, placeableCount, selectMatches, showMore, unknownStages, type BoardPaging } from '../board-model.js';
+import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, placeableCount, selectMatches, showMore, unknownStages, type BoardPaging } from '../board-model.js';
 import type { BoardViewModel } from '../board-protocol.js';
 import { INITIAL_SELECTION, type BoardSelection } from '../board-state.js';
 import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
-import { item, snapshot } from './board-fixtures.js';
+import { evidence as fixtureEvidence, item, snapshot } from './board-fixtures.js';
 
 const build = (snap: ReturnType<typeof snapshot>, selection: Partial<BoardSelection> = {}, paging: BoardPaging = {}): BoardViewModel =>
   buildBoardViewModel(snap, { ...INITIAL_SELECTION, ...selection }, paging, DISPLAY_LABELS);
@@ -126,7 +126,7 @@ test('unknownStages counts every stage id outside the six, and those items are i
 });
 
 const ev = (artifactId: string, state: 'approved' | 'rejected' | 'pending', review: unknown = null) =>
-  ({ artifactId, kind: 'LLD', mdPath: null, openWith: 'review-view', approval: { state, at: null }, review, reviewCurrency: null });
+  fixtureEvidence(artifactId, 'LLD', { openWith: 'review-view', approval: { state, at: null }, review: review as never });
 const review = (effectiveVerdict: 'pass' | 'warn' | 'block', blocking: boolean) =>
   ({ verdict: effectiveVerdict, reviewedAt: '', reviewedBy: 'daemon', counts: { high: 0, med: 0, low: 0 }, override: null, resolvedFindings: 0, effectiveVerdict, blocking });
 const cardOfId = (m: BoardViewModel, id: string) => m.columns.flatMap(c => c.cards).find(c => c.itemId === id);
@@ -179,7 +179,7 @@ test('a failed story-level result shows Validation failed, badges never repeat a
   assert.deepEqual(labels, ['Validation failed', 'Unknown route', 'Review currency unknown']);
   assert.deepEqual(card.badges.slice(1).map(b => b.tone), ['warning', 'neutral']);
   assert.equal(card.accessibleLabel,
-    'Story: Ship <b>it</b>. Stage: Scoped. Epic: Board epic. Needs attention. Signals: Validation failed, Unknown route, Review currency unknown.');
+    'Story: Ship <b>it</b>. Id: S1. Stage: Scoped. 4/4 tasks passed. Epic: Board epic. Needs attention. Signals: Validation failed, Unknown route, Review currency unknown.');
 
   const standalone = cardOfId(build(snapshot([item({ id: 'S9', standalone: true, title: null, kind: 'issue',
     validation: { passed: 2, failed: 0, unrecorded: 1, unplanned: 0 } })])), 'S9')!;
@@ -189,7 +189,7 @@ test('a failed story-level result shows Validation failed, badges never repeat a
   const newer = cardOfId(build(snapshot([item({ id: 'N1', notices: [notice('from-a-newer-daemon', false)] as never })])), 'N1')!;
   assert.deepEqual(newer.badges, [{ kind: 'notice', label: 'from-a-newer-daemon', tone: 'neutral' }], 'an unlabelled notice code shows its id, never undefined');
   assert.doesNotMatch(newer.accessibleLabel, /undefined/);
-  assert.equal(standalone.accessibleLabel, 'Issue: S9. Stage: Scoped. Standalone. Signals: Unrecorded.');
+  assert.equal(standalone.accessibleLabel, 'Issue: S9. Id: S9. Stage: Scoped. 2/3 tasks passed. Standalone. Signals: Unrecorded.');
 });
 
 test('selectMatches returns the board\'s matches in snapshot order, each with its epic and card', () => {
@@ -211,4 +211,57 @@ test('selectMatches returns the board\'s matches in snapshot order, each with it
   const searched = selectMatches(snap, { ...INITIAL_SELECTION, search: 'board' }, DISPLAY_LABELS);
   assert.deepEqual(searched.map(m => m.item.id), ['E1:S001']);
   assert.deepEqual(cardIds(build(snap, { search: 'board' })).flat(), ['E1:S001']);
+});
+
+test('compactId is \'ABCDEF01 / S001\' for \'E20261009abcdef01:S001\', \'ABCDEF01\' for an epic-level \'E20261009abcdef01\', \'ABCDEF01 / S002\' for the H-form \'Habcdef0123456789:S002\', and the full id for a \':R(<raw>)\' fallback id', () => {
+  assert.equal(compactIdOf('E20261009abcdef01:S001'), 'ABCDEF01 / S001');
+  assert.equal(compactIdOf('E20261009abcdef01'), 'ABCDEF01');
+  assert.equal(compactIdOf('Habcdef0123456789:S002'), 'ABCDEF01 / S002');
+  assert.equal(compactIdOf('E20261009abcdef01:R(odd-raw-id)'), 'E20261009abcdef01:R(odd-raw-id)');
+  assert.equal(compactIdOf('E20261009abcdef01:S001:T002'), 'E20261009abcdef01:S001:T002', 'a task id is not a card id and is returned whole');
+  assert.equal(compactIdOf('S1'), 'S1', 'an id of unknown shape is returned whole');
+  const snap = snapshot([
+    item({ id: 'E20261009abcdef01', kind: 'epic', title: 'Epic' }),
+    item({ id: 'E20261009abcdef01:S001', parentId: 'E20261009abcdef01' }),
+    item({ id: 'Habcdef0123456789:S002', kind: 'issue' }),
+  ]);
+  const cards = build(snap).columns.flatMap(c => c.cards);
+  assert.deepEqual(cards.map(c => [c.itemId, c.compactId]), [
+    ['E20261009abcdef01:S001', 'ABCDEF01 / S001'],
+    ['Habcdef0123456789:S002', 'ABCDEF01 / S002'],
+  ]);
+});
+
+test('taskSummary is \'n/N tasks passed\' from validation and null when validation is null or has no recorded tasks', () => {
+  const snap = snapshot([
+    item({ id: 'S1', validation: { passed: 2, failed: 1, unrecorded: 1, unplanned: 3 } }),
+    item({ id: 'S2', validation: null }),
+    item({ id: 'S3', validation: { passed: 0, failed: 0, unrecorded: 0, unplanned: 2 } }),
+  ]);
+  const m = build(snap);
+  assert.deepEqual(cardOfId(m, 'S1')!.taskSummary, { passed: 2, total: 4, label: '2/4 tasks passed' }, 'unplanned tasks are not counted');
+  assert.equal(cardOfId(m, 'S2')!.taskSummary, null);
+  assert.equal(cardOfId(m, 'S3')!.taskSummary, null, 'only unplanned tasks: nothing recorded against the plan');
+});
+
+test('accessibleLabel carries the compactId and task summary, and badges are unchanged', () => {
+  const s = item({ id: 'E20261009abcdef01:S001', title: 'Ship it', validation: { passed: 3, failed: 0, unrecorded: 0, unplanned: 0 } });
+  const card = cardOfId(build(snapshot([s])), 'E20261009abcdef01:S001')!;
+  assert.equal(card.accessibleLabel, 'Story: Ship it. Id: ABCDEF01 / S001. Stage: Scoped. 3/3 tasks passed. Signals: Passed.');
+  assert.deepEqual(card.badges, [{ kind: 'validation', label: 'Passed', tone: 'success' }], 'the badges are the same as before');
+});
+
+test('an approval state or review verdict this build does not know shows its code, ranks worst and is neutral, with no undefined label', () => {
+  const evOf = (artifactId: string, state: string, verdict: string | null) => fixtureEvidence(artifactId, 'LLD', {
+    approval: { state: state as never, at: null },
+    review: verdict === null ? null : { ...review('pass', false), verdict: verdict as never, effectiveVerdict: verdict as never },
+  });
+  const s1 = item({ id: 'S1', stage: 'design-plan', reasonIds: ['A', 'B'],
+    evidence: [evOf('A', 'approved', 'pass'), evOf('B', 'superseded', 'escalated')] as never });
+  const card = cardOfId(build(snapshot([s1])), 'S1')!;
+  assert.deepEqual(card.badges.slice(0, 2), [
+    { kind: 'approval', label: 'superseded', tone: 'neutral' },
+    { kind: 'review', label: 'escalated', tone: 'neutral' },
+  ], 'the unknown code is the worst, so it is the one shown, as its own text');
+  assert.doesNotMatch(card.accessibleLabel, /undefined/);
 });

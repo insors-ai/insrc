@@ -28,6 +28,37 @@ export interface DisplayLabels {
   readonly approval: Readonly<Record<ApprovalState, string>>;
   readonly reviewVerdict: Readonly<Record<ReviewVerdict, string>>;
   readonly unplanned: string;
+  /** The artifact chain's row for an expected record that does not exist. */
+  readonly chain: { readonly notRecorded: string };
+  /** The heading of the details' validation-conflict warning. */
+  readonly conflictHeadline: string;
+  /** The title of the panel shown when a view's selection matches nothing. */
+  readonly noMatchesTitle: string;
+  readonly noMatchesText: string;
+  /** The panel of an issue view over a board that has no issues at all (nothing is filtered out). */
+  readonly noIssuesTitle: string;
+  readonly noIssuesText: string;
+}
+
+/** A label from the table, or the code itself when the daemon publishes one this build does not know. */
+export function labelOf<K extends string>(table: Readonly<Record<K, string>>, code: K): string {
+  return Object.hasOwn(table, code) ? table[code] : String(code);
+}
+
+/** The tone of each approval state; a state this build does not know is neutral. */
+const APPROVAL_TONES: Readonly<Record<ApprovalState, 'success' | 'warning' | 'danger'>> = { approved: 'success', pending: 'warning', rejected: 'danger' };
+export function approvalTone(state: ApprovalState): 'success' | 'warning' | 'danger' | 'neutral' {
+  return Object.hasOwn(APPROVAL_TONES, state) ? APPROVAL_TONES[state] : 'neutral';
+}
+
+/** The tone of a recorded task result: Passed success, Failed danger, Unrecorded (or a result this build does not know) neutral. */
+export function taskResultTone(result: TaskResult): 'success' | 'danger' | 'neutral' {
+  return result === 'passed' ? 'success' : result === 'failed' ? 'danger' : 'neutral';
+}
+
+/** The tone of an effective review verdict as a card shows it: pass success, warn warning, a block that no longer blocks neutral. */
+export function verdictTone(verdict: ReviewVerdict): 'success' | 'warning' | 'neutral' {
+  return verdict === 'pass' ? 'success' : verdict === 'warn' ? 'warning' : 'neutral';
 }
 
 /** The six stages in workflow order, the order the board shows its columns. */
@@ -86,4 +117,10 @@ export const DISPLAY_LABELS: DisplayLabels = {
     'block': 'Review blocked',
   },
   unplanned: 'Unplanned',
+  chain: { notRecorded: 'Not recorded' },
+  conflictHeadline: 'Two records disagree',
+  noMatchesTitle: 'Nothing matches this view',
+  noMatchesText: 'Work exists, but none matches the current search, scope and attention filter.',
+  noIssuesTitle: 'No issues on the board',
+  noIssuesText: 'There are no issues on the board.',
 };

@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { parseBoardUpMessage, type BoardUpMessage } from '../board-protocol.js';
+import { STAGE_ORDER } from '../labels.js';
 
 const env = (payload: unknown, v: unknown = 1): unknown => ({ v, payload });
 
@@ -51,4 +52,11 @@ test('every valid up-message parses and a wrong version, unknown type or mistype
     env('refresh'),
   ];
   for (const raw of invalid) assert.equal(parseBoardUpMessage(raw), null, JSON.stringify(raw));
+});
+
+test('show-more is accepted only for one of the six stages', () => {
+  for (const stage of STAGE_ORDER) assert.deepEqual(parseBoardUpMessage(env({ type: 'show-more', stage })), { type: 'show-more', stage });
+  for (const bad of [{ type: 'show-more' }, { type: 'show-more', stage: 'shipped' }, { type: 'show-more', stage: 'Complete' }, { type: 'show-more', stage: 3 }]) {
+    assert.equal(parseBoardUpMessage(env(bad)), null, JSON.stringify(bad));
+  }
 });

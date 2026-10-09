@@ -1,0 +1,351 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791523125032-egagdu",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T05:21:51.669Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 186634,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "storyId": "s1",
+    "lldRunId": "wf-1791486668911-o3u8rv",
+    "lldEffectiveHash": "e74ad3720f264d1fa81053294dfcd822eca2512a5bf5d4a718f9aec6380c02c6",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-09T05:28:42.839Z",
+    "rangeBase": "b7f66406453387a16d4d5f9060cd35698fe3f8ca"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building s1 means adding the board's foundations to the VS Code plugin: the extra delivery types and their display labels, a time-limited client for the daemon's delivery methods, the board's message types, a pure state machine for refreshes and selection, and a host that owns the webview tab. The last step registers an 'Open delivery board' command and records whether the board stays in an editor tab or moves to a sidebar. Each piece is tested on its own with fakes, plus one run against the daemon's real handler over a temporary git repository.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Type-mirror re-exports and display labels",
+        "summary": "Re-export DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState and ReviewVerdict from the plugin's delivery type mirror, and add DISPLAY_LABELS with exhaustive Records over the six unions plus the unplanned label.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "delivery-contract.ts re-exports the six types beside the nine existing ones and stays type-only; `npx tsc -p vscode-plugin/tsconfig.delivery-contract.json` passes.",
+          "DISPLAY_LABELS has a label for every member of the six unions; removing a key fails to compile.",
+          "The stage labels read Scoped, Design & plan, Ready · design approved, Ready · plan approved, Build recorded, Complete."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "labels.test.ts: 'every stage, attention reason, notice code, task result, approval state and review verdict has a display label'"
+          },
+          {
+            "level": "unit",
+            "name": "labels.test.ts: 'the six stage labels read in workflow order'"
+          },
+          {
+            "level": "integration",
+            "name": "contract.test.ts: 'the VS Code plugin type-checks against the published delivery types'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Delivery client",
+        "summary": "createDeliveryClient over an rpc function, the workspace repo and two deadlines: snapshot() and evidence(artifactId) send repo in every request, race the deadline, never reject, and classify outcomes into no-workspace, daemon-unavailable, timed-out and read-failed, rejecting a snapshot whose schemaVersion is not 1. It needs only t1's re-exported types, not its labels.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "snapshot() sends workflow.delivery with { repo } and evidence() sends workflow.deliveryEvidence with { repo, artifactId }; nothing is sent when repo is null.",
+          "Each failure kind is produced by its documented condition, and neither method ever rejects.",
+          "A never-settling rpc yields timed-out after the deadline, and its late answer is ignored.",
+          "Wired to the daemon's real handleDelivery over a temporary git repository, repeated snapshot() calls change no file under the repository and leave git status and HEAD unchanged."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "delivery-client.test.ts: 'snapshot and evidence send the workspace repo and nothing is sent without a workspace'"
+          },
+          {
+            "level": "unit",
+            "name": "delivery-client.test.ts: 'the client classifies a missing workspace, a stopped daemon, a daemon error, a timeout and an unknown schemaVersion into their own failure kinds'"
+          },
+          {
+            "level": "integration",
+            "name": "delivery-client.test.ts: 'opening and refreshing against a temporary git repository leaves the store, docs and git untouched'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Board message protocol and up-message parser",
+        "summary": "The Envelope, BoardDownMessage (including the interim 'items' variant from AMD-6a131558-1), BoardUpMessage and StatusView types, and parseBoardUpMessage, which accepts only a v1 envelope with a known type and well-typed fields.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The down- and up-message unions match the HLD sc3 sketch plus the approved 'items' variant.",
+          "parseBoardUpMessage returns the typed intent for every valid up-message and null for a wrong version, an unknown type or a mistyped field."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "board-protocol.test.ts: 'every valid up-message parses and a wrong version, unknown type or mistyped field gives null'"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Board-state reducer and down-message derivation",
+        "summary": "initialBoardState, reduceBoardState over refresh-requested, snapshot-arrived and selection-changed events, and boardDownMessages, which derives the status message and the interim item list from state using the display labels.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "An answer whose seq is not the latest leaves state unchanged.",
+          "Status is empty only for a non-partial snapshot with no items; partial snapshots are ready with a partial notice; daemon-unavailable and no-workspace give unavailable, read-failed and timed-out give failed, each keeping the last snapshot.",
+          "The selection survives an applied snapshot; a selected item that is gone is cleared with a notice; selection-changed changes only the selection and leaves status and latestSeq unchanged.",
+          "boardDownMessages always starts with status, marks a failure over an old snapshot as stale with the failure and its time, and lists every item of the shown snapshot in its own order."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "board-state.test.ts: 'an answer to a superseded refresh is dropped and nothing from it is applied'"
+          },
+          {
+            "level": "unit",
+            "name": "board-state.test.ts: 'empty, unavailable, failed and partial snapshots each give their own status, a partial snapshot still lists every item, and a snapshot with no items but unreadable records is partial, not empty'"
+          },
+          {
+            "level": "unit",
+            "name": "board-state.test.ts: 'a failed refresh keeps the last snapshot as stale with the failure and its time'"
+          },
+          {
+            "level": "unit",
+            "name": "board-state.test.ts: 'a refresh keeps the selection, and clears a selected item that is gone with a notice'"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Board host and webview document",
+        "summary": "createDeliveryBoardHost over createPanel, the client, a ChatPanelLogger, a clock and a nonce source: opens or reveals one panel, sets a CSP-locked document whose single nonce'd script renders the status and item list as text, runs refreshes through the reducer, posts derived messages, logs superseded and failed answers, and discards answers after the panel is disposed.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "open() creates one panel with view type insrc.deliveryBoard and a document whose CSP is default-src 'none' with a nonce'd script; a second open() reveals it and refreshes.",
+          "When an earlier refresh answers after a later one, only the later snapshot is posted, and the dropped answer is logged through warn().",
+          "A failed or timed-out refresh is logged through error(); an answer or timeout arriving after dispose is neither posted nor logged.",
+          "Asserted against the generated document, the webview script inserts all text with textContent (never innerHTML) and posts only BoardUpMessage envelopes; richer rendering tests belong to s2."
+        ],
+        "derivedFrom": [
+          "c7",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'opening the board creates one editor-tab panel with a CSP-locked document and posts the snapshot's items with its taken-at time'"
+          },
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'when the earlier refresh answers after the later one, only the later snapshot is posted'"
+          },
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'an answer or timeout that arrives after the panel is closed is neither posted nor logged'"
+          },
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'the board document inserts text only through textContent and posts only board up-messages'"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Extension wiring, command and placement record",
+        "summary": "Add insrc.delivery.openBoard to package.json, the InsrcCommandId union and the command tests; wire the client, logger and host in extension.ts outside the chat gate; and record the editor-tab versus sidebar placement decision in the s1 BUILD record's summary.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "package.json contributes insrc.delivery.openBoard ('Open delivery board', category insrc), InsrcCommandId includes it, and packaging.test.ts and truthful-sync.test.ts expect it.",
+          "extension.ts builds the logger as { warn: panelLog.warn, error: console.error wrapper }, the client from createIpcClient().rpc with workspaceFolders[0] and 30 s / 15 s deadlines, and registers the command outside the insrc.chat.enabled gate.",
+          "`npx tsc -p vscode-plugin` passes and the plugin's existing tests still pass.",
+          "The comparison of the editor tab against a sidebar entry point, and the decision with its reason, are given as the validate summary so they land in the s1 BUILD record."
+        ],
+        "derivedFrom": [
+          "c8",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "packaging.test.ts: 'the 7 durable ad0d45c9 contributes.commands are preserved + the config/panel-track additions (S003 refresh, S004 panel commands)'"
+          },
+          {
+            "level": "integration",
+            "name": "truthful-sync.test.ts: 'package.json contributes.commands includes insrc.settings.refresh alongside the 7 shipped commands'"
+          },
+          {
+            "level": "integration",
+            "name": "board-wiring.test.ts: 'extension.ts registers insrc.delivery.openBoard outside the chat gate with a warn-and-error logger and a repo-scoped delivery client'"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "createDeliveryClient",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "reduceBoardState / initialBoardState",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "boardDownMessages",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "parseBoardUpMessage",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "DISPLAY_LABELS",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "createDeliveryBoardHost",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "createDeliveryClient over src/workflow/delivery/handlers.ts handleDelivery",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/delivery/delivery-contract.ts",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/package.json contributes.commands",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/extension.ts wiring",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: vscode-plugin/src/delivery/delivery-contract.ts type mirror re-exports"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: DeliveryClient, DeliveryClient.snapshot, DeliveryClient.evidence (sc1)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: DisplayLabels / DISPLAY_LABELS (sc4)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: BoardUpMessage / parseBoardUpMessage and the sc3 protocol with AMD-6a1315585c38c41c-1's 'items' variant"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: BoardState / initialBoardState / reduceBoardState (sc2)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: BoardDownMessage / boardDownMessages"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: createDeliveryBoardHost (the board host over DeliveryClientDeps)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: package.json contributes.commands, InsrcCommandId and extension.ts board wiring"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths: error cases, edge cases and invariants"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 localConstraint lc1 and the board host's lc1 postcondition: the editor-tab versus sidebar placement decision"
+    }
+  ]
+}

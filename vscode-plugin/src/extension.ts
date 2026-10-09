@@ -57,6 +57,8 @@ import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
 import { createDocsReviewHost } from './chat/docs-review-panel.js';
 import { createDocsReviewClient } from './chat/docs-review-client.js';
 import { createGitBaseline } from './chat/git-baseline.js';
+import { registerDeliveryBoard } from './delivery/board-wiring.js';
+import { webviewChannel } from './chat/webview-channel.js';
 import { execFile as nodeExecFile } from 'node:child_process';
 import { promises as nodeFsp } from 'node:fs';
 import { relative as pathRelative, isAbsolute as pathIsAbsolute, join as pathJoin } from 'node:path';
@@ -252,7 +254,10 @@ export function activate(context: vscode.ExtensionContext): void {
   // A thin degrade-path logger for the panels. The plugin ships no pino logger
   // (that would drag the daemon logging stack into the thin extension bundle, k5);
   // panel diagnostics go to the Extension Host console, the idiomatic channel.
-  const panelLog = { warn: (message: string): void => console.warn(`[insrc] ${message}`) };
+  const panelLog = {
+    warn: (message: string): void => console.warn(`[insrc] ${message}`),
+    error: (message: string): void => console.error(`[insrc] ${message}`),
+  };
   const daemonData = createDaemonDataGateway({
     rpc: (method, params) => client.rpc(method, params),
     artifactsRoot: () => {
@@ -498,25 +503,7 @@ export function activate(context: vscode.ExtensionContext): void {
         dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon-dark.svg')),
       };
       chatGroupLock.attach(panel);
-      return {
-        setHtml: (html) => {
-          panel.webview.html = html;
-        },
-        postMessage: (message) => {
-          // Fire-and-forget: a post to a disposed/hidden panel must never reject inward.
-          panel.webview.postMessage(message).then(undefined, () => {
-            /* ignore */
-          });
-        },
-        onMessage: (listener) => {
-          panel.webview.onDidReceiveMessage((m) => listener(m));
-        },
-        onDidDispose: (listener) => {
-          panel.onDidDispose(listener);
-        },
-        reveal: () => panel.reveal(),
-        dispose: () => panel.dispose(),
-      };
+      return webviewChannel(panel);
     };
     const chatHost = createChatPanelHost({
       editGovernance: {
@@ -606,32 +593,25 @@ export function activate(context: vscode.ExtensionContext): void {
     // persists nothing extension-side (k3). Gated behind the same insrc.chat.enabled flag.
     const docsReviewHost = createDocsReviewHost({
       client: createDocsReviewClient(client),
-      createPanel: ({ viewType, title }) => {
-        const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
-        return {
-          setHtml: (html) => {
-            panel.webview.html = html;
-          },
-          postMessage: (message) => {
-            panel.webview.postMessage(message).then(undefined, () => {
-              /* ignore posts to a disposed/hidden panel */
-            });
-          },
-          onMessage: (listener) => {
-            panel.webview.onDidReceiveMessage((m) => listener(m));
-          },
-          onDidDispose: (listener) => {
-            panel.onDidDispose(listener);
-          },
-          reveal: () => panel.reveal(),
-          dispose: () => panel.dispose(),
-        };
-      },
+      createPanel: ({ viewType, title }) =>
+        webviewChannel(vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true })),
     });
     commands.register({ id: 'insrc.chat.docsReview', title: 'insrc: Review pending documents' }, async () => {
       docsReviewHost.open();
     });
   }
+
+  // E2 s1: the delivery board — a read-only editor tab over the daemon's workflow.delivery
+  // snapshot for the first workspace folder. Not gated on insrc.chat.enabled.
+  registerDeliveryBoard({
+    commands,
+    subscriptions: context.subscriptions,
+    createWebviewPanel: (viewType, title) =>
+      vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true }),
+    rpc: client.rpc,
+    repo: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null,
+    logger: panelLog,
+  });
 
   // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over
   // workspaceState (distinct key from the S004 register-dismissed flag).

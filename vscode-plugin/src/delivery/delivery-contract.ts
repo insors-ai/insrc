@@ -8,10 +8,14 @@
  * workflow.delivery and workflow.deliveryEvidence. Type-only, imported by
  * relative path like docs-review-client.ts imports pending.ts, so a change to
  * the published types fails the plugin's own typecheck
- * (tsconfig.delivery-contract.json) instead of drifting.
+ * (tsconfig.delivery-contract.json) instead of drifting. The six enum types
+ * (stage, attention, notice, task result, approval, review verdict) are
+ * re-exported for the board's display labels (E2 s1, sc4).
  */
 
 import type {
+	ApprovalState,
+	AttentionReason,
 	DeliveryError,
 	DeliveryEvidenceEntry,
 	DeliveryEvidenceRecord,
@@ -21,9 +25,15 @@ import type {
 	DeliverySnapshot,
 	DeliverySnapshotRequest,
 	DeliverySnapshotResponse,
+	DeliveryStage,
+	NoticeCode,
+	ReviewVerdict,
+	TaskResult,
 } from '../../../src/workflow/delivery/types.js';
 
 export type {
+	ApprovalState,
+	AttentionReason,
 	DeliveryError,
 	DeliveryEvidenceEntry,
 	DeliveryEvidenceRecord,
@@ -33,6 +43,10 @@ export type {
 	DeliverySnapshot,
 	DeliverySnapshotRequest,
 	DeliverySnapshotResponse,
+	DeliveryStage,
+	NoticeCode,
+	ReviewVerdict,
+	TaskResult,
 };
 
 /** The IPC method each request goes to, with its request and response shapes. */

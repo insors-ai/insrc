@@ -37,9 +37,12 @@ test('extension.ts constructs createChatPanelHost with the real injected vscode 
   const b = block![1]!;
   assert.match(b, /createChatPanelHost\(\{/, 'builds the chat host');
   assert.match(b, /vscode\.window\.createWebviewPanel\(/, 'injects the real createWebviewPanel');
-  assert.match(b, /panel\.webview\.onDidReceiveMessage\(/, 'injects the inbound registrar');
-  assert.match(b, /panel\.webview\.postMessage\(message\)\.then\(undefined/, 'injects the fire-and-forget postMessage');
-  assert.match(b, /panel\.onDidDispose\(/, 'injects onDidDispose');
+  // The channel seams live in the shared adapter (chat/webview-channel.ts) the chat adapter returns.
+  assert.match(b, /return webviewChannel\(panel\);/, 'the chat adapter returns the shared channel');
+  const channel = read(join(HERE, '..', 'webview-channel.ts'));
+  assert.match(channel, /panel\.webview\.onDidReceiveMessage\(/, 'injects the inbound registrar');
+  assert.match(channel, /panel\.webview\.postMessage\(message\)\.then\(undefined/, 'injects the fire-and-forget postMessage');
+  assert.match(channel, /panel\.onDidDispose\(/, 'injects onDidDispose');
   assert.match(b, /createMementoChatSessionStore\(\{ memento: context\.globalState, maxSessions: \d+ \}\)/, 'the sc4 store binds over context.globalState (k3) with a bounded history cap (S005)');
   assert.match(b, /createProviderRegistry\(\{ spawn: nodeSpawner, isInstalled: defaultBinaryProbe \}\)/, 'the sc5 registry over the installed CLIs');
 });
@@ -121,7 +124,7 @@ test('group-lock: extension.ts wires thin seams into createChatGroupLock and att
   assert.match(b, /executeCommand\('workbench\.action\.lockEditorGroup'\)/, 'the lock seam runs the built-in lock command');
   assert.match(
     b,
-    /const webviewPanelChannel = \(panel: vscode\.WebviewPanel\): ChatPanelChannel => \{[\s\S]*?chatGroupLock\.attach\(panel\);[\s\S]*?return \{/,
+    /const webviewPanelChannel = \(panel: vscode\.WebviewPanel\): ChatPanelChannel => \{[\s\S]*?chatGroupLock\.attach\(panel\);\s*return webviewChannel\(panel\);/,
     'the single create+restore adapter attaches the lock',
   );
   // The view-type literal lives only in chat-panel.ts; extension.ts compares nothing itself.

@@ -90,8 +90,33 @@ test("the code family's scope function and its test hook are gone and no code ru
 	assert.match(adherence, /graphRepoOf\(await resolveTaskScope\(args\.intent\.scopeRef, familyOfTemplate\(templateId\), templateId\)\)/);
 	assert.equal(adherence.match(/const repoPath = await adherenceRepoPath\(/g)!.length, 2);
 	assert.equal(adherence.match(/\brepoPath\s*=/g)!.length, 2, 'no other source of a repo path in the adherence check');
-	// The docs task that used the code family's function takes the one function too.
-	assert.match(sources('docs').get('docs/discovery-inventory.ts')!, /graphRepoOf\(await resolveTaskScope\(scopeRef as AnalyzeScopeRef, 'docs', TEMPLATE_ID\)\)/);
+});
+
+test("no docs runtime uses the scope's value as a repo path", () => {
+	const docs = sources('docs');
+	assert.ok(docs.size >= 6, `the scan found the runtime files (${docs.size} docs)`);
+
+	for (const [file, text] of docs) {
+		assert.ok(!VALUE_READ.test(text), `${file}: reads the scope's value`);
+		assert.ok(!/\bresolveRepoPath\b/.test(text), `${file}: resolveRepoPath`);
+	}
+	// The four docs tasks that have a scope resolve it through the one function,
+	// as the docs family; the fifth, the report, has none.
+	const callers = [...docs].filter(([, text]) => /\bresolveTaskScope\(/.test(text));
+	assert.deepEqual(callers.map(([f]) => f), [
+		'docs/constraint-enumerate.ts', 'docs/decision-trace.ts', 'docs/discovery-inventory.ts', 'docs/family-summarise.ts',
+	]);
+	for (const [file, text] of callers) {
+		assert.match(text, /resolveTaskScope\((scopeRef as AnalyzeScopeRef|args\.intent\.scopeRef), 'docs', TEMPLATE_ID\)/, file);
+		assert.equal(text.match(/\bresolveTaskScope\(/g)!.length, 1, file);
+		// Every repo path in the file comes from the resolved scope.
+		const sourcesOfRepoPath = text.match(/\bconst repoPath\s*=.*$/gm) ?? [];
+		assert.equal(sourcesOfRepoPath.length, 1, file);
+		assert.match(sourcesOfRepoPath[0]!, /= graphRepoOf\(/, file);
+	}
+	// The two tasks that select documents themselves keep to the scope's area.
+	assert.match(docs.get('docs/discovery-inventory.ts')!, /\)\)\.filter\(inAreaOf\(scope\)\);/);
+	assert.match(docs.get('docs/family-summarise.ts')!, /if \(!inArea\(\{ id: entityId, file \}\)\) continue;/);
 });
 
 test('the unrelated resolveRepoPath under src/mcp is untouched', () => {

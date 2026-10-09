@@ -37,7 +37,7 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 import { readScopeRef } from '../code/_shared.js';
-import { graphRepoOf, resolveTaskScope } from '../shared/task-scope.js';
+import { graphRepoOf, inAreaOf, resolveTaskScope } from '../shared/task-scope.js';
 import type { AnalyzeScopeRef } from '../../../shared/analyze-types.js';
 import { buildCompleteness } from '../../completeness.js';
 import type { PartlyReadItem, SkippedItem } from '../../completeness.js';
@@ -74,17 +74,20 @@ export const docsDiscoveryInventoryRuntime: TemplateRuntime = {
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
-		const repoPath = graphRepoOf(await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'docs', TEMPLATE_ID));
+		// The one scope function: the kinds a docs task accepts, the repo whose
+		// documents it reads, and the area of that repo it keeps to.
+		const scope    = await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'docs', TEMPLATE_ID);
+		const repoPath = graphRepoOf(scope);
 
 		const db = await getDb();
 
 		// (1) Every doc + section + config entity in the repo. One LMDB
 		//     scan filtered by kind.
-		const entities = await listEntitiesByKinds(
+		const entities = (await listEntitiesByKinds(
 			db,
 			['document', 'section', 'config'],
 			{ repo: repoPath },
-		);
+		)).filter(inAreaOf(scope));
 
 		// (2) Every DocSummary the summariser has produced so far.
 		//     Keyed by entityId for O(1) lookup during zip below.

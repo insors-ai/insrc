@@ -36,6 +36,8 @@ import { createItemMeasurer, summarisedFrom } from '../../explore/item-measure.j
 import { SUMMARISER_BODY_CHARS } from '../../summariser/driver.js';
 import { inferDocFamily } from '../../summariser/family.js';
 
+import { graphRepoOf, inAreaOf, resolveTaskScope } from '../shared/task-scope.js';
+
 const TEMPLATE_ID = 'docs.family.summarise';
 const log = getLogger('analyze:runtimes:docs:family-summarise');
 
@@ -90,16 +92,18 @@ export function countedSkip(files: readonly string[], reason: string): SkippedIt
 	return [{ what: `${sorted.length} document${sorted.length === 1 ? '' : 's'}: ${sorted.join(', ')}`, reason }];
 }
 
-/** The files of the family's documents and sections that have no summary row at all. */
+/** The files of the family's documents and sections, within the scope's area, that have no summary row at all. */
 async function unsummarised(
 	db:         Awaited<ReturnType<typeof getDb>>,
 	repoPath:   string,
 	family:     DocFamily,
 	summarised: ReadonlySet<string>,
+	inArea:     ReturnType<typeof inAreaOf>,
 ): Promise<string[]> {
 	const docs = await listEntitiesByKinds(db, ['document', 'section'], { repo: repoPath });
 	const files = new Set<string>();
 	for (const e of docs) {
+		if (!inArea(e)) continue;
 		if (summarised.has(e.id)) continue;
 		if (inferDocFamily(e.file) !== family) continue;
 		files.add(e.kind === 'section' ? `${e.file} § ${e.name}` : e.file);
@@ -124,11 +128,11 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 		}
 		const familyKey = family as DocFamily;
 
-		// Resolve the repo path from the intent's scopeRef. Docs
-		// retrieval is V1 repo-scoped -- we always take the intent's
-		// containing repo.
-		const scopeRef = args.intent.scopeRef;
-		const repoPath = scopeRef.value;
+		// The one scope function: the kinds a docs task accepts, the repo whose
+		// summaries it reads, and the area of that repo it keeps to.
+		const scope    = await resolveTaskScope(args.intent.scopeRef, 'docs', TEMPLATE_ID);
+		const repoPath = graphRepoOf(scope);
+		const inArea   = inAreaOf(scope);
 
 		const db = await getDb();
 		const summaries        = await listDocSummariesForRepo(db, repoPath);
@@ -154,17 +158,21 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 			const entityId = summaryEntityIds[i]!;
 			if (s.family !== familyKey) continue;
 
-			summarisedIds.add(entityId);
-			if (s.errorCode !== undefined) {
-				placeholderCount += 1;
-				failedSummaries.push((await getEntity(db, entityId))?.file ?? s.title);
-				continue;
-			}
-
 			// Hydrate the entity for the file path -- we don't store
 			// file on the summary row itself. Cheap point lookup.
 			const entity = await getEntity(db, entityId);
 			const file = entity?.file ?? '';
+			// A summary is selected by where its document lies, before anything is
+			// counted. One whose document is gone has no place: only a scope that
+			// takes the whole repo keeps it.
+			if (!inArea({ id: entityId, file })) continue;
+
+			summarisedIds.add(entityId);
+			if (s.errorCode !== undefined) {
+				placeholderCount += 1;
+				failedSummaries.push(entity?.file ?? s.title);
+				continue;
+			}
 			// The summariser reads the first part of a long document.
 			if (entity !== null) {
 				const cut = await summarisedFrom(measurer, entity, SUMMARISER_BODY_CHARS);
@@ -239,7 +247,7 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 				partlyRead,
 				skipped:  [
 					...countedSkip(failedSummaries, 'summarising failed for them, so they are not in this roll-up'),
-					...countedSkip(await unsummarised(db, repoPath, familyKey, summarisedIds), 'they have no summary yet, so they are not in this roll-up'),
+					...countedSkip(await unsummarised(db, repoPath, familyKey, summarisedIds, inArea), 'they have no summary yet, so they are not in this roll-up'),
 				],
 				basisNote: DOC_INDEX_RULE,
 				// The subject roll-up is a second list, cut to its own length.

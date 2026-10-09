@@ -115,14 +115,16 @@ const isChainKind = (kind: string): kind is ChainKind => (CHAIN_ORDER as readonl
 const APPROVAL_TONE: Readonly<Record<DeliveryEvidenceView['approval']['state'], BadgeView['tone']>> = { approved: 'success', pending: 'warning', rejected: 'danger' };
 
 /**
- * The item's artifact chain: its own DEF/HLD/ISSUE/LLD/PLAN/BUILD records plus the DEF, HLD and ISSUE records of its
- * epic or issue parent, one row per record (by artifactId within a kind), and a not-recorded row for each kind the
- * route expects but nothing records. Records of any other kind (SPEC, CR, EXT, AMD) are skipped here.
+ * The item's artifact chain: its own DEF/HLD/ISSUE/LLD/PLAN/BUILD records, the DEF and HLD of its parent epic, and the
+ * ISSUE of its parent issue (a sized bugfix's fix story records its ISSUE on the issue it fixes), one row per record
+ * (by artifactId within a kind), and a not-recorded row for each kind the route expects but nothing records. Records
+ * of any other kind (SPEC, CR, EXT, AMD) are skipped here.
  */
 function chainOf(item: DeliveryItemView, byId: ItemIndex, labels: DisplayLabels): ChainRowView[] {
   const parent = item.parentId === null ? undefined : byId.get(item.parentId);
-  const inherited = parent !== undefined && (parent.kind === 'epic' || parent.kind === 'issue')
-    ? parent.evidence.filter(e => e.kind === 'DEF' || e.kind === 'HLD' || e.kind === 'ISSUE')
+  const inherited = parent === undefined ? []
+    : parent.kind === 'epic' ? parent.evidence.filter(e => e.kind === 'DEF' || e.kind === 'HLD')
+    : parent.kind === 'issue' ? parent.evidence.filter(e => e.kind === 'ISSUE')
     : [];
   const records = new Map<string, DeliveryEvidenceView>();
   for (const e of [...item.evidence, ...inherited]) if (isChainKind(e.kind) && !records.has(e.artifactId)) records.set(e.artifactId, e);

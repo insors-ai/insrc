@@ -215,3 +215,16 @@ test('kicker, chips and TaskRowView.resultTone', () => {
   assert.equal(buildItemDetails(snap, 'E20261009abcdef01', NONE, null, DISPLAY_LABELS)!.kicker, 'EPIC \u00b7 ABCDEF01');
   assert.deepEqual(buildItemDetails(snap, 'E20261009abcdef01', NONE, null, DISPLAY_LABELS)!.chips, [], 'an epic has no stage, tasks or badges');
 });
+
+test('the chain takes DEF and HLD only from a parent epic, and ISSUE only from a parent issue', () => {
+  const snap = snapshot([
+    item({ id: 'I1', kind: 'issue', standalone: true, evidence: [ev('ISSUE-i', 'ISSUE'), ev('DEF-stray', 'DEF'), ev('HLD-stray', 'HLD')] as never }),
+    routed('I1:S001', 'sized-bugfix', [ev('LLD-f', 'LLD')], { parentId: 'I1' }),
+    item({ id: 'E1', kind: 'epic', evidence: [ev('DEF-e', 'DEF'), ev('HLD-e', 'HLD'), ev('ISSUE-stray', 'ISSUE')] as never }),
+    routed('E1:S001', 'full-chain', [ev('LLD-a', 'LLD')], { parentId: 'E1' }),
+  ]);
+  assert.deepEqual(chainOf(snap, 'I1:S001'), [['ISSUE', 'ISSUE-i'], ['LLD', 'LLD-f'], ['PLAN', 'Not recorded'], ['BUILD', 'Not recorded']],
+    "a fix story shows its issue's ISSUE, never DEF or HLD from the issue");
+  assert.deepEqual(chainOf(snap, 'E1:S001'), [['DEF', 'DEF-e'], ['HLD', 'HLD-e'], ['LLD', 'LLD-a'], ['PLAN', 'Not recorded'], ['BUILD', 'Not recorded']],
+    "an epic story shows its epic's DEF and HLD, never an ISSUE recorded on the epic");
+});

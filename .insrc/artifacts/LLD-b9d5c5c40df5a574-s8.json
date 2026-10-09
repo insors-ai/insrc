@@ -26,7 +26,16 @@
     "hldAmendmentsApplied": [
       "AMD-b9d5c5c40df5a574-1"
     ],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "questionResolutions": {
+      "qee1b0b54": {
+        "question": "The module list returns every directory that directly holds a stored source file, with no grouping: this repository has 209. A directory that holds source only in its sub-directories (such as 'src') is not in the list, though it is accepted as a module value. Is a flat list of source directories what a broad analysis should be given as its modules, or should the list also carry the parent directories?",
+        "status": "resolved",
+        "choice": "Keep the flat list of source directories",
+        "rationale": "Stakeholder took the recommendation on 2026-10-09: the module list is every directory that directly holds a stored source file, with no parent directories added. A directory that holds source only in its sub-directories stays out of the list and stays a valid module value for the functional-surface task.",
+        "resolvedAt": "2026-10-09T10:51:09.719Z"
+      }
+    }
   },
   "body": {
     "summary": {

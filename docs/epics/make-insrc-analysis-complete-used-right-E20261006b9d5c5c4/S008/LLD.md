@@ -325,3 +325,19 @@ Have code.discovery.modules walk the scope's directory on disk with the same ign
 
 - The Define's criterion ac3 says 'a repository whose graph does hold module entities, as for a language whose parser emits them'. None of the six parsers stores a module entity for a repository's own directories: each stores one only for an imported module, in a shared namespace with an empty repo and file. This design reads ac3 as: a graph that holds module entities inside the repository, however written, loses nothing. Should the Define's wording be corrected to say that?
 - The module list returns every directory that directly holds a stored source file, with no grouping: this repository has 209. A directory that holds source only in its sub-directories (such as 'src') is not in the list, though it is accepted as a module value. Is a flat list of source directories what a broad analysis should be given as its modules, or should the list also carry the parent directories?
+
+## Resolved questions
+
+- `qee1b0b54` — The module list returns every directory that directly holds a stored source file, with no grouping: this repository has 209. A directory that holds source only in its sub-directories (such as 'src') is not in the list, though it is accepted as a module value. Is a flat list of source directories what a broad analysis should be given as its modules, or should the list also carry the parent directories?
+  - **resolved**: Keep the flat list of source directories — Stakeholder took the recommendation on 2026-10-09: the module list is every directory that directly holds a stored source file, with no parent directories added. A directory that holds source only in its sub-directories stays out of the list and stays a valid module value for the functional-surface task. _(2026-10-09T10:51:09.719Z)_
+
+## Citations
+
+- **[[c1]]** `prior-artifact` `docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/measurements/live-runs-t17.md` — "code, S ... completed, report with 11 findings ... t04 to t11, each code.surface.functional: module entity '<dir>' not found in the graph"
+- **[[c2]]** `code` `src/analyze/runtimes/code/surface-functional.ts` — "module entity '${moduleId}' not found in the graph"
+- **[[c3]]** `code` `src/indexer/parser/python.ts` — "const moduleId = makeEntityId(MODULE_NAMESPACE, '', 'module', modName);"
+- **[[c4]]** `code` `src/analyze/planner/templates/code/index.ts` — "module: { type: 'string', minLength: 1 },"
+- **[[c5]]** `code` `src/analyze/runtimes/shared/task-scope.ts` — "export function inAreaOf(scope: ResolvedScope)"
+- **[[c6]]** `code` `src/analyze/runtimes/code/__tests__/scope-area.test.ts` — "ent('module', 'pay', 'pay/package.json'),"
+- **[[c7]]** `prior-artifact` `DEF-b9d5c5c40df5a574` — "a repository whose graph does hold module entities, as for a language whose parser emits them"
+- **[[c8]]** `stakeholder` `chat 2026-10-08` — "Story 7 split in three: what the code tasks treat as a module is a Story of its own"

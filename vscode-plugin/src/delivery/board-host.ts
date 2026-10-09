@@ -15,14 +15,23 @@
  * disposed an outstanding answer is discarded without being dispatched, posted
  * or logged, and the next open() starts a new panel with a fresh state.
  *
+ * The host also keeps the board's paging (E2 s2): show-more raises one
+ * column's page, and a scope, search or attention change resets it. Every
+ * derive keeps the new state only when it renders, and items whose stage is
+ * not one of the six are logged once per applied refresh.
+ *
  * The document is CSP-locked (default-src 'none') with one nonce'd script that
- * renders the status and the s1 item list as text (textContent only) and posts
- * only BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
+ * renders the status and the board's columns, cards and controls as text
+ * (textContent only) and posts only BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
  */
 
 import type { ChatPanelChannel, ChatPanelLogger } from '../chat/chat-panel.js';
-import { parseBoardUpMessage, type BoardUpMessage } from './board-protocol.js';
-import { boardDownMessages, initialBoardState, reduceBoardState, type BoardEvent, type BoardState } from './board-state.js';
+import { showMore, unknownStages, type BoardPaging } from './board-model.js';
+import { parseBoardUpMessage, type BoardScope, type BoardUpMessage } from './board-protocol.js';
+import {
+  boardDownMessages, initialBoardState, reduceBoardState, shownSnapshot,
+  type BoardEvent, type BoardSelection, type BoardState,
+} from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
 import { errorText } from './guards.js';
@@ -52,30 +61,59 @@ function attr(v: string): string {
 
 /**
  * The webview script. Everything shown is set with textContent, and the only
- * messages posted are the 'ready' and 'refresh' board up-messages.
+ * messages posted are board up-messages: ready, refresh, set-search,
+ * set-scope, set-attention and show-more.
  */
-export const BOARD_WEBVIEW_SCRIPT =
-  `(function(){` +
-  `const vs=acquireVsCodeApi();` +
-  `const send=function(p){vs.postMessage({v:1,payload:p});};` +
-  `const status=document.getElementById('status');` +
-  `const notice=document.getElementById('notice');` +
-  `const list=document.getElementById('items');` +
-  `document.getElementById('refresh').addEventListener('click',function(){send({type:'refresh'});});` +
-  `window.addEventListener('message',function(e){` +
-  `const m=e.data;if(!m||m.v!==1||!m.payload)return;const p=m.payload;` +
-  `if(p.type==='status'){const s=p.status;` +
-  `const parts=[];if(s.message)parts.push(s.message);else parts.push(s.state==='ready'?'Up to date.':s.state);` +
-  `if(s.takenAt)parts.push('Snapshot taken at '+s.takenAt+(s.stale?' (stale).':'.'));` +
-  `status.textContent=parts.join(' ');status.setAttribute('data-state',s.state);` +
-  `notice.textContent=s.partialNotice||'';return;}` +
-  `if(p.type==='items'){while(list.firstChild)list.removeChild(list.firstChild);` +
-  `for(const it of p.items){const li=document.createElement('li');` +
-  `li.textContent=it.kind+' \\u00b7 '+(it.title===null?it.itemId:it.title)+(it.stageLabel===null?'':' \\u00b7 '+it.stageLabel);` +
-  `li.setAttribute('data-item-id',it.itemId);list.appendChild(li);}return;}` +
-  `});` +
-  `send({type:'ready'});` +
-  `})();`;
+export const BOARD_WEBVIEW_SCRIPT = [
+  `(function(){`,
+  `const vs=acquireVsCodeApi();`,
+  `const send=function(p){vs.postMessage({v:1,payload:p});};`,
+  `const byId=function(id){return document.getElementById(id);};`,
+  `const status=byId('status'),notice=byId('notice'),totals=byId('totals'),board=byId('board'),empty=byId('empty');`,
+  `const search=byId('search'),scope=byId('scope'),attention=byId('attention');`,
+  `const make=function(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.setAttribute('class',cls);return e;};`,
+  `const clear=function(n){while(n.firstChild)n.removeChild(n.firstChild);};`,
+  `const KIND={story:'Story',issue:'Issue'};`,
+  `byId('refresh').addEventListener('click',function(){send({type:'refresh'});});`,
+  `search.addEventListener('input',function(){send({type:'set-search',search:String(search.value)});});`,
+  `attention.addEventListener('change',function(){send({type:'set-attention',on:attention.checked===true});});`,
+  `scope.addEventListener('change',function(){const v=String(scope.value);`,
+  `send({type:'set-scope',scope:v==='all'?{kind:'all'}:v==='standalone'?{kind:'standalone'}:{kind:'epic',epicItemId:v.slice(5)}});});`,
+  // The scope options are rebuilt from each board; the reader's current choice is kept.
+  `function renderScope(options){const current=String(scope.value||'all');clear(scope);`,
+  `const add=function(value,text){const o=make('option',text);o.value=value;scope.appendChild(o);};`,
+  `add('all','All work');add('standalone','Standalone');`,
+  `for(const o of options)add('epic:'+o.epicItemId,o.title);`,
+  // An epic the reader scoped to that a refresh removed stays selectable, so the reader sees why nothing matches.
+  `if(current.indexOf('epic:')===0&&!options.some(function(o){return 'epic:'+o.epicItemId===current;}))add(current,'Epic no longer on the board');`,
+  `scope.value=current;}`,
+  `function renderCard(c){const li=make('li',undefined,'card');li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);`,
+  `li.appendChild(make('div',KIND[c.kind]+' · '+c.title,'card-title'));`,
+  `li.appendChild(make('div',c.standalone?'Standalone':c.epicTitle===null?'':'Epic: '+c.epicTitle,'card-epic'));`,
+  `const badges=make('ul',undefined,'badges');`,
+  `for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}`,
+  `li.appendChild(badges);return li;}`,
+  `function renderBoard(m){renderScope(m.scopeOptions);clear(board);`,
+  `totals.textContent=m.totals.items+' item'+(m.totals.items===1?'':'s')+', '+m.totals.needsAttention+' needing attention';`,
+  `for(const col of m.columns){const sec=make('section',undefined,'column');sec.setAttribute('data-stage',col.stage);`,
+  `sec.appendChild(make('h2',col.label+' ('+col.total+')'));`,
+  `const ul=make('ul');ul.setAttribute('aria-label',col.label);for(const c of col.cards)ul.appendChild(renderCard(c));sec.appendChild(ul);`,
+  `if(col.hiddenCount>0){const more=make('button','Show '+col.hiddenCount+' more');more.setAttribute('type','button');`,
+  `more.addEventListener('click',function(){send({type:'show-more',stage:col.stage});});sec.appendChild(more);}`,
+  `board.appendChild(sec);}`,
+  `empty.textContent=m.emptySelection?'Nothing on the board matches the search and filters.':'';}`,
+  `window.addEventListener('message',function(e){`,
+  `const m=e.data;if(!m||m.v!==1||!m.payload)return;const p=m.payload;`,
+  `if(p.type==='status'){const s=p.status;`,
+  `const parts=[];if(s.message)parts.push(s.message);else parts.push(s.state==='ready'?'Up to date.':s.state);`,
+  `if(s.takenAt)parts.push('Snapshot taken at '+s.takenAt+(s.stale?' (stale).':'.'));`,
+  `status.textContent=parts.join(' ');status.setAttribute('data-state',s.state);`,
+  `notice.textContent=s.partialNotice||'';return;}`,
+  `if(p.type==='board'){renderBoard(p.model);return;}`,
+  `});`,
+  `send({type:'ready'});`,
+  `})();`,
+].join('');
 
 export function renderBoardDocument(nonce: string): string {
   const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
@@ -86,7 +124,14 @@ export function renderBoardDocument(nonce: string): string {
     `<header><h1>${BOARD_TITLE}</h1><button id="refresh" type="button">Refresh</button></header>` +
     `<p id="status" role="status" aria-live="polite"></p>` +
     `<p id="notice"></p>` +
-    `<ul id="items" aria-label="Work items"></ul>` +
+    `<div class="controls">` +
+    `<input id="search" type="search" aria-label="Search work items" placeholder="Search">` +
+    `<select id="scope" aria-label="Scope"><option value="all">All work</option></select>` +
+    `<label><input id="attention" type="checkbox"> Needs attention</label>` +
+    `</div>` +
+    `<p id="totals"></p>` +
+    `<p id="empty"></p>` +
+    `<div id="board" class="board"></div>` +
     `<script nonce="${attr(nonce)}">${BOARD_WEBVIEW_SCRIPT}</script></body></html>`
   );
 }
@@ -94,20 +139,25 @@ export function renderBoardDocument(nonce: string): string {
 export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBoardHost {
   let channel: ChatPanelChannel | undefined;
   let state: BoardState = initialBoardState();
+  /** The visible card limit per column; reset by a scope, search or attention change, kept across refreshes. */
+  let paging: BoardPaging = {};
   let nextSeq = 0;
   /** Bumped on every dispose; an answer from an earlier panel generation is discarded. */
   let generation = 0;
 
-  function post(): void {
-    for (const m of boardDownMessages(state, DISPLAY_LABELS)) channel?.postMessage(m);
+  /**
+   * Derive the messages first; the new state and paging are kept only when they render, so a bad snapshot or
+   * selection never becomes the board's. A throw leaves both as they were and posts nothing.
+   */
+  function apply(next: BoardState, nextPaging: BoardPaging): void {
+    const messages = boardDownMessages(next, DISPLAY_LABELS, nextPaging);
+    state = next;
+    paging = nextPaging;
+    for (const m of messages) channel?.postMessage(m);
   }
 
-  /** Reduce and derive the messages first; the new state is kept only when it renders, so a bad snapshot never becomes the last one. */
-  function dispatch(event: BoardEvent): void {
-    const next = reduceBoardState(state, event);
-    const messages = boardDownMessages(next, DISPLAY_LABELS);
-    state = next;
-    for (const m of messages) channel?.postMessage(m);
+  function dispatch(event: BoardEvent, nextPaging: BoardPaging = paging): void {
+    apply(reduceBoardState(state, event), nextPaging);
   }
 
   function elapsedMs(since: string): number {
@@ -119,7 +169,13 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const gen = generation;
     const seq = ++nextSeq;
     const started = deps.now();
-    dispatch({ type: 'refresh-requested', seq });
+    try {
+      dispatch({ type: 'refresh-requested', seq });
+    } catch (err) {
+      // The loading state could not be shown; state is unchanged, so no request is made for it.
+      deps.logger.error(`delivery board: refresh ${seq} could not start: ${errorText(err)}`);
+      return;
+    }
     // The client resolves every failure to a typed result; a throw is turned into one so the board never stays on 'loading'.
     let result: DeliveryResult<DeliverySnapshot>;
     try {
@@ -140,6 +196,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     }
     try {
       dispatch({ type: 'snapshot-arrived', seq, result, at });
+      if (result.ok) logUnknownStages(seq, result.value);
     } catch (err) {
       // A snapshot that slipped past the client's checks but cannot be rendered: state still holds the previous
       // board, so this shows a failed refresh over it rather than a frozen board.
@@ -154,18 +211,44 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     }
   }
 
+  /** Once per applied refresh: the items left off the board because their stage is not one of the six. */
+  function logUnknownStages(seq: number, snapshot: DeliverySnapshot): void {
+    const unknown = unknownStages(snapshot);
+    if (unknown.size === 0) return;
+    const named = [...unknown].map(([stage, n]) => `${stage} (${n})`).join(', ');
+    deps.logger.warn(`delivery board: refresh ${seq} left items with unknown stages off the board: ${named}`);
+  }
+
+  /** An epic scope must name an epic in the shown snapshot. */
+  function knownScope(scope: BoardScope): boolean {
+    if (scope.kind !== 'epic') return true;
+    const shown = shownSnapshot(state.status);
+    return shown !== null && shown.snapshot.items.some(i => i.kind === 'epic' && i.id === scope.epicItemId);
+  }
+
+  function select(selection: BoardSelection, nextPaging: BoardPaging = paging): void {
+    dispatch({ type: 'selection-changed', selection }, nextPaging);
+  }
+
   function handle(msg: BoardUpMessage): void {
     const sel = state.selection;
     switch (msg.type) {
-      case 'ready': post(); return;
+      case 'ready': apply(state, paging); return;
       case 'refresh': void refresh(); return;
-      case 'set-view': dispatch({ type: 'selection-changed', selection: { ...sel, view: msg.view } }); return;
-      case 'set-scope': dispatch({ type: 'selection-changed', selection: { ...sel, scope: msg.scope } }); return;
-      case 'set-search': dispatch({ type: 'selection-changed', selection: { ...sel, search: msg.search } }); return;
-      case 'set-attention': dispatch({ type: 'selection-changed', selection: { ...sel, needsAttentionOnly: msg.on } }); return;
-      case 'select-item': dispatch({ type: 'selection-changed', selection: { ...sel, selectedItemId: msg.itemId } }); return;
-      case 'close-details': dispatch({ type: 'selection-changed', selection: { ...sel, selectedItemId: null } }); return;
-      case 'set-density': dispatch({ type: 'selection-changed', selection: { ...sel, density: msg.density } }); return;
+      case 'set-view': select({ ...sel, view: msg.view }); return;
+      case 'set-scope':
+        if (!knownScope(msg.scope)) {
+          deps.logger.warn('delivery board: ignored a scope naming an epic that is not on the board');
+          return;
+        }
+        select({ ...sel, scope: msg.scope }, {});
+        return;
+      case 'set-search': select({ ...sel, search: msg.search }, {}); return;
+      case 'set-attention': select({ ...sel, needsAttentionOnly: msg.on }, {}); return;
+      case 'select-item': select({ ...sel, selectedItemId: msg.itemId }); return;
+      case 'close-details': select({ ...sel, selectedItemId: null }); return;
+      case 'set-density': select({ ...sel, density: msg.density }); return;
+      case 'show-more': apply(state, showMore(paging, msg.stage)); return;
       case 'open-evidence': return;   // opening evidence is s4's
     }
   }
@@ -174,6 +257,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     generation++;
     channel = undefined;
     state = initialBoardState();
+    paging = {};
     nextSeq = 0;
   }
 
@@ -193,7 +277,12 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
           deps.logger.warn('delivery board: ignored a malformed webview message');
           return;
         }
-        handle(msg);
+        try {
+          handle(msg);
+        } catch (err) {
+          // apply() keeps state and paging only when they render, so the board stays as it was.
+          deps.logger.error(`delivery board: ${msg.type} could not be shown: ${errorText(err)}`);
+        }
       });
       opened.setHtml(renderBoardDocument(deps.genNonce()));
       void refresh();

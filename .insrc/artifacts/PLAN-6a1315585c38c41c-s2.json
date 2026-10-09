@@ -1,0 +1,303 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791527854025-l8pdq5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T06:41:25.208Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 231179,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "storyId": "s2",
+    "lldRunId": "wf-1791526663756-5pux7j",
+    "lldEffectiveHash": "6e5370449cb50fc598cb79ed3d21fbd5c79520797d7947271294e0de2bffbace",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-09T06:46:03.145Z",
+    "rangeBase": "ecc892e4e745d66b0db9fb71330f818bb65c4391"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building s2 adds one pure module, board-model.ts. It turns the shown snapshot and the reader's scope, search and attention filter into six stage columns of cards with text badges, counted before paging. The protocol gains the view-model types and the show-more intent. The host replaces s1's interim item list with the 'board' message, keeps per-column paging, logs unknown stages once per refresh, and survives a render that throws. The webview script then draws the columns, cards and controls as plain text."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "View-model types, the show-more intent and the wider item mirror",
+        "summary": "Declare BadgeView, CardView, ColumnView and BoardViewModel in board-protocol.ts in place of unknown, add the 'show-more' { stage } up-message (AMD-6a1315585c38c41c-2) to BoardUpMessage and parseBoardUpMessage, and widen DeliveryItemView with standalone, sourceIds, validation, conflict and correctsRef.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "BoardViewModel, ColumnView, CardView and BadgeView match the sc5 sketch, and the 'board' down-message carries a BoardViewModel.",
+          "parseBoardUpMessage accepts show-more whose stage is one of STAGE_ORDER and rejects any other stage or a missing one.",
+          "DeliveryItemView picks the five added fields and E1's contract test still compiles the mirror; the 'items' variant stays in BoardDownMessage."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "board-protocol.test.ts: 'show-more is accepted only for one of the six stages'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Board model: filtering, columns, counts and paging",
+        "summary": "board-model.ts with each item's epic (a story's parent epic; an issue's corrected epic, or the epic of its corrected story), buildBoardViewModel's matching (scope, search, attention), STAGE_ORDER columns in snapshot order, totals counted before paging, BoardPaging with BOARD_PAGE_SIZE and showMore, scopeOptions, emptySelection, and unknownStages.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Six columns in workflow order hold every story and issue with a known stage exactly once, in the column its stage names, in snapshot order; epics, tasks and stage-less items are not cards.",
+          "Scope all, epic and standalone, a trimmed case-insensitive substring search over title, id, source ids and epic title, and Needs attention select exactly the matching items.",
+          "For every column total = cards.length + hiddenCount and cards.length = min(total, limit); totals sum the columns; showMore raises one column by BOARD_PAGE_SIZE.",
+          "unknownStages returns every unknown stage id with its count; those items are not in any column or total.",
+          "The same arguments give a deep-equal model."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "board-model.test.ts: 'six columns in workflow order hold every story and issue exactly once, in the column the snapshot assigns'"
+          },
+          {
+            "level": "unit",
+            "name": "board-model.test.ts: 'with an epic scope and a search, cards, hidden counts, column totals and totals agree, and clearing both restores the full set'"
+          },
+          {
+            "level": "unit",
+            "name": "board-model.test.ts: 'the same snapshot and filters give an identical model, including items with equal timestamps'"
+          },
+          {
+            "level": "unit",
+            "name": "board-model.test.ts: 'unknownStages counts every stage id outside the six, and those items are in no column'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Card badges, titles and accessible labels",
+        "summary": "Build each card's title (id when null), epic title (from t2's epic resolution), standalone flag and badges in the fixed order (approval, review, validation with storyLevelResult, conflict, attention, notice) with labels from DISPLAY_LABELS and de-duplication by label, plus the accessible label.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "An approved build with failed tasks is a Complete card with a Validation conflict badge.",
+          "A blocking review gives a Review blocked badge with tone danger; an overridden one gives tone neutral.",
+          "Tasks that all passed with a failed storyLevelResult give Validation failed, never Passed.",
+          "No two badges on a card share a label, and accessibleLabel names kind, title, stage, standalone or epic, Needs attention and every badge in order."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "board-model.test.ts: 'an approved build with failed tasks stays in Complete and carries a text-labelled validation-conflict badge'"
+          },
+          {
+            "level": "unit",
+            "name": "board-model.test.ts: 'a review-blocked design shows a Review blocked badge, matches Needs attention and keeps its column'"
+          },
+          {
+            "level": "unit",
+            "name": "board-model.test.ts: 'a failed story-level result shows Validation failed, badges never repeat a label, and the accessible label names every badge'"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Host: the board message, paging and safe derive paths",
+        "summary": "boardDownMessages(state, labels, paging) posts status then 'board'; the host keeps BoardPaging, answers show-more, resets paging on scope, search or attention changes, ignores an unknown set-scope epic id, logs unknownStages once per applied refresh, and keeps the previous state on any derive that throws. The s1 tests that read 'items' from the host and state move to 'board'. Until t5 the webview script still renders only 'items', so the board shows its status line alone between t4 and t5; the webview's own test moves with t5.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "After a snapshot the host posts status then one 'board' message and never 'items'.",
+          "show-more raises one column's page; a new scope, search or attention resets paging; a refresh keeps it.",
+          "An unknown stage logs exactly one warn() per applied refresh, and none on selection changes or show-more.",
+          "A selection change, show-more or ready whose rendering throws keeps the previous state and paging, posts nothing and logs through error().",
+          "The s1 tests in board-state.test.ts and board-host.test.ts that read the host's messages read 'board' and pass; the unlabelled-stage raw-id assertion is retired."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5",
+          "c8",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'show-more reveals the next page of one column, and a new search resets paging'"
+          },
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'an item with an unknown stage is left off the board and logged once per refresh'"
+          },
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'a selection change that cannot be rendered keeps the previous board and is logged'"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Webview rendering of the board and its controls",
+        "summary": "Extend BOARD_WEBVIEW_SCRIPT to render the 'board' message: six columns with labels and totals, cards with title, kind, epic or standalone and text badges, a show-more control per column with hidden cards, the empty-selection message, and search, scope and Needs attention controls that post set-search, set-scope and set-attention, all with textContent. The s1 webview test moves from 'items' to 'board'.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A 'board' message renders six columns with their label and total, and every card's title, kind and badge labels as text.",
+          "A title or notice containing markup or script is shown literally; the fake DOM's innerHTML is never touched.",
+          "Show-more, search, scope and attention controls post only show-more, set-search, set-scope and set-attention envelopes that parseBoardUpMessage accepts.",
+          "The scope control offers All, Standalone and every scopeOptions epic, and emptySelection shows a nothing-matches message with the controls still set."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'the board view renders titles and notices containing markup and script as literal text'"
+          },
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'the board controls post only board up-messages, the scope control lists every epic, and an empty selection says nothing matches'"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "buildBoardViewModel",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "showMore",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "parseBoardUpMessage (show-more)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "unknownStages",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "createDeliveryBoardHost",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "boardDownMessages",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "BOARD_WEBVIEW_SCRIPT",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 §2.1 BoardViewModel (buildBoardViewModel)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 §2.2 BoardPaging (BOARD_PAGE_SIZE, showMore)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 §2.3 boardDownMessages"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 §2.4 BoardUpMessage (show-more; AMD-6a1315585c38c41c-2)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 §2.5 unknownStages"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 §3.1 board-protocol.ts BoardViewModel field-modify"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 §3.2 delivery-contract.ts DeliveryItemView field-add"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 §3.3 BoardPaging (host memory)"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 §5 Error paths"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 §6 Test strategy"
+    }
+  ]
+}

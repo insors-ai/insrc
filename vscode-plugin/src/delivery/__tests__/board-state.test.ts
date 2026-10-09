@@ -13,17 +13,9 @@ import type { BoardDownMessage, StatusView } from '../board-protocol.js';
 import type { DeliveryItem, DeliverySnapshot } from '../delivery-contract.js';
 import type { DeliveryFailureKind } from '../delivery-client.js';
 import { DISPLAY_LABELS } from '../labels.js';
+import { item as fixtureItem, snapshot } from './board-fixtures.js';
 
-function item(id: string, title: string, stage: string | null = 'scoped'): DeliveryItem {
-  return { id, kind: 'story', title, stage: stage === null ? null : { stage } } as unknown as DeliveryItem;
-}
-
-function snapshot(items: readonly DeliveryItem[], extra: Partial<DeliverySnapshot> = {}): DeliverySnapshot {
-  return {
-    schemaVersion: 1, repo: '/ws', takenAt: '2026-10-09T10:00:00.000Z', recordCount: items.length, unreadableCount: 0,
-    items, rootIds: items.map(i => i.id), notices: [], counts: {}, attentionRule: '', ...extra,
-  } as unknown as DeliverySnapshot;
-}
+const item = (id: string, title: string, stage: string | null = 'scoped'): DeliveryItem => fixtureItem({ id, title, stage });
 
 const arrived = (seq: number, s: DeliverySnapshot): BoardEvent => ({ type: 'snapshot-arrived', seq, result: { ok: true, value: s }, at: '2026-10-09T10:00:01.000Z' });
 const failed = (seq: number, kind: DeliveryFailureKind, message: string, at = '2026-10-09T11:00:00.000Z'): BoardEvent =>
@@ -34,14 +26,21 @@ function run(events: readonly BoardEvent[], from: BoardState = initialBoardState
 }
 
 function statusOf(state: BoardState): StatusView {
-  const first = boardDownMessages(state, DISPLAY_LABELS)[0]?.payload;
+  const first = boardDownMessages(state, DISPLAY_LABELS, {})[0]?.payload;
   assert.ok(first !== undefined && first.type === 'status', 'the status message comes first');
   return first.status;
 }
 
+/** The board message's model, or null when no snapshot is shown. */
+function boardOf(state: BoardState): Extract<BoardDownMessage, { type: 'board' }>['model'] | null {
+  const m = boardDownMessages(state, DISPLAY_LABELS, {}).map(e => e.payload).find((p): p is Extract<BoardDownMessage, { type: 'board' }> => p.type === 'board');
+  return m === undefined ? null : m.model;
+}
+
+/** Every card on the board, column by column. */
 function itemsOf(state: BoardState): readonly string[] | null {
-  const m = boardDownMessages(state, DISPLAY_LABELS).map(e => e.payload).find((p): p is Extract<BoardDownMessage, { type: 'items' }> => p.type === 'items');
-  return m === undefined ? null : m.items.map(i => i.itemId);
+  const model = boardOf(state);
+  return model === null ? null : model.columns.flatMap(c => c.cards.map(k => k.itemId));
 }
 
 test('an answer to a superseded refresh is dropped and nothing from it is applied', () => {
@@ -73,18 +72,16 @@ test('empty, unavailable, failed and partial snapshots each give their own statu
   assert.equal(statusOf(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'timed-out', 'timed out')])).state, 'failed');
 
   const notice = { code: 'store-incomplete', message: 'The plans folder is missing.', itemIds: [], artifactIds: [], fileNames: [] } as unknown as DeliverySnapshot['notices'][number];
-  const partial = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A'), item('b', 'B', null)], { unreadableCount: 2, notices: [notice] }))]);
+  const partial = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A'), item('b', 'B', 'complete')], { unreadableCount: 2, notices: [notice] }))]);
   const pv = statusOf(partial);
   assert.equal(pv.state, 'ready');
   assert.match(pv.partialNotice ?? '', /2 records could not be read/);
   assert.match(pv.partialNotice ?? '', /The plans folder is missing\./);
-  assert.deepEqual(itemsOf(partial), ['a', 'b'], 'every readable item is listed');
-  const entries = boardDownMessages(partial, DISPLAY_LABELS).map(e => e.payload).find(p => p.type === 'items');
-  assert.deepEqual(entries?.type === 'items' ? entries.items.map(i => i.stageLabel) : null, [DISPLAY_LABELS.stage.scoped, null]);
-
-  const unknownStage = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('n', 'N', 'from-a-newer-daemon')]))]);
-  const unknownEntries = boardDownMessages(unknownStage, DISPLAY_LABELS).map(e => e.payload).find(p => p.type === 'items');
-  assert.deepEqual(unknownEntries?.type === 'items' ? unknownEntries.items.map(i => i.stageLabel) : null, ['from-a-newer-daemon'], 'an unlabelled stage shows its id');
+  assert.deepEqual(itemsOf(partial), ['a', 'b'], 'every readable item is on the board');
+  const columns = boardOf(partial)?.columns ?? [];
+  assert.deepEqual(columns.filter(c => c.total > 0).map(c => c.label), [DISPLAY_LABELS.stage.scoped, DISPLAY_LABELS.stage.complete]);
+  // s1's assertion that an unlabelled stage shows its raw id is retired: s2 leaves such an item off the board
+  // and logs it once per refresh (board-host.test.ts).
 
   const unreadableOnly = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([], { unreadableCount: 1 }))]);
   assert.equal(statusOf(unreadableOnly).state, 'ready', 'not empty: a record failed to load');

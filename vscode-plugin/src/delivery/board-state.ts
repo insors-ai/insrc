@@ -14,13 +14,14 @@
  * snapshot, so the board stays visible and is marked stale; a snapshot with no
  * items is 'empty' only when nothing failed to load. The selection survives a
  * refresh, except an item that is no longer in the board, which is cleared with
- * a notice. boardDownMessages turns state into the status message and s1's
- * interim item list. Pure and vscode-free.
+ * a notice. boardDownMessages turns state into the status message and the board
+ * view model (s2). Pure and vscode-free.
  */
 
 import type { DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
-import type { BoardDownMessage, BoardScope, BoardView, Density, Envelope, ItemListEntry, StatusView } from './board-protocol.js';
+import { buildBoardViewModel, type BoardPaging } from './board-model.js';
+import type { BoardDownMessage, BoardScope, BoardView, Density, Envelope, StatusView } from './board-protocol.js';
 import type { DisplayLabels } from './labels.js';
 
 export interface AppliedSnapshot {
@@ -150,19 +151,15 @@ function statusView(status: LoadStatus): StatusView {
   }
 }
 
-/** The status message first, then (when a snapshot is shown) every item of that snapshot in its own order. */
-export function boardDownMessages(state: BoardState, labels: DisplayLabels): readonly Envelope<BoardDownMessage>[] {
+/**
+ * The status message first, then (when a snapshot is shown) the board view model for it, the selection and the
+ * host's paging. The interim 'items' message is no longer sent (AMD-6a1315585c38c41c-1).
+ */
+export function boardDownMessages(state: BoardState, labels: DisplayLabels, paging: BoardPaging): readonly Envelope<BoardDownMessage>[] {
   const out: Envelope<BoardDownMessage>[] = [{ v: 1, payload: { type: 'status', status: statusView(state.status) } }];
   const shown = shownSnapshot(state.status);
   if (shown !== null) {
-    const items: ItemListEntry[] = shown.snapshot.items.map(i => ({
-      itemId: i.id,
-      kind: i.kind,
-      title: i.title,
-      // A stage this build has no label for (a newer daemon) shows its raw id rather than nothing.
-      stageLabel: i.stage === null ? null : labels.stage[i.stage.stage] ?? String(i.stage.stage),
-    }));
-    out.push({ v: 1, payload: { type: 'items', items } });
+    out.push({ v: 1, payload: { type: 'board', model: buildBoardViewModel(shown.snapshot, state.selection, paging, labels) } });
   }
   return out;
 }

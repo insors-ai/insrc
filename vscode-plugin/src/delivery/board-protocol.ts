@@ -10,13 +10,17 @@
  * the host resolves against its current snapshot, so a crafted message cannot
  * name a path. parseBoardUpMessage is the gate every inbound message passes.
  *
- * The 'items' down-message (HLD amendment AMD-6a1315585c38c41c-1) carries s1's
- * interim item list until s2's board view model replaces it. The other view
- * models are declared by the stories that own them (s2, s3, s4).
+ * The 'items' down-message (HLD amendment AMD-6a1315585c38c41c-1) carried s1's
+ * interim item list; s2's board view model (sc5) replaces it, and the variant
+ * stays declared but unsent. The 'show-more' up-message (AMD-6a1315585c38c41c-2)
+ * asks for the next page of one column. The other view models are declared by
+ * the stories that own them (s3, s4).
  */
 
 import type { Envelope } from '../chat/protocol.js';
+import type { DeliveryStage } from './delivery-contract.js';
 import { isObject } from './guards.js';
+import { STAGE_ORDER } from './labels.js';
 
 export type { Envelope };
 
@@ -35,8 +39,44 @@ export interface ItemListEntry {
   readonly stageLabel: string | null;
 }
 
-/** Declared by their owning stories: BoardViewModel (s2), EpicRollupViewModel and IssueViewModel (s3), ItemDetailsViewModel (s4). */
-export type BoardViewModel = unknown;
+/** One text-labelled signal on a card (sc5); colour comes from tone but the label always carries the meaning. */
+export interface BadgeView {
+  readonly kind: 'approval' | 'review' | 'validation' | 'conflict' | 'attention' | 'notice';
+  /** Text from sc4; always present. */
+  readonly label: string;
+  readonly tone: 'neutral' | 'warning' | 'danger' | 'success';
+}
+
+export interface CardView {
+  readonly itemId: string;
+  readonly kind: 'story' | 'issue';
+  readonly title: string;
+  readonly standalone: boolean;
+  readonly epicTitle: string | null;
+  readonly badges: readonly BadgeView[];
+  readonly needsAttention: boolean;
+  /** One line naming every badge, for screen readers. */
+  readonly accessibleLabel: string;
+}
+
+export interface ColumnView {
+  readonly stage: DeliveryStage;
+  readonly label: string;
+  /** Matches in the selection, including cards behind show-more. */
+  readonly total: number;
+  readonly cards: readonly CardView[];
+  readonly hiddenCount: number;
+}
+
+/** What the board view shows for a snapshot and selection (sc5, owned by s2). */
+export interface BoardViewModel {
+  readonly columns: readonly ColumnView[];
+  readonly totals: { readonly items: number; readonly needsAttention: number };
+  readonly scopeOptions: readonly { readonly epicItemId: string; readonly title: string }[];
+  readonly emptySelection: boolean;
+}
+
+/** Declared by their owning stories: EpicRollupViewModel and IssueViewModel (s3), ItemDetailsViewModel (s4). */
 export type EpicRollupViewModel = unknown;
 export type IssueViewModel = unknown;
 export type ItemDetailsViewModel = unknown;
@@ -66,7 +106,8 @@ export type BoardUpMessage =
   | { readonly type: 'select-item'; readonly itemId: string }
   | { readonly type: 'close-details' }
   | { readonly type: 'open-evidence'; readonly itemId: string; readonly artifactId: string }
-  | { readonly type: 'set-density'; readonly density: Density };
+  | { readonly type: 'set-density'; readonly density: Density }
+  | { readonly type: 'show-more'; readonly stage: DeliveryStage };
 
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
 
@@ -104,6 +145,10 @@ export function parseBoardUpMessage(raw: unknown): BoardUpMessage | null {
         : null;
     case 'set-density':
       return p['density'] === 'compact' || p['density'] === 'comfortable' ? { type: 'set-density', density: p['density'] } : null;
+    case 'show-more': {
+      const stage = STAGE_ORDER.find(st => st === p['stage']);
+      return stage === undefined ? null : { type: 'show-more', stage };
+    }
     default:
       return null;
   }

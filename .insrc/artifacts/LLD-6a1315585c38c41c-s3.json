@@ -1,0 +1,818 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791535429046-07qmp1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T08:49:20.201Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 331151,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1791485029499-gnjvqz",
+    "hldEffectiveHash": "d362668c917b0c5323a185b5ce5c8cf152d68ef62f2e324ee06d52d96319213a",
+    "hldAmendmentsApplied": [
+      "AMD-6a1315585c38c41c-1",
+      "AMD-6a1315585c38c41c-2"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "ac2: standalone stories and standalone issues are shown in their own group and are never counted towards any epic, by grouping every match whose epicOf is null into 'Not in an epic'.",
+          "evidence": "The rollup groups on s2's epicOf, not on the item's standalone flag. epicOf (board-model.ts:58-68) returns an epic for an issue through its correctsRef: 'if (target.kind === 'epic') return target; ... return targetParent?.kind === 'epic' ? targetParent : null'. The issue's standalone flag is set separately (graph.ts:228 'standalone: head.meta['standalone'] === true'), and issue artifacts are written with standalone: true (issue-artifact.test.ts:57, 132). So a standalone issue that corrects an epic's story has standalone=true, and the board's 'standalone' scope includes it (inScope: 'case 'standalone': return item.standalone'), and its card reads 'Standalone.' (cardOf). Yet the rollup puts it in that epic's group and issueCount, and the LLD's edge-case table says so explicitly. Under scope 'standalone', the rollup would then list epic groups. That breaks ac2 ('standalone issues ... not counted towards any epic'). [files: vscode-plugin/src/delivery/board-model.ts, src/workflow/delivery/graph.ts]",
+          "action": "Decide the rollup's grouping key against ac2: either group standalone-flagged items under the standalone group whatever epicOf says, or record in the LLD that an issue correcting epic work counts in that epic's issueCount even when flagged standalone, with a reason. Then add a test with a standalone issue that corrects an epic story.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac1, ac3, ac4 and ac5 are each designed: 'N of M stories complete' with stories grouped by stage; a followable parent link or an unresolved-parent notice; each fix story listed with its own stage; one shared selection across views.",
+          "evidence": "DEF.md:147-151 lists ac1-ac5. They map to §2.2 (completionLabel, stages in STAGE_ORDER), §2.3 (parent LinkView, parentNotice, fixStories) and §2.4 (selection.view chooses the view, and set-view keeps the selection). No non-goal, such as details or evidence (s4) or narrow layout or keyboard (s5), is built. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A fix story's parent is its issue, so s2's epicOf puts it in 'Not in an epic' on the board and in the rollup.",
+          "evidence": "graph.ts:315-316: '// A DEF's stories are its members; an issue's are its fix stories. parentId: headDraft?.id'. epicOf returns the parent only when parent.kind === 'epic' and follows correctsRef only for kind 'issue', so a fix story gets null. [files: src/workflow/delivery/graph.ts, vscode-plugin/src/delivery/board-model.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "apply() derives the messages before it keeps the new state, and a throw while handling an intent is logged through error() with the intent's type, leaving the view as it was.",
+          "evidence": "board-host.ts:152-157: 'const messages = boardDownMessages(next, ...); state = next; paging = nextPaging;'. Lines 280-285: 'try { handle(msg); } catch (err) { deps.logger.error(`delivery board: ${msg.type} could not be shown: ...`) }'. [files: vscode-plugin/src/delivery/board-host.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "selectMatches is new: the matching (scope, search, attention, known stage, epicOf, cardOf) is private inside buildBoardViewModel today, and epicOf is already exported.",
+          "evidence": "board-model.ts:179-195 inlines the match loop in buildBoardViewModel. inScope, matchesSearch and cardOf are module-private, and 'export function epicOf' is at :58. No selectMatches exists anywhere under vscode-plugin/src/delivery. [files: vscode-plugin/src/delivery/board-model.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The snapshot item exposes correctsRef.resolvedItemId, childIds, kind 'epic'|'story'|'task'|'issue' and notices with an 'unresolved-parent' code, so the issue view can read every link and notice without deriving it.",
+          "evidence": "types.ts:73 'DeliveryItemKind = 'epic' | 'story' | 'task' | 'issue''; :79 'resolvedItemId: string | null'; :94 childIds; :120 ''unresolved-parent' // an issue's corrected parent ... is not in the store'. delivery-contract.ts:59-61 DeliveryItemView picks childIds, correctsRef and notices. [files: src/workflow/delivery/types.ts, vscode-plugin/src/delivery/delivery-contract.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The change sites are complete: board-protocol.ts (types), board-state.ts (boardDownMessages builds by selection.view), board-host.ts (webview script tabs and rendering), board-model.ts (selectMatches) and the new board-views.ts.",
+          "evidence": "boardDownMessages is in board-state.ts:158-165 and posts only 'board' today. BOARD_WEBVIEW_SCRIPT is in board-host.ts:67, so the webview change lands in a listed file. set-view already reaches select() at board-host.ts:238. The §3.2 caller list omits board-views.ts, but the same section names it as a new module. [files: vscode-plugin/src/delivery/board-state.ts, vscode-plugin/src/delivery/board-host.ts]",
+          "action": "Optionally add board-views.ts to selectMatches' call-site list.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Replacing the 'unknown' placeholders for EpicRollupViewModel and IssueViewModel is an additive fill of messages sc3 already declares; nothing is stored or migrated.",
+          "evidence": "board-protocol.ts:79-81: '/** Declared by their owning stories: EpicRollupViewModel and IssueViewModel (s3) ... */ export type EpicRollupViewModel = unknown; export type IssueViewModel = unknown;'. Lines 89-90 already declare the 'epics' and 'issues' down-messages. Everything is host memory, and the webview ships in the same bundle (board-host.ts:67). [files: vscode-plugin/src/delivery/board-protocol.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s3 does not redesign sc5 (s2) or sc2/sc3 (s1): it only exports s2's existing matching step unchanged and fills s3-owned protocol types.",
+          "evidence": "The protocol comment at :79 assigns these types to s3. The board-model change is an extract-and-export with the postcondition that buildBoardViewModel's output is unchanged and s2's tests keep passing. No up-message or BoardSelection field is added: set-view and select-item already exist (board-protocol.ts:102, 131). [files: vscode-plugin/src/delivery/board-model.ts, vscode-plugin/src/delivery/board-protocol.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A follow link to an item a refresh has removed is detected because 'the host's selection-changed reduction already clears a selectedItemId that is not in the snapshot and sets selectionNotice (s1)'.",
+          "evidence": "reduceBoardState handles selection-changed as 'case 'selection-changed': return { ...state, selection: event.selection };' (board-state.ts:109-110), with no membership check. Only applySnapshot (:93-100) clears a missing selectedItemId and sets selectionNotice, and only when a snapshot arrives. board-host.ts:248 'case 'select-item': select({ ...sel, selectedItemId: msg.itemId })' passes any id through. So a stale link clicked after a refresh sets a selectedItemId that is not in the snapshot, with no notice. [files: vscode-plugin/src/delivery/board-state.ts, vscode-plugin/src/delivery/board-host.ts]",
+          "action": "Either validate the id in the host's select-item handler (as knownScope does for set-scope), clearing it with s1's notice, or restate the detection and response so they match what the code does. Add a test for a select-item naming an absent id.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Building a view throws on a malformed item: the previous state is kept, nothing is posted, and the error is logged with the intent's type.",
+          "evidence": "board-host.ts:152-157 builds the messages before assigning state, and :280-285 catches and logs '${msg.type} could not be shown'. On the refresh path, :197-211 turns the throw into a failed refresh over the previous board, which matches 'as for the board'. [files: vscode-plugin/src/delivery/board-host.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of ac1-ac5 maps to a named test, and the integration fixtures it relies on (openWith, lastBoard, the runScript fake DOM whose innerHTML throws, board-fixtures.ts) exist.",
+          "evidence": "§6's acceptance mapping names tests for ac1-ac5 and covers both parts of ac3 (link and notice) and ac5 (counts agree, and the selection and page are kept on switch). The fixtures exist: board-host.test.ts:79 'const lastBoard', :207-232 the fake element whose 'innerHTML' throws, :241 'function runScript', and __tests__/board-fixtures.ts. [files: vscode-plugin/src/delivery/__tests__/board-host.test.ts, vscode-plugin/src/delivery/__tests__/board-fixtures.ts]",
+          "action": "None. If the ac2 grouping is changed, extend the ac2 test with a standalone issue that corrects epic work.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 10,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-09T08:49:26.307Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "coverage-of-intent.1": {
+        "findingId": "coverage-of-intent.1",
+        "status": "resolved",
+        "note": "Applied: the rollup groups a standalone-flagged match under 'Not in an epic' whatever its epic is (EpicRollupViewModel postcondition), the edge cases record the standalone issue that corrects an epic story, and a fixture covers it.",
+        "resolvedAt": "2026-10-09T08:53:32.091Z"
+      },
+      "error-paths.1": {
+        "findingId": "error-paths.1",
+        "status": "resolved",
+        "note": "Applied: the host's select-item handler checks the id against the shown snapshot, as knownScope does, and ignores and logs an absent one (IssueViewModel postcondition and error case 2), with a board-host test.",
+        "resolvedAt": "2026-10-09T08:53:32.092Z"
+      }
+    },
+    "approvedAt": "2026-10-09T08:57:46.311Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "s3 adds two views beside the board: an epic rollup and an issue view. The rollup shows each epic with a completion count that names what it counts, such as '2 of 5 stories complete', and its matching cards grouped by stage. Work that belongs to no epic goes in its own 'Not in an epic' group and never counts towards an epic. The issue view lists every matching issue with the story or epic it corrects, which the reader can follow, or with its unresolved-parent notice, and lists each of its fix stories with its own stage. All three views read one shared match set, so switching views keeps the reader's search and scope and the counts agree with the board."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A host-side board model with a thin webview renderer (alternative a1). Inside the VS Code plugin, a delivery client wraps the daemon's workflow.delivery and workflow.deliveryEvidence methods over the shared IPC client. A board host, a vscode-free deps-injected factory like the existing panel hosts, owns the last successful snapshot, refresh sequencing, the load status and the reader's selection. Pure board-model functions turn snapshot plus selection into view models for the board, the epic rollup, the issue view and item details, using one display-label map for stages and signals. The webview is one CSP-locked inline script that renders those view models as text-only DOM and posts reader intents back in the plugin's versioned envelope. Evidence opens through a new additive open-by-artifact entry point on the existing review pane, or, for records the daemon marks evidence-read, as a read-only record the host reads through workflow.deliveryEvidence. A story's task dependencies and acceptance checks come from its PLAN, read through workflow.deliveryEvidence when its details open.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Delivery client",
+          "purpose": "The board's only path to delivery data: the two daemon read methods for the open workspace's repo, each bounded by a deadline, with failures typed so the host can tell an unavailable daemon, a failed or timed-out read and a missing workspace apart.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ],
+          "interfaceSketch": "import type { DeliverySnapshot, DeliveryEvidenceRecord } from './delivery-contract.js';\n\ntype DeliveryFailureKind = 'daemon-unavailable' | 'read-failed' | 'timed-out' | 'no-workspace';\n\ninterface DeliveryFailure {\n  readonly kind: DeliveryFailureKind;\n  /** The daemon's error text, or the socket error message. */\n  readonly message: string;\n}\n\ntype DeliveryResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly failure: DeliveryFailure };\n\n/** The client sends `repo` (the open workspace's root) in every DeliverySnapshotRequest and DeliveryEvidenceRequest,\n *  so the board never falls back to the daemon's INSRC_REPO; with no workspace folder it returns 'no-workspace'\n *  without calling the daemon. Each call races a deadline (snapshot 30 s, evidence 15 s) and returns 'timed-out'\n *  when it passes, because the shared IPC client sets no timeout of its own. */\ninterface DeliveryClientDeps {\n  readonly rpc: <T>(method: string, params?: unknown) => Promise<T>;\n  /** The workspace root, or null when no folder is open. */\n  readonly repo: string | null;\n  readonly deadlinesMs: { readonly snapshot: number; readonly evidence: number };\n}\n\ninterface DeliveryClient {\n  snapshot(): Promise<DeliveryResult<DeliverySnapshot>>;\n  evidence(artifactId: string): Promise<DeliveryResult<DeliveryEvidenceRecord>>;\n}"
+        },
+        {
+          "id": "sc2",
+          "name": "Board state: load status and selection",
+          "purpose": "What the host knows at any moment: the latest applied snapshot, why the board looks the way it does, and what the reader has chosen, kept across refreshes.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c10"
+          ],
+          "interfaceSketch": "import type { DeliverySnapshot } from './delivery-contract.js';\n\ntype LoadStatus =\n  | { readonly state: 'loading'; readonly last: AppliedSnapshot | null }\n  | { readonly state: 'ready'; readonly current: AppliedSnapshot }\n  | { readonly state: 'empty'; readonly current: AppliedSnapshot }\n  | { readonly state: 'unavailable'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string }\n  | { readonly state: 'failed'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string };\n\ninterface AppliedSnapshot {\n  readonly snapshot: DeliverySnapshot;\n  /** Monotonic request number the snapshot answered; older responses are dropped. */\n  readonly requestSeq: number;\n  /** True when the snapshot reports unreadable records or store-level notices. */\n  readonly partial: boolean;\n}\n\ntype BoardView = 'board' | 'epics' | 'issues';\ntype BoardScope = { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' };\ntype Density = 'compact' | 'comfortable';\n\ninterface BoardSelection {\n  readonly view: BoardView;\n  readonly scope: BoardScope;\n  readonly search: string;\n  readonly needsAttentionOnly: boolean;\n  readonly selectedItemId: string | null;\n  readonly density: Density;\n}\n\n/** 'unavailable' covers daemon-unavailable and no-workspace; 'failed' covers read-failed and timed-out. A request that\n *  times out ends its 'loading' state like any other failure. */\ninterface BoardState {\n  readonly status: LoadStatus;\n  readonly selection: BoardSelection;\n  /** Set when a refresh removed the selected item. */\n  readonly selectionNotice: string | null;\n}"
+        },
+        {
+          "id": "sc3",
+          "name": "Board webview message protocol",
+          "purpose": "The only traffic between the board's host and its webview: view models down, reader intents up, both in the plugin's versioned envelope.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "interface Envelope<T> { readonly v: 1; readonly payload: T }\n\n/** Host -> webview. Each message replaces what it names; nothing is merged. */\ntype BoardDownMessage =\n  | { readonly type: 'status'; readonly status: StatusView }\n  | { readonly type: 'board'; readonly model: BoardViewModel }\n  | { readonly type: 'epics'; readonly model: EpicRollupViewModel }\n  | { readonly type: 'issues'; readonly model: IssueViewModel }\n  | { readonly type: 'details'; readonly model: ItemDetailsViewModel | null }\n  | { readonly type: 'announce'; readonly text: string };\n\n/** Webview -> host. Ids only; the host resolves them against the current snapshot. */\ntype BoardUpMessage =\n  | { readonly type: 'ready' }\n  | { readonly type: 'refresh' }\n  | { readonly type: 'set-view'; readonly view: 'board' | 'epics' | 'issues' }\n  | { readonly type: 'set-scope'; readonly scope: { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' } }\n  | { readonly type: 'set-search'; readonly search: string }\n  | { readonly type: 'set-attention'; readonly on: boolean }\n  | { readonly type: 'select-item'; readonly itemId: string }\n  | { readonly type: 'close-details' }\n  | { readonly type: 'open-evidence'; readonly itemId: string; readonly artifactId: string }\n  | { readonly type: 'set-density'; readonly density: 'compact' | 'comfortable' };\n\ninterface StatusView {\n  readonly state: 'loading' | 'ready' | 'empty' | 'unavailable' | 'failed';\n  readonly takenAt: string | null;\n  readonly message: string | null;\n  readonly partialNotice: string | null;\n  readonly stale: boolean;\n}\n\n/** Declared by their owning stories: BoardViewModel (s2), EpicRollupViewModel and IssueViewModel (s3), ItemDetailsViewModel (s4). */\ntype BoardViewModel = unknown;\ntype EpicRollupViewModel = unknown;\ntype IssueViewModel = unknown;\ntype ItemDetailsViewModel = unknown;\n  // + BoardDownMessage 'items' variant: { readonly type: 'items'; readonly items: readonly { readonly itemId: string; readonly kind: 'epic' | 'story' | 'task' | 'issue'; readonly title: string | null; readonly stageLabel: string | null }[] };  // Lets s1 list every readable item (title, kind, stage label) before s2's BoardViewModel exists; s2 stops sending it once 'board' is posted. (amend:AMD-6a1315585c38c41c-1)\n  // + BoardUpMessage 'show-more' variant: { readonly type: 'show-more'; readonly stage: DeliveryStage };  // Lets the reader reveal the next page of one board column; the host validates the stage id and raises that column's visible limit (sc5 hiddenCount). (amend:AMD-6a1315585c38c41c-2)"
+        },
+        {
+          "id": "sc4",
+          "name": "Display labels",
+          "purpose": "One text label for every stage id and every signal the daemon publishes, so colour is never the only carrier and every view uses the same words.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c11"
+          ],
+          "interfaceSketch": "/** s1 extends the type mirror additively to re-export these six types from src/workflow/delivery/types.ts; tsconfig.delivery-contract.json keeps compiling them. */\nimport type { DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState, ReviewVerdict } from './delivery-contract.js';\n\ninterface DisplayLabels {\n  /** Exhaustive: a new stage id fails to compile. 'complete' -> 'Complete', 'ready-plan-approved' -> 'Ready · plan approved', ... */\n  readonly stage: Readonly<Record<DeliveryStage, string>>;\n  readonly attention: Readonly<Record<AttentionReason, string>>;\n  readonly notice: Readonly<Record<NoticeCode, string>>;\n  readonly taskResult: Readonly<Record<TaskResult, string>>;\n  readonly approval: Readonly<Record<ApprovalState, string>>;\n  readonly reviewVerdict: Readonly<Record<ReviewVerdict, string>>;\n  readonly unplanned: string;\n}"
+        },
+        {
+          "id": "sc5",
+          "name": "Board view model",
+          "purpose": "What the board view shows for a snapshot and selection: six columns in the daemon's order, the cards in each with their badges, and counts over the whole selection.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "import type { DeliveryStage } from './delivery-contract.js';\n\ninterface BadgeView {\n  readonly kind: 'approval' | 'review' | 'validation' | 'conflict' | 'attention' | 'notice';\n  /** Text from sc4; always present. */\n  readonly label: string;\n  readonly tone: 'neutral' | 'warning' | 'danger' | 'success';\n}\n\ninterface CardView {\n  readonly itemId: string;\n  readonly kind: 'story' | 'issue';\n  readonly title: string;\n  readonly standalone: boolean;\n  readonly epicTitle: string | null;\n  readonly badges: readonly BadgeView[];\n  readonly needsAttention: boolean;\n  /** One line naming every badge, for screen readers. */\n  readonly accessibleLabel: string;\n}\n\ninterface ColumnView {\n  readonly stage: DeliveryStage;\n  readonly label: string;\n  /** Matches in the selection, including cards behind show-more. */\n  readonly total: number;\n  readonly cards: readonly CardView[];\n  readonly hiddenCount: number;\n}\n\ninterface BoardViewModel {\n  readonly columns: readonly ColumnView[];\n  readonly totals: { readonly items: number; readonly needsAttention: number };\n  readonly scopeOptions: readonly { readonly epicItemId: string; readonly title: string }[];\n  readonly emptySelection: boolean;\n}"
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The epic rollup view model (per-epic completion counts that name their denominator, stories grouped by stage, a separate standalone group) and the issue view model (each issue with its fix stories as children and its parent relationship or unresolved-parent notice), both built from the same filtered selection as sc5, and their rendering. Its LLD maps every acceptance criterion to a named test."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The open-board command and its entry in the plugin's command list, the webview panel creation in an editor tab with its CSP and nonce, the refresh sequencing (request numbers and dropping superseded responses), the mapping of client failures to load states, and the status bar of the board (taken-at time, stale and partial notices, the empty, unavailable and failed messages). s1 also records the editor-tab versus sidebar placement check. It renders a minimal list of item titles until s2 supplies columns. s1 also extends vscode-plugin/src/delivery/delivery-contract.ts additively with the stage, attention, notice, task-result, approval and review-verdict types sc4 needs. Its LLD maps every acceptance criterion to a named test, including ac4 (an earlier response arriving after a later one is dropped, with fake out-of-order responses) and ac6 (repeated open and refresh against a temporary git repository leave the store, docs and git untouched)."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The pure functions that filter the snapshot by scope, search and attention, group the matches into the six columns in the daemon's order, count over the whole selection, page each column behind show-more, and build each card's badges and accessible label from the snapshot's published fields; and the board view's rendering in the webview script, text-only. Its LLD maps every acceptance criterion to a named test, including ac6 (a title and a notice containing markup and script render as literal text)."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6",
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Building item details from the snapshot item, reading the story's PLAN through the delivery client and caching it per snapshot, joining the plan's dependencies and acceptance checks to the snapshot's task results, fetching an evidence-read record and showing it as preformatted text, routing a review-view entry to the review pane's openArtifact, the change inside the review pane that implements openArtifact without altering its list, rendering or approval behaviour, and the details rendering. Its LLD maps every acceptance criterion to a named test, including ac5 for both paths: a review-view record opens through openArtifact, and when the review pane is unavailable or the record is evidence-read the record is shown read-only from workflow.deliveryEvidence; the review pane's existing tests run unchanged."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The narrow-pane layout (stage-grouped list), keyboard navigation and focus return, live-region announcements of selection and refresh results, the compact and comfortable density styles, and the 500-item performance fixture with its measured render and filter timings. Its LLD maps every acceptance criterion to a named test, with ac5 as the measured fixture."
+        }
+      ],
+      "rolloutPhase": "Phase C — epic rollup and issue view",
+      "nonFunctional": {
+        "performance": "After a snapshot arrives, the first board view model is built and rendered within one second for the 1,000-record, 500-item fixture; each filter or search change rebuilds and posts the view model and re-renders within 150 ms, measured best of three on the reference environment. Item details add at most one workflow.deliveryEvidence read per story per snapshot.",
+        "security": "The webview runs one nonce'd inline script under a restrictive Content-Security-Policy, as the plugin's other webviews do, and builds DOM with text nodes only; no artifact text is inserted as HTML. Up-messages carry only ids that the host resolves against the current snapshot, so a crafted message cannot name a path. The board calls only workflow.delivery and workflow.deliveryEvidence and has no route to any approval or write method; openArtifact shows non-pending artifacts without actions.",
+        "observability": "The host takes the plugin's ChatPanelLogger (warn and error). It logs failed refreshes and failed or timed-out evidence and PLAN reads through error(), and superseded responses through warn(), each with the request number, the item count where known and the elapsed time; successful refreshes are not logged, because the plugin has no info channel.",
+        "durability": "The board persists nothing to disk or workspace state; the selection lives for the life of the panel and is kept across refreshes, and the last successful snapshot is kept in memory until the panel closes."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "buildBoardViewModel",
+          "signature": "interface MatchedCard {\n  readonly item: DeliveryItemView;\n  readonly epic: DeliveryItemView | null;\n  readonly stage: DeliveryStage;\n  readonly card: CardView;\n}\nfunction selectMatches(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): readonly MatchedCard[]",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "DeliverySnapshot",
+              "purpose": "The shown snapshot.",
+              "optional": false
+            },
+            {
+              "name": "selection",
+              "type": "BoardSelection",
+              "purpose": "Scope, search and needsAttentionOnly.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "sc4 text for each card.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly MatchedCard[]",
+            "meaning": "Every story and issue with a known stage that matches the selection, in snapshot order, each with its epic (s2's epicOf) and its CardView."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "buildBoardViewModel builds from selectMatches and its output is unchanged; s2's board-model tests keep passing.",
+            "The board, the rollup and the issue view all call selectMatches with the same arguments, so they count the same matches."
+          ]
+        },
+        {
+          "name": "EpicRollupViewModel",
+          "signature": "interface StageGroupView { readonly stage: DeliveryStage; readonly label: string; readonly cards: readonly CardView[] }\ninterface EpicGroupView {\n  /** null for the 'Not in an epic' group. */\n  readonly epicItemId: string | null;\n  readonly title: string;\n  /** e.g. '2 of 5 stories complete'; names its denominator. */\n  readonly completionLabel: string;\n  readonly storiesComplete: number;\n  readonly storiesTotal: number;\n  readonly issueCount: number;\n  /** Matching cards in this group. */\n  readonly total: number;\n  /** Non-empty stages only, in STAGE_ORDER. */\n  readonly stages: readonly StageGroupView[];\n}\ninterface EpicRollupViewModel {\n  readonly epics: readonly EpicGroupView[];\n  readonly notInEpic: EpicGroupView;\n  readonly totals: { readonly items: number; readonly needsAttention: number };\n  readonly selectedItemId: string | null;\n  readonly emptySelection: boolean;\n}\nfunction buildEpicRollup(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): EpicRollupViewModel",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "DeliverySnapshot",
+              "purpose": "The shown snapshot.",
+              "optional": false
+            },
+            {
+              "name": "selection",
+              "type": "BoardSelection",
+              "purpose": "The board's selection; the rollup applies the same scope, search and attention filter.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "Stage labels.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "EpicRollupViewModel",
+            "meaning": "One group per epic in snapshot order, then the 'Not in an epic' group of matches with no epic, with totals that equal the board's totals for the same selection."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Every match from selectMatches is in exactly one group. A match flagged standalone goes to notInEpic whatever its epic is, so standalone work never counts towards an epic (ac2); any other match goes to its epic's group, or to notInEpic when its epic is null. totals.items is the number of matches, the same as the board's totals.items.",
+            "storiesTotal counts a group's matching stories, storiesComplete counts those whose stage is 'complete', and completionLabel reads 'N of M stories complete' ('1 of 1 story complete' when M is 1). Issues are counted in issueCount and never in the story counts.",
+            "An epic is listed when it has a match, when it is the scoped epic, or when nothing narrows the selection (scope all, empty search, attention off); a listed epic with no matches shows '0 of 0 stories complete'.",
+            "Within a group, cards keep snapshot order inside each stage, and stages follow STAGE_ORDER.",
+            "emptySelection is true when the snapshot has cards but none match; selectedItemId echoes the selection."
+          ]
+        },
+        {
+          "name": "IssueViewModel",
+          "signature": "interface LinkView {\n  readonly itemId: string;\n  readonly kind: 'epic' | 'story' | 'task' | 'issue';\n  readonly title: string;\n  /** null for an epic or an item with no stage. */\n  readonly stageLabel: string | null;\n}\ninterface IssueEntryView {\n  readonly card: CardView;\n  readonly stageLabel: string;\n  /** The story or epic the issue corrects; null when it names none or cannot be resolved. */\n  readonly parent: LinkView | null;\n  /** The issue's unresolved-parent notice message, when it has one. */\n  readonly parentNotice: string | null;\n  /** Each fix story among the issue's children, in childIds order. */\n  readonly fixStories: readonly LinkView[];\n}\ninterface IssueViewModel {\n  readonly issues: readonly IssueEntryView[];\n  readonly totals: { readonly issues: number; readonly needsAttention: number };\n  readonly selectedItemId: string | null;\n  readonly emptySelection: boolean;\n}\nfunction buildIssueView(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): IssueViewModel",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "DeliverySnapshot",
+              "purpose": "The shown snapshot.",
+              "optional": false
+            },
+            {
+              "name": "selection",
+              "type": "BoardSelection",
+              "purpose": "The same selection the board uses.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "Stage labels.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "IssueViewModel",
+            "meaning": "Every matching issue in snapshot order with its parent link or notice and its fix stories."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "issues are exactly the issue matches of selectMatches, so totals.issues equals the number of issue cards on the board for the same selection.",
+            "parent is the snapshot item named by correctsRef.resolvedItemId; when it is null or missing from the snapshot, parent is null and parentNotice carries the issue's unresolved-parent notice message if it has one.",
+            "fixStories lists every child of the issue whose kind is story, each with its own stage label, whether or not it matches the search; a child id missing from the snapshot is skipped.",
+            "Links carry ids only; the webview follows one by posting the existing select-item intent.",
+            "A follow link the host receives as select-item is checked against the shown snapshot, as set-scope's epic id is; an id that is not on the board is ignored and logged once through warn(), and the selection is unchanged."
+          ]
+        },
+        {
+          "name": "boardDownMessages",
+          "signature": "function boardDownMessages(state: BoardState, labels: DisplayLabels, paging: BoardPaging): readonly Envelope<BoardDownMessage>[]",
+          "parameters": [
+            {
+              "name": "state",
+              "type": "BoardState",
+              "purpose": "sc2's state; selection.view picks the view.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "sc4 text.",
+              "optional": false
+            },
+            {
+              "name": "paging",
+              "type": "BoardPaging",
+              "purpose": "Used by the board view only.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly Envelope<BoardDownMessage>[]",
+            "meaning": "The status message, then, when a snapshot is shown, the 'board', 'epics' or 'issues' message for selection.view."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Only the selected view's model is built and posted.",
+            "A set-view keeps scope, search, attention and paging, so switching back to the board shows the same page."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "vscode-plugin/src/delivery/board-protocol.ts EpicRollupViewModel and IssueViewModel",
+        "change": "field-modify",
+        "details": "Both change from unknown to the interfaces above, declared beside BoardViewModel with StageGroupView, EpicGroupView, LinkView and IssueEntryView.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-protocol.ts",
+          "vscode-plugin/src/delivery/board-state.ts",
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "vscode-plugin/src/delivery/board-model.ts selectMatches",
+        "change": "new",
+        "details": "The matching step inside buildBoardViewModel is exported as selectMatches, with no change in behaviour; board-views.ts (new) holds buildEpicRollup and buildIssueView.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-model.ts",
+          "vscode-plugin/src/delivery/__tests__/board-model.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Reads selection.view to choose the view, and scope, search, needsAttentionOnly and selectedItemId to build it; set-view and select-item keep going through selection-changed."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Fills the declared 'epics' and 'issues' down-messages and uses the existing set-view and select-item up-messages; no amendment."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Stage labels for groups and links; notice text comes from the snapshot."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Reuses CardView for every listed card and the board's matching (through selectMatches), so the views agree with the board."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "No new client call."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An issue's correctsRef names an item id that is not in the snapshot (the daemon resolved it, then a later record removed it, or the snapshot is partial).",
+          "detection": "buildIssueView looks correctsRef.resolvedItemId up in the snapshot's id index and finds nothing.",
+          "response": "parent is null and parentNotice carries the issue's unresolved-parent notice if it has one; otherwise the entry reads 'Parent not on the board' from a fixed text, so the reader still sees that a link was recorded.",
+          "userImpact": "The issue is listed with a notice instead of a link.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A follow link names an item that is not on the board, for example one a refresh removed after the view was drawn.",
+          "detection": "The host's select-item handler looks the id up in the shown snapshot before dispatching selection-changed, as knownScope does for set-scope.",
+          "response": "The intent is ignored and logged once through warn(); the selection and the view are unchanged.",
+          "userImpact": "Nothing happens on that click; the redrawn view no longer shows the link.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Building the rollup or the issue view throws on a malformed item that got past the client's shallow checks.",
+          "detection": "apply() in the host derives the messages before keeping the new state (s2), so the throw surfaces inside it.",
+          "response": "The previous state is kept, nothing is posted and the error is logged through error() with the intent's type, as for the board.",
+          "userImpact": "The view stays as it was.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An epic with no stories in the snapshot, nothing narrowing the selection.",
+          "expected": "The epic is listed with '0 of 0 stories complete' and no stage groups."
+        },
+        {
+          "input": "An epic whose only story is complete.",
+          "expected": "'1 of 1 story complete'."
+        },
+        {
+          "input": "A search that matches only one story of an epic.",
+          "expected": "The epic is listed with '0 of 1 stories complete' or '1 of 1 story complete' for that story alone; epics with no match are not listed."
+        },
+        {
+          "input": "An epic scope whose epic has no matches after a search.",
+          "expected": "That epic is still listed, with '0 of 0 stories complete', so the reader sees the scope is active."
+        },
+        {
+          "input": "An issue that corrects an epic rather than a story.",
+          "expected": "Its parent link names the epic, with no stage label. In the rollup the issue counts in that epic's issueCount only when it is not flagged standalone; the daemon writes issues as standalone today (graph.ts:228), so it normally sits in 'Not in an epic'."
+        },
+        {
+          "input": "An issue with no fix stories yet.",
+          "expected": "Listed with an empty fix-story list, which the webview shows as 'No fix stories yet'."
+        },
+        {
+          "input": "A fix story whose own search text does not match.",
+          "expected": "Still listed under its matching issue, with its stage."
+        },
+        {
+          "input": "A fix story of an issue that belongs to an epic.",
+          "expected": "On the board and in the rollup it sits in 'Not in an epic', because s2's epicOf follows a story's parent epic only and a fix story's parent is its issue; under its issue in the issue view it is listed as a child."
+        },
+        {
+          "input": "An issue with no correctsRef at all (it names no parent).",
+          "expected": "parent and parentNotice are both null; the entry shows no parent line."
+        },
+        {
+          "input": "A standalone issue that corrects a story in an epic.",
+          "expected": "In the issue view its parent link names the story. In the rollup it is in 'Not in an epic', never in that epic's counts. On the board, epic scope still includes it through s2's epicOf, and the totals agree because every match is in exactly one rollup group."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The board, the rollup and the issue view count the same matches for the same selection.",
+          "source": "c15"
+        },
+        {
+          "text": "Stage, parent links and notices are read from the snapshot; nothing is derived.",
+          "source": "c5"
+        },
+        {
+          "text": "Titles, notices and link text are inserted with textContent only.",
+          "source": "c7"
+        },
+        {
+          "text": "Switching views or following a link changes only host memory.",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx: (cd vscode-plugin && npx tsx --test 'src/**/__tests__/*.test.ts'); typecheck with npx tsc -p vscode-plugin",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The pure rollup and issue-view builders and the shared match step: grouping, completion counts, the not-in-an-epic group, parent links and notices, fix stories, and agreement with the board.",
+          "subjects": [
+            "selectMatches",
+            "buildEpicRollup",
+            "buildIssueView"
+          ],
+          "fixturesNeeded": [
+            "board-fixtures.ts snapshots with two epics (one with five stories, two complete), standalone stories and issues, an issue correcting a story, an issue correcting an epic, an issue with an unresolved parent and its notice, and an issue with two fix stories at different stages",
+            "A standalone issue that corrects a story in an epic"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The host and webview: set-view posts the selected view's model with the selection kept, and the webview renders the rollup and issue view as text, with view tabs and follow links that post only set-view and select-item.",
+          "subjects": [
+            "boardDownMessages",
+            "createDeliveryBoardHost",
+            "BOARD_WEBVIEW_SCRIPT"
+          ],
+          "fixturesNeeded": [
+            "board-host.test.ts's openWith, lastBoard and the runScript fake DOM whose innerHTML throws"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "board-views.test.ts: 'an epic with five stories, two complete, reads 2 of 5 stories complete and groups its stories by stage'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "board-views.test.ts: 'standalone stories and issues sit in their own group and count towards no epic'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "board-views.test.ts: 'an issue links to the story it corrects, and an issue with an unresolved parent is listed with its notice'",
+            "board-host.test.ts: 'the epic rollup and issue view render as text, and their tabs and links post only set-view and select-item'",
+            "board-host.test.ts: 'a follow link naming an item that is not on the board is ignored and logged'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "board-views.test.ts: 'an issue with two fix stories lists each as its own child with its own stage'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "board-views.test.ts: 'with a search and an epic scope, the rollup and issue view count the same matches as the board'",
+            "board-host.test.ts: 'switching views posts the selected view with the same selection, and switching back keeps the board page'"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One shared match step feeding three pure view builders, with the selected view posted",
+        "oneLineSummary": "board-model.ts exposes selectMatches(snapshot, selection); buildBoardViewModel, buildEpicRollup and buildIssueView all build from it, and boardDownMessages posts only the model of selection.view.",
+        "approach": "Lift s2's private matching (scope, search, attention, known stage, epicOf, cardOf) into one exported selectMatches that returns each matching story or issue with its epic and its CardView, in snapshot order. buildBoardViewModel keeps its output and builds from it. A new pure module board-views.ts adds buildEpicRollup (one group per epic in snapshot order, with its matching cards grouped by STAGE_ORDER and 'N of M stories complete' naming the denominator, plus one standalone group for matches with no epic) and buildIssueView (each matching issue with its parent relationship: the resolved story or epic with its id, title and stage label, or the issue's unresolved-parent notice; and each fix story among its children as a distinct entry with its own stage). EpicRollupViewModel and IssueViewModel replace unknown in board-protocol.ts. boardDownMessages posts status and then the board, the epics or the issues message by selection.view, so switching views keeps the same selection. A parent or fix story is followed with the existing select-item intent. The webview adds Board, Epics and Issues view tabs that post set-view, and renders both new views as text.",
+        "pros": [
+          "Every view counts the same match set, so ac5's counts agree by construction rather than by parallel code.",
+          "No protocol amendment: set-view, select-item and the 'epics' and 'issues' down-messages already exist in sc3.",
+          "Only the shown view is built and posted per change, which keeps within the 150 ms filter budget."
+        ],
+        "cons": [
+          "Touches s2's board-model.ts to export the match step (a refactor with no behaviour change, guarded by s2's tests).",
+          "Following a link only selects the item until s4 adds details; s3 shows the selection, but not the details."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Build the rollup and issue view from the board's view model",
+        "oneLineSummary": "buildEpicRollup and buildIssueView take the BoardViewModel's columns as input and regroup its cards.",
+        "approach": "Leave board-model.ts as is and write the two new builders over BoardViewModel: regroup each column's cards by their epicTitle for the rollup, and list the issue cards for the issue view, looking parents and fix stories up in the snapshot by id.",
+        "pros": [
+          "No change to s2's module."
+        ],
+        "cons": [
+          "The board model pages its columns, so cards behind show-more are missing and the rollup counts would be wrong (ac1, ac5).",
+          "CardView carries an epic title, not an epic id, so two epics with the same title would merge.",
+          "Parents and fix stories still need the snapshot, so the input is split across two shapes."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Counts would miss cards behind show-more, and epics with the same title would merge."
+      },
+      {
+        "id": "a3",
+        "name": "Post all three view models on every change",
+        "oneLineSummary": "boardDownMessages always posts board, epics and issues; the webview shows the one selection.view names.",
+        "approach": "Use a1's shared match step and builders, but post all three models after every dispatch and let the webview pick which to display, so a view switch needs no new message.",
+        "pros": [
+          "A view switch is instant in the webview."
+        ],
+        "cons": [
+          "Every keystroke in search builds and posts three models, about three times the work, against the 150 ms budget (k7).",
+          "The webview, not the host, decides what is shown, which moves view logic out of the host model the HLD fixes (a1)."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Correct, but triples the work per change and moves view choice into the webview."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md",
+      "quotedText": "Fix sc7 in this HLD, version it with schemaVersion, and allow only additive optional fields after approval; any breaking change goes through an HLD amendment before E2 consumes it."
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Refresh strategy: manual refresh is sufficient for the first increment; confirm whether existing daemon events can support later automatic updates."
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "docs/plans/delivery-board-epics.md",
+      "quotedText": "| Completion wording | Keep \"Complete\"; test it in E2's usability session | E2 S2 |"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "DEF-6a131558 k2: the board displays the daemon's facts and does not derive them"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "FR-09Keep the MVP read-only: all navigation and filtering leave artifacts, approvals, code, and Git state unchanged."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "DEF-6a131558 k4: artifact text is rendered as data"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "DEF-6a131558 k9: the same snapshot and filters always produce the same order and counts"
+    },
+    {
+      "id": "c21",
+      "kind": "analyze-bundle",
+      "ref": "s1: src/workflow/delivery/graph.ts issue fix stories, correctsRef, unresolved-parent"
+    },
+    {
+      "id": "c22",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/delivery/ (board-model, board-state, board-host, board-protocol)"
+    },
+    {
+      "id": "c23",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/delivery/__tests__/"
+    }
+  ]
+}

@@ -593,9 +593,12 @@ test('t6 (contract): StructuredRenderer is still exported and now implemented in
 
 const DOC_MD = ['# Title', '', 'prose', '', '## Section two', '', '### Deeper'].join('\n');
 
-async function openAndGetContent(markdown: string): Promise<Record<string, unknown>> {
+/** Open a document whose client returns `content`, and give back the posted payload.
+ *  A markdown string is served as `{ markdown, openQuestions: [], blocked: false }`. */
+async function openWithContent(content: DocsContent | string): Promise<Record<string, unknown>> {
+  const served: DocsContent = typeof content === 'string' ? { markdown: content, openQuestions: [], blocked: false } : content;
   const fc = fakeChannel();
-  const { client } = fakeClient({ content: () => ({ markdown, openQuestions: [], blocked: false }) });
+  const { client } = fakeClient({ content: () => served });
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
@@ -607,8 +610,17 @@ async function openAndGetContent(markdown: string): Promise<Record<string, unkno
   return msg!.payload;
 }
 
+test('there is one document opener, and a markdown string and the same markdown as DocsContent open to identical payloads', async () => {
+  const src = readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  assert.equal(src.split('openAnd' + 'GetContent').length - 1, 0, 'the second opener is gone');
+  assert.equal(src.split('async function ' + 'openWithContent(').length - 1, 1, 'exactly one opener is defined');
+  const fromString = await openWithContent(DOC_MD);
+  const fromContent = await openWithContent({ markdown: DOC_MD, openQuestions: [], blocked: false });
+  assert.deepEqual(fromString, fromContent);
+});
+
 test('t5: opening a document posts docs-content carrying BOTH the markdown and a sections index derived from it', async () => {
-  const payload = await openAndGetContent(DOC_MD);
+  const payload = await openWithContent(DOC_MD);
 
   assert.equal(payload['markdown'], DOC_MD, 'the markdown is on the message');
   const sections = payload['sections'] as { anchors: Array<{ slug: string; title: string; level: number }> };
@@ -624,7 +636,7 @@ test('t5: the index is derived from THE MARKDOWN ON THAT MESSAGE — the two can
   // Open two different documents and check each message is internally consistent:
   // deriving the index from the message's own markdown reproduces the posted index.
   for (const md of [DOC_MD, ['# Other doc', '## Only section'].join('\n')]) {
-    const payload = await openAndGetContent(md);
+    const payload = await openWithContent(md);
     const posted = payload['sections'] as { anchors: unknown[] };
     const rederived = deriveSectionIndex(String(payload['markdown']));
     assert.deepEqual(posted, rederived, 'the posted index is exactly what this message’s markdown yields');
@@ -632,7 +644,7 @@ test('t5: the index is derived from THE MARKDOWN ON THAT MESSAGE — the two can
 });
 
 test('t5: a document with NO headings posts an empty anchors array', async () => {
-  const payload = await openAndGetContent('just prose, no headings at all\n');
+  const payload = await openWithContent('just prose, no headings at all\n');
   assert.deepEqual((payload['sections'] as { anchors: unknown[] }).anchors, [],
     'empty, so t6 omits the chooser entirely rather than rendering an empty control');
 });
@@ -653,7 +665,7 @@ test('t5: a degraded index posts degradation and does NOT set blocked; a fetch f
     'a fetch failure claims NO render degradation — the reviewer saw nothing, which is a different state');
 
   // (b) A successful open: not blocked, and no degradation either.
-  const ok = await openAndGetContent(DOC_MD);
+  const ok = await openWithContent(DOC_MD);
   assert.equal(ok['blocked'], false);
   assert.equal(ok['degradation'], undefined, 'a clean render posts no degradation at all');
 });
@@ -676,7 +688,7 @@ test('t5: source-scan — the index rides the EXISTING docs-content variant; no 
 });
 
 test('t5: the pre-existing SIX members of the docs-content variant keep their meaning', async () => {
-  const payload = await openAndGetContent(DOC_MD);
+  const payload = await openWithContent(DOC_MD);
   assert.equal(payload['type'], 'docs-content');
   assert.equal(payload['artifactId'], 'LLD-abc-s7');
   assert.equal(payload['markdown'], DOC_MD);
@@ -922,21 +934,6 @@ const FR_RECORD = {
     { id: 'E20260929bfe98ff7:S002:FR002', statement: 'Each shows its identifier, unchanged.', scope: 'item' as const, itemRef: 's2' },
   ],
 };
-
-/** Open a document whose client returns `content`, and give back the posted payload. */
-async function openWithContent(content: DocsContent): Promise<Record<string, unknown>> {
-  const fc = fakeChannel();
-  const { client } = fakeClient({ content: () => content });
-  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
-  host.open();
-  await tick();
-  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
-  await tick();
-  const msg = fc.posted.filter((p) => p.payload.type === 'docs-content')
-    .find((p) => p.payload.artifactId === 'LLD-abc-s7');
-  assert.ok(msg, 'posted docs-content for the opened artifact');
-  return msg!.payload;
-}
 
 test('t1: a client returning a record posts docs-content carrying functionalDefinition as the SAME reference, unreshaped', async () => {
   const payload = await openWithContent({

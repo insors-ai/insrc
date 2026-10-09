@@ -1,0 +1,1076 @@
+ok 1 - buildCompleteness computes complete and rejects contradictory facts with RangeError
+ok 2 - buildCompleteness accepts several reached limits and a per-group limit below the returned count
+ok 3 - a limit on a result's sources is not compared with the returned count
+ok 4 - an overall limit is compared with the returned count even beside per-group limits
+ok 5 - deriveAnswerReport: all complete, one incomplete, one failed, and a source with neither is rejected
+ok 6 - renderCompletenessLine names every incomplete and failed source and repeats a shared basis note once
+ok 7 - the completeness line is one line even when a reason, a source id or a note spans lines; the report keeps them as given
+ok 8 - empty query returns []
+ok 9 - empty closureRepos returns []
+ok 10 - no doc entities in closure returns []
+ok 11 - keyword pass finds docs containing query terms
+ok 12 - keyword pass ignores stopwords + short tokens
+ok 13 - non-doc entities are excluded from results
+ok 14 - results ordered by score desc
+ok 15 - dedup collapses same (file, heading) preferring section
+ok 16 - filenameHint boosts matching docs
+ok 17 - path-hint boost is MULTIPLICATIVE (proportional lift, not additive)
+ok 18 - keyword pass counts ALL query terms, not just first 6
+ok 19 - short precise query is not punished by the divisor
+ok 20 - maxResults caps returned length
+ok 21 - minScore filter drops low-scoring results
+ok 22 - kinds allowlist restricts to prose-only when configured
+ok 23 - previewChars caps the body preview
+ok 24 - previewChars=0 omits preview
+ok 25 - measureItem returns the file's length for a document and the length of its lines for a section, and says when the indexer cut the stored body
+ok 26 - measureItem does not establish a length for a changed or a missing file (mutation: skip the hash comparison)
+ok 27 - indexerFileHash is the hash the indexer records on a file entity
+ok 28 - the summariser reads its cut from the exported constant and no file under src/indexer or src/db changes
+ok 29 - every schema handed to a model is valid under JSON Schema draft 2020-12
+ok 30 - a schema's identifier has no fragment and still carries the schema's version
+ok 31 - a failed model call for planning, classification or picking the size names the call and no provider
+ok 32 - classifier.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 33 - classifier: code-dominant workspace + code question -> target=code # SKIP
+ok 34 - classifier: data-dominant workspace + data question -> target=data # SKIP
+ok 35 - classifier: infra-dominant workspace + infra question -> target=infra # SKIP
+ok 36 - classifier: mixed workspace + broad question -> target=generic OR a primary single target # SKIP
+ok 37 - classifier: a pointed question lands with focused=true + non-empty focus # SKIP
+ok 38 - classifier: emitted scopeRef.value matches a path the user surfaced # SKIP
+ok 39 - CLASSIFIER_SCHEMA_VERSION is a positive integer
+ok 40 - TARGET_ENUM enumerates the documented five targets
+ok 41 - SCOPE_BUCKET_ENUM enumerates the five buckets in size order
+ok 42 - SCOPE_REF_KIND_ENUM enumerates the seven kinds
+ok 43 - CLASSIFIED_INTENT_SCHEMA declares every required field
+ok 44 - validateIntentShape accepts a minimal valid intent
+ok 45 - validateIntentShape accepts a focused intent with focus field
+ok 46 - validateIntentShape rejects an intent missing 'target'
+ok 47 - validateIntentShape rejects an intent missing 'scope'
+ok 48 - validateIntentShape rejects an intent missing 'focused'
+ok 49 - validateIntentShape rejects an intent missing 'scopeRef'
+ok 50 - validateIntentShape rejects an intent missing 'reasoning'
+ok 51 - validateIntentShape rejects target outside the enum
+ok 52 - validateIntentShape rejects scope outside the enum
+ok 53 - validateIntentShape rejects scopeRef.kind outside the enum
+ok 54 - validateIntentShape rejects unknown top-level properties
+ok 55 - validateIntentShape rejects unknown scopeRef properties
+ok 56 - validateIntentShape rejects boolean target
+ok 57 - validateIntentShape rejects string focused
+ok 58 - validateIntentShape rejects empty-string scopeRef.value
+ok 59 - validateIntentShape rejects empty-string reasoning
+ok 60 - validateIntentShape accepts focus only when minLength >= 1
+ok 61 - the matrix covers every pairing: five kinds of source by seven kinds of scope
+ok 62 - isKindCompatibleWithTarget: target=code, kind=repo -> true
+ok 63 - isKindCompatibleWithTarget: target=code, kind=module -> true
+ok 64 - isKindCompatibleWithTarget: target=code, kind=file -> true
+ok 65 - isKindCompatibleWithTarget: target=code, kind=symbol -> true
+ok 66 - isKindCompatibleWithTarget: target=code, kind=connection -> false
+ok 67 - isKindCompatibleWithTarget: target=code, kind=manifest-dir -> true
+ok 68 - isKindCompatibleWithTarget: target=code, kind=workspace -> true
+ok 69 - isKindCompatibleWithTarget: target=data, kind=repo -> true
+ok 70 - isKindCompatibleWithTarget: target=data, kind=module -> false
+ok 71 - isKindCompatibleWithTarget: target=data, kind=file -> false
+ok 72 - isKindCompatibleWithTarget: target=data, kind=symbol -> false
+ok 73 - isKindCompatibleWithTarget: target=data, kind=connection -> true
+ok 74 - isKindCompatibleWithTarget: target=data, kind=manifest-dir -> true
+ok 75 - isKindCompatibleWithTarget: target=data, kind=workspace -> true
+ok 76 - isKindCompatibleWithTarget: target=infra, kind=repo -> true
+ok 77 - isKindCompatibleWithTarget: target=infra, kind=module -> false
+ok 78 - isKindCompatibleWithTarget: target=infra, kind=file -> false
+ok 79 - isKindCompatibleWithTarget: target=infra, kind=symbol -> false
+ok 80 - isKindCompatibleWithTarget: target=infra, kind=connection -> false
+ok 81 - isKindCompatibleWithTarget: target=infra, kind=manifest-dir -> true
+ok 82 - isKindCompatibleWithTarget: target=infra, kind=workspace -> true
+ok 83 - isKindCompatibleWithTarget: target=docs, kind=repo -> true
+ok 84 - isKindCompatibleWithTarget: target=docs, kind=module -> true
+ok 85 - isKindCompatibleWithTarget: target=docs, kind=file -> true
+ok 86 - isKindCompatibleWithTarget: target=docs, kind=symbol -> false
+ok 87 - isKindCompatibleWithTarget: target=docs, kind=connection -> false
+ok 88 - isKindCompatibleWithTarget: target=docs, kind=manifest-dir -> false
+ok 89 - isKindCompatibleWithTarget: target=docs, kind=workspace -> true
+ok 90 - isKindCompatibleWithTarget: target=generic, kind=repo -> true
+ok 91 - isKindCompatibleWithTarget: target=generic, kind=module -> true
+ok 92 - isKindCompatibleWithTarget: target=generic, kind=file -> true
+ok 93 - isKindCompatibleWithTarget: target=generic, kind=symbol -> true
+ok 94 - isKindCompatibleWithTarget: target=generic, kind=connection -> true
+ok 95 - isKindCompatibleWithTarget: target=generic, kind=manifest-dir -> true
+ok 96 - isKindCompatibleWithTarget: target=generic, kind=workspace -> true
+ok 97 - validateIntentSemantics: code+connection -> scope-ref-kind-target-mismatch
+ok 98 - validateIntentSemantics: data+file -> scope-ref-kind-target-mismatch
+ok 99 - validateIntentSemantics: infra+module -> scope-ref-kind-target-mismatch
+ok 100 - validateIntentSemantics: pairings the plan tasks accept are accepted (infra+repo, data+repo, data+manifest-dir, code+manifest-dir)
+ok 101 - validator symbol form: passes, no '\#', file part not a file
+ok 102 - classifier prompt's pairing list equals the exported table
+ok 103 - validateIntentSemantics: generic+any-kind -> no kind/target failure
+ok 104 - validateIntentSemantics: missing path -> scope-ref-unresolved
+ok 105 - validateIntentSemantics: kind=file but value is a directory -> scope-ref-unresolved
+ok 106 - validateIntentSemantics: kind=repo but value is a file -> scope-ref-unresolved
+ok 107 - validateIntentSemantics: kind=workspace + real dir -> pass
+ok 108 - validateIntentSemantics: kind=file + real file -> pass
+ok 109 - validateIntentSemantics: kind=manifest-dir + real dir + infra target -> pass
+ok 110 - validateIntentSemantics: kind=connection + registered id -> pass
+ok 111 - validateIntentSemantics: kind=connection + unknown id -> scope-ref-unresolved
+ok 112 - validateIntentSemantics: kind=connection + no callback -> pass (cannot verify)
+ok 113 - validateAnalyzePrompts: every PROMPT_PATHS entry is present + non-empty
+ok 114 - validateAnalyzePrompts: throws when a prompt file is missing
+ok 115 - validateAnalyzePrompts: throws when a prompt file is empty
+ok 116 - validateAnalyzePrompts: collects ALL failures in one error
+ok 117 - AnalyzePromptValidationError preserves the failures array on the instance
+ok 118 - prompt file for 'classification' has a role intro matching expectations
+ok 119 - prompt file for 'generic' has a role intro matching expectations
+ok 120 - prompt file for 'code' has a role intro matching expectations
+ok 121 - prompt file for 'data' has a role intro matching expectations
+ok 122 - prompt file for 'infra' has a role intro matching expectations
+ok 123 - prompt file for 'docs' has a role intro matching expectations
+ok 124 - tmp helpers are wired (smoke)
+ok 125 - the stored bundle schema accepts a report and the schema version is 2
+ok 126 - the model-facing schema has neither meta nor report at both sites, on the first call and on a later one, and rejects an answer that carries a report
+ok 127 - no source file under src/mcp/analyze-step writes a literal schema version
+ok 128 - RENDER_ORDER is the documented seven layers in spec order
+ok 129 - LAYER_LABELS covers every layer in RENDER_ORDER
+ok 130 - omitEmpty returns empty string for empty body
+ok 131 - omitEmpty returns empty string for whitespace-only body
+ok 132 - omitEmpty renders heading + trimmed body for non-empty body
+ok 133 - assembleMarkdown renders all seven layers in order with the footer at tail
+ok 134 - assembleMarkdown renders the system layer without a heading
+ok 135 - assembleMarkdown appends contract footer exactly once
+ok 136 - assembleMarkdown omits layers whose body is empty
+ok 137 - assembleMarkdown omits layers whose body is whitespace-only
+ok 138 - assembleMarkdown omits layers listed in meta.emptyLayers even with non-empty body
+ok 139 - assembleMarkdown without meta uses body-emptiness only
+ok 140 - assembleMarkdown with an all-empty bundle still emits contract footer
+ok 141 - a bundle with a report leads the prompt text with its completeness line; a bundle with none is rendered as before
+ok 142 - cache-invalidation.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 143 - runShaper invalidates cached bundle when registry lastIndexed advances # SKIP
+ok 144 - isStaleByIndexer returns true when registry watermark is newer than the bundle
+ok 145 - isStaleByIndexer returns false when registry watermark equals the bundle
+ok 146 - isStaleByIndexer returns false when registry watermark is older than the bundle
+ok 147 - isStaleByIndexer treats bundles with no repoLastIndexedAt stamp as stale (conservative)
+ok 148 - isStaleByIndexer treats bundles with no meta at all as stale
+ok 149 - readBundle returns the bundle when stamp is fresh against the registry watermark
+ok 150 - readBundle invalidates + returns null when registry watermark advanced
+ok 151 - readBundle skips the freshness check when currentLastIndexedAt is undefined
+ok 152 - readBundle invalidates a bundle missing repoLastIndexedAt when a watermark is supplied
+ok 153 - readBundle: bypassCache=true short-circuits BEFORE the freshness check
+ok 154 - write-then-advance-then-read pattern: bundle is invalidated by the advanced watermark
+ok 155 - cacheFilePathFor (mode=classification) yields classification.json
+ok 156 - cacheFilePathFor (mode=run) yields run-bundle.json
+ok 157 - cacheFilePathFor (mode=task, with taskId) yields <taskId>.bundle.json
+ok 158 - cacheFilePathFor (mode=task, no taskId) throws TypeError
+ok 159 - writeBundle then readBundle round-trips an identical body (run mode)
+ok 160 - writeBundle then readBundle round-trips an identical body (task mode)
+ok 161 - readBundle on a missing slot returns null (no throw)
+ok 162 - readBundle with bypassCache=true returns null even when the file exists
+ok 163 - readBundle discards the file when the stored key does not match the request key
+ok 164 - readBundle discards an invalid-JSON file and returns null
+ok 165 - readBundle discards a JSON file with wrong shape (missing key field)
+ok 166 - writeBundle leaves no .tmp- file behind after a successful write
+ok 167 - invalidateBundle on a missing slot is a silent no-op
+ok 168 - writeBundle places the file under PATHS.analyzeContext(runId)
+ok 169 - node:os tmpdir + mkdtempSync are usable from this module
+ok 170 - classification-shaper.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 171 - CL1: code-dominant workspace -- code surface mentioned; data + infra acknowledged absent # SKIP
+ok 172 - CL2: data-dominant workspace -- data surface mentioned; code + infra acknowledged absent # SKIP
+ok 173 - CL3: mixed workspace -- code + data + infra all surface # SKIP
+ok 174 - CL4: classification bundle stays under 10 KB serialized # SKIP
+ok 175 - code-shaper.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 176 - C1: tiny-multi-lang-repo run-mode -- all 3 languages + all 3 surfaces # SKIP
+ok 177 - C2: monorepo-fixture (src/insrc) run-mode -- deferred (cost; covered by C1+C3 paths) # TODO
+ok 178 - C3: single-file scope -- surface narrows to that file # SKIP
+ok 179 - C4: task-mode with one upstream output -- upstream rendered, surface trimmed # SKIP
+ok 180 - C5: empty closure on unindexed repo -- requires P6 ensureNonEmptyClosure + driver wiring # TODO
+ok 181 - C6: identical re-run hits the run-bundle cache # SKIP
+ok 182 - completeness.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 183 - live: a focused request whose text search reaches its limit returns a bundle whose first line says it is incomplete and names that lookup # SKIP
+ok 184 - live: a request with a lookup made to fail returns a bundle that lists it as failed, not as empty # SKIP
+ok 185 - data-shaper.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 186 - D1: SQLite multi-table + FK -- schema enumerated; FK acknowledged # SKIP
+ok 187 - D2: CSV directory-as-table -- directory treated as one logical object # SKIP
+ok 188 - D3: hive partitions -- region + date keys surfaced # SKIP
+ok 189 - D4: empty SQLite -- bundle valid; sparseness reflected in meta # SKIP
+ok 190 - D5: task-mode targeting users table -- surface narrows # SKIP
+ok 191 - D6: missing SQLite file -- shaper surfaces the error gracefully # SKIP
+ok 192 - planning user turn: 'Repo path' from lookupPath, and the line naming a file, entity or connection
+ok 193 - the scope line sits directly under the repo path line
+ok 194 - prepareDecompose and decompose build the same user turn for a resolved scope
+ok 195 - stable stringify produces identical output for object key permutations
+ok 196 - stable stringify is order-stable for Maps with reverse insertion
+ok 197 - stable stringify treats different values as distinct
+ok 198 - stable stringify is deterministic for arrays (insertion order matters)
+ok 199 - classifyOllamaError(ECONNREFUSED) -> ShaperLlmUnavailableError
+ok 200 - classifyOllamaError("Ollama is not running. Start it...") -> ShaperLlmUnavailableError
+ok 201 - classifyOllamaError("Model not found ...") -> ShaperLlmUnavailableError
+ok 202 - classifyOllamaError("fetch failed") -> ShaperLlmUnavailableError (retries exhausted by provider)
+ok 203 - classifyOllamaError("Did not receive done...") -> ShaperLlmUnavailableError (retries exhausted)
+ok 204 - classifyOllamaError("ECONNRESET") -> ShaperLlmUnavailableError
+ok 205 - classifyOllamaError("socket hang up") -> ShaperLlmUnavailableError
+ok 206 - classifyOllamaError(arbitrary other Error) -> original error
+ok 207 - classifyOllamaError(non-Error value) -> wraps in Error
+ok 208 - deriveEmptyLayers on an all-empty bundle returns every layer
+ok 209 - deriveEmptyLayers on a fully-populated bundle returns []
+ok 210 - deriveEmptyLayers treats whitespace-only bodies as empty
+ok 211 - deriveEmptyLayers preserves the spec render order in its return
+ok 212 - ShaperLlmUnavailableError carries the cause in its message
+ok 213 - ShaperToolLoopExhausted carries the turn count in its message
+ok 214 - ShaperSchemaUnrecoverable carries the retry count + reasons in its message
+ok 215 - ShaperPromptMissingError carries the absolute prompt path
+ok 216 - renderUpstreamSection: classification mode returns empty string
+ok 217 - renderUpstreamSection: run mode returns empty string
+ok 218 - renderUpstreamSection: task mode with empty upstream map returns empty string
+ok 219 - renderUpstreamSection: task mode with one populated upstream renders a JSON block
+ok 220 - renderUpstreamSection: null upstream value renders [unavailable: ...] marker
+ok 221 - renderUpstreamSection: undefined upstream value also renders unavailable marker
+ok 222 - renderUpstreamSection: mixed populated + null upstream renders both
+ok 223 - renderUpstreamSection: upstream task ids are sorted alphabetically
+ok 224 - driver.live: skipped (set INSRC_LIVE_TESTS=1 to run) # SKIP
+ok 225 - runShaper produces a schema-valid bundle from a minimal prompt # SKIP
+ok 226 - runShaper hits the run-bundle cache on identical re-invocation # SKIP
+ok 227 - runShaper records meta.toolCalls > 0 when the prompt drives a tool call # SKIP
+ok 228 - runShaper handles a forced all-empty bundle # SKIP
+ok 229 - runShaper throws ShaperLlmUnavailableError when the provider host is bad # SKIP
+ok 230 - runShaper throws ShaperToolLoopExhausted when prompt forces tool calls past the cap # SKIP
+ok 231 - cleanup: remove the per-test tmp directory # SKIP
+ok 232 - failure-modes.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 233 - failure-mode: code-shaper run-mode against an unindexed registered repo throws ScopeNotIndexedError # SKIP
+ok 234 - failure-mode: task-mode with null upstream surfaces [unavailable: ...] in the upstream layer # SKIP
+ok 235 - failure-mode: auto-reindex on empty closure -- deferred to P6.b (needs indexer-queue wiring) # TODO
+ok 236 - tiny-multi-lang-repo has index.ts, compute.py, user.go, README.md
+ok 237 - tiny-multi-lang-repo total LOC is in the documented ballpark
+ok 238 - tiny-multi-lang-repo TS exports the documented surface
+ok 239 - tiny-multi-lang-repo Python module has helper + 2 public functions
+ok 240 - tiny-multi-lang-repo Go exports the documented type + methods
+ok 241 - seeded.sqlite is openable + has the 3 documented tables
+ok 242 - seeded.sqlite has the documented FK from orders.user_id to users.id
+ok 243 - seeded.sqlite has FK on order_items.order_id to orders.id
+ok 244 - seeded.sqlite row counts: users=3, orders=3, order_items=4
+ok 245 - seeded-csv-dir: 5 consistent CSVs + 1 divergent under hive partitions
+ok 246 - seeded-manifests/k8s: 3 Deployments + 2 Services + 1 ConfigMap
+ok 247 - seeded-manifests/tf: main.tf + variables.tf with aws resources
+ok 248 - seeded-manifests/.github/workflows: one CI workflow
+ok 249 - empty-repo: has .git marker + README, no source
+ok 250 - unindexed-repo: has .git marker + README + a TS source file
+ok 251 - teardownFixtures removes the entire root tree (smoke)
+ok 252 - setupFixturesAt is idempotent on a populated root
+ok 253 - fallbackFreeformPlan emits exactly one freeform.probe step
+ok 254 - fallbackFreeformPlan maps shaperId->answerType so logs stay readable
+ok 255 - fallbackFreeformPlan preserves intent.focus in the step purpose
+ok 256 - free-form replacement's purpose for an unfocused intent is the broad survey
+ok 257 - extractSoleFreeformResult returns the bundle when freeform.probe is the only step
+ok 258 - extractSoleFreeformResult returns null when the freeform bundle is all-empty
+ok 259 - extractSoleFreeformResult returns null on a mixed plan
+ok 260 - generic-shaper.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 261 - G1: code-only workspace -- code in summary; data + infra declared-absent # SKIP
+ok 262 - G2: mixed workspace -- code + data + infra all positively acknowledged # SKIP
+ok 263 - G3: empty workspace -- bundle valid; artefacts + upstream empty per prompt contract # SKIP
+ok 264 - infra-shaper.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 265 - I1: k8s + tf + GHA manifests -- all three families appear in summary + surface # SKIP
+ok 266 - I2: k8s-only scope does NOT surface false TF / GHA positives # SKIP
+ok 267 - I3: empty manifest dir -- no families detected; bundle still schema-valid # SKIP
+ok 268 - I4: artefacts contains representative excerpts for each detected family # SKIP
+ok 269 - helpers wired: cleanupRun handles missing files (smoke) # SKIP
+ok 270 - ensureNonEmptyClosure: pristine registry -> skipped silently, returns undefined
+ok 271 - ensureNonEmptyClosure: connection-kind scope is skipped silently
+ok 272 - ensureNonEmptyClosure: registered repo with entities -> returns repo path
+ok 273 - ensureNonEmptyClosure: scope nested under registered repo with entities -> match
+ok 274 - ensureNonEmptyClosure: registered repo with ZERO entities -> ScopeNotIndexedError
+ok 275 - ensureNonEmptyClosure: scope outside every registered repo -> ScopeNotIndexedError
+ok 276 - ensureNonEmptyClosure: longest-prefix repo wins when nested
+ok 277 - ensureNonEmptyClosure: false-prefix is rejected (requires / boundary)
+ok 278 - ensureNonEmptyClosure: given readers it reads the registry and the entities through them, not the real store
+ok 279 - ensureNonEmptyClosure: with readers the check keeps its leniency for a registry that cannot be read or holds no repo
+ok 280 - ScopeNotIndexedError carries scopePath + registeredAs on the instance
+ok 281 - ScopeNotIndexedError handles undefined registeredAs
+ok 282 - symbol exception: a symbol in a registered repo with ZERO entities -> ScopeNotIndexedError, not "no entity of that name"
+ok 283 - symbol exception: a symbol outside every registered repo, and with a pristine registry -> ScopeNotIndexedError
+ok 284 - symbol exception: in an indexed repo a symbol resolves to its stored entity; an unknown name is unresolved
+ok 285 - assembleLiveProjectContext returns zero-doc context for a repo with no summaries
+ok 286 - familyBreakdown counts summaries per family
+ok 287 - decisions + constraints roll up with citations
+ok 288 - decisions cap respects maxDecisions option
+ok 289 - topSubjects tallies + sorts by document count desc
+ok 290 - recentActivity sorts by summarisedAt desc + populates file path
+ok 291 - totalCodeEntities excludes artefacts
+ok 292 - placeholder rows count into placeholderCount but not decisions/constraints
+ok 293 - source search: the failure-text list exists only in model-failure.ts
+ok 294 - each of the six callers classifies a CLI call failure as its model-unavailable error and a shape failure as its schema error
+ok 295 - a typed sampling failure reaches each caller's error as the client's own words
+ok 296 - isModelCallFailure: Ollama texts, CLI call failures, ModelCallFailedError are failures; shape failures are not
+ok 297 - what the model WROTE is not evidence about the call: a quoted answer is never matched
+ok 298 - modelCallFailureDetail returns the failure's own words
+ok 299 - planning and answer-writing classifiers raise their model-unavailable error for a CLI call failure
+ok 300 - planning and answer-writing classifiers raise their model-unavailable error for a typed sampling failure
+ok 301 - a shape failure stays a schema error for both calls
+ok 302 - model-unavailable messages are provider-neutral and carry the underlying message in a field
+ok 303 - the two prompt-missing errors carry the prompt path
+ok 304 - planning prompt has a no-focus recipe per kind of source, with existing lookups and no limit parameter
+ok 305 - the no-focus section sits after the other recipes and before the output format
+ok 306 - planning user turn for an unfocused intent names the no-focus section
+ok 307 - every prompt that prints the intent's focus states the no-focus rule
+ok 308 - CONTRACT_FOOTER_MD is non-empty and references the three citation kinds
+ok 309 - PROMPT_PATHS has exactly the six expected shapers
+ok 310 - PROMPT_PATHS values point at prompts/analyze/<shaper>.system.md
+ok 311 - shaperFor('classification') returns a Shaper with buildClassificationBundle
+ok 312 - shaperFor('run', 'code') returns a Shaper with buildRunBundle
+ok 313 - shaperFor('run', 'data') returns a Shaper with buildRunBundle
+ok 314 - shaperFor('run', 'infra') returns a Shaper with buildRunBundle
+ok 315 - shaperFor('run', 'generic') returns a Shaper with buildRunBundle
+ok 316 - shaperFor('run') without a target throws TypeError
+ok 317 - shaperFor('task', 'code') returns a Shaper with buildTaskBundle
+ok 318 - shaperFor('task', 'data') returns a Shaper with buildTaskBundle
+ok 319 - shaperFor('task', 'infra') returns a Shaper with buildTaskBundle
+ok 320 - shaperFor('task') without a target throws TypeError
+ok 321 - shaperFor('task', 'generic') is rejected
+ok 322 - focused request on a repo: stand-in arguments and bundle equal the recorded baseline
+ok 323 - pipeline returns each cause for the stand-in that produces it, including 'empty-plan' through the fourth stand-in
+ok 324 - a planning call that fails for another reason is replaced by the free-form lookup, as before
+ok 325 - pipeline returns 'not-applicable' for classification and task modes
+ok 326 - pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace
+ok 327 - an unfocused intent whose plan is replaced falls to the free-form lookup with a broad-survey purpose
+ok 328 - pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path
+ok 329 - module scope: lookup path and cache key unchanged
+ok 330 - cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call
+ok 331 - error messages state the cause, name the failed call, and never say retries or Ollama for another provider
+ok 332 - CLI and sampling call failures give 'planner-model-failed' and 'answer-model-failed' from the pipeline
+ok 333 - runShaper throws ShaperAnswerStepFailedError with reason 'invalid-bundle' for an invalid bundle
+ok 334 - settlePipelineOutcome: a valid bundle is stamped and returned; not-applicable continues; a cause throws its error
+ok 335 - the pipeline's three causes after the lookups ran carry the results and the report, and the cause table gives ShaperAnswerStepFailedError with its reason
+ok 336 - a missing answer prompt found after the lookups ran carries the results and the report under its own code; a missing planning prompt carries none
+ok 337 - runShaper refuses a pairing the table does not allow before resolving the scope
+ok 338 - runShaper accepts every pairing in the corrected table
+ok 339 - the pairing is checked for run mode only: classification and task inputs are not refused
+ok 340 - resolveScopeForTarget: every pairing of the table resolves to what resolveScope gives; every other pairing is refused before a reader is touched
+ok 341 - prepareScope makes no pairing check outside run mode: a refused pairing resolves to what resolveScope gives
+ok 342 - generic and classification-mode requests on a symbol in an unindexed repo fail as not indexed; on a module they proceed
+ok 343 - tool loop's path for classification and task modes is the resolved lookupPath
+ok 344 - inputs that carry neither a scope nor an intent fail as invalid input, not as a bare TypeError
+ok 345 - no production reasoning site bypasses the RoutingSeamContext — only sanctioned files call buildShaperProvider
+ok 346 - the allowlisted seam files still exist (guards against a stale allowlist)
+ok 347 - excludes directories matching a root .gitignore rule
+ok 348 - every ancestor of a tracked file is considered included
+ok 349 - respects a subdirectory .gitignore
+ok 350 - non-git repo returns a permissive filter that includes everything
+ok 351 - permissiveIgnoreFilter is always-include
+ok 352 - include() returns only tracked items
+ok 353 - scope path: classification input returns scopeRef.value
+ok 354 - scope path: run input with kind=repo returns scopeRef.value
+ok 355 - scope path: run input with kind=file returns scopeRef.value
+ok 356 - scope path: run input with kind=connection returns empty string
+ok 357 - scope path: a symbol yields its FILE, without the name
+ok 358 - resolveRepoLastIndexedAt: empty path returns undefined
+ok 359 - resolveRepoLastIndexedAt: no registered repo matching the path returns undefined
+ok 360 - resolveRepoLastIndexedAt: registered repo with lastIndexed returns ms epoch
+ok 361 - resolveRepoLastIndexedAt: registered repo without lastIndexed returns undefined
+ok 362 - resolveRepoLastIndexedAt: scope path nested under registered repo matches the parent
+ok 363 - resolveRepoLastIndexedAt: longest-prefix match wins when multiple repos overlap
+ok 364 - resolveRepoLastIndexedAt: false-prefix is rejected (boundary at "/")
+ok 365 - resolveRepoLastIndexedAt: a later updateRepoStatus advances the watermark
+ok 366 - empty tiering → peripheral (mid) role resolves to the built-in mid default (claude sonnet), no clamp
+ok 367 - empty tiering → critical (core) role resolves to the built-in core default (claude opus), no clamp
+ok 368 - S010: brainstorm.decision.draft is peripheral → mid and is NOT floor-clamped
+ok 369 - empty tiering BUT an explicit legacy shaperProvider still wins over the built-in defaults
+ok 370 - roleTiers assigns a peripheral role a cheap tier with a concrete model
+ok 371 - a mid CLI tier pins a concrete model (e.g. sonnet) that shaperModel alone cannot express
+ok 372 - critical role assigned cheap is clamped UP to a core floor (clampedByFloor true) and uses the core tier model
+ok 373 - peripheral role assigned cheap is NEVER clamped even with a core floor
+ok 374 - byRepo roleTiers overrides the global roleTiers for the same role
+ok 375 - an unknown RoleId falls to the built-in default tier (mid), non-critical, no throw
+ok 376 - resolveShaperKind: roleResolved wins over repo/global/client
+ok 377 - resolveShaperKind: a non-union roleResolved is coerced away (falls through the chain, never a REST path)
+ok 378 - resolveShaperKind: legacy three-input callers resolve identically (roleResolved absent)
+ok 379 - resolveProviderForRole memoizes per (role, repoPath) — repeated calls reuse the instance
+ok 380 - resolveProviderForRole attaches a resolution record with the resolved tier/runner/model
+ok 381 - resolveSummariser stays local (ollama) regardless of the shaper/role tiering
+ok 382 - currentRoutingContext is undefined outside an established run
+ok 383 - established context → a converted site resolves per-role via the ambient router
+ok 384 - unestablished context → resolveRoleProvider is byte-for-byte buildShaperProvider(cfg) (k3)
+ok 385 - unestablished context → a claude-preserving legacyFallback is honoured (not dropped to Ollama)
+ok 386 - established context with a nullish router throws (fail-loud, no silent legacy revert)
+ok 387 - runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope
+ok 388 - runShaper, run mode: a refused pairing fails before the scope is resolved or any step runs
+ok 389 - runShaper, run mode: a scope outside every registered repo fails as not indexed before any step runs
+ok 390 - runShaper, run mode: a cause becomes its typed error and does NOT fall through to the tool loop
+ok 391 - runShaper's run-mode bundle carries the report derived from the executed lookups
+ok 392 - a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups
+ok 393 - a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report
+ok 394 - a bundle cached before the change is not returned
+ok 395 - the tool loop's final answer is asked for with a schema that has no report, and a classification bundle carries none
+ok 396 - ambient sampler context wins over cfg.shaperProvider=ollama
+ok 397 - currentSamplerContext returns undefined outside a runWith scope
+ok 398 - currentSamplerContext returns the installed sampler inside the scope
+ok 399 - sampler context propagates across an await inside the scope
+ok 400 - explicit override still beats ambient context
+ok 401 - SCHEMA_VERSION is a positive integer
+ok 402 - BUNDLE_LAYER_NAMES matches the seven documented layers
+ok 403 - schema declares every layer as required
+ok 404 - validateBundle accepts a minimum valid bundle (all empty strings, no meta)
+ok 405 - validateBundle accepts a fully-populated bundle with meta
+ok 406 - validateBundleWithErrors returns ok=true on a valid bundle
+ok 407 - validateBundle rejects a bundle missing the 'system' layer
+ok 408 - validateBundle rejects a bundle missing the 'focus' layer
+ok 409 - validateBundle rejects a bundle missing the 'summary' layer
+ok 410 - validateBundle rejects a bundle missing the 'structure' layer
+ok 411 - validateBundle rejects a bundle missing the 'surface' layer
+ok 412 - validateBundle rejects a bundle missing the 'artefacts' layer
+ok 413 - validateBundle rejects a bundle missing the 'upstream' layer
+ok 414 - validateBundle rejects a non-string layer
+ok 415 - validateBundle rejects unknown top-level properties
+ok 416 - validateBundle rejects unknown meta properties
+ok 417 - meta.mode rejects values outside the enum
+ok 418 - meta.shaper rejects values outside the enum
+ok 419 - meta.schemaVersion must match SCHEMA_VERSION exactly
+ok 420 - meta.emptyLayers rejects an unknown layer name
+ok 421 - meta.emptyLayers rejects duplicate entries
+ok 422 - meta.toolCalls rejects a negative count
+ok 423 - meta.toolCalls rejects a non-integer
+ok 424 - meta.modelId rejects an empty string
+ok 425 - meta.repoLastIndexedAt accepts a positive integer when present
+ok 426 - meta.repoLastIndexedAt rejects a negative value
+ok 427 - bundle without meta is valid (driver stamps meta before persisting)
+ok 428 - bundle with partial meta (missing required key) is rejected
+ok 429 - resolveScope for each of the seven kinds, with nested repos
+ok 430 - a sibling directory that only shares a name prefix is not inside the repo
+ok 431 - resolveScope directory kinds keep their own directory as lookupPath; a path in no repo gives repoPath null
+ok 432 - a registry that cannot be read leaves the repo unknown for the file-system kinds
+ok 433 - resolveScope symbol cases: split, no '\#', none, two, '\#' in the path
+ok 434 - resolveScope symbol not-indexed cases: empty repo, no containing repo, empty registry
+ok 435 - a symbol that resolves costs one read: the whole repo is read only when the file has no entities
+ok 436 - resolveScope connection cases: one, none, two, unparseable connections file
+ok 437 - ShaperLlmUnavailableError message with and without a call
+ok 438 - ShaperAnswerStepFailedError states its reason, keeps what the lookups found, and never reports retries
+ok 439 - the other new errors carry their detail and their own name
+ok 440 - a tool's output with no JSON form is described as text and never thrown into the tool loop
+ok 441 - shaperProvider=ollama returns an OllamaProvider
+ok 442 - shaperProvider=cli-claude returns a CliProvider (claude kind)
+ok 443 - shaperProvider=cli-codex returns a CliProvider
+ok 444 - isOllamaModelId is true for `:`-tagged ids, false for CLI model ids
+ok 445 - cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CLI default)
+ok 446 - cli-claude + a real claude shaperModel → forwarded verbatim
+ok 447 - cli-claude + a role-tier claude model → forwarded (role model wins)
+ok 448 - cli-claude + a role-tier model that is Ollama-shaped → also dropped
+ok 449 - ollama path is unchanged: the Ollama model id is still used
+ok 450 - shaperProvider=ollama honours cfg.shaperModel + cfg.shaper.ollamaNumCtx
+ok 451 - shaperProvider=cli-* is idempotent -- repeated calls return distinct instances
+ok 452 - sampler override wins over cfg.shaperProvider=ollama
+ok 453 - sampler override wins even when shaperProvider=cli-claude
+ok 454 - sampler override forwards modelHints into the provider
+ok 455 - clientDefault picks the matching CLI when config does NOT pin a provider
+ok 456 - explicit config shaperProvider overrides the clientDefault
+ok 457 - ambient runWithClientProviderContext supplies the default
+ok 458 - sampler still beats a clientDefault
+ok 459 - resolveShaperKind: per-repo override wins over everything below it
+ok 460 - resolveShaperKind: explicit global wins over the per-run caller
+ok 461 - resolveShaperKind: per-run caller used when repo + global are unset
+ok 462 - resolveShaperKind: ollama when all signals are unset
+ok 463 - repoOverride beats an explicit global config in buildShaperProvider
+ok 464 - repoOverride beats the clientDefault in buildShaperProvider
+ok 465 - sampler still beats a repoOverride
+ok 466 - buildSummariserProvider: defaults to a local OllamaProvider
+ok 467 - buildSummariserProvider: stays LOCAL even when shaperProvider is a cloud CLI (the decoupling)
+ok 468 - buildSummariserProvider: uses a CLI only when summariserProvider is explicitly cli-*
+ok 469 - stripMetaFromSchema drops $id so ajv can compile it repeatedly
+ok 470 - stripMetaFromSchema is cached: identical reference across calls
+ok 471 - stripMetaFromSchema still drops the `meta` property + required entry
+ok 472 - READ_ONLY_TOOL_IDS matches the expected snapshot
+ok 473 - READ_ONLY_TOOL_IDS has no duplicate entries
+ok 474 - file_write must NOT be in the shaper's read-only surface
+ok 475 - file_edit must NOT be in the shaper's read-only surface
+ok 476 - file_delete must NOT be in the shaper's read-only surface
+ok 477 - file_copy must NOT be in the shaper's read-only surface
+ok 478 - file_move must NOT be in the shaper's read-only surface
+ok 479 - file_mkdir must NOT be in the shaper's read-only surface
+ok 480 - file_multi-edit must NOT be in the shaper's read-only surface
+ok 481 - shell_exec must NOT be in the shaper's read-only surface
+ok 482 - shell_exec-detached must NOT be in the shaper's read-only surface
+ok 483 - shell_exec-pipeline must NOT be in the shaper's read-only surface
+ok 484 - shell_cwd must NOT be in the shaper's read-only surface
+ok 485 - ssh_exec must NOT be in the shaper's read-only surface
+ok 486 - ssh:exec-detached must NOT be in the shaper's read-only surface
+ok 487 - ssh:port-forward must NOT be in the shaper's read-only surface
+ok 488 - scp:upload must NOT be in the shaper's read-only surface
+ok 489 - scp:download must NOT be in the shaper's read-only surface
+ok 490 - git_amend must NOT be in the shaper's read-only surface
+ok 491 - git_commit must NOT be in the shaper's read-only surface
+ok 492 - git_push must NOT be in the shaper's read-only surface
+ok 493 - git_pull must NOT be in the shaper's read-only surface
+ok 494 - git_fetch must NOT be in the shaper's read-only surface
+ok 495 - git_merge must NOT be in the shaper's read-only surface
+ok 496 - git_rebase must NOT be in the shaper's read-only surface
+ok 497 - git_reset must NOT be in the shaper's read-only surface
+ok 498 - git_revert must NOT be in the shaper's read-only surface
+ok 499 - git_checkout must NOT be in the shaper's read-only surface
+ok 500 - git_stage must NOT be in the shaper's read-only surface
+ok 501 - git_stash must NOT be in the shaper's read-only surface
+ok 502 - git_worktree must NOT be in the shaper's read-only surface
+ok 503 - git:cherry-pick must NOT be in the shaper's read-only surface
+ok 504 - git_branch must NOT be in the shaper's read-only surface
+ok 505 - git_tag must NOT be in the shaper's read-only surface
+ok 506 - git_remote must NOT be in the shaper's read-only surface
+ok 507 - gh_pr_create must NOT be in the shaper's read-only surface
+ok 508 - gh_pr_merge must NOT be in the shaper's read-only surface
+ok 509 - gh_pr_close must NOT be in the shaper's read-only surface
+ok 510 - gh_pr_view must NOT be in the shaper's read-only surface
+ok 511 - gh_issue_create must NOT be in the shaper's read-only surface
+ok 512 - gh_issue_close must NOT be in the shaper's read-only surface
+ok 513 - gh_run_cancel must NOT be in the shaper's read-only surface
+ok 514 - cloud_aws_ec2_terminate must NOT be in the shaper's read-only surface
+ok 515 - cloud_aws_s3_rm must NOT be in the shaper's read-only surface
+ok 516 - cloud_aws_lambda_invoke must NOT be in the shaper's read-only surface
+ok 517 - cloud_gcp_storage_rm must NOT be in the shaper's read-only surface
+ok 518 - cloud_az_vm_delete must NOT be in the shaper's read-only surface
+ok 519 - k8s_apply must NOT be in the shaper's read-only surface
+ok 520 - k8s_delete must NOT be in the shaper's read-only surface
+ok 521 - k8s_exec must NOT be in the shaper's read-only surface
+ok 522 - k8s_logs must NOT be in the shaper's read-only surface
+ok 523 - pkg_install must NOT be in the shaper's read-only surface
+ok 524 - pkg_add must NOT be in the shaper's read-only surface
+ok 525 - pkg_remove must NOT be in the shaper's read-only surface
+ok 526 - notify_slack must NOT be in the shaper's read-only surface
+ok 527 - notify_email must NOT be in the shaper's read-only surface
+ok 528 - test_run must NOT be in the shaper's read-only surface
+ok 529 - test_coverage must NOT be in the shaper's read-only surface
+ok 530 - test_watch must NOT be in the shaper's read-only surface
+ok 531 - http_request must NOT be in the shaper's read-only surface
+ok 532 - http_download must NOT be in the shaper's read-only surface
+ok 533 - http_upload must NOT be in the shaper's read-only surface
+ok 534 - web_fetch must NOT be in the shaper's read-only surface
+ok 535 - web_search must NOT be in the shaper's read-only surface
+ok 536 - isReadOnlyShaperTool returns true for every allowlist entry
+ok 537 - isReadOnlyShaperTool returns false for unknown tool ids
+ok 538 - getReadOnlyTools throws ReadOnlyToolRegistryMismatch when registry is empty
+ok 539 - getReadOnlyTools returns N ToolDefinitions after registerBuiltinTools()
+ok 540 - getReadOnlyTools result preserves allowlist order
+ok 541 - each returned ToolDefinition has a non-empty description + inputSchema
+ok 542 - every registered mutation tool from the must-not-be-exposed list is absent from the result
+ok 543 - ReadOnlyToolRegistryMismatch reports the missing ids in its message
+ok 544 - unfocused.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 545 - unfocused code request on this repository returns a bundle with a no-focus focus layer # SKIP
+ok 546 - file scope and symbol scope return a bundle # SKIP
+ok 547 - real planning call follows the no-focus recipe for code and returns a free-form lookup for docs # SKIP
+ok 548 - failure codes: 'scope-ref-unresolved' with the model running, 'shaper-llm-unavailable' with it stopped # SKIP
+ok 549 - a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)
+ok 550 - a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run
+ok 551 - a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)
+ok 552 - a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path
+ok 553 - a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates
+ok 554 - unmetDependencies: no consumes -> null
+ok 555 - unmetDependencies: every consume present -> null
+ok 556 - unmetDependencies: first missing name reported
+ok 557 - projectUpstream: limits to consumed names only
+ok 558 - checkOutputShape: exact match -> null
+ok 559 - checkOutputShape: missing name reported
+ok 560 - checkOutputShape: extra name reported
+ok 561 - runExecutor: 2-task happy path -- discovery + aggregator
+ok 562 - runExecutor: missing runtime -> task fails; downstream cascades
+ok 563 - runExecutor: runtime throws -> failed status with reason; cascade
+ok 564 - runExecutor: runtime returns extra/missing produces -> output-shape-mismatch
+ok 565 - runExecutor: planner-template task materialises child report as parent.report
+ok 566 - runExecutor: planner task whose child build failed -> child-plan-unavailable + cascade
+ok 567 - taskOutputPathFor: lands under ~/.insrc/analyze/<runId>/tasks/<taskId>.json
+ok 568 - readTaskOutput: miss returns null
+ok 569 - purgeTaskOutput on a missing slot is a silent no-op
+ok 570 - onTaskEvent: 2-task happy path emits started+completed per task in plan order
+ok 571 - onTaskEvent: failed task emits started + completed with status="failed"
+ok 572 - onTaskEvent: planner-template task -- child plan events fire BETWEEN parent started + completed, with parentTaskPath set
+ok 573 - onTaskEvent: throwing subscriber does not crash the executor
+ok 574 - SINGLE-PASS: child plan tasks execute exactly once (regression for the executePlanNode double-walk)
+ok 575 - the plan walk copies the record to the task record, and a runtime that returns none is recorded as failed
+ok 576 - a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)
+ok 577 - the plan walk imports nothing from the run driver
+ok 578 - a table test over all twenty lookup types finds a completeness record with its stated basis
+ok 579 - the fixture gives every lookup something to return, so the table is not a table of empty results
+ok 580 - each lookup that stops at a count reports the limit with its scope
+ok 581 - data-model.trace reports its overall limit and both per-target limits
+ok 582 - search.text and config.trace turn the search's omissions into skipped, partlyRead and limited
+ok 583 - the table-listing lookup reads the data driver's cut flag into a limit
+ok 584 - every graph-based record carries the coverage note, on the paths that return early as well
+ok 585 - a limit below 1 does not make a text lookup fail
+ok 586 - a prepared value without the carried facts gives a record that is not established
+ok 587 - tokenise drops stopwords + short tokens
+ok 588 - tokenise lowercases + splits on non-alphanumeric
+ok 589 - tokenise handles snake_case + dot-separated
+ok 590 - tokenise drops framework-generic jargon
+ok 591 - splitIdentifier handles snake_case
+ok 592 - splitIdentifier handles camelCase
+ok 593 - splitIdentifier handles kebab-case
+ok 594 - splitIdentifier splits letter/digit boundary + drops single-char tokens
+ok 595 - splitIdentifier handles filename with extension
+ok 596 - directory match beats file match on same token count (Test 3 case)
+ok 597 - depth does NOT enter the score (docs shallow, code deep is a bad prior)
+ok 598 - zero token hits returns null (dropped)
+ok 599 - structural boost lifts dir scores over the same non-boosted case
+ok 600 - score is bounded to [0, 1]
+ok 601 - name-token match contributes to score
+ok 602 - code dir with real entities beats docs dir with zero entities on same tokens
+ok 603 - entity density buckets are monotonic
+ok 604 - classifier query matches classification/ via prefix (shared 8 chars)
+ok 605 - extract query matches extraction/ via prefix
+ok 606 - exact match still beats prefix match at same density
+ok 607 - test file with exact matches loses to real module with prefix match
+ok 608 - test path regex matches common test directory conventions
+ok 609 - test path penalty fires WITHOUT structuralBoost too (regression: executor-placeholders.test.ts beat executor.ts)
+ok 610 - short query token (<7 chars) does NOT prefix-match (no false hit)
+ok 611 - classifyName: snake_case with underscore
+ok 612 - classifyName: all-lowercase word reads as snake_case
+ok 613 - classifyName: PascalCase class name
+ok 614 - classifyName: camelCase identifier
+ok 615 - classifyName: kebab-case file name
+ok 616 - classifyName: strips single leading underscore for classification
+ok 617 - classifyName: dunder methods classify as unknown
+ok 618 - classifyName: mixed underscore + uppercase
+ok 619 - classifyName: 1-char and empty strings are unknown
+ok 620 - classifyTestFile: test_*.py -> test_*
+ok 621 - classifyTestFile: *_test.go -> *_test
+ok 622 - classifyTestFile: *.spec.ts -> *.spec
+ok 623 - classifyTestFile: *.test.tsx -> *.test
+ok 624 - classifyTestFile: file inside tests/ dir with plain name -> inline
+ok 625 - classifyTestFile: production file -> none
+ok 626 - dominant: single bucket at 100% wins
+ok 627 - dominant: 60% share + 2x runner-up wins
+ok 628 - dominant: 50/50 split -> mixed
+ok 629 - dominant: unknown bucket is ignored in the total
+ok 630 - dominant: empty -> unknown
+ok 631 - config.trace role: JSON file, quoted key -> definition
+ok 632 - config.trace role: python getenv with fallback -> default
+ok 633 - config.trace role: python getenv without fallback -> usage
+ok 634 - config.trace role: comment line -> unknown
+ok 635 - test.locate tokenise: strips stopwords + short tokens
+ok 636 - test.locate tokenise: camelCase splits into fragments
+ok 637 - test.locate tokenise: dedupes repeats
+ok 638 - doc.mention rejects empty params
+ok 639 - doc.mention rejects whitespace-only subject
+ok 640 - doc.mention rejects non-string subject
+ok 641 - doc.decision.trace rejects empty params
+ok 642 - doc.decision.trace rejects empty topic string
+ok 643 - doc.constraint.enumerate rejects empty params
+ok 644 - doc.constraint.enumerate rejects null subject
+ok 645 - executor dispatches to the registered runner
+ok 646 - executor hands the request's resolved scope to the runner; without one the runner gets none
+ok 647 - stepPlan hands the resolved scope to the runner too
+ok 648 - the step tool's plan phase resolves the scope from the token and runs the lookups there
+ok 649 - unsupported exploration type produces a diagnostic output
+ok 650 - runner throw produces a `failed` output; does not stop the plan
+ok 651 - deterministic exploration is cached across executions
+ok 652 - lastIndexedAt bump invalidates the cache
+ok 653 - readDep exposes prior exploration outputs to later runners
+ok 654 - $e1.field resolves to prior output field
+ok 655 - $eN.field[0..2] returns an array of items
+ok 656 - placeholder referencing unknown dep skips the runner cleanly
+ok 657 - placeholder with out-of-range index skips the runner cleanly
+ok 658 - placeholder resolves to empty array -> runner is skipped, not called
+ok 659 - literal string params (not $e-prefixed) pass through verbatim
+ok 660 - substitution recurses into nested arrays + objects
+ok 661 - the count of catch clauses in the lookup files equals the number of classified entries
+ok 662 - a text search that throws becomes the failed output (mutation: restore the catch that returns an empty result)
+ok 663 - each class of lookup catch clause has a test: an expected condition says so in the record, anything else is a failed output
+ok 664 - a document lookup says when the search by meaning did not run and only keyword matches are in the result
+ok 665 - the free-form lookup at its turn limit is a failed output whose partial holds the tool results gathered
+ok 666 - a free-form answer's record has basis 'model-directed' and is not complete
+ok 667 - both mapping functions name the file of the gathered tool results for 'shaper-tool-loop-exhausted', and carry the results only when no file was written
+ok 668 - freeform.probe rejects empty params
+ok 669 - freeform.probe rejects whitespace-only purpose
+ok 670 - freeform.probe rejects missing shaperId
+ok 671 - freeform.probe rejects unknown shaperId
+ok 672 - freeform.probe rejects non-string shaperId
+ok 673 - free-form lookup for a file-scope request builds a file intent and uses the resolved repo as the loop's path
+ok 674 - free-form loop's path for a connection is the connection's repo
+ok 675 - a module request keeps its own directory, and a bare repo path stands for a workspace scope
+ok 676 - k8s body kind wins over a misleading filename
+ok 677 - multi-doc manifest returns the FIRST doc kind
+ok 678 - helm Chart.yaml returns the chart name; other helm files return undefined
+ok 679 - empty and unparseable bodies return undefined (caller falls back)
+ok 680 - non-k8s/helm families return undefined (family gate)
+ok 681 - a doc with a non-string / missing kind yields undefined
+ok 682 - inferResourceKind (fallback) still guesses from the filename
+ok 683 - a document lookup that cuts a 100,000-character section to 2,000 reports it against the section's real length (mutation: measure the stored body)
+ok 684 - a section whose file changed since it was indexed is reported as partly read with no length claimed
+ok 685 - a lookup that passes on a stored body uncut reports the item as partly read when the indexer cut it
+ok 686 - module.profile reports each file it cut with the kept and full lengths
+ok 687 - each of the three lookups that pause for a model call builds its record in finalize from the facts prepare carried, and a prepared value without them is not established
+ok 688 - the measurer finds the file's recorded hash in the graph, and reports an item only when something shows it is longer
+ok 689 - usage.example rejects empty params
+ok 690 - usage.example rejects blank symbolName + blank entityId
+ok 691 - usage.example rejects non-string symbolName
+ok 692 - class.hierarchy rejects empty params
+ok 693 - class.hierarchy rejects both fields empty-string
+ok 694 - capability.reuse-check rejects empty params
+ok 695 - capability.reuse-check rejects whitespace-only capability
+ok 696 - capability.reuse-check rejects non-string capability
+ok 697 - convention.detect rejects empty params
+ok 698 - convention.detect rejects whitespace-only path
+ok 699 - test.locate rejects empty params
+ok 700 - test.locate rejects non-string subject
+ok 701 - config.trace rejects empty params
+ok 702 - config.trace rejects path outside repoPath
+ok 703 - data-model.trace rejects empty params
+ok 704 - data-model.trace rejects whitespace-only entityName
+ok 705 - db.tables.list rejects empty params
+ok 706 - db.tables.list rejects whitespace-only connectionId
+ok 707 - db.table.describe rejects empty params
+ok 708 - db.table.describe rejects only-connectionId
+ok 709 - manifests.locate returns empty output when repo has no indexed entities
+ok 710 - classifyFamily: Dockerfile -> docker
+ok 711 - classifyFamily: .tf -> terraform
+ok 712 - classifyFamily: .github/workflows/*.yml -> ci
+ok 713 - classifyFamily: Chart.yaml -> helm
+ok 714 - classifyFamily: k8s/ path -> kubernetes
+ok 715 - classifyFamily: plain yaml under repo root -> other
+ok 716 - isK8sPath: recognises the standard directories
+ok 717 - isHelmPath: Chart.yaml + values.yaml + helm/ + charts/
+ok 718 - isCIPath: known CI file locations
+ok 719 - inferResourceKind: filename convention wins for kubernetes/helm
+ok 720 - inferResourceKind: undefined for non-kubernetes families
+ok 721 - no prompt under src/prompts/analyze names a removed field, and each names `completeness`
+ok 722 - a lookup output cached before the change is not returned: the cache key includes its version
+ok 723 - search.text rejects empty params
+ok 724 - search.text rejects whitespace-only pattern
+ok 725 - search.text rejects non-string pattern
+ok 726 - search.text rejects absolute path outside repoPath
+ok 727 - search.text rejects sibling-scoped absolute path
+ok 728 - hinted request: focused with the prompt as focus, unfocused with an empty prompt
+ok 729 - hinted request: the validator's two checks are made, with the connection check it was given
+ok 730 - hinted pairing the table refuses fails at 'classify' with a failed run record
+ok 731 - hinted request with a scope that does not resolve fails with 'scope-ref-unresolved'
+ok 732 - hinted request with a valid pairing reaches the context builder and the planner
+ok 733 - hinted request: a connection check that throws fails the run at classify with a code, not an unhandled rejection
+ok 734 - the classifier receives a connection check from each caller
+ok 735 - connectionIsRegistered: declared by a registered repo or not; an unreadable file is reported
+ok 736 - an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)
+ok 737 - a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)
+ok 738 - with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)
+ok 739 - a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite
+ok 740 - orchestrator-e2e.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 741 - orchestrator-e2e.live: infra XS end-to-end -> result mirrors run.json # SKIP
+ok 742 - classifyClassifierError: typed errors map to stable codes
+ok 743 - plan tree's classify mapping returns the inner code and passes context errors on; the table-test row rewritten
+ok 744 - classifyClassifierError: unrecognized error -> internal-error
+ok 745 - classifyClassifierError: non-Error throws are stringified into internal-error
+ok 746 - classifyShaperError: ScopeNotIndexedError populates data
+ok 747 - classifyShaperError: typed shaper errors map to stable codes
+ok 748 - classifyShaperError: unrecognized error -> internal-error
+ok 749 - classifyPlannerError: MaxPlanDepthExceededError populates data
+ok 750 - classifyPlannerError: PlanBuilderExhausted -> plan-invariant-failed with lastFailure
+ok 751 - classifyPlannerError: typed planner errors map to stable codes
+ok 752 - classifyPlannerError: unrecognized error -> internal-error
+ok 753 - writeRunRecord + readRunRecord: round-trip preserves the record
+ok 754 - readRunRecord: miss returns null
+ok 755 - runRecordPathFor: lands under ~/.insrc/analyze/<runId>/run.json
+ok 756 - purgeRunForTests on a missing slot is a silent no-op
+ok 757 - purgeRun: missing run dir -> { ok:true, purged:false }
+ok 758 - purgeRun: status=ok run -> removes dir
+ok 759 - purgeRun: status=failed run -> removes dir (no protection on failed)
+ok 760 - purgeRun: status=in-progress without force -> refused
+ok 761 - onEvent: resume cache hit emits a single done event with the cached result
+ok 762 - onEvent: aborted signal -> done event with code="aborted"
+ok 763 - onEvent: missing onEvent option -> no exception (no-op)
+ok 764 - onEvent: throwing callback does not crash the run
+ok 765 - purgeRun: status=in-progress with force=true -> removes dir
+ok 766 - resume: status=ok + stage=done -> cached RunAnalyzeOk returned without re-running
+ok 767 - resume: status=failed -> NOT short-circuited (would re-run)
+ok 768 - resume: status=in-progress -> NOT short-circuited (stale record from crash)
+ok 769 - resume: missing run.json -> NOT short-circuited (cold cache)
+ok 770 - a run with one failed task and one limited task returns a report naming both, and its final report's text starts with the completeness line
+ok 771 - a run with a nested plan names an incomplete child task by its path; the planner-kind task and the aggregate-report task are not sources
+ok 772 - a run record written after the change resumes with its report (mutation: leave `report` out of the resume literal)
+ok 773 - a run record written without a report resumes with none and its text form carries the not-recorded line
+ok 774 - a run that completes stores its report in the run record, and resuming from that record returns the same report and the same text
+ok 775 - the plan's and the run's tasksFailed and the daemon's response carry the code
+ok 776 - a docs run on a scope in no registered repo ends at stage 'plan' with 'scope-not-indexed' before the planner is called; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning)
+ok 777 - both classifyShaperError functions map each of the five new error classes to its code
+ok 778 - one list of ten error classes gives the same code from the plan tree's and the daemon's mapping
+ok 779 - an error neither mapping knows stays internal-error on both sides
+ok 780 - the three new cause codes are declared in both lists
+ok 781 - both mapping functions return 'answer-step-failed' with the reason, the results and the report, and a failed planning call is still 'shaper-llm-unavailable'
+ok 782 - both mapping functions keep the code of a missing prompt and put the results and the report in its data only when the lookups ran
+ok 783 - one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)
+ok 784 - planDirFor: root plan -> ~/.insrc/analyze/<runId>
+ok 785 - planDirFor: child plan for t02 -> tasks/t02
+ok 786 - planDirFor: nested child plan for t02.t05 -> tasks/t02/tasks/t02.t05
+ok 787 - planDirFor: deeply nested t02.t05.t01 -> three nested tasks/ dirs
+ok 788 - planFinalPathFor: root -> plan.json under run dir
+ok 789 - planAttemptPathFor + planFeedbackPathFor: zero-padded N-digit naming
+ok 790 - planAttemptPathFor: 10 doesn't zero-pad
+ok 791 - readPlanFinal: miss returns null
+ok 792 - writePlanFinal then readPlanFinal round-trips an identical plan
+ok 793 - writePlanFinal overwrites a prior final (resume case)
+ok 794 - writeAttempt + writeFeedback land at zero-padded paths
+ok 795 - multiple attempts persist independently (no overwriting between attempts)
+ok 796 - child plan persists under tasks/<parentTaskPath>/
+ok 797 - nested child plan (t02.t05) lands at the right depth
+ok 798 - writePlanFinal leaves no .tmp- file behind
+ok 799 - purgePlan removes plan.json + plan.attempts/ for the given slot
+ok 800 - purgePlan: child plan purge does NOT affect root plan
+ok 801 - renderCatalog: empty catalog renders the no-templates marker
+ok 802 - renderCatalog: single template renders id + target + family + description + produces
+ok 803 - renderCatalog: aggregator template flags itself with INV-12 hint
+ok 804 - renderCatalog: catalog order is preserved
+ok 805 - renderDepthPolicy: M scope reports 20-40 band
+ok 806 - renderDepthPolicy: focused intent halves the lower bound only
+ok 807 - renderDepthPolicy: XS depth hint mentions detailed per-unit
+ok 808 - renderDepthPolicy: XL depth hint mentions structural breadth + child plans
+ok 809 - classifyError(ECONNREFUSED) -> PlanBuilderLlmUnavailableError
+ok 810 - classifyError("Ollama is not running") -> PlanBuilderLlmUnavailableError
+ok 811 - classifyError("Model not found") -> PlanBuilderLlmUnavailableError
+ok 812 - classifyError(arbitrary error) -> PlanBuilderSchemaUnrecoverable
+ok 813 - classifyError(non-Error) -> wraps in PlanBuilderSchemaUnrecoverable
+ok 814 - PlanBuilderLlmUnavailableError carries cause in message
+ok 815 - PlanBuilderSchemaUnrecoverable carries error list in message
+ok 816 - PlanBuilderPromptMissingError carries the absolute path
+ok 817 - PlanBuilderExhausted carries attempts + failures + lastFailure
+ok 818 - buildInitialMessages: emits 2 messages (system, user) with all the required sections
+ok 819 - buildInitialMessages: child-plan parentTaskPath emits the warning note
+ok 820 - appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBACK block
+ok 821 - MaxPlanDepthExceededError carries currentDepth, rootScope, cap on the instance
+ok 822 - runPlanner: refuses BEFORE any LLM call when currentDepth+1 > cap
+ok 823 - runPlanner: rootScope overrides intent.scope for the depth cap
+ok 824 - runPlanner: rootScope=XS at currentDepth=2 (exactly the cap) is rejected
+ok 825 - runPlanner: default currentDepth=0 always passes the depth check (cap >= 2)
+ok 826 - appendCorrectionTurn with failure.target renders the pointer
+ok 827 - appendCorrectionTurn: escalation banner fires when the same (invariantId, taskId) repeats
+ok 828 - appendCorrectionTurn: no escalation banner when previous failure was a different invariant
+ok 829 - appendCorrectionTurn: no escalation banner when same invariant hits a different task
+ok 830 - planner.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 831 - runPlanner: infra target + XS scope -> validated PlanTask using the registered catalog # SKIP
+ok 832 - planner.live setup: registered catalog covers every target with an aggregator # SKIP
+ok 833 - extractChildIntent: well-formed childIntent -> returns it
+ok 834 - extractChildIntent: missing childIntent -> null
+ok 835 - extractChildIntent: malformed childIntent (missing required field) -> null
+ok 836 - buildParentTaskPath: root parent (undefined) -> taskId verbatim
+ok 837 - buildParentTaskPath: empty parent string -> taskId verbatim
+ok 838 - buildParentTaskPath: nested -> parent.taskId
+ok 839 - countNodes / countPlannerTasks / maxDepth on a single-node tree
+ok 840 - countNodes / countPlannerTasks / maxDepth on a 3-level tree
+ok 841 - runRecursivePlanner: root with one planner-template task spawns a child plan; tree has 2 nodes
+ok 842 - runRecursivePlanner: depth-cap hit on a deeper subtree -> childError = MaxPlanDepthExceededError
+ok 843 - runRecursivePlanner: child plans inherit rootScope for the depth cap
+ok 844 - PLAN_SCHEMA_VERSION is a positive integer
+ok 845 - PLAN_TARGET_ENUM matches the four documented targets
+ok 846 - PLAN_SCOPE_BUCKET_ENUM matches the five buckets in size order
+ok 847 - TASK_KIND_ENUM is exactly leaf | planner
+ok 848 - TASK_ID_PATTERN matches t01 / t99 / t100 / t999 but not t1 / tabc / T01
+ok 849 - validatePlanShape accepts a minimal valid plan
+ok 850 - validatePlannedTaskShape accepts a minimal valid task
+ok 851 - validatePlanShape accepts a plan with parentTaskPath (child plan)
+ok 852 - validatePlannedTaskShape accepts a task with consumes + taskPath
+ok 853 - validatePlanShape rejects a plan missing 'planId'
+ok 854 - validatePlanShape rejects a plan missing 'goal'
+ok 855 - validatePlanShape rejects a plan missing 'target'
+ok 856 - validatePlanShape rejects a plan missing 'scope'
+ok 857 - validatePlanShape rejects a plan missing 'tasks'
+ok 858 - validatePlanShape rejects a plan missing 'reasoning'
+ok 859 - validatePlannedTaskShape rejects a task missing 'taskId'
+ok 860 - validatePlannedTaskShape rejects a task missing 'template'
+ok 861 - validatePlannedTaskShape rejects a task missing 'kind'
+ok 862 - validatePlannedTaskShape rejects a task missing 'params'
+ok 863 - validatePlannedTaskShape rejects a task missing 'produces'
+ok 864 - validatePlannedTaskShape rejects a task missing 'rationale'
+ok 865 - validatePlanShape rejects unknown target
+ok 866 - validatePlanShape rejects unknown scope
+ok 867 - validatePlannedTaskShape rejects taskId not matching the pattern
+ok 868 - validatePlannedTaskShape rejects kind outside leaf|planner
+ok 869 - validatePlanShape rejects unknown top-level properties
+ok 870 - validatePlannedTaskShape rejects unknown task properties
+ok 871 - validatePlanShape rejects empty tasks array (minItems:1)
+ok 872 - validatePlannedTaskShape rejects empty produces array (minItems:1)
+ok 873 - validatePlannedTaskShape rejects duplicate produces entries (uniqueItems)
+ok 874 - validatePlannedTaskShape rejects too-short rationale (minLength 20)
+ok 875 - validatePlanShape rejects too-short plan reasoning (minLength 50)
+ok 876 - validatePlanShape rejects too-long goal (maxLength 200)
+ok 877 - registerTemplate accepts a well-formed template
+ok 878 - registerTemplate rejects id collision
+ok 879 - registerTemplate rejects missing inputSchema
+ok 880 - registerTemplate rejects empty produces
+ok 881 - registerTemplate rejects missing description
+ok 882 - registerTemplate: family=aggregate without isAggregator flag is rejected
+ok 883 - registerTemplate: isAggregator without family=aggregate is rejected
+ok 884 - registerTemplate: family=aggregate AND isAggregator:true is accepted
+ok 885 - registerBuiltinTemplates registers exactly 27 builtins (7 code + 5 data + 8 infra + 1 generic + 6 docs) without collision
+ok 886 - registerBuiltinTemplates is idempotent (latch prevents double-register)
+ok 887 - every per-target subset has its own aggregator
+ok 888 - getTemplatesForTarget(code) returns 7 code templates (6 leaf + 1 planner)
+ok 889 - getTemplatesForTarget(data) returns 5 data templates
+ok 890 - getTemplatesForTarget(infra) returns 8 infra templates
+ok 891 - getTemplatesForTarget(docs) returns 6 docs templates (5 leaf + 1 planner)
+ok 892 - getTemplatesForTarget(generic) returns the FULL catalog (INV-4 permits cross-target)
+ok 893 - every builtin template has a syntactically valid inputSchema (Ajv compiles)
+ok 894 - every builtin template produces non-empty string entries
+ok 895 - every builtin template id namespaces its target as the leading prefix
+ok 896 - every builtin template description is at least one sentence (>= 20 chars)
+ok 897 - aggregator templates produce exactly ['report']
+ok 898 - validatePlan: happy-path 20-task M-bucket plan passes every invariant
+ok 899 - INV-1: empty tasks list
+ok 900 - INV-2: gap in task ids (t01, t02, t04)
+ok 901 - INV-2: out-of-order ids (t01, t03, t02, ...)
+ok 902 - INV-3: unknown template id
+ok 903 - INV-4: data template in a code plan
+ok 904 - INV-4: generic-target plans accept any target template
+ok 905 - INV-5: missing required param key
+ok 906 - INV-5: param value with wrong type
+ok 907 - INV-6: emitted produces differs from template produces
+ok 908 - INV-7: task consumes an output no earlier task produces
+ok 909 - INV-8: leaf template emitted with kind=planner
+ok 910 - INV-8: planner template emitted with kind=leaf
+ok 911 - INV-9: params contains a nested {taskId, template, ...} array
+ok 912 - INV-9: params deeply nested array of task-shaped objects
+ok 913 - INV-10: produces->consumes cycle (a depends on b depends on a)
+ok 914 - INV-12: no aggregator at all
+ok 915 - INV-12: aggregator not in the last slot
+ok 916 - INV-12: TWO aggregator tasks
+ok 917 - INV-13: M-bucket plan with too few tasks (below lower bound 20)
+ok 918 - INV-13: focused intent halves the lower bound
+ok 919 - INV-13: focused intent does NOT raise the upper bound
+ok 920 - INV-14: task rationale at exactly 19 chars (boundary)
+ok 921 - INV-14: plan reasoning at exactly 49 chars (boundary)
+ok 922 - INV-15: root plan must NOT have parentTaskPath
+ok 923 - INV-15: child plan MUST have parentTaskPath
+ok 924 - INV-15: child plan with parentTaskPath set passes
+ok 925 - SCOPE_BAND values match the design doc
+ok 926 - each of the five aggregate-report runtimes hands absentInputs to the aggregator
+ok 927 - a table test over every registered plan-task runtime finds a completeness record on each result
+ok 928 - the fixture gives the inventories and listings something to return
+ok 929 - no output of the five infra inventories has a `truncated` field; a walk that stops at its cap is a limit in the record
+ok 930 - discovery-families reports its per-family sample as a per-group limit and is not rejected by the builder
+ok 931 - the object-listing plan task reads the data driver's cut flag into a limit
+ok 932 - an aggregate-report runtime's record says its completeness is that of the tasks it summarises
+ok 933 - the count of catch clauses in the runtime files equals the number of classified entries
+ok 934 - an inventory over a tree with an unreadable directory and a file that does not parse lists both under skipped and is not complete (mutation: restore the silent skip)
+ok 935 - an adherence check whose model call fails is recorded by the walk as a failed task
+ok 936 - each adherence check reports a body it cut with the kept and full lengths
+ok 937 - the project-context assembler reports a limit it reached and the documents behind its decisions and constraints, and the adherence check puts them in the record
+ok 938 - the docs plan tasks report a document longer than the summariser's cut under partlyRead, and a missing summary and a failure placeholder under skipped (mutation: drop the partlyRead entry)
+ok 939 - the docs tool exposed to agents returns what it returned before
+ok 940 - the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path
+ok 941 - the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path
+ok 942 - no docs runtime uses the scope's value as a repo path
+ok 943 - the unrelated resolveRepoPath under src/mcp is untouched
+ok 944 - code.aggregate.report.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 945 - code.aggregate.report.live: real Ollama -> validator-passing AggregateReport # SKIP
+ok 946 - modulePrefixOf: includes trailing slash for nested paths
+ok 947 - modulePrefixOf: root-level path (no slash) returns input
+ok 948 - compareEntitiesByLocation: file then startLine then name
+ok 949 - code deterministic runtimes integration: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 950 - discovery.entrypoints: lists only exported functions/methods/classes, sorted by location # SKIP
+ok 951 - surface.functional: splits exports vs internalHelpers for a single module # SKIP
+ok 952 - surface.functional: shallow depth omits body, deep includes it # SKIP
+ok 953 - surface.functional: unknown module entity id -> throws # SKIP
+ok 954 - surface.functional: passing a non-module entity id -> throws # SKIP
+ok 955 - surface.functional: missing params.module -> throws with INV-5 message # SKIP
+ok 956 - structure.module-tree: emits module nodes + IMPORTS edges as module-to-module # SKIP
+ok 957 - structure.module-tree: repo with zero modules -> empty tree, not error # SKIP
+ok 958 - readScopeRef: well-formed scopeRef -> returned verbatim
+ok 959 - readScopeRef: missing scopeRef -> throws with INV-5 message
+ok 960 - readScopeRef: scopeRef with wrong shape -> throws
+ok 961 - registerBuiltinRuntimes registers code.discovery.modules; idempotent
+ok 962 - registerBuiltinRuntimes: after reset, re-registers without collision
+ok 963 - code.discovery.modules integration: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 964 - integration: seeded 3 modules + 2 functions -> outputs only the 3 modules, sorted by path # SKIP
+ok 965 - integration: repo with zero modules -> empty array, not error # SKIP
+ok 966 - integration: manifest-dir scopeRef -> resolved to repo path # SKIP
+ok 967 - integration: a kind the code family does not accept (connection) -> refused, naming the template and the kinds allowed # SKIP
+ok 968 - a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity
+ok 969 - the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused
+ok 970 - data.aggregate.report.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 971 - data.aggregate.report.live: real Ollama -> validator-passing AggregateReport # SKIP
+ok 972 - a data task with a connection scope works on that connection only
+ok 973 - a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)
+ok 974 - the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code
+ok 975 - requireStringParam: present non-empty -> returns; missing -> throws INV-5
+ok 976 - requireStringParam: empty string -> throws (empty != non-empty)
+ok 977 - optionalStringParam: present -> value; missing -> undefined; empty -> throws
+ok 978 - registerBuiltinRuntimes registers all 4 data runtimes
+ok 979 - runtime templateIds match expected ids
+ok 980 - DATA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
+ok 981 - data runtimes integration: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 982 - discovery.connections: lists the registered sqlite connection (no secret leak) # SKIP
+ok 983 - discovery.objects: lists rdbms tables for the sqlite connection # SKIP
+ok 984 - discovery.objects: kind filter narrows the result # SKIP
+ok 985 - discovery.objects: unknown connectionId -> throws (no such connection) # SKIP
+ok 986 - discovery.objects: missing connectionId param -> INV-5 message # SKIP
+ok 987 - schema.table: describes the users table -- columns + types + nullability # SKIP
+ok 988 - schema.table: describes orders table -- FK to users surfaces # SKIP
+ok 989 - schema.table: missing table param -> INV-5 message # SKIP
+ok 990 - schema.table: nonexistent table -> driver error propagates # SKIP
+ok 991 - a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)
+ok 992 - a docs task with a module scope whose sections are not among the repository's nearest matches still gets them from the vector pass (mutation: search the whole repository and drop what lies outside)
+ok 993 - the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code
+ok 994 - the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's
+ok 995 - generic.aggregate.report.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 996 - generic.aggregate.report.live: real Ollama -> validator-passing AggregateReport # SKIP
+ok 997 - runtime exposes templateId = generic.aggregate.report
+ok 998 - registerBuiltinRuntimes registers generic.aggregate.report
+ok 999 - registerBuiltinRuntimes registers BOTH code + generic families (idempotent)
+ok 1000 - GENERIC_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
+ok 1001 - infra.aggregate.report.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 1002 - infra.aggregate.report.live: real Ollama -> validator-passing AggregateReport # SKIP
+ok 1003 - readScopeRef: well-formed -> returns
+ok 1004 - readScopeRef: missing -> throws INV-5
+ok 1005 - baseName: directory-stripped
+ok 1006 - classifyFile: terraform / dockerfile / helm chart / gha / gitlab / compose
+ok 1007 - extractResource: minimal valid manifest -> record
+ok 1008 - extractResource: no metadata.name -> null (dropped)
+ok 1009 - extractResource: no apiVersion/kind -> null
+ok 1010 - extractResource: label coercion of non-string values
+ok 1011 - registerBuiltinRuntimes registers all infra runtimes (incl. helm/docker/ci)
+ok 1012 - runtime templateIds match expected ids
+ok 1013 - registration parity: INFRA_RUNTIMES and INFRA_TEMPLATES both length 8; produces-key === runtime output key
+ok 1014 - infra.discovery.families description no longer overpromises ansible/pulumi/cloudformation
+ok 1015 - INFRA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
+ok 1016 - walkFiles: node_modules is skipped (SKIP_DIRS); other files visible
+ok 1017 - an infra task accepts its three kinds and refuses a file scope with the mismatch code; the connection-listing task gives the same result for a repo scope as before
+ok 1018 - discovery.families: classifies all expected families against the fixture
+ok 1019 - inventory.kubernetes: enumerates resources with kind/name/namespace/labels
+ok 1020 - inventory.kubernetes: Chart.yaml is skipped (helm metadata, not k8s)
+ok 1021 - inventory.terraform: extracts resources / data / providers / variables / outputs
+ok 1022 - inventory.terraform: captures indented blocks + drops invalid HCL (no throw)
+ok 1023 - inventory.helm: enumerates charts with metadata + deps + templateFileCount + valuesKeys
+ok 1024 - inventory.docker: multi-stage Dockerfile FROM/stage/EXPOSE + compose services (build-only kept)
+ok 1025 - inventory.ci: GHA `on` map normalized + step uses; gitlab stages + jobs (reserved keys excluded); broken skipped
+ok 1026 - inventory runtimes: empty scope yields well-formed empty inventories, no throw
+ok 1027 - inline params.constraints pass through untouched
+ok 1028 - constraintIds hydrate keyConstraints from summarised docs
+ok 1029 - constraintIds skip ids that do not resolve to summarised docs
+ok 1030 - constraintIds fall through when the priority-1 upstream is missing
+ok 1031 - priority-1 upstream overrides both inline and constraintIds
+ok 1032 - returns empty when no constraints source is provided
+ok 1033 - stableStringify: object keys sorted
+ok 1034 - stableStringify: Map entries sorted + emitted as object
+ok 1035 - stableStringify: arrays preserve order
+ok 1036 - renderUpstreamSection: empty map -> "No upstream outputs" sentinel
+ok 1037 - renderUpstreamSection: tasks emitted in sorted taskId order
+ok 1038 - renderUpstreamSection: null upstream rendered as unavailable note
+ok 1039 - renderUpstreamSection: JSON output rendered in fenced block
+ok 1040 - buildMessages: system has prompt content, user has Target/Scope/upstream
+ok 1041 - buildMessages: focus is included in the user message when present
+ok 1042 - buildMessages: focus omitted when undefined
+ok 1043 - classifyError: Ollama-down patterns -> aggregator-llm-unavailable
+ok 1044 - classifyError: arbitrary error -> aggregator-schema-unrecoverable
+ok 1045 - classifyError: non-Error -> aggregator-internal wrapper
+ok 1046 - runAggregator: stub provider -> report carries LLM output + runtime metadata
+ok 1047 - runAggregator: focus passed through to the user message
+ok 1048 - runAggregator: provider throws ECONNREFUSED -> rethrown as aggregator-llm-unavailable
+ok 1049 - runAggregator: provider throws arbitrary error -> aggregator-schema-unrecoverable
+ok 1050 - runAggregator: missing prompt file -> "aggregator prompt missing"
+ok 1051 - AGGREGATE_LLM_SCHEMA: requires summary + findings, additionalProperties false
+ok 1052 - the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent
+ok 1053 - a table test over four families and seven kinds of scope: pairings in the table resolve, the rest throw the mismatch error naming the kinds allowed (mutation: give a family a kind outside its row)
+ok 1054 - a kind added to a row of a stand-in table is accepted
+ok 1055 - a module, a file, a symbol and a connection scope resolve to the registered repo and the area
+ok 1056 - a scope in no registered repo is not indexed for code and docs and resolves for infra and data
+ok 1057 - an unreadable or empty registry does not refuse a path scope; a symbol scope fails as resolveScope decides (mutation: treat a null repo as not indexed)
+ok 1058 - design/ wins over plans/
+ok 1059 - plans/ matches for docs directly under plans
+ok 1060 - designs/ (plural) matches the design family
+ok 1061 - plan/ (singular) matches the plans family
+ok 1062 - docs/ matches for docs under docs/
+ok 1063 - design > docs when both are in the path
+ok 1064 - adr/ matches for docs under adr/
+ok 1065 - rfc/ matches for docs under rfc/
+ok 1066 - spec/ matches for docs under spec/
+ok 1067 - CHANGELOG.md classifies as changelog regardless of directory
+ok 1068 - CHANGES.md and HISTORY.md classify as changelog
+ok 1069 - README.md classifies as readme
+ok 1070 - ADR-*.md by basename classifies as adr
+ok 1071 - RFC-*.md by basename classifies as rfc
+ok 1072 - SPEC-*.md by basename classifies as spec
+ok 1073 - unknown paths fall back to other
+ok 1074 - empty path returns other
+ok 1075 - windows-style backslashes normalise
+ok 1076 - case-insensitive on directory names

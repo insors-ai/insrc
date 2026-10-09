@@ -51,3 +51,6 @@ workflow: baseline passing names 1577; now failing 0; no longer present 0; new n
   progress (it purges one with no live run), so the test now holds its run
   live and is titled `runPurge refuses on status=in-progress for a live run
   without force; force=true overrides`. It passes.
+
+The result line of every top-level test of the new run (`ok` or `not ok`, with
+its name) is in `after/<suite>.txt`, in the same form as the baseline's files.

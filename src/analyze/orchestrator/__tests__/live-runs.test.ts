@@ -20,6 +20,7 @@ import { join } from 'node:path';
 import { upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import { addRepo } from '../../../db/repos.js';
+import { makeEntityId } from '../../../indexer/parser/base.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
 import type { AnswerReport } from '../../completeness.js';
@@ -44,8 +45,9 @@ test.beforeEach(async () => {
 	// One registered, indexed repo that does NOT contain the sandbox: the
 	// registry is not pristine, so the code source's indexed check is live.
 	await addRepo(null, { path: REGISTERED, name: REGISTERED, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' });
+	const fixtureFile = `${REGISTERED}/index.ts`;
 	await upsertEntities(null, [{
-		id: 'e-fixture', repo: REGISTERED, file: `${REGISTERED}/index.ts`, kind: 'function', name: 'fn',
+		id: makeEntityId(REGISTERED, fixtureFile, 'function', 'fn'), repo: REGISTERED, file: fixtureFile, kind: 'function', name: 'fn',
 		language: 'typescript', startLine: 1, endLine: 3,
 	} as unknown as Entity]);
 });
@@ -318,5 +320,91 @@ test('a completed run asked for again returns its stored result and report; a re
 		assert.equal(isRunLive(left), false);
 	} finally {
 		purgeRunForTests(left);
+	}
+});
+
+test("the handler of an uncaught error leaves a record that already says how the run ended, and the record of another run still going under the same id", async () => {
+	// --- the error is raised AFTER the run wrote its own end ---
+	// The run ends at the indexed check and writes its record as failed with that
+	// cause. Its event subscriber then cannot be read, once: an error nothing catches.
+	const ended = uniqueId('after-the-end');
+	try {
+		let thrown = false;
+		const events: AnalyzeRunEvent[] = [];
+		const opts = {
+			get onEvent(): ((e: AnalyzeRunEvent) => void) | undefined {
+				if (!thrown && readRunRecord(ended)?.status === 'failed') { thrown = true; throw new Error('the subscriber could not be read'); }
+				return (e) => { events.push(e); };
+			},
+		};
+		const result = await runAnalyze(hinted(ended), opts);
+		assert.equal(thrown, true, 'the error was raised, after the record was written');
+		// The error is returned, and 'done' fires once ...
+		assert.equal(result.ok, false);
+		if (result.ok) return;
+		assert.deepEqual([result.error.code, result.error.message], ['internal-error', 'the subscriber could not be read']);
+		assert.equal(events.filter(e => e.type === 'done').length, 1);
+		// ... and the record keeps the end the run had written: it is not rewritten as an internal error.
+		const record = readRunRecord(ended);
+		assert.deepEqual([record?.status, record?.stage, record?.error?.code], ['failed', 'plan', 'scope-not-indexed']);
+		assert.equal(isRunLive(ended), false);
+	} finally {
+		purgeRunForTests(ended);
+	}
+
+	// A completed record ('ok') is left too: asked for again with a subscriber that cannot be read.
+	const completed = uniqueId('completed-then-thrown');
+	try {
+		const stored: RunRecord = {
+			runId: completed, createdAt: '2026-10-08T00:00:00.000Z', updatedAt: '2026-10-08T00:00:05.000Z',
+			userPrompt: 'the earlier request', initialScopeRef: { kind: 'repo', value: '/r' }, stage: 'done', status: 'ok',
+			intent: { target: 'code', scope: 'XS', focused: false, scopeRef: { kind: 'repo', value: '/r' }, reasoning: 'stored' },
+			finalReport: { summary: 'Complete.\n\ns', findings: [] }, tasksCompleted: 1, tasksFailed: [],
+		};
+		writeRunRecord(stored);
+		let reads = 0;
+		const opts = { get onEvent(): ((e: AnalyzeRunEvent) => void) | undefined { reads += 1; if (reads === 1) throw new Error('the subscriber could not be read'); return undefined; } };
+		const result = await runAnalyze(hinted(completed), opts);
+		assert.equal(result.ok, false);
+		assert.deepEqual(readRunRecord(completed), stored, 'the completed record is byte for byte what it was');
+	} finally {
+		purgeRunForTests(completed);
+	}
+
+	// --- two runs under one id: the one that throws leaves the shared record to the one still going ---
+	const shared = uniqueId('shared');
+	try {
+		let release!: () => void;
+		let entered!: () => void;
+		const gate = new Promise<void>(r => { release = r; });
+		const inside = new Promise<void>(r => { entered = r; });
+		const model = { completeStructured: async () => { entered(); await gate; return { scope: 'S', reasoning: 'stand-in' }; } } as unknown as LLMProvider;
+		const routing = { router: { resolveProviderForRole: () => ({ provider: model }) } } as unknown as RoutingSeamContext;
+		// The first run is held inside its size-picking step: it is live and its record is in progress.
+		const { scopeHint: _none, ...noSize } = hinted(shared);
+		const going = runWithRoutingContext(routing, () => runAnalyze(noSize));
+		await inside;
+		assert.equal(readRunRecord(shared)?.status, 'in-progress');
+
+		// A second run under the same id throws before any stage.
+		const thrown = await runAnalyze(hinted(shared), { signal: signalFailingAt(1) });
+		assert.equal(thrown.ok, false);
+		if (thrown.ok) return;
+		assert.equal(thrown.error.code, 'internal-error');
+		// The id is still live, and the shared record does NOT say failed: the run still going owns it.
+		assert.equal(isRunLive(shared), true);
+		const record = readRunRecord(shared);
+		assert.deepEqual([record?.status, record?.error], ['in-progress', undefined]);
+
+		// The first run goes on and writes its own end.
+		release();
+		const first = await going;
+		assert.equal(first.ok, false);
+		if (first.ok) return;
+		assert.equal(first.error.code, 'scope-not-indexed');
+		assert.deepEqual([readRunRecord(shared)?.status, readRunRecord(shared)?.error?.code], ['failed', 'scope-not-indexed']);
+		assert.equal(isRunLive(shared), false);
+	} finally {
+		purgeRunForTests(shared);
 	}
 });

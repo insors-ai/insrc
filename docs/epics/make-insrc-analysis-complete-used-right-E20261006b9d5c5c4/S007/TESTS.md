@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 7 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -447,3 +447,33 @@ the gate ran no test: every named test of this Task was reported by the builder
 **smoke: the rendered HLD equals what its renderer gives for the stored data, and the Epic's designs pass the approved-and-fresh gate once the HLD is approved**
 
 Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/measurements/hld-edit-t16.md holds the check's printed output: HLD approved 2026-10-09T09:49:43.744Z; gate passed for s1, s6 and s7 (LLD and PLAN); rendered HLD equals the renderer output for the stored data: true; none of the old wording remains.
+
+## t17
+
+Run at 2026-10-09T10:23:03.807Z on commit `3e59ea98`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 6 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: an infra request and a data request each complete with a final report**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: S007/measurements/live-runs-t17.md runs 1 and 2; whole results in S007/measurements/live/infra-S.result.json and data-S.result.json (both ok: true with a finalReport).
+
+**live: a code request returns a final report whose first line names the failed functional-surface tasks**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: S007/measurements/live-runs-t17.md run 3; S007/measurements/live/code-S.result.json: ok true, finalReport.summary's first line names t04 to t11, each code.surface.functional.
+
+**live: a request with an empty prompt and a stated kind of source completes**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: S007/measurements/live-runs-t17.md run 4; S007/measurements/live/empty-prompt-infra-S.meta.json (userPrompt is the empty string) and .result.json (ok true, intent.focused false).
+
+**live: infra or data requests at sizes above S: a plan with a planner-kind task runs its child plan, or the sizes tried are recorded and the nested integration test stands**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: S007/measurements/live-runs-t17.md runs 5a, 5b and 6: infra at M (twice) and L; the plans in S007/measurements/live/infra-M-first.plan.json, infra-M.plan.json and infra-L.plan.json hold only leaf tasks. The nested integration test in src/analyze/executor/__tests__/walker-aggregate.test.ts stands as the proof of ac2.
+
+**live: a docs request, recorded as the accepted exception**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: S007/measurements/live-runs-t17.md run 7 and S007/measurements/live/docs-S.result.json: the run failed at execute with executor-aggregator-failed after ten docs tasks passed; the aggregate task's input exceeded one model call. Recorded as the exception accepted on 2026-10-08, to be closed by Story s3; the result recorded here is that the request was run and recorded, not that it completed.
+
+**smoke: no test of the four suites that passed in the baseline fails after the last Task, other than the tests of the three removed scope functions**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: S007/measurements/baseline-comparison-t17.md: compared by name without the force-exit flag; zero baseline-passing tests fail now in analyze, mcp, daemon and workflow; eight tests of the removed scope functions are gone; one daemon test was retitled by task t14 and passes, named there.

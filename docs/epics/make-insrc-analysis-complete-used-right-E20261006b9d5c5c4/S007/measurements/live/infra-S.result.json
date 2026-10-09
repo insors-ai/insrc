@@ -1,0 +1,91 @@
+{
+  "ok": true,
+  "runId": "s7-live-infra-S-mv0so0n8",
+  "intent": {
+    "target": "infra",
+    "focused": true,
+    "focus": "what infrastructure does this repository define, and how is it built and released",
+    "scopeRef": {
+      "kind": "repo",
+      "value": "/Users/subhagho/work/projects/insors/insrc"
+    },
+    "scope": "S",
+    "reasoning": "target hinted via slash command (classifier skipped); scope hinted via slash command suffix"
+  },
+  "finalReport": {
+    "summary": "Complete. Note: this result holds what the stored code graph has; the graph's own coverage of the code is not established Not walked, by rule: symbolic links, and directories named .git, node_modules, .next, .svelte-kit, .nuxt, .cache, dist, build, out, target, __pycache__, .venv, venv, .tox, .idea, .vscode, .gradle, .terraform.\n\nThe scope walked (S) surfaced exactly one IaC family: `github-actions`, with 4 workflow files under `.github/workflows/` (per `families`). No Dockerfiles or Compose files, no Helm charts, no Kubernetes manifests or resources, and no Terraform files, providers, modules or resources were found (per `docker-inventory`, `helm-inventory`, `k8s-inventory`, `tf-inventory`), and no GitLab CI is configured (per `ci-inventory`).\n\nAt the declaration level, this repository therefore defines no deployable runtime infrastructure (no containers, clusters or cloud resources). What it defines is build and release automation: four GitHub Actions workflows covering a Node-based build/test job, a Java/Gradle JetBrains plugin build, a Node-based VS Code plugin publish job, and a GitHub Pages site deployment.\n\nTop-level conclusion (implication): build and release is almost entirely manually triggered. Three of the four workflows declare only `workflow_dispatch`; only the Pages deployment also runs on `push`. The upstream outputs record only workflow names, paths, triggers, job ids and `uses:` actions, so the actual build/publish commands, branch filters, secrets and release targets are not visible in this run.",
+    "findings": [
+      {
+        "title": "GitHub Actions is the only IaC family present",
+        "detail": "**Surfaced facts**\n\n- `families` reports a single family, `github-actions`, with `fileCount: 4`.\n- The four files are:\n  - `.github/workflows/ci.yml`\n  - `.github/workflows/jetbrains-plugin.yml`\n  - `.github/workflows/pages.yml`\n  - `.github/workflows/vscode-plugin.yml`\n- `ci-inventory` lists the same four workflows and an empty `gitlabCi` list.\n\n**Implication:** the repository's infrastructure footprint is CI/CD automation only; there is no second tool declaring infrastructure alongside it.",
+        "sources": [
+          "families",
+          "ci-inventory"
+        ]
+      },
+      {
+        "title": "No container, Kubernetes, Helm or Terraform infrastructure is declared",
+        "detail": "**Surfaced facts** (all inventories returned successfully but empty):\n\n- `docker-inventory`: `dockerfiles` and `composeFiles` are both empty.\n- `helm-inventory`: `charts` is empty.\n- `k8s-inventory`: `files` and `resources` are both empty.\n- `tf-inventory`: `files`, `providers`, `resources`, `modules`, `data`, `variables` and `outputs` are all empty.\n\n**Implication:** nothing in the walked scope declares a container image, a cluster workload or a cloud resource, so the repository does not define a deployment environment for its own software. This is a statement about declarations found in scope S only, not about what may exist outside the repository.",
+        "sources": [
+          "docker-inventory",
+          "helm-inventory",
+          "k8s-inventory",
+          "tf-inventory"
+        ]
+      },
+      {
+        "title": "Build pipelines: one Node build/test workflow and one Java/Gradle plugin build",
+        "detail": "**Surfaced facts** (per `ci-inventory`):\n\n| Workflow | Path | Job | Actions used |\n|---|---|---|---|\n| `CI` | `.github/workflows/ci.yml` | `build-and-test` | `actions/checkout@v4`, `actions/setup-node@v4` |\n| `jetbrains-plugin` | `.github/workflows/jetbrains-plugin.yml` | `build` | `actions/checkout@v4`, `actions/setup-java@v4`, `gradle/actions/setup-gradle@v4` |\n\nEach workflow has a single job.\n\n**Implications:**\n\n- The `CI` workflow sets up a Node toolchain, and its job id suggests it builds and tests the main codebase.\n- The `jetbrains-plugin` workflow sets up Java and Gradle, which suggests a separate Gradle-built JetBrains plugin artefact. Its job id is `build`, so on the evidence available it builds rather than publishes.",
+        "sources": [
+          "ci-inventory"
+        ]
+      },
+      {
+        "title": "Release pipelines: GitHub Pages site deployment and a VS Code plugin publish job",
+        "detail": "**Surfaced facts** (per `ci-inventory`):\n\n| Workflow | Path | Job | Actions used |\n|---|---|---|---|\n| `Deploy site to GitHub Pages` | `.github/workflows/pages.yml` | `deploy` | `actions/checkout@v4`, `actions/configure-pages@v5`, `actions/upload-pages-artifact@v3`, `actions/deploy-pages@v4` |\n| `vscode-plugin` | `.github/workflows/vscode-plugin.yml` | `publish` | `actions/checkout@v4`, `actions/setup-node@v4` |\n\n**Implications:**\n\n- GitHub Pages is the only hosting target that is visible in the declarations: the `deploy` job configures Pages, uploads a Pages artefact and deploys it.\n- The `vscode-plugin` workflow's job id `publish` suggests it releases a VS Code extension using a Node toolchain. No marketplace or registry action appears in its `uses:` list, so the publish target is not identifiable from these outputs; it would be in the job's `run:` steps, which were not captured.",
+        "sources": [
+          "ci-inventory"
+        ]
+      },
+      {
+        "title": "Almost everything is manually triggered; only the Pages deployment runs on push",
+        "detail": "**Surfaced facts** (per `ci-inventory` `triggers`):\n\n- `CI` (`.github/workflows/ci.yml`): `workflow_dispatch` only.\n- `jetbrains-plugin` (`.github/workflows/jetbrains-plugin.yml`): `workflow_dispatch` only.\n- `vscode-plugin` (`.github/workflows/vscode-plugin.yml`): `workflow_dispatch` only.\n- `Deploy site to GitHub Pages` (`.github/workflows/pages.yml`): `push` and `workflow_dispatch`.\n\nNo workflow declares a `pull_request`, `schedule`, tag or release trigger.\n\n**Implications:**\n\n- The build-and-test workflow does not run automatically on pushes or pull requests, so as declared there is no automated CI gate on changes; someone has to start it by hand.\n- Both plugin workflows are likewise started by hand, so plugin builds and releases are deliberate manual acts rather than tag- or merge-driven.\n- The site is the only thing released automatically. Which branches or paths the `push` trigger is limited to is not recorded in the upstream output.",
+        "sources": [
+          "ci-inventory"
+        ]
+      },
+      {
+        "title": "Gaps: what this run cannot say about build and release",
+        "detail": "No upstream task was unavailable; all six returned output. The limits are in what the inventories capture:\n\n- `ci-inventory` records workflow name, path, triggers, job ids and `uses:` actions only. It does not record `run:` commands, so the actual build, test, package and publish commands are not visible.\n- Trigger filters (branches, tags, paths), runner types, permissions, environments, secrets and job dependencies are not recorded.\n- Action inputs are not recorded, so toolchain versions (Node, Java) are unknown.\n- The empty Docker, Helm, Kubernetes and Terraform inventories reflect scope S of this repository only (per `docker-inventory`, `helm-inventory`, `k8s-inventory`, `tf-inventory`).\n\n**Implication:** the \"how is it built and released\" half of the focus is answered at the level of which pipelines exist and when they fire. Answering it at the level of concrete commands and release targets needs a read of the four workflow files listed in `families`.",
+        "sources": [
+          "ci-inventory",
+          "families",
+          "docker-inventory",
+          "helm-inventory",
+          "k8s-inventory",
+          "tf-inventory"
+        ]
+      }
+    ],
+    "metadata": {
+      "target": "infra",
+      "scope": "S",
+      "runId": "s7-live-infra-S-mv0so0n8",
+      "tasksAnalyzed": 6
+    }
+  },
+  "tasksCompleted": 7,
+  "tasksFailed": [],
+  "durationMs": 83361,
+  "report": {
+    "completeness": {
+      "complete": true,
+      "incomplete": [],
+      "failed": [],
+      "basisNotes": [
+        "this result holds what the stored code graph has; the graph's own coverage of the code is not established",
+        "Not walked, by rule: symbolic links, and directories named .git, node_modules, .next, .svelte-kit, .nuxt, .cache, dist, build, out, target, __pycache__, .venv, venv, .tox, .idea, .vscode, .gradle, .terraform."
+      ]
+    }
+  }
+}

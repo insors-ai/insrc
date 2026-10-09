@@ -206,14 +206,22 @@ test('the connection-listing task gives the same result for a repo scope as befo
 		}
 		assert.deepEqual(p.opened, ['/r/svc', '/r/svc', '/r/svc']);
 
-		// The explicit path wins over the scope: also over one the data row refuses,
-		// and over a connection scope (no connection is then singled out).
+		// The explicit path decides WHERE the pool is opened, over the scope's own path ...
 		p.opened.length = 0;
-		for (const intent of [mkIntent('repo', '/r/svc'), mkIntent('symbol', 'foo'), mkIntent('connection', 'ledger-db')]) {
-			const r = await dataDiscoveryConnectionsRuntime.execute(mkArgs(intent, connectionsTask({ scopeRefValue: '/r/override' }), 'same-2'));
-			assert.deepEqual(idsOf(r), ['audit-db', 'ledger-db']);
+		for (const kind of ['repo', 'workspace', 'manifest-dir'] as const) {
+			const r = await dataDiscoveryConnectionsRuntime.execute(mkArgs(mkIntent(kind, '/r/svc'), connectionsTask({ scopeRefValue: '/r/override' }), 'same-2'));
+			assert.deepEqual(idsOf(r), ['audit-db', 'ledger-db'], kind);
 		}
-		assert.deepEqual(p.opened, ['/r/override', '/r/override', '/r/override']);
+		// ... and under a connection scope too, where the task is still held to that connection ...
+		const held = await dataDiscoveryConnectionsRuntime.execute(mkArgs(mkIntent('connection', 'ledger-db'), connectionsTask({ scopeRefValue: '/r/override' }), 'same-2'));
+		assert.deepEqual(idsOf(held), ['ledger-db'], 'the explicit path does not lift the connection scope');
+		assert.deepEqual(p.opened, ['/r/override', '/r/override', '/r/override', '/r/override']);
+		// ... and it lifts no check: a kind the data row refuses is refused with the path given all the same.
+		await assert.rejects(
+			() => dataDiscoveryConnectionsRuntime.execute(mkArgs(mkIntent('symbol', 'foo'), connectionsTask({ scopeRefValue: '/r/override' }), 'same-2')),
+			(err: unknown) => scopeErrorMapping(err)?.code === 'scope-ref-kind-target-mismatch',
+		);
+		assert.equal(p.opened.length, 4, 'no pool was opened for the refused scope');
 
 		// A kind outside the data row: the typed error, whose code is the mismatch code.
 		for (const kind of ['file', 'module', 'symbol'] as const) {

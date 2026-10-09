@@ -19,6 +19,7 @@ import { join } from 'node:path';
 import { upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import { addRepo } from '../../../db/repos.js';
+import { makeEntityId } from '../../../indexer/parser/base.js';
 import type { AnalyzeScopeRef, AnalyzeTarget } from '../../../shared/analyze-types.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
 import { runWithRoutingContext } from '../../context/shaper-provider.js';
@@ -45,8 +46,9 @@ test.beforeEach(async () => {
 	}
 	// The registry is readable and holds a repo, so the indexed check is live.
 	await addRepo(null, { path: indexed, name: indexed, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' });
+	const fixtureFile = `${indexed}/index.ts`;
 	await upsertEntities(null, [{
-		id: 'e-fixture', repo: indexed, file: `${indexed}/index.ts`, kind: 'function', name: 'fn',
+		id: makeEntityId(indexed, fixtureFile, 'function', 'fn'), repo: indexed, file: fixtureFile, kind: 'function', name: 'fn',
 		language: 'typescript', startLine: 1, endLine: 3,
 	} as unknown as Entity]);
 });

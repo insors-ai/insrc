@@ -1,0 +1,291 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791541757795-88x0bb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-09T10:29:18.484Z",
+    "model": "claude:opus",
+    "elapsedMs": 169586,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "docs/daemon.md",
+        "src/analyze/context/__tests__/invariants.test.ts",
+        "src/analyze/context/__tests__/prepare-scope.test.ts",
+        "src/analyze/context/driver.ts",
+        "src/analyze/context/invariants.ts",
+        "src/analyze/context/scope.ts",
+        "src/analyze/docs-retrieval.ts",
+        "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+        "src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+        "src/analyze/executor/__tests__/walker.test.ts",
+        "src/analyze/executor/types.ts",
+        "src/analyze/executor/walker.ts",
+        "src/analyze/explore/doc-constraint-enumerate.ts",
+        "src/analyze/explore/doc-decision-trace.ts",
+        "src/analyze/index.ts",
+        "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+        "src/analyze/orchestrator/__tests__/run-report.test.ts",
+        "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+        "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+        "src/analyze/orchestrator/driver.ts",
+        "src/analyze/orchestrator/index.ts",
+        "src/analyze/orchestrator/live-runs.ts",
+        "src/analyze/orchestrator/persistence.ts",
+        "src/analyze/orchestrator/types.ts",
+        "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+        "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+        "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+        "src/analyze/runtimes/code/__tests__/discovery-modules.test.ts",
+        "src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+        "src/analyze/runtimes/code/_shared.ts",
+        "src/analyze/runtimes/code/aggregate-report.ts",
+        "src/analyze/runtimes/code/discovery-entrypoints.ts",
+        "src/analyze/runtimes/code/discovery-modules.ts",
+        "src/analyze/runtimes/code/structure-module-tree.ts",
+        "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+        "src/analyze/runtimes/data/_shared.ts",
+        "src/analyze/runtimes/data/aggregate-report.ts",
+        "src/analyze/runtimes/data/discovery-connections.ts",
+        "src/analyze/runtimes/data/discovery-objects.ts",
+        "src/analyze/runtimes/data/schema-table.ts",
+        "src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+        "src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts",
+        "src/analyze/runtimes/docs/__tests__/docs-scope.test.ts",
+        "src/analyze/runtimes/docs/aggregate-report.ts",
+        "src/analyze/runtimes/docs/constraint-enumerate.ts",
+        "src/analyze/runtimes/docs/decision-trace.ts",
+        "src/analyze/runtimes/docs/discovery-inventory.ts",
+        "src/analyze/runtimes/docs/family-summarise.ts",
+        "src/analyze/runtimes/generic/aggregate-report.ts",
+        "src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+        "src/analyze/runtimes/infra/_shared.ts",
+        "src/analyze/runtimes/infra/aggregate-report.ts",
+        "src/analyze/runtimes/infra/discovery-families.ts",
+        "src/analyze/runtimes/infra/inventory-ci.ts",
+        "src/analyze/runtimes/infra/inventory-docker.ts",
+        "src/analyze/runtimes/infra/inventory-helm.ts",
+        "src/analyze/runtimes/infra/inventory-kubernetes.ts",
+        "src/analyze/runtimes/infra/inventory-terraform.ts",
+        "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+        "src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+        "src/analyze/runtimes/shared/adherence.ts",
+        "src/analyze/runtimes/shared/aggregator.ts",
+        "src/analyze/runtimes/shared/task-scope.ts",
+        "src/daemon/__tests__/analyze-rpc.test.ts",
+        "src/daemon/__tests__/analyze-run-abandoned.test.ts",
+        "src/daemon/__tests__/analyze-run-empty-prompt.test.ts",
+        "src/daemon/analyze-rpc.ts",
+        "src/db/lance/__tests__/entity-vec.test.ts",
+        "src/db/lance/entity-vec.ts",
+        "src/mcp/analyze-step/scope.ts",
+        "src/mcp/build-step/__tests__/build-step.test.ts",
+        "src/mcp/build-step/__tests__/fixtures/tap-sample.tap",
+        "src/mcp/build-step/__tests__/render.test.ts",
+        "src/mcp/build-step/__tests__/tap-results.test.ts",
+        "src/mcp/build-step/__tests__/test-mapping.test.ts",
+        "src/mcp/build-step/__tests__/validation-checks.test.ts",
+        "src/mcp/build-step/phases/validate.ts",
+        "src/mcp/build-step/render.ts",
+        "src/mcp/build-step/tap-results.ts",
+        "src/mcp/build-step/test-mapping.ts",
+        "src/mcp/build-step/types.ts",
+        "src/mcp/build-step/validation-checks.ts",
+        "src/mcp/server.ts",
+        "src/prompts/build/implement-task.md",
+        "src/prompts/build/validate-task.md",
+        "src/prompts/steering-block.md",
+        "src/workflow/__tests__/artifact-kinds.test.ts",
+        "src/workflow/__tests__/migrate-docs-tree.test.ts",
+        "src/workflow/delivery/load.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/migrate-docs-tree.ts",
+        "src/workflow/path-scheme.ts",
+        "src/workflow/runners/build/__tests__/build-record.test.ts",
+        "src/workflow/runners/build/__tests__/completion-record.test.ts",
+        "src/workflow/runners/build/__tests__/test-record.test.ts",
+        "src/workflow/runners/build/completion-record.ts",
+        "src/workflow/runners/build/own-files.ts",
+        "src/workflow/runners/build/standalone-record.ts",
+        "src/workflow/runners/build/test-record.ts",
+        "src/workflow/storage.ts",
+        "vscode-plugin/assets/steering-block.md",
+        "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts",
+        "vscode-plugin/src/panels/daemon-gateway.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/orchestrator/__tests__/live-runs.test.ts:48",
+            "message": "The seeded fixture entity uses a hand-written id ('e-fixture', cast through `as unknown as Entity`) instead of the deterministic id. The other new tests in this Story that seed the store (scope-area, docs-scope, docs-area-retrieval, dropped-or-failed) build it with makeEntityId(repo, file, kind, name).",
+            "expectationRef": "entity-id-deterministic",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts:49",
+            "message": "Same as live-runs.test.ts: the seeded fixture entity uses the literal id 'e-fixture' rather than makeEntityId(repo, file, kind, name).",
+            "expectationRef": "entity-id-deterministic",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/runtimes/shared/__tests__/task-scope.test.ts:31",
+            "message": "The `Fixture` interface declares its optional properties `registry?` (line 31) and `indexed?` (line 33) without the explicit `| undefined`. The production types added in this Story (AbsentInput, FailedTask.code, DataScope.connectionId, the `area?` args) do spell it out.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/executor/__tests__/walker.test.ts:753",
+            "message": "The two new tests load modules with `await import(...)` inside the test body ('../../context/invariants.js', '../cache.js', 'node:fs', 'node:url'). The new sibling test files (walker-aggregate, walker-walk-failure) import the same kinds of module statically at the top. Nothing here needs lazy loading, so this departs from the module's static, `.js`-suffixed top-of-file import layout.",
+            "expectationRef": "module-idiom: static top-of-file imports in test files",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/runtimes/code/discovery-entrypoints.ts:66",
+            "message": "The runtime reads its scope into the family-local `ScopeRef` (kind: string) and then casts it with `scopeRef as AnalyzeScopeRef` to call resolveTaskScope. The same cast is repeated in discovery-modules, structure-module-tree, docs/discovery-inventory and the six infra runtimes. The docs constraint, decision and family-summary runtimes and data/_shared pass the already-typed `args.intent.scopeRef` with no cast. Two ways of handing a scope to the one scope function now coexist; an unknown kind is only caught at run time by the table check.",
+            "expectationRef": "module-idiom: typed scopeRef hand-over to resolveTaskScope",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/runtimes/docs/aggregate-report.ts:35",
+            "message": "Present but unverified as passing: the promised live docs request was run and did NOT complete. The Story's test record (S007/TESTS.md, t17) says the run failed at execute with executor-aggregator-failed after ten docs tasks passed, because the aggregate task's input exceeded one model call; it is recorded as the exception accepted on 2026-10-08, to be closed by Story s3. The docs family's changed behaviour (area scoping, the scope check before planning, a report written from the inputs that exist) is therefore exercised only by stand-in-model integration tests (docs-scope, docs-area-retrieval, docs-area-vector, scope-before-plan), never by a whole docs run that returns a final report.",
+            "expectationRef": "live: a docs request, recorded as the accepted exception",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/executor/__tests__/walker-aggregate.test.ts:258",
+            "message": "Present but unverified live: no live run produced a plan with a planner-kind task. The test record says infra was tried at M (twice) and L and every plan held only leaf tasks, so the child-plan path (a child plan with a failed task still returns its report to its parent; the answer report names the child's task by its path) is exercised only by the stand-in integration test 'a nested plan in which one child task failed gives a root report...'. That is the fallback the promised test itself allows, but the behaviour has no live exercise.",
+            "expectationRef": "live: infra or data requests at sizes above S: a plan with a planner-kind task runs its child plan, or the sizes tried are recorded and the nested integration test stands",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "docs/daemon.md:662",
+            "message": "Present but unverified by the gate: five further promised tests are recorded in S007/TESTS.md as 'reported by the builder, not run by the gate' (pass, with evidence files under S007/measurements/). Their pass-state rests on the builder's statement only: smoke 'the rendered HLD equals what its renderer gives...'; live 'an infra request and a data request each complete with a final report'; live 'a code request returns a final report whose first line names the failed functional-surface tasks'; live 'a request with an empty prompt and a stated kind of source completes'; smoke 'no test of the four suites that passed in the baseline fails after the last Task...'. The other 42 promised unit/integration tests are each present under their promised name's mapping and recorded as gate-run pass (60 cases pass, 0 fail, 0 skipped, 0 not found).",
+            "expectationRef": "smoke/live tests of tasks t16 and t17 (5 builder-reported results)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/docs-retrieval.ts:228",
+            "message": "Correctness/error-path risk: with an area, the vector search is given `ids: [...candidateById.keys()]`, i.e. every candidate of the area as an id filter. For a large area (a module scope over a docs tree with thousands of sections) this is an unbounded id list pushed into the Lance filter; it can be slow or be rejected. The surrounding try then drops the whole vector pass, so a large area silently falls back to keyword-only ranking while a small one gets vector scores. Nothing in the visible tests covers an area above three candidates.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/runtimes/data/discovery-connections.ts:63",
+            "message": "Correctness risk: when `task.params.scopeRefValue` is present, `resolveDataScope` is skipped entirely, so neither the data row's kind check nor the connection restriction applies. The test confirms that under a `connection` scope (and even a `symbol` scope the data row refuses) the override lists every connection of the overriding path. That contradicts the documented rule in docs/daemon.md that a data task with a connection scope works on that connection alone: a planner-written param lifts the restriction.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/orchestrator/driver.ts:150",
+            "message": "Correctness risk in the uncaught-error handler: it writes a failed record under the run id unconditionally from `reached.record`. Nothing refuses a second start under an id whose run is still going (live-runs.ts counts them for that reason), so a run that throws overwrites the shared run.json of the other, still-live run with `failed`/`internal-error`; the live run's later writes then flip it back. The same handler also rewrites a record already written as `ok`/`done` to `failed` if anything throws after the final write, because `reached.stage` keeps the last in-progress stage.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/scope.ts:131",
+            "message": "Duplication: `resolveScopeForTarget` re-implements the pairing test inline (`table[target].includes(ref.kind)`) where prepareScope previously called the classifier's own predicate, which this change stops importing. Two expressions of the same rule now exist; a change to the predicate (e.g. special-casing a target) would not reach the scope function.",
+            "counterpartRef": "isKindCompatibleWithTarget (src/analyze/classifier/validate.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/docs-retrieval.ts:98",
+            "message": "Duplication: `inDocsArea` is a second directory-or-file containment predicate (equal, or prefix plus '/') next to the area predicate the runtimes use from shared/task-scope.ts, with `DocsArea` produced from a resolved scope by `docsAreaOf`. The inventory and family-summary tasks filter with one, retrieval with the other, so the 'area' of a scope is decided in two places. Both also depend on an un-normalised path: a directory value with a trailing slash matches nothing and returns an empty result without an error.",
+            "counterpartRef": "inAreaOf (src/analyze/runtimes/shared/task-scope.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/runtimes/data/_shared.ts:56",
+            "message": "Error-path inconsistency: `connectionWithinScope` refuses a task that names a connection outside the scope with a plain `Error`. `scopeErrorMapping` does not recognise it, so the walk records it as `runtime-threw: ...` with no `code`, unlike every other scope refusal introduced by this Story, and a client cannot tell it from a crash.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/orchestrator/persistence.ts:137",
+            "message": "Avoidable work: in `purgeRun`, an abandoned record is rewritten as failed by `abandonRunRecord` and the run directory is then removed in the same call, so the write (and its log line and failure branch) has no observable effect.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/orchestrator/driver.ts:96",
+            "message": "Avoidable complexity: the name `writeRunRecord` means two different things in one file. Inside `runStages` it is a shadowing wrapper that also updates `reached`; in `runAnalyze`'s handler it is the raw writer, aliased as `writeRunRecordToDisk` only to make the shadow possible. A write added to the wrong function silently skips, or wrongly applies, the bookkeeping the handler relies on. A distinctly named wrapper would remove the trap.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts:101",
+            "message": "Test-isolation risk: `_setTaskScopeDepsForTest` is called at module top level and never reset, and the new test calls `_resetRuntimeRegistryForTests()` and registers a single runtime without restoring the built-in registrations. Later tests in the same file that read the registry become order-dependent.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/runtimes/__tests__/scope-sources.test.ts:76",
+            "message": "Brittle tests: several new tests assert on source text by regex with exact spelling and spacing (e.g. `const scope\\s+= await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'code', TEMPLATE_ID);`, the driver's `finalReport === undefined` block in walker-aggregate.test.ts, the import scan in walker.test.ts). A behaviour-preserving refactor or reformat fails them, and they prove the text is present, not the behaviour.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 4,
+      "low": 14
+    }
+  }
+}

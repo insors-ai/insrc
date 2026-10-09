@@ -1,0 +1,18 @@
+{
+  "label": "data-S",
+  "runId": "s7-live-data-S-mv0sqby9",
+  "params": {
+    "runId": "s7-live-data-S-mv0sqby9",
+    "userPrompt": "what data sources and schemas does this repository use",
+    "scopeRef": {
+      "kind": "repo",
+      "value": "/Users/subhagho/work/projects/insors/insrc"
+    },
+    "targetHint": "data",
+    "scopeHint": "S"
+  },
+  "startedAt": "2026-10-09T10:02:00.321Z",
+  "endedAt": "2026-10-09T10:03:08.089Z",
+  "seconds": 68,
+  "frames": 19
+}

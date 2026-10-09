@@ -1,0 +1,18 @@
+{
+  "label": "code-S",
+  "runId": "s7-live-code-S-mv0ss6p8",
+  "params": {
+    "runId": "s7-live-code-S-mv0ss6p8",
+    "userPrompt": "how is the analyze framework structured",
+    "scopeRef": {
+      "kind": "repo",
+      "value": "/Users/subhagho/work/projects/insors/insrc"
+    },
+    "targetHint": "code",
+    "scopeHint": "S"
+  },
+  "startedAt": "2026-10-09T10:03:26.828Z",
+  "endedAt": "2026-10-09T10:05:56.611Z",
+  "seconds": 150,
+  "frames": 31
+}

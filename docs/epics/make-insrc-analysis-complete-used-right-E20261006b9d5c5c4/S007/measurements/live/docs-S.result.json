@@ -1,0 +1,30 @@
+{
+  "ok": false,
+  "runId": "s7-live-docs-S-mv0t4fka",
+  "stage": "execute",
+  "intent": {
+    "target": "docs",
+    "focused": true,
+    "focus": "what do the design documents decide about the analyze framework",
+    "scopeRef": {
+      "kind": "repo",
+      "value": "/Users/subhagho/work/projects/insors/insrc"
+    },
+    "scope": "S",
+    "reasoning": "target hinted via slash command (classifier skipped); scope hinted via slash command suffix"
+  },
+  "durationMs": 546455,
+  "error": {
+    "code": "executor-aggregator-failed",
+    "message": "Run executor completed but the aggregator produced no report.",
+    "data": {
+      "tasksCompleted": 10,
+      "tasksFailed": [
+        {
+          "taskId": "t11",
+          "reason": "runtime-threw: aggregator-llm-unavailable: claude exited with 1. stderr=Error: piped stdin input exceeds 10MB. Pass large content as a file path in your prompt instead.\n stdout="
+        }
+      ]
+    }
+  }
+}

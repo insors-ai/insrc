@@ -1,0 +1,29 @@
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"classify","stageLabel":"classify started","index":0,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"classify","stageLabel":"classified: docs/S","index":1,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"plan","stageLabel":"plan started","index":2,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"plan","stageLabel":"plan accepted (11 tasks)","index":3,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"execute","stageLabel":"execute started","index":4,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t01","stageLabel":"task 1/11 started: docs.discovery.inventory","index":5,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t01","stageLabel":"task t01 ok","index":6,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t02","stageLabel":"task 2/11 started: docs.family.summarise","index":7,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t02","stageLabel":"task t02 ok","index":8,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t03","stageLabel":"task 3/11 started: docs.family.summarise","index":9,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t03","stageLabel":"task t03 ok","index":10,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t04","stageLabel":"task 4/11 started: docs.family.summarise","index":11,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t04","stageLabel":"task t04 ok","index":12,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t05","stageLabel":"task 5/11 started: docs.decision.trace","index":13,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t05","stageLabel":"task t05 ok","index":14,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t06","stageLabel":"task 6/11 started: docs.decision.trace","index":15,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t06","stageLabel":"task t06 ok","index":16,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t07","stageLabel":"task 7/11 started: docs.decision.trace","index":17,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t07","stageLabel":"task t07 ok","index":18,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t08","stageLabel":"task 8/11 started: docs.decision.trace","index":19,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t08","stageLabel":"task t08 ok","index":20,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t09","stageLabel":"task 9/11 started: docs.decision.trace","index":21,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t09","stageLabel":"task t09 ok","index":22,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t10","stageLabel":"task 10/11 started: docs.constraint.enumerate","index":23,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t10","stageLabel":"task t10 ok","index":24,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t11","stageLabel":"task 11/11 started: docs.aggregate.report","index":25,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"task-t11","stageLabel":"task t11 failed","index":26,"total":null}}
+{"id":1,"stream":"analyze.result","data":{"ok":false,"runId":"s7-live-docs-S-mv0t4fka","stage":"execute","intent":{"target":"docs","focused":true,"focus":"what do the design documents decide about the analyze framework","scopeRef":{"kind":"repo","value":"/Users/subhagho/work/projects/insors/insrc"},"scope":"S","reasoning":"target hinted via slash command (classifier skipped); scope hinted via slash command suffix"},"durationMs":546455,"error":{"code":"executor-aggregator-failed","message":"Run executor completed but the aggregator produced no report.","data":{"tasksCompleted":10,"tasksFailed":[{"taskId":"t11","reason":"runtime-threw: aggregator-llm-unavailable: claude exited with 1. stderr=Error: piped stdin input exceeds 10MB. Pass large content as a file path in your prompt instead.\n stdout="}]}}}}
+{"id":1,"stream":"done","data":{}}

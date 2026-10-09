@@ -54,23 +54,11 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each of the five acceptance criteria of Story s8 in the Define is designed, and the design builds nothing the Define rules out (the index and the planning prompt stay unchanged).",
-          "evidence": "DEF.md:251-255 gives ac1 (directories that hold source are the modules, and the result says what it rests on), ac2 (a directory as the module value), ac3 (a graph that holds module entities returns 'at least what they return today'), ac4 (a value that names nothing fails with a reason) and ac5 (a live broad code run). Sections 2.1 and 2.2 cover ac1, 2.3 covers ac2 and ac4, the stored-entity rules cover ac3, and the live test covers ac5. The design claims 'exactly' today's results for stored modules, which is stronger than the Define's 'at least'. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md]",
+          "premise": "Each of the five acceptance criteria of Story S008 in the Define is designed, and the non-goal 'changing what the code index contains' is not built.",
+          "evidence": "DEF.md:251-255 lists ac1 (directories that hold source returned as modules, result says what it rests on), ac2 (directory as module value), ac3 (graph with module entities returns at least today's), ac4 (value naming nothing fails with a reason), ac5 (live run). The design's sections 2.1/2.2 cover ac1, 2.3 covers ac2 and ac4, the stored-entity rules cover ac3, the live test covers ac5. DEF.md:86 non-goal: 'Changing what the code index contains or how it is built'; the design writes no entity and rejects alternative a2 for that reason.",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Open question 1 and reference c7 quote the Define's ac3 as 'a repository whose graph does hold module entities, as for a language whose parser emits them', and ask whether the wording should be corrected.",
-          "evidence": "The Define no longer says that. DEF.md:253 now reads: \"Given a repository whose graph does hold entities of kind 'module' for its own directories (no parser stores them today: each stores a module only for an imported module; a graph written by other means may hold them), when the same tasks run, then they return at least what they return today.\" The quoted sentence is not in the file, so the question is already answered and the c7 quote no longer matches its source. Nothing in the code design is wrong because of it, but an open question left on the design is raised again at the start of the plan stage. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md]",
-          "action": "Remove open question 1 (or mark it resolved by the Define's corrected ac3) and replace the c7 quote with the current text of DEF.md:253.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
         },
         {
           "claimId": "current-behaviour.1",
@@ -78,8 +66,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today the module list and the module tree keep only stored entities of kind 'module' from the scope's area, and the functional-surface task reads its `module` value only as an entity id, resolves no scope, and fails with \"module entity '<value>' not found in the graph\" for a directory path.",
-          "evidence": "discovery-modules.ts:57-60 filters `listEntitiesForRepo(db, repoPath)` with `inAreaOf(scope)` and skips `e.kind !== 'module'`. structure-module-tree.ts:91 does `entities.filter(e => e.kind === 'module')`, and line 123 drops a file with no owning module. surface-functional.ts:81-91 calls `getEntity(db, moduleId)`, throws `module entity '${moduleId}' not found in the graph` on null and `expected 'module'` for another kind, then reads `listEntitiesForRepo(db, moduleEntity.repo)` with no call to resolveTaskScope. The live run record live-runs-t17.md:15 shows t04 to t11 failing with exactly that message for directory values. [files: src/analyze/runtimes/code/discovery-modules.ts, src/analyze/runtimes/code/structure-module-tree.ts, src/analyze/runtimes/code/surface-functional.ts]",
+          "premise": "Today the three code tasks use only stored entities of kind 'module', and the functional-surface task throws when its `module` value is not a stored entity id.",
+          "evidence": "discovery-modules.ts:60 `if (e.kind !== 'module') continue;`; structure-module-tree.ts:91 `const modules = entities.filter(e => e.kind === 'module');` and :123 `if (owningModule === null) continue;`; surface-functional.ts:81-85 `getEntity(db, moduleId)` then `module entity '${moduleId}' not found in the graph`, :87 kind check, :94 `listEntitiesForRepo(db, moduleEntity.repo)` unnarrowed with no scope resolved.",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -90,9 +78,21 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "No parser stores a module entity for a repository's own directories; the ones stored are imported modules with an empty repo and file in a shared namespace, and listEntitiesForRepo does not return them for a repository.",
-          "evidence": "All six parsers write `kind: 'module'` only with `repoId: MODULE_REPO_ID, repo: '', file: ''` (typescript.ts:595-599, python.ts:228-230 and 259-261, go.ts:385-387, java.ts:186-189 and 218-221, scala.ts:306-308 and 361-363, kotlin.ts:225-227). The reserved ids are in shared/repo-namespaces.ts:45-49 (0xFFFFFFFE and below). One site outside the parsers, indexer/index.ts:829-830, also stores a module for a manifest dependency, likewise with `repo: '', file: ''`. listEntitiesForRepo (db/entities.ts:779-793) skips every row whose `row.repoId !== repoId`, so none of these is returned for a registered repo. [files: src/indexer/parser/typescript.ts, src/indexer/index.ts, src/db/entities.ts, src/shared/repo-namespaces.ts]",
-          "action": "None. The design could mention that the indexer's manifest-dependency site also stores such a module, but it falls under the same rule.",
+          "premise": "No parser stores a module entity for a repository's own directories, and listEntitiesForRepo does not return the imported-module entities.",
+          "evidence": "Every `kind: 'module'` writer in src/indexer (typescript.ts:591-598, python.ts:225-231 and 256-262, go.ts:382-388, java.ts:183-189 and 215-221, kotlin.ts:222-228, scala.ts:303-309, index.ts:827-831) sets `repoId: MODULE_REPO_ID` (or the namespace) with `repo: '', file: ''`. db/entities.ts:787 `if (row.repoId !== repoId) continue;` keeps only the named repo's rows.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The planner always gives the functional-surface task a directory path, and the planning prompt already asks for one task per unit shown, so the prompt needs no change.",
+          "evidence": "S007/measurements/live/code-S.result.json:109-137: eight tasks t04-t11 failed with `module entity '/Users/.../insrc/src/analyze/orchestrator' not found in the graph` (absolute directory paths). planner.system.md:28 'One leaf per unit, not one leaf per task family. If the bundle's surface shows 12 modules ... one per module name' and :35 'the units (modules / connections / ...) your tasks fan out over'.",
+          "action": "None. Note the prompt says 'module name'; the live run shows absolute directories, which the design accepts along with relative paths.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -102,20 +102,8 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "sourceModulesOf and resolveModuleValue are new, and the scope functions they sit beside (resolveTaskScope, graphRepoOf, inAreaOf) exist with the shapes the design relies on.",
-          "evidence": "A search of src/ for `sourceModulesOf|resolveModuleValue|SourceModule|NamedModule` finds nothing. src/analyze/runtimes/shared/ holds only aggregate-types.ts, adherence.ts, task-scope.ts and aggregator.ts. task-scope.ts:56-77 is `resolveTaskScope(scopeRef, family, templateLabel, deps?, table?)` and throws the three typed scope errors; :88-90 is `graphRepoOf` returning `scope.repoPath ?? scope.lookupPath`; :101-107 is `inAreaOf`, which tests `e.id === scope.entityId` for a symbol, `e.file === scope.filePath` for a file, and `e.file === dir || e.file.startsWith(`${dir}/`)` otherwise. ResolvedScope (context/scope.ts:49-66) carries kind, repoPath, lookupPath, filePath and entityId. [files: src/analyze/runtimes/shared/task-scope.ts, src/analyze/context/scope.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A source file can be told from the stored graph as an entity of kind 'file' whose `artifact` field is not true: code parsers store a file entity per source file, and documents and configuration are flagged as artifacts.",
-          "evidence": "shared/types.ts:618-619 declares `artifact?: boolean` (\"True for non-code artifacts (docs, configs, plans)\"). Each of the six code parsers writes one `kind: 'file'` entity, and artifact.ts writes its file entities with `artifact: true` (artifact.ts:136-139 and 338-341). File entities carry an absolute `file` and a `language` (rowToDomainEntity through toAbsolutePath in db/entities.ts; the fixtures in deterministic-runtimes.test.ts:183-184). [files: src/shared/types.ts, src/indexer/parser/artifact.ts]",
+          "premise": "The reused pieces exist with the stated shape: resolveTaskScope, graphRepoOf, inAreaOf, the entity read by id, and an `artifact` flag that separates a source file entity from an artifact file entity.",
+          "evidence": "task-scope.ts:56-77 resolveTaskScope(scopeRef, family, templateLabel) throws the three typed errors; :88 `return scope.repoPath ?? scope.lookupPath;`; :101-107 inAreaOf: symbol by id, file by `e.file === scope.filePath`, otherwise `e.file === dir || e.file.startsWith(`${dir}/`)`. db/entities.ts:585 `getEntity(_db, id): Promise<Entity | null>`. shared/types.ts:619 `artifact?: boolean`. Code parsers emit `kind: 'file'` with no artifact flag (typescript.ts:126, python.ts:454, go.ts:464, java.ts:705, kotlin.ts:584, scala.ts:814); artifact.ts:128-139 and :330-341 emit `kind: 'file'` with `artifact: true`.",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -126,9 +114,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "resolveModuleValue(value, scope: ResolvedScope, entities, getEntityById) can keep the stated rule that, for the id of a stored module entity, no scope is resolved and the repo read is the entity's own.",
-          "evidence": "The signature takes an already resolved `scope` and the already narrowed `entities` as required arguments, so the caller must call resolveTaskScope and read graphRepoOf(scope)'s entities BEFORE the function decides whether the value is an id. That contradicts the postcondition in 2.3 (\"No scope is resolved and no area is tested on this path\", \"only then is the run's scope resolved\") and the invariant marked c6. Today surface-functional.ts:80-94 resolves no scope at all. Built to the signature, an entity id under a scope that is refused, unresolvable or not indexed would fail with a typed scope error where it succeeds today, and the surface would be filtered from the wrong repo's entities unless the runtime reads a second list. Built to the prose, the id lookup has to live in the runtime, outside the function the design calls the only place a module value is read. [files: src/analyze/runtimes/code/surface-functional.ts, src/analyze/runtimes/shared/task-scope.ts]",
-          "action": "Change the contract so the function resolves lazily: pass the scope ref (or a `resolveScope: () => Promise<ResolvedScope>` callback) and a reader for a repo's entities in place of a resolved scope and an entity array, or split it into an id step that needs neither and a directory step that takes both. State which entity list each path filters, and adjust the unit-test fixtures to match.",
+          "premise": "The source scan scope-sources.test.ts 'still holds for the two module tasks' and only gains the functional-surface task's scope call (test subject in section 5, migration step 5).",
+          "evidence": "scope-sources.test.ts:80-86 requires, for discovery-modules.ts and structure-module-tree.ts, the literal `listEntitiesForRepo(db, repoPath)).filter(inAreaOf(scope))` and `text.match(/listEntitiesForRepo\\(/g)!.length === 1`, with the comment 'The only read of the repo's entities is the one kept to the area'. The design needs both the narrowed entities and `storedModulesOfRepo` ('ALL the repo's stored entities of kind module, not narrowed') 'from the one listEntitiesForRepo call the task already makes'. Keeping the unnarrowed result means the call is no longer immediately followed by `.filter(inAreaOf(scope))` (regex fails), and a second call fails the count. Separately, the scan's caller list (:76-79) is built from `readScopeRef(` users; the functional-surface task takes its scope from `args.intent.scopeRef`, so it will not appear in that list by itself. [files: src/analyze/runtimes/__tests__/scope-sources.test.ts, src/analyze/runtimes/code/discovery-modules.ts, src/analyze/runtimes/code/structure-module-tree.ts]",
+          "action": "State in migration step 5 that the scan's assertions for the two module tasks are rewritten (the form of the one read, and what replaces 'the only read is the one kept to the area'), and that a separate assertion is added for surface-functional.ts. Also reword the invariant in section 4 that says all three tasks read only entities 'already narrowed with inAreaOf': rule (b) reads unnarrowed stored module entities.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -137,12 +125,12 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "With the entities already narrowed by inAreaOf (the stated precondition), sourceModulesOf can apply rule (b): a directory is a module only if it does not lie in or under a stored module entity's directory.",
-          "evidence": "inAreaOf keeps, under a module or directory scope, only entities whose file is the directory or under it (task-scope.ts:104-106). A stored module entity whose file lies ABOVE the area (for example `<repo>/package.json` with the run scoped to `<repo>/pay`) is filtered out before sourceModulesOf sees it. The function then cannot know that `pay` lies under a stored module, and lists `pay` and its sub-directories as directory modules. The same graph under a repo scope gives one stored module that owns those files and no directory module. So the module of a file depends on the scope, and rule (b) as written cannot be computed from the inputs the precondition allows. No parser stores such an entity today, so this affects only the graphs ac3 is about. [files: src/analyze/runtimes/shared/task-scope.ts]",
-          "action": "Either pass sourceModulesOf the repo's stored module entities unnarrowed, as a separate argument, so that rule (b) is tested against all of them, or restate rule (b) as 'under a stored module entity of the AREA' and add the nested-scope case to the edge-case table and to the ac3 test.",
+          "severity": "LOW",
+          "premise": "Of the existing gated tests, exactly two of deterministic-runtimes.test.ts change; the tests that seed stored module entities keep passing unchanged.",
+          "evidence": "deterministic-runtimes.test.ts:177-186 seeds mod-a/package.json and mod-b/package.json modules with files mod-a/a1.ts and mod-b/b1.ts under them, so nodes and the one edge (:356-364) are unchanged; :307-315 expects `/module entity '0+' not found/` (changes); :318-327 a file id (hex, no separator) still gives `has kind='file', expected 'module'`; :370-408 one file x.ts at the repo root and `deepEqual(tree.modules, [])` (changes to one node '.'). scope-area.test.ts:80-88: every source file lies under pay/ or payments/, the other entities are kind 'document', so :119-135 hold. discovery-modules.test.ts:198-213 seeds only function entities (no 'file' entity), so :248 and :276 hold.",
+          "action": "The smoke subject names only deterministic-runtimes.test.ts for a run with INSRC_LIVE_TESTS=1; discovery-modules.test.ts:145 is gated the same way and is a listed call site. Name it for the gated run too.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "change-sites.3",
@@ -150,9 +138,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The inventory of existing tests is right: only the two named gated tests change, and the fixtures that seed stored module entities keep passing unchanged, the file-scope assertions of scope-area.test.ts included.",
-          "evidence": "deterministic-runtimes.test.ts:307-315 expects `/module entity '0+' not found/` for the value '0'.repeat(32), which under the design is read as a relative directory and fails with the new message. Lines 370-408 seed one file entity `${emptyRepoPath}/x.ts` and assert `tree.modules` is `[]`, which becomes one node '.'. The main fixture (lines 177-184) puts every file entity under mod-a/ or mod-b/, each a stored module's directory, so its assertions of two nodes and one edge stand. scope-area.test.ts:79-92 seeds file entities only under pay/ and payments/, both stored modules, and the two entities elsewhere are `document` with `artifact: true`, so the assertions at 119-135 stand, including `mods(file)` and `tree(file)` being `[]`. discovery-modules.test.ts:256-275 seeds functions only, no file entity, so it still returns an empty list. One thing for the builder: scope-sources.test.ts:76-86 requires each file that calls readScopeRef to keep the exact lines `const repoPath = graphRepoOf(scope);` and `listEntitiesForRepo(db, repoPath)).filter(inAreaOf(scope))` and exactly one `listEntitiesForRepo(`; a functional-surface runtime that takes the scope from args.intent.scopeRef stays out of that list, so its scope call needs the new assertion the design adds. [files: src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts, src/analyze/runtimes/code/__tests__/scope-area.test.ts, src/analyze/runtimes/code/__tests__/discovery-modules.test.ts, src/analyze/runtimes/__tests__/scope-sources.test.ts]",
-          "action": "None to the design. In the plan, state that the two module runtimes keep the three scanned lines verbatim.",
+          "premise": "Nothing but the aggregate task reads the three outputs; no plugin or other client does.",
+          "evidence": "Search for code.discovery.modules / code.surface.functional / module-tree / functional-surface: in src outside tests only planner/templates/code/index.ts and runtimes/code/* (plus a comment in task-scope.ts); zero hits in vscode-plugin/, jetbrains-plugin/ and site/. Hits remain in design/analyze-framework-code.md (3) and design/analyze-framework.md (2), which I did not read.",
+          "action": "Check whether design/analyze-framework-code.md describes the `module` parameter as an entity id or the module list as manifest directories; migration step 6 names only docs/daemon.md.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -162,20 +150,8 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Nothing but the aggregate task reads the three outputs, and no plugin or other client does, so a node id that is a directory path and an optional `entityId` break no reader.",
-          "evidence": "A search for `functional-surface|module-tree|surface.functional|discovery.modules|params.module` in src/mcp, src/daemon, src/analyze/planner/*.ts, src/analyze/context, src/analyze/executor/*.ts, vscode-plugin/src and jetbrains-plugin/src finds no reader outside the runtimes, the template catalog and tests. src/prompts/analyze has no mention of the output field names. The executor's checkOutputShape (walker.ts:266-267) checks the names in `produces` only. design/analyze-framework-code.md:61 and :69 describe output shapes that already differ from the code, so that page is no contract either. [files: src/analyze/executor/walker.ts, src/analyze/planner/templates/code/index.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.5",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A description added to the `module` parameter in the catalog reaches the planner, and a directory path still passes the plan validator.",
-          "evidence": "render-catalog.ts:50-51 writes each template's inputSchema to the planner prompt as `JSON.stringify(t.inputSchema, null, 2)`, so a `description` on the property is rendered. validate.ts:152-169 (INV-5) compiles the same schema, and the parameter is `{ type: 'string', minLength: 1 }` (templates/code/index.ts:91), which any non-empty path satisfies. The module list's current description at index.ts:31 reads 'top-level packages or directories with build-system manifests', which is the text the design corrects. [files: src/analyze/planner/render-catalog.ts, src/analyze/planner/validate.ts, src/analyze/planner/templates/code/index.ts]",
+          "premise": "The catalog needs no schema change beyond descriptions: the module list's output schema allows the new fields, and `module` is already a non-empty string.",
+          "evidence": "templates/code/index.ts:47-54 modules items `additionalProperties: true, required: ['name', 'path']`; :91 `module: { type: 'string', minLength: 1 }`; :31 description 'top-level packages or directories with build-system manifests' (the text the design corrects). :86-93 the functional-surface inputSchema is `additionalProperties: false` with no scopeRef, which is why the design reads the scope from `args.intent.scopeRef`.",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -186,11 +162,23 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "No stored shape changes: the module list's declared output schema requires only `name` and `path` and allows further fields, so added fields and an absent `entityId` are valid, and nothing is reindexed.",
-          "evidence": "templates/code/index.ts:41-58: the items of `modules` have `additionalProperties: true` and `required: ['name', 'path']`. The functional-surface and module-tree templates declare no outputSchema (index.ts:79-96 and 136-153). The design writes no entity and changes no parser. I found no cache of plan-task outputs keyed by a template's `revision`: a search for `revision` in src/analyze outside the template files matches comments only. A run record stored before the change is returned as stored. [files: src/analyze/planner/templates/code/index.ts]",
-          "action": "None.",
+          "premise": "For a graph that holds stored module entities, the records and nodes are the ones returned today (invariant c6, backward-compat paragraph).",
+          "evidence": "Content is preserved: the rule keeps every stored module entity in the area and puts no directory module in or under one, and surface-functional's entity path is today's (surface-functional.ts:93-98 prefix with trailing slash over the entity's whole repo). One difference the design does not state: order. Today the list sorts by the entity's file (discovery-modules.ts:71 `a.path.localeCompare(b.path)`; structure-module-tree.ts:92 by `m.file`); the design sorts 'by directory' and the tree takes that order. For nested stored modules these differ ('a/b/package.json' sorts before 'a/package.json' by file, 'a' before 'a/b' by directory), and two module entities in one directory tie.",
+          "action": "State the sort key for stored entities (directory, then the entity's file) and say that order among nested stored modules changes, or keep today's key for them.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No stored data holds the old output shapes or the old meaning of the `module` value, so nothing needs migrating.",
+          "evidence": "The graph and index are untouched by the design, which I confirmed from the runtimes (they only read). I did not read the plan cache (src/analyze/planner/cache.ts; planner/__tests__/cache.test.ts mentions these templates) or the run-record store to see whether a cached plan or a stored run keeps task outputs or is keyed on the template revision ('r1' at templates/code/index.ts:30, :84, :141), which the design does not raise although it changes two template descriptions and the parameter's meaning.",
+          "action": "Say in section 6 whether a cached plan is reused across this change and whether the template revisions stay 'r1'.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
         },
         {
           "claimId": "boundaries.1",
@@ -198,9 +186,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design adds no error code and changes nothing Story s6 or s7 owns: a plain Error is recorded as 'runtime-threw: <message>' with no code, and a typed scope error from resolveTaskScope keeps its code.",
-          "evidence": "walker.ts:253-263: the catch calls `scopeErrorMapping(err)` and, when it matches, returns `failedRecord(task, scoped.message, scoped.code)`; otherwise it returns `failedRecord(task, `runtime-threw: ${msg}`)`. The design reuses resolveTaskScope, graphRepoOf and inAreaOf without altering them, leaves the planning prompt as it is (planner.system.md:28 already says 'One leaf per unit ... one per module name'), and writes nothing to the index, which the adjacent-scope text for Story s4 says is not changed. docs/daemon.md:668 holds the section on the kinds of scope each family accepts, beside which step 6 adds its text. [files: src/analyze/executor/walker.ts, src/prompts/analyze/planner.system.md, docs/daemon.md]",
-          "action": "None.",
+          "premise": "The Story adds no error code and does not change Story s7's scope function or Story s6's code list: its new failures are plain errors and the scope errors pass through.",
+          "evidence": "The design only calls resolveTaskScope/graphRepoOf/inAreaOf (task-scope.ts:56, :88, :101) and adds a new file beside them. context/invariants.ts:105-111 scopeErrorMapping maps exactly ScopeNotIndexedError, ScopeRefUnresolvedError and ScopeKindTargetMismatchError; nothing in the design adds to it. The one touch on Story s7's ground is its scan test, reported under change-sites.",
+          "action": "None beyond the change-sites finding.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -210,9 +198,21 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Every failure of the functional-surface task is detectable from what the runtime holds, and a value that names nothing becomes a failed task with a reason, never an empty surface.",
-          "evidence": "The detections rest on things that exist: `getEntity` returning null (surface-functional.ts:81-82), the entity's `kind` (:87), the resolved scope's `kind`, the equal-or-prefix-with-slash comparison of task-scope.ts:106, and a filter of the area's file entities by path. A thrown error becomes a failed record in walker.ts:253-263. Today an unknown value throws before any surface is built, so no path returns an empty module for it, and the design keeps that. The existing test of a bare unknown id (deterministic-runtimes.test.ts:307-315) meets the new 'no stored source file lies under it' message, as the design says. The order of the two refusals for a directory path (outside the area, then no stored source under it) is implied by the text and not stated outright. [files: src/analyze/runtimes/code/surface-functional.ts, src/analyze/executor/walker.ts]",
-          "action": "State the order in which resolveModuleValue tests a directory path (file or symbol scope, then outside the repo or area, then no stored source), so that each message is deterministic for a value that fails more than one test.",
+          "premise": "A plain Error thrown by a runtime is recorded as a failed task with 'runtime-threw: <message>' and no code, and a typed scope error is recorded with its code.",
+          "evidence": "executor/walker.ts:253-263: `const scoped = scopeErrorMapping(err); if (scoped !== undefined) { ... return failedRecord(task, scoped.message, scoped.code); } ... return failedRecord(task, `runtime-threw: ${msg}`);`. The live run shows the same form for today's error (code-S.result.json:109 'runtime-threw: code.surface.functional: module entity ... not found in the graph').",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each refusal of a module value is detectable in the stated order: entity id first (no separator), then scope kind, then area, then stored source under the directory.",
+          "evidence": "Entity ids are hex-32 with no separator (tests build them with makeEntityId: scope-area.test.ts:44, deterministic-runtimes.test.ts:160), so step 1 reaches every id accepted today; getEntity returns null for an unknown id (entities.ts:587-588), which sends a bare name or an unknown hex id to step 2. ResolvedScope carries kind, lookupPath, repoPath, filePath and entityId (context/scope.ts:49-66), which is what the kind test and the directory comparison need. A consequence the design does state: an unknown hex id under a refused or unindexed scope now fails with a typed scope error where today it says 'not found'.",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -222,21 +222,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each acceptance criterion maps to at least one named test, and the graph tests can run ungated on a temporary store as scope-area.test.ts does.",
-          "evidence": "The acceptance mapping gives ac1 three tests, ac2 three, ac3 two, ac4 two and ac5 one. scope-area.test.ts:69-76 creates a temporary LMDB store with setGraphStorePath and registers a repo in beforeEach, with no INSRC_LIVE_TESTS gate; the gated files are deterministic-runtimes.test.ts:90 and discovery-modules.test.ts:143. ac5 rests on one live run through the installed daemon, which the validate gate cannot run itself and which must be reported with its evidence; the Define's ac5 is by its nature a live criterion. The ac3 test as described does not cover a scope nested under a stored module's directory (see the second finding under change-sites). [files: src/analyze/runtimes/code/__tests__/scope-area.test.ts, src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts]",
-          "action": "When the nested-scope rule is settled, add that case to the ac3 integration test.",
+          "premise": "Each of ac1 to ac5 maps to at least one named test, and the fixtures those tests rest on can reach the paths they claim.",
+          "evidence": "The acceptance mapping names tests for ac1-ac5; ac1-ac4 each have a unit and an integration subject, ac5 has only the live run. The integration fixtures follow scope-area.test.ts, which is ungated and uses a temporary LMDB store (:69-76), with stored modules whose ids are real entity ids. Two weaknesses: ac5 rests on a single live run the gate cannot run, and the unit-level subject on the source scan asserts something that cannot stay true as written (see change-sites).",
+          "action": "Correct the scan subject as under change-sites. For ac5, say where the live run's result is recorded so it can be reported at validate.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
         "high": 0,
-        "med": 3,
-        "low": 12,
-        "unverified": 0
+        "med": 1,
+        "low": 14,
+        "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-09T12:13:06.991Z",
+      "reviewedAt": "2026-10-09T12:17:50.387Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     }
@@ -367,7 +367,7 @@
           ],
           "preconditions": [
             "The scope is resolved by resolveTaskScope for the code family, and the repo read is graphRepoOf(scope), as Story s7 left it",
-            "`entities` are the repo's entities already narrowed to the scope's area with inAreaOf: the modules LISTED come from them. `storedModulesOfRepo` are ALL the repo's stored entities of kind 'module', not narrowed: rule (b) is tested against them, because a stored module entity whose file lies above the area still owns the files under its directory. Both come from the one listEntitiesForRepo call the task already makes"
+            "`entities` are the repo's entities already narrowed to the scope's area with inAreaOf: the modules LISTED come from them. `storedModulesOfRepo` are ALL the repo's stored entities of kind 'module', not narrowed: rule (b) is tested against them, because a stored module entity whose file lies above the area still owns the files under its directory. In the two module tasks both come from ONE call of listEntitiesForRepo(db, repoPath): its result is kept whole, the area's entities are taken from it with inAreaOf, and the stored module entities are taken from it by kind. The whole result is used for nothing else"
           ],
           "postconditions": [
             "A SOURCE FILE is a stored entity of kind 'file' that is not an artifact (its `artifact` field is not true). A MODULE is one of two things. (a) A stored entity of kind 'module' whose file lies in the area: it owns every source file under the directory of its file, at any depth, as today. (b) A directory that directly holds at least one source file and is neither the directory of a stored module entity nor under one. A directory that holds source only in its sub-directories is not a module of its own in this list; its sub-directories are",
@@ -647,7 +647,7 @@
       ],
       "invariantsToPreserve": [
         {
-          "text": "A task under a scope reads only the entities of that scope's area (Story s7): the modules, the tree's files and the surface's symbols all come from entities already narrowed with inAreaOf.",
+          "text": "A task under a scope returns only what lies in that scope's area (Story s7): the modules listed, the tree's files and a directory path's symbols all come from entities narrowed with inAreaOf. One read reaches outside the area and returns nothing from it: the repo's stored module entities are read whole, only to decide whether a directory of the area lies under a stored module.",
           "source": "c2"
         },
         {
@@ -785,7 +785,7 @@
         },
         {
           "order": 5,
-          "action": "Bring the existing tests in line. The tests that seed a stored module entity inside the repository keep passing unchanged and are the proof that such a graph loses nothing; the file-scope assertions of src/analyze/runtimes/code/__tests__/scope-area.test.ts hold as they are. Two gated tests of src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts change and are rewritten: 'surface.functional: unknown module entity id -> throws' (new message) and 'structure.module-tree: repo with zero modules -> empty tree, not error' (one node '.', no edge). The whole gated file is run with INSRC_LIVE_TESTS=1. The source scan src/analyze/runtimes/__tests__/scope-sources.test.ts gains the functional-surface task's scope call.",
+          "action": "Bring the existing tests in line. The tests that seed a stored module entity inside the repository keep passing unchanged and are the proof that such a graph loses nothing; the file-scope assertions of src/analyze/runtimes/code/__tests__/scope-area.test.ts hold as they are. Two gated tests of src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts change and are rewritten: 'surface.functional: unknown module entity id -> throws' (new message) and 'structure.module-tree: repo with zero modules -> empty tree, not error' (one node '.', no edge). The whole gated file is run with INSRC_LIVE_TESTS=1. The source scan src/analyze/runtimes/__tests__/scope-sources.test.ts is rewritten for the code family, not only extended. Today it requires, in each code runtime that calls readScopeRef, the literal read `listEntitiesForRepo(db, repoPath)).filter(inAreaOf(scope))` and exactly one call of listEntitiesForRepo, under the comment that the only read of the repo's entities is the one kept to the area. For the two module tasks the scan will require instead: exactly one call of listEntitiesForRepo(db, repoPath), whose whole result is kept; the area's entities taken from that result with inAreaOf(scope); and the whole result passed on only as the stored module entities of sourceModulesOf. The entry-points task keeps today's assertion. A separate assertion is added for surface-functional.ts, which does not call readScopeRef and so is not found by the scan's list: it resolves `args.intent.scopeRef` through resolveTaskScope for the code family on the directory path, and reads no scope on the entity-id path.",
           "rollbackable": true
         },
         {
@@ -794,7 +794,7 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "No stored data changes and nothing needs to be reindexed. The three outputs only gain fields (`directory`, `fileCount`) and one field becomes optional (`entityId`), absent only for a module that had no record at all before. For a graph that holds stored module entities, the records, the nodes, the edges between those entities and the surfaces are the ones returned today under every kind of scope, and a plan that carries a stored module entity's id as its `module` value is read exactly as today. What changes for an existing caller: a directory that holds source and lies under no stored module is now a module (a repository with one source file and no module entity has one node '.' where it had none); a tree node's `id` may be a directory path where it was always an entity id; and a directory path as a `module` value no longer fails. Nothing but the aggregate task reads these outputs, and no plugin or other client does.",
+      "backwardCompat": "No stored data changes and nothing needs to be reindexed. The three outputs only gain fields (`directory`, `fileCount`) and one field becomes optional (`entityId`), absent only for a module that had no record at all before. For a graph that holds stored module entities, the records, the nodes, the edges between those entities and the surfaces are the ones returned today under every kind of scope, and a plan that carries a stored module entity's id as its `module` value is read exactly as today. What changes for an existing caller: a directory that holds source and lies under no stored module is now a module (a repository with one source file and no module entity has one node '.' where it had none); a tree node's `id` may be a directory path where it was always an entity id; and a directory path as a `module` value no longer fails. Nothing but the aggregate task reads these outputs, and no plugin or other client does. No stored plan or stored output needs migrating. A plan is written per run (src/analyze/planner/cache.ts keeps a run's plan and its attempts under that run's directory) and is never reused by another run, so no plan written before the change is executed after it. A run that completed before the change and is asked for again is replayed from its run record: its stored final report is returned as it was written, and its tasks are not run again. The templates' `revision` stays 'r1' for all three: nothing in the analyzer reads a template's revision, so raising it would change no behaviour.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },

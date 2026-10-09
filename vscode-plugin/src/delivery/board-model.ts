@@ -17,9 +17,9 @@
  * derived here. The same arguments always give an equal model.
  */
 
-import type { BoardViewModel, CardView, ColumnView } from './board-protocol.js';
+import type { BadgeView, BoardViewModel, CardView, ColumnView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
-import type { DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
+import type { AttentionReason, DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
 import { STAGE_ORDER, type DisplayLabels } from './labels.js';
 
 /** Cards shown per column before show-more, and how many each show-more adds. */
@@ -84,17 +84,93 @@ function matchesSearch(item: DeliveryItemView, epic: DeliveryItemView | null, ne
   return haystacks.some(h => h.toLowerCase().includes(needle));
 }
 
-function cardOf(item: DeliveryItemView & { readonly kind: 'story' | 'issue' }, epic: DeliveryItemView | null): CardView {
+type CardItem = DeliveryItemView & { readonly kind: 'story' | 'issue' };
+type Tone = BadgeView['tone'];
+
+const APPROVAL_RANK = { rejected: 0, pending: 1, approved: 2 } as const;
+const APPROVAL_TONE: Readonly<Record<keyof typeof APPROVAL_RANK, Tone>> = { rejected: 'danger', pending: 'warning', approved: 'success' };
+const VERDICT_RANK = { block: 0, warn: 1, pass: 2 } as const;
+const ATTENTION_TONE: Readonly<Record<AttentionReason, Tone>> = {
+  'pending-decision': 'warning',
+  'rejected': 'danger',
+  'review-blocked': 'danger',
+  'validation-failed': 'danger',
+  'validation-conflict': 'danger',
+};
+
+const isAttentionReason = (r: string, labels: DisplayLabels): r is AttentionReason => Object.hasOwn(labels.attention, r);
+
+/**
+ * The card's signals in a fixed order: approval, review, validation, conflict,
+ * attention, notice. Each reads a published field only; a badge whose label is
+ * already on the card is dropped.
+ */
+function badgesOf(item: CardItem, labels: DisplayLabels): readonly BadgeView[] {
+  const out: BadgeView[] = [];
+  const add = (kind: BadgeView['kind'], label: string, tone: Tone): void => {
+    if (!out.some(b => b.label === label)) out.push({ kind, label, tone });
+  };
+  const deciding = new Set(item.stage?.reason.artifactIds ?? []);
+  const named = item.evidence.filter(e => deciding.has(e.artifactId));
+
+  // Approval: the worst approval among the records the stage reason names.
+  const approval = named.map(e => e.approval.state).sort((a, b) => APPROVAL_RANK[a] - APPROVAL_RANK[b])[0];
+  if (approval !== undefined) add('approval', labels.approval[approval], APPROVAL_TONE[approval]);
+
+  // Review: any blocking review blocks; otherwise the worst effective verdict among the named records.
+  if (item.evidence.some(e => e.review?.blocking === true)) {
+    add('review', labels.reviewVerdict.block, 'danger');
+  } else {
+    const verdict = named.flatMap(e => (e.review === null ? [] : [e.review.effectiveVerdict])).sort((a, b) => VERDICT_RANK[a] - VERDICT_RANK[b])[0];
+    // A 'block' that no longer blocks (overridden, or its gate approved) is shown, but not as danger.
+    if (verdict !== undefined) add('review', labels.reviewVerdict[verdict], verdict === 'pass' ? 'success' : verdict === 'warn' ? 'warning' : 'neutral');
+  }
+
+  // Validation: task results and the story-level result together.
+  const v = item.validation;
+  const slr = item.storyLevelResult;
+  const hasResults = slr !== null || (v !== null && v.passed + v.failed + v.unrecorded > 0);
+  if (hasResults) {
+    if ((v?.failed ?? 0) > 0 || slr === 'failed') add('validation', labels.attention['validation-failed'], 'danger');
+    else if ((v?.unrecorded ?? 0) > 0 || slr === 'unrecorded') add('validation', labels.taskResult.unrecorded, 'neutral');
+    else add('validation', labels.taskResult.passed, 'success');
+  }
+
+  if (item.conflict !== null) add('conflict', labels.attention['validation-conflict'], 'danger');
+
+  for (const r of item.attentionReasons) {
+    if (isAttentionReason(r, labels)) add('attention', labels.attention[r], ATTENTION_TONE[r]);
+  }
+
+  const codes = new Set<string>();
+  for (const n of item.notices) {
+    if (codes.has(n.code)) continue;
+    codes.add(n.code);
+    add('notice', labels.notice[n.code], n.attention ? 'warning' : 'neutral');
+  }
+  return out;
+}
+
+const KIND_TEXT = { story: 'Story', issue: 'Issue' } as const;
+
+function cardOf(item: CardItem, stage: DeliveryStage, epic: DeliveryItemView | null, labels: DisplayLabels): CardView {
   const title = titleOf(item);
+  const epicTitle = epic === null ? null : titleOf(epic);
+  const badges = badgesOf(item, labels);
+  const parts = [`${KIND_TEXT[item.kind]}: ${title}.`, `Stage: ${labels.stage[stage]}.`];
+  if (item.standalone) parts.push('Standalone.');
+  else if (epicTitle !== null) parts.push(`Epic: ${epicTitle}.`);
+  if (item.needsAttention) parts.push('Needs attention.');
+  if (badges.length > 0) parts.push(`Signals: ${badges.map(b => b.label).join(', ')}.`);
   return {
     itemId: item.id,
     kind: item.kind,
     title,
     standalone: item.standalone,
-    epicTitle: epic === null ? null : titleOf(epic),
-    badges: [],
+    epicTitle,
+    badges,
     needsAttention: item.needsAttention,
-    accessibleLabel: title,
+    accessibleLabel: parts.join(' '),
   };
 }
 
@@ -112,7 +188,7 @@ export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: Board
     const epic = epicOf(item, byId);
     if (!inScope(item, epic, selection) || !matchesSearch(item, epic, needle)) continue;
     if (selection.needsAttentionOnly && !item.needsAttention) continue;
-    column.push(cardOf(item, epic));
+    column.push(cardOf(item, item.stage.stage, epic, labels));
     if (item.needsAttention) needsAttention++;
   }
   const columns: ColumnView[] = STAGE_ORDER.map(stage => {

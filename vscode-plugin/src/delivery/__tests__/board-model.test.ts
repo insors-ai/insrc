@@ -124,3 +124,66 @@ test('unknownStages counts every stage id outside the six, and those items are i
   assertCountsAgree(m);
   assert.equal(unknownStages(snapshot([item({ id: 'X', stage: 'scoped' })])).size, 0);
 });
+
+const ev = (artifactId: string, state: 'approved' | 'rejected' | 'pending', review: unknown = null) =>
+  ({ artifactId, kind: 'LLD', mdPath: null, openWith: 'review-view', approval: { state, at: null }, review, reviewCurrency: null });
+const review = (effectiveVerdict: 'pass' | 'warn' | 'block', blocking: boolean) =>
+  ({ verdict: effectiveVerdict, reviewedAt: '', reviewedBy: 'daemon', counts: { high: 0, med: 0, low: 0 }, override: null, resolvedFindings: 0, effectiveVerdict, blocking });
+const cardOfId = (m: BoardViewModel, id: string) => m.columns.flatMap(c => c.cards).find(c => c.itemId === id);
+const columnOf = (m: BoardViewModel, id: string) => m.columns.find(c => c.cards.some(k => k.itemId === id))?.stage;
+
+test('an approved build with failed tasks stays in Complete and carries a text-labelled validation-conflict badge', () => {
+  const s = item({ id: 'S1', validation: { passed: 3, failed: 2, unrecorded: 0, unplanned: 0 },
+    conflict: { failedTaskItemIds: ['S1:T001', 'S1:T002'], storyLevelFailed: false },
+    attentionReasons: ['validation-conflict'], needsAttention: true,
+    evidence: [ev('BUILD-x', 'approved')] as never, stage: 'complete', reasonIds: ['BUILD-x'] });
+  const m = build(snapshot([s]));
+  assert.equal(columnOf(m, 'S1'), 'complete');
+  const card = cardOfId(m, 'S1')!;
+  const conflict = card.badges.find(b => b.kind === 'conflict');
+  assert.deepEqual(conflict, { kind: 'conflict', label: 'Validation conflict', tone: 'danger' });
+  assert.deepEqual(card.badges.map(b => b.label), ['Approved', 'Validation failed', 'Validation conflict'], 'the attention reason repeats the conflict label, so it is not repeated');
+});
+
+test('a review-blocked design shows a Review blocked badge, matches Needs attention and keeps its column', () => {
+  const blocked = item({ id: 'S1', needsAttention: true, attentionReasons: ['pending-decision', 'review-blocked'],
+    evidence: [ev('LLD-x', 'pending', review('block', true))] as never, stage: 'design-plan', reasonIds: ['LLD-x'] });
+  const overridden = item({ id: 'S2', evidence: [ev('LLD-y', 'approved', review('block', false))] as never, stage: 'ready-design-approved', reasonIds: ['LLD-y'] });
+  const snap = snapshot([blocked, overridden]);
+
+  const on = build(snap, { needsAttentionOnly: true });
+  assert.deepEqual(on.columns.flatMap(c => c.cards).map(c => c.itemId), ['S1']);
+  assert.equal(columnOf(on, 'S1'), 'design-plan', 'the filter does not move the card');
+  const card = cardOfId(on, 'S1')!;
+  assert.deepEqual(card.badges, [
+    { kind: 'approval', label: 'Pending', tone: 'warning' },
+    { kind: 'review', label: 'Review blocked', tone: 'danger' },
+    { kind: 'attention', label: 'Pending decision', tone: 'warning' },
+  ]);
+  assert.deepEqual(cardOfId(build(snap), 'S2')!.badges.find(b => b.kind === 'review'), { kind: 'review', label: 'Review blocked', tone: 'neutral' },
+    'an overridden block is shown, but not as danger');
+});
+
+test('a failed story-level result shows Validation failed, badges never repeat a label, and the accessible label names every badge', () => {
+  const notice = (code: string, attention: boolean) => ({ code, message: `<script>${code}</script>`, itemIds: ['S1'], artifactIds: [], fileNames: [], attention });
+  const s = item({ id: 'S1', title: 'Ship <b>it</b>', parentId: 'E1', needsAttention: true,
+    validation: { passed: 4, failed: 0, unrecorded: 0, unplanned: 0 }, storyLevelResult: 'failed',
+    attentionReasons: ['validation-failed', 'unknown-route'],
+    notices: [notice('unknown-route', true), notice('unknown-route', true), notice('review-currency-unknown', false)] as never });
+  const m = build(snapshot([item({ id: 'E1', kind: 'epic', title: 'Board epic' }), s]));
+  const card = cardOfId(m, 'S1')!;
+  assert.deepEqual(card.badges.find(b => b.kind === 'validation'), { kind: 'validation', label: 'Validation failed', tone: 'danger' });
+  assert.ok(!card.badges.some(b => b.label === 'Passed'), 'never Passed beside a failed story-level result');
+  const labels = card.badges.map(b => b.label);
+  assert.equal(new Set(labels).size, labels.length, 'no label repeats');
+  assert.deepEqual(labels, ['Validation failed', 'Unknown route', 'Review currency unknown']);
+  assert.deepEqual(card.badges.slice(1).map(b => b.tone), ['warning', 'neutral']);
+  assert.equal(card.accessibleLabel,
+    'Story: Ship <b>it</b>. Stage: Scoped. Epic: Board epic. Needs attention. Signals: Validation failed, Unknown route, Review currency unknown.');
+
+  const standalone = cardOfId(build(snapshot([item({ id: 'S9', standalone: true, title: null, kind: 'issue',
+    validation: { passed: 2, failed: 0, unrecorded: 1, unplanned: 0 } })])), 'S9')!;
+  assert.equal(standalone.title, 'S9', 'a null title shows the id');
+  assert.deepEqual(standalone.badges, [{ kind: 'validation', label: 'Unrecorded', tone: 'neutral' }]);
+  assert.equal(standalone.accessibleLabel, 'Issue: S9. Stage: Scoped. Standalone. Signals: Unrecorded.');
+});

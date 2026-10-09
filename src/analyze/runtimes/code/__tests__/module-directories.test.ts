@@ -309,3 +309,26 @@ test('under a module scope the tree keeps to the area, a file whose owning store
 	assert.deepEqual(whole.tree.modules.map(m => m.name), ['.', 'pay-pkg', 'src/payments', 'src/ship']);
 	assert.deepEqual(edgesOf(whole.tree), ['pay-pkg -> src/ship x1', 'src/ship -> pay-pkg x1']);
 });
+
+test("a repository with no module entity and one source file gives one node '.' and no edge", async () => {
+	// The case of the gated test in deterministic-runtimes.test.ts, which the build
+	// gate cannot run (it runs without INSRC_LIVE_TESTS and would record it as skipped).
+	await seed([src('x.ts')]);
+	const { tree, completeness } = await moduleTree(repoScope());
+	assert.deepEqual(tree.modules, [{ id: REPO, name: '.', path: REPO, language: 'typescript' }]);
+	assert.deepEqual(tree.edges, []);
+	assert.equal(completeness.returned, 1);
+	// A repository with nothing stored as source has no node, and that is not an error.
+	await closeGraphStore();
+	const empty = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-module-directories-empty-')));
+	try {
+		setGraphStorePath(join(empty, 'graph.lmdb'));
+		await addRepo(null, { path: REPO, name: '', addedAt: NOW, status: 'ready' });
+		await seed([doc('README.md')]);
+		const none = await moduleTree(repoScope());
+		assert.deepEqual([none.tree.modules, none.tree.edges], [[], []]);
+	} finally {
+		await closeGraphStore();
+		rmSync(empty, { recursive: true, force: true });
+	}
+});

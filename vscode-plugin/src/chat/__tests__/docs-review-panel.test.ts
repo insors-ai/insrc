@@ -5503,7 +5503,8 @@ test('history and compiler checks skip with a stated reason when what they need 
     const reasons: string[] = [];
     return { reasons, skip: (reason?: string) => { reasons.push(reason ?? ''); } };
   };
-  if (!git(t, {})) return; // the guard tests drive git itself
+  // The guards are tested against directories built here, so only the git binary is needed, not this repo's history.
+  if (spawnSync('git', ['--version']).error) { t.skip('git is not installed'); return; }
 
   const bare = mkdtempSync(join(tmpdir(), 'insrc-guard-plain-'));
   const repo = mkdtempSync(join(tmpdir(), 'insrc-guard-git-'));

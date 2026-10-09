@@ -107,6 +107,8 @@ export const codeSurfaceFunctionalRuntime: TemplateRuntime = {
 		let inModule: Entity[];
 		if (byId !== null) {
 			// The entity's own repo, whole, and everything under the directory of its file.
+			// Kept on the prefix helper it used before, not on `liesUnder`: the two differ
+			// for a module entity whose file has no directory, and an id is read as before.
 			named = byId;
 			const prefix   = modulePrefixOf(byId.path);
 			const entities = await listEntitiesForRepo(db, byId.entity!.repo);

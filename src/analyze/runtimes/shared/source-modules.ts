@@ -26,6 +26,8 @@
  * no model.
  */
 
+import { posix } from 'node:path';
+
 import type { Entity } from '../../../shared/types.js';
 import type { ResolvedScope } from '../../context/scope.js';
 
@@ -46,7 +48,9 @@ export interface SourceModule {
 	readonly directory: string;
 	/** A stored module entity's name; else the directory relative to the repo, '.' for the repo's own. */
 	readonly name:      string;
-	/** Source files DIRECTLY in the directory. */
+	/** Source files DIRECTLY in the directory, counted WITHIN THE AREA: under a scope narrower than
+	 *  the directory (a file scope on a stored module entity's own file) it is lower than the
+	 *  directory's own count, and 0 does not say the directory is empty. */
 	readonly fileCount: number;
 	/** A stored module entity's language; else the language most of the directory's source files have. */
 	readonly language:  string;
@@ -119,8 +123,9 @@ export function sourceModulesOf(
 
 	// (a) The stored module entities the area contains, under every kind of scope.
 	const modules: SourceModule[] = [];
+	// An imported module has an empty file and owns no directory of this repo.
 	for (const e of entities) {
-		if (e.kind !== 'module') continue;
+		if (e.kind !== 'module' || e.file.length === 0) continue;
 		const directory = directoryOf(e.file);
 		modules.push({
 			directory,
@@ -232,12 +237,14 @@ export function moduleOfDirectory(
 	return { directory, name: relativeName(repo, directory), path: directory };
 }
 
-/** A directory value made absolute: joined to `base` when relative, with no trailing slash. */
+/**
+ * A directory value made absolute: joined to `base` when relative, its '.' and
+ * '..' segments resolved, with no trailing slash. Resolved BEFORE the tests of
+ * `moduleOfDirectory`, which compare paths as text: `src/pay/../ship` is the
+ * directory `src/ship`, and a path that climbs out of the area is outside it.
+ */
 function absoluteDirectory(value: string, base: string): string {
-	let path = value.startsWith('/') ? value : value.replace(/^(\.\/)+/, '');
-	if (!path.startsWith('/')) {
-		path = path === '' || path === '.' ? base : `${base}/${path}`;
-	}
+	let path = posix.normalize(value.startsWith('/') ? value : `${base}/${value}`);
 	while (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
 	return path;
 }

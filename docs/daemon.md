@@ -717,7 +717,9 @@ The list is flat: one entry per such directory, sorted by directory, named by
 its path relative to the repo (`.` for the repo's own directory). A directory
 that holds source only in its sub-directories, such as `src`, is not listed;
 its sub-directories are. A directory whose files the index does not hold is
-not listed either. Before, the list and the tree held stored module entities
+not listed either. Each entry's `fileCount` counts the source files directly in
+the directory within the scope's area, so under a `file` scope on a stored
+module entity's own file it is 0, which does not say the directory is empty. Before, the list and the tree held stored module entities
 only, which on a repository like this one is none.
 
 The functional-surface task's `module` value has three forms:
@@ -727,6 +729,9 @@ The functional-surface task's `module` value has three forms:
 | an absolute directory path | that directory |
 | a path relative to the repo (the `directory` or `name` the module list gives) | the directory under the repo that was read |
 | the id of a stored module entity | that entity, exactly as before: its own repo is read whole and no scope is resolved |
+
+A path's `.` and `..` segments are resolved first, so `src/pay/../ship` is the
+directory `src/ship`.
 
 The surface of a directory is every function, method and class of the stored
 source files under it, sub-directories included, so a directory that is not in

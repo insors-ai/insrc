@@ -49,6 +49,7 @@ interface ModuleRecord {
 	/** The module's directory: absolute, no trailing slash. */
 	readonly directory: string;
 	/** Source files directly in the directory. */
+	/** Source files directly in the directory, within the scope's area. */
 	readonly fileCount: number;
 	/** Present only when the module is a stored entity of kind 'module'. */
 	readonly entityId?: string | undefined;

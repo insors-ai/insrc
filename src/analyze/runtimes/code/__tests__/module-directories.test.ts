@@ -24,14 +24,13 @@ import { addRepo } from '../../../../db/repos.js';
 import { makeEntityId } from '../../../../indexer/parser/base.js';
 import type { AnalyzeScopeRef, ClassifiedIntent } from '../../../../shared/analyze-types.js';
 import type { Entity, EntityKind, Relation } from '../../../../shared/types.js';
+import { buildCompleteness } from '../../../completeness.js';
 import type { Completeness } from '../../../completeness.js';
-import type { PlannedTask, TemplateExecuteArgs, TemplateExecuteResult, TemplateRuntime } from '../../../executor/types.js';
+import type { ScopeDeps } from '../../../context/scope.js';
+import { purgeAllTaskOutputs, registerTemplateRuntime, runExecutor, _resetRuntimeRegistryForTests } from '../../../executor/index.js';
+import type { PlanTask, PlannedTask, TemplateExecuteArgs, TemplateExecuteResult, TemplateRuntime } from '../../../executor/types.js';
 import { MODULE_RULE } from '../../shared/source-modules.js';
 import { _setTaskScopeDepsForTest } from '../../shared/task-scope.js';
-import { buildCompleteness } from '../../../completeness.js';
-import { purgeAllTaskOutputs, registerTemplateRuntime, runExecutor, _resetRuntimeRegistryForTests } from '../../../executor/index.js';
-import type { PlanTask } from '../../../executor/types.js';
-import type { ScopeDeps } from '../../../context/scope.js';
 import { codeDiscoveryModulesRuntime } from '../discovery-modules.js';
 import { codeStructureModuleTreeRuntime, MODULE_TREE_RULE } from '../structure-module-tree.js';
 import { codeSurfaceFunctionalRuntime, SURFACE_RULE } from '../surface-functional.js';
@@ -77,7 +76,7 @@ function run(runtime: TemplateRuntime, scopeRef: AnalyzeScopeRef, params: Record
 	return runtime.execute(args);
 }
 
-interface ModuleRecord { name: string; path: string; repo: string; directory: string; fileCount: number; entityId?: string }
+interface ModuleRecord { name: string; path: string; repo: string; directory: string; fileCount: number; entityId?: string | undefined }
 async function moduleList(scopeRef: AnalyzeScopeRef): Promise<{ modules: ModuleRecord[]; completeness: Completeness }> {
 	const result = await run(codeDiscoveryModulesRuntime, scopeRef);
 	return { modules: result.outputs.get('modules') as ModuleRecord[], completeness: result.completeness };
@@ -346,8 +345,8 @@ test("a repository with no module entity and one source file gives one node '.' 
 // ---------------------------------------------------------------------------
 
 interface Surface {
-	module: { name: string; path: string; directory: string; entityId?: string };
-	exports: Array<{ name: string; kind: string; file: string; body?: string }>;
+	module: { name: string; path: string; directory: string; entityId?: string | undefined };
+	exports: Array<{ name: string; kind: string; file: string; body?: string | undefined }>;
 	internalHelpers: Array<{ name: string; kind: string; file: string }>;
 }
 async function surfaceOf(value: string, scopeRef: AnalyzeScopeRef = repoScope(), extra: Record<string, unknown> = {}): Promise<{ surface: Surface; completeness: Completeness }> {

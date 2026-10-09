@@ -636,6 +636,8 @@ ClassifiedIntent loses `scope`. The planner driver, the recursive planner, the p
 
 - `qf22edf66` — A request is measured from its lookup results by the same table as a named area: the files the results name and the items returned. The length of the results in characters is recorded for Story s3 and does not take part in the size. Should the size of lookup results also depend on their length in characters?
   - **resolved**: No: size lookup results by files and items only, and record the characters for Story s3 — Stakeholder took the recommendation on 2026-10-09: Story s3 owns the rule for when results are too large for one pass and will set that threshold from the characters; using them here would make two rules for one question. _(2026-10-09T16:12:52.050Z)_
+- `q820c2aa4` — A data source's objects (tables, collections, files) are compared with the FILES column of the table, so a source with 21 to 200 tables is M and one with more than 1,500 is XL. Should a data source's objects be compared with the files column, or with the entities column (where up to 500 tables would be S)?
+  - **resolved**: The files column — Stakeholder took the recommendation on 2026-10-09: a data source's tables, collections and files are compared with the files column of the table, since a table is the unit a data analysis reads, as a file is for code. _(2026-10-09T16:19:14.433Z)_
 
 ## Citations
 

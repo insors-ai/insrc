@@ -699,6 +699,52 @@ no data task accepted a `connection`.
 - A code or docs task needs its scope indexed. An infra or data task does not
   read the stored graph and is not checked for an index.
 
+### What a module is for the code tasks
+
+No parser stores a module entity for a repository's own directories: each
+stores one only for an imported module. So the module list
+(`code.discovery.modules`), the module tree (`code.structure.module-tree`)
+and the functional-surface task (`code.surface.functional`) derive a
+repository's modules from what the index does store. A module is one of:
+
+- a stored entity of kind `module` whose file lies in the area. It owns every
+  source file under the directory of its file, at any depth;
+- a directory that directly holds at least one **source file** (a stored
+  entity of kind `file` that is not an artifact) and lies neither in nor
+  under a stored module entity's directory.
+
+The list is flat: one entry per such directory, sorted by directory, named by
+its path relative to the repo (`.` for the repo's own directory). A directory
+that holds source only in its sub-directories, such as `src`, is not listed;
+its sub-directories are. A directory whose files the index does not hold is
+not listed either. Before, the list and the tree held stored module entities
+only, which on a repository like this one is none.
+
+The functional-surface task's `module` value has three forms:
+
+| Form | Read as |
+|---|---|
+| an absolute directory path | that directory |
+| a path relative to the repo (the `directory` or `name` the module list gives) | the directory under the repo that was read |
+| the id of a stored module entity | that entity, exactly as before: its own repo is read whole and no scope is resolved |
+
+The surface of a directory is every function, method and class of the stored
+source files under it, sub-directories included, so a directory that is not in
+the list (`src`) is still a valid value. A directory path is tested against
+the run's scope:
+
+- a directory outside the scope's area is refused;
+- a directory under which no stored source file lies fails the task with a
+  reason that says so and names the repo that was read. It is a failed task,
+  not an empty module. A source directory in which no function, method or
+  class is stored is an empty module, and complete.
+
+Under a `file` or `symbol` scope the area is smaller than any directory: the
+module list and the module tree hold no directory (a `file` scope that names a
+stored module entity's own file still returns that entity), and the
+functional-surface task refuses a directory path. An entity id is accepted
+under every kind of scope.
+
 ### The code on a failed task
 
 A task that refuses its scope fails with the scope error's own code. The task

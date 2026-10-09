@@ -32,6 +32,8 @@
  *        Validate the returned outputs cover exactly the template's
  *        produces (ExecutorOutputShapeError if not).
  *     4. Persist the task record to <runRoot>/tasks/<taskId>.json.
+ *        A record that cannot be written fails that task, and the
+ *        walk goes on; an error not tied to a task propagates.
  *     5. Merge the task's outputs into `outputs`.
  *     6. If the aggregator (last task) succeeded, its `report` is
  *        the plan's finalReport.
@@ -151,7 +153,9 @@ async function executePlan(
 				error:       `dependency-unavailable: ${unmet}`,
 				completedAt: nowIso(),
 			};
-			writeTaskOutput(runId, record);
+			// The task is already a failure of the plan; a record that cannot be
+			// written does not change that, and the walk goes on.
+			persistTaskRecord(runId, task, record);
 			perTask.set(task.taskId, record);
 			failed.add(task.taskId);
 			tasksFailed.push({ taskId: task.taskId, reason: record.error! });
@@ -182,8 +186,9 @@ async function executePlan(
 			result = await executeLeafTask(task, intent, runId, outputs, absentInputs);
 		}
 
-		// Step 4 + 5: persist + accumulate
-		writeTaskOutput(runId, result);
+		// Step 4 + 5: persist + accumulate. A record that cannot be written
+		// fails THIS task: its outputs are not handed on, and the walk goes on.
+		result = persistTaskRecord(runId, task, result);
 		perTask.set(task.taskId, result);
 
 		if (result.status === 'ok') {
@@ -458,6 +463,32 @@ function checkOutputShape(
 
 	if (missing.length === 0 && extra.length === 0) return null;
 	return new ExecutorOutputShapeError(task.template, task.taskId, missing, extra);
+}
+
+/**
+ * Write a task's record. Writing is the walk's work, outside the task's
+ * runtime: when it fails, the error is the TASK's failure, not the walk's.
+ * Returns the record the plan's result holds: the one given when it was
+ * written, else a failed record with the error's message. That failed record
+ * is written too when it can be; when it cannot, the failure is still in the
+ * plan's result.
+ */
+function persistTaskRecord(runId: string, task: PlannedTask, record: TaskExecutionRecord): TaskExecutionRecord {
+	try {
+		writeTaskOutput(runId, record);
+		return record;
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		log.warn({ runId, taskId: task.taskId, status: record.status, err: msg }, "the task's record could not be written");
+		// A task that had already failed or been skipped keeps its own reason.
+		if (record.status !== 'ok') return record;
+		const failed = failedRecord(task, `task-record-unwritable: ${msg}`);
+		try { writeTaskOutput(runId, failed); }
+		catch (again) {
+			log.warn({ runId, taskId: task.taskId, err: (again as Error).message }, "the task's failure could not be written either; it is in the plan's result");
+		}
+		return failed;
+	}
 }
 
 function failedRecord(task: PlannedTask, error: string, code?: ScopeErrorCode): TaskExecutionRecord {

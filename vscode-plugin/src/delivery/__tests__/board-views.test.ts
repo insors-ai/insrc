@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 
 import { buildBoardViewModel } from '../board-model.js';
 import { INITIAL_SELECTION, type BoardSelection } from '../board-state.js';
-import { buildEpicRollup } from '../board-views.js';
+import { buildEpicRollup, buildIssueView } from '../board-views.js';
 import { DISPLAY_LABELS } from '../labels.js';
 import { item, snapshot } from './board-fixtures.js';
 
@@ -91,4 +91,59 @@ test('standalone stories and issues sit in their own group and count towards no 
   assert.deepEqual(scoped.notInEpic.stages.flatMap(g => g.cards.map(c => c.itemId)), ['IS2']);
   assert.equal(scoped.epics.find(e => e.epicItemId === 'E1')!.issueCount, 1);
   assert.equal(scoped.totals.items, buildBoardViewModel(snap, sel({ scope: { kind: 'epic', epicItemId: 'E1' } }), {}, DISPLAY_LABELS).totals.items);
+});
+
+const issues = (snap: ReturnType<typeof snapshot>, s: Partial<BoardSelection> = {}) => buildIssueView(snap, sel(s), DISPLAY_LABELS);
+const unresolved = (id: string) => ({ code: 'unresolved-parent', message: `issue ${id} corrects 'gone-slug', which is not in the store`, itemIds: [id], artifactIds: [], fileNames: [], attention: true });
+
+test('an issue links to the story it corrects, and an issue with an unresolved parent is listed with its notice', () => {
+  const snap = snapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
+    item({ id: 'E1:S001', parentId: 'E1', stage: 'build-recorded', title: 'Columns' }),
+    item({ id: 'I1', kind: 'issue', standalone: true, stage: 'design-plan', title: 'Columns overflow', correctsRef: { resolvedItemId: 'E1:S001' } as never }),
+    item({ id: 'I2', kind: 'issue', standalone: true, stage: 'scoped', title: 'Lost parent', needsAttention: true,
+      correctsRef: { slug: 'gone-slug', resolvedItemId: null } as never, notices: [unresolved('I2')] as never }),
+    item({ id: 'I3', kind: 'issue', standalone: true, stage: 'scoped', title: 'Epic-level fix', correctsRef: { resolvedItemId: 'E1' } as never }),
+    item({ id: 'I4', kind: 'issue', standalone: true, stage: 'scoped', title: 'Dangling', correctsRef: { resolvedItemId: 'E9:S001' } as never }),
+    item({ id: 'I5', kind: 'issue', standalone: true, stage: 'scoped', title: 'No parent named' }),
+  ]);
+  const m = issues(snap, { selectedItemId: 'I1' });
+  const by = (id: string) => m.issues.find(e => e.card.itemId === id)!;
+  assert.deepEqual(m.issues.map(e => e.card.itemId), ['I1', 'I2', 'I3', 'I4', 'I5'], 'every issue is listed, in snapshot order');
+
+  assert.deepEqual(by('I1').parent, { itemId: 'E1:S001', kind: 'story', title: 'Columns', stageLabel: 'Build recorded' });
+  assert.equal(by('I1').parentNotice, null);
+  assert.equal(by('I1').stageLabel, 'Design & plan');
+
+  assert.equal(by('I2').parent, null, 'still listed, with no link');
+  assert.equal(by('I2').parentNotice, "issue I2 corrects 'gone-slug', which is not in the store");
+
+  assert.deepEqual(by('I3').parent, { itemId: 'E1', kind: 'epic', title: 'Board epic', stageLabel: null });
+  assert.deepEqual([by('I4').parent, by('I4').parentNotice], [null, 'Parent not on the board'], 'a recorded parent missing from the snapshot');
+  assert.deepEqual([by('I5').parent, by('I5').parentNotice], [null, null], 'an issue that names no parent');
+
+  assert.deepEqual(m.totals, { issues: 5, needsAttention: 1 });
+  assert.equal(m.selectedItemId, 'I1');
+  assert.equal(m.emptySelection, false);
+  assert.equal(issues(snap, { search: 'nothing like this' }).emptySelection, true);
+});
+
+test('an issue with two fix stories lists each as its own child with its own stage', () => {
+  const snap = snapshot([
+    item({ id: 'I1', kind: 'issue', standalone: true, stage: 'build-recorded', title: 'Search is slow', childIds: ['I1:S001', 'I1:S002', 'I1:T009', 'I1:S404'] }),
+    item({ id: 'I1:S001', parentId: 'I1', stage: 'complete', title: 'Index the titles' }),
+    item({ id: 'I1:S002', parentId: 'I1', stage: 'design-plan', title: 'Debounce the input' }),
+    item({ id: 'I1:T009', kind: 'task', parentId: 'I1' }),
+    item({ id: 'I2', kind: 'issue', standalone: true, stage: 'scoped', title: 'No fix yet' }),
+  ]);
+  const m = issues(snap, { search: 'slow' });
+  assert.deepEqual(m.issues.map(e => e.card.itemId), ['I1'], 'the fix stories do not match the search themselves');
+  assert.deepEqual(m.issues[0]!.fixStories, [
+    { itemId: 'I1:S001', kind: 'story', title: 'Index the titles', stageLabel: 'Complete' },
+    { itemId: 'I1:S002', kind: 'story', title: 'Debounce the input', stageLabel: 'Design & plan' },
+  ], 'each fix story is its own entry with its own stage; tasks and missing ids are skipped');
+  assert.deepEqual(issues(snap).issues.find(e => e.card.itemId === 'I2')!.fixStories, []);
+
+  const board = buildBoardViewModel(snap, sel({ search: 'slow' }), {}, DISPLAY_LABELS);
+  assert.equal(m.totals.issues, board.columns.flatMap(c => c.cards).filter(c => c.kind === 'issue').length, 'the board shows the same issue cards');
 });

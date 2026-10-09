@@ -11,12 +11,15 @@
  */
 
 import { placeableCount, selectMatches, type MatchedCard } from './board-model.js';
-import type { CardView, EpicGroupView, EpicRollupViewModel, StageGroupView } from './board-protocol.js';
+import type { CardView, EpicGroupView, EpicRollupViewModel, IssueEntryView, IssueViewModel, LinkView, StageGroupView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
-import type { DeliverySnapshot } from './delivery-contract.js';
+import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
 import { STAGE_ORDER, type DisplayLabels } from './labels.js';
 
 export const NOT_IN_EPIC_TITLE = 'Not in an epic';
+
+/** Shown when an issue's recorded parent is not in the snapshot and the daemon gave no notice for it. */
+export const PARENT_NOT_ON_BOARD = 'Parent not on the board';
 
 /** 'N of M stories complete', naming its denominator; singular when M is 1. */
 export function completionLabel(complete: number, total: number): string {
@@ -83,5 +86,55 @@ export function buildEpicRollup(snapshot: DeliverySnapshot, selection: BoardSele
     totals: { items: matches.length, needsAttention: matches.filter(m => m.item.needsAttention).length },
     selectedItemId: selection.selectedItemId,
     emptySelection: placeableCount(snapshot) > 0 && matches.length === 0,
+  };
+}
+
+/** A followable reference: ids only; the stage label is null for an epic or an item with no stage. */
+function linkOf(item: DeliveryItemView, labels: DisplayLabels): LinkView {
+  const stage = item.stage?.stage;
+  return {
+    itemId: item.id,
+    kind: item.kind,
+    title: item.title ?? item.id,
+    stageLabel: stage === undefined ? null : Object.hasOwn(labels.stage, stage) ? labels.stage[stage] : String(stage),
+  };
+}
+
+/**
+ * The issue view: each matching issue in snapshot order with the story or
+ * epic its correctsRef resolves to, or its unresolved-parent notice (a fixed
+ * text when a recorded parent is not in the snapshot and the daemon gave no
+ * notice), and every fix story among its children with its own stage, whether
+ * or not the fix story itself matches the search.
+ */
+export function buildIssueView(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): IssueViewModel {
+  const byId = new Map(snapshot.items.map(i => [i.id, i]));
+  const issues: IssueEntryView[] = [];
+  let needsAttention = 0;
+  for (const m of selectMatches(snapshot, selection, labels)) {
+    if (m.item.kind !== 'issue') continue;
+    const ref = m.item.correctsRef;
+    const parentItem = ref === null || ref.resolvedItemId === null ? undefined : byId.get(ref.resolvedItemId);
+    const notice = m.item.notices.find(n => n.code === 'unresolved-parent')?.message ?? null;
+    const recordedButMissing = ref !== null && ref.resolvedItemId !== null && parentItem === undefined;
+    const fixStories: LinkView[] = [];
+    for (const childId of m.item.childIds) {
+      const child = byId.get(childId);
+      if (child?.kind === 'story') fixStories.push(linkOf(child, labels));
+    }
+    issues.push({
+      card: m.card,
+      stageLabel: labels.stage[m.stage],
+      parent: parentItem === undefined ? null : linkOf(parentItem, labels),
+      parentNotice: parentItem !== undefined ? null : notice ?? (recordedButMissing ? PARENT_NOT_ON_BOARD : null),
+      fixStories,
+    });
+    if (m.item.needsAttention) needsAttention++;
+  }
+  return {
+    issues,
+    totals: { issues: issues.length, needsAttention },
+    selectedItemId: selection.selectedItemId,
+    emptySelection: placeableCount(snapshot) > 0 && issues.length === 0,
   };
 }

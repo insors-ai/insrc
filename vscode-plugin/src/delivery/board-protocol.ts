@@ -103,6 +103,8 @@ export interface EpicRollupViewModel {
   readonly epics: readonly EpicGroupView[];
   readonly notInEpic: EpicGroupView;
   readonly totals: { readonly items: number; readonly needsAttention: number };
+  /** The epics the scope control offers, as on the board, so the control stays current on every tab. */
+  readonly scopeOptions: BoardViewModel['scopeOptions'];
   readonly selectedItemId: string | null;
   readonly emptySelection: boolean;
 }
@@ -131,6 +133,8 @@ export interface IssueEntryView {
 export interface IssueViewModel {
   readonly issues: readonly IssueEntryView[];
   readonly totals: { readonly issues: number; readonly needsAttention: number };
+  /** The epics the scope control offers, as on the board. */
+  readonly scopeOptions: BoardViewModel['scopeOptions'];
   readonly selectedItemId: string | null;
   readonly emptySelection: boolean;
 }

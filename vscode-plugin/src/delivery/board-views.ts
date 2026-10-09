@@ -10,7 +10,7 @@
  * board. Pure and vscode-free.
  */
 
-import { groupByStage, indexItems, isPlaceable, placeableCount, selectMatches, titleOf, type MatchedCard } from './board-model.js';
+import { attentionCount, groupByStage, indexItems, isPlaceable, placeableCount, scopeOptionsOf, selectMatches, titleOf, type MatchedCard } from './board-model.js';
 import type { EpicGroupView, EpicRollupViewModel, IssueEntryView, IssueViewModel, LinkView, StageGroupView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
 import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
@@ -82,7 +82,8 @@ export function buildEpicRollup(snapshot: DeliverySnapshot, selection: BoardSele
   return {
     epics,
     notInEpic: groupOf(null, NOT_IN_EPIC_TITLE, notInEpic, labels),
-    totals: { items: matches.length, needsAttention: matches.filter(m => m.item.needsAttention).length },
+    totals: { items: matches.length, needsAttention: attentionCount(matches) },
+    scopeOptions: scopeOptionsOf(snapshot),
     selectedItemId: selection.selectedItemId,
     emptySelection: placeableCount(snapshot) > 0 && matches.length === 0,
   };
@@ -109,9 +110,8 @@ function linkOf(item: DeliveryItemView, labels: DisplayLabels): LinkView {
 export function buildIssueView(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): IssueViewModel {
   const byId = indexItems(snapshot);
   const issues: IssueEntryView[] = [];
-  let needsAttention = 0;
-  for (const m of selectMatches(snapshot, selection, labels, byId)) {
-    if (m.item.kind !== 'issue') continue;
+  const issueMatches = selectMatches(snapshot, selection, labels, byId).filter(m => m.item.kind === 'issue');
+  for (const m of issueMatches) {
     const ref = m.item.correctsRef;
     const parentItem = ref === null || ref.resolvedItemId === null ? undefined : byId.get(ref.resolvedItemId);
     const notice = m.item.notices.find(n => n.code === 'unresolved-parent')?.message ?? null;
@@ -128,11 +128,11 @@ export function buildIssueView(snapshot: DeliverySnapshot, selection: BoardSelec
       parentNotice: parentItem !== undefined ? null : notice ?? (recordedButMissing ? PARENT_NOT_ON_BOARD : null),
       fixStories,
     });
-    if (m.item.needsAttention) needsAttention++;
   }
   return {
     issues,
-    totals: { issues: issues.length, needsAttention },
+    totals: { issues: issues.length, needsAttention: attentionCount(issueMatches) },
+    scopeOptions: scopeOptionsOf(snapshot),
     selectedItemId: selection.selectedItemId,
     // 'Nothing matches' only when there are issues to match: a board with no issues is not an empty selection.
     emptySelection: issues.length === 0 && snapshot.items.some(i => i.kind === 'issue' && isPlaceable(i)),

@@ -219,6 +219,16 @@ export function selectMatches(snapshot: DeliverySnapshot, selection: BoardSelect
   return out;
 }
 
+/** The epics the scope control offers, in snapshot order; every view carries the same list. */
+export function scopeOptionsOf(snapshot: DeliverySnapshot): BoardViewModel['scopeOptions'] {
+  return snapshot.items.filter(i => i.kind === 'epic').map(e => ({ epicItemId: e.id, title: titleOf(e) }));
+}
+
+/** How many matches the daemon says need attention; every view counts it this way. */
+export function attentionCount(matches: readonly MatchedCard[]): number {
+  return matches.filter(m => m.item.needsAttention).length;
+}
+
 /** Matches bucketed by stage, every stage present, in STAGE_ORDER; each bucket keeps snapshot order. The board's columns and the rollup's stage groups both use it. */
 export function groupByStage(matches: readonly MatchedCard[]): ReadonlyMap<DeliveryStage, readonly MatchedCard[]> {
   const out = new Map<DeliveryStage, MatchedCard[]>(STAGE_ORDER.map(s => [s, []]));
@@ -229,7 +239,7 @@ export function groupByStage(matches: readonly MatchedCard[]): ReadonlyMap<Deliv
 export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: BoardSelection, paging: BoardPaging, labels: DisplayLabels): BoardViewModel {
   const matches = selectMatches(snapshot, selection, labels);
   const byStage = groupByStage(matches);
-  const needsAttention = matches.filter(m => m.item.needsAttention).length;
+  const needsAttention = attentionCount(matches);
   const columns: ColumnView[] = STAGE_ORDER.map(stage => {
     const all = (byStage.get(stage) ?? []).map(m => m.card);
     const shown = all.slice(0, Math.max(0, paging[stage] ?? BOARD_PAGE_SIZE));
@@ -239,7 +249,7 @@ export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: Board
   return {
     columns,
     totals: { items, needsAttention },
-    scopeOptions: snapshot.items.filter(i => i.kind === 'epic').map(e => ({ epicItemId: e.id, title: titleOf(e) })),
+    scopeOptions: scopeOptionsOf(snapshot),
     emptySelection: placeableCount(snapshot) > 0 && items === 0,
   };
 }

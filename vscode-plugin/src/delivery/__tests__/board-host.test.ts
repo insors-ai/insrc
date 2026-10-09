@@ -479,6 +479,7 @@ test('switching views posts the selected view with the same selection, and switc
   const epics = lastOf(ch, 'epics')!.model;
   assert.equal(epics.totals.items, boardTotal, 'the same search applies');
   assert.deepEqual(epics.epics.map(e => e.completionLabel), ['0 of 60 stories complete']);
+  assert.deepEqual(epics.scopeOptions, [{ epicItemId: 'E1', title: 'Board epic' }], 'the scope control stays current on every tab');
 
   ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
   const iv = lastOf(ch, 'issues')!.model;
@@ -572,4 +573,30 @@ test('the epic rollup and issue view render as text, and their tabs and links po
   plain.ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
   deliver({ v: 1, payload: lastOf(plain.ch, 'issues')! });
   assert.equal(el['empty']!.textContent, 'There are no issues on the board.');
+});
+
+test('a logger that throws never leaves the board loading or stops a refresh', async () => {
+  const { client, calls } = controlledClient();
+  const ch = fakeChannel();
+  const host = createDeliveryBoardHost({
+    createPanel: () => ch,
+    client,
+    logger: { warn: () => { throw new Error('warn sink down'); }, error: () => { throw new Error('error sink down'); } },
+    now: () => '2026-10-09T12:00:00.000Z',
+    genNonce: () => 'N0NCE',
+  });
+  host.open();
+  calls[0]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'slow' } });
+  await flush();
+  const status = payloads(ch).filter(p => p.type === 'status').at(-1);
+  assert.equal(status?.type === 'status' ? status.status.state : null, 'failed', 'the failure is shown even though logging it threw');
+
+  ch.send({ v: 1, payload: { type: 'refresh' } });
+  ch.send({ v: 1, payload: { type: 'refresh' } });
+  calls[2]!.resolve({ ok: true, value: fixtureSnapshot([item({ id: 'A', stage: 'shipped' }), item({ id: 'B' })]) });
+  calls[1]!.resolve({ ok: true, value: fixtureSnapshot([item({ id: 'old' })]) });
+  await flush();
+  assert.deepEqual(lastItems(ch), ['B'], 'the newer answer is applied; the dropped one and the unknown stage are logged into a broken sink without harm');
+  ch.send({ v: 1, payload: { type: 'select-item', itemId: 'nowhere' } });
+  assert.deepEqual(lastItems(ch), ['B']);
 });

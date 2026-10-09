@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -189,3 +189,17 @@ Run at 2026-10-09T13:31:43.007Z on commit `ba4b5014`. Tests check: **passed**. 8
 | `src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts` | 0 | 7 | 1.9 s |  |
 | `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 7 | 0.4 s |  |
 | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` | 0 | 13 | 2 s |  |
+
+## t5
+
+Run at 2026-10-09T13:39:55.182Z on commit `76fe7b55`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: a code request at size S on this repository returns a final report in which every functional-surface task succeeded and the module list is not empty**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live-run-t5.md (run s8-live-code-S-mv10dmxn; frames, result, plan and the twelve task records under measurements/live/)
+
+**smoke: no test of the analyze suite that passed before the Story's first change fails after its last, the gated file src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts included, which is run whole with INSRC_LIVE_TESTS=1. Two of its tests change and are named: 'surface.functional: unknown module entity id -> throws' (the message for a value that names nothing) and 'structure.module-tree: repo with zero modules -> empty tree, not error' (one source file in the repo's own directory now gives one node '.' and no edge)**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/baseline-comparison-t5.md (result lines of every test under measurements/after/, baseline under baseline/)

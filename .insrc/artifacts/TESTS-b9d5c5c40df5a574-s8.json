@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s8",
     "createdAt": "2026-10-09T13:06:19.852Z",
-    "updatedAt": "2026-10-09T13:31:43.007Z"
+    "updatedAt": "2026-10-09T13:39:55.182Z"
   },
   "body": {
     "tasks": [
@@ -668,6 +668,38 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "76fe7b55",
+        "ranAt": "2026-10-09T13:39:55.182Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a code request at size S on this repository returns a final report in which every functional-surface task succeeded and the module list is not empty",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live-run-t5.md (run s8-live-code-S-mv10dmxn; frames, result, plan and the twelve task records under measurements/live/)"
+            }
+          },
+          {
+            "name": "no test of the analyze suite that passed before the Story's first change fails after its last, the gated file src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts included, which is run whole with INSRC_LIVE_TESTS=1. Two of its tests change and are named: 'surface.functional: unknown module entity id -> throws' (the message for a value that names nothing) and 'structure.module-tree: repo with zero modules -> empty tree, not error' (one source file in the repo's own directory now gives one node '.' and no edge)",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/baseline-comparison-t5.md (result lines of every test under measurements/after/, baseline under baseline/)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

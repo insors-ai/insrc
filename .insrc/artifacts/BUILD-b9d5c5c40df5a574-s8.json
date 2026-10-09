@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s8",
     "createdAt": "2026-10-09T13:06:19.852Z",
-    "updatedAt": "2026-10-09T13:31:43.007Z",
+    "updatedAt": "2026-10-09T13:39:55.182Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -24,105 +24,263 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "The functional-surface task reads its module value in two steps. A stored entity's id is looked up first and read exactly as before, with no scope resolved (the wrong-kind message is unchanged). Any other value is a directory path: the run's scope is resolved through the one scope function, the directory is tested against the scope's area, and the surface is every function, method and class of the stored source files under it, sub-directories included. A value under which no stored source file lies fails the task; a directory outside the area, and any directory under a file or symbol scope, is refused. Notes: (1) the plan's mutation 'test a directory against the area with the entity predicate' is equivalent once the file/symbol refusal comes first, so it cannot be killed; the falsifiable form, removing that refusal, is killed. (2) Resolving a repo scope tolerates a registry that cannot be read, so with throwing readers a directory path fails under a symbol scope, and under a repo scope the test asserts the readers were called. (3) The gated test of the unknown value cannot run in the gate; an ungated test of the same case carries that name.",
+    "summary": "docs/daemon.md has a new subsection, 'What a module is for the code tasks', after the kinds-of-scope subsection: the definition, the three forms of the module value and the rule under a file or symbol scope. The analyze suite after the Story's last source change (ba4b5014) has no test that passed in the baseline and fails now (1099 tests, 1004 pass, 0 fail, against 982 passes); the gated file passes whole with INSRC_LIVE_TESTS=1 (11 of 11) and its two rewritten tests are named. Upstream was merged with --no-ff (07caf563); it changed nothing under src/. Live check on 2026-10-09 through the installed daemon at 07caf563: run s8-live-code-S-mv10dmxn returned a final report, 12 tasks completed and none failed, the module list held 37 modules and all eight functional-surface tasks succeeded. The whole-repository suite was not run; the Story changed files under src/analyze only.",
     "testRecord": {
       "md": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/analyze.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/deterministic-runtimes.gated.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/after/analyze.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/after/deterministic-runtimes.gated.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/baseline-comparison-t5.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live-run-t5.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.frames.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.meta.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.result.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/plan.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/run.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t01.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t02.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t03.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t04.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t05.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t06.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t07.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t08.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t09.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t10.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t11.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/code-S.run/tasks/t12.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/templates/code/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/__tests__/module-directories.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/discovery-modules.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/structure-module-tree.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/surface-functional.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/__tests__/source-modules.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/source-modules.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:31:43.007Z"
+        "timestamp": "2026-10-09T13:39:55.182Z"
       }
     ],
-    "commit": "ba4b5014"
+    "commit": "76fe7b55"
   }
 }

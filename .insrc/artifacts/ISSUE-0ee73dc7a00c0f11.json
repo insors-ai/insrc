@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791556940029-ipm1ve",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-09T14:43:15.174Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 55144,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "0ee73dc7a00c0f11",
+    "epicSlug": "bug-analyze-planner-gives-plan-task",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Reject at plan validation a task scope its family does not accept",
+    "reproduction": "Ask for an infra analysis of a repository that has several CI workflow files.\n\nObserved live on 2026-10-09 through the installed daemon, on this repository, in three infra runs (sizes S, M and L). In the size M run the plan held four `infra.inventory.ci` tasks, each with `params.scopeRef` of kind `file` naming one workflow file (`.github/workflows/ci.yml`, `pages.yml`, `jetbrains-plugin.yml`, `vscode-plugin.yml`). The plan passed validation. When the tasks ran, each failed with:\n\n`infra.inventory.ci: scopeRef.kind='file' is incompatible with target='infra'. Allowed kinds for this target: repo, manifest-dir, workspace.` (code `scope-ref-kind-target-mismatch`).\n\nFour tasks failed in each of the three runs; the run with an empty prompt at size S ended `Incomplete: 4 failed`.\n\nExpected: a plan whose task carries a kind of scope its family does not accept does not pass validation; the planner is told which kinds the task accepts and plans again.\n\nObserved: the plan is accepted, the tasks fail when they run, and the report is written without the CI inventory of those files.\n\nThe plans and results are kept whole in `docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/measurements/live/` (`infra-M.plan.json`, `infra-L.plan.json`, `infra-M.result.json`, `empty-prompt-infra-S.result.json`).",
+    "rootCause": "The task templates of the code, docs and infra families declare their `scopeRef` parameter with one shared schema, `SCOPE_REF_SCHEMA` (`src/analyze/planner/templates/shared-schemas.ts`), whose `kind` lists all seven kinds of scope for every family: `repo`, `module`, `file`, `symbol`, `connection`, `manifest-dir`, `workspace`. The infra templates use it six times, the code templates three times and the docs templates once.\n\nThat schema is the only thing the planner and the plan validator know about a task's scope. The catalog shown to the planner prints each template's `inputSchema` as JSON (`src/analyze/planner/render-catalog.ts`), so the planner is told that an infra task may have a `file` scope. The plan validator's rule INV-5 checks a task's parameters against the template's `inputSchema` and nothing else (`src/analyze/planner/validate.ts`), so a `file` scope on an infra task passes.\n\nThe kinds a family really accepts are in a different table, `TARGET_TO_KINDS` (`src/analyze/classifier/validate.ts`): for infra `repo`, `manifest-dir` and `workspace`. That table is applied to a task only when the task runs: the infra runtime reads `params.scopeRef` and resolves it through the one scope function for its family (`src/analyze/runtimes/infra/inventory-ci.ts`), which refuses the kind. By then the plan is fixed and the planner cannot correct it.\n\nThe same gap exists for every family that uses the shared schema: a code task may be planned with a `connection` scope and a docs task with a `symbol` scope, and each would be refused only when it runs.",
+    "fixIntent": "A plan in which a task's `scopeRef` has a kind its template's family does not accept fails plan validation, with a message that names the task, the kind it was given and the kinds its family accepts, so the planner's corrective retry can fix it.\n\nThe catalog shown to the planner lists, for each template, only the kinds of scope its family accepts.\n\nThe kinds per family come from the one existing table, so the planner, the validator and the runtime cannot disagree.\n\nA plan whose tasks all carry accepted kinds validates and runs exactly as today. The runtime's own refusal stays as it is.\n\nNot in scope: how the planner chooses between one task over a directory and one task per file, and the CI inventory task accepting a single file."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/analyze/planner/templates/shared-schemas.ts",
+      "quotedText": "enum: ['repo', 'module', 'file', 'symbol', 'connection', 'manifest-dir', 'workspace'],"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/analyze/planner/templates/infra/index.ts",
+      "quotedText": "scopeRef: SCOPE_REF_SCHEMA,"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/planner/render-catalog.ts",
+      "quotedText": "'- **inputSchema**:\\n```json\\n' + JSON.stringify(t.inputSchema, null, 2) + '\\n```\\n'"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/analyze/planner/validate.ts",
+      "quotedText": "// INV-5: params validate against template inputSchema"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/analyze/classifier/validate.ts",
+      "quotedText": "infra:   ['repo', 'manifest-dir', 'workspace'],"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/analyze/runtimes/infra/inventory-ci.ts",
+      "quotedText": "const repoPath = (await resolveTaskScope(scopeRef as AnalyzeScopeRef, 'infra', TEMPLATE_ID)).lookupPath;"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/measurements/live-runs-t17.md",
+      "quotedText": "Runs 4, 5 and 6: the planner gave `infra.inventory.ci` tasks a `file`\n  scope, which the infra family refuses."
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/measurements/live/infra-M.result.json",
+      "quotedText": "infra.inventory.ci: scopeRef.kind='file' is incompatible with target='infra'. Allowed kinds for this target: repo, manifest-dir, workspace."
+    }
+  ]
+}

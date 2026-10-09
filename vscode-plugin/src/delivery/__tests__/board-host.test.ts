@@ -216,6 +216,7 @@ interface FakeEl {
   readonly firstChild: FakeEl | null;
   removeChild(c: FakeEl): void;
   appendChild(c: FakeEl): void;
+  removeAttribute(k: string): void;
   setAttribute(k: string, v: string): void;
   addEventListener(k: string, f: () => void): void;
 }
@@ -227,6 +228,7 @@ function makeEl(tag: string): FakeEl {
     removeChild(c) { e.children = e.children.filter(x => x !== c); },
     appendChild(c) { e.children.push(c); },
     setAttribute(k, v) { e.attrs[k] = v; },
+    removeAttribute(k) { delete e.attrs[k]; },
     addEventListener(k, f) { e.listeners[k] = f; },
   };
   Object.defineProperty(e, 'innerHTML', { set() { throw new Error('innerHTML used'); }, get() { throw new Error('innerHTML used'); } });
@@ -796,4 +798,73 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
   s5.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
   await flush();
   assert.equal(ch5.posted.length, before, 'a read that finishes after the panel closed posts nothing');
+});
+
+test('the details pane renders as text and its controls post only select-item, close-details and open-evidence', async () => {
+  // The model comes from the real host over a snapshot whose title, notice and opened record carry markup.
+  const hostile = '<img src=x onerror=alert(1)>';
+  const snap = fixtureSnapshot([
+    item({ id: 'S1', title: `Details ${hostile}`, stage: 'build-recorded', parentId: 'E1', childIds: ['S1:T1'], sourceIds: ['s1'],
+      tasks: [{ taskItemId: 'S1:T1', result: 'failed', planned: true }],
+      validation: { passed: 0, failed: 1, unrecorded: 0, unplanned: 0 },
+      conflict: { failedTaskItemIds: ['S1:T1'], storyLevelFailed: false },
+      notices: [{ code: 'unplanned-task', message: `odd ${hostile}`, itemIds: ['S1'], artifactIds: [], fileNames: [] }] as never,
+      evidence: [ev('BUILD-x', 'BUILD'), ev('LLD-x', 'LLD', { mdPath: 'docs/e/S001/LLD.md', openWith: 'review-view' }), ev('PLAN-x', 'PLAN')] }),
+    item({ id: 'S1:T1', kind: 'task', parentId: 'S1', title: 'Types', sourceIds: ['t1'] }),
+    item({ id: 'E1', kind: 'epic', title: 'Board epic', childIds: ['S1'] }),
+  ]);
+  const withReason = { ...snap, items: snap.items.map(i => (i.id === 'S1' ? { ...i, stage: { ...i.stage!, reason: { text: 'A build is recorded.', artifactIds: ['BUILD-x'] } } } : i)) };
+  const s = detailsSetup();
+  const ch = await openOn(s, withReason);
+  send(ch, { type: 'select-item', itemId: 'S1' });
+  s.evidence[0]!.resolve({ ok: true, value: planRecord({ tasks: [{ id: 't1', dependsOn: ['t0'], acceptanceChecks: ['types compile'] }] }) });
+  await flush();
+  send(ch, { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' });
+  s.evidence[1]!.resolve({ ok: true, value: { artifactId: 'BUILD-x', kind: 'BUILD', meta: {}, body: {}, renderedMarkdown: `# Build ${hostile}` } });
+  await flush();
+  const model = detailsOf(ch).at(-1)!;
+  assert.ok(model.openedRecord !== null);
+
+  const { posted, deliver, el } = runScript();
+  posted.length = 0;
+  deliver({ v: 1, payload: { type: 'details', model } });
+  const pane = el['details']!;
+  assert.equal('hidden' in pane.attrs, false, 'the pane is shown');
+  const shown = texts(pane);
+  for (const t of [
+    `Details ${hostile}`, 'Stage: Build recorded', 'A build is recorded. (BUILD-x)',
+    'The build is approved while 1 task result failed (Types).',
+    '0 passed, 1 failed, 0 unrecorded, 0 unplanned', 'Types \u00b7 Failed', 'Depends on: t0', 'types compile',
+    'BUILD BUILD-x \u00b7 Approved', 'LLD LLD-x \u00b7 Approved', `Unplanned task: odd ${hostile}`,
+    'Parent: Board epic', 'Child: Types', 'Sources: s1', 'Record BUILD-x',
+  ]) assert.ok(shown.includes(t), `shows ${t}`);
+  const pre = findAll(pane, e => e.tag === 'pre');
+  assert.equal(pre.length, 1);
+  assert.equal(pre[0]!.textContent, `# Build ${hostile}`, 'the opened record is literal text in a <pre>');
+  assert.equal(findAll(pane, e => e.tag === 'img').length, 0, 'markup never becomes elements');
+
+  // The controls: close, one open per record, and the linked items.
+  const buttons = findAll(pane, e => e.tag === 'button');
+  const click = (text: string) => buttons.find(b => b.textContent === text)!.listeners['click']!();
+  click('Close details');
+  click('Open read-only');
+  click('Open in review');
+  click('Parent: Board epic');
+  // A card click in the board view posts select-item.
+  deliver({ v: 1, payload: { type: 'board', model: lastBoard(ch) } });
+  const card = findAll(el['board']!, e => e.attrs['data-item-id'] === 'S1' && e.tag === 'li')[0]!;
+  card.listeners['click']!();
+  for (const m of posted) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
+  assert.deepEqual(posted.map(m => (m as { payload: unknown }).payload), [
+    { type: 'close-details' },
+    { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' },
+    { type: 'open-evidence', itemId: 'S1', artifactId: 'LLD-x' },
+    { type: 'select-item', itemId: 'E1' },
+    { type: 'select-item', itemId: 'S1' },
+  ]);
+
+  // A null model clears the pane.
+  deliver({ v: 1, payload: { type: 'details', model: null } });
+  assert.deepEqual(pane.children, []);
+  assert.equal('hidden' in pane.attrs, true);
 });

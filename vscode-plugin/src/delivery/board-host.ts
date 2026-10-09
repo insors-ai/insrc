@@ -101,15 +101,16 @@ function attr(v: string): string {
 /**
  * The webview script. Everything shown is set with textContent, and the only
  * messages posted are board up-messages: ready, refresh, set-search,
- * set-scope, set-attention, show-more, set-view (the tabs) and select-item
- * (follow links in the issue view).
+ * set-scope, set-attention, show-more, set-view (the tabs), select-item (a
+ * card in any view, a follow link or a linked item in the details),
+ * close-details and open-evidence (the details pane, s4).
  */
 export const BOARD_WEBVIEW_SCRIPT = [
   `(function(){`,
   `const vs=acquireVsCodeApi();`,
   `const send=function(p){vs.postMessage({v:1,payload:p});};`,
   `const byId=function(id){return document.getElementById(id);};`,
-  `const status=byId('status'),notice=byId('notice'),totals=byId('totals'),board=byId('board'),empty=byId('empty');`,
+  `const status=byId('status'),notice=byId('notice'),totals=byId('totals'),board=byId('board'),empty=byId('empty'),details=byId('details');`,
   `const search=byId('search'),scope=byId('scope'),attention=byId('attention');`,
   `const make=function(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.setAttribute('class',cls);return e;};`,
   `const clear=function(n){while(n.firstChild)n.removeChild(n.firstChild);};`,
@@ -132,7 +133,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `li.appendChild(make('div',c.standalone?'Standalone':c.epicTitle===null?'':'Epic: '+c.epicTitle,'card-epic'));`,
   `const badges=make('ul',undefined,'badges');`,
   `for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}`,
-  `li.appendChild(badges);return li;}`,
+  `li.appendChild(badges);li.addEventListener('click',function(){send({type:'select-item',itemId:c.itemId});});return li;}`,
   // View tabs: each posts set-view; the shown view's tab is marked pressed.
   `const TABS={board:byId('tab-board'),epics:byId('tab-epics'),issues:byId('tab-issues')};`,
   `for(const v of ['board','epics','issues'])TABS[v].addEventListener('click',function(){send({type:'set-view',view:v});});`,
@@ -175,6 +176,33 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `more.addEventListener('click',function(){send({type:'show-more',stage:col.stage});});sec.appendChild(more);}`,
   `board.appendChild(sec);}`,
   `empty.textContent=m.emptySelection?EMPTY:'';}`,
+  // The details pane (s4): every field as text, the opened record in a <pre>; a null model clears it.
+  `const RELATION={parent:'Parent',child:'Child',corrects:'Corrects'};`,
+  `const button=function(text,onClick){const b=make('button',text);b.setAttribute('type','button');b.addEventListener('click',onClick);return b;};`,
+  `function renderDetails(m){clear(details);if(m===null){details.setAttribute('hidden','');return;}details.removeAttribute('hidden');`,
+  `details.setAttribute('data-item-id',m.itemId);details.appendChild(make('h2',m.title));`,
+  `details.appendChild(button('Close details',function(){send({type:'close-details'});}));`,
+  `if(m.stageLabel!==null)details.appendChild(make('p','Stage: '+m.stageLabel,'details-stage'));`,
+  `if(m.stageReason!==null)details.appendChild(make('p',m.stageReason.text+(m.stageReason.artifactIds.length>0?' ('+m.stageReason.artifactIds.join(', ')+')':''),'details-reason'));`,
+  `if(m.conflict!==null)details.appendChild(make('p',m.conflict,'details-conflict'));`,
+  `if(m.tasks.length>0||m.taskCounts!==null){details.appendChild(make('h3','Tasks'));`,
+  `if(m.taskCounts!==null){const k=m.taskCounts;details.appendChild(make('p',k.passed+' passed, '+k.failed+' failed, '+k.unrecorded+' unrecorded, '+k.unplanned+' unplanned','task-counts'));}`,
+  `const ul=make('ul');ul.setAttribute('aria-label','Tasks');`,
+  `for(const t of m.tasks){const li=make('li',undefined,'task');li.setAttribute('data-item-id',t.taskItemId);li.appendChild(make('div',(t.title===null?t.taskItemId:t.title)+' \u00b7 '+t.resultLabel,'task-title'));`,
+  `if(t.dependsOn!==null)li.appendChild(make('div','Depends on: '+(t.dependsOn.length===0?'nothing':t.dependsOn.join(', ')),'task-deps'));`,
+  `if(t.acceptanceChecks!==null&&t.acceptanceChecks.length>0){const cl=make('ul',undefined,'task-checks');for(const c of t.acceptanceChecks)cl.appendChild(make('li',c));li.appendChild(cl);}`,
+  `ul.appendChild(li);}details.appendChild(ul);}`,
+  `if(m.planNotice!==null)details.appendChild(make('p',m.planNotice,'plan-notice'));`,
+  `if(m.evidence.length>0){details.appendChild(make('h3','Records'));const ul=make('ul');ul.setAttribute('aria-label','Records');`,
+  `for(const r of m.evidence){const li=make('li',undefined,'record');li.setAttribute('data-artifact-id',r.artifactId);`,
+  `li.appendChild(make('span',[r.kindLabel+' '+r.artifactId,r.approvalLabel].concat(r.reviewLabel===null?[]:[r.reviewLabel]).concat(r.overrideLabel===null?[]:[r.overrideLabel]).join(' \u00b7 ')));`,
+  `li.appendChild(button(r.opensIn==='review-pane'?'Open in review':'Open read-only',function(){send({type:'open-evidence',itemId:m.itemId,artifactId:r.artifactId});}));`,
+  `ul.appendChild(li);}details.appendChild(ul);}`,
+  `if(m.notices.length>0){details.appendChild(make('h3','Notices'));const ul=make('ul');for(const n of m.notices)ul.appendChild(make('li',n,'notice'));details.appendChild(ul);}`,
+  `if(m.linked.length>0){details.appendChild(make('h3','Linked'));const ul=make('ul');`,
+  `for(const l of m.linked){const li=make('li');li.appendChild(button(RELATION[l.relation]+': '+l.title,function(){send({type:'select-item',itemId:l.itemId});}));ul.appendChild(li);}details.appendChild(ul);}`,
+  `if(m.sourceIds.length>0)details.appendChild(make('p','Sources: '+m.sourceIds.join(', '),'source-ids'));`,
+  `if(m.openedRecord!==null){details.appendChild(make('h3','Record '+m.openedRecord.artifactId));details.appendChild(make('pre',m.openedRecord.text,'opened-record'));}}`,
   `window.addEventListener('message',function(e){`,
   `const m=e.data;if(!m||m.v!==1||!m.payload)return;const p=m.payload;`,
   `if(p.type==='status'){const s=p.status;`,
@@ -185,6 +213,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `if(p.type==='board'){renderBoard(p.model);return;}`,
   `if(p.type==='epics'){renderEpics(p.model);return;}`,
   `if(p.type==='issues'){renderIssues(p.model);return;}`,
+  `if(p.type==='details'){renderDetails(p.model);return;}`,
   `});`,
   `send({type:'ready'});`,
   `})();`,
@@ -212,6 +241,7 @@ export function renderBoardDocument(nonce: string): string {
     `<p id="totals"></p>` +
     `<p id="empty"></p>` +
     `<div id="board" class="board"></div>` +
+    `<aside id="details" aria-label="Item details" hidden></aside>` +
     `<script nonce="${attr(nonce)}">${BOARD_WEBVIEW_SCRIPT}</script></body></html>`
   );
 }

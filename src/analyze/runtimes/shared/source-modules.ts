@@ -165,17 +165,20 @@ function mostCommon(counts: ReadonlyMap<string, number>): string {
  * then a directory path, for `moduleOfDirectory`.
  *
  * @param lookup the store's own reader; the runtime passes `id => getEntity(db, id)`
+ * @param taskId the task that named the value, for the message of a wrong kind,
+ *               which is word for word the one given before this Story
  * @throws Error when the id is a stored entity of another kind
  */
 export async function moduleOfEntityId(
 	value:  string,
 	lookup: (id: string) => Promise<Entity | null>,
+	taskId: string,
 ): Promise<NamedModule | null> {
 	if (value.includes('/')) return null;
 	const entity = await lookup(value);
 	if (entity === null) return null;
 	if (entity.kind !== 'module') {
-		throw new Error(`${SURFACE_TEMPLATE}: entity '${value}' has kind='${entity.kind}', expected 'module'`);
+		throw new Error(`${SURFACE_TEMPLATE}: entity '${value}' has kind='${entity.kind}', expected 'module' (taskId=${taskId})`);
 	}
 	return { directory: directoryOf(entity.file), name: entity.name, path: entity.file, entity };
 }

@@ -143,17 +143,17 @@ test("moduleOfDirectory reads an absolute path, a relative path, a trailing slas
 	const stored = ent('module', 'pay-pkg', 'src/pay/package.json');
 	const asked: string[] = [];
 	const lookup = async (id: string): Promise<Entity | null> => { asked.push(id); return id === stored.id ? stored : null; };
-	assert.deepEqual(await moduleOfEntityId(stored.id, lookup), { directory: `${REPO}/src/pay`, name: 'pay-pkg', path: stored.file, entity: stored });
+	assert.deepEqual(await moduleOfEntityId(stored.id, lookup, 't07'), { directory: `${REPO}/src/pay`, name: 'pay-pkg', path: stored.file, entity: stored });
 	// A value that is no entity's id is not a module by id: the caller reads it as a directory.
-	assert.equal(await moduleOfEntityId('analyze', lookup), null);
+	assert.equal(await moduleOfEntityId('analyze', lookup, 't07'), null);
 	assert.deepEqual(asked, [stored.id, 'analyze']);
 	// A path is never looked up as an id.
 	asked.length = 0;
-	assert.equal(await moduleOfEntityId(`${REPO}/src/pay`, lookup), null);
-	assert.equal(await moduleOfEntityId('src/pay', lookup), null);
+	assert.equal(await moduleOfEntityId(`${REPO}/src/pay`, lookup, 't07'), null);
+	assert.equal(await moduleOfEntityId('src/pay', lookup, 't07'), null);
 	assert.deepEqual(asked, []);
-	// The function takes a value and a lookup, and nothing else.
-	assert.equal(moduleOfEntityId.length, 2);
+	// The function takes a value, a lookup and the task's id for its one message: no scope, no entity list.
+	assert.equal(moduleOfEntityId.length, 3);
 });
 
 test("moduleOfDirectory fails for a directory with no stored source under it, for one outside the repo, for one outside the scope's area and for a directory path under a file or symbol scope, and moduleOfEntityId for the id of an entity of another kind, each with its own message; a relative value with no known repo is joined to the scope's own directory", async () => {
@@ -196,8 +196,9 @@ test("moduleOfDirectory fails for a directory with no stored source under it, fo
 
 	// --- the id of an entity of another kind ---
 	const fn = ent('function', 'settle', 'src/pay/a.ts');
-	await assert.rejects(moduleOfEntityId(fn.id, async () => fn), (err: Error) => {
-		assert.equal(err.message, `code.surface.functional: entity '${fn.id}' has kind='function', expected 'module'`);
+	await assert.rejects(moduleOfEntityId(fn.id, async () => fn, 't07'), (err: Error) => {
+		// Word for word the message of src/analyze/runtimes/code/surface-functional.ts before this Story.
+		assert.equal(err.message, `code.surface.functional: entity '${fn.id}' has kind='function', expected 'module' (taskId=t07)`);
 		return true;
 	});
 });

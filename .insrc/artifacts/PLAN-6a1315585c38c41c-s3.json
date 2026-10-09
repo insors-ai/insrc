@@ -1,0 +1,263 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791536282850-fb9n7o",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T09:00:08.479Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 125625,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "storyId": "s3",
+    "lldRunId": "wf-1791535429046-07qmp1",
+    "lldEffectiveHash": "d362668c917b0c5323a185b5ce5c8cf152d68ef62f2e324ee06d52d96319213a",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-09T09:11:23.546Z",
+    "rangeBase": "8ee0fd4f6c1a6b9165da6534c4b14e4a597ffbf6"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building s3 exports the board's matching as one shared step and adds a new pure module, board-views.ts, with the epic rollup and issue-view builders on top of it. The extension then posts whichever view the reader has chosen and checks follow links against the board. Last, the webview gets Board, Epics and Issues tabs and draws the two new views as plain text."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "The shared match step and the two view-model types",
+        "summary": "Export the matching inside buildBoardViewModel as selectMatches (MatchedCard: item, epic, stage, card) with buildBoardViewModel built from it and unchanged in output, and declare StageGroupView, EpicGroupView, EpicRollupViewModel, LinkView, IssueEntryView and IssueViewModel in board-protocol.ts in place of unknown.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "selectMatches returns every matching story and issue with a known stage, in snapshot order, with its epic and CardView.",
+          "buildBoardViewModel builds from selectMatches and s2's seven board-model tests pass unchanged.",
+          "EpicRollupViewModel and IssueViewModel match the LLD's interfaces, and the 'epics' and 'issues' down-messages carry them."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "board-model.test.ts: 'selectMatches returns the board's matches in snapshot order, each with its epic and card'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Epic rollup builder",
+        "summary": "board-views.ts buildEpicRollup: one group per listed epic in snapshot order and a 'Not in an epic' group; standalone-flagged matches always go to 'Not in an epic'; story counts with a completion label that names its denominator; issue counts; non-empty stage groups in STAGE_ORDER; totals equal to the board's; emptySelection and selectedItemId.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "An epic with five matching stories, two complete, reads '2 of 5 stories complete' and its cards are grouped by stage in STAGE_ORDER; one story reads '1 of 1 story complete'.",
+          "Standalone stories and issues, including a standalone issue that corrects an epic story, are in 'Not in an epic' and in no epic's counts.",
+          "An epic is listed when it has a match, is the scoped epic, or nothing narrows the selection; totals.items equals the board's totals.items for the same selection.",
+          "emptySelection is true when the snapshot has cards but none match, and selectedItemId echoes the selection."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "board-views.test.ts: 'an epic with five stories, two complete, reads 2 of 5 stories complete and groups its stories by stage'"
+          },
+          {
+            "level": "unit",
+            "name": "board-views.test.ts: 'standalone stories and issues sit in their own group and count towards no epic'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Issue view builder",
+        "summary": "board-views.ts buildIssueView: each matching issue in snapshot order with its parent link (the story or epic its correctsRef resolves to) or its unresolved-parent notice (or a fixed 'Parent not on the board' text when the resolved id is missing), and each fix story among its children with its own stage.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "An issue correcting a story has a parent link carrying that story's id, title and stage label; one correcting an epic links the epic with no stage label.",
+          "An issue whose parent is unresolved is listed with parent null and its unresolved-parent notice message; a resolved id missing from the snapshot gives the fixed 'Parent not on the board' text when there is no notice; an issue with no correctsRef has neither.",
+          "An issue with two fix stories lists both as separate entries with their own stage labels, whether or not they match the search; totals.issues equals the board's issue cards."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "board-views.test.ts: 'an issue links to the story it corrects, and an issue with an unresolved parent is listed with its notice'"
+          },
+          {
+            "level": "unit",
+            "name": "board-views.test.ts: 'an issue with two fix stories lists each as its own child with its own stage'"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Host: post the selected view and check follow links",
+        "summary": "boardDownMessages posts status then the board, epics or issues message by selection.view; the host's select-item checks the id against the shown snapshot and ignores and logs an absent one. Until t5 the webview has no tabs, so only the board is reachable from the UI.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "After set-view 'epics' or 'issues' the host posts that view's model with the same scope, search and attention, and set-view 'board' posts the board with its paging kept.",
+          "A select-item naming an id that is not in the shown snapshot posts nothing, changes no selection and logs one warn().",
+          "A derive that throws on a view switch keeps the previous state, as for any intent."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "board-views.test.ts: 'with a search and an epic scope, the rollup and issue view count the same matches as the board'"
+          },
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'switching views posts the selected view with the same selection, and switching back keeps the board page'"
+          },
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'a follow link naming an item that is not on the board is ignored and logged'"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Webview: view tabs, the rollup and the issue view",
+        "summary": "BOARD_WEBVIEW_SCRIPT gains Board, Epics and Issues tabs posting set-view, renders the rollup (epic title, completion label, issue count, stage groups of cards, the 'Not in an epic' group) and the issue view (issue card, parent link or notice, fix stories with stages, 'No fix stories yet'), all with textContent; follow links post select-item.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "An 'epics' message renders each group's title, completion label and stage groups as text, and an 'issues' message renders each issue with its parent link or notice and its fix stories with their stages, or 'No fix stories yet'.",
+          "Titles and notices containing markup render literally; the fake DOM's innerHTML is never touched.",
+          "The tabs post only set-view and the follow links only select-item, each accepted by parseBoardUpMessage.",
+          "An empty selection in either view shows the nothing-matches message."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'the epic rollup and issue view render as text, and their tabs and links post only set-view and select-item'"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "selectMatches",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildEpicRollup",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildIssueView",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "boardDownMessages",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "createDeliveryBoardHost",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "BOARD_WEBVIEW_SCRIPT",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §2.1 buildBoardViewModel (selectMatches)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §2.2 EpicRollupViewModel (buildEpicRollup)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §2.3 IssueViewModel (buildIssueView)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §2.4 boardDownMessages"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §3.1 board-protocol.ts EpicRollupViewModel and IssueViewModel field-modify"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §3.2 board-model.ts selectMatches"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §5 Error paths"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 §6 Test strategy"
+    }
+  ]
+}

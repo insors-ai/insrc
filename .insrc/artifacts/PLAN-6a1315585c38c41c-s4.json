@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791539436477-4g3cve",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T09:53:13.017Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 156535,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "storyId": "s4",
+    "lldRunId": "wf-1791538672573-nqv8bc",
+    "lldEffectiveHash": "d362668c917b0c5323a185b5ce5c8cf152d68ef62f2e324ee06d52d96319213a",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-09T09:54:00.757Z",
+    "rangeBase": "1f891d68d56e99cb0dbfe114468c161e48101c47"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building s4 adds a pure details builder (board-details.ts) and teaches the board host to keep a small details memory: the selected story's PLAN, read once per snapshot, and the one record the reader opened. Evidence is routed by the daemon's open-with value, either to the review pane's new openArtifact or to a read-only read through the daemon. The review pane gains that entry point and a read-only flag. The webview draws the details as text, and extension.ts hands the review pane to the board when the chat setting has created one."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Details view-model types and the item mirror's tasks",
+        "summary": "Declare TaskRowView, EvidenceRowView and ItemDetailsViewModel in board-protocol.ts in place of unknown, and add 'tasks' to DeliveryItemView.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ItemDetailsViewModel, TaskRowView and EvidenceRowView match the sc6 sketch and the 'details' down-message carries ItemDetailsViewModel | null.",
+          "DeliveryItemView picks 'tasks' and E1's contract test still compiles the mirror."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "contract.test.ts: 'the VS Code plugin type-checks against the published delivery types'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "The pure details builder",
+        "summary": "board-details.ts buildItemDetails(snapshot, itemId, plan, opened, labels): stage label and reason, task rows joined to the PLAN by sourceIds with dependencies by title, result labels and counts, the conflict sentence, evidence rows (approval, original review verdict with the effective one when different, override, opensIn by openWith), notices, linked items, source ids, planNotice and the opened record.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Planned tasks show dependencies (by task title, else the raw plan id) and checks when the plan is ok, and null for both otherwise; a PLAN task with no task item is not a row; a build-only task reads Unplanned; counts come from validation, with unrecorded counted apart.",
+          "stageReason is the daemon's text and cited artifact ids, unchanged.",
+          "An approved build with failed tasks keeps its approval row and failed rows and gets a conflict sentence naming the failed tasks.",
+          "A rejected record reads Rejected; a historically blocked review reads 'Review blocked (now Review passed)'; an override reads 'Overridden: <reason>'.",
+          "A code review with no build lists the review-without-build notice and the CR as an evidence row; a record with openWith review-view and an mdPath opens in the review pane, any other read-only."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "board-details.test.ts: 'planned tasks show their dependencies and checks with Passed, Failed or Unrecorded, a build-only task is unplanned, and unrecorded tasks are counted apart'"
+          },
+          {
+            "level": "unit",
+            "name": "board-details.test.ts: 'the details give the daemon's stage reason and the records it cites'"
+          },
+          {
+            "level": "unit",
+            "name": "board-details.test.ts: 'an approved build with failed tasks shows the approval, the failed rows and a sentence explaining the conflict'"
+          },
+          {
+            "level": "unit",
+            "name": "board-details.test.ts: 'a rejected record reads Rejected, and the original review verdict is shown with any override'"
+          },
+          {
+            "level": "unit",
+            "name": "board-details.test.ts: 'a code review with no build keeps its stage, lists the review-without-build notice and shows the review as evidence'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Review pane: openArtifact and read-only content",
+        "summary": "createDocsReviewHost gains openArtifact(target): open or reveal the pane, bump the refresh counter, read client.pending() itself, replace the pending map and post the list, then open the document by mdPath, read-only when not pending. The 'docs-content' message gains readOnly?, and the pane webview hides approve and request-changes and shows 'read-only: not awaiting review' when it is set.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "openArtifact on a non-pending artifact posts its content with readOnly true, and the webview shows no approve or request-changes control.",
+          "openArtifact on a pending artifact opens it as a list-row click does, with its actions.",
+          "On a cold pane, a refresh superseded by the boot ping cannot make a pending artifact read-only: the decision comes from openArtifact's own pending read.",
+          "The pane's existing tests pass unchanged."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c6",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "docs-review-panel.test.ts: 'openArtifact opens a non-pending artifact without approve or request-changes, and a pending one as its list row does'"
+          },
+          {
+            "level": "integration",
+            "name": "docs-review-panel.test.ts: 'openArtifact on a cold pane decides pending from its own pending read, even when the boot ping's refresh is superseded'"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Board host: details memory, PLAN reads and evidence routing",
+        "summary": "DeliveryBoardHostDeps gains reviewPane?; the host keeps DetailsMemory (PLAN reads per applied snapshot keyed by PLAN artifact id, the opened record), posts 'details' after the view message while an item is selected, reads the selected story's PLAN once per snapshot, drops stale answers, and routes open-evidence by openWith to the review pane or a read-only client.evidence read.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Selecting a story with a PLAN posts details with the plan loading, makes one evidence read, and posts again with dependencies; reopening it in the same snapshot makes no second read, and a new snapshot reads again.",
+          "A PLAN read that fails shows planNotice and is logged; one that finishes after a newer snapshot or a closed panel is dropped; a PLAN whose body has no tasks list reads as failed with 'The plan record has no task list', and malformed entries are skipped.",
+          "open-evidence for a review-view entry calls reviewPane.openArtifact with its id and mdPath; for a build record, or with no review pane, it reads the record and shows its text as openedRecord; an artifact that is not the item's evidence is ignored and logged.",
+          "close-details posts details null and clears the opened record."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c7",
+          "c8",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'opening a story reads its plan once per snapshot and shows the dependencies when it arrives'"
+          },
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'a review-view record opens in the review pane and a build record opens read-only from the daemon as text'"
+          },
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'a failed, malformed or stale plan read leaves the details standing with a notice'"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Webview: the details pane and its controls",
+        "summary": "BOARD_WEBVIEW_SCRIPT gains a details pane rendering every ItemDetailsViewModel field with textContent (the opened record in a <pre>), a select-item listener on every card in all three views, a close button posting close-details and an open button per evidence row posting open-evidence.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A 'details' message renders the title, stage and reason, task rows with dependencies, checks and results, the conflict, evidence rows, notices, links and source ids as text; a null model clears the pane.",
+          "Titles, notices and the opened record containing markup render literally; innerHTML is never touched.",
+          "Card clicks post select-item, the close button close-details and the evidence buttons open-evidence, each accepted by parseBoardUpMessage."
+        ],
+        "derivedFrom": [
+          "c8",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "board-host.test.ts: 'the details pane renders as text and its controls post only select-item, close-details and open-evidence'"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Wiring: pass the review pane to the board",
+        "summary": "registerDeliveryBoard takes reviewPane? and passes it to the host; extension.ts declares docsReviewHost before the chat gate, assigns it inside, and passes it to registerDeliveryBoard after the gate.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "registerDeliveryBoard passes reviewPane through, so an open-evidence on a review-view entry reaches it; without it the board reads the record read-only.",
+          "extension.ts declares docsReviewHost before the chat gate and passes it to registerDeliveryBoard outside the gate; the existing chat wiring tests pass."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "board-wiring.test.ts: 'the board receives the review pane when the chat setting creates one, and reads evidence itself when it does not'"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "buildItemDetails",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "createDeliveryBoardHost",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "BOARD_WEBVIEW_SCRIPT",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "createDocsReviewHost.openArtifact",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "registerDeliveryBoard",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §2.1 ItemDetailsViewModel (buildItemDetails)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §2.2 DocsReviewHostOpenArtifact (openArtifact)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §2.3 BoardUpMessage (select-item, close-details, open-evidence in the host)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §2.4 DeliveryBoardWiringDeps (reviewPane)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §3.1 board-protocol.ts ItemDetailsViewModel field-modify"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §3.2 chat/protocol.ts 'docs-content' readOnly field-add"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §3.3 DetailsMemory (board host memory)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §3.4 board-host.ts DeliveryBoardHostDeps and BOARD_WEBVIEW_SCRIPT"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §3.5 extension.ts docsReviewHost declared before the chat gate"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §3.6 delivery-contract.ts DeliveryItemView 'tasks'"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §5 Error paths"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 §6 Test strategy"
+    }
+  ]
+}

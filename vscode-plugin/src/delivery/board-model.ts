@@ -49,7 +49,12 @@ export function unknownStages(snapshot: DeliverySnapshot): ReadonlyMap<string, n
   return new Map([...counts].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
-type ItemIndex = ReadonlyMap<string, DeliveryItemView>;
+export type ItemIndex = ReadonlyMap<string, DeliveryItemView>;
+
+/** The snapshot's items by id. */
+export function indexItems(snapshot: DeliverySnapshot): ItemIndex {
+  return new Map(snapshot.items.map(i => [i.id, i]));
+}
 
 /**
  * The epic an item belongs to: its parent when that is an epic; for an issue,
@@ -67,7 +72,8 @@ export function epicOf(item: DeliveryItemView, byId: ItemIndex): DeliveryItemVie
   return targetParent?.kind === 'epic' ? targetParent : null;
 }
 
-const titleOf = (item: DeliveryItemView): string => item.title ?? item.id;
+/** An item's title, or its id when it has none; every view shows titles through this. */
+export const titleOf = (item: DeliveryItemView): string => item.title ?? item.id;
 
 function inScope(item: DeliveryItemView, epic: DeliveryItemView | null, selection: BoardSelection): boolean {
   switch (selection.scope.kind) {
@@ -176,25 +182,66 @@ function cardOf(item: CardItem, stage: DeliveryStage, epic: DeliveryItemView | n
   };
 }
 
-export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: BoardSelection, paging: BoardPaging, labels: DisplayLabels): BoardViewModel {
-  const byId: ItemIndex = new Map(snapshot.items.map(i => [i.id, i]));
+/** One story or issue that matches the selection: its item, its epic, its (known) stage and its card. */
+export interface MatchedCard {
+  readonly item: DeliveryItemView;
+  readonly epic: DeliveryItemView | null;
+  readonly stage: DeliveryStage;
+  readonly card: CardView;
+}
+
+/** A story or issue whose stage is one of the six: what can be a card at all. */
+export function isPlaceable(item: DeliveryItemView): item is CardItem & { readonly stage: NonNullable<DeliveryItemView['stage']> } {
+  return isCardKind(item) && item.stage !== null && KNOWN_STAGES.has(item.stage.stage);
+}
+
+/** How many items in the snapshot can be cards, whatever the selection; zero means an empty board, not an empty selection. */
+export function placeableCount(snapshot: DeliverySnapshot): number {
+  return snapshot.items.filter(isPlaceable).length;
+}
+
+/**
+ * Every story and issue with a known stage that matches the selection's scope,
+ * search and attention filter, in snapshot order. The board, the epic rollup
+ * and the issue view all build from this one step, so they count the same
+ * matches (E2 s3).
+ */
+export function selectMatches(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels, byId: ItemIndex = indexItems(snapshot)): readonly MatchedCard[] {
   const needle = selection.search.trim().toLowerCase();
-  const matches = new Map<DeliveryStage, CardView[]>(STAGE_ORDER.map(s => [s, []]));
-  let placeable = 0;
-  let needsAttention = 0;
+  const out: MatchedCard[] = [];
   for (const item of snapshot.items) {
-    if (!isCardKind(item) || item.stage === null) continue;
-    const column = matches.get(item.stage.stage);
-    if (column === undefined) continue;   // an unknown stage: left off the board (unknownStages reports it)
-    placeable++;
+    if (!isPlaceable(item)) continue;   // an unknown stage is left off every view (unknownStages reports it)
     const epic = epicOf(item, byId);
     if (!inScope(item, epic, selection) || !matchesSearch(item, epic, needle)) continue;
     if (selection.needsAttentionOnly && !item.needsAttention) continue;
-    column.push(cardOf(item, item.stage.stage, epic, labels));
-    if (item.needsAttention) needsAttention++;
+    out.push({ item, epic, stage: item.stage.stage, card: cardOf(item, item.stage.stage, epic, labels) });
   }
+  return out;
+}
+
+/** The epics the scope control offers, in snapshot order; every view carries the same list. */
+export function scopeOptionsOf(snapshot: DeliverySnapshot): BoardViewModel['scopeOptions'] {
+  return snapshot.items.filter(i => i.kind === 'epic').map(e => ({ epicItemId: e.id, title: titleOf(e) }));
+}
+
+/** How many matches the daemon says need attention; every view counts it this way. */
+export function attentionCount(matches: readonly MatchedCard[]): number {
+  return matches.filter(m => m.item.needsAttention).length;
+}
+
+/** Matches bucketed by stage, every stage present, in STAGE_ORDER; each bucket keeps snapshot order. The board's columns and the rollup's stage groups both use it. */
+export function groupByStage(matches: readonly MatchedCard[]): ReadonlyMap<DeliveryStage, readonly MatchedCard[]> {
+  const out = new Map<DeliveryStage, MatchedCard[]>(STAGE_ORDER.map(s => [s, []]));
+  for (const m of matches) out.get(m.stage)?.push(m);
+  return out;
+}
+
+export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: BoardSelection, paging: BoardPaging, labels: DisplayLabels): BoardViewModel {
+  const matches = selectMatches(snapshot, selection, labels);
+  const byStage = groupByStage(matches);
+  const needsAttention = attentionCount(matches);
   const columns: ColumnView[] = STAGE_ORDER.map(stage => {
-    const all = matches.get(stage) ?? [];
+    const all = (byStage.get(stage) ?? []).map(m => m.card);
     const shown = all.slice(0, Math.max(0, paging[stage] ?? BOARD_PAGE_SIZE));
     return { stage, label: labels.stage[stage], total: all.length, cards: shown, hiddenCount: all.length - shown.length };
   });
@@ -202,7 +249,7 @@ export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: Board
   return {
     columns,
     totals: { items, needsAttention },
-    scopeOptions: snapshot.items.filter(i => i.kind === 'epic').map(e => ({ epicItemId: e.id, title: titleOf(e) })),
-    emptySelection: placeable > 0 && items === 0,
+    scopeOptions: scopeOptionsOf(snapshot),
+    emptySelection: placeableCount(snapshot) > 0 && items === 0,
   };
 }

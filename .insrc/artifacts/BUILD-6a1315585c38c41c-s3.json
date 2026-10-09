@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s3",
+    "createdAt": "2026-10-09T09:13:28.104Z",
+    "updatedAt": "2026-10-09T09:36:56.501Z",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-09T09:36:57.367Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T09:36:56.501Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-model.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T09:36:56.501Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T09:36:56.501Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T09:36:56.501Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-model.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T09:36:56.501Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T09:36:56.501Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T09:36:56.501Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-views.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T09:36:56.501Z"
+      }
+    ],
+    "commit": "095629c5",
+    "summary": "s3 adds the epic rollup and the issue view beside the board. The board's matching is exported as selectMatches, and board-views.ts builds both views from it. The rollup shows each epic with a completion count that names its denominator, and its cards grouped by stage. Standalone work goes in 'Not in an epic'. The issue view shows each issue's parent link or unresolved-parent notice, and its fix stories with their stages. The host posts only the chosen view, keeping the same selection, and checks follow links against the board. The webview adds Board, Epics and Issues tabs and draws everything as text. Verification: npx tsc -p vscode-plugin exits 0. The plugin suite gives 875 pass and 2 fail; both failures are pre-existing and also fail without s3 (docs-review-panel t1 and manifest-catalog)."
+  }
+}

@@ -453,3 +453,150 @@ test('a refresh whose loading state cannot be shown is logged and asks the daemo
   assert.equal(logs.error.length, 1);
   assert.match(logs.error[0]!, /refresh 2 could not start: title unreadable/);
 });
+
+const lastOf = <T extends BoardDownMessage['type']>(c: FakeChannel, type: T) => {
+  const m = payloads(c).filter((p): p is Extract<BoardDownMessage, { type: T }> => p.type === type).at(-1);
+  return m ?? null;
+};
+
+test('switching views posts the selected view with the same selection, and switching back keeps the board page', async () => {
+  const many = fixtureSnapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
+    ...Array.from({ length: 60 }, (_, n) => item({ id: `E1:S${String(n).padStart(3, '0')}`, parentId: 'E1', title: `Board story ${n}` })),
+    item({ id: 'I1', kind: 'issue', standalone: true, stage: 'design-plan', title: 'Board bug', correctsRef: { resolvedItemId: 'E1:S000' } as never }),
+    item({ id: 'S99', standalone: true, title: 'Unrelated' }),
+  ]);
+  const { ch, logs } = await openWith(many);
+  ch.send({ v: 1, payload: { type: 'set-search', search: 'board' } });
+  ch.send({ v: 1, payload: { type: 'show-more', stage: 'scoped' } });
+  assert.equal(column(ch, 'scoped')?.cards.length, 60);
+  const boardTotal = lastBoard(ch)?.totals.items;
+
+  const before = ch.posted.length;
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
+  const sent = payloads(ch).slice(before - ch.posted.length);
+  assert.deepEqual(sent.map(p => p.type), ['status', 'epics'], 'only the chosen view is posted');
+  const epics = lastOf(ch, 'epics')!.model;
+  assert.equal(epics.totals.items, boardTotal, 'the same search applies');
+  assert.deepEqual(epics.epics.map(e => e.completionLabel), ['0 of 60 stories complete']);
+  assert.deepEqual(epics.scopeOptions, [{ epicItemId: 'E1', title: 'Board epic' }], 'the scope control stays current on every tab');
+
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
+  const iv = lastOf(ch, 'issues')!.model;
+  assert.deepEqual(iv.issues.map(e => [e.card.itemId, e.parent?.itemId]), [['I1', 'E1:S000']]);
+
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'board' } });
+  assert.deepEqual([column(ch, 'scoped')?.cards.length, column(ch, 'scoped')?.hiddenCount], [60, 0], 'switching back keeps the page');
+  assert.equal(lastBoard(ch)?.totals.items, boardTotal);
+  assert.deepEqual(logs, { warn: [], error: [] });
+});
+
+test('a follow link naming an item that is not on the board is ignored and logged', async () => {
+  const { ch, logs } = await openWith(fixtureSnapshot([item({ id: 'A' }), item({ id: 'B' })]));
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
+  const before = ch.posted.length;
+  ch.send({ v: 1, payload: { type: 'select-item', itemId: 'gone' } });
+  assert.equal(ch.posted.length, before, 'nothing is posted');
+  assert.equal(logs.warn.length, 1);
+  assert.match(logs.warn[0]!, /link to an item that is not on the board/);
+  assert.equal(lastOf(ch, 'issues')!.model.selectedItemId, null, 'the selection is unchanged');
+
+  ch.send({ v: 1, payload: { type: 'select-item', itemId: 'B' } });
+  assert.equal(lastOf(ch, 'issues')!.model.selectedItemId, 'B', 'an item on the board is selected');
+  assert.equal(logs.warn.length, 1);
+});
+
+test('the epic rollup and issue view render as text, and their tabs and links post only set-view and select-item', async () => {
+  const hostile = '<img src=x onerror=alert(1)>';
+  const snap = fixtureSnapshot([
+    item({ id: 'E1', kind: 'epic', title: `Epic ${hostile}` }),
+    item({ id: 'E1:S001', parentId: 'E1', stage: 'complete', title: 'Columns' }),
+    item({ id: 'E1:S002', parentId: 'E1', stage: 'scoped', title: hostile }),
+    item({ id: 'I1', kind: 'issue', standalone: true, stage: 'design-plan', title: 'Overflow', correctsRef: { resolvedItemId: 'E1:S001' } as never,
+      childIds: ['I1:S001', 'I1:S002'] }),
+    item({ id: 'I1:S001', parentId: 'I1', stage: 'complete', title: 'Wrap the text' }),
+    item({ id: 'I1:S002', parentId: 'I1', stage: 'design-plan', title: 'Measure first' }),
+    item({ id: 'I2', kind: 'issue', standalone: true, stage: 'scoped', title: 'Orphan',
+      correctsRef: { resolvedItemId: null } as never,
+      notices: [{ code: 'unresolved-parent', message: `cannot find ${hostile}`, itemIds: ['I2'], artifactIds: [], fileNames: [], attention: true }] as never }),
+  ]);
+  const host = await openWith(snap);
+  host.ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
+  const epics = lastOf(host.ch, 'epics')!;
+  host.ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
+  const issues = lastOf(host.ch, 'issues')!;
+
+  const { posted, deliver, el } = runScript();
+  deliver({ v: 1, payload: epics });
+  const groups = el['board']!.children;
+  assert.deepEqual(groups.map(g => texts(g).slice(0, 2)), [
+    [`Epic ${hostile}`, '1 of 2 stories complete'],
+    ['Not in an epic', '1 of 2 stories complete, 2 issues'],
+  ], 'titles and completion labels as literal text; the fix stories (parent: their issue) are not in an epic');
+  assert.deepEqual(findAll(groups[0]!, x => x.tag === 'h3').map(h => h.textContent), ['Scoped (1)', 'Complete (1)']);
+  assert.ok(texts(groups[0]!).includes(`Story · ${hostile}`), 'a hostile card title is literal text');
+  assert.equal(el['tab-epics']!.attrs['aria-pressed'], 'true');
+  assert.equal(el['tab-board']!.attrs['aria-pressed'], 'false');
+  assert.equal(el['totals']!.textContent, '6 items, 0 needing attention');
+
+  deliver({ v: 1, payload: issues });
+  const entries = el['board']!.children;
+  assert.deepEqual(entries.map(e => e.attrs['data-item-id']), ['I1', 'I2']);
+  assert.deepEqual(texts(entries[0]!).filter(t => !t.startsWith('Issue')), ['Standalone', 'Stage: Design & plan', 'Corrects: ', 'Story · Columns · Complete', 'Fix stories', 'Story · Wrap the text · Complete', 'Story · Measure first · Design & plan']);
+  assert.ok(texts(entries[1]!).includes(`cannot find ${hostile}`), 'the unresolved-parent notice is literal text');
+  assert.ok(texts(entries[1]!).includes('No fix stories yet'));
+  assert.equal(el['tab-issues']!.attrs['aria-pressed'], 'true');
+
+  // The links and tabs post only select-item and set-view.
+  const links = findAll(el['board']!, x => x.attrs['class'] === 'link');
+  assert.deepEqual(links.map(l => l.attrs['data-item-id']), ['E1:S001', 'I1:S001', 'I1:S002']);
+  for (const l of links) l.listeners['click']!();
+  for (const t of ['tab-board', 'tab-epics', 'tab-issues']) el[t]!.listeners['click']!();
+  const sent = posted.slice(2);
+  for (const m of sent) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
+  assert.deepEqual(sent.map(m => (m as { payload: unknown }).payload), [
+    { type: 'select-item', itemId: 'E1:S001' }, { type: 'select-item', itemId: 'I1:S001' }, { type: 'select-item', itemId: 'I1:S002' },
+    { type: 'set-view', view: 'board' }, { type: 'set-view', view: 'epics' }, { type: 'set-view', view: 'issues' },
+  ]);
+
+  // An empty selection in either view says nothing matches.
+  host.ch.send({ v: 1, payload: { type: 'set-search', search: 'no such thing' } });
+  deliver({ v: 1, payload: lastOf(host.ch, 'issues')! });
+  assert.equal(el['empty']!.textContent, 'Nothing on the board matches the search and filters.');
+  host.ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
+  deliver({ v: 1, payload: lastOf(host.ch, 'epics')! });
+  assert.equal(el['empty']!.textContent, 'Nothing on the board matches the search and filters.');
+  assert.deepEqual(el['board']!.children.map(g => g.children[0]!.textContent), [], 'no epic matches the search');
+
+  // An issue view over a board with no issues says so, rather than that nothing matches.
+  const plain = await openWith(fixtureSnapshot([item({ id: 'S1' })]));
+  plain.ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
+  deliver({ v: 1, payload: lastOf(plain.ch, 'issues')! });
+  assert.equal(el['empty']!.textContent, 'There are no issues on the board.');
+});
+
+test('a logger that throws never leaves the board loading or stops a refresh', async () => {
+  const { client, calls } = controlledClient();
+  const ch = fakeChannel();
+  const host = createDeliveryBoardHost({
+    createPanel: () => ch,
+    client,
+    logger: { warn: () => { throw new Error('warn sink down'); }, error: () => { throw new Error('error sink down'); } },
+    now: () => '2026-10-09T12:00:00.000Z',
+    genNonce: () => 'N0NCE',
+  });
+  host.open();
+  calls[0]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'slow' } });
+  await flush();
+  const status = payloads(ch).filter(p => p.type === 'status').at(-1);
+  assert.equal(status?.type === 'status' ? status.status.state : null, 'failed', 'the failure is shown even though logging it threw');
+
+  ch.send({ v: 1, payload: { type: 'refresh' } });
+  ch.send({ v: 1, payload: { type: 'refresh' } });
+  calls[2]!.resolve({ ok: true, value: fixtureSnapshot([item({ id: 'A', stage: 'shipped' }), item({ id: 'B' })]) });
+  calls[1]!.resolve({ ok: true, value: fixtureSnapshot([item({ id: 'old' })]) });
+  await flush();
+  assert.deepEqual(lastItems(ch), ['B'], 'the newer answer is applied; the dropped one and the unknown stage are logged into a broken sink without harm');
+  ch.send({ v: 1, payload: { type: 'select-item', itemId: 'nowhere' } });
+  assert.deepEqual(lastItems(ch), ['B']);
+});

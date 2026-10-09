@@ -14,13 +14,14 @@
  * snapshot, so the board stays visible and is marked stale; a snapshot with no
  * items is 'empty' only when nothing failed to load. The selection survives a
  * refresh, except an item that is no longer in the board, which is cleared with
- * a notice. boardDownMessages turns state into the status message and the board
- * view model (s2). Pure and vscode-free.
+ * a notice. boardDownMessages turns state into the status message and the chosen
+ * view's model (s2, s3). Pure and vscode-free.
  */
 
 import type { DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
 import { buildBoardViewModel, type BoardPaging } from './board-model.js';
+import { buildEpicRollup, buildIssueView } from './board-views.js';
 import type { BoardDownMessage, BoardScope, BoardView, Density, Envelope, StatusView } from './board-protocol.js';
 import type { DisplayLabels } from './labels.js';
 
@@ -152,14 +153,22 @@ function statusView(status: LoadStatus): StatusView {
 }
 
 /**
- * The status message first, then (when a snapshot is shown) the board view model for it, the selection and the
- * host's paging. The interim 'items' message is no longer sent (AMD-6a1315585c38c41c-1).
+ * The status message first, then (when a snapshot is shown) the model of the view the selection names: the board
+ * (with the host's paging), the epic rollup or the issue view. The interim 'items' message is no longer sent
+ * (AMD-6a1315585c38c41c-1).
  */
 export function boardDownMessages(state: BoardState, labels: DisplayLabels, paging: BoardPaging): readonly Envelope<BoardDownMessage>[] {
   const out: Envelope<BoardDownMessage>[] = [{ v: 1, payload: { type: 'status', status: statusView(state.status) } }];
   const shown = shownSnapshot(state.status);
   if (shown !== null) {
-    out.push({ v: 1, payload: { type: 'board', model: buildBoardViewModel(shown.snapshot, state.selection, paging, labels) } });
+    // Only the view the reader has chosen is built and posted (s3).
+    const { snapshot } = shown;
+    const sel = state.selection;
+    switch (sel.view) {
+      case 'board': out.push({ v: 1, payload: { type: 'board', model: buildBoardViewModel(snapshot, sel, paging, labels) } }); break;
+      case 'epics': out.push({ v: 1, payload: { type: 'epics', model: buildEpicRollup(snapshot, sel, labels) } }); break;
+      case 'issues': out.push({ v: 1, payload: { type: 'issues', model: buildIssueView(snapshot, sel, labels) } }); break;
+    }
   }
   return out;
 }

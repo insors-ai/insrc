@@ -62,7 +62,8 @@ function attr(v: string): string {
 /**
  * The webview script. Everything shown is set with textContent, and the only
  * messages posted are board up-messages: ready, refresh, set-search,
- * set-scope, set-attention and show-more.
+ * set-scope, set-attention, show-more, set-view (the tabs) and select-item
+ * (follow links in the issue view).
  */
 export const BOARD_WEBVIEW_SCRIPT = [
   `(function(){`,
@@ -73,7 +74,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `const search=byId('search'),scope=byId('scope'),attention=byId('attention');`,
   `const make=function(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.setAttribute('class',cls);return e;};`,
   `const clear=function(n){while(n.firstChild)n.removeChild(n.firstChild);};`,
-  `const KIND={story:'Story',issue:'Issue'};`,
+  `const KIND={story:'Story',issue:'Issue',epic:'Epic',task:'Task'};`,
   `byId('refresh').addEventListener('click',function(){send({type:'refresh'});});`,
   `search.addEventListener('input',function(){send({type:'set-search',search:String(search.value)});});`,
   `attention.addEventListener('change',function(){send({type:'set-attention',on:attention.checked===true});});`,
@@ -93,15 +94,48 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `const badges=make('ul',undefined,'badges');`,
   `for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}`,
   `li.appendChild(badges);return li;}`,
-  `function renderBoard(m){renderScope(m.scopeOptions);clear(board);`,
-  `totals.textContent=m.totals.items+' item'+(m.totals.items===1?'':'s')+', '+m.totals.needsAttention+' needing attention';`,
+  // View tabs: each posts set-view; the shown view's tab is marked pressed.
+  `const TABS={board:byId('tab-board'),epics:byId('tab-epics'),issues:byId('tab-issues')};`,
+  `for(const v of ['board','epics','issues'])TABS[v].addEventListener('click',function(){send({type:'set-view',view:v});});`,
+  `function markTab(view){for(const v of ['board','epics','issues'])TABS[v].setAttribute('aria-pressed',v===view?'true':'false');}`,
+  `const EMPTY='Nothing on the board matches the search and filters.';`,
+  `const plural=function(n,one,many){return n+' '+(n===1?one:many);};`,
+  // A follow link: a button whose text names the item; clicking it posts select-item with the item's id.
+  `function linkButton(l){const b=make('button',KIND[l.kind]+' \u00b7 '+l.title+(l.stageLabel===null?'':' \u00b7 '+l.stageLabel),'link');`,
+  `b.setAttribute('type','button');b.setAttribute('data-item-id',l.itemId);b.addEventListener('click',function(){send({type:'select-item',itemId:l.itemId});});return b;}`,
+  `function renderGroup(g){const sec=make('section',undefined,'epic-group');if(g.epicItemId!==null)sec.setAttribute('data-epic',g.epicItemId);`,
+  `sec.appendChild(make('h2',g.title));`,
+  `sec.appendChild(make('p',g.completionLabel+(g.issueCount>0?', '+plural(g.issueCount,'issue','issues'):''),'completion'));`,
+  `for(const st of g.stages){sec.appendChild(make('h3',st.label+' ('+st.cards.length+')'));`,
+  `const ul=make('ul');ul.setAttribute('aria-label',g.title+': '+st.label);for(const c of st.cards)ul.appendChild(renderCard(c));sec.appendChild(ul);}`,
+  `return sec;}`,
+  `function renderEpics(m){markTab('epics');renderScope(m.scopeOptions);clear(board);`,
+  `totals.textContent=plural(m.totals.items,'item','items')+', '+m.totals.needsAttention+' needing attention';`,
+  `for(const g of m.epics)board.appendChild(renderGroup(g));`,
+  `if(m.notInEpic.total>0)board.appendChild(renderGroup(m.notInEpic));`,
+  `empty.textContent=m.emptySelection?EMPTY:'';}`,
+  `function renderIssue(e){const sec=make('section',undefined,'issue');sec.setAttribute('data-item-id',e.card.itemId);`,
+  `const cards=make('ul');cards.appendChild(renderCard(e.card));sec.appendChild(cards);`,
+  `sec.appendChild(make('p','Stage: '+e.stageLabel,'issue-stage'));`,
+  `if(e.parent!==null){const p=make('p','Corrects: ','parent');p.appendChild(linkButton(e.parent));sec.appendChild(p);}`,
+  `else if(e.parentNotice!==null)sec.appendChild(make('p',e.parentNotice,'parent-notice'));`,
+  `sec.appendChild(make('h3','Fix stories'));`,
+  `if(e.fixStories.length===0)sec.appendChild(make('p','No fix stories yet','no-fix'));`,
+  `else{const ul=make('ul');ul.setAttribute('aria-label','Fix stories');for(const f of e.fixStories){const li=make('li');li.appendChild(linkButton(f));ul.appendChild(li);}sec.appendChild(ul);}`,
+  `return sec;}`,
+  `function renderIssues(m){markTab('issues');renderScope(m.scopeOptions);clear(board);`,
+  `totals.textContent=plural(m.totals.issues,'issue','issues')+', '+m.totals.needsAttention+' needing attention';`,
+  `for(const e of m.issues)board.appendChild(renderIssue(e));`,
+  `empty.textContent=m.emptySelection?EMPTY:m.issues.length===0?'There are no issues on the board.':'';}`,
+  `function renderBoard(m){markTab('board');renderScope(m.scopeOptions);clear(board);`,
+  `totals.textContent=plural(m.totals.items,'item','items')+', '+m.totals.needsAttention+' needing attention';`,
   `for(const col of m.columns){const sec=make('section',undefined,'column');sec.setAttribute('data-stage',col.stage);`,
   `sec.appendChild(make('h2',col.label+' ('+col.total+')'));`,
   `const ul=make('ul');ul.setAttribute('aria-label',col.label);for(const c of col.cards)ul.appendChild(renderCard(c));sec.appendChild(ul);`,
   `if(col.hiddenCount>0){const more=make('button','Show '+col.hiddenCount+' more');more.setAttribute('type','button');`,
   `more.addEventListener('click',function(){send({type:'show-more',stage:col.stage});});sec.appendChild(more);}`,
   `board.appendChild(sec);}`,
-  `empty.textContent=m.emptySelection?'Nothing on the board matches the search and filters.':'';}`,
+  `empty.textContent=m.emptySelection?EMPTY:'';}`,
   `window.addEventListener('message',function(e){`,
   `const m=e.data;if(!m||m.v!==1||!m.payload)return;const p=m.payload;`,
   `if(p.type==='status'){const s=p.status;`,
@@ -110,6 +144,8 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `status.textContent=parts.join(' ');status.setAttribute('data-state',s.state);`,
   `notice.textContent=s.partialNotice||'';return;}`,
   `if(p.type==='board'){renderBoard(p.model);return;}`,
+  `if(p.type==='epics'){renderEpics(p.model);return;}`,
+  `if(p.type==='issues'){renderIssues(p.model);return;}`,
   `});`,
   `send({type:'ready'});`,
   `})();`,
@@ -124,6 +160,11 @@ export function renderBoardDocument(nonce: string): string {
     `<header><h1>${BOARD_TITLE}</h1><button id="refresh" type="button">Refresh</button></header>` +
     `<p id="status" role="status" aria-live="polite"></p>` +
     `<p id="notice"></p>` +
+    `<nav class="tabs" aria-label="Views">` +
+    `<button id="tab-board" type="button" aria-pressed="true">Board</button>` +
+    `<button id="tab-epics" type="button" aria-pressed="false">Epics</button>` +
+    `<button id="tab-issues" type="button" aria-pressed="false">Issues</button>` +
+    `</nav>` +
     `<div class="controls">` +
     `<input id="search" type="search" aria-label="Search work items" placeholder="Search">` +
     `<select id="scope" aria-label="Scope"><option value="all">All work</option></select>` +
@@ -137,6 +178,11 @@ export function renderBoardDocument(nonce: string): string {
 }
 
 export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBoardHost {
+  /** The injected logger, made safe: logging never throws into the board's own paths. */
+  const log: ChatPanelLogger = {
+    warn: (m) => { try { deps.logger.warn(m); } catch { /* a failing logger must not break the board */ } },
+    error: (m) => { try { deps.logger.error(m); } catch { /* a failing logger must not break the board */ } },
+  };
   let channel: ChatPanelChannel | undefined;
   let state: BoardState = initialBoardState();
   /** The visible card limit per column; reset by a scope, search or attention change, kept across refreshes. */
@@ -146,8 +192,9 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   let generation = 0;
 
   /**
-   * Derive the messages first; the new state and paging are kept only when they render, so a bad snapshot or
-   * selection never becomes the board's. A throw leaves both as they were and posts nothing.
+   * Derive the messages first; the new state and paging are kept only when their messages can be built, so a bad
+   * snapshot or selection never becomes the board's, and a throw while deriving leaves both as they were and posts
+   * nothing. Posting itself is fire-and-forget (ChatPanelChannel.postMessage never rejects inward).
    */
   function apply(next: BoardState, nextPaging: BoardPaging): void {
     const messages = boardDownMessages(next, DISPLAY_LABELS, nextPaging);
@@ -173,7 +220,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
       dispatch({ type: 'refresh-requested', seq });
     } catch (err) {
       // The loading state could not be shown; state is unchanged, so no request is made for it.
-      deps.logger.error(`delivery board: refresh ${seq} could not start: ${errorText(err)}`);
+      log.error(`delivery board: refresh ${seq} could not start: ${errorText(err)}`);
       return;
     }
     // The client resolves every failure to a typed result; a throw is turned into one so the board never stays on 'loading'.
@@ -188,25 +235,34 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     if (seq !== state.latestSeq) {
       const n = result.ok ? result.value.items.length : 0;
       const answer = result.ok ? `${n} item${n === 1 ? '' : 's'}` : result.failure.kind;
-      deps.logger.warn(`delivery board: dropped the answer to refresh ${seq} (${answer}); refresh ${state.latestSeq} is newer (${elapsedMs(started)} ms)`);
+      log.warn(`delivery board: dropped the answer to refresh ${seq} (${answer}); refresh ${state.latestSeq} is newer (${elapsedMs(started)} ms)`);
       return;
     }
     if (!result.ok) {
-      deps.logger.error(`delivery board: refresh ${seq} ${result.failure.kind} after ${elapsedMs(started)} ms: ${result.failure.message}`);
+      log.error(`delivery board: refresh ${seq} ${result.failure.kind} after ${elapsedMs(started)} ms: ${result.failure.message}`);
     }
+    let applied = false;
     try {
       dispatch({ type: 'snapshot-arrived', seq, result, at });
-      if (result.ok) logUnknownStages(seq, result.value);
+      applied = true;
     } catch (err) {
       // A snapshot that slipped past the client's checks but cannot be rendered: state still holds the previous
       // board, so this shows a failed refresh over it rather than a frozen board.
       const message = errorText(err);
-      deps.logger.error(`delivery board: refresh ${seq} could not be applied: ${message}`);
+      log.error(`delivery board: refresh ${seq} could not be applied: ${message}`);
       try {
         dispatch({ type: 'snapshot-arrived', seq, result: { ok: false, failure: { kind: 'read-failed', message } }, at });
       } catch (again) {
         // Last resort: the board keeps whatever it last posted.
-        deps.logger.error(`delivery board: refresh ${seq} failure could not be shown: ${errorText(again)}`);
+        log.error(`delivery board: refresh ${seq} failure could not be shown: ${errorText(again)}`);
+      }
+    }
+    // Outside the try: a failure to log must never turn a board that rendered into a failed refresh.
+    if (applied && result.ok) {
+      try {
+        logUnknownStages(seq, result.value);
+      } catch (err) {
+        log.error(`delivery board: refresh ${seq} unknown stages could not be listed: ${errorText(err)}`);
       }
     }
   }
@@ -216,7 +272,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const unknown = unknownStages(snapshot);
     if (unknown.size === 0) return;
     const named = [...unknown].map(([stage, n]) => `${stage} (${n})`).join(', ');
-    deps.logger.warn(`delivery board: refresh ${seq} left items with unknown stages off the board: ${named}`);
+    log.warn(`delivery board: refresh ${seq} left items with unknown stages off the board: ${named}`);
   }
 
   /** An epic scope must name an epic in the shown snapshot. */
@@ -224,6 +280,12 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     if (scope.kind !== 'epic') return true;
     const shown = shownSnapshot(state.status);
     return shown !== null && shown.snapshot.items.some(i => i.kind === 'epic' && i.id === scope.epicItemId);
+  }
+
+  /** A followed link must name an item in the shown snapshot. */
+  function onBoard(itemId: string): boolean {
+    const shown = shownSnapshot(state.status);
+    return shown !== null && shown.snapshot.items.some(i => i.id === itemId);
   }
 
   function select(selection: BoardSelection, nextPaging: BoardPaging = paging): void {
@@ -238,14 +300,20 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
       case 'set-view': select({ ...sel, view: msg.view }); return;
       case 'set-scope':
         if (!knownScope(msg.scope)) {
-          deps.logger.warn('delivery board: ignored a scope naming an epic that is not on the board');
+          log.warn('delivery board: ignored a scope naming an epic that is not on the board');
           return;
         }
         select({ ...sel, scope: msg.scope }, {});
         return;
       case 'set-search': select({ ...sel, search: msg.search }, {}); return;
       case 'set-attention': select({ ...sel, needsAttentionOnly: msg.on }, {}); return;
-      case 'select-item': select({ ...sel, selectedItemId: msg.itemId }); return;
+      case 'select-item':
+        if (!onBoard(msg.itemId)) {
+          log.warn('delivery board: ignored a link to an item that is not on the board');
+          return;
+        }
+        select({ ...sel, selectedItemId: msg.itemId });
+        return;
       case 'close-details': select({ ...sel, selectedItemId: null }); return;
       case 'set-density': select({ ...sel, density: msg.density }); return;
       case 'show-more': apply(state, showMore(paging, msg.stage)); return;
@@ -274,14 +342,14 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
       opened.onMessage(raw => {
         const msg = parseBoardUpMessage(raw);
         if (msg === null) {
-          deps.logger.warn('delivery board: ignored a malformed webview message');
+          log.warn('delivery board: ignored a malformed webview message');
           return;
         }
         try {
           handle(msg);
         } catch (err) {
           // apply() keeps state and paging only when they render, so the board stays as it was.
-          deps.logger.error(`delivery board: ${msg.type} could not be shown: ${errorText(err)}`);
+          log.error(`delivery board: ${msg.type} could not be shown: ${errorText(err)}`);
         }
       });
       opened.setHtml(renderBoardDocument(deps.genNonce()));

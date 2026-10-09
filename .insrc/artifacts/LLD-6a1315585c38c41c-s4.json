@@ -1,0 +1,922 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791538672573-nqv8bc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T09:45:11.650Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 439073,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1791485029499-gnjvqz",
+    "hldEffectiveHash": "d362668c917b0c5323a185b5ce5c8cf152d68ef62f2e324ee06d52d96319213a",
+    "hldAmendmentsApplied": [
+      "AMD-6a1315585c38c41c-1",
+      "AMD-6a1315585c38c41c-2"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every s4 acceptance criterion (ac1–ac6), FR001/FR002 and local constraint lc1 is designed, and nothing beyond the read-only MVP is built.",
+          "evidence": "DEF.md:163-172 lists ac1–ac6 and lc1. The LLD covers them as follows: ac1 by task rows with dependsOn, acceptanceChecks, resultLabel and unplanned, plus taskCounts; ac2 by stageReason; ac3 by the conflict sentence; ac4 by approvalLabel, reviewLabel and overrideLabel; ac5 by opensIn and openArtifact; ac6 by notices and the CR evidence row. lc1 is covered because opensIn follows openWith. The PRD's FR-09 read-only invariant is kept, and no write path is added. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s1's reducer clears selection.selectedItemId when a refresh removes the selected item.",
+          "evidence": "board-state.ts:94-101 applySnapshot: `if (selected !== null && !items.some(i => i.id === selected)) return {...selection: { ...state.selection, selectedItemId: null }, selectionNotice: 'The selected item is no longer in the board.'}`. [files: vscode-plugin/src/delivery/board-state.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The review pane's client.content(mdPath) accepts a raw docs/ path, the daemon's docs/ guard applies to it, and a failed content read already gives an 'unavailable: <message>' body with blocked set.",
+          "evidence": "docs-review-client.ts:77 `resolvePath = (idOrPath) => mdPathById.get(idOrPath) ?? idOrPath`, and content() calls workflow.artifactContent with { mdPath }. artifact-content.ts:158-161 rejects outside-docs, not-md and symlink-escape paths. docs-review-panel.ts:1386-1392 posts `markdown: `unavailable: ${errText(err)}`, blocked: true`. [files: vscode-plugin/src/chat/docs-review-client.ts, vscode-plugin/src/chat/docs-review-panel.ts, src/workflow/artifact-content.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The snapshot item publishes the fields the builder reads: tasks (TaskValidation with planned), validation counts, stage.reason {text, artifactIds}, conflict {failedTaskItemIds, storyLevelFailed}, evidence with approval.state including 'rejected', and review {verdict, effectiveVerdict, override}.",
+          "evidence": "src/workflow/delivery/types.ts:285-308 defines DeliveryItem. TaskValidation at :200-205 has { taskItemId, result, planned }. ItemGates.conflict at :218. DeliveryEvidenceEntry at :273-283 has approval.state 'approved'|'rejected'|'pending' and review: ArtifactGate['review'], which carries verdict, override {reason, at} and effectiveVerdict (:184-195). The review-without-build notice is attached to the story through itemIds (stage.ts:227-229). [files: src/workflow/delivery/types.ts, src/workflow/delivery/stage.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The PLAN body has tasks[] with id, dependsOn and acceptanceChecks, and the snapshot's task items hold the plan task id in sourceIds, so the join works.",
+          "evidence": "src/workflow/artifacts/plan.ts:63-73: PlanTask { id: 't1'…, dependsOn: readonly string[], acceptanceChecks: readonly string[] }. graph.ts:405-411 creates task items with `sourceIds: [taskId]`, where taskId is the PLAN/BUILD entry id. [files: src/workflow/artifacts/plan.ts, src/workflow/delivery/graph.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "client.evidence(artifactId) is reused as is: it has a 15 s deadline and returns typed { ok: false } failures.",
+          "evidence": "board-wiring.ts:37 `DELIVERY_DEADLINES_MS = { snapshot: 30_000, evidence: 15_000 }`. delivery-client.ts:22 defines the kinds 'daemon-unavailable' | 'read-failed' | 'timed-out' | 'no-workspace', and evidence() never rejects. The LLD names only read-failed and timed-out, but its handling keys on { ok: false }, so the other two kinds are covered as well. [files: vscode-plugin/src/delivery/delivery-client.ts, vscode-plugin/src/delivery/board-wiring.ts]",
+          "action": "Optionally name daemon-unavailable and no-workspace in the PLAN-read error case for completeness.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc4 labels exist with the shape the LLD formats, e.g. 'Review blocked (now Review passed)', 'Rejected' and labels.unplanned.",
+          "evidence": "labels.ts:23-31 DisplayLabels has stage, notice, taskResult, approval, reviewVerdict and unplanned. reviewVerdict maps pass to 'Review passed' and block to 'Review blocked'; approval.rejected is 'Rejected'; unplanned is 'Unplanned'. [files: vscode-plugin/src/delivery/labels.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The change-site inventory is complete. §3 lists only board-protocol.ts, board-host.ts, chat/protocol.ts and docs-review-panel.ts, and §2.4 says registerDeliveryBoard passes reviewPane to the host and extension.ts passes the docs-review host.",
+          "evidence": "Four sites the design depends on are missing from the inventory. (1) DeliveryBoardHostDeps (board-host.ts:43-50) has no reviewPane field, and the LLD gives no signature change for createDeliveryBoardHost; only DeliveryBoardWiringDeps is specified. (2) BOARD_WEBVIEW_SCRIPT (board-host.ts:68-152) has no details pane, no click-to-select on board cards (renderCard attaches no listener; only issue-view linkButtons post select-item), and nothing that posts open-evidence or close-details. The LLD names it only as a test subject and does not design the rendering or these intents. (3) In extension.ts:594, `const docsReviewHost = createDocsReviewHost(...)` is declared inside `if (chatEnabled) {`, while registerDeliveryBoard is called at :606, outside that block. The host has to be hoisted, and extension.ts is not in any call-site list. (4) DeliveryItemView (delivery-contract.ts:59-61) does not pick 'tasks', which the builder reads. [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/extension.ts, vscode-plugin/src/delivery/delivery-contract.ts]",
+          "action": "Add these to the contract and §3: the DeliveryBoardHostDeps.reviewPane field; the webview script changes (selecting a card, rendering the details pane with textContent, the open-evidence and close-details buttons); hoisting docsReviewHost in extension.ts; and adding 'tasks' to DeliveryItemView.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "sc3 already declares the select-item, close-details and open-evidence up-messages and the 'details' down-message, so no protocol amendment is needed.",
+          "evidence": "board-protocol.ts:152 `{ type: 'details'; model: ItemDetailsViewModel | null }` and :167-169 declare the three up-messages, which parseBoardUpMessage (:190, :201-206) validates. :143 `export type ItemDetailsViewModel = unknown;` is the placeholder s4 replaces. board-host.ts:320 `case 'open-evidence': return; // opening evidence is s4's`. [files: vscode-plugin/src/delivery/board-protocol.ts, vscode-plugin/src/delivery/board-host.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Adding the optional readOnly flag to 'docs-content' is additive: every existing post leaves it absent and behaves as before. Nothing is persisted (DetailsMemory lives in memory only).",
+          "evidence": "chat/protocol.ts:75-81 shows the 'docs-content' variant, which already carries an optional `commentable?`. All existing posts (docs-review-panel.ts:1258, 1319, 1386, 1408, 1424) build the object without readOnly. Under exactOptionalPropertyTypes, an absent key stays unchanged for these posts. The board host keeps all its state in closures (board-host.ts:186-192). [files: vscode-plugin/src/chat/protocol.ts, vscode-plugin/src/chat/docs-review-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s4 redesigns nothing owned by s1, s2, s3 or s5 and does not amend E1's sc7. Task detail is read from the PLAN body rather than added to the snapshot.",
+          "evidence": "The LLD consumes sc1–sc4 unchanged and leaves keyboard and narrow layouts to s5 (§4 table). HLD.md:461-480 rejected alternative a3, which would have extended E1's view, and the LLD instead reads the PLAN through workflow.deliveryEvidence. HLD.md:393 requires the review pane's existing behaviour to stay unchanged, and the LLD's §2.2 postconditions restate that requirement. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "openArtifact can refresh the pending list and then decide pending versus read-only from the refreshed list: 'When the artifact is in the pending list after the refresh, it opens exactly as a click on its list row does'.",
+          "evidence": "refreshPending (docs-review-panel.ts:1246-1253) returns early without updating the `pending` map when a newer refresh superseded it: `if (mySeq !== refreshSeq) return;`. On a first open, open() calls refreshPending (:1784), and the webview's boot ping (:1739-1740) starts another. A refresh that openArtifact awaits can therefore resolve before `pending` is populated, so a pending artifact is wrongly shown read-only, without approve. On a cold panel, `pending` is also empty until a refresh lands. The LLD's error paths do not cover this race. [files: vscode-plugin/src/chat/docs-review-panel.ts]",
+          "action": "Specify how openArtifact gets an authoritative pending check: call client.pending() directly and use its result, or keep the open request and resolve it once the latest refresh completes. Add a test where the boot ping supersedes the refresh.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A late PLAN or record read can be detected and dropped by comparing the snapshot's request number, the current selection and the panel generation.",
+          "evidence": "board-host.ts:191-192 keeps `generation`, bumped on dispose. board-state.ts:116 stamps each applied snapshot with `requestSeq: event.seq`, and selection.selectedItemId sits in state. The refresh path already uses the same gen and seq pattern (board-host.ts:233-235). [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/delivery/board-state.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion maps to a named test, using fixtures that exist in the named test files.",
+          "evidence": "§6 maps ac1–ac6 to named tests in board-details.test.ts, board-host.test.ts and docs-review-panel.test.ts. The fixtures exist: board-host.test.ts:241 `runScript()` and :359 `openWith(snap)`, and docs-review-panel.test.ts:38 `fakeChannel()` and :68 `fakeClient(...)`. board-fixtures.ts exists. No test covers the openArtifact refresh race (see error-paths). [files: vscode-plugin/src/delivery/__tests__/board-host.test.ts, vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts]",
+          "action": "Add a test for openArtifact while a superseding refresh is in flight.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 12,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-09T09:45:53.874Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "change-sites.1": {
+        "findingId": "change-sites.1",
+        "status": "resolved",
+        "note": "Applied: §2 and §3 now list DeliveryBoardHostDeps.reviewPane, the webview script's details pane, card select-item listener and close-details and open-evidence buttons, the docsReviewHost declaration moved before the chat gate in extension.ts, and 'tasks' added to DeliveryItemView.",
+        "resolvedAt": "2026-10-09T09:49:07.578Z"
+      },
+      "error-paths.1": {
+        "findingId": "error-paths.1",
+        "status": "resolved",
+        "note": "Applied: openArtifact reads client.pending() itself after bumping the pane's refresh counter, so in-flight refreshes are dropped and the pending decision comes from its own answer; a new error case and a docs-review-panel test cover the boot-ping race.",
+        "resolvedAt": "2026-10-09T09:49:07.580Z"
+      }
+    },
+    "approvedAt": "2026-10-09T09:50:22.978Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "s4 lets a reader open any card and see why the item is where it is. The details show the daemon's reason for its stage and the records that reason cites, each task with its dependencies, acceptance checks and recorded result, any conflict between an approval and failed results, its notices, its linked items and its source ids. Every supporting record is listed with its approval, its original review verdict and any override, and the reader can open it: documents the review pane can show open there, read-only unless they are awaiting review, and build and review records open read-only on the board itself, as plain text."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A host-side board model with a thin webview renderer (alternative a1). Inside the VS Code plugin, a delivery client wraps the daemon's workflow.delivery and workflow.deliveryEvidence methods over the shared IPC client. A board host, a vscode-free deps-injected factory like the existing panel hosts, owns the last successful snapshot, refresh sequencing, the load status and the reader's selection. Pure board-model functions turn snapshot plus selection into view models for the board, the epic rollup, the issue view and item details, using one display-label map for stages and signals. The webview is one CSP-locked inline script that renders those view models as text-only DOM and posts reader intents back in the plugin's versioned envelope. Evidence opens through a new additive open-by-artifact entry point on the existing review pane, or, for records the daemon marks evidence-read, as a read-only record the host reads through workflow.deliveryEvidence. A story's task dependencies and acceptance checks come from its PLAN, read through workflow.deliveryEvidence when its details open.",
+      "ownedContracts": [
+        {
+          "id": "sc6",
+          "name": "Item details view model and evidence opening",
+          "purpose": "What a selected item's details show, including tasks with dependencies, checks and results, the stage reason and its cited records, and how each evidence entry opens.",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": [
+            "c4",
+            "c17"
+          ],
+          "interfaceSketch": "/**\n * Join rule: a PLAN task (PlanTask.id, e.g. 't1') belongs to the snapshot task item whose sourceIds contain that id;\n * a PLAN task with no such item is not shown as a task row. dependsOn ids are shown by the matched item's title,\n * or as the raw plan id when no item matches.\n * Opened-record text: renderedMarkdown when present, otherwise meta and body pretty-printed as JSON (two-space indent);\n * always inserted as textContent.\n */\ninterface TaskRowView {\n  readonly taskItemId: string;\n  readonly title: string | null;\n  /** Result label from sc4, or the unplanned label. */\n  readonly resultLabel: string;\n  readonly planned: boolean;\n  /** From the story's PLAN, read through workflow.deliveryEvidence; null when no PLAN or it could not be read. */\n  readonly dependsOn: readonly string[] | null;\n  readonly acceptanceChecks: readonly string[] | null;\n}\n\ninterface EvidenceRowView {\n  readonly artifactId: string;\n  readonly kindLabel: string;\n  readonly approvalLabel: string;\n  readonly reviewLabel: string | null;\n  readonly overrideLabel: string | null;\n  readonly opensIn: 'review-pane' | 'read-only';\n}\n\ninterface ItemDetailsViewModel {\n  readonly itemId: string;\n  readonly title: string;\n  readonly stageLabel: string | null;\n  readonly stageReason: { readonly text: string; readonly artifactIds: readonly string[] } | null;\n  readonly tasks: readonly TaskRowView[];\n  readonly taskCounts: { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number } | null;\n  readonly conflict: string | null;\n  readonly evidence: readonly EvidenceRowView[];\n  readonly notices: readonly string[];\n  readonly linked: readonly { readonly itemId: string; readonly title: string; readonly relation: 'parent' | 'child' | 'corrects' }[];\n  readonly sourceIds: readonly string[];\n  /** Set when the PLAN read failed; the rest of the details still render. */\n  readonly planNotice: string | null;\n  /** The read-only text of an evidence-read record the reader opened, rendered as preformatted text. */\n  readonly openedRecord: { readonly artifactId: string; readonly text: string } | null;\n}"
+        },
+        {
+          "id": "sc7",
+          "name": "Review pane open-by-artifact entry point",
+          "purpose": "The one additive entry point on the existing review pane (amended k10): open the pane on a given artifact, read-only when it is not pending.",
+          "ownedByStory": "s4",
+          "consumedByStories": [],
+          "assumptions": [
+            "c24"
+          ],
+          "interfaceSketch": "/** Added to the existing DocsReviewHost (vscode-plugin/src/chat/docs-review-panel.ts); open() and dispose() are unchanged. */\ninterface DocsReviewHostOpenArtifact {\n  /**\n   * Open the pane on one artifact by id and its docs/ markdown path. When the artifact is not\n   * in the pane's pending list, it is shown without approve or request-changes actions.\n   */\n  openArtifact(target: { readonly artifactId: string; readonly mdPath: string }): void;\n}"
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Delivery client",
+          "purpose": "The board's only path to delivery data: the two daemon read methods for the open workspace's repo, each bounded by a deadline, with failures typed so the host can tell an unavailable daemon, a failed or timed-out read and a missing workspace apart.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ],
+          "interfaceSketch": "import type { DeliverySnapshot, DeliveryEvidenceRecord } from './delivery-contract.js';\n\ntype DeliveryFailureKind = 'daemon-unavailable' | 'read-failed' | 'timed-out' | 'no-workspace';\n\ninterface DeliveryFailure {\n  readonly kind: DeliveryFailureKind;\n  /** The daemon's error text, or the socket error message. */\n  readonly message: string;\n}\n\ntype DeliveryResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly failure: DeliveryFailure };\n\n/** The client sends `repo` (the open workspace's root) in every DeliverySnapshotRequest and DeliveryEvidenceRequest,\n *  so the board never falls back to the daemon's INSRC_REPO; with no workspace folder it returns 'no-workspace'\n *  without calling the daemon. Each call races a deadline (snapshot 30 s, evidence 15 s) and returns 'timed-out'\n *  when it passes, because the shared IPC client sets no timeout of its own. */\ninterface DeliveryClientDeps {\n  readonly rpc: <T>(method: string, params?: unknown) => Promise<T>;\n  /** The workspace root, or null when no folder is open. */\n  readonly repo: string | null;\n  readonly deadlinesMs: { readonly snapshot: number; readonly evidence: number };\n}\n\ninterface DeliveryClient {\n  snapshot(): Promise<DeliveryResult<DeliverySnapshot>>;\n  evidence(artifactId: string): Promise<DeliveryResult<DeliveryEvidenceRecord>>;\n}"
+        },
+        {
+          "id": "sc2",
+          "name": "Board state: load status and selection",
+          "purpose": "What the host knows at any moment: the latest applied snapshot, why the board looks the way it does, and what the reader has chosen, kept across refreshes.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c10"
+          ],
+          "interfaceSketch": "import type { DeliverySnapshot } from './delivery-contract.js';\n\ntype LoadStatus =\n  | { readonly state: 'loading'; readonly last: AppliedSnapshot | null }\n  | { readonly state: 'ready'; readonly current: AppliedSnapshot }\n  | { readonly state: 'empty'; readonly current: AppliedSnapshot }\n  | { readonly state: 'unavailable'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string }\n  | { readonly state: 'failed'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string };\n\ninterface AppliedSnapshot {\n  readonly snapshot: DeliverySnapshot;\n  /** Monotonic request number the snapshot answered; older responses are dropped. */\n  readonly requestSeq: number;\n  /** True when the snapshot reports unreadable records or store-level notices. */\n  readonly partial: boolean;\n}\n\ntype BoardView = 'board' | 'epics' | 'issues';\ntype BoardScope = { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' };\ntype Density = 'compact' | 'comfortable';\n\ninterface BoardSelection {\n  readonly view: BoardView;\n  readonly scope: BoardScope;\n  readonly search: string;\n  readonly needsAttentionOnly: boolean;\n  readonly selectedItemId: string | null;\n  readonly density: Density;\n}\n\n/** 'unavailable' covers daemon-unavailable and no-workspace; 'failed' covers read-failed and timed-out. A request that\n *  times out ends its 'loading' state like any other failure. */\ninterface BoardState {\n  readonly status: LoadStatus;\n  readonly selection: BoardSelection;\n  /** Set when a refresh removed the selected item. */\n  readonly selectionNotice: string | null;\n}"
+        },
+        {
+          "id": "sc3",
+          "name": "Board webview message protocol",
+          "purpose": "The only traffic between the board's host and its webview: view models down, reader intents up, both in the plugin's versioned envelope.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "interface Envelope<T> { readonly v: 1; readonly payload: T }\n\n/** Host -> webview. Each message replaces what it names; nothing is merged. */\ntype BoardDownMessage =\n  | { readonly type: 'status'; readonly status: StatusView }\n  | { readonly type: 'board'; readonly model: BoardViewModel }\n  | { readonly type: 'epics'; readonly model: EpicRollupViewModel }\n  | { readonly type: 'issues'; readonly model: IssueViewModel }\n  | { readonly type: 'details'; readonly model: ItemDetailsViewModel | null }\n  | { readonly type: 'announce'; readonly text: string };\n\n/** Webview -> host. Ids only; the host resolves them against the current snapshot. */\ntype BoardUpMessage =\n  | { readonly type: 'ready' }\n  | { readonly type: 'refresh' }\n  | { readonly type: 'set-view'; readonly view: 'board' | 'epics' | 'issues' }\n  | { readonly type: 'set-scope'; readonly scope: { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' } }\n  | { readonly type: 'set-search'; readonly search: string }\n  | { readonly type: 'set-attention'; readonly on: boolean }\n  | { readonly type: 'select-item'; readonly itemId: string }\n  | { readonly type: 'close-details' }\n  | { readonly type: 'open-evidence'; readonly itemId: string; readonly artifactId: string }\n  | { readonly type: 'set-density'; readonly density: 'compact' | 'comfortable' };\n\ninterface StatusView {\n  readonly state: 'loading' | 'ready' | 'empty' | 'unavailable' | 'failed';\n  readonly takenAt: string | null;\n  readonly message: string | null;\n  readonly partialNotice: string | null;\n  readonly stale: boolean;\n}\n\n/** Declared by their owning stories: BoardViewModel (s2), EpicRollupViewModel and IssueViewModel (s3), ItemDetailsViewModel (s4). */\ntype BoardViewModel = unknown;\ntype EpicRollupViewModel = unknown;\ntype IssueViewModel = unknown;\ntype ItemDetailsViewModel = unknown;\n  // + BoardDownMessage 'items' variant: { readonly type: 'items'; readonly items: readonly { readonly itemId: string; readonly kind: 'epic' | 'story' | 'task' | 'issue'; readonly title: string | null; readonly stageLabel: string | null }[] };  // Lets s1 list every readable item (title, kind, stage label) before s2's BoardViewModel exists; s2 stops sending it once 'board' is posted. (amend:AMD-6a1315585c38c41c-1)\n  // + BoardUpMessage 'show-more' variant: { readonly type: 'show-more'; readonly stage: DeliveryStage };  // Lets the reader reveal the next page of one board column; the host validates the stage id and raises that column's visible limit (sc5 hiddenCount). (amend:AMD-6a1315585c38c41c-2)"
+        },
+        {
+          "id": "sc4",
+          "name": "Display labels",
+          "purpose": "One text label for every stage id and every signal the daemon publishes, so colour is never the only carrier and every view uses the same words.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c11"
+          ],
+          "interfaceSketch": "/** s1 extends the type mirror additively to re-export these six types from src/workflow/delivery/types.ts; tsconfig.delivery-contract.json keeps compiling them. */\nimport type { DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState, ReviewVerdict } from './delivery-contract.js';\n\ninterface DisplayLabels {\n  /** Exhaustive: a new stage id fails to compile. 'complete' -> 'Complete', 'ready-plan-approved' -> 'Ready · plan approved', ... */\n  readonly stage: Readonly<Record<DeliveryStage, string>>;\n  readonly attention: Readonly<Record<AttentionReason, string>>;\n  readonly notice: Readonly<Record<NoticeCode, string>>;\n  readonly taskResult: Readonly<Record<TaskResult, string>>;\n  readonly approval: Readonly<Record<ApprovalState, string>>;\n  readonly reviewVerdict: Readonly<Record<ReviewVerdict, string>>;\n  readonly unplanned: string;\n}"
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [
+          "sc6",
+          "sc7"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "Building item details from the snapshot item, reading the story's PLAN through the delivery client and caching it per snapshot, joining the plan's dependencies and acceptance checks to the snapshot's task results, fetching an evidence-read record and showing it as preformatted text, routing a review-view entry to the review pane's openArtifact, the change inside the review pane that implements openArtifact without altering its list, rendering or approval behaviour, and the details rendering. Its LLD maps every acceptance criterion to a named test, including ac5 for both paths: a review-view record opens through openArtifact, and when the review pane is unavailable or the record is evidence-read the record is shown read-only from workflow.deliveryEvidence; the review pane's existing tests run unchanged."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The open-board command and its entry in the plugin's command list, the webview panel creation in an editor tab with its CSP and nonce, the refresh sequencing (request numbers and dropping superseded responses), the mapping of client failures to load states, and the status bar of the board (taken-at time, stale and partial notices, the empty, unavailable and failed messages). s1 also records the editor-tab versus sidebar placement check. It renders a minimal list of item titles until s2 supplies columns. s1 also extends vscode-plugin/src/delivery/delivery-contract.ts additively with the stage, attention, notice, task-result, approval and review-verdict types sc4 needs. Its LLD maps every acceptance criterion to a named test, including ac4 (an earlier response arriving after a later one is dropped, with fake out-of-order responses) and ac6 (repeated open and refresh against a temporary git repository leave the store, docs and git untouched)."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The pure functions that filter the snapshot by scope, search and attention, group the matches into the six columns in the daemon's order, count over the whole selection, page each column behind show-more, and build each card's badges and accessible label from the snapshot's published fields; and the board view's rendering in the webview script, text-only. Its LLD maps every acceptance criterion to a named test, including ac6 (a title and a notice containing markup and script render as literal text)."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The epic rollup view model (per-epic completion counts that name their denominator, stories grouped by stage, a separate standalone group) and the issue view model (each issue with its fix stories as children and its parent relationship or unresolved-parent notice), both built from the same filtered selection as sc5, and their rendering. Its LLD maps every acceptance criterion to a named test."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The narrow-pane layout (stage-grouped list), keyboard navigation and focus return, live-region announcements of selection and refresh results, the compact and comfortable density styles, and the 500-item performance fixture with its measured render and filter timings. Its LLD maps every acceptance criterion to a named test, with ac5 as the measured fixture."
+        }
+      ],
+      "rolloutPhase": "Phase B — board columns, and item details with evidence",
+      "nonFunctional": {
+        "performance": "After a snapshot arrives, the first board view model is built and rendered within one second for the 1,000-record, 500-item fixture; each filter or search change rebuilds and posts the view model and re-renders within 150 ms, measured best of three on the reference environment. Item details add at most one workflow.deliveryEvidence read per story per snapshot.",
+        "security": "The webview runs one nonce'd inline script under a restrictive Content-Security-Policy, as the plugin's other webviews do, and builds DOM with text nodes only; no artifact text is inserted as HTML. Up-messages carry only ids that the host resolves against the current snapshot, so a crafted message cannot name a path. The board calls only workflow.delivery and workflow.deliveryEvidence and has no route to any approval or write method; openArtifact shows non-pending artifacts without actions.",
+        "observability": "The host takes the plugin's ChatPanelLogger (warn and error). It logs failed refreshes and failed or timed-out evidence and PLAN reads through error(), and superseded responses through warn(), each with the request number, the item count where known and the elapsed time; successful refreshes are not logged, because the plugin has no info channel.",
+        "durability": "The board persists nothing to disk or workspace state; the selection lives for the life of the panel and is kept across refreshes, and the last successful snapshot is kept in memory until the panel closes."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "ItemDetailsViewModel",
+          "signature": "type PlanRead =\n  | { readonly state: 'none' }\n  | { readonly state: 'loading' }\n  | { readonly state: 'ok'; readonly tasks: readonly { readonly id: string; readonly dependsOn: readonly string[]; readonly acceptanceChecks: readonly string[] }[] }\n  | { readonly state: 'failed'; readonly message: string };\ninterface OpenedRecord { readonly artifactId: string; readonly text: string }\nfunction buildItemDetails(snapshot: DeliverySnapshot, itemId: string, plan: PlanRead, opened: OpenedRecord | null, labels: DisplayLabels): ItemDetailsViewModel | null",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "DeliverySnapshot",
+              "purpose": "The shown snapshot.",
+              "optional": false
+            },
+            {
+              "name": "itemId",
+              "type": "string",
+              "purpose": "The selected item.",
+              "optional": false
+            },
+            {
+              "name": "plan",
+              "type": "PlanRead",
+              "purpose": "The selected story's PLAN read: none (no PLAN evidence, or not a story), loading, ok, or failed.",
+              "optional": false
+            },
+            {
+              "name": "opened",
+              "type": "OpenedRecord | null",
+              "purpose": "An evidence-read record of this item the reader opened.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "sc4 text.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ItemDetailsViewModel | null",
+            "meaning": "The sc6 details for the item, or null when the id is not in the snapshot."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "stageLabel and stageReason are the item's stage label and the daemon's stage.reason text and artifactIds, unchanged; null for an item with no stage (an epic or task).",
+            "tasks: one row per entry of the item's tasks (TaskValidation), in its order, with the task item's title, resultLabel from labels.taskResult for a planned task and labels.unplanned for an unplanned one; when plan is ok, the PLAN task whose id is in the task item's sourceIds gives dependsOn (each shown by the matching task item's title, else the raw plan id) and acceptanceChecks; otherwise both are null.",
+            "taskCounts is the item's validation counts (passed, failed, unrecorded, unplanned) as published; unrecorded tasks are counted only as unrecorded.",
+            "conflict, when item.conflict is set, is one sentence naming that the build is approved while N task results failed (and the story-level result, when it failed), naming the failed tasks by title; the approval and the failed rows stay in place.",
+            "evidence: one row per evidence entry in its order: kindLabel is the record kind, approvalLabel labels.approval[approval.state], reviewLabel the recorded verdict's label (labels.reviewVerdict[review.verdict]) with the effective verdict appended when it differs, overrideLabel 'Overridden: <reason>' when review.override is set, and opensIn 'review-pane' when openWith is 'review-view' and mdPath is not null, else 'read-only' (lc1).",
+            "notices are each item notice as '<label>: <message>' using labels.notice, the code itself when unlabelled; linked lists the parent (relation 'parent'), each child ('child') and the corrected item ('corrects') that is in the snapshot, by title; sourceIds are the item's, in order.",
+            "planNotice is set only when plan is failed, naming the failure; openedRecord is the opened argument when its artifactId is one of this item's evidence entries, else null."
+          ]
+        },
+        {
+          "name": "DocsReviewHostOpenArtifact",
+          "signature": "interface DocsReviewHost {\n  open(): void;\n  dispose(): void;\n  openArtifact(target: { readonly artifactId: string; readonly mdPath: string }): void;\n}\n// HostToWebview 'docs-content' gains: readonly readOnly?: boolean",
+          "parameters": [
+            {
+              "name": "target",
+              "type": "{ readonly artifactId: string; readonly mdPath: string }",
+              "purpose": "The record and its docs/ markdown path, both taken from the daemon's snapshot evidence entry.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Opens or reveals the review pane, reads the pending list itself, and shows the document."
+          },
+          "errors": [],
+          "preconditions": [
+            "mdPath is the daemon-published mdPath of an evidence entry whose openWith is 'review-view'."
+          ],
+          "postconditions": [
+            "openArtifact decides pending or read-only from its own call to client.pending(), not from the pane's refresh: it bumps the pane's refresh counter so any refresh already in flight (open()'s or the webview's boot ping) is dropped, replaces the pending map and posts the list from that one answer, and then opens the document. A pending artifact opens exactly as a click on its list row does; if client.pending() fails, the document is shown read-only with the pane's existing 'unavailable' notice for the list.",
+            "Otherwise the content is read with the pane's existing client.content(mdPath) (the daemon's docs/ path guard applies) and posted with readOnly true; the webview then shows no approve or request-changes control, only a 'read-only: not awaiting review' note.",
+            "The pending list, its rendering and the docs-decision guard (decisions only for a live pending artifact) are unchanged, and the pane's existing tests pass unchanged."
+          ]
+        },
+        {
+          "name": "BoardUpMessage",
+          "signature": "// handled by createDeliveryBoardHost:\n// { type: 'select-item'; itemId } | { type: 'close-details' } | { type: 'open-evidence'; itemId; artifactId }",
+          "parameters": [
+            {
+              "name": "message",
+              "type": "BoardUpMessage",
+              "purpose": "The three detail intents sc3 already declares.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The host updates its details memory and posts the details message."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "After every derive while an item is selected, the host posts { type: 'details', model } after the view message; close-details posts details null and clears the opened record.",
+            "select-item of a story with a PLAN evidence entry posts details with the plan loading, reads the PLAN once through client.evidence (cached per applied snapshot by PLAN artifact id), and posts again with the plan ok or failed; a failed or timed-out read is logged through error() and shown as planNotice. A read that finishes after a newer snapshot was applied or the panel closed is dropped.",
+            "open-evidence is honoured only when artifactId is one of the selected item's evidence entries (else ignored and logged through warn()). A review-pane entry goes to the injected reviewPane.openArtifact({ artifactId, mdPath }); with no review pane, or for a read-only entry, the host reads the record through client.evidence and shows its renderedMarkdown, or its meta and body as two-space JSON, as openedRecord; a failed read is logged through error() and shown as openedRecord with the text 'Could not read <id>: <message>'.",
+            "The board webview script posts these intents: a click on any card (board, rollup or issue view) posts select-item with its id; the details pane has a close button that posts close-details and one open button per evidence row that posts open-evidence with the item and artifact ids. The details pane renders every ItemDetailsViewModel field with textContent, the opened record in a <pre> element, and nothing when the model is null."
+          ]
+        },
+        {
+          "name": "DeliveryBoardWiringDeps",
+          "signature": "interface DeliveryBoardWiringDeps {\n  // existing fields unchanged, plus:\n  readonly reviewPane?: { openArtifact(target: { readonly artifactId: string; readonly mdPath: string }): void } | undefined;\n}",
+          "parameters": [
+            {
+              "name": "reviewPane",
+              "type": "{ openArtifact(...) } | undefined",
+              "purpose": "The review host when the chat setting created one; absent otherwise.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "registerDeliveryBoard passes it to the board host."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "extension.ts passes the docs-review host when insrc.chat.enabled created it, and nothing otherwise; the board command stays outside the chat gate.",
+            "createDeliveryBoardHost's DeliveryBoardHostDeps gains the same optional reviewPane field, which registerDeliveryBoard passes through.",
+            "In extension.ts the docs-review host is declared before the chat gate (let docsReviewHost: DocsReviewHost | undefined), assigned inside it as today, and passed to registerDeliveryBoard, which runs after the gate; nothing else in the gate moves."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "vscode-plugin/src/delivery/board-protocol.ts ItemDetailsViewModel",
+        "change": "field-modify",
+        "details": "ItemDetailsViewModel changes from unknown to the sc6 interface with TaskRowView and EvidenceRowView beside it.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-protocol.ts",
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "vscode-plugin/src/chat/protocol.ts 'docs-content' message",
+        "change": "field-add",
+        "details": "An optional readOnly flag, absent for every existing open, true for openArtifact on a non-pending artifact; the pane webview hides its decision controls when it is set.",
+        "callSites": [
+          "vscode-plugin/src/chat/docs-review-panel.ts"
+        ]
+      },
+      {
+        "entity": "DetailsMemory (board host memory)",
+        "change": "new",
+        "details": "PLAN reads keyed by PLAN artifact id for the applied snapshot (cleared when a new snapshot is applied) and the one opened record; never persisted.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "vscode-plugin/src/delivery/board-host.ts DeliveryBoardHostDeps and BOARD_WEBVIEW_SCRIPT",
+        "change": "field-add",
+        "details": "DeliveryBoardHostDeps gains the optional reviewPane port. The webview script gains a details pane (rendered with textContent, the opened record in a <pre>), a select-item listener on every card, and close-details and open-evidence buttons.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-host.ts",
+          "vscode-plugin/src/delivery/board-wiring.ts"
+        ]
+      },
+      {
+        "entity": "vscode-plugin/src/extension.ts docsReviewHost",
+        "change": "field-modify",
+        "details": "The docs-review host is declared before the insrc.chat.enabled gate and assigned inside it, so registerDeliveryBoard (after the gate) can receive it; when the chat setting is off it stays undefined.",
+        "callSites": [
+          "vscode-plugin/src/extension.ts"
+        ]
+      },
+      {
+        "entity": "vscode-plugin/src/delivery/delivery-contract.ts DeliveryItemView",
+        "change": "field-add",
+        "details": "The plugin-side Pick gains 'tasks', which the details builder reads; E1's contract test keeps compiling the mirror.",
+        "callSites": [
+          "vscode-plugin/src/delivery/delivery-contract.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc6",
+        "role": "implements",
+        "howDetails": "board-details.ts builds ItemDetailsViewModel; the host fills PlanRead and the opened record; s5 consumes the model for keyboard and narrow layouts."
+      },
+      {
+        "contractId": "sc7",
+        "role": "implements",
+        "howDetails": "createDocsReviewHost gains openArtifact; open() and dispose() are unchanged."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "client.evidence(artifactId) for PLAN reads and read-only records, with its 15 s deadline and typed failures."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "selection.selectedItemId picks the item; s1's reducer clears it when a refresh removes the item."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Fills the 'details' down-message and handles select-item, close-details and open-evidence; no amendment."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Stage, task-result, approval, review-verdict and notice labels."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The PLAN read fails or times out.",
+          "detection": "client.evidence(planArtifactId) returns { ok: false } with kind read-failed or timed-out.",
+          "response": "PlanRead becomes failed with the failure's message, logged through error() with the artifact id; the details post again with planNotice set and dependsOn and acceptanceChecks null on every row. The failure is cached for that snapshot, so reopening the same item does not re-read until the next refresh.",
+          "userImpact": "Tasks and results still show; dependencies and checks read as unavailable with the reason.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The PLAN record's body does not have a tasks list of the expected shape.",
+          "detection": "The host checks body.tasks is an array and keeps only entries whose id is a string; dependsOn and acceptanceChecks default to empty when they are not string arrays.",
+          "response": "Malformed entries are skipped; if body.tasks is missing the read counts as failed with 'The plan record has no task list'.",
+          "userImpact": "Rows without a usable plan entry show no dependencies or checks.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An evidence-read record (or a review-view record with no review pane) cannot be read.",
+          "detection": "client.evidence(artifactId) returns { ok: false }.",
+          "response": "Logged through error(); openedRecord becomes { artifactId, text: 'Could not read <id>: <message>' } so the reader sees why nothing opened.",
+          "userImpact": "A one-line failure in place of the record's text.",
+          "recoverable": true
+        },
+        {
+          "scenario": "open-evidence names an artifact that is not one of the selected item's evidence entries, or arrives with no item selected.",
+          "detection": "The host looks the artifact id up in the selected item's evidence list.",
+          "response": "Ignored and logged through warn(); nothing is read or opened.",
+          "userImpact": "None.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A PLAN or record read finishes after a newer snapshot was applied, after the selection moved to another item, or after the panel closed.",
+          "detection": "The host compares the read's snapshot request number and selected item with the current ones, and checks the panel generation, before using the answer.",
+          "response": "The answer is dropped; a PLAN answer for an older snapshot is not cached.",
+          "userImpact": "None; the current details are not overwritten.",
+          "recoverable": true
+        },
+        {
+          "scenario": "openArtifact's content read fails in the review pane.",
+          "detection": "client.content(mdPath) throws inside the pane.",
+          "response": "The pane's existing failure path applies: an 'unavailable: <message>' body, blocked, and read-only when the artifact is not pending.",
+          "userImpact": "The pane says it cannot show the record.",
+          "recoverable": true
+        },
+        {
+          "scenario": "openArtifact runs while the review pane's own refresh is in flight (on a first open, open() and the webview's boot ping each start one).",
+          "detection": "openArtifact does not rely on the pane's pending map: it calls client.pending() itself and bumps the pane's refresh counter first, so the in-flight refreshes see a newer counter and drop their answers.",
+          "response": "The pending decision and the posted list both come from openArtifact's own answer, so a pending artifact is never shown read-only because a refresh had not landed.",
+          "userImpact": "None; the artifact opens with the right actions.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A story with no PLAN evidence entry.",
+          "expected": "PlanRead none; no read is made; dependsOn and acceptanceChecks are null and no planNotice is shown."
+        },
+        {
+          "input": "A planned task whose PLAN entry depends on a task id with no matching task item.",
+          "expected": "The dependency is shown as the raw plan id."
+        },
+        {
+          "input": "A task present only in the BUILD record (planned false).",
+          "expected": "Labelled with labels.unplanned; no PLAN entry joins to it."
+        },
+        {
+          "input": "A PLAN task with no task item in the snapshot.",
+          "expected": "Not shown as a row, per sc6's join rule."
+        },
+        {
+          "input": "An approved record whose review once blocked (verdict block, effective pass after resolutions).",
+          "expected": "reviewLabel reads 'Review blocked (now Review passed)', so the original verdict stays visible."
+        },
+        {
+          "input": "A review override.",
+          "expected": "overrideLabel 'Overridden: <reason>' beside the original verdict."
+        },
+        {
+          "input": "A rejected record.",
+          "expected": "approvalLabel 'Rejected', never 'Pending'."
+        },
+        {
+          "input": "A story with a code review and no BUILD.",
+          "expected": "The stage is the snapshot's, the review-without-build notice is listed, and the CR is an evidence row."
+        },
+        {
+          "input": "An evidence-read record with no rendered markdown.",
+          "expected": "Its meta and body are shown as two-space JSON, as plain text."
+        },
+        {
+          "input": "Selecting an epic or a task.",
+          "expected": "Details render with no stage label or reason where none is published, no PLAN read, and its linked items."
+        },
+        {
+          "input": "The same story reopened after close-details within one snapshot.",
+          "expected": "No second PLAN read; the cached read is used."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Stage, reasons, results, approvals, reviews and conflicts are shown as the daemon published them.",
+          "source": "c5"
+        },
+        {
+          "text": "Opened record text and every detail string are inserted with textContent only, and the board opens no path except the daemon's mdPath through the review pane's own guarded read.",
+          "source": "c7"
+        },
+        {
+          "text": "The review pane's list, rendering and approval behaviour are unchanged: a non-pending artifact is read-only and decisions still need a live pending artifact.",
+          "source": "c24"
+        },
+        {
+          "text": "Opening details or evidence changes nothing on disk or in git.",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx: (cd vscode-plugin && npx tsx --test 'src/**/__tests__/*.test.ts'); typecheck with npx tsc -p vscode-plugin",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The pure details builder: task rows joined to the PLAN, result labels and counts, the stage reason, the conflict sentence, evidence rows with approval, original review and override, notices, links and source ids.",
+          "subjects": [
+            "buildItemDetails"
+          ],
+          "fixturesNeeded": [
+            "board-fixtures.ts items with tasks, validation, conflict, evidence entries (approved, rejected, overridden, historically blocked; review-view and evidence-read), notices including review-without-build, and task items whose sourceIds hold plan ids"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The board host and the review pane: PLAN read once per story per snapshot and dropped when stale, open-evidence routed by openWith to the review pane or read read-only, the details rendered as text, and openArtifact opening read-only when not pending while the pane's existing tests run unchanged.",
+          "subjects": [
+            "createDeliveryBoardHost",
+            "BOARD_WEBVIEW_SCRIPT",
+            "createDocsReviewHost.openArtifact",
+            "registerDeliveryBoard"
+          ],
+          "fixturesNeeded": [
+            "board-host.test.ts's openWith, runScript and a controlled client whose evidence() answers are scripted",
+            "docs-review-panel.test.ts's fake channel and fake DocsReviewClient"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "board-details.test.ts: 'planned tasks show their dependencies and checks with Passed, Failed or Unrecorded, a build-only task is unplanned, and unrecorded tasks are counted apart'",
+            "board-host.test.ts: 'opening a story reads its plan once per snapshot and shows the dependencies when it arrives'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "board-details.test.ts: 'the details give the daemon's stage reason and the records it cites'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "board-details.test.ts: 'an approved build with failed tasks shows the approval, the failed rows and a sentence explaining the conflict'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "board-details.test.ts: 'a rejected record reads Rejected, and the original review verdict is shown with any override'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "board-host.test.ts: 'a review-view record opens in the review pane and a build record opens read-only from the daemon as text'",
+            "docs-review-panel.test.ts: 'openArtifact opens a non-pending artifact without approve or request-changes, and a pending one as its list row does'",
+            "docs-review-panel.test.ts: 'openArtifact on a cold pane decides pending from its own pending read, even when the boot ping's refresh is superseded'"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "board-details.test.ts: 'a code review with no build keeps its stage, lists the review-without-build notice and shows the review as evidence'"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Pure details builder, host-held PLAN and opened-record memory, and an injected review-pane port",
+        "oneLineSummary": "buildItemDetails is pure over the snapshot item, the story's PLAN read and an opened record; the host reads the PLAN once per story per snapshot, routes open-evidence by openWith, and reaches the review pane through an optional port that implements sc7.",
+        "approach": "A pure module board-details.ts builds ItemDetailsViewModel (sc6) from the selected item, a PlanRead (none, loading, ok with tasks, or failed with a message) and an opened record, joining PLAN tasks to task items by sourceIds and labelling everything from DISPLAY_LABELS. The host keeps DetailsMemory: the PLAN reads for the shown snapshot, keyed by the PLAN artifact id and cleared when a new snapshot is applied, so each story's PLAN is read at most once per snapshot; and the one opened record. On select-item the host posts the details at once (PLAN loading) and, when the item has a PLAN evidence entry, reads it through client.evidence and posts the details again. On open-evidence it checks the artifact is one of the item's evidence entries, then follows the daemon's openWith (lc1): 'review-view' with an mdPath goes to the injected reviewPane port, when present; otherwise, or when the port is absent, it reads the record through client.evidence and shows its renderedMarkdown, or its meta and body as two-space JSON, as preformatted text. The review pane gains openArtifact (sc7): it opens or reveals the pane, refreshes its pending list, and opens the document by its mdPath, marking it read-only when it is not pending, so the pane's existing decision guard and its list, rendering and approval behaviour are unchanged. extension.ts passes the review host to registerDeliveryBoard when the chat setting is on.",
+        "pros": [
+          "Every acceptance criterion is a pure-model or host test with fakes; the review pane's change is one additive method plus one read-only flag on its existing content message.",
+          "One PLAN read per story per snapshot, as the HLD budgets, and none for epics, issues or tasks.",
+          "The board never calls an approval or write method: the pane's own k5 guard already refuses decisions on non-pending artifacts, and openArtifact adds no new path to them."
+        ],
+        "cons": [
+          "The host gains a second piece of state (DetailsMemory) beside paging.",
+          "The review pane's webview must learn a read-only flag to hide its decision controls."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Read every story's PLAN with the snapshot",
+        "oneLineSummary": "On each applied snapshot, read the PLAN of every story through workflow.deliveryEvidence so details are complete the moment they open.",
+        "approach": "Same details builder and review-pane port as a1, but the host fans PLAN reads out after each refresh and keeps them all, so opening details never waits.",
+        "pros": [
+          "Details open with their dependencies and checks already present."
+        ],
+        "cons": [
+          "A board with hundreds of stories makes hundreds of evidence reads per refresh, against the HLD's budget of at most one read per story whose details open.",
+          "Most reads are never used, and every refresh repeats them."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Correct, but reads every story's PLAN on every refresh, far past the HLD's budget."
+      },
+      {
+        "id": "a3",
+        "name": "Open review-view records in VS Code's markdown preview",
+        "oneLineSummary": "Route review-view evidence to the built-in markdown preview of its docs/ file instead of extending the review pane.",
+        "approach": "Same details builder as a1, but a review-view entry opens its mdPath with VS Code's markdown preview command, so the review pane is not changed at all.",
+        "pros": [
+          "No change to the review pane or its tests."
+        ],
+        "cons": [
+          "Contradicts k10 (amended), which has the board open evidence through the review pane's new entry point, and drops the pane's structured rendering (diagrams, sections).",
+          "Opens a file path taken from the snapshot outside the pane's own path guard."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Avoids touching the review pane but breaks k10 and k4."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md",
+      "quotedText": "Fix sc7 in this HLD, version it with schemaVersion, and allow only additive optional fields after approval; any breaking change goes through an HLD amendment before E2 consumes it."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "readonly tasks:            readonly TaskValidation[];"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Refresh strategy: manual refresh is sufficient for the first increment; confirm whether existing daemon events can support later automatic updates."
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "docs/plans/delivery-board-epics.md",
+      "quotedText": "| Completion wording | Keep \"Complete\"; test it in E2's usability session | E2 S2 |"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "readonly openWith:       'review-view' | 'evidence-read';"
+    },
+    {
+      "id": "c24",
+      "kind": "stakeholder",
+      "ref": "Stakeholder decision in chat, 2026-10-09: option A, add an open-this-artifact entry to the review pane",
+      "quotedText": "go with A"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "DEF-6a131558 k2: the board displays the daemon's facts and does not derive them"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "FR-09Keep the MVP read-only: all navigation and filtering leave artifacts, approvals, code, and Git state unchanged."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "DEF-6a131558 k4: artifact text is rendered as data"
+    },
+    {
+      "id": "c21",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/chat/docs-review-panel.ts and docs-review-client.ts (review pane host, pending list, content read, decision guard)"
+    },
+    {
+      "id": "c22",
+      "kind": "analyze-bundle",
+      "ref": "s1: src/workflow/delivery/types.ts DeliveryItem evidence, tasks, conflict; DeliveryEvidenceRecord; PLAN body.tasks"
+    },
+    {
+      "id": "c23",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/delivery/ (board-protocol, board-host, board-state, board-wiring, delivery-client) and their tests"
+    }
+  ]
+}

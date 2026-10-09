@@ -34,6 +34,12 @@ import { graphRepoOf } from './task-scope.js';
 /** The template whose module value is read here; it heads every refusal. */
 const SURFACE_TEMPLATE = 'code.surface.functional';
 
+/** What the module list and the module tree rest on, for their completeness records. */
+export const MODULE_RULE =
+	'A module is a stored module entity in the area, or a directory that directly holds at least one source file the index stores ' +
+	"and lies neither in nor under a stored module entity's directory. A directory whose files the index does not hold is not listed. " +
+	'Under a scope of one file or one symbol no directory is listed.';
+
 /** One module of an area. */
 export interface SourceModule {
 	/** The module's directory: absolute, no trailing slash. */

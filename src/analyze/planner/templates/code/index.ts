@@ -28,7 +28,7 @@ export const codeDiscoveryModules: AnalyzeTaskTemplate = {
 	family:      'discovery',
 	kind:        'leaf',
 	revision:    'r1',
-	description: 'Enumerate the modules in scope (top-level packages or directories with build-system manifests).',
+	description: 'Enumerate the modules in scope: every directory of the scope that directly holds source files, each with its `directory` (an absolute path) and its `name` (the path relative to the repo).',
 	inputSchema: {
 		type:                 'object',
 		additionalProperties: false,

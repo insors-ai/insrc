@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { deriveSectionIndex } from '../docs-sections.js';
+import { bodyStub, fire, type BodyStub } from './fake-dom.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
 import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
 import type { DocsArtifactSummary } from '../protocol.js';
@@ -431,17 +432,6 @@ test('the docs-review host + client modules are vscode-free', async () => {
 // the behaviour was wrong, so the degradation path is executed here.
 // ---------------------------------------------------------------------------
 
-/** A minimal element stub: enough for innerHTML/textContent/className and the
- *  querySelectorAll('a'|'img') guardMd walks. */
-function stubEl(): Record<string, unknown> {
-  return {
-    innerHTML: '',
-    textContent: '',
-    className: '',
-    querySelectorAll: () => [] as unknown[],
-  };
-}
-
 /** Evaluate DOCS_BODY_RENDERER_SOURCE with a chosen `marked` global and return
  *  its renderMarkdownBody. */
 function loadRenderer(marked: unknown): (el: unknown, src: string) => {
@@ -457,7 +447,7 @@ test('t4: the happy path parses through the vendored renderer and scrubs with gu
   const marked = {
     parse: (src: string, opts: unknown) => { calls.push(opts); return `<h1>${src}</h1>`; },
   };
-  const el = stubEl();
+  const el = bodyStub('div');
   const out = loadRenderer(marked)(el, '# Title');
 
   assert.equal(el['innerHTML'], '<h1># Title</h1>', 'markup came from the vendored parse');
@@ -471,7 +461,7 @@ test('t4: the happy path parses through the vendored renderer and scrubs with gu
 
 test('t4: a PARSE FAILURE falls back to textContent with the FULL body present and degradation { degraded: true, notice }', () => {
   const body = '# Title\n\n- a\n- b\n\nparagraph with **emphasis**';
-  const el = stubEl();
+  const el = bodyStub('div');
   const out = loadRenderer({ parse: () => { throw new Error('boom'); } })(el, body);
 
   assert.equal(el['textContent'], body, 'the FULL body text is present — degraded is plainer, never partial');
@@ -484,16 +474,16 @@ test('t4: a PARSE FAILURE falls back to textContent with the FULL body present a
 test('t4: a MISSING vendored global takes the SAME fallback path as a parse throw — one code path, one message', () => {
   const body = '# Title\n\nbody text';
 
-  const thrown = loadRenderer({ parse: () => { throw new Error('boom'); } })(stubEl(), body);
-  const missing = loadRenderer(undefined)(stubEl(), body);
-  const notAFunction = loadRenderer({})(stubEl(), body);
+  const thrown = loadRenderer({ parse: () => { throw new Error('boom'); } })(bodyStub('div'), body);
+  const missing = loadRenderer(undefined)(bodyStub('div'), body);
+  const notAFunction = loadRenderer({})(bodyStub('div'), body);
 
   // Identical degradation from all three, which is what "one path, one message" means.
   assert.deepEqual(missing.degradation, thrown.degradation);
   assert.deepEqual(notAFunction.degradation, thrown.degradation);
   assert.equal(missing.degradation.notice, DEGRADE_NOTICE);
 
-  const el = stubEl();
+  const el = bodyStub('div');
   loadRenderer(undefined)(el, body);
   assert.equal(el['textContent'], body, 'the full body still shows with no renderer at all');
 });
@@ -702,49 +692,25 @@ test('t5: the pre-existing SIX members of the docs-content variant keep their me
 // its markup.
 // ---------------------------------------------------------------------------
 
-interface StubNode {
-  tagName: string; id: string; className: string; textContent: string; value: string;
-  children: StubNode[]; attrs: Record<string, string>; listeners: Record<string, () => void>;
-  scrolled: boolean;
-  appendChild(c: StubNode): void; removeChild(c: StubNode): void;
-  setAttribute(k: string, v: string): void;
-  addEventListener(k: string, fn: () => void): void;
-  scrollIntoView(): void;
-  readonly firstChild: StubNode | undefined;
-}
-function node(tagName = 'div'): StubNode {
-  const n: StubNode = {
-    tagName, id: '', className: '', textContent: '', value: '',
-    children: [], attrs: {}, listeners: {}, scrolled: false,
-    appendChild(c) { this.children.push(c); },
-    removeChild(c) { this.children = this.children.filter((x) => x !== c); },
-    setAttribute(k, v) { this.attrs[k] = v; },
-    addEventListener(k, fn) { this.listeners[k] = fn; },
-    scrollIntoView() { this.scrolled = true; },
-    get firstChild() { return this.children[0]; },
-  };
-  return n;
-}
-
 /** Eval DOCS_SECTIONS_SOURCE with a stub `document`, returning its three functions. */
-function loadSections(byId: Record<string, StubNode> = {}) {
+function loadSections(byId: Record<string, BodyStub> = {}) {
   const doc = {
-    createElement: (t: string) => node(t),
+    createElement: (t: string) => bodyStub(t),
     getElementById: (id: string) => byId[id],
   };
   // eslint-disable-next-line no-new-func
   const make = new Function('document', `${DOCS_SECTIONS_SOURCE}; return {stampSlugs:stampSlugs,renderSectionChooser:renderSectionChooser,jumpToSection:jumpToSection,renderDegradationNotice:renderDegradationNotice};`);
   return make(doc) as {
     stampSlugs(root: unknown, sections: unknown): number;
-    renderSectionChooser(host: StubNode, sections: unknown, onPick: (s: string) => void): boolean;
+    renderSectionChooser(host: BodyStub, sections: unknown, onPick: (s: string) => void): boolean;
     jumpToSection(slug: string): boolean;
-    renderDegradationNotice(host: StubNode, d: unknown): boolean;
+    renderDegradationNotice(host: BodyStub, d: unknown): boolean;
   };
 }
 
 /** A body stub whose querySelectorAll('h1..h6') returns the given headings. */
-function bodyWithHeadings(titles: string[]): { root: { querySelectorAll(s: string): StubNode[] }; heads: StubNode[] } {
-  const heads = titles.map((t) => { const h = node('h2'); h.textContent = t; return h; });
+function bodyWithHeadings(titles: string[]): { root: { querySelectorAll(s: string): BodyStub[] }; heads: BodyStub[] } {
+  const heads = titles.map((t) => { const h = bodyStub('h2'); h.textContent = t; return h; });
   return { root: { querySelectorAll: () => heads }, heads };
 }
 
@@ -778,7 +744,7 @@ test('t6: a heading the deriver never indexed is left UNSTAMPED rather than mis-
 });
 
 test('t6: a document with NO headings renders no chooser AT ALL — not an empty control', () => {
-  const host = node();
+  const host = bodyStub('div');
   const rendered = loadSections().renderSectionChooser(host, deriveSectionIndex('just prose'), () => {});
   assert.equal(rendered, false);
   assert.equal(host.children.length, 0, 'no select, no placeholder, no empty control');
@@ -788,7 +754,7 @@ test('t6: the chooser labels each entry with the heading VERBATIM and jumps to t
   const md = ['# Low-level design', '## Contract details', '### Error paths'].join('\n');
   const index = deriveSectionIndex(md);
 
-  const host = node();
+  const host = bodyStub('div');
   const picked: string[] = [];
   const api = loadSections();
   assert.equal(api.renderSectionChooser(host, index, (s) => picked.push(s)), true);
@@ -804,11 +770,11 @@ test('t6: the chooser labels each entry with the heading VERBATIM and jumps to t
 
   // choosing one relays its slug...
   sel.value = 'contract-details';
-  sel.listeners['change']!();
+  fire(sel, 'change');
   assert.deepEqual(picked, ['contract-details']);
 
   // ...and the jump moves the view DIRECTLY to that element.
-  const target = node('h2');
+  const target = bodyStub('h2');
   const jumped = loadSections({ 'contract-details': target }).jumpToSection('contract-details');
   assert.equal(jumped, true);
   assert.equal(target.scrolled, true, 'scrolled straight to the section');
@@ -817,20 +783,20 @@ test('t6: the chooser labels each entry with the heading VERBATIM and jumps to t
 });
 
 test('t6: the chooser placeholder selection does NOT fire a jump', () => {
-  const host = node();
+  const host = bodyStub('div');
   const picked: string[] = [];
   const api = loadSections();
   api.renderSectionChooser(host, deriveSectionIndex('# One'), (s) => picked.push(s));
   const sel = host.children[0]!;
   sel.value = '';              // the 'jump to section…' placeholder
-  sel.listeners['change']!();
+  fire(sel, 'change');
   assert.deepEqual(picked, [], 'picking the placeholder is not a navigation');
 });
 
 test('t6: the ac3 notice appears when degraded and is ABSENT when not', () => {
   const api = loadSections();
 
-  const host = node();
+  const host = bodyStub('div');
   assert.equal(api.renderDegradationNotice(host, { degraded: true, notice: DEGRADE_NOTICE }), true);
   assert.equal(host.children.length, 1);
   assert.equal(host.children[0]!.textContent, DEGRADE_NOTICE, 'set by textContent, never markup');
@@ -935,7 +901,7 @@ test('t6: a DEGRADED body renders NO chooser — entries whose targets do not ex
     'the chooser is gated on the stamped count, so a degraded body renders no chooser');
 
   // And the gate's downstream behaviour: an empty index renders nothing at all.
-  const host = node();
+  const host = bodyStub('div');
   const rendered = loadSections().renderSectionChooser(host, { anchors: [] }, () => {});
   assert.equal(rendered, false);
   assert.equal(host.children.length, 0);
@@ -1507,132 +1473,6 @@ test('t3 (contract): docs-sections.ts is unchanged and still has zero imports', 
 // bound is PROVED rather than assumed: a removal that runs too far deletes
 // document content the reviewer is about to approve.
 // ---------------------------------------------------------------------------
-
-/** A body-container stub with ORDERED children, insertBefore/removeChild/firstChild
- *  and a querySelectorAll that finds headings — enough for the sibling walk and
- *  the bounded removal, and no more. Counts createElement calls so "zero DOM
- *  activity" is assertable as an absence rather than inferred from the tree. */
-interface BodyStub {
-  tagName: string;
-  id: string;
-  textContent: string;
-  children: BodyStub[];
-  insertBefore(n: BodyStub, ref: BodyStub | null): BodyStub;
-  removeChild(n: BodyStub): BodyStub;
-  appendChild(n: BodyStub): BodyStub;
-  querySelectorAll(sel: string): BodyStub[];
-  // S003/t6 — the mount anchors via `#slug` and inserts after the heading, so
-  // the stub must model the parent link and the sibling order too. A stub
-  // missing these would make the anchored path silently take the fallback.
-  querySelector(sel: string): BodyStub | null;
-  parentNode: BodyStub | null;
-  readonly nextSibling: BodyStub | null;
-  readonly firstChild: BodyStub | null;
-  // Present so the REAL bootstrap can run against these stubs: the body renderer
-  // assigns innerHTML, the notice sets role, and the controls attach listeners.
-  innerHTML: string;
-  className: string;
-  setAttribute(k: string, v: string): void;
-  addEventListener(t: string, l: () => void): void;
-  attrs: Record<string, string>;
-  listeners: Record<string, Array<() => void>>;
-}
-function bodyStub(tagName: string, id = '', text = ''): BodyStub {
-  const children: BodyStub[] = [];
-  const attrs: Record<string, string> = {};
-  const listeners: Record<string, Array<() => void>> = {};
-  let html = '';
-  let txt = text;
-  const n: BodyStub = {
-    tagName, id, children, attrs, listeners,
-    className: '',
-    // THE REAL DOM CONTRACT, modelled because the idempotence check depends on
-    // it: assigning innerHTML or textContent REPLACES every child. That is what
-    // makes renderContent's per-message rebuild clear a previously placed block
-    // rather than merely not re-add one — and a stub that kept its children
-    // would make that test prove nothing.
-    get innerHTML() { return html; },
-    set innerHTML(v: string) {
-      html = v;
-      children.length = 0;
-      // Parse the harness's `TAG\ttext` convention into real child elements, so
-      // the shipped bootstrap walks a tree rather than an opaque string.
-      for (const line of v.split('\n')) {
-        const i = line.indexOf('\t');
-        if (i > 0) children.push(bodyStub(line.slice(0, i), '', line.slice(i + 1)));
-      }
-    },
-    get textContent() { return txt; },
-    set textContent(v: string) { txt = v; html = ''; children.length = 0; },
-    setAttribute(k, v) { attrs[k] = v; },
-    addEventListener(t, l) { (listeners[t] ??= []).push(l); },
-    get firstChild() { return children[0] ?? null; },
-    appendChild(c) { children.push(c); return c; },
-    insertBefore(c, ref) {
-      const i = ref === null ? children.length : children.indexOf(ref);
-      children.splice(i < 0 ? children.length : i, 0, c);
-      return c;
-    },
-    removeChild(c) {
-      const i = children.indexOf(c);
-      assert.ok(i >= 0, 'removeChild was called with a node that is not a child');
-      children.splice(i, 1);
-      return c;
-    },
-    querySelectorAll(sel) {
-      const want = new Set(sel.split(',').map((t) => t.trim().toLowerCase()));
-      const walk = (x: BodyStub): BodyStub[] =>
-        x.children.flatMap((c) => [...(want.has(c.tagName.toLowerCase()) ? [c] : []), ...walk(c)]);
-      return walk(n);
-    },
-    // Only `#id` is supported, which is all the mount uses. Anything else returns
-    // null rather than guessing, so an unsupported selector shows up as a failing
-    // anchor rather than a silently wrong match.
-    //
-    // AND IT THROWS WHERE A REAL BROWSER THROWS. A bare CSS identifier may not
-    // begin with a digit, so `querySelector('#2-contract-details')` is a
-    // SyntaxError (verified in Chrome). The permissive stub that simply matched
-    // the string is precisely why a selector-based mount passed every test here
-    // while being unable to anchor on ANY numbered heading — which is every real
-    // insrc document.
-    querySelector(sel) {
-      if (!sel.startsWith('#')) return null;
-      const want = sel.slice(1);
-      if (/^[0-9]/.test(want)) {
-        throw Object.assign(new Error(`'${sel}' is not a valid selector`), { name: 'SyntaxError' });
-      }
-      const walk = (x: BodyStub): BodyStub | null => {
-        for (const c of x.children) {
-          if (c.id === want) return c;
-          const found = walk(c);
-          if (found) return found;
-        }
-        return null;
-      };
-      return walk(n);
-    },
-    parentNode: null,
-    get nextSibling() {
-      const p = n.parentNode;
-      if (!p) return null;
-      const i = p.children.indexOf(n);
-      return i >= 0 ? (p.children[i + 1] ?? null) : null;
-    },
-  };
-  // Keep the parent link current however children arrive, since the mount reads
-  // `h.parentNode` and `h.nextSibling` off a heading the body renderer created.
-  const adopt = (c: BodyStub): BodyStub => { c.parentNode = n; return c; };
-  const origAppend = n.appendChild.bind(n);
-  const origInsert = n.insertBefore.bind(n);
-  n.appendChild = (c) => origAppend(adopt(c));
-  n.insertBefore = (c, ref) => origInsert(adopt(c), ref);
-  const desc = Object.getOwnPropertyDescriptor(n, 'innerHTML')!;
-  Object.defineProperty(n, 'innerHTML', {
-    get: desc.get!,
-    set(v: string) { desc.set!.call(n, v); for (const c of children) c.parentNode = n; },
-  });
-  return n;
-}
 
 /** Eval DOCS_FR_SOURCE and return placeFunctionalRequirements + the createElement count. */
 function loadPlace(opts: { throwOnCall?: number; getElementById?: (id: string) => BodyStub | undefined } = {}) {

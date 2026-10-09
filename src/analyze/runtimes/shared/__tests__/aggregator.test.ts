@@ -309,3 +309,67 @@ test('AGGREGATE_LLM_SCHEMA: requires summary + findings, additionalProperties fa
 	assert.equal(s['additionalProperties'], false);
 	assert.deepEqual(s['required'], ['summary', 'findings']);
 });
+
+// ---------------------------------------------------------------------------
+// Absent inputs (Story s7, task t9)
+// ---------------------------------------------------------------------------
+
+test("the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent", async () => {
+	const upstream = new Map<string, unknown>([['t01', { modules: ['pay'] }], ['t03', { entrypoints: ['settle'] }]]);
+	const reply: AggregateLLMOutput = { summary: 's', findings: [] };
+	const ask = async (absentInputs?: Parameters<typeof runAggregator>[0]['absentInputs'], omit = false) => {
+		const capture: { messages?: import('../../../../shared/types.js').LLMMessage[] } = {};
+		await runAggregator({
+			promptRelPath: PROMPT_REL, target: 'code', scope: 'M', runId: 'r1', upstreamOutputs: upstream, focus: 'refunds',
+			provider: stubProvider(reply, capture),
+			...(omit ? {} : { absentInputs }),
+		});
+		return { system: String(capture.messages![0]!.content), user: String(capture.messages![1]!.content) };
+	};
+
+	// --- nothing absent: the prompt is the one it always was, in each way of saying so ---
+	const before = _buildMessagesForTest({ promptContent: 'P', target: 'code', scope: 'M', focus: 'refunds', upstreamOutputs: upstream });
+	const none = await ask(undefined, true);
+	assert.equal(none.user, String(before[1]!.content), 'no absentInputs argument');
+	assert.equal((await ask(undefined)).user, none.user, 'absentInputs undefined');
+	assert.equal((await ask([])).user, none.user, 'an empty list');
+	assert.ok(!none.user.includes('Absent inputs'));
+	// Today's prompt, spelled out: the outputs, then the closing instruction.
+	assert.ok(none.user.endsWith(
+		'### t03\n```json\n{\n  "entrypoints": [\n    "settle"\n  ]\n}\n```\n\n' +
+		'Compose the aggregate report. Respond with ONLY the JSON object matching the schema -- no markdown fences, no prose outside the JSON body.'));
+
+	// --- two absent inputs: one a failed task's, one that no task produces ---
+	const longReason = `runtime-threw: code.structure.module-tree: ${'the graph could not be read; '.repeat(40)}end of reason`;
+	const some = await ask([
+		{ name: 'module-tree', producedBy: 't02', reason: longReason },
+		{ name: 'adherence-report', producedBy: null, reason: 'no task of the plan produces this name' },
+	]);
+	const section =
+		'\n\nAbsent inputs (NOT available to you):\n' +
+		`- module-tree: task t02 should have produced it. Reason: ${longReason}\n` +
+		'- adherence-report: no task of the plan produces it. Reason: no task of the plan produces this name\n\n' +
+		'These inputs were not produced, so you have nothing about them. In the summary and in the findings, state nothing about an absent input ' +
+		'except that it is absent, with the task that should have produced it and the reason given above. Do not infer, estimate or describe what ' +
+		'it would have held, and do not present the report as covering it.';
+	// The prompt is today's with the section put in, whole, at one place ...
+	const closing = '\n\nCompose the aggregate report.';
+	const at = none.user.lastIndexOf(closing);
+	assert.equal(some.user, none.user.slice(0, at) + section + none.user.slice(at));
+	// ... which is after every output that exists and before the closing instruction.
+	assert.ok(some.user.indexOf('### t03') < some.user.indexOf('Absent inputs (NOT available to you):'));
+	assert.ok(some.user.indexOf('Absent inputs (NOT available to you):') < some.user.indexOf('Compose the aggregate report.'));
+	// The reason is carried whole, however long.
+	assert.ok(some.user.includes(longReason));
+	// The reference material stays at the end: the system prompt, which holds
+	// it, is untouched, and the user turn still ends with the instruction to answer.
+	assert.equal(some.system, none.system);
+	assert.ok(some.user.endsWith('no markdown fences, no prose outside the JSON body.'));
+
+	// With no output at all, the section follows the note that says so.
+	const empty = _buildMessagesForTest({
+		promptContent: 'P', target: 'code', scope: 'M', upstreamOutputs: new Map(),
+		absentInputs: [{ name: 'modules', producedBy: 't01', reason: 'scope-not-indexed' }],
+	});
+	assert.match(String(empty[1]!.content), /No upstream outputs were available[^\n]*\n\nAbsent inputs \(NOT available to you\):\n- modules: task t01 should have produced it\. Reason: scope-not-indexed\n/);
+});

@@ -1,0 +1,204 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s4",
+    "createdAt": "2026-10-09T09:57:32.537Z",
+    "updatedAt": "2026-10-09T12:04:52.965Z",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-09T12:04:54.238Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "t6 done (commit f191c154).\n\n**board-wiring.ts:** DeliveryBoardWiringDeps gains reviewPane?, typed as DeliveryBoardHostDeps['reviewPane']. registerDeliveryBoard passes it to createDeliveryBoardHost.\n\n**extension.ts:**\n- `let docsReviewHost: DocsReviewHost | undefined;` is declared before the `if (chatEnabled)` gate.\n- Inside the gate, the pane is created as `reviewHost`. The insrc.chat.docsReview command still opens it, and `docsReviewHost = reviewHost` is assigned there.\n- After the gate, registerDeliveryBoard receives `reviewPane: docsReviewHost`.\n\n**Tests:**\n- New: board-wiring.test.ts, 'the board receives the review pane when the chat setting creates one, and reads evidence itself when it does not'. It checks the declaration, assignment and call placement in extension.ts against the chat-gate span. It also runs the registered command over a fake panel and rpc, posting select-item then open-evidence for a review-view LLD:\n  - With a pane: the pane gets {artifactId, mdPath} and the board makes no evidence rpc.\n  - Without one: the board calls workflow.deliveryEvidence {repo, artifactId} and shows the record as openedRecord.\n- The existing chat wiring tests (extension-chat-wiring, group-lock, packaging) pass, 44/44 together with the wiring file.\n- Plugin suite: 889 pass, plus the known manifest-catalog failure.\n- All typechecks are clean, including the strict test check.",
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-2f07f59c76f70149-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-2f07f59c76f70149-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-2f07f59c76f70149.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/2f07f59c76f70149-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-test-t1-no-file-under-E202610092f07f59c/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-test-t1-no-file-under-E202610092f07f59c/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-test-t1-no-file-under-E202610092f07f59c/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/docs-review-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/details-memory.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-details.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-wiring.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/delivery-contract.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/details-memory.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T12:04:52.965Z"
+      }
+    ],
+    "commit": "99a59377"
+  }
+}

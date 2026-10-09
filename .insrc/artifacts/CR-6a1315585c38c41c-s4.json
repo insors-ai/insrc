@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791543672567-t91tog",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T11:01:12.568Z",
+    "model": "claude:opus",
+    "elapsedMs": 165135,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s4",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s4",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/docs-review-panel.ts",
+        "vscode-plugin/src/chat/protocol.ts",
+        "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-fixtures.ts",
+        "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts",
+        "vscode-plugin/src/delivery/__tests__/details-memory.test.ts",
+        "vscode-plugin/src/delivery/board-details.ts",
+        "vscode-plugin/src/delivery/board-host.ts",
+        "vscode-plugin/src/delivery/board-protocol.ts",
+        "vscode-plugin/src/delivery/board-wiring.ts",
+        "vscode-plugin/src/delivery/delivery-contract.ts",
+        "vscode-plugin/src/delivery/details-memory.ts",
+        "vscode-plugin/src/extension.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/extension.ts:257",
+            "message": "The panel logger (`panelLog`), changed in this Story, writes straight to `console.warn` / `console.error` instead of using `getLogger`. A comment at lines 254-256 says this is deliberate: the plugin bundle ships no pino logger, so it uses the Extension Host console with an `[insrc]` prefix. The rule names `console.log` and backend `src/`, and `getLogger` is not used anywhere under vscode-plugin, so this is recorded as an observation, not a breach. A short note in CLAUDE.md that the plugin is exempt from the logger rule would make the exception official.",
+            "expectationRef": "logger-not-console",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-host.ts:1",
+            "message": "Coverage caveat, not a gap. The graph grounding has no test edges for any production symbol in this Story: createDeliveryBoardHost, createDetailsMemory, buildItemDetails, createDocsReviewHost, registerDeliveryBoard and attr all show empty testsReaching, and only test helpers have edges to each other. So coverage was checked by running the suites instead. All 13 promised tests are present by name. Twelve are in vscode-plugin/src/delivery/__tests__/board-details.test.ts, board-host.test.ts, board-wiring.test.ts and src/chat/__tests__/docs-review-panel.test.ts. The contract test is in src/workflow/delivery/__tests__/contract.test.ts. Results: the delivery suites plus docs-review-panel passed 251 of 251, chat-panel passed 91 of 91, and the contract test passed 2 of 2. The test helpers (setup, detailsSetup, memorySetup, openAndGetContent, run) call the production entry points directly, so the changed behaviour is exercised. The empty edges are a gap in the index, not in the tests. There is no build record, so these pass results come from this review's own local run only.",
+            "expectationRef": "graph testsReaching grounding (hollow for production symbols)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/docs-review-panel.ts:1847",
+            "message": "errText(err) is a byte-for-byte copy of the shared errorText helper (`err instanceof Error ? err.message : String(err)`) that the delivery side already imports from delivery/guards.ts. The two copies can drift apart. Import the shared helper instead of keeping a private one.",
+            "counterpartRef": "errorText",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 3
+    }
+  }
+}

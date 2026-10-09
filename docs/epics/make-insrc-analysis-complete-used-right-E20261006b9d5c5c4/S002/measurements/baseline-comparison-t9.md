@@ -19,7 +19,7 @@ Commands: `npx tsx --test 'src/analyze/**/*.test.ts'`; `npx tsx --test 'src/daem
 These failed at the baseline commit and fail the same way now. They are not this Story's.
 
 - **daemon:** `SqliteDriver (via pool)`, through its subtest on the temporal trend (`integer overflow`).
-- **VS Code extension:** the same six top-level lines as in the baseline: `runReachabilityProbe degrades a hung probe to errored within the bounded deadline`; `runReachabilityProbe never throws even if reachability() rejects`; `activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves`; `the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)`; `only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)`; `each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'`.
+- **VS Code extension:** the same six top-level lines as in the baseline (the suite's summary counts them as one failure, because five are reported as cancelled by their parent; the comparison is by the six lines): `runReachabilityProbe degrades a hung probe to errored within the bounded deadline`; `runReachabilityProbe never throws even if reachability() rejects`; `activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves`; `the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)`; `only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)`; `each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'`.
 
 ## Test names that are gone, and why
 

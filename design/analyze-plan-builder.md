@@ -80,7 +80,7 @@ The Plan Validator runs after the LLM's schema check and before the plan is pers
 10. **No cross-cycles.** The DAG over `(producer.produces, consumer.consumes)` within this Plan is acyclic.
 11. **Serial linearization.** The list order is a valid topological sort of the output DAG.
 12. **One aggregator task.** Exactly one task in the list uses the target's terminal aggregator template (e.g. `code.aggregate.report`). It must be the last entry. This holds for **every** Plan in the tree — each child Plan ends with its own aggregator.
-13. **Scope policy adherence.** The list length is within the depth-policy band for **this Plan's** scope bucket (XS: 3-8, S: 10-20, M: 20-40, L: 30-60, XL: 40-80). The child Plan's scope is not constrained by the parent's — a child planner is free to classify its sub-target however it wants.
+13. **Scope policy adherence.** The list length is within the depth-policy band for **this Plan's** scope bucket (XS: 3-8, S: 10-20, M: 20-40, L: 30-60, XL: 40-80). The child Plan's scope is not constrained by the parent's: it is measured from the area the child names when the child is spawned. The figure the parent's planner wrote for it is kept as a hint and never becomes the size.
 14. **Reasoning non-empty.** Every `PlannedTask.rationale` is ≥ 20 chars; `PlanTask.reasoning` is ≥ 50 chars. Catches the cargo-cult-prompt case where the model emits `""` for every field.
 15. **`parentTaskPath` present iff not root.** The root Plan has `parentTaskPath: undefined`; every other Plan has `parentTaskPath` matching the task that spawned it. The Plan Builder stamps this from the call-site, not from the LLM's output.
 

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -260,3 +260,17 @@ Run at 2026-10-09T18:12:25.659Z on commit `990a5fce`. Tests check: **passed**. 3
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/classifier/__tests__/no-size.test.ts` | 0 | 2 | 0.9 s |  |
 | `src/config/__tests__/retired-roles.test.ts` | 0 | 1 | 0.4 s |  |
+
+## t9
+
+Run at 2026-10-09T20:18:49.950Z on commit `646bda33`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: no test of the analyze, planner, classifier, data-driver and daemon suites that passed before the Story's first change fails after its last, compared by test name against a baseline taken at the plan's approval; the tests of the scope picker and of the classifier's size are named as removed or changed**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/measurements/baseline-comparison-t9.md, with the result line of every top-level test in measurements/after/<suite>.txt and the baseline in baseline/<suite>.txt
+
+**live: through the installed daemon, a code request scoped to one directory of this repository and the same request scoped to the whole repository return different measured sizes, each with its counts in the report, and no model call picks a size**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/measurements/live-run-t9.md, with every frame, the result, the run record and the plan of both runs in measurements/live/ (run ids s2-live-directory-mv1ebo2b and s2-live-repo-mv1edxtn, 2026-10-09 20:06 to 20:16 UTC)

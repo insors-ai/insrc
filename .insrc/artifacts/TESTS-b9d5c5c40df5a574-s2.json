@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s2",
     "createdAt": "2026-10-09T16:31:36.297Z",
-    "updatedAt": "2026-10-09T18:12:25.659Z"
+    "updatedAt": "2026-10-09T20:18:49.950Z"
   },
   "body": {
     "tasks": [
@@ -787,6 +787,38 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "646bda33",
+        "ranAt": "2026-10-09T20:18:49.950Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "no test of the analyze, planner, classifier, data-driver and daemon suites that passed before the Story's first change fails after its last, compared by test name against a baseline taken at the plan's approval; the tests of the scope picker and of the classifier's size are named as removed or changed",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/measurements/baseline-comparison-t9.md, with the result line of every top-level test in measurements/after/<suite>.txt and the baseline in baseline/<suite>.txt"
+            }
+          },
+          {
+            "name": "through the installed daemon, a code request scoped to one directory of this repository and the same request scoped to the whole repository return different measured sizes, each with its counts in the report, and no model call picks a size",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/measurements/live-run-t9.md, with every frame, the result, the run record and the plan of both runs in measurements/live/ (run ids s2-live-directory-mv1ebo2b and s2-live-repo-mv1edxtn, 2026-10-09 20:06 to 20:16 UTC)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

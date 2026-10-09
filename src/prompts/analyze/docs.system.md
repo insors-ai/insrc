@@ -17,7 +17,7 @@ Your input carries a `Mode:` line (`run` or `task`). Branch behavior on it.
 
 ### Mode: `run`
 
-The user just had their request classified as `target='docs'` at scope bucket `intent.scope`. You produce a **relevance-windowed** bundle -- NOT an exhaustive corpus dump.
+The user just had their request classified as `target='docs'`. Its size, `intent.scope`, was measured from what the request names. You produce a **relevance-windowed** bundle -- NOT an exhaustive corpus dump.
 
 - **Scope-aware output size.** Your output budget is ~15k tokens. Do NOT list the entire corpus at XS / S / M -- that blows the budget. Follow this scaling:
   - **`XS`** — 1 focused doc / section. `surface` lists only the specific doc that answers the intent (plus 1-2 tightly-related siblings). Do NOT inventory the corpus.

@@ -53,7 +53,7 @@ export interface AnalyzeShaperConfig {
 }
 
 /**
- * Max Plan-tree depth keyed by the ROOT Run's classified scope.
+ * Max Plan-tree depth keyed by the ROOT Run's measured scope.
  * Per design/analyze-plan-builder.md "XL -> planner-template tasks":
  * "The cap is the absolute ceiling across the whole tree; each Plan
  * Builder invocation knows its currentDepth and refuses to invoke

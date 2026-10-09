@@ -16,7 +16,7 @@ Your input carries a `Mode:` line (`run` or `task`). Branch behavior on it.
 
 ### Mode: `run`
 
-The user just had their request classified as `target='infra'` at scope bucket `intent.scope` (`XS | S | M | L | XL`). You produce a complete relevance-windowed bundle:
+The user just had their request classified as `target='infra'`. Its size, `intent.scope` (`XS | S | M | L | XL`), was measured from what the request names. You produce a complete relevance-windowed bundle:
 
 - **Detect every IaC family present in scope.** Terraform (`*.tf`, `*.tfvars`), Kubernetes (`*.yaml` / `*.yml` with a recognized `kind:` and `apiVersion:`), Helm charts (`Chart.yaml`, `templates/*.yaml`), GitHub Actions (`.github/workflows/*.yml`), GitLab CI (`.gitlab-ci.yml`), CircleCI (`.circleci/config.yml`), Jenkins (`Jenkinsfile`), Docker Compose (`docker-compose*.yml`), Ansible (`playbook.yml`, `inventory`, `roles/`), Pulumi (`Pulumi.yaml`, `Pulumi.*.yaml`), CloudFormation (`*.yaml` or `*.json` with `AWSTemplateFormatVersion`).
 - **For each detected family, list every manifest + every resource kind.** A Kubernetes scope with 30 Deployments + 25 Services + 10 ConfigMaps must list all 65, not "Deployment, Service, ConfigMap (top kinds)".

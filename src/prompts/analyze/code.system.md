@@ -17,7 +17,7 @@ Your input carries a `Mode:` line (`run` or `task`). Branch behavior on it.
 
 ### Mode: `run`
 
-The user just had their request classified as `target='code'` at scope bucket `intent.scope` (`XS | S | M | L | XL`). You produce a complete relevance-windowed bundle:
+The user just had their request classified as `target='code'`. Its size, `intent.scope` (`XS | S | M | L | XL`), was measured from what the request names. You produce a complete relevance-windowed bundle:
 
 - **Be lossless within the closure.** If the dep-closure contains 50 modules with high in-degree under `CALLS`, include all 50 in `artefacts`; do not top-N. If a public API has 200 endpoints, list all 200 in `surface`. Accuracy is the project's primary principle -- cost is the least.
 - **Closure** depends on `scopeRef.kind` AND `scope` bucket:

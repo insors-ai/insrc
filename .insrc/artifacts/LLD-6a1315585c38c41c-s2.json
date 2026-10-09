@@ -1,0 +1,917 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791526663756-5pux7j",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T06:26:04.980Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 501220,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1791485029499-gnjvqz",
+    "hldEffectiveHash": "6e5370449cb50fc598cb79ed3d21fbd5c79520797d7947271294e0de2bffbace",
+    "hldAmendmentsApplied": [
+      "AMD-6a1315585c38c41c-1"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The DEF's s2 requirements (FR001 card content with standalone flag and text-labelled badges, FR002 search/scope/needs-attention filter on the daemon's decision, FR003 counts over the whole selection) and ac1–ac6 are all designed.",
+          "evidence": "DEF.md:43-45 and :130-135. The LLD covers each one: §2.1 postconditions (six STAGE_ORDER columns; scope, search and needsAttentionOnly; total = cards.length + hiddenCount; badges labelled from DISPLAY_LABELS), §2.2 paging, k9 determinism, and textContent rendering (ac6). Nothing in the LLD builds a non-goal: details, the rollup and the narrow-pane layout are left to s3, s4 and s5. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Every DEF decision assigned to S2 is designed or explicitly deferred.",
+          "evidence": "DEF.md:79 says: '\"Complete\" stays as the final stage's label; whether readers take it for validation success is tested in a usability session that the epics plan assigns to S2, outside this Define's acceptance criteria. [[c11]]'. The LLD cites c11 in §8 but no section plans, schedules or defers that usability session. The DEF review also proposed adding it as an S2 acceptance criterion (DEF.md:306). [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md]",
+          "action": "Add a short note to the LLD that keeps the 'Complete' label and either plans the usability check (who runs it, and what result would switch the label to 'Completion approved') or explicitly defers it, with the reason.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The host's dispatch builds the down-messages before it commits state, and s1's refresh path recovers from a throw by dispatching a failed refresh over the previous board.",
+          "evidence": "board-host.ts:106-111: `const next = reduceBoardState(state, event); const messages = boardDownMessages(next, DISPLAY_LABELS); state = next;`. board-host.ts:141-154 catches the throw, logs error(), and dispatches `{ ok: false, failure: { kind: 'read-failed', message } }`. [files: vscode-plugin/src/delivery/board-host.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "snapshot.items is sorted by id, so following snapshot order is deterministic even when timestamps are equal.",
+          "evidence": "snapshot.ts:150 builds the list with `const items = [...graph.items.keys()].sort(byText)...map(itemOf);`. types.ts:317 documents it with '/** Sorted by id. */'. [files: src/workflow/delivery/snapshot.ts, src/workflow/delivery/types.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An overridden review keeps effectiveVerdict 'block' with blocking false, which is what the edge case 'Review blocked with tone neutral' relies on.",
+          "evidence": "gate.ts:190: `const blocking = review.effectiveVerdict === 'block' && record.approval.state !== 'approved' && review.override === null;`. An override does not change effectiveVerdict (gate.ts:112-123), so the edge-case row matches the data. [files: src/workflow/delivery/gate.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "STAGE_ORDER and DISPLAY_LABELS (sc4) already exist and have the shape the model reuses: six stages in order, plus approval, reviewVerdict, attention, notice and taskResult tables.",
+          "evidence": "labels.ts:34-41 defines STAGE_ORDER with the six stages in order. labels.ts:43-89 defines DISPLAY_LABELS with stage, attention, notice, taskResult, approval and reviewVerdict ('block' -> 'Review blocked', 'validation-conflict' -> 'Validation conflict'). [files: vscode-plugin/src/delivery/labels.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The fields the plugin-side Pick gains (standalone, sourceIds, validation, conflict, correctsRef) already exist on the daemon's DeliveryItem, so the addition is purely a mirror change.",
+          "evidence": "types.ts:285-308 declares DeliveryItem with standalone, sourceIds, validation (ItemGates['validation'] | null), conflict and correctsRef. delivery-contract.ts:59-60 currently picks 'id' | 'kind' | 'title' | 'parentId' | 'childIds' | 'stage' | 'evidence' | 'needsAttention' | 'attentionReasons' | 'notices'. [files: src/workflow/delivery/types.ts, vscode-plugin/src/delivery/delivery-contract.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The validation badge can be built from validation.failed and the unrecorded tasks ('Validation failed when validation.failed > 0 … otherwise Passed').",
+          "evidence": "gate.ts:349 counts tasks only: `failed: validation.tasks.filter(t => t.result === 'failed').length`. A failed story-level result is kept separately in storyLevelResult (gate.ts:301, snapshot.ts:140), but it still raises attention: gate.ts:341 `... || validation.storyLevelResult === 'failed') reasons.add('validation-failed')`, and it can set conflict (types.ts:217). When a story's tasks all passed but its story-level result failed, the rule as written shows a 'Passed' validation badge next to a 'Validation failed' attention badge. That is a contradictory signal, and it departs from the daemon's own fact (k2). [files: src/workflow/delivery/gate.ts, src/workflow/delivery/snapshot.ts]",
+          "action": "Change the validation-badge rule to read storyLevelResult as well: 'Validation failed' when validation.failed > 0 or storyLevelResult === 'failed', and 'Unrecorded' when an unrecorded task or storyLevelResult === 'unrecorded'. Add the case to the badge fixture.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The call-site inventory for replacing 'items' with 'board' and adding paging to boardDownMessages is complete (board-protocol.ts, board-state.ts, board-host.ts).",
+          "evidence": "Existing s1 tests read the 'items' message directly and call the two-argument signature: board-state.test.ts:43-44, :82-87 (`boardDownMessages(state, DISPLAY_LABELS)...find(p => p.type === 'items')`, including the unknown-stage label test), and board-host.test.ts:79-80, :120, :240-244 (the webview test delivers `{ type: 'items', ... }`). Removing the message breaks these tests. Neither §3.1's call sites nor §6 says whether to rewrite or retire them, or which 'board' tests replace their coverage. One example is the s1 test that an unlabelled stage shows its raw id; under s2 that item is dropped instead. The BoardDownMessage 'items' variant itself is also not said to be removed or kept. [files: vscode-plugin/src/delivery/__tests__/board-state.test.ts, vscode-plugin/src/delivery/__tests__/board-host.test.ts, vscode-plugin/src/delivery/board-protocol.ts]",
+          "action": "List board-state.test.ts and board-host.test.ts as change sites. Say which s1 assertions move to 'board' messages and which are retired (with the unknown-stage behaviour change made explicit). State whether the 'items' variant stays in BoardDownMessage.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "parseBoardUpMessage can take the show-more variant the same way as its existing validated cases, and the host's existing malformed-message path logs the rejection through warn().",
+          "evidence": "board-protocol.ts:82-110 is a switch that returns null for any mistyped field. board-host.ts:190-195 does `if (msg === null) { deps.logger.warn('delivery board: ignored a malformed webview message'); return; }`. A `case 'show-more'` that checks the stage against STAGE_ORDER fits this pattern. [files: vscode-plugin/src/delivery/board-protocol.ts, vscode-plugin/src/delivery/board-host.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No stored shape changes: paging stays in host memory only, the DeliveryItemView change is additive, and the snapshot stays at schemaVersion 1.",
+          "evidence": "The host state is in-memory: board-host.ts:95-97 holds `let state ... let nextSeq` and reset() at :173-178 discards it. The client accepts only schemaVersion 1 (delivery-client.ts:115). The Pick in delivery-contract.ts:59-60 only gains existing daemon fields. Nothing is written to the store. [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/delivery/delivery-client.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s2 changes the s1-owned sc3 only through a pending, additive amendment, and the boardDownMessages signature change does not touch any part of the HLD's sc2 contract.",
+          "evidence": ".insrc/artifacts/AMD-6a1315585c38c41c-2.json has `\"type\": \"sharedContract.fieldAdd\", \"contractId\": \"sc3\", \"breaking\": false`, adds `{ readonly type: 'show-more'; readonly stage: DeliveryStage }`, and has status 'pending'. The HLD's sc2 sketch (HLD.md:120-128) declares BoardState and BoardSelection but not boardDownMessages, and BoardSelection is not extended. That was alternative a3, which the LLD rejected. [files: .insrc/artifacts/AMD-6a1315585c38c41c-2.json, docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md]",
+          "action": "The amendment must be approved before the build.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "An item with an unknown stage is detected and the host logs one warn() per refresh naming the stage id and its count.",
+          "evidence": "buildBoardViewModel is specified as pure, and BoardViewModel (HLD.md:249-254) has no field that reports dropped stages, so the host cannot learn which stages were dropped or how many. boardDownMessages also runs on every dispatch and every post(): board-host.ts:102 on 'ready', :108 on every selection change and refresh event. A log placed there would fire on every search keystroke, not once per refresh. The statement 'counts still agree' holds, but the detection and logging seam is not designed. [files: vscode-plugin/src/delivery/board-host.ts, docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md]",
+          "action": "Specify the seam, for example a separate pure helper `unknownStages(snapshot): ReadonlyMap<string, number>` that the host calls only when a 'snapshot-arrived' event is applied. Add a test that asserts exactly one warn() per refresh.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A throw while building the board model is recovered by s1's existing path, which ends the refresh as failed over the previous board.",
+          "evidence": "Recovery exists only in refresh() (board-host.ts:141-154). handle() calls dispatch() without try/catch for set-scope, set-search, set-attention and the rest (board-host.ts:157-171), and the new show-more uses the same path. post() on 'ready' (board-host.ts:101-103) also has no catch. The client checks only that items, rootIds and notices are lists (delivery-client.ts:117-119). Under the LLD's own matching rule, an item whose sourceIds or title is malformed renders fine with an empty search (because the search is trimmed to empty and nothing is read), passes the refresh, and then throws on the first set-search. That exception escapes from the webview onMessage handler with no state recovery and no stated user impact. [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/delivery/delivery-client.ts]",
+          "action": "State the handling for a throw during a selection change, show-more or ready: for example, wrap dispatch in handle() and post() so that state is not committed, the error is logged, and the status is marked failed. Add a host test that uses a malformed sourceIds and a non-empty search.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of ac1–ac6 maps to a named test, and the fixtures that the integration tests rely on already exist (a fake channel, and a runScript fake DOM whose innerHTML throws).",
+          "evidence": "LLD §6 maps ac1–ac5 to board-model.test.ts tests (ac4 also to a board-host.test.ts paging test) and ac6 to a board-host.test.ts literal-text test. The fixture exists: board-host.test.ts:203-214 says '/** A minimal DOM the script runs against: elements record textContent and children, and innerHTML throws. */' with `Object.defineProperty(e, 'innerHTML', { set() { throw ... } })`. board-state.test.ts already casts snapshots through unknown. [files: vscode-plugin/src/delivery/__tests__/board-host.test.ts, vscode-plugin/src/delivery/__tests__/board-state.test.ts]",
+          "action": "None for the acceptance criteria. The missing error-path tests are raised under error-paths.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 5,
+        "low": 10,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-09T06:26:26.326Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "coverage-of-intent.2": {
+        "findingId": "coverage-of-intent.2",
+        "status": "resolved",
+        "note": "Applied: §2.1 keeps 'Complete' and defers the usability check to E2's usability session after s5, with the reason and the one-line label change that a misreading would trigger.",
+        "resolvedAt": "2026-10-09T06:30:37.169Z"
+      },
+      "new-versus-reuse.3": {
+        "findingId": "new-versus-reuse.3",
+        "status": "resolved",
+        "note": "Applied: the validation badge now reads storyLevelResult too (failed -> Validation failed, unrecorded -> Unrecorded), and the fixture gains a story whose tasks passed but whose story-level result failed.",
+        "resolvedAt": "2026-10-09T06:30:37.171Z"
+      },
+      "change-sites.1": {
+        "findingId": "change-sites.1",
+        "status": "resolved",
+        "note": "Applied: §3.1 lists board-state.test.ts and board-host.test.ts as change sites, says which s1 assertions move to 'board' and which one is retired (the unknown-stage raw id), and §2.3 keeps the 'items' variant in the type but unsent.",
+        "resolvedAt": "2026-10-09T06:30:37.172Z"
+      },
+      "error-paths.1": {
+        "findingId": "error-paths.1",
+        "status": "resolved",
+        "note": "Applied: a pure unknownStages(snapshot) helper (§2.5) that the host calls only when a refresh applies a snapshot, logging one warn() per refresh, with a board-host test.",
+        "resolvedAt": "2026-10-09T06:30:37.173Z"
+      },
+      "error-paths.2": {
+        "findingId": "error-paths.2",
+        "status": "resolved",
+        "note": "Applied: §2.3 states that every derive path (refresh, selection change, show-more, ready) keeps state only when rendering succeeds and logs through error() otherwise; §5 and a board-host test cover a malformed sourceIds hit by a search.",
+        "resolvedAt": "2026-10-09T06:30:37.174Z"
+      }
+    },
+    "approvedAt": "2026-10-09T06:36:40.402Z",
+    "staleAckedAt": "2026-10-09T06:36:48.523Z",
+    "staleAckedReason": "The only change since approval is AMD-6a131558-2, which this LLD itself proposed (the 'show-more' up-message on sc3) and already designs against; nothing in the LLD depends on the pre-amendment HLD."
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "s2 turns the board's interim item list into six stage columns in workflow order, each card showing the item's title, kind, epic or standalone, and text-labelled badges for approval, review, validation, conflict, attention and data-quality notices, all read from the daemon's snapshot. A reader can search, scope to one epic or to standalone work and turn on Needs attention; every column count and total counts the whole selection, including cards behind a column's show-more control. The same snapshot and filters always give the same cards in the same order."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A host-side board model with a thin webview renderer (alternative a1). Inside the VS Code plugin, a delivery client wraps the daemon's workflow.delivery and workflow.deliveryEvidence methods over the shared IPC client. A board host, a vscode-free deps-injected factory like the existing panel hosts, owns the last successful snapshot, refresh sequencing, the load status and the reader's selection. Pure board-model functions turn snapshot plus selection into view models for the board, the epic rollup, the issue view and item details, using one display-label map for stages and signals. The webview is one CSP-locked inline script that renders those view models as text-only DOM and posts reader intents back in the plugin's versioned envelope. Evidence opens through a new additive open-by-artifact entry point on the existing review pane, or, for records the daemon marks evidence-read, as a read-only record the host reads through workflow.deliveryEvidence. A story's task dependencies and acceptance checks come from its PLAN, read through workflow.deliveryEvidence when its details open.",
+      "ownedContracts": [
+        {
+          "id": "sc5",
+          "name": "Board view model",
+          "purpose": "What the board view shows for a snapshot and selection: six columns in the daemon's order, the cards in each with their badges, and counts over the whole selection.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "import type { DeliveryStage } from './delivery-contract.js';\n\ninterface BadgeView {\n  readonly kind: 'approval' | 'review' | 'validation' | 'conflict' | 'attention' | 'notice';\n  /** Text from sc4; always present. */\n  readonly label: string;\n  readonly tone: 'neutral' | 'warning' | 'danger' | 'success';\n}\n\ninterface CardView {\n  readonly itemId: string;\n  readonly kind: 'story' | 'issue';\n  readonly title: string;\n  readonly standalone: boolean;\n  readonly epicTitle: string | null;\n  readonly badges: readonly BadgeView[];\n  readonly needsAttention: boolean;\n  /** One line naming every badge, for screen readers. */\n  readonly accessibleLabel: string;\n}\n\ninterface ColumnView {\n  readonly stage: DeliveryStage;\n  readonly label: string;\n  /** Matches in the selection, including cards behind show-more. */\n  readonly total: number;\n  readonly cards: readonly CardView[];\n  readonly hiddenCount: number;\n}\n\ninterface BoardViewModel {\n  readonly columns: readonly ColumnView[];\n  readonly totals: { readonly items: number; readonly needsAttention: number };\n  readonly scopeOptions: readonly { readonly epicItemId: string; readonly title: string }[];\n  readonly emptySelection: boolean;\n}"
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Delivery client",
+          "purpose": "The board's only path to delivery data: the two daemon read methods for the open workspace's repo, each bounded by a deadline, with failures typed so the host can tell an unavailable daemon, a failed or timed-out read and a missing workspace apart.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ],
+          "interfaceSketch": "import type { DeliverySnapshot, DeliveryEvidenceRecord } from './delivery-contract.js';\n\ntype DeliveryFailureKind = 'daemon-unavailable' | 'read-failed' | 'timed-out' | 'no-workspace';\n\ninterface DeliveryFailure {\n  readonly kind: DeliveryFailureKind;\n  /** The daemon's error text, or the socket error message. */\n  readonly message: string;\n}\n\ntype DeliveryResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly failure: DeliveryFailure };\n\n/** The client sends `repo` (the open workspace's root) in every DeliverySnapshotRequest and DeliveryEvidenceRequest,\n *  so the board never falls back to the daemon's INSRC_REPO; with no workspace folder it returns 'no-workspace'\n *  without calling the daemon. Each call races a deadline (snapshot 30 s, evidence 15 s) and returns 'timed-out'\n *  when it passes, because the shared IPC client sets no timeout of its own. */\ninterface DeliveryClientDeps {\n  readonly rpc: <T>(method: string, params?: unknown) => Promise<T>;\n  /** The workspace root, or null when no folder is open. */\n  readonly repo: string | null;\n  readonly deadlinesMs: { readonly snapshot: number; readonly evidence: number };\n}\n\ninterface DeliveryClient {\n  snapshot(): Promise<DeliveryResult<DeliverySnapshot>>;\n  evidence(artifactId: string): Promise<DeliveryResult<DeliveryEvidenceRecord>>;\n}"
+        },
+        {
+          "id": "sc2",
+          "name": "Board state: load status and selection",
+          "purpose": "What the host knows at any moment: the latest applied snapshot, why the board looks the way it does, and what the reader has chosen, kept across refreshes.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c10"
+          ],
+          "interfaceSketch": "import type { DeliverySnapshot } from './delivery-contract.js';\n\ntype LoadStatus =\n  | { readonly state: 'loading'; readonly last: AppliedSnapshot | null }\n  | { readonly state: 'ready'; readonly current: AppliedSnapshot }\n  | { readonly state: 'empty'; readonly current: AppliedSnapshot }\n  | { readonly state: 'unavailable'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string }\n  | { readonly state: 'failed'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string };\n\ninterface AppliedSnapshot {\n  readonly snapshot: DeliverySnapshot;\n  /** Monotonic request number the snapshot answered; older responses are dropped. */\n  readonly requestSeq: number;\n  /** True when the snapshot reports unreadable records or store-level notices. */\n  readonly partial: boolean;\n}\n\ntype BoardView = 'board' | 'epics' | 'issues';\ntype BoardScope = { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' };\ntype Density = 'compact' | 'comfortable';\n\ninterface BoardSelection {\n  readonly view: BoardView;\n  readonly scope: BoardScope;\n  readonly search: string;\n  readonly needsAttentionOnly: boolean;\n  readonly selectedItemId: string | null;\n  readonly density: Density;\n}\n\n/** 'unavailable' covers daemon-unavailable and no-workspace; 'failed' covers read-failed and timed-out. A request that\n *  times out ends its 'loading' state like any other failure. */\ninterface BoardState {\n  readonly status: LoadStatus;\n  readonly selection: BoardSelection;\n  /** Set when a refresh removed the selected item. */\n  readonly selectionNotice: string | null;\n}"
+        },
+        {
+          "id": "sc3",
+          "name": "Board webview message protocol",
+          "purpose": "The only traffic between the board's host and its webview: view models down, reader intents up, both in the plugin's versioned envelope.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "interface Envelope<T> { readonly v: 1; readonly payload: T }\n\n/** Host -> webview. Each message replaces what it names; nothing is merged. */\ntype BoardDownMessage =\n  | { readonly type: 'status'; readonly status: StatusView }\n  | { readonly type: 'board'; readonly model: BoardViewModel }\n  | { readonly type: 'epics'; readonly model: EpicRollupViewModel }\n  | { readonly type: 'issues'; readonly model: IssueViewModel }\n  | { readonly type: 'details'; readonly model: ItemDetailsViewModel | null }\n  | { readonly type: 'announce'; readonly text: string };\n\n/** Webview -> host. Ids only; the host resolves them against the current snapshot. */\ntype BoardUpMessage =\n  | { readonly type: 'ready' }\n  | { readonly type: 'refresh' }\n  | { readonly type: 'set-view'; readonly view: 'board' | 'epics' | 'issues' }\n  | { readonly type: 'set-scope'; readonly scope: { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' } }\n  | { readonly type: 'set-search'; readonly search: string }\n  | { readonly type: 'set-attention'; readonly on: boolean }\n  | { readonly type: 'select-item'; readonly itemId: string }\n  | { readonly type: 'close-details' }\n  | { readonly type: 'open-evidence'; readonly itemId: string; readonly artifactId: string }\n  | { readonly type: 'set-density'; readonly density: 'compact' | 'comfortable' };\n\ninterface StatusView {\n  readonly state: 'loading' | 'ready' | 'empty' | 'unavailable' | 'failed';\n  readonly takenAt: string | null;\n  readonly message: string | null;\n  readonly partialNotice: string | null;\n  readonly stale: boolean;\n}\n\n/** Declared by their owning stories: BoardViewModel (s2), EpicRollupViewModel and IssueViewModel (s3), ItemDetailsViewModel (s4). */\ntype BoardViewModel = unknown;\ntype EpicRollupViewModel = unknown;\ntype IssueViewModel = unknown;\ntype ItemDetailsViewModel = unknown;\n  // + BoardDownMessage 'items' variant: { readonly type: 'items'; readonly items: readonly { readonly itemId: string; readonly kind: 'epic' | 'story' | 'task' | 'issue'; readonly title: string | null; readonly stageLabel: string | null }[] };  // Lets s1 list every readable item (title, kind, stage label) before s2's BoardViewModel exists; s2 stops sending it once 'board' is posted. (amend:AMD-6a1315585c38c41c-1)"
+        },
+        {
+          "id": "sc4",
+          "name": "Display labels",
+          "purpose": "One text label for every stage id and every signal the daemon publishes, so colour is never the only carrier and every view uses the same words.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c11"
+          ],
+          "interfaceSketch": "/** s1 extends the type mirror additively to re-export these six types from src/workflow/delivery/types.ts; tsconfig.delivery-contract.json keeps compiling them. */\nimport type { DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState, ReviewVerdict } from './delivery-contract.js';\n\ninterface DisplayLabels {\n  /** Exhaustive: a new stage id fails to compile. 'complete' -> 'Complete', 'ready-plan-approved' -> 'Ready · plan approved', ... */\n  readonly stage: Readonly<Record<DeliveryStage, string>>;\n  readonly attention: Readonly<Record<AttentionReason, string>>;\n  readonly notice: Readonly<Record<NoticeCode, string>>;\n  readonly taskResult: Readonly<Record<TaskResult, string>>;\n  readonly approval: Readonly<Record<ApprovalState, string>>;\n  readonly reviewVerdict: Readonly<Record<ReviewVerdict, string>>;\n  readonly unplanned: string;\n}"
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "The pure functions that filter the snapshot by scope, search and attention, group the matches into the six columns in the daemon's order, count over the whole selection, page each column behind show-more, and build each card's badges and accessible label from the snapshot's published fields; and the board view's rendering in the webview script, text-only. Its LLD maps every acceptance criterion to a named test, including ac6 (a title and a notice containing markup and script render as literal text)."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The open-board command and its entry in the plugin's command list, the webview panel creation in an editor tab with its CSP and nonce, the refresh sequencing (request numbers and dropping superseded responses), the mapping of client failures to load states, and the status bar of the board (taken-at time, stale and partial notices, the empty, unavailable and failed messages). s1 also records the editor-tab versus sidebar placement check. It renders a minimal list of item titles until s2 supplies columns. s1 also extends vscode-plugin/src/delivery/delivery-contract.ts additively with the stage, attention, notice, task-result, approval and review-verdict types sc4 needs. Its LLD maps every acceptance criterion to a named test, including ac4 (an earlier response arriving after a later one is dropped, with fake out-of-order responses) and ac6 (repeated open and refresh against a temporary git repository leave the store, docs and git untouched)."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The epic rollup view model (per-epic completion counts that name their denominator, stories grouped by stage, a separate standalone group) and the issue view model (each issue with its fix stories as children and its parent relationship or unresolved-parent notice), both built from the same filtered selection as sc5, and their rendering. Its LLD maps every acceptance criterion to a named test."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6",
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Building item details from the snapshot item, reading the story's PLAN through the delivery client and caching it per snapshot, joining the plan's dependencies and acceptance checks to the snapshot's task results, fetching an evidence-read record and showing it as preformatted text, routing a review-view entry to the review pane's openArtifact, the change inside the review pane that implements openArtifact without altering its list, rendering or approval behaviour, and the details rendering. Its LLD maps every acceptance criterion to a named test, including ac5 for both paths: a review-view record opens through openArtifact, and when the review pane is unavailable or the record is evidence-read the record is shown read-only from workflow.deliveryEvidence; the review pane's existing tests run unchanged."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The narrow-pane layout (stage-grouped list), keyboard navigation and focus return, live-region announcements of selection and refresh results, the compact and comfortable density styles, and the 500-item performance fixture with its measured render and filter timings. Its LLD maps every acceptance criterion to a named test, with ac5 as the measured fixture."
+        }
+      ],
+      "rolloutPhase": "Phase B — board columns, and item details with evidence",
+      "nonFunctional": {
+        "performance": "After a snapshot arrives, the first board view model is built and rendered within one second for the 1,000-record, 500-item fixture; each filter or search change rebuilds and posts the view model and re-renders within 150 ms, measured best of three on the reference environment. Item details add at most one workflow.deliveryEvidence read per story per snapshot.",
+        "security": "The webview runs one nonce'd inline script under a restrictive Content-Security-Policy, as the plugin's other webviews do, and builds DOM with text nodes only; no artifact text is inserted as HTML. Up-messages carry only ids that the host resolves against the current snapshot, so a crafted message cannot name a path. The board calls only workflow.delivery and workflow.deliveryEvidence and has no route to any approval or write method; openArtifact shows non-pending artifacts without actions.",
+        "observability": "The host takes the plugin's ChatPanelLogger (warn and error). It logs failed refreshes and failed or timed-out evidence and PLAN reads through error(), and superseded responses through warn(), each with the request number, the item count where known and the elapsed time; successful refreshes are not logged, because the plugin has no info channel.",
+        "durability": "The board persists nothing to disk or workspace state; the selection lives for the life of the panel and is kept across refreshes, and the last successful snapshot is kept in memory until the panel closes."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "BoardViewModel",
+          "signature": "function buildBoardViewModel(snapshot: DeliverySnapshot, selection: BoardSelection, paging: BoardPaging, labels: DisplayLabels): BoardViewModel",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "DeliverySnapshot",
+              "purpose": "The snapshot the board shows (sc2's current one, or the last one behind a loading or failed state).",
+              "optional": false
+            },
+            {
+              "name": "selection",
+              "type": "BoardSelection",
+              "purpose": "sc2's scope, search and needsAttentionOnly; view, selectedItemId and density do not change the model.",
+              "optional": false
+            },
+            {
+              "name": "paging",
+              "type": "BoardPaging",
+              "purpose": "The visible card limit per column.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "sc4's text for stages and every signal.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BoardViewModel",
+            "meaning": "Six columns in STAGE_ORDER, each with its label, total, the shown page of cards in snapshot order and hiddenCount; totals over the whole selection; the epics to scope to; and whether the selection matched nothing."
+          },
+          "errors": [],
+          "preconditions": [
+            "snapshot.items is sorted by id (the daemon's published order)."
+          ],
+          "postconditions": [
+            "Cards are the stories and issues whose stage is one of the six; epics, tasks and items with no stage are not cards.",
+            "An item matches when it is in scope (all; epic E: a story whose parentId is E, or an issue whose correctsRef.resolvedItemId is E or a story under E; standalone: standalone is true), its title, id, any source id or its epic title contains the trimmed search case-insensitively (toLowerCase, no locale), and, when needsAttentionOnly is on, its needsAttention is true.",
+            "Each match appears exactly once, in the column of its stage.stage, in snapshot order; nothing is derived or overridden (k2).",
+            "For every column, total = cards.length + hiddenCount and cards.length = min(total, the column's visible limit); totals.items is the sum of the column totals and totals.needsAttention counts the matches whose needsAttention is true.",
+            "Badges are built in this order, each with a text label from labels: approval (the worst approval among the evidence entries the stage reason names: rejected, then pending, then approved); review (Review blocked, tone danger, when any evidence entry's review.blocking is true, otherwise the worst effectiveVerdict among the reason's entries); validation (Validation failed when validation.failed > 0 or storyLevelResult is 'failed'; Unrecorded when any task or the storyLevelResult is unrecorded; otherwise Passed; only when the item has task results or a storyLevelResult); conflict (Validation conflict when conflict is not null); attention (one per attentionReasons entry that is an attention reason); notice (one per distinct item notice code, tone warning when the notice raises attention). A badge whose label is already on the card is not repeated.",
+            "accessibleLabel names the kind, title, stage label, standalone or epic, Needs attention when set, and every badge label in order.",
+            "scopeOptions lists every epic in the snapshot in snapshot order with its title, or its id when it has none.",
+            "emptySelection is true when the snapshot has cards but none match.",
+            "The same arguments always give an equal model (k9).",
+            "The final column keeps the label 'Complete' (sc4, c11). The usability check the epics plan assigns to S2, whether readers take 'Complete' for validation success, is deferred to E2's usability session after s5: it needs a reader panel and the whole board, including s4's details, and no automated test can stand in for it. Until then the validation-conflict badge on Complete cards (ac2) carries the distinction. If the session shows readers misread it, the label changes in DISPLAY_LABELS alone (for example to 'Completion approved')."
+          ]
+        },
+        {
+          "name": "BoardPaging",
+          "signature": "type BoardPaging = Readonly<Partial<Record<DeliveryStage, number>>>;\nconst BOARD_PAGE_SIZE = 50;\nfunction showMore(paging: BoardPaging, stage: DeliveryStage): BoardPaging",
+          "parameters": [
+            {
+              "name": "paging",
+              "type": "BoardPaging",
+              "purpose": "The current visible limits; a missing stage means BOARD_PAGE_SIZE.",
+              "optional": false
+            },
+            {
+              "name": "stage",
+              "type": "DeliveryStage",
+              "purpose": "The column whose next page to reveal.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BoardPaging",
+            "meaning": "The same limits with that column's limit raised by BOARD_PAGE_SIZE."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The board host keeps BoardPaging beside sc2's BoardState and resets it to {} whenever scope, search or needsAttentionOnly changes; a refresh and a view, selection or density change keep it."
+          ]
+        },
+        {
+          "name": "boardDownMessages",
+          "signature": "function boardDownMessages(state: BoardState, labels: DisplayLabels, paging: BoardPaging): readonly Envelope<BoardDownMessage>[]",
+          "parameters": [
+            {
+              "name": "state",
+              "type": "BoardState",
+              "purpose": "sc2's state.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "sc4's text.",
+              "optional": false
+            },
+            {
+              "name": "paging",
+              "type": "BoardPaging",
+              "purpose": "The host's visible limits.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly Envelope<BoardDownMessage>[]",
+            "meaning": "The status message first, then, when a snapshot is shown, one 'board' message built by buildBoardViewModel. The interim 'items' message is no longer sent (AMD-6a1315585c38c41c-1)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "status is unchanged from s1.",
+            "Every host path that derives messages (a refresh answer, a selection change, show-more and 'ready') reduces first and keeps the new state and paging only when boardDownMessages returns; when it throws, the previous state and paging stay, nothing is posted, and the error is logged through error() with the intent's type.",
+            "BoardDownMessage keeps its 'items' variant in the type (AMD-6a1315585c38c41c-1 added it to sc3, and removing it would need a breaking amendment), but no s2 path sends it."
+          ]
+        },
+        {
+          "name": "BoardUpMessage",
+          "signature": "function parseBoardUpMessage(raw: unknown): BoardUpMessage | null  // gains { type: 'show-more'; stage: DeliveryStage }",
+          "parameters": [
+            {
+              "name": "raw",
+              "type": "unknown",
+              "purpose": "Whatever the webview posted.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BoardUpMessage | null",
+            "meaning": "The typed intent, now including show-more with a stage that is one of STAGE_ORDER; null otherwise."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A show-more whose stage is not one of the six is rejected (null) and logged once through warn() by the host, like any malformed message.",
+            "The host answers a valid show-more by replacing paging with showMore(paging, stage) and posting the derived messages."
+          ]
+        },
+        {
+          "name": "unknownStages",
+          "signature": "function unknownStages(snapshot: DeliverySnapshot): ReadonlyMap<string, number>",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "DeliverySnapshot",
+              "purpose": "A snapshot that a refresh has just applied.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReadonlyMap<string, number>",
+            "meaning": "Every stage id on a story or issue that is not one of STAGE_ORDER, with how many items carry it, in id order; empty when every stage is known."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The board host calls it only when a 'snapshot-arrived' event applies a snapshot, never on a selection change, show-more or 'ready', and logs one warn() per refresh when the map is not empty."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "vscode-plugin/src/delivery/board-protocol.ts BoardViewModel",
+        "change": "field-modify",
+        "details": "BoardViewModel changes from unknown to the sc5 interface, with ColumnView, CardView and BadgeView declared beside it; BoardUpMessage gains the 'show-more' variant (amendment). The s1 tests that read the 'items' message move to 'board': board-state.test.ts's itemsOf and board-host.test.ts's lastItems read card ids from the board's columns, and the webview test delivers a 'board' message. One s1 assertion is retired by design: the test that an unlabelled stage shows its raw id. Under s2 that item is left off the board and logged once per refresh, and a board-host test replaces the assertion.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-protocol.ts",
+          "vscode-plugin/src/delivery/board-state.ts",
+          "vscode-plugin/src/delivery/board-host.ts",
+          "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+          "vscode-plugin/src/delivery/__tests__/board-host.test.ts"
+        ]
+      },
+      {
+        "entity": "vscode-plugin/src/delivery/delivery-contract.ts DeliveryItemView",
+        "change": "field-add",
+        "details": "The plugin-side Pick gains standalone, sourceIds, validation, conflict and correctsRef, the fields the cards read; E1's contract test keeps compiling the mirror, so a renamed daemon field fails there.",
+        "callSites": [
+          "vscode-plugin/src/delivery/delivery-contract.ts"
+        ]
+      },
+      {
+        "entity": "BoardPaging (host memory)",
+        "change": "new",
+        "details": "A per-stage visible limit held by the board host for the panel's life, reset by scope, search or attention changes; never persisted.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "board-model.ts implements buildBoardViewModel and declares BadgeView, CardView, ColumnView and BoardViewModel as sketched; s3 and s5 consume them."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Reads BoardState's shown snapshot and BoardSelection's scope, search and needsAttentionOnly through the existing reducer; selection intents keep going through selection-changed."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Posts 'board' in place of the interim 'items' message, sends set-scope, set-search and set-attention from the webview's controls, and adds the 'show-more' up-message through the proposed amendment."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Every column label and badge label comes from DISPLAY_LABELS."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "No new client call; the board model reads the snapshot s1's refresh applied."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A card's stage is not one of the six (a newer daemon, still schemaVersion 1).",
+          "detection": "unknownStages(snapshot) finds stage ids outside STAGE_ORDER when the host applies a refreshed snapshot; buildBoardViewModel skips those items while grouping.",
+          "response": "The item is left out of the columns and the totals, and the host logs one warn() for that refresh naming each unknown stage id and how many items carry it; selection changes and show-more do not log it again.",
+          "userImpact": "The item is missing from the board until the plugin catches up; counts still agree with what is shown.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A scope names an epic that a refresh removed.",
+          "detection": "buildBoardViewModel finds no epic item with selection.scope.epicItemId in the snapshot.",
+          "response": "The model matches nothing in that scope, sets emptySelection, and keeps the epic out of scopeOptions; the webview shows the empty-selection message with the scope control still set, so the reader can clear it.",
+          "userImpact": "The board shows no cards and says the selection matches nothing.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A show-more names a stage that is not one of the six, or a set-scope names an unknown epic id.",
+          "detection": "parseBoardUpMessage rejects an unknown stage; the host checks a set-scope epic id against the shown snapshot before dispatching it.",
+          "response": "The message is ignored and logged once through warn(); nothing changes.",
+          "userImpact": "None.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Building the board model throws on a malformed item that got past the client's shallow checks, on a refresh or later on a selection change, show-more or 'ready' (for example a non-list sourceIds that only a non-empty search reads).",
+          "detection": "The host reduces and derives messages before keeping the new state, so a throw from boardDownMessages surfaces inside that step on every path.",
+          "response": "On a refresh, s1's recovery applies: the refresh ends as failed over the previous board. On a selection change, show-more or 'ready', the previous state and paging are kept, nothing is posted, and the error is logged through error() with the intent's type.",
+          "userImpact": "After a failed refresh the previous board stays. After a failed selection change the board stays as it was and the control has no visible effect.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An item with a null title.",
+          "expected": "The card shows its id as the title and search matches the id."
+        },
+        {
+          "input": "A search of only spaces.",
+          "expected": "Trimmed to empty; every in-scope item matches."
+        },
+        {
+          "input": "A search with regular-expression or markup characters, e.g. '(<b>'.",
+          "expected": "Matched as a plain substring; nothing is interpreted."
+        },
+        {
+          "input": "A column with exactly BOARD_PAGE_SIZE matches, and one with one more.",
+          "expected": "The first shows every card with hiddenCount 0 and no show-more; the second shows 50 cards, hiddenCount 1 and a show-more control."
+        },
+        {
+          "input": "Show-more, then a new search.",
+          "expected": "Paging resets, so every column starts at the first page again; total still counts every match."
+        },
+        {
+          "input": "Show-more, then a refresh that removes cards.",
+          "expected": "Paging is kept; a limit larger than the column shows every card with hiddenCount 0."
+        },
+        {
+          "input": "An issue with no correctsRef, or one whose target is unresolved.",
+          "expected": "It has no epic; it matches only 'all' and, when standalone is true, 'standalone'."
+        },
+        {
+          "input": "A story with no evidence named by its stage reason.",
+          "expected": "No approval or review badge; other badges are unaffected."
+        },
+        {
+          "input": "A review overridden or no longer blocking (effectiveVerdict block, blocking false).",
+          "expected": "The review badge reads Review blocked with tone neutral, not danger, and the card does not count as needing attention unless needsAttention says so."
+        },
+        {
+          "input": "A snapshot with no cards at all (only epics, or empty).",
+          "expected": "Six empty columns with total 0 and emptySelection false; s1's empty status message carries the explanation."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The same snapshot, selection and paging always give the same columns, card order and counts; order follows the snapshot's id order, never time or locale.",
+          "source": "c15"
+        },
+        {
+          "text": "Stage, attention and conflict are read from the snapshot, never derived or overridden.",
+          "source": "c5"
+        },
+        {
+          "text": "Card text, titles and notice messages are inserted with textContent only.",
+          "source": "c7"
+        },
+        {
+          "text": "Filters, search, scope and show-more change only host memory; nothing is written.",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx: (cd vscode-plugin && npx tsx --test 'src/**/__tests__/*.test.ts'); typecheck with npx tsc -p vscode-plugin",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The pure board model: columns, placement, scope, search, attention, counts, paging, badges, accessible labels and determinism.",
+          "subjects": [
+            "buildBoardViewModel",
+            "showMore",
+            "parseBoardUpMessage (show-more)",
+            "unknownStages"
+          ],
+          "fixturesNeeded": [
+            "A snapshot fixture with stories and issues at every stage, two epics, standalone work, a conflict story, a review-blocked design, notices, and more than 50 items in one stage, cast through unknown like board-state.test.ts",
+            "A story whose tasks all passed but whose storyLevelResult failed, and an item whose sourceIds is not a list"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The host and webview: 'board' replaces 'items', show-more and filter intents reach the model with paging reset, and the webview renders columns and cards as literal text.",
+          "subjects": [
+            "createDeliveryBoardHost",
+            "boardDownMessages",
+            "BOARD_WEBVIEW_SCRIPT"
+          ],
+          "fixturesNeeded": [
+            "board-host.test.ts's fake channel, controlled client and runScript fake DOM whose innerHTML throws"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "board-model.test.ts: 'six columns in workflow order hold every story and issue exactly once, in the column the snapshot assigns'",
+            "board-host.test.ts: 'an item with an unknown stage is left off the board and logged once per refresh'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "board-model.test.ts: 'an approved build with failed tasks stays in Complete and carries a text-labelled validation-conflict badge'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "board-model.test.ts: 'a review-blocked design shows a Review blocked badge, matches Needs attention and keeps its column'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "board-model.test.ts: 'with an epic scope and a search, cards, hidden counts, column totals and totals agree, and clearing both restores the full set'",
+            "board-host.test.ts: 'show-more reveals the next page of one column, and a new search resets paging'",
+            "board-host.test.ts: 'a selection change that cannot be rendered keeps the previous board and is logged'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "board-model.test.ts: 'the same snapshot and filters give an identical model, including items with equal timestamps'"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "board-host.test.ts: 'the board view renders titles and notices containing markup and script as literal text'"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Pure board model with host-held paging and one additive show-more intent",
+        "oneLineSummary": "buildBoardViewModel(snapshot, selection, paging, labels) is pure; the host keeps a per-column page count beside the selection and an additive sc3 up-message 'show-more' {stage} raises it.",
+        "approach": "A pure module board-model.ts filters the shown snapshot's stories and issues by scope, search and the daemon's needsAttention, groups the matches into STAGE_ORDER columns keeping snapshot order (items are sorted by id, so equal timestamps cannot reorder), counts total per column and overall before paging, then slices each column to its page limit and reports hiddenCount. Cards and badges come from published fields only: the deciding records' approval and review (stage.reason.artifactIds joined to evidence), validation counts, conflict, attentionReasons and item notices, each labelled from DISPLAY_LABELS. The host holds BoardPaging (a per-stage visible limit, reset when scope, search or attention change) beside sc2's BoardState, adds one up-message variant { type: 'show-more'; stage } to sc3 through an amendment, and posts 'board' instead of the interim 'items' message. The webview renders columns and cards with textContent.",
+        "pros": [
+          "Matches sc5's sketch exactly: cards are what is shown and hiddenCount is what is behind show-more, so counts are computed once on the host and the webview stays a dumb renderer.",
+          "The view model is a pure function, so every acceptance criterion (order, counts, badges, scope, search) is a unit test with no DOM.",
+          "Up-messages stay id-only; show-more names only a stage id the host validates."
+        ],
+        "cons": [
+          "Needs an sc3 amendment (one additive up-message variant) owned by s1.",
+          "The host carries one more piece of state (paging) next to sc2's selection."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Webview-side paging over a full column list",
+        "oneLineSummary": "The view model carries every matching card per column plus a page size; the webview hides cards past the page and expands locally on show-more.",
+        "approach": "board-model.ts builds the same filtered, grouped, counted model but puts every matching card in each column and a pageSize field; hiddenCount is computed by the webview from cards.length minus what it shows. Show-more is handled entirely inside the webview script, so sc3 needs no new up-message, and the host never learns which columns are expanded.",
+        "pros": [
+          "No protocol amendment; s2 stays inside the contracts s1 shipped.",
+          "Show-more is instant, with no host round trip."
+        ],
+        "cons": [
+          "Departs from sc5's meaning of cards and hiddenCount, which s3 and s5 consume; the webview would compute a count, contrary to the HLD's thin renderer.",
+          "Every filter change posts every card, up to 500, so the 150 ms re-render budget is spent on hidden DOM or on rebuilding it.",
+          "Expansion is lost whenever the host reposts the board (every refresh or filter change) unless the webview keeps extra state."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Avoids the amendment, but breaks sc5's meaning of hiddenCount, moves counting into the webview and posts every card on every change."
+      },
+      {
+        "id": "a3",
+        "name": "Paging inside the sc2 selection",
+        "oneLineSummary": "BoardSelection gains expandedStages, and show-more is a selection change through the existing reducer.",
+        "approach": "Extend sc2's BoardSelection with an expandedStages field and sc3 with a show-more intent mapped to selection-changed, so paging rides the s1 reducer and survives refreshes like the rest of the selection. board-model.ts reads the page limits from the selection.",
+        "pros": [
+          "Paging follows the selection's existing keep-across-refresh rule with no new host state."
+        ],
+        "cons": [
+          "Amends two s1-owned contracts (sc2 and sc3) instead of one.",
+          "Every consumer of BoardSelection (s3, s4, s5) sees a board-only field.",
+          "Keeping expansion across a filter change is wrong for counts that change under it; it would need a reset rule inside the s1 reducer anyway."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Works, but amends two s1-owned contracts and pushes a board-only field to every BoardSelection consumer."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md",
+      "quotedText": "Fix sc7 in this HLD, version it with schemaVersion, and allow only additive optional fields after approval; any breaking change goes through an HLD amendment before E2 consumes it."
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Refresh strategy: manual refresh is sufficient for the first increment; confirm whether existing daemon events can support later automatic updates."
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "docs/plans/delivery-board-epics.md",
+      "quotedText": "| Completion wording | Keep \"Complete\"; test it in E2's usability session | E2 S2 |"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "DEF-6a131558 k2: the board displays the daemon's facts and does not derive them"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "FR-09Keep the MVP read-only: all navigation and filtering leave artifacts, approvals, code, and Git state unchanged."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "DEF-6a131558 k4: artifact text is rendered as data"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "DEF-6a131558 k9: the same snapshot and filters always produce the same order and counts"
+    },
+    {
+      "id": "c16",
+      "kind": "prior-artifact",
+      "ref": "AMD-6a1315585c38c41c-1: the interim items down-message; s2 stops sending it once board is posted"
+    },
+    {
+      "id": "c21",
+      "kind": "analyze-bundle",
+      "ref": "s1: src/workflow/delivery/types.ts DeliveryItem / DeliverySnapshot"
+    },
+    {
+      "id": "c22",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/delivery/ (delivery-contract, labels, board-protocol, board-state, board-host)"
+    },
+    {
+      "id": "c23",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/delivery/__tests__/"
+    }
+  ]
+}

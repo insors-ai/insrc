@@ -21,7 +21,7 @@
 import type { DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
 import { buildBoardViewModel, type BoardPaging } from './board-model.js';
-import { buildEpicRollup, buildIssueView } from './board-views.js';
+import { buildEpicRollup, buildIssueView, epicRowOf } from './board-views.js';
 import type { BoardDownMessage, BoardScope, BoardView, Density, Envelope, StatePanelView, StatusView } from './board-protocol.js';
 import type { DisplayLabels } from './labels.js';
 
@@ -80,6 +80,10 @@ export function initialBoardState(): BoardState {
 /** The snapshot the board currently shows: the current one, or the last good one behind a loading or failed state. */
 export function shownSnapshot(status: LoadStatus): AppliedSnapshot | null {
   return status.state === 'ready' || status.state === 'empty' ? status.current : status.last;
+}
+
+function epicItem(snapshot: DeliverySnapshot, id: string): DeliverySnapshot['items'][number] | undefined {
+  return snapshot.items.find(i => i.kind === 'epic' && i.id === id);
 }
 
 function isPartial(s: DeliverySnapshot): boolean {
@@ -216,7 +220,13 @@ export function boardDownMessages(state: BoardState, labels: DisplayLabels, pagi
     const { snapshot } = shown;
     const sel = state.selection;
     switch (sel.view) {
-      case 'board': out.push({ v: 1, payload: { type: 'board', model: buildBoardViewModel(snapshot, sel, paging, labels) } }); break;
+      case 'board': {
+        const body = buildBoardViewModel(snapshot, sel, paging, labels);
+        // An epic's board carries the epic's own row, the same numbers as on Epics.
+        const epic = sel.scope.kind === 'epic' ? epicItem(snapshot, sel.scope.epicItemId) : undefined;
+        out.push({ v: 1, payload: { type: 'board', model: epic === undefined ? body : { ...body, epic: epicRowOf(snapshot, epic, labels) } } });
+        break;
+      }
       case 'epics': out.push({ v: 1, payload: { type: 'epics', model: buildEpicRollup(snapshot, sel, labels) } }); break;
       case 'issues': out.push({ v: 1, payload: { type: 'issues', model: buildIssueView(snapshot, sel, labels) } }); break;
     }

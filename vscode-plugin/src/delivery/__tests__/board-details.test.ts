@@ -242,3 +242,28 @@ test('the tasks chip is danger when the story-level result failed, even with eve
   assert.deepEqual(d.chips.find(c => c.kind === 'tasks'), { kind: 'tasks', label: '3/3 tasks passed', tone: 'danger' });
   assert.ok(d.chips.some(c => c.label === 'Validation failed' && c.tone === 'danger'), 'agreeing with the card badge');
 });
+
+test('correctedBy lists the issues correcting the item and approvedAt reads the approval time', () => {
+  const snap = snapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
+    item({ id: 'E1:S001', parentId: 'E1', title: 'Columns', stage: 'complete', evidence: [
+      ev('LLD-a', 'LLD', { approval: { state: 'approved', at: '2026-09-30T14:40:12.000Z' } }),
+      ev('PLAN-a', 'PLAN', { approval: { state: 'pending', at: null } }),
+      ev('CR-a', 'CR', { approval: { state: 'approved', at: 'sometime' } }),
+    ] }),
+    item({ id: 'I2', kind: 'issue', title: 'Overflow', stage: 'design-plan', correctsRef: { resolvedItemId: 'E1:S001' } as never }),
+    item({ id: 'I1', kind: 'issue', title: 'Wrapping', stage: 'scoped', standalone: true, correctsRef: { resolvedItemId: 'E1:S001' } as never }),
+    item({ id: 'I3', kind: 'issue', title: 'Elsewhere', correctsRef: { resolvedItemId: 'E1' } as never }),
+    item({ id: 'I4', kind: 'issue', title: 'Lost', correctsRef: { resolvedItemId: null } as never }),
+  ]);
+  const d = buildItemDetails(snap, 'E1:S001', NONE, null, DISPLAY_LABELS)!;
+  assert.deepEqual(d.correctedBy, [
+    { itemId: 'I1', kind: 'issue', title: 'Wrapping', stageLabel: 'Scoped' },
+    { itemId: 'I2', kind: 'issue', title: 'Overflow', stageLabel: 'Design & plan' },
+  ], 'the issues whose parent resolves to the story, in snapshot order');
+  assert.deepEqual(d.evidence.map(r => [r.artifactId, r.approvedAt]), [
+    ['LLD-a', '2026-09-30 14:40 UTC'], ['PLAN-a', null], ['CR-a', 'sometime'],
+  ], 'an unparseable time is shown as recorded');
+  assert.deepEqual(buildItemDetails(snap, 'E1', NONE, null, DISPLAY_LABELS)!.correctedBy.map(l => l.itemId), ['I3']);
+  assert.deepEqual(buildItemDetails(snap, 'I1', NONE, null, DISPLAY_LABELS)!.correctedBy, []);
+});

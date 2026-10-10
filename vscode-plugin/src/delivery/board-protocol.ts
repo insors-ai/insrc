@@ -345,9 +345,9 @@ export interface ScreenModel {
 export type BoardDownMessage =
   | { readonly type: 'status'; readonly status: StatusView }
   | { readonly type: 'items'; readonly items: readonly ItemListEntry[] }
-  | { readonly type: 'board'; readonly model: BoardViewModel }
-  | { readonly type: 'epics'; readonly model: EpicRollupViewModel }
-  | { readonly type: 'issues'; readonly model: IssueViewModel }
+  | { readonly type: 'board'; readonly model: StagesBody }
+  | { readonly type: 'epics'; readonly model: EpicsBody }
+  | { readonly type: 'issues'; readonly model: IssuesBody }
   | { readonly type: 'details'; readonly model: ItemDetailsViewModel | null }
   | { readonly type: 'screen'; readonly model: ScreenModel }
   | { readonly type: 'announce'; readonly text: string };

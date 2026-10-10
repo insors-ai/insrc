@@ -17,8 +17,7 @@
  * derived here. The same arguments always give an equal model.
  */
 
-import type { BadgeView, BoardViewModel, CardView, ColumnView, StatePanelView } from './board-protocol.js';
-import type { BoardSelection } from './board-state.js';
+import type { BadgeView, BoardScope, BoardViewModel, CardView, StagesBody, StageSectionView, StatePanelView } from './board-protocol.js';
 import type { AttentionReason, DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
 import { approvalTone, labelOf, STAGE_ORDER, verdictTone, type DisplayLabels } from './labels.js';
 
@@ -75,11 +74,22 @@ export function epicOf(item: DeliveryItemView, byId: ItemIndex): DeliveryItemVie
 /** An item's title, or its id when it has none; every view shows titles through this. */
 export const titleOf = (item: DeliveryItemView): string => item.title ?? item.id;
 
-function inScope(item: DeliveryItemView, epic: DeliveryItemView | null, selection: BoardSelection): boolean {
-  switch (selection.scope.kind) {
+/** What a screen matches: its scope, and the search and attention filter of its trail entry. */
+export interface MatchFilter {
+  readonly scope: BoardScope;
+  readonly search: string;
+  readonly needsAttentionOnly: boolean;
+}
+
+/**
+ * The epic membership rule: an item belongs to epic X exactly when it is not flagged standalone and epicOf(item) is
+ * X, so a standalone issue that corrects one of X's stories is on Standalone and Issues, never on X's board.
+ */
+function inScope(item: DeliveryItemView, epic: DeliveryItemView | null, filter: MatchFilter): boolean {
+  switch (filter.scope.kind) {
     case 'all': return true;
     case 'standalone': return item.standalone;
-    case 'epic': return epic !== null && epic.id === selection.scope.epicItemId;
+    case 'epic': return !item.standalone && epic !== null && epic.id === filter.scope.epicItemId;
   }
 }
 
@@ -235,14 +245,14 @@ export function placeableCount(snapshot: DeliverySnapshot): number {
  * and the issue view all build from this one step, so they count the same
  * matches (E2 s3).
  */
-export function selectMatches(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels, byId: ItemIndex = indexItems(snapshot)): readonly MatchedCard[] {
-  const needle = selection.search.trim().toLowerCase();
+export function selectMatches(snapshot: DeliverySnapshot, filter: MatchFilter, labels: DisplayLabels, byId: ItemIndex = indexItems(snapshot)): readonly MatchedCard[] {
+  const needle = filter.search.trim().toLowerCase();
   const out: MatchedCard[] = [];
   for (const item of snapshot.items) {
     if (!isPlaceable(item)) continue;   // an unknown stage is left off every view (unknownStages reports it)
     const epic = epicOf(item, byId);
-    if (!inScope(item, epic, selection) || !matchesSearch(item, epic, needle)) continue;
-    if (selection.needsAttentionOnly && !item.needsAttention) continue;
+    if (!inScope(item, epic, filter) || !matchesSearch(item, epic, needle)) continue;
+    if (filter.needsAttentionOnly && !item.needsAttention) continue;
     out.push({ item, epic, stage: item.stage.stage, card: cardOf(item, item.stage.stage, epic, labels) });
   }
   return out;
@@ -272,21 +282,58 @@ export function selectionPanel(kind: 'no-matches' | 'no-issues', labels: Display
     : { kind, title: labels.noIssuesTitle, text: labels.noIssuesText, action: null, stale: false, affected: [], placement: 'body' };
 }
 
-export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: BoardSelection, paging: BoardPaging, labels: DisplayLabels): BoardViewModel {
-  const matches = selectMatches(snapshot, selection, labels);
+/** 'No open gates' at 0, otherwise how many need attention. */
+export function attentionLabel(count: number): string {
+  if (count === 0) return 'No open gates';
+  return count === 1 ? '1 needs attention' : `${count} need attention`;
+}
+
+const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
+
+/** 'N items · M need attention'; with Needs attention on, 'M of N items need attention' (N counted without the toggle). */
+export function totalsLabel(matched: number, needing: number, attentionOnly: boolean, unfiltered: number, noun: readonly [string, string]): string {
+  if (attentionOnly) return `${needing} of ${plural(unfiltered, noun[0], noun[1])} ${needing === 1 ? 'needs' : 'need'} attention`;
+  return `${plural(matched, noun[0], noun[1])} \u00b7 ${needing} ${needing === 1 ? 'needs' : 'need'} attention`;
+}
+
+/**
+ * A board screen's body: six stage sections in workflow order. A section with matches starts open, except Complete,
+ * which starts closed (with how many need attention) unless Needs attention is on; an empty section starts closed and
+ * says so. Under Needs attention the empty stages always fold into one line; in a narrow pane the webview folds them
+ * too. The epic header is filled in by the screen that knows the epic.
+ */
+export function buildBoardViewModel(snapshot: DeliverySnapshot, filter: MatchFilter, paging: BoardPaging, labels: DisplayLabels): StagesBody {
+  const byId = indexItems(snapshot);
+  const matches = selectMatches(snapshot, filter, labels, byId);
   const byStage = groupByStage(matches);
-  const needsAttention = attentionCount(matches);
-  const columns: ColumnView[] = STAGE_ORDER.map(stage => {
-    const all = (byStage.get(stage) ?? []).map(m => m.card);
+  const attentionOnly = filter.needsAttentionOnly;
+  const sections: StageSectionView[] = STAGE_ORDER.map(stage => {
+    const inStage = byStage.get(stage) ?? [];
+    const all = inStage.map(m => m.card);
     const shown = all.slice(0, Math.max(0, paging[stage] ?? BOARD_PAGE_SIZE));
-    return { stage, label: labelOf(labels.stage, stage), total: all.length, cards: shown, hiddenCount: all.length - shown.length };
+    const needing = attentionCount(inStage);
+    const defaultOpen = all.length > 0 && (stage !== 'complete' || attentionOnly);
+    return {
+      stage, label: labelOf(labels.stage, stage), total: all.length, cards: shown, hiddenCount: all.length - shown.length,
+      attentionCount: needing, defaultOpen,
+      emptyText: all.length === 0 ? labels.nothingAtStage : null,
+      hint: !defaultOpen && all.length > 0 && needing > 0 ? attentionLabel(needing) : null,
+    };
   });
-  const items = columns.reduce((n, c) => n + c.total, 0);
+  const empty = sections.filter(sec => sec.total === 0);
+  const foldText = empty.length === 0 ? ''
+    : attentionOnly
+      ? `${plural(empty.length, 'stage has', 'stages have')} nothing needing attention: ${empty.map(sec => sec.label).join(', ')}.`
+      : empty.map(sec => `${sec.label} 0`).join(' \u00b7 ');
+  const unfiltered = attentionOnly ? selectMatches(snapshot, { ...filter, needsAttentionOnly: false }, labels, byId).length : matches.length;
+  const noMatches = placeableCount(snapshot) > 0 && matches.length === 0;
   return {
-    columns,
-    totals: { items, needsAttention },
-    scopeOptions: scopeOptionsOf(snapshot),
-    emptySelection: placeableCount(snapshot) > 0 && items === 0,
-    emptyPanel: placeableCount(snapshot) > 0 && items === 0 ? selectionPanel('no-matches', labels) : null,
+    kind: 'stages',
+    epic: null,
+    totalsLabel: totalsLabel(matches.length, attentionCount(matches), attentionOnly, unfiltered, ['item', 'items']),
+    showAll: attentionOnly,
+    sections,
+    fold: { always: attentionOnly, text: foldText },
+    emptyPanel: noMatches ? selectionPanel('no-matches', labels) : null,
   };
 }

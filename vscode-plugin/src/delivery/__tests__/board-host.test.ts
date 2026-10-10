@@ -862,7 +862,7 @@ test('an Epics row opens that epic\'s board with its header, breadcrumb and ← 
   const main = b.w.el['main']!;
   click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'epics')!);
   b.relay();
-  const rows = findAll(main, e => e.attrs['class'] === 'epic-row');
+  const rows = findAll(main, e => e.attrs['class'] === 'row');
   assert.deepEqual(rows.map(r => r.attrs['data-epic']), [EPIC_A, 'E20261009bbbbbbbb'], 'one row per epic');
   assert.deepEqual(texts(rows[0]!).slice(0, 5), ['EPIC · AAAAAAAA', 'Board epic', '2 stories · 0 tasks', '1 of 2 stories complete', '1 needs attention']);
   const meter = findAll(rows[0]!, e => e.attrs['role'] === 'meter')[0]!;
@@ -900,8 +900,8 @@ test('an Epics row opens that epic\'s board with its header, breadcrumb and ← 
   assert.ok(!cardsIn(main).some(c => texts(c).includes('Standalone')), 'no Standalone line repeated on the Standalone screen');
   click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'issues')!);
   b.relay();
-  const issueRows = findAll(main, e => e.attrs['class'] === 'issue-row');
-  assert.deepEqual(texts(issueRows[0]!), ['ISSUE · 1234ABCD', 'Overflow', 'Corrects Columns · no fix story yet', 'Design & plan']);
+  const issueRows = findAll(main, e => e.attrs['class'] === 'row issue-row');
+  assert.deepEqual(texts(issueRows[0]!), ['ISSUE · 1234ABCD', 'Overflow', 'Corrects Columns · no fix story yet'], 'the stage is the box the row sits in');
   b.w.posted.length = 0;
   click(issueRows[0]!);
   assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-item', itemId: 'H1234abcd5678ef00' }]);
@@ -1235,7 +1235,7 @@ test('the issue screen opens what it corrects, or shows the parent notice, and l
   const main = b.w.el['main']!;
   click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'issues')!);
   b.relay();
-  click(findAll(main, e => e.attrs['class'] === 'issue-row' && e.attrs['data-item-id'] === 'H9999aaaa0000bbbb')[0]!);
+  click(findAll(main, e => e.attrs['class'] === 'row issue-row' && e.attrs['data-item-id'] === 'H9999aaaa0000bbbb')[0]!);
   b.relay();
   assert.equal(shownScreen(b.w), 'issue');
   assert.deepEqual(buttonsIn(main, 'back').map(x => x.textContent), ['← Issues']);
@@ -1252,7 +1252,7 @@ test('the issue screen opens what it corrects, or shows the parent notice, and l
   // An epic parent opens the epic; an unresolved parent shows its notice and no button.
   click(findAll(b.w.el['crumbs']!, e => e.tag === 'button' && e.textContent === 'Issues')[0]!);
   b.relay();
-  click(findAll(main, e => e.attrs['class'] === 'issue-row' && e.attrs['data-item-id'] === 'H5555eeee0000ffff')[0]!);
+  click(findAll(main, e => e.attrs['class'] === 'row issue-row' && e.attrs['data-item-id'] === 'H5555eeee0000ffff')[0]!);
   b.relay();
   b.w.posted.length = 0;
   click(findAll(main, e => e.tag === 'button' && e.textContent === 'Open what it corrects →')[0]!);
@@ -1260,7 +1260,7 @@ test('the issue screen opens what it corrects, or shows the parent notice, and l
   b.w.posted.length = 0;
   main.listeners['keydown']!(keyEvent('Escape'));
   b.relay();
-  click(findAll(main, e => e.attrs['class'] === 'issue-row' && e.attrs['data-item-id'] === 'H7777cccc0000dddd')[0]!);
+  click(findAll(main, e => e.attrs['class'] === 'row issue-row' && e.attrs['data-item-id'] === 'H7777cccc0000dddd')[0]!);
   b.relay();
   assert.equal(findAll(main, e => e.textContent === 'Open what it corrects →').length, 0);
   assert.ok(texts(main).includes('Unresolved parent') && texts(main).includes("corrects 'gone', which is not in the store"));
@@ -1474,6 +1474,72 @@ test('Back to a list screen whose opener is gone focuses the chosen view', async
   assert.equal(shownScreen(b.w), 'stages');
   assert.equal(cardsIn(main).length, 0, 'the opener is no longer shown');
   assert.equal(focusState.active, findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'all')[0], 'focus falls back to the chosen view');
+});
+
+test('the epic board and Epics rows follow the mocks: head with meter, rows with completion and attention on one line', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  const shape = (e: FakeEl) => `${e.tag}.${e.attrs['class'] ?? ''}`;
+  click(findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'epics')[0]!);
+  b.relay();
+  // Epics: one row per epic, its three columns side by side: name block, completion over the meter, attention.
+  const rows = findAll(main, e => e.tag === 'div' && e.attrs['class'] === 'rows')[0]!;
+  assert.deepEqual(rows.children.map(shape), ['button.row', 'button.row']);
+  const row = rows.children[0]!;
+  assert.deepEqual(row.children.map(shape), ['div.', 'div.completion', 'span.pill attention-count']);
+  assert.deepEqual(row.children[0]!.children.map(c => [shape(c), c.textContent]), [['div.kicker', 'EPIC · AAAAAAAA'], ['div.name', 'Board epic'], ['div.muted', '2 stories · 0 tasks']]);
+  assert.deepEqual(row.children[1]!.children.map(shape), ['span.muted', 'div.meter']);
+  assert.equal(row.children[1]!.children[0]!.textContent, '1 of 2 stories complete');
+  assert.deepEqual([row.children[2]!.textContent, row.children[2]!.attrs['data-tone']], ['1 needs attention', 'warning']);
+
+  // The epic board: the epic's head (kicker, heading, count pills | completion and meter), then a filter bar led by ← Epics.
+  click(row);
+  b.relay();
+  const head = findAll(main, e => e.attrs['class'] === 'between head')[0]!;
+  assert.deepEqual(head.children.map(shape), ['div.', 'div.completion']);
+  assert.deepEqual(head.children[0]!.children.map(shape), ['div.kicker', 'h1.', 'div.pills']);
+  assert.deepEqual(texts(head.children[0]!.children[2]!), ['2 stories', '0 tasks', '1 needs attention']);
+  assert.equal(findAll(head, e => e.attrs['role'] === 'meter')[0]!.attrs['aria-valuenow'], '1');
+  assert.equal(focusState.active, head.children[0]!.children[1], 'a new epic board focuses its heading');
+  const bar = findAll(main, e => e.attrs['class'] === 'filterbar')[0]!;
+  assert.deepEqual(bar.children.map(c => [shape(c), c.textContent]), [['button.btn ghost back', '← Epics'], ['button.toggle attention', 'Needs attention'], ['input.search', '']]);
+  assert.equal(findAll(main, e => e.attrs['class'] === 'count-line')[0]!.textContent, '2 items · 1 needs attention');
+});
+
+test('the Issues screen shows its issues in collapsible stage boxes', async () => {
+  const snap = () => screensSnapshot([
+    item({ id: 'H2222abcd5678ef00', kind: 'issue', title: 'Wrong count', standalone: true, stage: 'complete', needsAttention: true, attentionReasons: ['pending-decision'] }),
+    item({ id: 'H3333abcd5678ef00', kind: 'issue', title: 'New defect', standalone: true, stage: 'scoped' }),
+  ]);
+  const b = await liveBoard(snap());
+  const main = b.w.el['main']!;
+  click(findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'issues')[0]!);
+  b.relay();
+  const boxes = () => findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'acc');
+  assert.deepEqual(boxes().map(d => [d.attrs['data-stage'], d.attrs['open'] !== undefined, d.attrs['data-empty'] !== undefined]), [
+    ['scoped', true, false], ['design-plan', true, false], ['ready-design-approved', false, true], ['ready-plan-approved', false, true], ['build-recorded', false, true], ['complete', false, false],
+  ], 'the board screens\' defaults: open with work, Complete closed, empty ones closed and marked');
+  const rowsIn = (d: FakeEl) => findAll(d, e => e.attrs['class'] === 'row issue-row').map(r => r.attrs['data-item-id']);
+  assert.deepEqual(boxes().map(rowsIn), [['H3333abcd5678ef00'], ['H1234abcd5678ef00'], [], [], [], ['H2222abcd5678ef00']]);
+  assert.deepEqual(texts(boxes()[5]!.children[0]!), ['Complete', '· 1 needs attention', '1'], 'closed Complete says how many need attention');
+  assert.equal(boxes()[1]!.children[1]!.attrs['class'], 'rows', 'the rows sit in the box');
+
+  // The reader opens Complete; a refresh keeps it open.
+  const complete = boxes()[5]!;
+  complete.setAttribute('open', '');
+  complete.listeners['toggle']!();
+  b.ch.send({ v: 1, payload: { type: 'refresh' } });
+  b.s.snapshots.at(-1)!.resolve({ ok: true, value: snap() });
+  await flush();
+  b.pump();
+  assert.equal(boxes()[5]!.attrs['open'], '', 'the reader\'s choice survives a refresh');
+
+  // Under Needs attention only the stage with such an issue stays; the rest fold into one line.
+  click(buttonsIn(main, 'attention')[0]!);
+  b.relay();
+  assert.deepEqual(boxes().map(d => d.attrs['data-stage']), ['complete']);
+  assert.match(findAll(main, e => e.attrs['class'] === 'fold')[0]!.textContent, /^5 stages have nothing needing attention/);
+  assert.match(findAll(main, e => e.attrs['class'] === 'count-line')[0]!.textContent, /^1 of 3 issues needs attention/);
 });
 
 test('BOARD_STYLE carries the mocks\' product rules with theme colours and no hiding rule', () => {

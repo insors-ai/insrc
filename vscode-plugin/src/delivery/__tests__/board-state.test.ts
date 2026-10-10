@@ -230,7 +230,7 @@ test('filter intents are ignored on an item screen, and a refresh that removes t
   const cut = run([{ type: 'refresh-requested', seq: 2 }, arrived(2, snapshot(noStory))], atStory);
   assert.deepEqual(cut.selection.trail.map(e => e.screen.kind), ['list', 'epic']);
   assert.equal(cut.selectionNotice, 'What you were viewing is no longer on the board.');
-  assert.equal(cut.restored, true);
+  assert.equal(cut.restored, false, 'a cut is not a return the reader asked for: the screen starts fresh');
 
   // The epic goes too: back to Epics.
   const noEpic = noStory.filter(i => !i.id.startsWith(EPIC));

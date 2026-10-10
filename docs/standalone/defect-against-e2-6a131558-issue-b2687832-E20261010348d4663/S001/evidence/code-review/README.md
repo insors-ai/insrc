@@ -6,8 +6,8 @@ so functions such as `showMore`, `unknownStages`, `taskResultTone`, `buildBoardV
 suite instead.
 
 [coverage.txt](coverage.txt): `node --import tsx --test --experimental-test-coverage
---test-coverage-include='src/delivery/*.ts' src/delivery/__tests__/*.test.ts` in `vscode-plugin`. 93 tests pass; the
-delivery module is covered at 99.85 % of lines and 99.53 % of functions. Every function named in the findings is
+--test-coverage-include='src/delivery/*.ts' src/delivery/__tests__/*.test.ts` in `vscode-plugin`. the delivery tests
+pass and the module's measured coverage is in the file (re-run after every review round). Every function named in the findings is
 reached:
 
 - `showMore`: board-model.test.ts ("with an epic scope and a search, …"), board-host.test.ts ("show-more reveals the
@@ -22,3 +22,6 @@ reached:
   host and the real script on the fake DOM).
 
 The webview script is a string, so line coverage does not count it; board-host.test.ts boots it on the fake DOM.
+
+[full-plugin-suite.txt](full-plugin-suite.txt): the full plugin suite after the last review round, at its baseline
+(only the known manifest-catalog failure, 4 live skips).

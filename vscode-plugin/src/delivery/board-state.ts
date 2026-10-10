@@ -72,7 +72,7 @@ export interface BoardState {
   readonly latestSeq: number;
   /** The last trail entry id handed out. */
   readonly entrySeq: number;
-  /** True when the last navigation returned to an earlier screen (Back, a crumb, or a refresh that cut the trail). */
+  /** True when the last navigation was Back or a breadcrumb: the screen returned to gets its scroll and focus back. */
   readonly restored: boolean;
 }
 
@@ -146,9 +146,10 @@ function applySnapshot(state: BoardState, applied: AppliedSnapshot): BoardState 
   const trail = state.selection.trail;
   const gone = trail.findIndex(e => !stillOnBoard(e.screen, applied.snapshot));
   if (gone > 0) {
-    // The root is one of the four views, so it always survives.
+    // The root is one of the four views, so it always survives. Not a return the reader asked for, so the screen
+    // shown starts fresh (restored is only for Back and the breadcrumb).
     return {
-      ...state, status, restored: true, selectionNotice: REMOVED_NOTICE,
+      ...state, status, restored: false, selectionNotice: REMOVED_NOTICE,
       selection: { ...state.selection, trail: trail.slice(0, gone) },
     };
   }

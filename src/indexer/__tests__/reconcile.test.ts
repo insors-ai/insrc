@@ -484,8 +484,10 @@ test('a store failure part-way through a clean-up job still drops the cached res
 });
 
 test('a resolver failure after a clean-up fails the job with the cached results already dropped', async () => {
+	const keepFile = join(repoA, 'src', 'keep.ts');
+	onDisk(keepFile);
 	const gone = ent(repoA, join(repoA, 'src', 'gone.ts'), 'function', 'gone');
-	await upsertEntities(null, [gone]);
+	await upsertEntities(null, [ent(repoA, keepFile, 'function', 'keep'), gone]);
 	await putCachedExploration(repoA, 1n, EXP, OUTPUT);
 	const svc = service();
 	svc.failResolver = true;
@@ -494,6 +496,71 @@ test('a resolver failure after a clean-up fails the job with the cached results 
 
 	assert.equal(await exists(gone), false);
 	assert.equal(await cached(repoA), false);
+});
+
+test('a failure on the only stale file still drops the cached results and runs the resolver, because part of the file may be gone', async () => {
+	const keepFile = join(repoA, 'src', 'keep.ts');
+	const goneFile = join(repoA, 'src', 'gone.ts');
+	onDisk(keepFile);
+	await upsertEntities(null, [ent(repoA, keepFile, 'function', 'keep'), ent(repoA, goneFile, 'function', 'gone')]);
+	await putCachedExploration(repoA, 1n, EXP, OUTPUT);
+	const svc = service();
+	svc.failRemovalOf = goneFile;
+
+	await assert.rejects(svc.processJob({ kind: 'reconcile', repoPath: repoA }), /store write failed/);
+
+	assert.deepEqual(svc.removed, [], 'no removal completed');
+	assert.deepEqual(svc.resolverRuns, [repoA]);
+	assert.equal(await cached(repoA), false);
+});
+
+test('a repository whose directory is there but holds none of the stored files loses nothing, and one where only ignored files are left on disk is still cleaned', async () => {
+	// repoA: an empty directory where the repository used to be (an unmounted
+	// volume leaves its mount point behind). Stored: a source file and a built file.
+	const srcA = ent(repoA, join(repoA, 'src', 'a.ts'), 'function', 'a');
+	const builtA = ent(repoA, join(repoA, 'out', 'a.js'), 'function', 'aBuilt');
+	// repoC: the source file was deleted, the build output is still on disk.
+	const builtFileC = join(repoC, 'out', 'c.js');
+	onDisk(builtFileC);
+	const srcC = ent(repoC, join(repoC, 'src', 'c.ts'), 'function', 'c');
+	const builtC = ent(repoC, builtFileC, 'function', 'cBuilt');
+	await upsertEntities(null, [srcA, builtA, srcC, builtC]);
+	await putCachedExploration(repoA, 1n, EXP, OUTPUT);
+	const svc = service();
+
+	await svc.processJob({ kind: 'reconcile', repoPath: repoA });
+
+	assert.equal(await exists(srcA), true);
+	assert.equal(await exists(builtA), true, 'not even the ignored file is removed');
+	assert.deepEqual(svc.resolverRuns, []);
+	assert.equal(await cached(repoA), true);
+	assert.deepEqual(await svc.reconcileRepo(repoA), { ...ZERO, compared: 2 });
+
+	// repoC is plainly there: one stored file is on disk, although it is an ignored one.
+	assert.deepEqual(await svc.reconcileRepo(repoC), { compared: 2, removedAbsent: 1, removedIgnored: 1, notChecked: 0 });
+	assert.equal(await exists(srcC), false);
+	assert.equal(await exists(builtC), false);
+});
+
+test('an ignored file is removed whatever the check of its presence says, also when it is the only thing stored', async () => {
+	// repoA: the one stored file is an ignored one that is no longer on disk.
+	const builtA = ent(repoA, join(repoA, 'out', 'a.js'), 'function', 'aBuilt');
+	// repoC: the presence of the ignored file cannot be told.
+	const lockedBuilt = join(repoC, 'out', 'locked.js');
+	const builtC = ent(repoC, lockedBuilt, 'function', 'cBuilt');
+	await upsertEntities(null, [builtA, builtC]);
+	const presence: FilePresenceCheck = file => {
+		if (file === lockedBuilt) throw Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
+		statSync(file);
+	};
+	const svc = service(presence);
+
+	// Nothing looks deleted here, so the repository is not taken to be away.
+	assert.deepEqual(await svc.reconcileRepo(repoA), { compared: 1, removedAbsent: 0, removedIgnored: 1, notChecked: 0 });
+	assert.equal(await exists(builtA), false);
+	// "Not checked" is about files kept for that reason; this one is removed as ignored.
+	assert.deepEqual(await svc.reconcileRepo(repoC), { compared: 1, removedAbsent: 0, removedIgnored: 1, notChecked: 0 });
+	assert.equal(await exists(builtC), false);
 });
 
 test('a clean-up failure inside a full index fails the full index and marks the repository error', async () => {

@@ -325,9 +325,11 @@ relations and their vectors. Only the cleaned repo's entities are
 removed: where one registered repo lies under a directory that its
 registered parent ignores, the parent's clean-up leaves the child's
 entities for the same files. After a clean-up at daemon start that
-removed something, relations are resolved once for the repo and the
-repo's cached exploration results are dropped, so an analysis is not
-answered from a result computed before the clean-up.
+removed something, the repo's cached exploration results are dropped
+and relations are resolved once for the repo, so an analysis is not
+answered from a result computed before the clean-up. If the store
+fails part-way, both are still done for what was already removed,
+and the job then fails; the next daemon start finishes the clean-up.
 
 **What it keeps.**
 
@@ -336,8 +338,13 @@ answered from a result computed before the clean-up.
 - A file whose presence cannot be determined (a permission or I/O
   error). The log line of the pass counts these as `notChecked`.
 - Entities that belong to no file (external endpoints).
-- Everything, when the repo's own directory is missing (an unmounted
-  volume, a moved repo): the pass removes nothing and logs a warning.
+- Everything, when the repo looks to be away: its own directory is
+  missing, or the directory is there but files look deleted and not
+  one of the files the index holds for the repo is on disk (an
+  unmounted volume often leaves an empty mount point behind). The
+  pass removes nothing and logs a warning. The price of this caution:
+  a repo whose every indexed file really was deleted is not cleaned
+  by the pass; remove the repo, or index a file in it, to clear it.
 
 The pass logs `index clean-up complete` with four counts:
 `compared`, `removedAbsent`, `removedIgnored` and `notChecked`.

@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1791647700336-x4zqii",
+    "runId": "cr-1791648106822-bz446o",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-10T15:55:00.428Z",
+    "createdAt": "2026-10-10T16:01:46.902Z",
     "model": "claude:opus",
-    "elapsedMs": 93859,
+    "elapsedMs": 108823,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "2764c29d7ccb66a5",
@@ -45,8 +45,8 @@
           {
             "dimension": "coverage",
             "severity": "HIGH",
-            "location": "src/indexer/index.ts:412",
-            "message": "The promised smoke test is not in the changed set and there is no record that it was performed. It is a manual check against the installed daemon after the update: entities gone for the build output and the deleted test file, a source file still indexed, and the JavaScript file count lower. No test file, script or build record in the grounding corresponds to it, so the end-to-end behaviour on a real store is unconfirmed.",
+            "location": "src/indexer/index.ts:313",
+            "message": "The promised smoke test has no corresponding test in the grounding. Nothing in the changed set checks the installed daemon after the update: that the build-output files and the deleted test file have no entities, that a source file keeps its entities, and that the JavaScript file count has fallen. The daemon-start clean-up is covered only at integration level, against a temp store with a stand-in watcher. If the smoke check was run by hand, no record of it was supplied.",
             "expectationRef": "on the installed daemon after the update, the files under this repository's build output and the deleted test file have no entities, a source file still has its entities, and the repository's count of JavaScript files has fallen",
             "confidence": "breach"
           },
@@ -54,16 +54,40 @@
             "dimension": "coverage",
             "severity": "MED",
             "location": "src/indexer/__tests__/reconcile.test.ts:1",
-            "message": "Present but unverified: all 18 promised unit and integration tests appear with matching titles in the diff (14 in src/indexer/__tests__/reconcile.test.ts, 3 in src/db/__tests__/entity-files-for-repo.test.ts, 1 in src/daemon/__tests__/queue-depth-for-repo.test.ts). No build record is available, so none of them can be confirmed as passing. The empty testsReaching edges are not reported as gaps: the grounding is file-level diffs, and the test diffs call the changed symbols directly (listEntityFilesForRepo, deleteUnresolvedForRepoFile, IndexQueue.enqueue/depthForRepo, reconcileRepo, the 'reconcile' and 'file' paths of processJob, start, the full index).",
-            "expectationRef": "pass-state of the 18 promised unit/integration tests",
+            "message": "Present but unverified: the 18 promised unit and integration tests are all in the diff under their exact promised titles (3 in src/db/__tests__/entity-files-for-repo.test.ts, 1 in src/daemon/__tests__/queue-depth-for-repo.test.ts, 14 in src/indexer/__tests__/reconcile.test.ts). No build record was supplied, so none of them can be confirmed as passing. Every testsReaching list is empty, but the entries are file-level diff entities with no graph edges, and the test diffs call the changed symbols directly (listEntityFilesForRepo, deleteUnresolvedForRepoFile, IndexQueue.enqueue/depthForRepo with 'reconcile', processJob for reconcile/full/file jobs, reconcileRepo, start). I therefore did not report the changed symbols as not exercised.",
+            "expectationRef": "all 18 promised unit and integration tests (pass-state)",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
             "severity": "LOW",
-            "location": "src/indexer/index.ts:484",
-            "message": "Two new error paths have no test in the diff, and the plan promised none. First, the non-fatal catch branches in resolveAfterReconcile, where a failing external-endpoint or messaging-endpoint pass is logged and the job continues. Second, the stated behaviour that a clean-up failure inside the full index propagates like an indexing failure. Only the success paths are exercised.",
-            "expectationRef": "IndexerService.resolveAfterReconcile (non-fatal endpoint-pass failures); fullIndex clean-up failure propagation",
+            "location": "src/indexer/index.ts:441",
+            "message": "No test in the grounding exercises the branch in reconcileJob where the clean-up fails part-way and the following resolver run also fails (the first failure is rethrown, the second only logged). The two failures are each tested separately, never together.",
+            "expectationRef": "IndexerService.reconcileJob (both-failures branch)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/indexer/index.ts:531",
+            "message": "No test in the grounding exercises the non-fatal handling in resolveAfterReconcile when the external-endpoint or messaging-endpoint pass throws. The ProbeService override only fails the whole method, so the two inner try/catch branches are not reached.",
+            "expectationRef": "IndexerService.resolveAfterReconcile (endpoint-pass failure branches)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/indexer/index.ts:487",
+            "message": "No test in the grounding reaches the event-loop yield in reconcileInto (every RECONCILE_YIELD_EVERY = 500 compared files). The largest fixture stores a handful of files.",
+            "expectationRef": "IndexerService.reconcileInto (RECONCILE_YIELD_EVERY yield)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/indexer/index.ts:313",
+            "message": "The daemon-start test covers a ready repository with no changed files (lastIndexed set in the future). No test covers a ready repository that does have changed files, where the delta file jobs and the reconcile job should both be queued.",
+            "expectationRef": "IndexerService.start (ready repository with a changed-file delta)",
             "confidence": "observation"
           }
         ]
@@ -74,43 +98,36 @@
           {
             "dimension": "quality",
             "severity": "MED",
-            "location": "src/indexer/index.ts:415",
-            "message": "Unhandled error path in reconcileJob: the cached exploration results are dropped only AFTER resolveAfterReconcile, and the cross-file pass inside it (runCrossFileResolver) is not wrapped in a try, unlike the two endpoint passes. If it throws, the removals are already committed but deleteCachedExplorationsForRepo never runs. The next clean-up of the repo then removes nothing (removedAbsent + removedIgnored is 0), so neither the resolver nor the cache removal is retried, and an exploration cached before the clean-up keeps answering with the removed files until the next full index. Drop the cache before the resolver run, or in a finally.",
+            "location": "src/indexer/index.ts:473",
+            "message": "Correctness risk: the only guard against a missing repo is that the root is a directory. An unmounted volume commonly leaves its mount point behind as an empty directory (Linux mounts, network shares, a recreated empty checkout directory). The guard then passes, every stored file stats ENOENT, and the pass removes the repo's whole index; at daemon start it also drops the exploration cache. docs/daemon.md promises that an unmounted volume removes nothing. Consider refusing, or requiring a full index, when every compared file or a very large share of them comes back absent, or checking a marker such as `.git` or `.insrc` under the root.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "MED",
-            "location": "src/indexer/index.ts:471",
-            "message": "The same gap one level down in reconcileRepo: each stale file is removed in its own awaited store calls inside the loop, with no try around them. If deleteEntitiesById or deleteUnresolvedForRepoFile throws on file N, files 1..N-1 are already gone, the counts are lost with the exception, and reconcileJob runs neither the resolver nor the cache removal for them. A later pass no longer sees those files as stale, so the follow-up work is never done for them. Inside fullIndex the same throw fails the whole full index, as its comment says.",
+            "location": "src/indexer/index.ts:510",
+            "message": "Unhandled error path: the removed counts rise only after `removeStoredFile` returns. If `deleteEntitiesById` throws after removing some or all of the file's entities (for example the graph rows go and the vector delete then fails), the file is not counted. When it is the only stale file, `reconcileJob` sees zero removals, so it neither drops the cached exploration results nor runs the resolver. If the entities are in fact gone, the next pass no longer lists the file, so that follow-up never happens. The comment in `reconcileJob` describes this hazard for earlier files but not for the file that failed. Counting an attempted removal before the store call, or treating any failure as 'something may have been removed', would close it.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
-            "severity": "LOW",
-            "location": "src/indexer/index.ts:472",
-            "message": "The two removals for one file are separate write transactions (entities first, then that file's unresolved relations). If the process stops or the second call fails between them, the unresolved rows stay with no entity behind them. The pass finds files through listEntityFilesForRepo, which reads entities only, so a later clean-up never visits that file again and the rows are left until something else clears the repo's unresolved relations. Deleting the unresolved rows first, or both in one transaction, closes this.",
-            "confidence": "observation"
+            "severity": "MED",
+            "location": "src/indexer/index.ts:434",
+            "message": "Unhandled error path: `deleteCachedExplorationsForRepo` is awaited outside any try block. If it throws after `reconcileInto` already failed, the original store failure held in `failure` is discarded and never logged, the resolver run for the files already removed is skipped, and the `index clean-up complete` line with the counts is not written. The resolver call just below it is guarded; this call is not.",
+            "confidence": "breach"
           },
           {
             "dimension": "quality",
-            "severity": "LOW",
-            "location": "src/indexer/index.ts:457",
-            "message": "Presence is decided by whether statSync succeeds, not by whether the path is still a file. A stored file whose path is now a directory stats successfully, so it is kept with its stale entities. The reverse case (a parent directory replaced by a file) is handled through ENOTDIR, but this one is not, and the guide's 'a file that is no longer on disk' does not cover it.",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "quality",
-            "severity": "LOW",
-            "location": "src/indexer/index.ts:449",
-            "message": "For a repo with nothing stale the loop over stored files has no await in it: one statSync per stored file runs back to back on the daemon's event loop, after a synchronous scan of the whole entity table in listEntityFilesForRepo. At daemon start this is queued once per ready repo, so IPC requests wait behind each pass on a large index. An async stat, or a yield every few hundred files, would avoid it.",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "quality",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/db/entities.ts:810",
-            "message": "listEntityFilesForRepo scans and decodes every row of the entity table for all repos and filters by repoId in the loop, the same full-table walk as the function directly above it. At daemon start it runs once per ready repo, so the cost is (number of repos) x (all entities). The scan-and-filter loop is repeated rather than shared with the existing per-repo listing.",
+            "message": "Correctness and performance risk: `listEntityFilesForRepo` walks the whole entity table, across all repos, synchronously, decoding every row, with no yield. The pass is queued at daemon start for every indexed repo and runs inside every full index, so start-up costs (number of repos × all entities) of blocking work. The `RECONCILE_YIELD_EVERY` yield in `reconcileInto` covers only the stat loop, so IPC requests are still held behind this scan on a large store. A per-repo key range, or a periodic yield inside the scan, would avoid it.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/db/entities.ts:802",
+            "message": "Duplication: `listEntityFilesForRepo` repeats the repo-filtered full scan of the entity table that `listEntitiesForRepo`, directly above it, already performs (same repo-id lookup, same `getRange` loop and row filter); it differs only in collecting ids by file instead of building entities. A shared row iterator would keep the two scans from drifting apart.",
             "counterpartRef": "listEntitiesForRepo",
             "confidence": "observation"
           },
@@ -118,23 +135,23 @@
             "dimension": "quality",
             "severity": "LOW",
             "location": "src/db/relations.ts:344",
-            "message": "deleteUnresolvedForRepoFile repeats the body of the existing path-wide delete: collect the ids under the unresolvedByFile key, then delete each with deleteUnresolvedRowInTxn in one write transaction. Only the repo scoping differs. The path-wide function could call the repo-scoped one per repo so the two cannot drift. It also reads the ids outside the write transaction it deletes them in.",
+            "message": "Duplication: `deleteUnresolvedForRepoFile` is the body of `deleteUnresolvedForFile` restricted to one repo id (collect ids from `unresolvedByFile`, then `deleteUnresolvedRowInTxn` in one write transaction). The existing function could take an optional repo, or both could share one helper that works on a single repo id. As in the original, the ids are read outside the write transaction.",
             "counterpartRef": "deleteUnresolvedForFile",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/indexer/index.ts:484",
-            "message": "resolveAfterReconcile is a third copy of the resolver sequence (cross-file pass, then the external-endpoint and messaging-endpoint passes, each non-fatal) that its own comment says mirrors the settle pass, and that fullIndex also runs. A resolver step added later has to be added in all three places. One shared helper taking the repo path would remove the copies.",
-            "counterpartRef": "IndexerService.scheduleSettle",
+            "location": "src/indexer/index.ts:530",
+            "message": "Duplication: `resolveAfterReconcile` writes out the cross-file pass followed by the two non-fatal endpoint passes again; its own comment says it is 'as in the settle pass', and `fullIndex` runs the same sequence. That makes three copies of the resolver sequence and its error handling, so a pass added later has to be added in three places. One shared helper for the sequence would remove the copies.",
+            "counterpartRef": "IndexerService.scheduleSettle (the settle pass) / IndexerService.fullIndex",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/indexer/index.ts:683",
-            "message": "fileEvent resolves the repo's ignore list and builds a new Set for every create or update event. If resolveRepoIgnore reads <repo>/.insrc/config.json each time, a burst of watcher events (a branch switch, a build writing many files) reads and parses the config once per file. Caching the set per repo would avoid it, but the cache would have to be dropped when the ignore list is edited.",
+            "location": "src/indexer/index.ts:730",
+            "message": "Avoidable cost: every create or update file event now calls `resolveRepoIgnore(repoPath)` and builds a new Set before indexing. If `resolveRepoIgnore` reads `<repo>/.insrc/config.json` from disk, that is one synchronous config read per watcher event, which adds up during a burst such as a branch switch or a build. A per-repo ignore set cached and invalidated when the config changes would avoid it. Also worth confirming: for a file under a nested registered repo, the `repoPath` resolved for the event must be the innermost repo; otherwise the parent's ignore list (for example `vendor`) would silently stop the child's files from being indexed by events.",
             "confidence": "observation"
           }
         ]
@@ -143,7 +160,7 @@
     "verdict": "block",
     "counts": {
       "high": 1,
-      "med": 3,
+      "med": 5,
       "low": 8
     }
   }

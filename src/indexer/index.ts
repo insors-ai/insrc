@@ -186,6 +186,9 @@ export interface ReconcileResult {
 /** The counts of a pass while it runs. */
 type ReconcileCounts = { -readonly [K in keyof ReconcileResult]: ReconcileResult[K] };
 
+/** Whether a pass has begun writing to the store. */
+interface ReconcileProgress { removalStarted: boolean }
+
 export class IndexerService {
   private readonly db:      DbClient;
   private readonly queue:   IndexQueue;
@@ -417,33 +420,35 @@ export class IndexerService {
    */
   private async reconcileJob(repoPath: string): Promise<void> {
     const counts: ReconcileCounts = { compared: 0, removedAbsent: 0, removedIgnored: 0, notChecked: 0 };
-    // A store failure part-way leaves the files before it removed, and a
-    // later pass no longer sees them as stale: what follows the removals
-    // is done for them here, before the failure is rethrown.
+    const progress: ReconcileProgress = { removalStarted: false };
+    // A store failure part-way leaves the files before it removed (and
+    // possibly part of the file it failed on), and a later pass no longer
+    // sees them as stale: what follows the removals is done for them here,
+    // before the failure is rethrown. The first failure is the job's.
     let failure: unknown;
-    try {
-      await this.reconcileInto(repoPath, counts);
-    } catch (err) {
-      failure = err;
-    }
-    if (counts.removedAbsent + counts.removedIgnored > 0) {
-      // The cache key carries the repo's lastIndexed, which this job does
-      // not stamp; without this an exploration cached before the clean-up
-      // could still answer with the removed files. Dropped BEFORE the
-      // resolver run so that a resolver failure cannot leave it in place.
-      await deleteCachedExplorationsForRepo(repoPath);
+    const attempt = async (what: string, step: () => Promise<void>): Promise<void> => {
       try {
-        await this.resolveAfterReconcile(repoPath);
+        await step();
       } catch (err) {
         if (failure === undefined) {
           failure = err;
         } else {
           log.warn(
             { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
-            'resolver run after a failed index clean-up also failed',
+            `index clean-up: ${what} failed after an earlier failure`,
           );
         }
       }
+    };
+
+    await attempt('the pass', () => this.reconcileInto(repoPath, counts, progress));
+    if (progress.removalStarted) {
+      // The cache key carries the repo's lastIndexed, which this job does
+      // not stamp; without this an exploration cached before the clean-up
+      // could still answer with the removed files. Dropped BEFORE the
+      // resolver run so that a resolver failure cannot leave it in place.
+      await attempt('dropping the cached explorations', () => deleteCachedExplorationsForRepo(repoPath));
+      await attempt('the resolver run', () => this.resolveAfterReconcile(repoPath));
     }
     log.info({ repo: repoPath, ...counts }, 'index clean-up complete');
     if (failure !== undefined) throw failure;
@@ -461,13 +466,18 @@ export class IndexerService {
    */
   async reconcileRepo(repoPath: string): Promise<ReconcileResult> {
     const counts: ReconcileCounts = { compared: 0, removedAbsent: 0, removedIgnored: 0, notChecked: 0 };
-    await this.reconcileInto(repoPath, counts);
+    await this.reconcileInto(repoPath, counts, { removalStarted: false });
     return counts;
   }
 
-  /** The pass behind `reconcileRepo`. Counts into `counts` as it goes, so a
-   *  caller still knows what was removed when a store call throws. */
-  private async reconcileInto(repoPath: string, counts: ReconcileCounts): Promise<void> {
+  /** The pass behind `reconcileRepo`. Counts into `counts` as it goes and
+   *  sets `progress.removalStarted` before the first store write, so a
+   *  caller still knows something may be gone when a store call throws. */
+  private async reconcileInto(
+    repoPath: string,
+    counts: ReconcileCounts,
+    progress: ReconcileProgress,
+  ): Promise<void> {
     // A repo whose root is away (unmounted volume, moved directory) would
     // make every stored file look deleted. Remove nothing.
     let rootIsDir = false;
@@ -480,6 +490,11 @@ export class IndexerService {
     const ignoreSet = new Set(resolveRepoIgnore(repoPath));
     const stored = await listEntityFilesForRepo(this.db, repoPath);
 
+    // Phase 1: decide, without writing. Nothing is removed until the whole
+    // repo has been looked at, because of the check that follows.
+    const stale: Array<{ file: string; ids: string[]; reason: 'absent' | 'ignored' }> = [];
+    let anyOnDisk = false;
+    let absent = 0;
     for (const [file, ids] of stored) {
       counts.compared++;
       // The presence check is a synchronous stat: hand the event loop back
@@ -488,25 +503,50 @@ export class IndexerService {
         await new Promise<void>(resolveYield => setImmediate(resolveYield));
       }
 
-      let reason: 'absent' | 'ignored' | null = null;
-      if (hasIgnoredSegment(file, repoPath, ignoreSet)) {
-        reason = 'ignored';
-      } else {
+      const ignored = hasIgnoredSegment(file, repoPath, ignoreSet);
+      // An ignored file goes whether or not it exists; it is stat'ed only
+      // while no stored file has been seen on disk yet (see below).
+      let onDisk: boolean | null = null;
+      if (!ignored || !anyOnDisk) {
         try {
           this.filePresence(file);
+          onDisk = true;
         } catch (err) {
           const code = (err as NodeJS.ErrnoException | null)?.code;
           if (code !== undefined && ABSENT_CODES.has(code)) {
-            reason = 'absent';
-          } else {
+            onDisk = false;
+          } else if (!ignored) {
             // Permission / IO error: presence unknown, so keep the file.
             counts.notChecked++;
             log.debug({ file, code }, 'index clean-up: presence not determined, keeping');
           }
         }
       }
-      if (reason === null) continue;
+      if (onDisk === true) anyOnDisk = true;
 
+      if (ignored) {
+        stale.push({ file, ids, reason: 'ignored' });
+      } else if (onDisk === false) {
+        stale.push({ file, ids, reason: 'absent' });
+        absent++;
+      }
+    }
+
+    // An unmounted volume often leaves its mount point behind as an empty
+    // directory, which passes the root check above. If files look deleted
+    // and NOT ONE stored file is on disk, the repo is taken to be away and
+    // nothing is removed -- a wrong guess here would empty the whole index.
+    if (absent > 0 && !anyOnDisk) {
+      log.warn(
+        { repo: repoPath, compared: counts.compared, absent },
+        'index clean-up skipped: none of the stored files is on disk (repo looks unmounted or moved)',
+      );
+      return;
+    }
+
+    // Phase 2: remove.
+    for (const { file, ids, reason } of stale) {
+      progress.removalStarted = true;
       await this.removeStoredFile(repoPath, file, ids);
       if (reason === 'absent') counts.removedAbsent++; else counts.removedIgnored++;
     }

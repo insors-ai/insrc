@@ -173,15 +173,21 @@ const CANONICAL_ID = /^E\d{8}([0-9a-f]{8})(?::(S\d+))?$/i;
 const H_FORM_ID = /^H([0-9a-f]{8})[0-9a-f]*(?::(S\d+))?$/i;
 
 /**
- * An item id in short form, per the published id format ('E<date><hash8>[:S<nnn>]', or the 'H<hash>' fallback): the
- * 8-character hash in upper case, then ' / S<nnn>' when the id names a story. Any other id (a ':R(<raw>)' fallback, a
- * task id, an id of unknown shape) is returned whole.
+ * The parts of an item id in the published format ('E<date><hash8>[:S<nnn>]', or the 'H<hash>' fallback): the
+ * 8-character hash in upper case, and the story number when the id names a story. Null for any other id (a
+ * ':R(<raw>)' fallback, a task id, an id of unknown shape).
  */
-export function compactIdOf(id: string): string {
+export function idParts(id: string): { readonly hash: string; readonly story: string | null } | null {
   const m = CANONICAL_ID.exec(id) ?? H_FORM_ID.exec(id);
-  if (m === null) return id;
-  const hash = (m[1] ?? '').toUpperCase();
-  return m[2] === undefined ? hash : `${hash} / ${m[2].toUpperCase()}`;
+  if (m === null) return null;
+  return { hash: (m[1] ?? '').toUpperCase(), story: m[2] === undefined ? null : m[2].toUpperCase() };
+}
+
+/** An item id in short form: the hash, then ' / S<nnn>' when the id names a story; any other id whole. */
+export function compactIdOf(id: string): string {
+  const p = idParts(id);
+  if (p === null) return id;
+  return p.story === null ? p.hash : `${p.hash} / ${p.story}`;
 }
 
 /** The recorded task results as 'n/N tasks passed'; unplanned tasks are not counted, and no recorded task gives null. */

@@ -21,7 +21,7 @@
 
 import type { DeliveryResult } from './delivery-client.js';
 import type { DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
-import { buildBoardViewModel, compactIdOf, epicOf, indexItems, isPlaceable, showMore, titleOf, type BoardPaging, type MatchFilter } from './board-model.js';
+import { buildBoardViewModel, epicOf, idParts, indexItems, isPlaceable, showMore, titleOf, type BoardPaging, type MatchFilter } from './board-model.js';
 import { buildEpicRollup, buildIssueView, epicRowOf } from './board-views.js';
 import type {
   BoardDownMessage, BoardScreen, CrumbView, Density, Envelope, ItemDetailsViewModel, ItemTab, ListView, ScreenBody, ScreenModel,
@@ -326,7 +326,8 @@ const SEARCH_PLACEHOLDER: Readonly<Record<ListView | 'epic', string>> = {
 
 /** An item's id as the breadcrumb shows it: the story number ('S001'), or the issue's or epic's short hash. */
 export function shortId(id: string): string {
-  return compactIdOf(id).split(' / ').pop() ?? id;
+  const p = idParts(id);
+  return p === null ? id : p.story ?? p.hash;
 }
 
 /** The breadcrumb label of one trail entry's screen. */

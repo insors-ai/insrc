@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, placeableCount, selectMatches, showMore, unknownStages, type BoardPaging, type MatchFilter } from '../board-model.js';
+import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, idParts, placeableCount, selectMatches, showMore, unknownStages, type BoardPaging, type MatchFilter } from '../board-model.js';
 import type { StagesBody } from '../board-protocol.js';
 import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
 import { evidence as fixtureEvidence, item, review, snapshot } from './board-fixtures.js';
@@ -310,4 +310,11 @@ test('totals read N items · M need attention, or M of N with Show all under Nee
   assert.equal(attention.fold.text,
     '5 stages have nothing needing attention: Design & plan, Ready · design approved, Ready · plan approved, Build recorded, Complete.');
   assert.equal(build(snapshot(STAGE_ORDER.map((stage, i) => item({ id: `S${i}`, stage })))).fold.text, '', 'nothing to fold when every stage has work');
+});
+
+test('idParts reads the hash and story number of a published id, and nothing from any other id', () => {
+  assert.deepEqual(idParts('E20261009abcdef01:S001'), { hash: 'ABCDEF01', story: 'S001' });
+  assert.deepEqual(idParts('Habcdef0123456789'), { hash: 'ABCDEF01', story: null });
+  assert.equal(idParts('E20261009abcdef01:S001:T1'), null);
+  assert.equal(idParts('slug:R(raw)'), null);
 });

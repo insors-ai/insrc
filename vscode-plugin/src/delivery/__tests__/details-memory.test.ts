@@ -15,7 +15,7 @@ import type { DeliveryResult } from '../delivery-client.js';
 import type { DeliveryEvidenceRecord, DeliverySnapshot } from '../delivery-contract.js';
 import { createDetailsMemory } from '../details-memory.js';
 import { DISPLAY_LABELS } from '../labels.js';
-import { evidence, item, snapshot } from './board-fixtures.js';
+import { announcementsIn as announced, evidence, item, screensIn as screens, snapshot } from './board-fixtures.js';
 import { flush } from './flush.js';
 
 function memorySetup() {
@@ -111,8 +111,6 @@ function hostSetup(snap: DeliverySnapshot) {
   return { host, posted, logs, reads, up: (payload: unknown) => send({ v: 1, payload }) };
 }
 
-const screens = (posted: readonly BoardDownMessage[]) => posted.filter(p => p.type === 'screen');
-const announced = (posted: readonly BoardDownMessage[]) => posted.flatMap(p => (p.type === 'announce' ? [p.text] : []));
 
 test('the memory is told null once the item screen is left', async () => {
   const board = snapshot([
@@ -126,13 +124,11 @@ test('the memory is told null once the item screen is left', async () => {
 
   up({ type: 'open-item', itemId: 'E1:S001' });
   assert.deepEqual(reads.map(r => r.artifactId), ['PLAN-x'], 'the memory was told the story: it reads its PLAN');
-  const last = screens(posted).at(-1);
-  assert.ok(last?.type === 'screen' && last.model.body.kind === 'story');
+  assert.equal(screens(posted).at(-1)?.body.kind, 'story');
 
   up({ type: 'back' });
   const shown = screens(posted).length;
-  const back = screens(posted).at(-1);
-  assert.ok(back?.type === 'screen' && back.model.body.kind === 'stages', 'Back shows the board again, and nothing of the story');
+  assert.equal(screens(posted).at(-1)?.body.kind, 'stages', 'Back shows the board again, and nothing of the story');
 
   // The PLAN answers after the reader left: the memory follows no item, so nothing is re-posted.
   reads[0]!.resolve({ ok: true, value: { artifactId: 'PLAN-x', kind: 'PLAN', meta: {}, body: { tasks: [] }, renderedMarkdown: null } });

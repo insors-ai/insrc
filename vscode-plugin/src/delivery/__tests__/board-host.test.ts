@@ -17,7 +17,7 @@ import { BOARD_STYLE, BOARD_VIEW_TYPE, BOARD_WEBVIEW_SCRIPT, createDeliveryBoard
 import { parseBoardUpMessage, type BoardDownMessage, type Envelope, type ScreenModel, type StagesBody } from '../board-protocol.js';
 import type { DeliveryClient, DeliveryResult } from '../delivery-client.js';
 import type { DeliveryEvidenceRecord, DeliverySnapshot } from '../delivery-contract.js';
-import { evidence as ev, item, snapshot as fixtureSnapshot } from './board-fixtures.js';
+import { announcementsIn, evidence as ev, item, screensIn, snapshot as fixtureSnapshot } from './board-fixtures.js';
 import { cardsIn, findAll, focusState, keyEvent, runScript, texts, type FakeEl } from './board-webview-harness.js';
 import { flush } from './flush.js';
 
@@ -84,7 +84,7 @@ function setup() {
 const payloadsOf = (posted: readonly unknown[]) => posted.map(m => (m as Envelope<BoardDownMessage>).payload);
 const payloads = (c: FakeChannel) => payloadsOf(c.posted);
 /** Every screen model posted, in order. */
-const screensOf = (c: FakeChannel): ScreenModel[] => payloads(c).flatMap(p => (p.type === 'screen' ? [p.model] : []));
+const screensOf = (c: FakeChannel): ScreenModel[] => screensIn(payloads(c));
 const lastScreen = (c: FakeChannel): ScreenModel | null => screensOf(c).at(-1) ?? null;
 /** The body of the last screen posted when it is a board screen; null otherwise. */
 const lastBoard = (c: FakeChannel): StagesBody | null => {
@@ -648,7 +648,7 @@ const cardOf = (root: FakeEl, id: string) => cardsIn(root).find(c => c.attrs['da
 
 test('a filter change, Back and announcements: screen changes are announced once, a settled refresh once, and filters, density and reloads say nothing', async () => {
   const s = detailsSetup();
-  const announces = (c: FakeChannel) => payloads(c).filter(p => p.type === 'announce').map(p => (p.type === 'announce' ? p.text : ''));
+  const announces = (c: FakeChannel) => announcementsIn(payloads(c));
   s.host.open();
   const ch = s.channels[0]!;
   assert.deepEqual(announces(ch), [], 'loading announces nothing');
@@ -1326,7 +1326,7 @@ test('the refresh announcement text is unchanged after statusView takes now', as
     item({ id: 'S1', stage: 'scoped', needsAttention: true }), item({ id: 'S2', stage: 'complete' }), item({ id: 'E1', kind: 'epic' }),
   ]));
   const posted = payloads(host.ch);
-  const announced = posted.filter(p => p.type === 'announce').map(p => (p.type === 'announce' ? p.text : ''));
+  const announced = announcementsIn(posted);
   assert.deepEqual(announced, ['Board refreshed: 2 items, 1 needing attention']);
   const status = posted.filter(p => p.type === 'status').at(-1);
   assert.ok(status !== undefined && status.type === 'status');

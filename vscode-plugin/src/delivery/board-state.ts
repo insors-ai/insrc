@@ -405,6 +405,23 @@ function screenBody(
 }
 
 /**
+ * The announcement for a settled refresh (s5): the snapshot-wide counts when ready, led by the notice when the refresh
+ * removed what the reader was viewing; otherwise the status message. Null while loading, or when there is nothing to say.
+ */
+export function refreshAnnouncement(state: BoardState, now: string): string | null {
+  if (state.status.state === 'loading') return null;
+  const shown = shownSnapshot(state.status);
+  if (state.status.state === 'ready' && shown !== null) {
+    const placeable = shown.snapshot.items.filter(isPlaceable);
+    const n = placeable.length;
+    const attention = placeable.filter(i => i.needsAttention).length;
+    const lead = state.selectionNotice === null ? '' : `${state.selectionNotice} `;
+    return `${lead}Board refreshed: ${n} item${n === 1 ? '' : 's'}, ${attention} needing attention`;
+  }
+  return statusView(state.status, now).message;
+}
+
+/**
  * The announcement for a screen change (s5): 'Showing <view>', 'Epic: <title>' or 'Opened: <title> · <stage>' for a
  * new screen, and 'Back to <crumb>' for a return, naming the screen as its breadcrumb does. Null when the screen's
  * epic or item is not in the snapshot.

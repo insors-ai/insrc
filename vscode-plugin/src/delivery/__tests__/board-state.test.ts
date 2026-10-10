@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { boardDownMessages, currentEntry, initialBoardState, reduceBoardState, screenAnnouncement, statusView, TRAIL_LIMIT, type BoardEvent, type BoardState, type NavIntent } from '../board-state.js';
+import { boardDownMessages, currentEntry, initialBoardState, reduceBoardState, refreshAnnouncement, screenAnnouncement, statusView, TRAIL_LIMIT, type BoardEvent, type BoardState, type NavIntent } from '../board-state.js';
 import type { ScreenModel, StagesBody, StatusView } from '../board-protocol.js';
 import type { DeliveryItem, DeliverySnapshot } from '../delivery-contract.js';
 import type { DeliveryFailureKind } from '../delivery-client.js';
@@ -326,4 +326,17 @@ test('screenAnnouncement names a new screen, and a return as its breadcrumb does
   assert.equal(say(epic, 'back'), 'Back to Board epic');
   assert.equal(say(run([nav({ type: 'back' })], epic), 'back'), 'Back to Epics');
   assert.equal(screenAnnouncement(story, snapshot([]), DISPLAY_LABELS, 'opened'), null, 'nothing to name when the item is gone');
+});
+
+test('refreshAnnouncement counts the whole snapshot when ready, leads with a removal notice, and otherwise says the status', () => {
+  const ready = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([
+    item('a', 'A'), fixtureItem({ id: 'b', title: 'B', needsAttention: true }), fixtureItem({ id: 'E', kind: 'epic' }), item('x', 'X', 'shipped'),
+  ]))]);
+  assert.equal(refreshAnnouncement(ready, NOW), 'Board refreshed: 2 items, 1 needing attention', 'epics and unknown stages are not counted');
+  assert.equal(refreshAnnouncement(reduceBoardState(ready, { type: 'refresh-requested', seq: 2 }), NOW), null, 'nothing while loading');
+  const atStory = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, trailSnapshot()), nav({ type: 'open-item', itemId: STORY })]);
+  const cut = run([{ type: 'refresh-requested', seq: 2 }, arrived(2, snapshot(trailSnapshot().items.filter(i => i.id !== STORY)))], atStory);
+  assert.match(refreshAnnouncement(cut, NOW)!, /^What you were viewing is no longer on the board\. Board refreshed: /);
+  const failedState = run([{ type: 'refresh-requested', seq: 2 }, failed(2, 'timed-out', 'slow')], ready);
+  assert.match(refreshAnnouncement(failedState, NOW)!, /^The refresh failed at .*: slow Showing the board from/);
 });

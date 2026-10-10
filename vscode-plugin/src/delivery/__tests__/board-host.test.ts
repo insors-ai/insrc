@@ -1379,3 +1379,23 @@ test('a refresh timing that cannot be measured says so in the log instead of rea
   assert.ok(logs.error.some(e => /refresh 1 timed-out after an unmeasurable time \(unreadable clock\): slow/.test(e)), logs.error.join('\n'));
   host.dispose();
 });
+
+test('an intent that changes nothing posts nothing', async () => {
+  const { ch } = await openWith(screensSnapshot());
+  const before = ch.posted.length;
+  for (const p of [
+    { type: 'set-view', view: 'all' },                         // the current single root
+    { type: 'back' },                                         // nothing to go back to
+    { type: 'go-to-crumb', index: 3 },                        // out of range
+    { type: 'set-search', search: '' },                       // the search it already has
+    { type: 'set-attention', on: false },
+    { type: 'set-density', density: 'comfortable' },
+  ]) send(ch, p);
+  assert.equal(ch.posted.length, before, 'no status, screen or announcement for a no-op');
+  send(ch, { type: 'open-item', itemId: 'SA1' });
+  const onStory = ch.posted.length;
+  for (const p of [{ type: 'open-item', itemId: 'SA1' }, { type: 'set-search', search: 'x' }, { type: 'show-more', stage: 'scoped' }, { type: 'set-item-tab', tab: 'overview' }]) send(ch, p);
+  assert.equal(ch.posted.length, onStory, 'the item already shown, and filters on an item screen, post nothing');
+  send(ch, { type: 'ready' });
+  assert.ok(ch.posted.length > onStory, 'a reloaded webview still gets the screen again');
+});

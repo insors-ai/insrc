@@ -35,10 +35,10 @@
 
 import { attr, type ChatPanelChannel, type ChatPanelLogger } from '../chat/chat-panel.js';
 import type { Envelope } from '../chat/protocol.js';
-import { isPlaceable, placeableCount, unknownStages } from './board-model.js';
+import { isPlaceable, unknownStages } from './board-model.js';
 import { parseBoardUpMessage, type BoardUpMessage } from './board-protocol.js';
 import {
-  boardDownMessages, currentEntry, currentItemId, initialBoardState, reduceBoardState, screenAnnouncement, shownSnapshot, statusView,
+  boardDownMessages, currentEntry, currentItemId, initialBoardState, reduceBoardState, refreshAnnouncement, screenAnnouncement, shownSnapshot,
   type BoardEvent, type BoardState, type NavIntent,
 } from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
@@ -473,8 +473,10 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     for (const m of messages) channel?.postMessage(m);
   }
 
+  /** Reduce and apply; an event the reducer treats as a no-op (the same state back) posts nothing. */
   function dispatch(event: BoardEvent): void {
-    apply(reduceBoardState(state, event));
+    const next = reduceBoardState(state, event);
+    if (next !== state) apply(next);
   }
 
   /** How long since a refresh started, for the log: 'N ms', or says so when a clock reading cannot be parsed. */
@@ -554,17 +556,9 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
    * the notice when the refresh removed what the reader was viewing.
    */
   function announceRefresh(seq: number): void {
-    if (seq !== state.latestSeq || state.status.state === 'loading') return;
-    const shown = shownSnapshot(state.status);
-    if (state.status.state === 'ready' && shown !== null) {
-      const n = placeableCount(shown.snapshot);
-      const attention = shown.snapshot.items.filter(i => isPlaceable(i) && i.needsAttention).length;
-      const lead = state.selectionNotice === null ? '' : `${state.selectionNotice} `;
-      announce(`${lead}Board refreshed: ${n} item${n === 1 ? '' : 's'}, ${attention} needing attention`);
-      return;
-    }
-    const message = statusView(state.status, deps.now()).message;
-    if (message !== null) announce(message);
+    if (seq !== state.latestSeq) return;
+    const text = refreshAnnouncement(state, deps.now());
+    if (text !== null) announce(text);
   }
 
   /** The sc3 'announce' message, written by the webview into its one live region. */

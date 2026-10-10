@@ -4,7 +4,7 @@
     "epicHash": "008e146ad1475ef9",
     "storyId": "S001",
     "createdAt": "2026-10-10T14:08:41.695Z",
-    "updatedAt": "2026-10-10T14:11:59.702Z",
+    "updatedAt": "2026-10-10T14:18:34.157Z",
     "standalone": true
   },
   "body": {
@@ -332,6 +332,288 @@
               },
               {
                 "title": "a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "15a3b403",
+        "ranAt": "2026-10-10T14:18:34.157Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-measure.test.ts",
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+                "title": "a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the bundle cache key is the same with and without a handed measure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/lookup-measure.test.ts",
+                "title": "the bundle cache key is the same with and without a handed measure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-measure.test.ts",
+                "title": "the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/planner/__tests__/recursive.test.ts",
+                "title": "the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/lookup-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1095,
+            "titles": [
+              {
+                "title": "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report, as do the step tool's bundle phase and answer turn; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the builder's cache key leaves out the intent's size and the size hint: a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              },
+              {
+                "title": "the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path; it never takes a default",
+                "result": "pass"
+              },
+              {
+                "title": "the bundle cache key is the same with and without a handed measure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 704,
+            "titles": [
+              {
+                "title": "focused request on a repo: stand-in arguments and bundle equal the recorded baseline",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns each cause for the stand-in that produces it, including 'empty-plan' through the fourth stand-in",
+                "result": "pass"
+              },
+              {
+                "title": "a planning call that fails for another reason is replaced by the free-form lookup, as before",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns 'not-applicable' for classification and task modes",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace",
+                "result": "pass"
+              },
+              {
+                "title": "an unfocused intent whose plan is replaced falls to the free-form lookup with a broad-survey purpose",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path",
+                "result": "pass"
+              },
+              {
+                "title": "module scope: lookup path and cache key unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call",
+                "result": "pass"
+              },
+              {
+                "title": "error messages state the cause, name the failed call, and never say retries or Ollama for another provider",
+                "result": "pass"
+              },
+              {
+                "title": "CLI and sampling call failures give 'planner-model-failed' and 'answer-model-failed' from the pipeline",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper throws ShaperAnswerStepFailedError with reason 'invalid-bundle' for an invalid bundle",
+                "result": "pass"
+              },
+              {
+                "title": "settlePipelineOutcome: a valid bundle is stamped and returned; not-applicable continues; a cause throws its error",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline's three causes after the lookups ran carry the results and the report, and the cause table gives ShaperAnswerStepFailedError with its reason",
+                "result": "pass"
+              },
+              {
+                "title": "a missing answer prompt found after the lookups ran carries the results and the report under its own code; a missing planning prompt carries none",
+                "result": "pass"
+              },
+              {
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              },
+              {
+                "title": "a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/run-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1085,
+            "titles": [
+              {
+                "title": "runAnalyze sets the intent's size from the measure on both classification branches, keeps a stated size as the hint, puts the measure on the classified event, in the run record and in the final report, and makes no model call to pick a size (mutation: take the stated size as the size)",
+                "result": "pass"
+              },
+              {
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              },
+              {
+                "title": "the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/planner/__tests__/recursive.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 724,
+            "titles": [
+              {
+                "title": "extractChildIntent: well-formed childIntent -> returns it",
+                "result": "pass"
+              },
+              {
+                "title": "extractChildIntent: missing childIntent -> null",
+                "result": "pass"
+              },
+              {
+                "title": "extractChildIntent: malformed childIntent (missing required field) -> null",
+                "result": "pass"
+              },
+              {
+                "title": "buildParentTaskPath: root parent (undefined) -> taskId verbatim",
+                "result": "pass"
+              },
+              {
+                "title": "buildParentTaskPath: empty parent string -> taskId verbatim",
+                "result": "pass"
+              },
+              {
+                "title": "buildParentTaskPath: nested -> parent.taskId",
+                "result": "pass"
+              },
+              {
+                "title": "countNodes / countPlannerTasks / maxDepth on a single-node tree",
+                "result": "pass"
+              },
+              {
+                "title": "countNodes / countPlannerTasks / maxDepth on a 3-level tree",
+                "result": "pass"
+              },
+              {
+                "title": "runRecursivePlanner: root with one planner-template task spawns a child plan; tree has 2 nodes",
+                "result": "pass"
+              },
+              {
+                "title": "runRecursivePlanner: depth-cap hit on a deeper subtree -> childError = MaxPlanDepthExceededError",
+                "result": "pass"
+              },
+              {
+                "title": "runRecursivePlanner: child plans inherit rootScope for the depth cap",
+                "result": "pass"
+              },
+              {
+                "title": "a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)",
+                "result": "pass"
+              },
+              {
+                "title": "the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1242,
+            "titles": [
+              {
+                "title": "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)",
+                "result": "pass"
+              },
+              {
+                "title": "the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              },
+              {
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -77,3 +77,44 @@ Run at 2026-10-10T14:11:59.702Z on commit `b909bfb9`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/__tests__/measure-pass.test.ts` | 0 | 15 | 4.4 s |  |
+
+## t3
+
+Run at 2026-10-10T14:18:34.157Z on commit `15a3b403`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way | `src/analyze/context/__tests__/pipeline-outcome.test.ts` |
+| pass | a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way | `src/analyze/orchestrator/__tests__/run-measure.test.ts` |
+| pass | a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way | `src/daemon/__tests__/analyze-rpc-measure.test.ts` |
+
+**integration: a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before | `src/analyze/context/__tests__/pipeline-outcome.test.ts` |
+
+**integration: the bundle cache key is the same with and without a handed measure**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the bundle cache key is the same with and without a handed measure | `src/analyze/context/__tests__/lookup-measure.test.ts` |
+
+**integration: the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan | `src/analyze/orchestrator/__tests__/run-measure.test.ts` |
+| pass | the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan | `src/analyze/planner/__tests__/recursive.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/lookup-measure.test.ts` | 0 | 4 | 1.1 s |  |
+| `src/analyze/context/__tests__/pipeline-outcome.test.ts` | 0 | 17 | 0.7 s |  |
+| `src/analyze/orchestrator/__tests__/run-measure.test.ts` | 0 | 3 | 1.1 s |  |
+| `src/analyze/planner/__tests__/recursive.test.ts` | 0 | 13 | 0.7 s |  |
+| `src/daemon/__tests__/analyze-rpc-measure.test.ts` | 0 | 3 | 1.2 s |  |

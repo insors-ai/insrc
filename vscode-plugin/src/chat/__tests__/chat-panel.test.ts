@@ -9,9 +9,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createChatPanelHost, type ChatPanelChannel, type ChatEditGovernanceDeps } from '../chat-panel.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
-import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, TurnProcess, RunOptions } from '../cli-adapter.js';
+import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, RunOptions } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import { markerFor, WAITING_LABEL } from '../markers.js';
+import { fakeLiveProc, waitFor, type FakeLiveProc } from './fixtures.js';
 import { defaultComputeDiff, type DiffView } from '../edit-governor.js';
 
 interface FakeChannel {
@@ -93,11 +94,6 @@ function registry(adapters: Partial<Record<ProviderId, StreamAdapter>>, availabl
 
 const env = (type: string, extra: Record<string, unknown> = {}): unknown => ({ v: 1, payload: { type, ...extra } });
 const turnEvents = (fc: FakeChannel): TurnEvent[] => fc.posted.filter((m) => m.payload.type === 'turn-event').map((m) => m.payload['event'] as TurnEvent);
-async function waitFor(fn: () => boolean, ms = 1500): Promise<void> {
-  const start = Date.now();
-  while (Date.now() - start < ms) { if (fn()) return; await new Promise((r) => setTimeout(r, 5)); }
-  throw new Error('waitFor timed out');
-}
 
 test('submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)', async () => {
   const fc = fakeChannel();
@@ -2256,48 +2252,14 @@ test('S004 (ux polish): a selection-decision with an empty/invalid selected list
 
 // ---- S001 (E20261010d6a4bc79): one CLI process per session ------------------------------
 
-interface FakeTurnProc extends TurnProcess {
-  readonly signals: string[];
-  exited(): boolean;
-  exitNow(): void;
-}
-
-/** A started CLI process that stays alive after its answer until exitNow() or a signal ends it. */
-function fakeTurnProc(pid: number, dies: 'SIGTERM' | 'SIGKILL' = 'SIGTERM'): FakeTurnProc {
-  let done = false;
-  let settle!: (v: { code: number | null; signal: string | null }) => void;
-  const exit = new Promise<{ code: number | null; signal: string | null }>((r) => (settle = r));
-  const end = (v: { code: number | null; signal: string | null }): void => {
-    done = true;
-    settle(v);
-  };
-  const signals: string[] = [];
-  const proc: FakeTurnProc = {
-    pid,
-    exit,
-    signals,
-    exited: () => done,
-    exitNow: () => end({ code: 0, signal: null }),
-    kill(signal) {
-      signals.push(signal);
-      if (signal === dies || signal === 'SIGKILL') end({ code: null, signal });
-    },
-    async stop() {
-      proc.kill('SIGTERM');
-      await exit;
-    },
-  };
-  return proc;
-}
-
 /** An adapter whose every run hands over a fake process (onSpawn), answers, and leaves it running. */
-function procAdapter(text = (n: number) => `answer-${n}`): { adapter: StreamAdapter; procs: FakeTurnProc[]; runs: () => number } {
-  const procs: FakeTurnProc[] = [];
+function procAdapter(text = (n: number) => `answer-${n}`): { adapter: StreamAdapter; procs: FakeLiveProc[]; runs: () => number } {
+  const procs: FakeLiveProc[] = [];
   let n = 0;
   const adapter: StreamAdapter = {
     async *run(_req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
       const id = `t${++n}`;
-      const proc = fakeTurnProc(1000 + n);
+      const proc = fakeLiveProc(1000 + n);
       procs.push(proc);
       opts?.onSpawn?.(proc);
       await Promise.resolve();

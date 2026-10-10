@@ -607,6 +607,37 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (proc !== undefined) await proc.stop();
   };
 
+  /**
+   * One CLI process per session: waits until the session's previous process has exited (in this
+   * window or another), stopping it only after the lock timeout, and shows the waiting state.
+   * Undefined when the turn was dropped while waiting (newer submit / Stop / chat switch) or is
+   * no longer current once granted — nothing is to run then.
+   */
+  async function acquireSessionLease(s: ChatSession, myGen: number): Promise<SessionLease | undefined> {
+    const ctl = new AbortController();
+    waitCtl = ctl;
+    let lease: SessionLease;
+    try {
+      lease = await locks.acquire(s.id, {
+        timeoutMs: lockTimeoutMs(),
+        signal: ctl.signal,
+        onWaiting: () => {
+          log.warn(`[chat] session ${s.id}: waiting for the previous turn's process to exit`);
+          if (!disposed && myGen === generation) post({ type: 'turn-event', event: { kind: 'status', turnId: 'waiting', phase: 'waiting' } });
+        },
+      });
+    } catch {
+      return undefined;
+    } finally {
+      if (waitCtl === ctl) waitCtl = undefined;
+    }
+    if (disposed || myGen !== generation) {
+      lease.release();
+      return undefined;
+    }
+    return lease;
+  }
+
   async function runTurn(text: unknown, allowedTools?: readonly string[], opts?: { readonly suppressEcho?: boolean }): Promise<void> {
     if (typeof text !== 'string') return; // malformed submit-turn -> no-op (never throws)
     const prompt = text.trim();
@@ -655,29 +686,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
       : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant };
 
-    // One CLI process per session: wait until the session's previous process has exited
-    // (in this window or another), stopping it only after the lock timeout.
-    const ctl = new AbortController();
-    waitCtl = ctl;
-    let lease: SessionLease;
-    try {
-      lease = await locks.acquire(s.id, {
-        timeoutMs: lockTimeoutMs(),
-        signal: ctl.signal,
-        onWaiting: () => {
-          log.warn(`[chat] session ${s.id}: waiting for the previous turn's process to exit`);
-          if (!disposed && myGen === generation) post({ type: 'turn-event', event: { kind: 'status', turnId: 'waiting', phase: 'waiting' } });
-        },
-      });
-    } catch {
-      return; // dropped while waiting (newer submit / Stop / chat switch): nothing to run
-    } finally {
-      if (waitCtl === ctl) waitCtl = undefined;
-    }
-    if (disposed || myGen !== generation) {
-      lease.release();
-      return;
-    }
+    const lease = await acquireSessionLease(s, myGen);
+    if (lease === undefined) return;
     let attached = false;
 
     // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn),

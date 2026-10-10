@@ -15,36 +15,19 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   createFileSessionLocks,
+  defaultIsAlive,
+  defaultProcessStartTime,
   createMemorySessionLocks,
   type LockFileRecord,
   LockWaitAborted,
   LockWaitSuperseded,
   stopProcess,
-  type LeaseProcess,
   type SessionLease,
 } from '../session-lock.js';
-
-interface FakeProc extends LeaseProcess {
-  readonly signals: string[];
-  exitNow(): void;
-}
+import { fakeLiveProc, waitFor, type FakeLiveProc } from './fixtures.js';
 
 /** A fake process. `exitsOn` names the signal it dies of; 'never' ignores both. */
-function fakeProc(pid: number, exitsOn: 'SIGTERM' | 'SIGKILL' | 'never' = 'SIGTERM'): FakeProc {
-  let resolveExit!: () => void;
-  const exit = new Promise<void>((r) => (resolveExit = r));
-  const signals: string[] = [];
-  return {
-    pid,
-    exit,
-    signals,
-    kill(signal) {
-      signals.push(signal);
-      if (exitsOn === signal || (exitsOn === 'SIGTERM' && signal === 'SIGKILL')) resolveExit();
-    },
-    exitNow: () => resolveExit(),
-  };
-}
+const fakeProc = (pid: number, exitsOn: 'SIGTERM' | 'SIGKILL' | 'never' = 'SIGTERM'): FakeLiveProc => fakeLiveProc(pid, exitsOn);
 
 const tick = (ms = 0): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
@@ -241,13 +224,6 @@ const lockDir = (): string => mkdtempSync(join(tmpdir(), 'chat-locks-'));
 const readLock = (dir: string, id: string): LockFileRecord | undefined =>
   existsSync(join(dir, `${id}.lock`)) ? (JSON.parse(readFileSync(join(dir, `${id}.lock`), 'utf8')) as LockFileRecord) : undefined;
 
-async function until(cond: () => boolean, ms = 1000): Promise<void> {
-  for (let t = 0; !cond(); t += 5) {
-    if (t > ms) throw new Error('condition not met in time');
-    await tick(5);
-  }
-}
-
 test('a lock file from another window is honoured while its pid is alive, and a stale file (dead pid or mismatched start time) is replaced', async () => {
   const dir = lockDir();
   const table = procTable();
@@ -262,7 +238,7 @@ test('a lock file from another window is honoured while its pid is alive, and a 
   table.set(500, 7);
   const proc = fakeProc(500);
   a.attach(proc);
-  await until(() => readLock(dir, 's1')?.cliPid === 500);
+  await waitFor(() => readLock(dir, 's1')?.cliPid === 500);
   assert.equal(readLock(dir, 's1')?.startedAt, 7, 'records the start time');
 
   // Window B waits while pid 500 is alive...
@@ -273,32 +249,32 @@ test('a lock file from another window is honoured while its pid is alive, and a 
   assert.equal(waited, 1);
   // ...and takes over once it dies (window A gone, file left behind).
   table.kill(500);
-  await until(() => b.state() === 'granted');
+  await waitFor(() => b.state() === 'granted');
   assert.equal(readLock(dir, 's1')?.hostPid, 2, 'the stale file was replaced');
   assert.deepEqual(table.signals, [], 'nothing was signalled');
   (b.value() as SessionLease).release();
-  await until(() => readLock(dir, 's1') === undefined);
+  await waitFor(() => readLock(dir, 's1') === undefined);
 
   // A reused pid (start time mismatch) is stale: replaced at once, never signalled.
   table.set(600, 2);
   writeFileSync(join(dir, 's2.lock'), JSON.stringify({ sessionId: 's2', cliPid: 600, hostPid: 9, startedAt: 1 }));
   const c = track(windowB.acquire('s2', { timeoutMs: 10 }));
-  await until(() => c.state() === 'granted');
+  await waitFor(() => c.state() === 'granted');
   assert.deepEqual(table.signals, [], 'the unrelated pid 600 was never signalled');
 
   // A host that died before starting its process leaves a stale file too.
   writeFileSync(join(dir, 's3.lock'), JSON.stringify({ sessionId: 's3', cliPid: null, hostPid: 9999, startedAt: null }));
   const d = track(windowB.acquire('s3', { timeoutMs: 60_000 }));
-  await until(() => d.state() === 'granted');
+  await waitFor(() => d.state() === 'granted');
 
   // The holder's exit removes its file.
   const e = await windowA.acquire('s4', { timeoutMs: 60_000 });
   table.set(501, 3);
   const p2 = fakeProc(501);
   e.attach(p2);
-  await until(() => readLock(dir, 's4')?.cliPid === 501);
+  await waitFor(() => readLock(dir, 's4')?.cliPid === 501);
   p2.exitNow();
-  await until(() => readLock(dir, 's4') === undefined);
+  await waitFor(() => readLock(dir, 's4') === undefined);
 });
 
 test("on timeout a cross-window holder's group is stopped only when its start time matches", async () => {
@@ -314,7 +290,7 @@ test("on timeout a cross-window holder's group is stopped only when its start ti
   await tick(10);
   assert.equal(a.state(), 'pending');
   assert.deepEqual(table.signals, [], 'not signalled before the timeout');
-  await until(() => a.state() === 'granted');
+  await waitFor(() => a.state() === 'granted');
   assert.deepEqual(table.signals, [[700, 'SIGTERM'], [700, 'SIGKILL']]);
   assert.equal(readLock(dir, 's1')?.hostPid, 2, 'the lock file is now ours');
   assert.match(l.warn.join('\n'), /pid 700 from another window still running after 20 ms; stopping it/);
@@ -324,9 +300,9 @@ test("on timeout a cross-window holder's group is stopped only when its start ti
   table.set(701, 5, 'never');
   writeFileSync(join(dir, 's2.lock'), JSON.stringify({ sessionId: 's2', cliPid: 701, hostPid: 9, startedAt: 5 }));
   const b = track(locks.acquire('s2', { timeoutMs: 10 }));
-  await until(() => table.signals.length === 1);
+  await waitFor(() => table.signals.length === 1);
   table.restart(701, 6);
-  await until(() => b.state() === 'granted');
+  await waitFor(() => b.state() === 'granted');
   assert.deepEqual(table.signals, [[701, 'SIGTERM']], 'never escalated against a reused pid');
 });
 
@@ -344,9 +320,30 @@ test('an unwritable lock directory falls back to memory', async () => {
   await tick(20);
   assert.equal(b.state(), 'pending', 'the in-memory lock still holds');
   proc.exitNow();
-  await until(() => b.state() === 'granted');
+  await waitFor(() => b.state() === 'granted');
   (b.value() as SessionLease).release();
   await locks.acquire('s2', { timeoutMs: 60_000 });
   assert.equal(l.error.length, 1, 'one logged error');
   assert.match(l.error[0] ?? '', /unusable \(ENOTDIR\); locking within this window only/);
+});
+
+test('the file-backed lock works with the real default seams (pid liveness, start time, fs)', async (t) => {
+  if (process.platform !== 'linux') return t.diagnostic('the start-time seam reads /proc (Linux)');
+  // The defaults the extension relies on: this process is alive, a pid that is not is not, and
+  // the start time is stable for a live pid.
+  assert.equal(defaultIsAlive(process.pid), true);
+  assert.equal(defaultIsAlive(2 ** 22 + 12345), false, 'a pid above pid_max is never alive');
+  const start = defaultProcessStartTime(process.pid);
+  assert.equal(typeof start, 'number');
+  assert.equal(defaultProcessStartTime(process.pid), start, 'stable for the same process');
+
+  const dir = lockDir();
+  const locks = createFileSessionLocks({ fs: fsp, lockDir: join(dir, 'chat-locks'), hostPid: process.pid, pollMs: 5 });
+  const a = await locks.acquire('s1', { timeoutMs: 60_000 });
+  const proc = fakeLiveProc(process.pid); // a live pid, so the default liveness check honours it
+  a.attach(proc);
+  await waitFor(() => readLock(join(dir, 'chat-locks'), 's1')?.cliPid === process.pid);
+  assert.equal(readLock(join(dir, 'chat-locks'), 's1')?.startedAt, start, 'records the real start time');
+  proc.exitNow();
+  await waitFor(() => readLock(join(dir, 'chat-locks'), 's1') === undefined);
 });

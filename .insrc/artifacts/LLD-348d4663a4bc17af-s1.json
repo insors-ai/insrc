@@ -151,6 +151,13 @@
         "choice": "Accept as-is with a reviewer note",
         "rationale": "The invariants live in the LLD's own error-paths section (c1, c3, c7) and the build tests them; there is no separate s5 story to depend on. The approved LLD stands.",
         "resolvedAt": "2026-10-10T05:32:35.501Z"
+      },
+      "q1099e950": {
+        "question": "The Issues view is a list sorted by stage, not a stage-grouped issue board (mocks screen 5 'open choice'); the PRD's 'defect cards using the same evidence-based stages' is read as satisfied by stage pills and stage ordering.",
+        "status": "resolved",
+        "choice": "Keep stage-sorted list (accept LLD reading)",
+        "rationale": "The user approved the LLD with this choice stated explicitly, and it matches mocks screen 5.",
+        "resolvedAt": "2026-10-10T05:33:00.025Z"
       }
     }
   },

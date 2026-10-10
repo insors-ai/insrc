@@ -28,9 +28,11 @@
  *           Emits JSONL events; mapped best-effort (validated by the opt-in live test).
  */
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
+import { closeSync, openSync } from 'node:fs';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
 import { DEFAULT_GRACE_MS, signalGroup, stopProcess } from './session-lock.js';
+import { parseMarker, type SegmentCursor } from './session-output.js';
 
 export type ProviderId = 'claude' | 'codex';
 
@@ -129,9 +131,24 @@ export interface SpawnedProcess {
    * presence before calling. Only review mode uses it; auto mode never does.
    */
   write?(data: string): void;
+  /** With a session output: the position just after the last line lines() yielded. */
+  readonly cursor?: SegmentCursor | undefined;
 }
 
-export type SpawnFn = (command: string, args: readonly string[], opts: { readonly cwd: string }) => SpawnedProcess;
+/**
+ * Where a turn's output goes when it is kept in the session's output file (session-output.ts):
+ * the CLI's stdout and stderr are appended to these files, and lines() reads the turn's segment.
+ */
+export interface SpawnOutput {
+  readonly outPath: string;
+  readonly errPath: string;
+  /** Just after the turn's turn-start marker. */
+  readonly cursor: SegmentCursor;
+  readonly tail: (cursor: SegmentCursor, finished: () => boolean) => AsyncIterable<{ readonly line: string; readonly cursor: SegmentCursor }>;
+  readonly errTail: () => string;
+}
+
+export type SpawnFn = (command: string, args: readonly string[], opts: { readonly cwd: string; readonly output?: SpawnOutput | undefined }) => SpawnedProcess;
 
 /** Minimal logger seam (the vscode-plugin does not pull the daemon's pino logger; never console.log). */
 export interface AdapterLogger {
@@ -764,7 +781,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         if (next.done === true) break;
         let events: TurnEvent[];
         try {
-          events = mapper.mapLine(next.value, turnId, state);
+          // Host-written marker lines (session output segments) are never CLI events.
+          events = parseMarker(next.value) !== undefined ? [] : mapper.mapLine(next.value, turnId, state);
         } catch {
           log.warn(`[chat:${mapper.id}] skipped unparseable stream line`);
           continue; // non-fatal: skip malformed line, never yield a malformed event
@@ -972,7 +990,26 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
   // Off Windows the CLI leads its own process group (detached), so a stop reaches every
   // process it started, not just the direct child.
   const ownGroup = process.platform !== 'win32';
-  const child = nodeChildSpawn(command, [...args], { cwd: opts.cwd, stdio: ['pipe', 'pipe', 'pipe'], detached: ownGroup });
+  // With a session output the CLI writes its stdout and stderr straight into the session's
+  // files (append mode), so its output survives whatever happens to this extension host.
+  const out = opts.output;
+  const fds = out !== undefined ? [openSync(out.outPath, 'a'), openSync(out.errPath, 'a')] : undefined;
+  let child: ReturnType<typeof nodeChildSpawn>;
+  try {
+    child = nodeChildSpawn(command, [...args], {
+      cwd: opts.cwd,
+      stdio: fds !== undefined ? ['pipe', fds[0]!, fds[1]!] : ['pipe', 'pipe', 'pipe'],
+      detached: ownGroup,
+    });
+  } finally {
+    // The child holds its own copies of the descriptors; ours are not needed after spawn.
+    for (const fd of fds ?? []) closeSync(fd);
+  }
+  let exited = false;
+  child.on('exit', () => {
+    exited = true;
+  });
+  let cursor = out?.cursor;
   let stderrBuf = '';
   child.stderr?.on('data', (d: Buffer) => {
     stderrBuf += d.toString('utf8');
@@ -996,10 +1033,19 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
     resolveExit({ code: null, signal: null });
   });
   child.on('close', (code, signal) => {
+    exited = true;
     resolveExit({ code, signal });
   });
 
   async function* lines(): AsyncIterable<string> {
+    if (out !== undefined) {
+      // Read the turn's segment of the session file, until the process has exited and it is read.
+      for await (const r of out.tail(out.cursor, () => exited)) {
+        cursor = r.cursor;
+        yield r.line;
+      }
+      return;
+    }
     let buf = '';
     const stdout = child.stdout;
     if (stdout === null) return;
@@ -1017,11 +1063,14 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
 
   return {
     lines,
-    stderr: () => stderrBuf,
+    stderr: () => (out !== undefined ? out.errTail() : stderrBuf),
     exit,
     spawnError,
     get pid() {
       return child.pid;
+    },
+    get cursor() {
+      return cursor;
     },
     kill: (signal = 'SIGTERM') => {
       const pid = child.pid;

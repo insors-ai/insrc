@@ -10,7 +10,10 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createSessionOutput, parseMarker } from '../session-output.js';
 import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner } from '../cli-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
@@ -1091,4 +1094,43 @@ test('codex: a command item with an id carries it as callId on both events; an i
   ];
   const ev2 = await collect(createProviderRegistry(depsFor({ lines: noId }).deps).get('codex').run(REQ({ provider: 'codex' })));
   assert.ok(!('callId' in (toolCall(ev2) as object)), 'no id -> callId omitted');
+});
+
+// ---- S001 (E202610101d04e560): the CLI's output in the session file ---------------------
+
+test("the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line", async (t) => {
+  if (process.platform === 'win32') return t.diagnostic('uses sh');
+  const out = createSessionOutput({ root: join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output'), pollMs: 5 });
+  const seg = await out.beginTurn('s1', 'turn-1');
+  const script = [
+    `echo '{"type":"system","subtype":"init","session_id":"s"}'`,
+    `echo '{"type":"result","subtype":"success","is_error":false,"session_id":"s"}'`,
+    'echo "warming up" >&2',
+    'sleep 0.2',
+    `echo '{"type":"late","n":1}'`,
+  ].join('; ');
+  const proc = nodeSpawner('sh', ['-c', script], {
+    cwd: process.cwd(),
+    output: { outPath: seg.outPath, errPath: seg.errPath, cursor: seg.cursor, tail: (c, finished) => out.tail(c, { finished }), errTail: () => out.errTail('s1') },
+  });
+  assert.equal(await proc.spawnError, undefined);
+  const lines: string[] = [];
+  for await (const l of proc.lines()) lines.push(l);
+  await proc.exit;
+  assert.equal(lines.length, 3, 'every line, including the one written after the result line');
+  assert.match(lines[2]!, /"late"/);
+  assert.equal(proc.stderr(), 'warming up\n', 'stderr went to the err log');
+  // The file holds the turn's segment: header, turn-start, then the CLI's own lines.
+  const fileLines = readFileSync(seg.outPath, 'utf8').trimEnd().split('\n');
+  assert.deepEqual(fileLines.slice(0, 2).map((l) => parseMarker(l)?.kind), ['file', 'turn-start']);
+  assert.deepEqual(fileLines.slice(2), lines, 'the CLI wrote straight into the session file after the turn-start');
+  assert.equal(proc.cursor?.offset, readFileSync(seg.outPath).length, 'the cursor is just after the last line');
+});
+
+test('marker lines reaching a mapper produce no events', async () => {
+  // A marker that also looks like a claude result line: without the marker check it would map to done.
+  const marker = JSON.stringify({ 'insrc.marker': 'turn-end', turnId: 'x', type: 'result', subtype: 'success', is_error: false });
+  const { deps } = depsFor({ lines: [CLAUDE_TEXT_TURN[0]!, marker, ...CLAUDE_TEXT_TURN.slice(1)] });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+  assert.deepEqual(events.map((e) => e.kind), ['status', 'assistant-delta', 'assistant-delta', 'done'], 'the marker produced nothing');
 });

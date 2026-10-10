@@ -745,6 +745,8 @@ case for:
   list of what exists;
 - a data request over several connections when any one of them could not be
   counted;
+- a live data source that does not answer within its time limit (see below);
+- a request that was cancelled while it was being measured;
 - an answer whose lookups all failed or are not supported.
 
 An empty directory inside an indexed repo is different: it is a count of zero,
@@ -753,6 +755,59 @@ so it is `XS` and determined.
 Measuring does not refuse a request. A request that was refused for its scope
 is still refused where it was, with the same code (see
 [the scope is checked once before planning](#the-scope-is-checked-once-before-planning)).
+
+### A live data source is given a time limit
+
+Measuring a data request asks each live source for the complete list of its
+tables, its namespaces or its files. That used to wait for as long as the
+source took, with no way to stop it. Now:
+
+- each source is given a time limit to be reached and listed, **120 seconds**
+  by default. The setting is `analyzer.dataSourceListingTimeoutMs` in
+  `~/.insrc/config.json`, in milliseconds; it is read each time a source is
+  measured, so a change needs no restart. A value that is not a number greater
+  than 0 is ignored and the default is used;
+- a source that does not answer in time is not counted: the size is `XL`, not
+  determined, with the note `the listing of '<id>' timed out: the source did
+  not answer within <n> seconds`. The request goes on. Raise the setting for a
+  source whose full listing is known to take longer;
+- the limit is **per source**. A data request on a repository with several
+  connections gives each its own, one after another: two connections that do
+  not answer cost twice the limit. The other connections are still counted,
+  and the note names the ones that timed out;
+- a request that is cancelled stops measuring at once. Its measure is not
+  determined, with a note that says the request was cancelled, and the
+  connections not yet asked are not asked;
+- the wait is given up, not the source's own call. The data drivers cannot be
+  cancelled, so a listing that timed out may go on in the background until the
+  source answers or fails; its late result is not used. The connection may
+  stay busy until then.
+
+A child plan that names a source its parent also named lists it again, within
+its own limit.
+
+### A run measures the area it names once
+
+A run measures its request and then builds its context. The context builder
+used to measure the same area a second time for its own planning call, at a
+later moment, so the two sizes could differ and a slow data source was waited
+on twice. The run now hands its measure to the builder, which uses it and
+takes none of its own; the plan request (`analyze.plan`) does the same. A
+caller that hands none, such as the one-shot `insrc_analyze` tool, is measured
+by the builder as before.
+
+### What is read for a symbol or a file
+
+For a request scoped to one symbol the measure reads that one entity, and for
+one scoped to a file the entities of that file; it no longer builds every
+stored entity of the repository to pick them out. The counts are the same.
+
+Two things are not saved yet, and are filed as `ISSUE-61045de91faef1a0`. The
+store has no index by file, so reading one file's entities still passes over
+the rows of the whole entity table. And the check that a code or docs scope
+lies in an indexed repository still reads every entity of that repository,
+once when the request is measured and again when the run builds its context
+and checks its scope before planning.
 
 ### The measure in the report, and the measure line
 

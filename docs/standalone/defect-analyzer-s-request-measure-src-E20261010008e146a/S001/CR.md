@@ -1,0 +1,41 @@
+<!-- insrc:artifact CR-008e146ad1475ef9-S001 -->
+
+# Code review: 008e146ad1475ef9:S001
+
+⚠️ **WARN** — HIGH 0 · MED 4 · LOW 9 · model `claude:opus`
+
+**Changed files:** 19
+
+## adherence — 1 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | src/analyze/orchestrator/__tests__/run-measure.test.ts:294 | The hand-off of the run's signal from the run driver to the recursive planner is not exercised by a run. The test reads driver.ts as text and regex-matches the spread `...(opts.signal !== undefined ? { signal: opts.signal } : {})` and the `measureRequestScope(..., { signal: opts.signal })` call. The driver-to-measure leg is shown behaviourally (a run cancelled during classify reads nothing), and the planner-to-child-measure leg is shown behaviourally in recursive.test.ts, but the driver-to-planner leg is asserted only by source text. That assertion passes for any code with matching text and would fail on a behaviour-preserving refactor, so it is not the integration-level proof the design names for this subject. |
+
+## conventions — 2 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | src/analyze/__tests__/measure-pass.test.ts:249 | The new optional property `readonly stalled?: boolean` on `StandInConnection` is declared without `\| undefined`. The documented rule asks for optional props to be declared `\| undefined`, and the Story's production interfaces (`MeasureDeps`, `MeasureOptions`, `RunShapeInput`, `PlanBuilderOpts`) all do so. The neighbouring props on the same line (`driver?`, `path?`, `recursive?`, `unreachable?`) already omit it, so the addition follows the existing line but not the rule. |
+| LOW | src/analyze/__tests__/measure-pass.test.ts:689 | The new test helper `countingReads` declares its `over` parameter type with optional properties `getEntity?:` and `listEntitiesOfFile?:` without `\| undefined`. The matching new seams on `MeasureDeps` in `src/analyze/measure.ts` are declared `\| undefined`, as the documented rule asks. |
+
+## coverage — 4 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| MED | src/analyze/orchestrator/__tests__/run-measure.test.ts:293 | Present but weak: the half of this promised test that says the run driver hands its signal to the recursive planner is asserted only by reading src/analyze/orchestrator/driver.ts as text and matching two regular expressions. No run in the test has a child plan measured under the run's signal. The other two links are exercised by behaviour (driver to measure in this file via a cancellation during classification; planner to child measure in recursive.test.ts). If the spread at driver.ts:412 were reformatted, or kept but not reached, the test would not tell the difference. |
+| LOW | src/analyze/measure.ts:626 | Not exercised: the branch `if (abandoned) late('connection', err)` — a connection whose `acquire` rejects after the wait has already ended. The stand-in pool's stalled connection never settles, and the abandoned-rejection test rejects only from `listTables`, so only the `late('listing', …)` and `onLate` paths are reached. The effect is a debug log line; the returned measure is not affected. |
+| LOW | src/daemon/__tests__/analyze-rpc-measure.test.ts:281 | Present but pass-state unverified: this file carries the plan-RPC half of the promised 'a run takes one measure…' test, and it lies outside the two suites the before/after comparison ran (src/analyze, src/config). The comparison record (suites-comparison-t4.md, commit 54001963) says it 'was run on its own … and passes', with no raw output kept. I could not re-run it: the test command was declined in this review. |
+| LOW | src/analyze/__tests__/measure-pass.test.ts:505 | All 13 promised tests are present: 12 by exact title in the changed test files, and the smoke comparison as a record in commit 54001963 (suites-comparison-t4.md plus both raw TAP outputs: 1200 pass / 0 fail before, 1215 pass / 0 fail after, 92 skipped live tests in both). Their pass-state is the author's record only — there is no build record and my own re-run of the nine changed test files was declined, so I confirm presence, not a green. The empty `testsReaching` on every entry is not reported as a gap: the entries are file-level diff entities with no graph edges, and the diffs themselves show each changed source file driven by the tests above. |
+
+## quality — 6 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| MED | src/analyze/measure.ts:578 | Correctness: the time limit has no upper bound. `sourceLimitMs` (and `dataSourceListingTimeoutMs` in src/config/analyze.ts:484) accept any finite number greater than 0, and the value goes straight to `setTimeout` at measure.ts:556. Node clamps a delay above 2^31-1 ms (about 24.8 days) to 1 ms with a TimeoutOverflowWarning. A user who sets a very large value to effectively switch the limit off, as the docs invite for slow sources ('Raise the setting'), would get the opposite: every live source times out at once and every data request is reported as XL, not determined. Clamp to 2_147_483_647 or reject values above it. Sub-millisecond values such as 0.5, which the config test accepts, also become a 1 ms limit. |
+| MED | src/analyze/context/driver.ts:549 | Correctness: the bundle cache key leaves out the measure on the stated ground that the size is a function of the scope and the index state. This Story makes that untrue for data scopes: a measure can now be XL and not determined for a transient reason (the listing timed out, or the request was cancelled), and that measure is used as it is for the planning call at driver.ts:1382. A bundle planned under a transient XL can be cached and served to later runs whose source answers and measures small, and the reverse. The key and the invalidation carry nothing that tells these apart. Consider not caching a bundle built from an undetermined measure, or adding `determined` to the key. |
+| MED | src/analyze/measure.ts:614 | Unhandled resource path: when the wait ends first, the driver call (`pool.acquire` plus the listing) is left running with no guard against starting another for the same connection. Each child plan that names the source lists it again (`walk` in recursive.ts:140), and so does each later run. Against a source that does not answer, every measure adds another call in flight on the same pooled connection, each for as long as the driver takes, with nothing bounding the pile-up or recording that a listing is already pending. The docs note that 'the connection may stay busy', but the code neither reuses the pending listing nor short-circuits a source that just timed out. Consider a per-connection in-flight map so a second measure joins or skips the pending call. |
+| LOW | src/analyze/measure.ts:566 | Avoidable complexity: the rejection branch of `withinLimit` repeats the cleanup that `end` already does (set `over`, clear the timer, remove the abort listener). Its only caller passes `reachAndList()`, which is documented as never rejecting, so both this branch and the `onLate` callback are unreachable in practice; the late failures are logged inside `reachAndList` through the `abandoned` flag instead. Two parallel mechanisms exist for one concern, and one of them could be dropped. |
+| LOW | src/analyze/context/driver.ts:1382 | Correctness (trust boundary): a handed measure is used whenever its source is not 'lookup-results', with no check that it was taken for `args.scope` and `unsized.target`. A caller that hands a measure of a different scope would silently set the wrong size for the planning call. Both current callers pass the measure of the same intent, so this is a latent risk only; a debug assertion would make the contract enforceable. |
+| LOW | src/analyze/orchestrator/__tests__/run-measure.test.ts:294 | Fragile test: the claim that the run driver passes its signal to the recursive planner is asserted by regex over the text of driver.ts, not by behaviour. A harmless refactor (renaming `opts`, reformatting the spread) fails the test. The planner call's regex is confined to a slice of the file, but the `measureRequestScope` regex runs over the whole file and would still pass if that call were only in a comment. |
+

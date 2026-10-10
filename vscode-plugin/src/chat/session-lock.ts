@@ -27,8 +27,14 @@ export interface LeaseProcess {
 }
 
 export interface SessionLease {
-  /** Ties the lease to the process the turn started; the lease is released when it exits. */
+  /**
+   * Ties the lease to the process the turn started; the lease is released when it exits. A lease
+   * that was taken over (its turn started no process within a waiter's timeout) is revoked: a
+   * process attached to it afterwards is stopped at once, so two never run on one session.
+   */
   attach(proc: LeaseProcess): void;
+  /** Whether this lease still holds its session (false once released or taken over). */
+  held(): boolean;
   /** Releases the lease now (a turn that never started a process). Idempotent. */
   release(): void;
 }
@@ -168,11 +174,18 @@ export function createMemorySessionLocks(deps: MemorySessionLocksDeps = {}): Ses
     let released = false;
     const lease: SessionLease = {
       attach(proc: LeaseProcess): void {
+        if (released) return;
         const h = holders.get(sessionId);
-        if (released || h === undefined || h.lease !== lease) return;
+        if (h === undefined || h.lease !== lease) {
+          // Taken over while starting: this process must not run beside the new holder's.
+          log.warn(`[chat-lock] session ${sessionId}: pid ${proc.pid ?? '?'} started after its lease was taken over; stopping it`);
+          void stopProcess(proc, graceMs, timers);
+          return;
+        }
         h.proc = proc;
         proc.exit.then(lease.release, lease.release);
       },
+      held: () => !released && holders.get(sessionId)?.lease === lease,
       release(): void {
         if (released) return;
         released = true;
@@ -219,7 +232,7 @@ export function createMemorySessionLocks(deps: MemorySessionLocksDeps = {}): Ses
             waiter.grant();
           };
           if (holder.proc === undefined) {
-            log.error(`[chat-lock] session ${sessionId}: holder started no process within ${opts.timeoutMs} ms; taking the lease`);
+            log.error(`[chat-lock] session ${sessionId}: holder started no process within ${opts.timeoutMs} ms; taking the lease (a process it starts later is stopped)`);
             return takeOver();
           }
           const pid = holder.proc.pid;
@@ -247,6 +260,8 @@ export interface LockFileRecord {
   readonly hostPid: number;
   /** cliPid's process start time (processStartTime), when the platform reports one. */
   readonly startedAt: number | null;
+  /** Unique per lease: tells two leases of one host apart, so a lease only ever removes its own file. */
+  readonly token: string;
 }
 
 /** The slice of node:fs/promises the file-backed registry uses. */
@@ -329,18 +344,23 @@ function parseRecord(text: string): LockFileRecord | undefined {
       cliPid: typeof r.cliPid === 'number' ? r.cliPid : null,
       hostPid: r.hostPid,
       startedAt: typeof r.startedAt === 'number' ? r.startedAt : null,
+      token: typeof r.token === 'string' ? r.token : '',
     };
   } catch {
     return undefined;
   }
 }
 
+let tokenSeq = 0;
+const newToken = (hostPid: number): string => `${hostPid}-${Date.now().toString(36)}-${(tokenSeq++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
 /**
- * The in-memory registry plus one lock file per session. The file is created exclusively
- * when the lease is granted (cliPid null), rewritten with the CLI's pid and start time on
- * attach, and removed when that process exits or the lease is released. Any fs failure
- * other than "the file exists" falls back to the in-memory lease for that acquire only (logged
- * once), so a transient failure never turns cross-window locking off for later turns.
+ * The in-memory registry plus one lock file per session. The file is created exclusively when
+ * the lease is granted (cliPid null), rewritten with the CLI's pid and start time on attach, and
+ * removed (only while it still carries this lease's token) when that process exits or the lease
+ * is released. Any fs failure other than "the file exists" falls back to the in-memory lease for
+ * that acquire only (logged once), so a transient failure never turns cross-window locking off
+ * for later turns.
  */
 export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks {
   const memory = createMemorySessionLocks(deps);
@@ -354,6 +374,10 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
   const now = deps.now ?? Date.now;
   // Logged once per host; the fallback itself applies to one acquire, so the next one retries the file.
   let fallbackLogged = false;
+
+  const fileOf = (sessionId: string): string => `${deps.lockDir}/${lockFileName(sessionId)}`;
+  const recordText = (sessionId: string, token: string, cliPid: number | null, startedAt: number | null): string =>
+    JSON.stringify({ sessionId, cliPid, hostPid: deps.hostPid, startedAt, token } satisfies LockFileRecord);
 
   const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> =>
     new Promise((resolve) => {
@@ -396,9 +420,11 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
     }
   };
 
-  /** Stops another window's holder after the timeout; resolves when the file may be taken. */
-  const stopRemote = async (sessionId: string, rec: LockFileRecord, timeoutMs: number): Promise<void> => {
+  /** Stops the recorded holder after the timeout; resolves when its file may be taken. */
+  const stopHolder = async (sessionId: string, rec: LockFileRecord, timeoutMs: number): Promise<void> => {
     if (rec.cliPid === null) {
+      // Its turn never started a process: its lease is revoked, and a process it starts is stopped
+      // (for this window, by the in-memory lease; another window's sees its file gone).
       log.error(`[chat-lock] session ${sessionId}: host ${rec.hostPid} started no process within ${timeoutMs} ms; taking the lock file`);
       return;
     }
@@ -414,6 +440,85 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
     if (!exited) log.error(`[chat-lock] session ${sessionId}: pid ${pid} did not exit after SIGKILL; taking the lock file anyway`);
   };
 
+  /**
+   * Waits until this lease owns the session's lock file: creates it exclusively, replaces a stale
+   * one, polls a live holder, and stops that holder once `deadline` has passed.
+   */
+  const claimFile = async (sessionId: string, token: string, deadline: number, opts: AcquireOptions, onWaiting: () => void): Promise<void> => {
+    const file = fileOf(sessionId);
+    await deps.fs.mkdir(deps.lockDir, { recursive: true });
+    for (;;) {
+      if (opts.signal?.aborted === true) throw new LockWaitAborted(sessionId);
+      try {
+        await deps.fs.writeFile(file, recordText(sessionId, token, null, null), { flag: 'wx' });
+        return;
+      } catch (e) {
+        if (errCode(e) !== 'EEXIST') throw e;
+      }
+      let text: string;
+      try {
+        text = await deps.fs.readFile(file, 'utf8');
+      } catch (e) {
+        if (errCode(e) === 'ENOENT') continue; // removed between the write and the read
+        throw e;
+      }
+      const rec = parseRecord(text);
+      if (rec === undefined || !holderAlive(rec)) {
+        log.warn(`[chat-lock] session ${sessionId}: replacing a stale lock file`);
+        await unlinkIfUnchanged(file, text);
+        continue;
+      }
+      onWaiting();
+      if (now() >= deadline) {
+        await stopHolder(sessionId, rec, opts.timeoutMs);
+        await unlinkIfUnchanged(file, text);
+        continue;
+      }
+      await sleep(Math.min(pollMs, Math.max(0, deadline - now())), opts.signal);
+    }
+  };
+
+  /** The lease over the in-memory one that also keeps the lock file in step with the process. */
+  const fileLease = (sessionId: string, token: string, inner: SessionLease): SessionLease => {
+    const file = fileOf(sessionId);
+    let removed = false;
+    /** Removes the file only while it still carries this lease's token. */
+    const removeFile = async (): Promise<void> => {
+      if (removed) return;
+      removed = true;
+      try {
+        if (parseRecord(await deps.fs.readFile(file, 'utf8'))?.token === token) await deps.fs.unlink(file);
+      } catch {
+        /* already gone */
+      }
+    };
+    return {
+      attach(proc: LeaseProcess): void {
+        inner.attach(proc); // a revoked lease stops the process here
+        proc.exit.then(removeFile, removeFile);
+        if (!inner.held() || proc.pid === undefined) return;
+        const pid = proc.pid;
+        const tmp = `${file}.${token}.tmp`;
+        void deps.fs
+          .writeFile(tmp, recordText(sessionId, token, pid, startTime(pid) ?? null))
+          .then(async () => {
+            // Never overwrite a file this lease no longer owns (taken over meanwhile).
+            if (parseRecord(await deps.fs.readFile(file, 'utf8'))?.token !== token) throw Object.assign(new Error('lock file taken over'), { code: 'ETAKEN' });
+            await deps.fs.rename(tmp, file);
+          })
+          .catch((e: unknown) => {
+            log.error(`[chat-lock] session ${sessionId}: could not record pid ${pid} (${errCode(e) ?? String(e)})`);
+            return deps.fs.unlink(tmp).catch(() => {});
+          });
+      },
+      held: () => inner.held(),
+      release(): void {
+        inner.release();
+        void removeFile();
+      },
+    };
+  };
+
   return {
     async acquire(sessionId: string, opts: AcquireOptions): Promise<SessionLease> {
       let waitedOnce = false;
@@ -425,95 +530,19 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
       const inner = await memory.acquire(sessionId, { ...opts, onWaiting });
       // The cross-window wait has its own budget, counted from the in-window grant.
       const deadline = now() + opts.timeoutMs;
-      const file = `${deps.lockDir}/${lockFileName(sessionId)}`;
-      const record = (cliPid: number | null, startedAt: number | null): string =>
-        JSON.stringify({ sessionId, cliPid, hostPid: deps.hostPid, startedAt } satisfies LockFileRecord);
-      const fallBack = (e: unknown): SessionLease => {
+      const token = newToken(deps.hostPid);
+      try {
+        await claimFile(sessionId, token, deadline, opts, onWaiting);
+      } catch (e) {
+        if (e instanceof LockWaitAborted) {
+          inner.release();
+          throw e;
+        }
         if (!fallbackLogged) log.error(`[chat-lock] lock directory ${deps.lockDir} unusable (${errCode(e) ?? String(e)}); locking within this window only for this turn`);
         fallbackLogged = true;
         return inner;
-      };
-
-      try {
-        await deps.fs.mkdir(deps.lockDir, { recursive: true });
-        for (;;) {
-          if (opts.signal?.aborted === true) {
-            inner.release();
-            throw new LockWaitAborted(sessionId);
-          }
-          try {
-            await deps.fs.writeFile(file, record(null, null), { flag: 'wx' });
-            break;
-          } catch (e) {
-            if (errCode(e) !== 'EEXIST') throw e;
-          }
-          let text: string;
-          try {
-            text = await deps.fs.readFile(file, 'utf8');
-          } catch (e) {
-            if (errCode(e) === 'ENOENT') continue; // removed between the write and the read
-            throw e;
-          }
-          const rec = parseRecord(text);
-          if (rec === undefined || !holderAlive(rec)) {
-            log.warn(`[chat-lock] session ${sessionId}: replacing a stale lock file`);
-            await unlinkIfUnchanged(file, text);
-            continue;
-          }
-          onWaiting();
-          // This window's own lease that has not started its process yet (another acquire here
-          // that the in-window lock gave up on): wait for it, never take its file over.
-          const ownStarting = rec.hostPid === deps.hostPid && rec.cliPid === null;
-          if (!ownStarting && now() >= deadline) {
-            await stopRemote(sessionId, rec, opts.timeoutMs);
-            await unlinkIfUnchanged(file, text);
-            continue;
-          }
-          await sleep(ownStarting ? pollMs : Math.min(pollMs, Math.max(0, deadline - now())), opts.signal);
-        }
-      } catch (e) {
-        if (e instanceof LockWaitAborted) throw e;
-        return fallBack(e);
       }
-
-      let attachedPid: number | null = null;
-      let removed = false;
-      /** Removes the file only while it is still this lease's. */
-      const removeFile = async (): Promise<void> => {
-        if (removed) return;
-        removed = true;
-        try {
-          const rec = parseRecord(await deps.fs.readFile(file, 'utf8'));
-          if (rec !== undefined && rec.hostPid === deps.hostPid && rec.cliPid === attachedPid) await deps.fs.unlink(file);
-        } catch {
-          /* already gone */
-        }
-      };
-      return {
-        attach(proc: LeaseProcess): void {
-          inner.attach(proc);
-          if (removed || proc.pid === undefined) return;
-          const pid = proc.pid;
-          const tmp = `${file}.${deps.hostPid}.tmp`;
-          void deps.fs
-            .writeFile(tmp, record(pid, startTime(pid) ?? null))
-            .then(() => deps.fs.rename(tmp, file))
-            .then(() => {
-              attachedPid = pid;
-            })
-            .catch((e: unknown) => {
-              log.error(`[chat-lock] session ${sessionId}: could not record pid ${pid} (${errCode(e) ?? String(e)})`);
-              return deps.fs.unlink(tmp).catch(() => {});
-            })
-            .finally(() => {
-              proc.exit.then(removeFile, removeFile);
-            });
-        },
-        release(): void {
-          inner.release();
-          void removeFile();
-        },
-      };
+      return fileLease(sessionId, token, inner);
     },
   };
 }

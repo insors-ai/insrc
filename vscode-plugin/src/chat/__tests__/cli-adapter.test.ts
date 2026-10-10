@@ -11,8 +11,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createProviderRegistry, classifyPermissionDenial, nodeSpawner } from '../cli-adapter.js';
-import type { AdapterDeps, ProviderId, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
+import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner } from '../cli-adapter.js';
+import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
   makeFakeSpawner,
@@ -531,9 +531,6 @@ test('codex: a completed command_execution WITHOUT output emits only the tool-ca
 });
 
 // ---- deriveChatTitle (LLM chat titling, option 1) ------------------------------
-
-import { deriveChatTitle } from '../cli-adapter.js';
-import type { StreamAdapter, ProviderRegistry } from '../cli-adapter.js';
 
 function titleReg(adapter: StreamAdapter): ProviderRegistry {
   return { available: ['claude'], get: (id) => { if (id !== 'claude') throw new Error('unknown'); return adapter; } };

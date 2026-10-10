@@ -145,6 +145,13 @@
             "default": true,
             "markdownDescription": "Lock the insrc chat's editor group so files opened from the Explorer open in another group instead of as tabs over the chat. The group is locked the first time the chat is focused, and again after each window reload. Turn off to let tabs stack on the chat.",
             "scope": "machine"
+          },
+          "insrc.chat.turnLockTimeoutMs": {
+            "type": "number",
+            "default": 600000,
+            "minimum": 1000,
+            "markdownDescription": "How long (in milliseconds) a new chat message waits for the session's previous CLI process to exit before that process is stopped. Only one CLI process works on a chat session at a time, in any window. Default 600000 (10 minutes).",
+            "scope": "machine"
           }
         }
       },

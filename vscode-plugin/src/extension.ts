@@ -49,7 +49,8 @@ import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier } from './models/model-tier-picker.js';
 import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
-import { createChatPanelHost, CHAT_VIEW_TYPE, type ChatPanelChannel } from './chat/chat-panel.js';
+import { createChatPanelHost, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
+import { createFileSessionLocks } from './chat/session-lock.js';
 import { createChatGroupLock } from './chat/group-lock.js';
 import { createMementoChatSessionStore } from './chat/session-store.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitle } from './chat/cli-adapter.js';
@@ -564,6 +565,12 @@ export function activate(context: vscode.ExtensionContext): void {
       // LLM chat titling: a one-shot over the same CLI (no resume; timeout-bounded) names the
       // chat after its first turn, replacing the truncated-prompt fallback.
       deriveTitle: (input) => deriveChatTitle(chatProviders, input),
+      // One CLI process per chat session, across windows and reloads: each lease is mirrored in a
+      // lock file under ~/.insrc/chat-locks naming the CLI's pid. A new turn waits for it and
+      // stops it only after insrc.chat.turnLockTimeoutMs.
+      sessionLocks: createFileSessionLocks({ fs: nodeFsp, lockDir: join(PATHS.insrc, 'chat-locks'), hostPid: process.pid, logger: panelLog }),
+      turnLockTimeoutMs: () =>
+        Math.max(1000, vscode.workspace.getConfiguration().get<number>('insrc.chat.turnLockTimeoutMs') ?? DEFAULT_TURN_LOCK_TIMEOUT_MS),
     });
     // Gate the editor-title icon (contributes.menus["editor/title"] when:insrc.chat.ready) on an
     // activate-time context key set ONLY here, inside the flag gate \u2014 NOT the live

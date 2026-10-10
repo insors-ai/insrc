@@ -211,3 +211,33 @@ test('editor-title: extension.ts opens the chat as an editor-tab panel + gates t
   // The sidebar experiment is gone: no webview-view provider wiring remains.
   assert.doesNotMatch(b, /registerWebviewViewProvider/, 'no Activity Bar webview-view provider');
 });
+
+// ---- S001 (E20261010d6a4bc79): one CLI process per session ------------------------------
+
+test('the extension passes a file-backed lock registry and the turnLockTimeoutMs setting', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  const host = /createChatPanelHost\(\{([\s\S]*?)\n    \}\);/.exec(b);
+  assert.ok(host, 'the createChatPanelHost call is present');
+  assert.match(
+    host![1]!,
+    /sessionLocks: createFileSessionLocks\(\{ fs: nodeFsp, lockDir: join\(PATHS\.insrc, 'chat-locks'\), hostPid: process\.pid, logger: panelLog \}\)/,
+    'a file-backed registry on ~/.insrc/chat-locks, owned by this extension host',
+  );
+  assert.match(host![1]!, /turnLockTimeoutMs: \(\) =>[\s\S]*?get<number>\('insrc\.chat\.turnLockTimeoutMs'\)/, 'a live read of the setting');
+  assert.match(src, /import \{ createFileSessionLocks \} from '\.\/chat\/session-lock\.js';/);
+});
+
+test('package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)', () => {
+  const pkg = JSON.parse(read(PKG)) as {
+    contributes: { configuration: Array<{ properties?: Record<string, { type?: string; default?: unknown; minimum?: number }> }> };
+  };
+  const props = Object.assign({}, ...pkg.contributes.configuration.map((c) => c.properties ?? {})) as Record<string, { type?: string; default?: unknown; minimum?: number }>;
+  const setting = props['insrc.chat.turnLockTimeoutMs'];
+  assert.ok(setting, 'insrc.chat.turnLockTimeoutMs is contributed');
+  assert.equal(setting!.type, 'number');
+  assert.equal(setting!.default, 600000);
+  assert.equal(setting!.minimum, 1000);
+});

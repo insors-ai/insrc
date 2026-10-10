@@ -472,8 +472,10 @@ export async function plan(params: unknown): Promise<PlanRpcResponse> {
 		// (1) Build (or read-from-cache) the run-level bundle. Shaper
 		// errors propagate to the outer catch + classifyShaperError.
 		const shaper = shaperFor('run', intent.target);
+		// The measure taken above is handed on: the builder does not measure
+		// the same area a second time.
 		const contextBundle = await shaper.buildRunBundle(
-			{ intent },
+			{ intent, measure },
 			{ runId: parsed.runId },
 		);
 

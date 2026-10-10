@@ -48,7 +48,7 @@ import type {
 import type { AnalyzeContextBundle } from '../../context/types.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
-import { _setMeasureDepsForTest } from '../../measure.js';
+import { CANCELLED_BEFORE_MEASURE, _setMeasureDepsForTest } from '../../measure.js';
 
 // ---------------------------------------------------------------------------
 // Suite setup
@@ -548,6 +548,39 @@ test("a plan's task band and its depth cap both follow the measured size, and a 
 			purgePlan({ runId: id });
 			purgePlan({ runId: id, parentTaskPath: 't02' });
 			purgePlan({ runId: id, parentTaskPath: 't02.t02' });
+		}
+	}
+});
+
+test("the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan", async () => {
+	const ids: string[] = [];
+	const runId = (tag: string): string => { const id = `recursive-signal-${tag}-${Math.floor(Math.random() * 1e9).toString(16)}`; ids.push(id); return id; };
+	// The child names the repo of one file: measured, it is XS.
+	const childIntent: ClassifiedIntent = { ...rootIntent('XS'), scope: 'XS' };
+	const build = (id: string, signal: AbortSignal | undefined, childPlan: PlanTask) => runRecursivePlanner({
+		input: { intent: rootIntent('M'), contextBundle: EMPTY_BUNDLE, catalog: getTemplatesForTarget('code') },
+		opts: { runId: id, ...(signal !== undefined ? { signal } : {}) },
+		provider: makeStubProvider([makeRootPlanWithOnePlannerTask('M', childIntent), childPlan]),
+	});
+	try {
+		// A signal that has fired reaches the child's measure: it reads nothing and says the request was cancelled,
+		// so the child is the largest size and only a plan in that band is accepted for it.
+		const gone = new AbortController();
+		gone.abort();
+		const cancelled = await build(runId('aborted'), gone.signal, statingSize(makeLeafOnlyPlan('XL'), 'XS'));
+		assert.equal(cancelled.childErrors.size, 0, [...cancelled.childErrors.values()].map(e => e.message).join('; '));
+		const child = cancelled.children.get('t02')!;
+		assert.deepEqual([child.measure?.determined, child.measure?.size, child.measure?.note], [false, 'XL', CANCELLED_BEFORE_MEASURE]);
+		// A signal that has not fired, and no signal: the child is measured from the area it names.
+		for (const signal of [new AbortController().signal, undefined]) {
+			const tree = await build(runId('live'), signal, statingSize(makeLeafOnlyPlan('XS'), 'XS'));
+			assert.equal(tree.childErrors.size, 0, [...tree.childErrors.values()].map(e => e.message).join('; '));
+			assert.deepEqual([tree.children.get('t02')!.measure?.determined, tree.children.get('t02')!.measure?.size], [true, 'XS']);
+		}
+	} finally {
+		for (const id of ids) {
+			purgePlan({ runId: id });
+			purgePlan({ runId: id, parentTaskPath: 't02' });
 		}
 	}
 });

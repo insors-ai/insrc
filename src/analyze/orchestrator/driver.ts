@@ -314,7 +314,9 @@ async function runStages(
 		substep: 'measure',
 		detail: 'measuring what the request names',
 	});
-	const measure = await measureRequestScope(unsized.scopeRef, unsized.target, args.scopeHint);
+	// The run's signal goes with it: a cancelled run does not wait on a live
+	// data source, and the abort check below then ends the run.
+	const measure = await measureRequestScope(unsized.scopeRef, unsized.target, args.scopeHint, { signal: opts.signal });
 	const intent: ClassifiedIntent = { ...unsized, scope: measure.size };
 	log.info(
 		{ runId, size: measure.size, determined: measure.determined, files: measure.files, items: measure.items, sizeHint: measure.sizeHint, note: measure.note },
@@ -345,8 +347,10 @@ async function runStages(
 	let contextBundle;
 	try {
 		const shaper = shaperFor('run', intent.target);
+		// The run's measure is handed on: the builder uses it for its planning
+		// call and does not measure the same area a second time.
 		contextBundle = await shaper.buildRunBundle(
-			{ intent },
+			{ intent, measure },
 			{
 				runId,
 				onTrace: (traceEvent) => forwardShaperTrace('plan', traceEvent, emit),
@@ -404,6 +408,8 @@ async function runStages(
 					substep: 'planner',
 					preview,
 				}),
+				// For the measure of each child plan.
+				...(opts.signal !== undefined ? { signal: opts.signal } : {}),
 			},
 		});
 	} catch (err) {

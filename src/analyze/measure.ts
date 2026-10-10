@@ -273,6 +273,19 @@ export interface MeasureOptions {
 	readonly sourceTimeoutMs?: number | undefined;
 }
 
+/**
+ * Whether the request's signal has fired. A signal that cannot be read is
+ * taken as one that has not: the pass never throws, and the run that owns the
+ * signal reads it again at its next stage.
+ */
+function isCancelled(options: MeasureOptions | undefined): boolean {
+	try {
+		return options?.signal?.aborted === true;
+	} catch {
+		return false;
+	}
+}
+
 /** Said when the request was cancelled before anything was read. */
 export const CANCELLED_BEFORE_MEASURE = 'the request was cancelled before it was measured';
 /** Said when the request was cancelled between the connections of a repo, workspace or manifest directory. */
@@ -319,7 +332,7 @@ export async function measureRequestScope(
 	sizeHint?: AnalyzeScope,
 	options?:  MeasureOptions,
 ): Promise<RequestMeasure> {
-	if (options?.signal?.aborted === true) {
+	if (isCancelled(options)) {
 		return notDetermined(sourceFor(scopeRef.kind, target), CANCELLED_BEFORE_MEASURE, sizeHint);
 	}
 	let scope: ResolvedScope;
@@ -354,7 +367,7 @@ export async function measureResolvedScope(
 	sizeHint?: AnalyzeScope,
 	options?:  MeasureOptions,
 ): Promise<RequestMeasure> {
-	if (options?.signal?.aborted === true) {
+	if (isCancelled(options)) {
 		return notDetermined(sourceFor(scope.kind, target), CANCELLED_BEFORE_MEASURE, sizeHint);
 	}
 	try {
@@ -498,7 +511,7 @@ const SAMPLED_KINDS: ReadonlySet<string> = new Set(['redis', 'valkey', 'keydb', 
 export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScope, options?: MeasureOptions): Promise<RequestMeasure> {
 	const id = scope.connectionId;
 	if (id === undefined) return notDetermined('data-source', 'no connection is named: a data source is measured one connection at a time', sizeHint);
-	if (options?.signal?.aborted === true) return notDetermined('data-source', CANCELLED_BEFORE_MEASURE, sizeHint);
+	if (isCancelled(options)) return notDetermined('data-source', CANCELLED_BEFORE_MEASURE, sizeHint);
 	let pool: DataPool;
 	try {
 		pool = await acquireDataPool(scope.poolPath);
@@ -536,14 +549,17 @@ function withinLimit<T>(
 			if (over) return;
 			over = true;
 			clearTimeout(timer);
-			signal?.removeEventListener('abort', onAbort);
+			try { signal?.removeEventListener('abort', onAbort); } catch { /* nothing to remove */ }
 			resolve(outcome);
 		};
 		const onAbort = (): void => end({ kind: 'cancelled' });
 		const timer = setTimeout(() => end({ kind: 'timed-out' }), limitMs);
 		if (signal !== undefined) {
-			if (signal.aborted) { end({ kind: 'cancelled' }); }
-			else signal.addEventListener('abort', onAbort, { once: true });
+			// A signal that cannot be read or listened to is taken as one that has not fired.
+			try {
+				if (signal.aborted) end({ kind: 'cancelled' });
+				else signal.addEventListener('abort', onAbort, { once: true });
+			} catch { /* the wait goes on under its time limit */ }
 		}
 		work.then(
 			value => end({ kind: 'done', value }),
@@ -551,7 +567,7 @@ function withinLimit<T>(
 				if (over) { onLate(err); return; }
 				over = true;
 				clearTimeout(timer);
-				signal?.removeEventListener('abort', onAbort);
+				try { signal?.removeEventListener('abort', onAbort); } catch { /* nothing to remove */ }
 				reject(err);
 			},
 		);
@@ -665,7 +681,7 @@ async function measureDataPool(poolPath: string, sizeHint: AnalyzeScope | undefi
 	let objects = 0;
 	let files = 0;
 	const uncounted: string[] = [];
-	const cancelled = (): boolean => options?.signal?.aborted === true;
+	const cancelled = (): boolean => isCancelled(options);
 	for (const id of ids) {
 		if (cancelled()) return notDetermined('data-source', CANCELLED_AMONG_SOURCES, sizeHint);
 		// The pool was loaded once, above: it is not reloaded for each connection.

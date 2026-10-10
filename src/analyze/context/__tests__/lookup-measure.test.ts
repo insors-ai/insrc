@@ -287,3 +287,21 @@ test('the free-form lookup uses the request size its runner context carries and,
 	assert.equal(await sizeTold(ctxOf({ repoPath: elsewhere })), 'XL');
 	assert.equal((await measureOwnRequest({ repoPath: elsewhere }, 'code')).determined, false);
 });
+
+test("the bundle cache key is the same with and without a handed measure", () => {
+	const prompt = readFileSync(join(REPO_ROOT, 'src/prompts/analyze/code.system.md'), 'utf8');
+	const intent = unsized({ kind: 'repo', value: repo });
+	const key = (inputs: RunShapeInput): string => _computeCacheKeyForTest(prompt, inputs);
+	const base = key({ intent });
+	const measures: RequestMeasure[] = [
+		{ source: 'named-area', items: 2, files: 1, characters: null, size: 'XS', determined: true },
+		{ source: 'named-area', items: 60, files: 30, characters: null, size: 'M', determined: true, sizeHint: 'L' },
+		{ source: 'data-source', items: 0, files: 0, characters: null, size: 'XL', determined: false, note: 'the listing timed out' },
+	];
+	for (const measure of measures) {
+		assert.equal(key({ intent, measure }), base, JSON.stringify(measure));
+		assert.equal(key({ intent: { ...intent, scope: measure.size }, sizeHint: 'S', measure }), base);
+	}
+	// The key still tells one scope from another when a measure is handed in.
+	assert.notEqual(key({ intent: unsized({ kind: 'module', value: join(repo, 'src') }), measure: measures[0] }), base);
+});

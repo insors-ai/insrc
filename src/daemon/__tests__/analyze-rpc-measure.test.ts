@@ -22,11 +22,12 @@ import { join } from 'node:path';
 
 import { runWithRoutingContext } from '../../analyze/context/shaper-provider.js';
 import type { RoutingSeamContext } from '../../analyze/context/shaper-provider.js';
+import { _setMeasureDepsForTest } from '../../analyze/measure.js';
 import type { RequestMeasure } from '../../analyze/measure.js';
 import { purgeRunForTests } from '../../analyze/orchestrator/persistence.js';
 import { registerBuiltinTemplates } from '../../analyze/planner/templates/bootstrap.js';
 import { registerBuiltinRuntimes } from '../../analyze/runtimes/bootstrap.js';
-import { upsertEntities } from '../../db/entities.js';
+import { listEntitiesForRepo, upsertEntities } from '../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
 import { addRepo } from '../../db/repos.js';
 import { makeEntityId } from '../../indexer/parser/base.js';
@@ -82,6 +83,7 @@ test.beforeEach(async () => {
 test.afterEach(async () => {
 	roles.length = 0;
 	_setClassifierForTest(undefined);
+	_setMeasureDepsForTest(undefined);
 	for (const id of runIds.splice(0)) purgeRunForTests(id);
 	await closeGraphStore();
 	rmSync(sandbox, { recursive: true, force: true });
@@ -274,4 +276,23 @@ test("the one-shot tool and the workflow runner state no size of their own and t
 	assert.ok(planned.ok, planned.ok ? '' : planned.error.message);
 	assert.deepEqual(roles.filter(r => r === 'analyze.decompose'), ['analyze.decompose'], "the run context was not built again for the plan request");
 	assert.ok(roles.includes('analyze.plan'), 'the planner was asked');
+});
+
+test("a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way", async () => {
+	// The measure's own read of the repo, counted.
+	let measured = 0;
+	_setMeasureDepsForTest({ listEntities: async path => { measured += 1; return listEntitiesForRepo(null, path); } });
+	// A plan request measures its intent and then builds the run's context: the area is measured once.
+	const planned = await withModel(fourTaskPlan(small, 'L'), () => plan({ runId: id('plan-one-measure'), intent: intentOn(small, 'L') }));
+	assert.ok(planned.ok, planned.ok ? '' : planned.error.message);
+	if (!planned.ok) return;
+	assert.deepEqual(planned.measure, { ...SMALL, sizeHint: 'L' });
+	assert.equal(planned.plan.scope, 'XS');
+	assert.equal(measured, 1, 'the context builder took no measure of its own');
+
+	// The bundle request hands the builder no measure: the builder measures, as before.
+	measured = 0;
+	const built = await withModel(null, () => buildRun(oneShotRunParams({ focus: 'where is fn0' }, small, id('bundle-measures'))), LOOKUPS);
+	assert.ok(built.ok, built.ok ? '' : built.error.message);
+	assert.equal(measured, 1);
 });

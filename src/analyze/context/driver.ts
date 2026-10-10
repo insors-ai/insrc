@@ -546,8 +546,8 @@ function computeCacheKey(
 /**
  * What of a set of inputs the cache key is taken over.
  *
- * For a run-level request the intent's size and the stated size are left
- * out. The size the builder works with is measured: it is a function of the
+ * For a run-level request the intent's size, the stated size and a measure
+ * the caller handed in are left out. The size the builder works with is measured: it is a function of the
  * scope, which is in the key, and of the index, whose state already
  * invalidates the cache. So two callers that state different sizes, or none,
  * share one cached bundle.
@@ -1369,17 +1369,24 @@ async function tryExplorationPipeline(
 	}
 	// What the request is. A size on the intent it came with is not read: the
 	// builder is the one writer of the size in this pipeline.
-	const { intent: given, sizeHint } = args.inputs as RunShapeInput;
+	const { intent: given, sizeHint, measure: handed } = args.inputs as RunShapeInput;
 	const { scope: _notRead, ...unsized } = given;
 
 	// (a.0) The size for the planning call: counted from the area the scope
-	// names. The pass does not throw; an area it cannot count is the largest
-	// size, with the reason.
-	const area = await (steps.measureArea ?? measureResolvedScope)(args.scope, unsized.target, sizeHint);
+	// names. A caller that has already measured that area hands its measure
+	// in, and it is used as it is, also when it is not determined: the area is
+	// then not measured a second time. A measure of lookup results is not a
+	// measure of a named area and is not used. Otherwise the pass measures; it
+	// does not throw, and an area it cannot count is the largest size, with
+	// the reason.
+	const reused = handed !== undefined && handed.source !== 'lookup-results';
+	const area = reused
+		? handed
+		: await (steps.measureArea ?? measureResolvedScope)(args.scope, unsized.target, sizeHint);
 	const intent: ClassifiedIntent = { ...unsized, scope: area.size };
 	log.info(
-		{ runId: args.runId, size: area.size, determined: area.determined, files: area.files, items: area.items, sizeHint, note: area.note },
-		'exploration pipeline: the named area was measured',
+		{ runId: args.runId, size: area.size, determined: area.determined, files: area.files, items: area.items, sizeHint, note: area.note, reused },
+		reused ? "exploration pipeline: the caller's measure of the named area was used" : 'exploration pipeline: the named area was measured',
 	);
 
 	// (a) Decompose. LLM unavailable / prompt missing -> fall through

@@ -596,6 +596,12 @@ test('a request cancelled while a source is being measured stops at once and the
 	// A direct call for one source, too: its pool is not loaded.
 	assert.equal((await measureDataSource({ poolPath: BIG, connectionId: 'a' }, undefined, before)).note, CANCELLED_BEFORE_MEASURE);
 	assert.deepEqual([q.opened, q.acquired, entityReads, scopeReads], [[], [], 0, 0]);
+	// A signal that cannot be read does not make the pass throw: it is taken as one that has not fired.
+	const unreadable = { get aborted(): boolean { throw new Error('the signal could not be read'); } } as unknown as AbortSignal;
+	const despite = await measureResolvedScope(connectionScope('a'), 'data', undefined, { signal: unreadable });
+	assert.deepEqual(counts(despite), { source: 'data-source', items: 3, files: 0, size: 'S', determined: true });
+	assert.equal((await measureRequestScope(ref('repo', BIG), 'data', undefined, { signal: unreadable })).determined, true);
+	entityReads = 0;
 	// The same scope with a signal that has not fired is measured.
 	const live = await measureResolvedScope(repoScope(), 'code', undefined, { signal: new AbortController().signal });
 	assert.equal(live.determined, true);

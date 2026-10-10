@@ -185,12 +185,16 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `function renderStages(b){renderTotals(b.totalsLabel,b.showAll);if(b.emptyPanel!==null){renderPanel(bodyEl,b.emptyPanel);return;}`,
   `const showEpic=b.epic===null&&!(model.filters!==null&&model.filters.view==='standalone');const fold=b.fold.always||narrow;`,
   `for(const sec of b.sections){if(fold&&sec.total===0)continue;bodyEl.appendChild(renderSection(sec,showEpic));}if(fold)renderFold(b);}`,
-  // The Epics screen: one row per epic (the name, the completion, the attention pill), each opening that epic's board.
-  `function renderEpics(b){renderTotals(b.totalsLabel,false);if(b.emptyPanel!==null)renderPanel(bodyEl,b.emptyPanel);`,
-  `else{const rows=make('div',undefined,'rows');rows.setAttribute('role','list');rows.setAttribute('aria-label','Epics');for(const r of b.rows){`,
-  `const row=keyed(button('',function(){send({type:'open-epic',epicItemId:r.epicItemId});},'row'),'epic-'+r.epicItemId);row.setAttribute('data-epic',r.epicItemId);row.setAttribute('role','listitem');`,
+  // The Epics screen: the same stage boxes, each holding the rows of the epics whose least-advanced story is at that
+  // stage (the name, the completion, the attention pill), each row opening that epic's board; epics with no stories
+  // follow the boxes.
+  `function epicRow(r){const row=keyed(button('',function(){send({type:'open-epic',epicItemId:r.epicItemId});},'row'),'epic-'+r.epicItemId);row.setAttribute('data-epic',r.epicItemId);row.setAttribute('role','listitem');`,
   `const name=make('div');name.appendChild(make('div','EPIC \\u00b7 '+r.compactId,'kicker'));name.appendChild(make('div',r.title,'name'));name.appendChild(make('div',countsOf(r).join(' \\u00b7 '),'muted'));`,
-  `row.appendChild(name);row.appendChild(completion(r));row.appendChild(pill(r.attentionLabel,r.attentionTone,'pill attention-count'));rows.appendChild(row);}bodyEl.appendChild(rows);}`,
+  `row.appendChild(name);row.appendChild(completion(r));row.appendChild(pill(r.attentionLabel,r.attentionTone,'pill attention-count'));return row;}`,
+  `const epicRows=function(label,list){const rows=make('div',undefined,'rows');rows.setAttribute('role','list');rows.setAttribute('aria-label',label);for(const r of list)rows.appendChild(epicRow(r));return rows;};`,
+  `function renderEpics(b){renderTotals(b.totalsLabel,false);if(b.emptyPanel!==null)renderPanel(bodyEl,b.emptyPanel);`,
+  `else{const fold=b.fold.always||narrow;for(const sec of b.sections){if(fold&&sec.total===0)continue;const d=accBox(sec,['epic','epics']);if(sec.rows.length>0)d.appendChild(epicRows(sec.label,sec.rows));bodyEl.appendChild(d);}`,
+  `if(fold)renderFold(b);if(b.noStories.length>0){const box=make('div',undefined,'no-stories');box.appendChild(make('div','No stories yet','label'));box.appendChild(epicRows('No stories yet',b.noStories));bodyEl.appendChild(box);}}`,
   `const p=make('p','Work outside any epic is under ','muted standalone-link');p.appendChild(button(L.views.standalone,function(){send({type:'set-view',view:'standalone'});},'link'));bodyEl.appendChild(p);}`,
   // The Issues screen: the same stage boxes, each holding its issues' rows; a row opens the issue's screen.
   `function issueRow(e){const row=keyed(button('',function(){send({type:'open-item',itemId:e.card.itemId});},'row issue-row'),'item-'+e.card.itemId);row.setAttribute('data-item-id',e.card.itemId);row.setAttribute('aria-label',e.card.accessibleLabel);row.setAttribute('role','listitem');`,
@@ -348,6 +352,7 @@ export const BOARD_STYLE = [
   `#status{margin:0;}`,
   `button,.btn{font:inherit;font-size:12px;color:var(--vscode-button-secondaryForeground);background:var(--vscode-button-secondaryBackground);border:1px solid transparent;border-radius:4px;padding:3px 10px;cursor:pointer;display:inline-block;}`,
   `button:hover{background:var(--vscode-button-secondaryHoverBackground,var(--vscode-button-secondaryBackground));}`,
+  `.icon-btn{font-size:15px;line-height:1;padding:2px 7px;}`,
   `.btn.primary{background:var(--vscode-button-background);color:var(--vscode-button-foreground);}`,
   `.btn.ghost{background:none;color:var(--vscode-textLink-foreground);padding:3px 0;}`,
   `.btn.ghost:hover{background:none;text-decoration:underline;}`,
@@ -404,6 +409,7 @@ export const BOARD_STYLE = [
   `.issue-row{grid-template-columns:minmax(220px,1fr) auto;}`,
   `.acc .rows{margin:0 12px 12px;}`,
   `.standalone-link{margin:12px 0;}`,
+  `.no-stories{margin:12px 0 0;}`,
   // A story's or issue's screen.
   `.head{margin:0 0 12px;}`,
   `.head h1{font-size:19px;line-height:1.3;margin:3px 0 8px;letter-spacing:-.2px;overflow-wrap:anywhere;}`,
@@ -464,7 +470,8 @@ export function renderBoardDocument(nonce: string): string {
     `<header class="appbar"><nav id="crumbs" class="crumbs" aria-label="Breadcrumb"></nav>` +
     // The status line keeps role=status but is not a live region: #announce is the one announcer (s5).
     `<div class="appbar-tools"><p id="status" role="status"></p><span class="readonly">Read-only</span>` +
-    `<button id="refresh" type="button">Refresh</button></div></header>` +
+    // Refresh is an icon; its name and tooltip say what it does.
+    `<button id="refresh" class="icon-btn" type="button" aria-label="Refresh" title="Refresh">\u21bb</button></div></header>` +
     // A failed refresh over a shown board and partial evidence sit here, above the screen, which stays usable.
     `<div id="banner"></div>` +
     // One screen at a time: each screen message replaces what is here.

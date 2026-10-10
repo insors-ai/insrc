@@ -11,8 +11,8 @@
  */
 
 import { attentionCount, attentionLabel, compactIdOf, foldOf, groupByStage, indexItems, isPlaceable, sectionDefaults, selectionPanel, selectMatches, titleOf, totalsLabel, type MatchedCard, type MatchFilter } from './board-model.js';
-import type { EpicRollupRowView, EpicsBody, IssueEntryView, IssueSectionView, IssuesBody, LinkView } from './board-protocol.js';
-import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
+import type { EpicRollupRowView, EpicSectionView, EpicsBody, IssueEntryView, IssueSectionView, IssuesBody, LinkView } from './board-protocol.js';
+import type { DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
 import { labelOf, STAGE_ORDER, type DisplayLabels } from './labels.js';
 
 /** Shown when an issue's recorded parent is not in the snapshot and the daemon gave no notice for it. */
@@ -57,6 +57,8 @@ export function epicRowOf(snapshot: DeliverySnapshot, epic: DeliveryItemView, la
  * The Epics screen: one row per epic in snapshot order, each counted over the epic's whole scope under the epic
  * membership rule (standalone work counts towards no epic). The search keeps the epics whose title or id contains it;
  * Needs attention keeps the epics with something needing attention. Work outside every epic is on Standalone, not a row.
+ * The rows sit in six stage sections, snapshot order within each, opened and folded by the board screens' rule: an
+ * epic at the stage of its least-advanced story, and an epic with no stories after the sections.
  */
 export function buildEpicRollup(snapshot: DeliverySnapshot, filter: Pick<MatchFilter, 'search' | 'needsAttentionOnly'>, labels: DisplayLabels): EpicsBody {
   const byId = indexItems(snapshot);
@@ -69,19 +71,46 @@ export function buildEpicRollup(snapshot: DeliverySnapshot, filter: Pick<MatchFi
   }
   const needle = filter.search.trim().toLowerCase();
   const epics = snapshot.items.filter(i => i.kind === 'epic');
-  const rows: EpicRollupRowView[] = [];
+  const byStage = new Map<DeliveryStage, EpicRollupRowView[]>(STAGE_ORDER.map(s => [s, []]));
+  const noStories: EpicRollupRowView[] = [];
+  let shown = 0;
   for (const e of epics) {
     if (needle.length > 0 && !titleOf(e).toLowerCase().includes(needle) && !e.id.toLowerCase().includes(needle)) continue;
-    const row = rowOf(e.id, titleOf(e), byEpic.get(e.id) ?? []);
+    const matches = byEpic.get(e.id) ?? [];
+    const row = rowOf(e.id, titleOf(e), matches);
     if (filter.needsAttentionOnly && row.attentionCount === 0) continue;
-    rows.push(row);
+    shown++;
+    const stage = leastAdvancedStage(matches);
+    if (stage === null) noStories.push(row);
+    else byStage.get(stage)?.push(row);
   }
+  const sections: EpicSectionView[] = STAGE_ORDER.map(stage => {
+    const rows = byStage.get(stage) ?? [];
+    const needing = rows.filter(r => r.attentionCount > 0).length;
+    return {
+      stage, label: labelOf(labels.stage, stage), total: rows.length, attentionCount: needing,
+      ...sectionDefaults(stage, rows.length, needing, filter.needsAttentionOnly, labels), rows,
+    };
+  });
   return {
     kind: 'epics',
-    totalsLabel: `${rows.length} ${rows.length === 1 ? 'epic' : 'epics'} \u00b7 completion counts stories at Complete`,
-    rows,
-    emptyPanel: epics.length > 0 && rows.length === 0 ? selectionPanel('no-matches', labels) : null,
+    totalsLabel: `${shown} ${shown === 1 ? 'epic' : 'epics'} \u00b7 completion counts stories at Complete`,
+    sections,
+    fold: foldOf(sections, filter.needsAttentionOnly),
+    noStories,
+    emptyPanel: epics.length > 0 && shown === 0 ? selectionPanel('no-matches', labels) : null,
   };
+}
+
+/** The earliest stage among an epic's stories, so an epic is Complete only when every story is; null with no stories. */
+function leastAdvancedStage(matches: readonly MatchedCard[]): DeliveryStage | null {
+  let best: number | null = null;
+  for (const m of matches) {
+    if (m.item.kind !== 'story') continue;
+    const rank = STAGE_ORDER.indexOf(m.stage);
+    if (best === null || rank < best) best = rank;
+  }
+  return best === null ? null : STAGE_ORDER[best] ?? null;
 }
 
 /** A followable reference: ids only; the stage label is null for an epic or an item with no stage. */
@@ -153,4 +182,9 @@ export function buildIssueView(snapshot: DeliverySnapshot, filter: MatchFilter, 
 /** Every issue row of an Issues body, in stage order. */
 export function issueEntries(body: IssuesBody): readonly IssueEntryView[] {
   return body.sections.flatMap(sec => sec.issues);
+}
+
+/** Every epic row of an Epics body: the sections' rows in stage order, then the epics with no stories. */
+export function epicRows(body: EpicsBody): readonly EpicRollupRowView[] {
+  return [...body.sections.flatMap(sec => sec.rows), ...body.noStories];
 }

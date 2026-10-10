@@ -231,11 +231,30 @@ export interface StagesBody {
   readonly emptyPanel: StatePanelView | null;
 }
 
-/** The Epics screen: one row per epic, each opening that epic's board. */
+/** One stage of the Epics screen: the epics whose least-advanced story is at this stage, in a board screen's section. */
+export interface EpicSectionView {
+  readonly stage: DeliveryStage;
+  readonly label: string;
+  readonly total: number;
+  /** How many of the section's epics have something needing attention. */
+  readonly attentionCount: number;
+  readonly defaultOpen: boolean;
+  readonly emptyText: string | null;
+  readonly hint: string | null;
+  readonly rows: readonly EpicRollupRowView[];
+}
+
+/**
+ * The Epics screen: one row per epic, each opening that epic's board, in six stage sections opened and folded as a
+ * board screen's. An epic sits at the stage of its least-advanced story; an epic with no stories has no stage and is
+ * listed after the sections.
+ */
 export interface EpicsBody {
   readonly kind: 'epics';
   readonly totalsLabel: string;
-  readonly rows: readonly EpicRollupRowView[];
+  readonly sections: readonly EpicSectionView[];
+  readonly fold: { readonly always: boolean; readonly text: string };
+  readonly noStories: readonly EpicRollupRowView[];
   readonly emptyPanel: StatePanelView | null;
 }
 

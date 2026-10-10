@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 
 import { buildBoardViewModel, type MatchFilter } from '../board-model.js';
 import type { StagesBody } from '../board-protocol.js';
-import { attentionLabel, buildEpicRollup, buildIssueView, epicRowOf, issueEntries } from '../board-views.js';
+import { attentionLabel, buildEpicRollup, buildIssueView, epicRowOf, epicRows, issueEntries } from '../board-views.js';
 import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
 import { item, snapshot } from './board-fixtures.js';
 
@@ -43,13 +43,13 @@ function epicsSnapshot(): Snap {
   ]);
 }
 
-test('an epic with five stories, two complete, reads 2 of 5 stories complete, and every epic is a row in snapshot order', () => {
+test('an epic with five stories, two complete, reads 2 of 5 stories complete, and every epic is a row, by stage and then snapshot order', () => {
   const m = rollup(epicsSnapshot());
   assert.equal(m.kind, 'epics');
-  assert.deepEqual(m.rows.map(e => [e.title, e.completionLabel]), [
+  assert.deepEqual(epicRows(m).map(e => [e.title, e.completionLabel]), [
     ['Board epic', '2 of 5 stories complete'], ['Rollup epic', '1 of 1 story complete'], ['Empty epic', '0 of 0 stories complete'],
   ]);
-  const e1 = m.rows[0]!;
+  const e1 = epicRows(m)[0]!;
   assert.deepEqual([e1.storiesComplete, e1.storiesTotal, e1.issueCount, e1.total, e1.attentionCount], [2, 5, 0, 5, 1]);
   assert.equal(m.totalsLabel, '3 epics · completion counts stories at Complete');
   assert.equal(m.emptyPanel, null);
@@ -66,7 +66,7 @@ test('a standalone issue correcting a story of an epic counts towards no epic, a
     // Not standalone, corrects E1: part of E1.
     item({ id: 'IS3', kind: 'issue', standalone: false, stage: 'design-plan', correctsRef: { resolvedItemId: 'E1' } as never }),
   ]);
-  const row = rollup(snap).rows.find(r => r.epicItemId === 'E1')!;
+  const row = epicRows(rollup(snap)).find(r => r.epicItemId === 'E1')!;
   assert.deepEqual([row.completionLabel, row.issueCount, row.total, row.attentionCount], ['1 of 2 stories complete', 1, 3, 1]);
 
   const e1Board = board(snap, { scope: { kind: 'epic', epicItemId: 'E1' } });
@@ -82,13 +82,13 @@ test('the Epics body filters rows by epic title or id and by attention, with who
   const snap = epicsSnapshot();
   // A search matches epic titles and ids, not the stories inside; the counts stay whole.
   const byTitle = rollup(snap, { search: '  ROLLUP ' });
-  assert.deepEqual(byTitle.rows.map(r => [r.epicItemId, r.total]), [['E2', 1]]);
+  assert.deepEqual(epicRows(byTitle).map(r => [r.epicItemId, r.total]), [['E2', 1]]);
   assert.equal(byTitle.totalsLabel, '1 epic · completion counts stories at Complete');
-  assert.deepEqual(rollup(snap, { search: 'e3' }).rows.map(r => r.epicItemId), ['E3'], 'ids are searched');
-  assert.deepEqual(rollup(snap, { search: 'paging' }).rows, [], 'a story title alone does not list its epic');
+  assert.deepEqual(epicRows(rollup(snap, { search: 'e3' })).map(r => r.epicItemId), ['E3'], 'ids are searched');
+  assert.deepEqual(epicRows(rollup(snap, { search: 'paging' })), [], 'a story title alone does not list its epic');
 
   const attention = rollup(snap, { needsAttentionOnly: true });
-  assert.deepEqual(attention.rows.map(r => [r.epicItemId, r.total, r.attentionCount]), [['E1', 5, 1]], 'only epics with something needing attention, counted whole');
+  assert.deepEqual(epicRows(attention).map(r => [r.epicItemId, r.total, r.attentionCount]), [['E1', 5, 1]], 'only epics with something needing attention, counted whole');
 
   const none = rollup(snap, { search: 'nothing like this' });
   assert.deepEqual(none.emptyPanel, { kind: 'no-matches', title: DISPLAY_LABELS.noMatchesTitle, text: DISPLAY_LABELS.noMatchesText, action: 'clear-filters', stale: false, affected: [], placement: 'body' });
@@ -108,7 +108,7 @@ test('epic rows count the planned tasks of the epic\'s stories and an issue\'s c
     item({ id: 'I1', kind: 'issue', correctsRef: { resolvedItemId: 'E1' } as never, stage: 'scoped', tasks: planned(4), needsAttention: true }),
     item({ id: 'SA1', standalone: true, stage: 'scoped', tasks: planned(1) }),
   ]);
-  const [e1, e2] = rollup(snap).rows;
+  const [e1, e2] = epicRows(rollup(snap));
   assert.deepEqual(
     [e1!.storiesTotal, e1!.storiesComplete, e1!.taskCount, e1!.issueCount, e1!.total, e1!.attentionCount],
     [2, 1, 5, 1, 3, 2],
@@ -128,7 +128,7 @@ test('attentionLabel is \'No open gates\' at 0, \'1 needs attention\' at 1, \'N 
     item({ id: 'E2:S001', parentId: 'E2', needsAttention: true }),
     item({ id: 'E3', kind: 'epic' }),
   ]);
-  assert.deepEqual(rollup(snap).rows.map(r => [r.attentionLabel, r.attentionTone]), [
+  assert.deepEqual(epicRows(rollup(snap)).map(r => [r.attentionLabel, r.attentionTone]), [
     ['2 need attention', 'warning'], ['1 needs attention', 'warning'], ['No open gates', 'success'],
   ]);
 });
@@ -138,7 +138,7 @@ test('an epic row\'s compactId is the epic\'s compact id', () => {
     item({ id: 'E20261009abcdef01', kind: 'epic', title: 'Canonical epic' }),
     item({ id: 'Hfedcba9876543210', kind: 'epic', title: 'Fallback epic' }),
   ]);
-  assert.deepEqual(rollup(snap).rows.map(r => [r.epicItemId, r.compactId]), [
+  assert.deepEqual(epicRows(rollup(snap)).map(r => [r.epicItemId, r.compactId]), [
     ['E20261009abcdef01', 'ABCDEF01'], ['Hfedcba9876543210', 'FEDCBA98'],
   ]);
 });
@@ -229,4 +229,37 @@ test('the Issues body groups issues into stage sections with the board screens\'
   const empty = m.sections.find(sec => sec.stage === 'build-recorded')!;
   assert.deepEqual([empty.defaultOpen, empty.emptyText, empty.issues], [false, DISPLAY_LABELS.nothingAtStage, []]);
   assert.match(issues(snap, { needsAttentionOnly: true }).fold.text, /stages have nothing needing attention/);
+});
+
+test('the Epics body places each epic at the stage of its least-advanced story, by the board screens\' section rule, and epics with no stories after the sections', () => {
+  const snap = snapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Mixed' }),
+    item({ id: 'E1:S001', parentId: 'E1', stage: 'complete' }),
+    item({ id: 'E1:S002', parentId: 'E1', stage: 'design-plan', needsAttention: true }),
+    item({ id: 'E2', kind: 'epic', title: 'Done' }),
+    item({ id: 'E2:S001', parentId: 'E2', stage: 'complete', needsAttention: true }),
+    item({ id: 'E2:S002', parentId: 'E2', stage: 'complete' }),
+    item({ id: 'E3', kind: 'epic', title: 'Empty' }),
+    item({ id: 'E4', kind: 'epic', title: 'Issue only early' }),
+    item({ id: 'E4:S001', parentId: 'E4', stage: 'build-recorded' }),
+    item({ id: 'I1', kind: 'issue', stage: 'scoped', correctsRef: { resolvedItemId: 'E4:S001' } as never, parentId: 'E4' }),
+  ]);
+  const m = rollup(snap);
+  const at = (stage: string) => m.sections.find(sec => sec.stage === stage)!;
+  assert.deepEqual(m.sections.map(sec => sec.stage), [...STAGE_ORDER], 'six sections in stage order');
+  assert.deepEqual(m.sections.map(sec => sec.rows.map(r => r.epicItemId)), [[], ['E1'], [], [], ['E4'], ['E2']],
+    'the earliest story stage places the epic; an issue does not hold it back; Complete only when every story is');
+  assert.deepEqual(m.noStories.map(r => r.epicItemId), ['E3'], 'an epic with no stories has no stage');
+  assert.deepEqual([at('complete').defaultOpen, at('complete').attentionCount, at('complete').hint], [false, 1, '1 needs attention'], 'Complete starts closed with its hint');
+  assert.deepEqual([at('scoped').defaultOpen, at('scoped').emptyText], [false, DISPLAY_LABELS.nothingAtStage]);
+  assert.equal(at('design-plan').defaultOpen, true);
+  assert.equal(m.fold.always, false);
+  assert.equal(m.totalsLabel, '4 epics · completion counts stories at Complete');
+
+  // Needs attention keeps the epics with something needing attention, opens their stages and folds the rest.
+  const attention = rollup(snap, { needsAttentionOnly: true });
+  assert.deepEqual(attention.sections.map(sec => sec.rows.map(r => r.epicItemId)), [[], ['E1'], [], [], [], ['E2']]);
+  assert.deepEqual([attention.fold.always, attention.sections.find(sec => sec.stage === 'complete')!.defaultOpen], [true, true]);
+  assert.deepEqual(attention.noStories, []);
+  assert.deepEqual(epicRows(attention).map(r => r.epicItemId), ['E1', 'E2']);
 });

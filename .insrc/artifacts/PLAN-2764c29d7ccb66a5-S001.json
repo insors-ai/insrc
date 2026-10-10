@@ -1,0 +1,346 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791646199472-02vk9w",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-10T15:32:30.070Z",
+    "epicCreatedAt": "2026-10-10T14:46:43.082Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 150592,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2764c29d7ccb66a5",
+    "epicSlug": "index-never-reconciled-against-files-disk",
+    "storyId": "S001",
+    "lldRunId": "wf-1791644365501-kpsmvb",
+    "lldEffectiveHash": "4989a10d1a6eb87cd664f7862ff7c657eab492ffa12a9da9e126a3e50783dc1b",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build adds two small store functions, a new kind of index job with its place in the queue, and the clean-up pass itself in the indexer, then wires the pass into daemon start and the full index. Most of the work, and most of the tests, are in the pass: what it removes, what it must never remove, and what it does afterwards. The last task updates the guide and checks the installed daemon's index of this repository after the update."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the two store functions the clean-up needs",
+        "summary": "In src/db/entities.ts add listEntityFilesForRepo(db, repo): for one repository, each non-empty absolute file path with the ids of that repository's entities in it, read in one pass over the entity table without building entities. In src/db/relations.ts add deleteUnresolvedForRepoFile(db, repo, file): remove one repository's unresolved relations of one file by a direct read of the index by repository and file.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "listEntityFilesForRepo returns each file of the repository once with all of that repository's entity ids for it, no file of another repository and no empty path.",
+          "deleteUnresolvedForRepoFile removes the named repository's unresolved relations of the file and leaves another repository's unresolved relations of the same path.",
+          "An unregistered repository gives an empty map and a no-op delete."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the read of a repository's stored files returns each file once, only that repository's files, and no empty path"
+          },
+          {
+            "level": "unit",
+            "name": "the removal of one repository's unresolved relations of a file leaves another repository's unresolved relations of the same path"
+          },
+          {
+            "level": "unit",
+            "name": "an unregistered repository has no stored files and its removal of unresolved relations does nothing"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the clean-up job kind to the job union and the queue",
+        "summary": "Add `{ kind: 'reconcile'; repoPath: string }` to IndexJob in src/shared/types.ts. In src/daemon/queue.ts count a queued `reconcile` job for its repository in depthForRepo and keep at most one queued per repository in enqueue. Add the `case 'reconcile'` to processJob in src/indexer/index.ts, calling a reconcileRepo method that this task leaves as a stub returning zero counts, so the tree compiles.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A queued clean-up job is counted as pending for its repository and not for another.",
+          "A second clean-up job for the same repository is not queued; one for another repository is.",
+          "processJob accepts a `reconcile` job and returns without error for a registered repository with nothing stored."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued"
+          },
+          {
+            "level": "integration",
+            "name": "a clean-up job for a registered repository with nothing stored is processed without error"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Build the clean-up pass and keep ignored files out of file jobs",
+        "summary": "Implement reconcileRepo(repoPath) on IndexerService: guard a missing repository root; read the stored files (t1); for each, decide absent (the presence check answers ENOENT or ENOTDIR), ignored (a path segment relative to the repository is in resolveRepoIgnore's list, the rule of hasIgnoredSegment), not checked (any other error; kept) or kept; remove an absent or ignored file's entities with deleteEntitiesById and its unresolved relations with deleteUnresolvedForRepoFile. Return the counts; reconcileRepo itself runs no resolver and removes no cached result. In the `reconcile` job: when at least one file was removed, run runCrossFileResolver once for the repository and the two endpoint passes (not fatal), and call deleteCachedExplorationsForRepo; arm no settle timer; log the counts. The presence check is a function held by the service, the real stat by default, replaceable through an optional last constructor argument. In fileEvent, make a create or update for a file with an ignored segment end after a debug log; a delete is unchanged.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A file that is gone, one whose parent directory became a file, and one under an ignored directory lose their entities, edges, unresolved relations and vector rows; every other file of the repository and every file of another repository is as before.",
+          "A file that exists and is not ignored, an entity with no file path and a file whose name only contains an ignored name are kept.",
+          "A missing repository root removes nothing; a file whose presence cannot be told is kept and counted once as not checked.",
+          "A nested registered repository keeps its entities for files under a directory its parent ignores.",
+          "After removals the resolver ran once in the job, no settle timer is armed and the repository's cached exploration results are gone; with no removals they are kept and no resolver ran.",
+          "reconcileRepo called directly removes the stale files, runs no resolver and removes no cached result; only the job does.",
+          "A second run removes nothing.",
+          "A create or update file job for a file under an ignored directory indexes nothing; one for a file elsewhere is indexed.",
+          "A kept file's link into a removed entity is gone and its other links stay."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was"
+          },
+          {
+            "level": "integration",
+            "name": "a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept"
+          },
+          {
+            "level": "integration",
+            "name": "a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept"
+          },
+          {
+            "level": "integration",
+            "name": "running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was"
+          },
+          {
+            "level": "integration",
+            "name": "a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them"
+          },
+          {
+            "level": "integration",
+            "name": "a file whose parent directory became a file is removed as absent"
+          },
+          {
+            "level": "integration",
+            "name": "the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it"
+          },
+          {
+            "level": "integration",
+            "name": "the vector rows of a removed file are gone after the clean-up and those of a kept file remain"
+          },
+          {
+            "level": "integration",
+            "name": "a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed"
+          },
+          {
+            "level": "integration",
+            "name": "a kept file's link into a removed entity is removed with it, and the kept file's other links and entities stay"
+          },
+          {
+            "level": "integration",
+            "name": "the clean-up method called directly removes the stale files, runs no resolver and removes no cached result"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Run the clean-up at daemon start and inside a full index",
+        "summary": "In start(), enqueue a `reconcile` job for each repository that is `ready` with a last-indexed time, whether or not the delta found changes, and for one stored as `indexing` with a last-indexed time; none for a repository that gets a `full` job. In fullIndex(), call reconcileRepo after the files are indexed and before runCrossFileResolver, with no resolver run of its own and no settle timer; a failure fails the full index as an indexing failure does.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A ready repository gets one clean-up job at start; a pending one gets a full job and no clean-up job.",
+          "A repository stored as indexing with a last-indexed time gets a clean-up job at start.",
+          "A full index of a repository holding a stale stored file leaves that file out of the index and marks the repository ready."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready"
+          },
+          {
+            "level": "integration",
+            "name": "a repository left indexing with a last-indexed time gets a clean-up job at daemon start"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Describe the clean-up in the guide and check the installed daemon",
+        "summary": "In docs/daemon.md, where indexing is described, say that the index is cleaned at start and during a full index, what is removed and what is kept, that an ignored file is not indexed by a file job, and the limit on a kept file's link into a removed entity. After the build is pushed, update and restart the installed daemon and check this repository's index before and after with search.by_file and repo.stats. The check on the installed daemon is reported by the builder with its evidence, not run by the gate; this task is validated after the push and the daemon update.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "docs/daemon.md describes the clean-up, when it runs, what it removes and its one limit.",
+          "On the installed daemon after the update, files under this repository's build output and the deleted test file have no entities, a source file still has its entities, and the count of JavaScript files has fallen (reported by the builder with evidence)."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "on the installed daemon after the update, the files under this repository's build output and the deleted test file have no entities, a source file still has its entities, and the repository's count of JavaScript files has fallen"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a file whose parent directory became a file is removed as absent",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the vector rows of a removed file are gone after the clean-up and those of a kept file remain",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a kept file's link into a removed entity is removed with it, and the kept file's other links and entities stay",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a repository left indexing with a last-indexed time gets a clean-up job at daemon start",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the read of a repository's stored files returns each file once, only that repository's files, and no empty path",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the removal of one repository's unresolved relations of a file leaves another repository's unresolved relations of the same path",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "on the installed daemon after the update, the files under this repository's build output and the deleted test file have no entities, a source file still has its entities, and the repository's count of JavaScript files has fallen",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges: the stored files of a repository (listEntityFilesForRepo, deleteUnresolvedForRepoFile)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges: IndexJob gains the kind `reconcile`; the queue counts it and keeps one per repository"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails processJob: the `reconcile` job, reconcileRepo, and the error paths and edge cases of the clean-up"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails fullIndex and start: where the clean-up runs"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration steps 4 and 5: update the installed daemon and the guide"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges: what the index holds for a repository; a create or update file job skips an ignored file"
+    }
+  ]
+}

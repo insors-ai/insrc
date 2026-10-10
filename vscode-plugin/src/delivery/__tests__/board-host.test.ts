@@ -670,6 +670,13 @@ test('a filter change, Back and announcements: screen changes are announced once
   send(ch, { type: 'back' });
   send(ch, { type: 'open-item', itemId: 'E1' });
   assert.deepEqual(announces(ch).slice(1), ['Opened: Details · Build recorded', 'Back to All work', 'Epic: Epic'], 'an epic id opens the epic');
+  // A return to an item names it as its breadcrumb does.
+  send(ch, { type: 'set-view', view: 'all' });
+  send(ch, { type: 'open-item', itemId: 'S1' });
+  send(ch, { type: 'open-item', itemId: 'S2' });
+  send(ch, { type: 'back' });
+  assert.equal(announces(ch).at(-1), 'Back to S1');
+  assert.equal(lastScreen(ch)!.crumbs.at(-1)!.label, 'S1');
 
   const before = announces(ch).length;
   for (const p of [{ type: 'set-search', search: 'x' }, { type: 'set-search', search: '' }, { type: 'set-attention', on: true },

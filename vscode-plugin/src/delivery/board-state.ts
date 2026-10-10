@@ -27,7 +27,7 @@ import type {
   BoardDownMessage, BoardScreen, CrumbView, Density, Envelope, ItemDetailsViewModel, ItemTab, ListView, ScreenBody, ScreenModel,
   StatePanelView, StatusView,
 } from './board-protocol.js';
-import type { DisplayLabels } from './labels.js';
+import { readableTime, type DisplayLabels } from './labels.js';
 
 export interface AppliedSnapshot {
   readonly snapshot: DeliverySnapshot;
@@ -250,12 +250,6 @@ function partialNotice(s: DeliverySnapshot): string | null {
   return parts.join(' ');
 }
 
-/** An ISO time as 'YYYY-MM-DD HH:MM UTC', or the string itself when it is not one. */
-function readableTime(iso: string): string {
-  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(iso);
-  return m === null ? iso : `${m[1]} ${m[2]} UTC`;
-}
-
 /** How long ago the shown snapshot was taken, phrased for the app bar; an unparseable time is shown as recorded. */
 function freshnessLabel(takenAt: string | null, now: string): string | null {
   if (takenAt === null) return null;
@@ -331,8 +325,8 @@ const SEARCH_PLACEHOLDER: Readonly<Record<ListView | 'epic', string>> = {
 };
 
 /** An item's id as the breadcrumb shows it: the story number ('S001'), or the issue's or epic's short hash. */
-function shortId(id: string): string {
-  return compactIdOf(id).split(' / ').pop()!;
+export function shortId(id: string): string {
+  return compactIdOf(id).split(' / ').pop() ?? id;
 }
 
 /** The breadcrumb label of one trail entry's screen. */

@@ -18,7 +18,7 @@ import type { DeliveryEvidenceView, DeliveryItemView, DeliverySnapshot } from '.
 import type { DisplayLabels } from './labels.js';
 import type { BadgeView, ChainRowView, EvidenceRowView, ItemDetailsViewModel, LinkView, TaskRowView } from './board-protocol.js';
 import { badgesOf, compactIdOf, indexItems, isCardKind, taskSummaryOf, titleOf, type ItemIndex } from './board-model.js';
-import { approvalTone, labelOf, taskResultTone } from './labels.js';
+import { approvalTone, labelOf, readableTime, taskResultTone } from './labels.js';
 
 export interface PlanTaskView {
   readonly id: string;
@@ -71,12 +71,6 @@ function conflictSentence(item: DeliveryItemView, byId: ItemIndex): string | nul
   if (item.conflict.storyLevelFailed) parts.push('the story-level result failed');
   if (parts.length === 0) return 'The build is approved while a validation result failed.';
   return `The build is approved while ${parts.join(' and ')}.`;
-}
-
-/** An ISO time as 'YYYY-MM-DD HH:MM UTC', or the string itself when it is not one. */
-function readableTime(iso: string): string {
-  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(iso);
-  return m === null ? iso : `${m[1]} ${m[2]} UTC`;
 }
 
 function evidenceRow(entry: DeliveryEvidenceView, labels: DisplayLabels): EvidenceRowView {

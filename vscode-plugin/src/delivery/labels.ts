@@ -55,6 +55,12 @@ export function labelOf<K extends string>(table: Readonly<Record<K, string>>, co
   return Object.hasOwn(table, code) ? table[code] : String(code);
 }
 
+/** An ISO time as 'YYYY-MM-DD HH:MM UTC', or the string itself when it is not one; every timestamp the board shows. */
+export function readableTime(iso: string): string {
+  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(iso);
+  return m === null ? iso : `${m[1]} ${m[2]} UTC`;
+}
+
 /** The tone of each approval state; a state this build does not know is neutral. */
 const APPROVAL_TONES: Readonly<Record<ApprovalState, 'success' | 'warning' | 'danger'>> = { approved: 'success', pending: 'warning', rejected: 'danger' };
 export function approvalTone(state: ApprovalState): 'success' | 'warning' | 'danger' | 'neutral' {

@@ -38,7 +38,7 @@ import type { Envelope } from '../chat/protocol.js';
 import { isPlaceable, placeableCount, titleOf, unknownStages } from './board-model.js';
 import { parseBoardUpMessage, type BoardUpMessage } from './board-protocol.js';
 import {
-  boardDownMessages, currentEntry, currentItemId, initialBoardState, reduceBoardState, shownSnapshot, statusView,
+  boardDownMessages, currentEntry, currentItemId, initialBoardState, reduceBoardState, shortId, shownSnapshot, statusView,
   type BoardEvent, type BoardState, type NavIntent,
 } from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
@@ -592,7 +592,8 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     if (item === undefined) return null;
     if (screen.kind === 'epic') return opened ? `Epic: ${titleOf(item)}` : titleOf(item);
     const stage = item.stage === null ? '' : ` \u00b7 ${labelOf(DISPLAY_LABELS.stage, item.stage.stage)}`;
-    return opened ? `Opened: ${titleOf(item)}${stage}` : titleOf(item);
+    // A return names the screen as its breadcrumb does: the story's number or the issue's short hash.
+    return opened ? `Opened: ${titleOf(item)}${stage}` : shortId(item.id);
   }
 
   /**

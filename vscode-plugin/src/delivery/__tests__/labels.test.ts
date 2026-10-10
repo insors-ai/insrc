@@ -16,7 +16,7 @@ import type {
   ReviewVerdict,
   TaskResult,
 } from '../delivery-contract.js';
-import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
+import { DISPLAY_LABELS, readableTime, STAGE_ORDER } from '../labels.js';
 
 // Exhaustive member lists: each Record fails to compile if its union gains or loses a member.
 const STAGES: Record<DeliveryStage, true> = {
@@ -79,4 +79,9 @@ test('DISPLAY_LABELS carries the view, item-tab, attention and stage-section lab
   assert.equal(DISPLAY_LABELS.needsAttention, 'Needs attention');
   assert.equal(DISPLAY_LABELS.nothingAtStage, 'nothing at this stage');
   assert.equal(DISPLAY_LABELS.otherStages, 'Other stages · 0 matching');
+});
+
+test('readableTime shows an ISO time as YYYY-MM-DD HH:MM UTC and anything else as recorded', () => {
+  assert.equal(readableTime('2026-09-30T14:40:12.000Z'), '2026-09-30 14:40 UTC');
+  assert.equal(readableTime('sometime'), 'sometime');
 });

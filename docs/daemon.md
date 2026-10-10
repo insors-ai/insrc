@@ -766,7 +766,8 @@ source took, with no way to stop it. Now:
   by default. The setting is `analyzer.dataSourceListingTimeoutMs` in
   `~/.insrc/config.json`, in milliseconds; it is read each time a source is
   measured, so a change needs no restart. A value that is not a number greater
-  than 0 is ignored and the default is used;
+  than 0 is ignored and the default is used; a value above 2147483647 (about
+  24.8 days, the longest a timer waits) is taken as that;
 - a source that does not answer in time is not counted: the size is `XL`, not
   determined, with the note `the listing of '<id>' timed out: the source did
   not answer within <n> seconds`. The request goes on. Raise the setting for a
@@ -780,11 +781,16 @@ source took, with no way to stop it. Now:
   connections not yet asked are not asked;
 - the wait is given up, not the source's own call. The data drivers cannot be
   cancelled, so a listing that timed out may go on in the background until the
-  source answers or fails; its late result is not used. The connection may
-  stay busy until then.
+  source answers or fails. The connection may stay busy until then;
+- a source whose listing is still out is not asked again. A later measure of
+  it (a child plan, another request) waits for the same call under its own
+  time limit, and is given the count if it arrives in time. So a source that
+  does not answer has one call out, not one per request. Once the call ends
+  the source is asked afresh.
 
-A child plan that names a source its parent also named lists it again, within
-its own limit.
+A child plan that names a source its parent also named measures it again,
+within its own limit: it asks the source afresh when the parent's call has
+ended, and waits on the parent's call when it is still out.
 
 ### A run measures the area it names once
 

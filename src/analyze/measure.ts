@@ -574,12 +574,33 @@ function withinLimit<T>(
 	});
 }
 
-/** The time one live source is given: the caller's, when it is a usable limit, else the configured one. */
+/** The longest delay a timer takes (about 24.8 days): given a longer one, the runtime fires the timer at once. */
+export const MAX_SOURCE_TIMEOUT_MS = 2_147_483_647;
+
+/**
+ * The time one live source is given: the caller's, when it is a usable limit,
+ * else the configured one; never more than a timer can wait, so that a very
+ * large value is a very long limit and not one that ends at once.
+ */
 function sourceLimitMs(options: MeasureOptions | undefined): number {
 	const given = options?.sourceTimeoutMs;
-	if (typeof given === 'number' && Number.isFinite(given) && given > 0) return given;
-	return depsForTest?.sourceTimeoutMs !== undefined ? depsForTest.sourceTimeoutMs() : dataSourceListingTimeoutMs();
+	const limit = typeof given === 'number' && Number.isFinite(given) && given > 0
+		? given
+		: depsForTest?.sourceTimeoutMs !== undefined ? depsForTest.sourceTimeoutMs() : dataSourceListingTimeoutMs();
+	return Math.min(limit, MAX_SOURCE_TIMEOUT_MS);
 }
+
+/** A reach-and-list call that is still out, and whether a caller has given up waiting for it. */
+interface PendingListing { work: Promise<RequestMeasure>; abandoned: boolean }
+
+/**
+ * The reach-and-list calls still out, per pool and connection. A source that
+ * has not answered yet is not asked again while its call is out: a later
+ * measure of it (another child plan, another request) waits for the same
+ * call under its own time limit, so the calls on one stalled connection do
+ * not pile up. An entry is removed when its call ends, whatever its result.
+ */
+const pendingListings = new WeakMap<object, Map<string, PendingListing>>();
 
 /**
  * The measure of one connection of a pool that is already loaded.
@@ -596,6 +617,8 @@ async function measureConnection(
 	sizeHint: AnalyzeScope | undefined,
 	options?: MeasureOptions,
 ): Promise<RequestMeasure> {
+	/** A measure of this call: the caller's stated size is its own, also on a result shared with another caller. */
+	const hinted = (m: RequestMeasure): RequestMeasure => (sizeHint !== undefined ? { ...m, sizeHint } : m);
 	const nd = (note: string): RequestMeasure => notDetermined('data-source', note, sizeHint);
 
 	// A source whose listing is a sample of keys is known by its kind, which the
@@ -606,24 +629,42 @@ async function measureConnection(
 	}
 
 	const limitMs = sourceLimitMs(options);
-	/** True once the wait has ended without the work: what the work does after that is late. */
-	let abandoned = false;
 	const late = (what: string, err: unknown): void => {
 		log.debug({ connectionId: id, err: reasonOf(err) }, `the measure of a data source was abandoned; its ${what} failed afterwards`);
 	};
-	const outcome = await withinLimit(reachAndList(), limitMs, options?.signal, err => late('call', err));
-	if (outcome.kind === 'done') return outcome.value;
-	abandoned = true;
+	// The call that is already out for this connection, or a new one.
+	let out = pendingListings.get(pool);
+	if (out === undefined) { out = new Map(); pendingListings.set(pool, out); }
+	let pending = out.get(id);
+	if (pending === undefined) {
+		// The call reads the entry's own flag, so the entry exists before the call starts.
+		const entry = { abandoned: false } as PendingListing;
+		entry.work = reachAndList(entry);
+		const calls = out;
+		void entry.work.finally(() => { if (calls.get(id) === entry) calls.delete(id); });
+		out.set(id, entry);
+		pending = entry;
+	}
+	const outcome = await withinLimit(pending.work, limitMs, options?.signal, err => late('call', err));
+	if (outcome.kind === 'done') return hinted(outcome.value);
+	// What the call does after this is late.
+	pending.abandoned = true;
 	if (outcome.kind === 'cancelled') return nd(`the request was cancelled while the source '${id}' was being measured`);
 	return nd(`the listing of '${id}' timed out: the source did not answer within ${limitMs / 1000} seconds`);
 
-	/** Reach the connection and list it. Never rejects: each failure is a measure that is not determined. */
-	async function reachAndList(): Promise<RequestMeasure> {
+	/**
+	 * Reach the connection and list it. Never rejects: each failure is a
+	 * measure that is not determined. Its result carries no stated size: it
+	 * may be shared by callers that stated different ones.
+	 */
+	async function reachAndList(state: { readonly abandoned: boolean }): Promise<RequestMeasure> {
+		const nd = (note: string): RequestMeasure => notDetermined('data-source', note);
+		const sizeHint = undefined;
 		let driver: Awaited<ReturnType<DataPool['acquire']>>;
 		try {
 			driver = await pool.acquire(id);
 		} catch (err) {
-			if (abandoned) late('connection', err);
+			if (state.abandoned) late('connection', err);
 			return nd(`the source '${id}' cannot be reached (${reasonOf(err)})`);
 		}
 
@@ -658,7 +699,7 @@ async function measureConnection(
 					return nd(`the source '${id}' is of a family that has no listing (${String((driver as { family?: unknown }).family)})`);
 			}
 		} catch (err) {
-			if (abandoned) late('listing', err);
+			if (state.abandoned) late('listing', err);
 			return nd(`the listing of '${id}' failed (${reasonOf(err)})`);
 		}
 	}

@@ -28,7 +28,7 @@ import { resolveScopeForTarget } from '../context/scope.js';
 import type { ResolvedScope, ScopeDeps } from '../context/scope.js';
 import type { PlannedTask, TemplateExecuteArgs } from '../executor/types.js';
 import {
-	CANCELLED_AMONG_SOURCES, CANCELLED_BEFORE_MEASURE,
+	CANCELLED_AMONG_SOURCES, CANCELLED_BEFORE_MEASURE, MAX_SOURCE_TIMEOUT_MS,
 	_setMeasureDepsForTest, measureDataSource, measureNamedArea, measureRequestScope, measureResolvedScope, sizeOfCounts,
 } from '../measure.js';
 import type { RequestMeasure } from '../measure.js';
@@ -246,7 +246,7 @@ test("a workspace that a registered repo contains is counted through the area pr
 // A data source
 // ---------------------------------------------------------------------------
 
-interface StandInConnection { readonly id: string; readonly kind: string; readonly family: 'rdbms' | 'kv' | 'file'; readonly driver?: Record<string, unknown>; readonly path?: string; readonly recursive?: boolean; readonly unreachable?: boolean; /** Its connection is never made: `acquire` does not settle. */ readonly stalled?: boolean }
+interface StandInConnection { readonly id: string; readonly kind: string; readonly family: 'rdbms' | 'kv' | 'file'; readonly driver?: Record<string, unknown>; readonly path?: string; readonly recursive?: boolean; readonly unreachable?: boolean; /** Its connection is never made: `acquire` does not settle. */ readonly stalled?: boolean | undefined; /** Its connection fails, after this many milliseconds. */ readonly refusesAfterMs?: number | undefined }
 
 /** A pool of stand-in connections that records what was opened, acquired and asked of each listing. */
 function standInPool(connections: readonly StandInConnection[]): { opened: string[]; acquired: string[]; asked: Array<Record<string, unknown> | undefined>; reloads: () => number } {
@@ -263,6 +263,7 @@ function standInPool(connections: readonly StandInConnection[]): { opened: strin
 			if (c === undefined) throw new Error(`no connection '${id}'`);
 			if (c.unreachable === true) throw new Error('connect ECONNREFUSED 127.0.0.1:5432');
 			if (c.stalled === true) return new Promise<never>(() => undefined);
+			if (c.refusesAfterMs !== undefined) return new Promise<never>((_, reject) => setTimeout(() => reject(new Error('connect ETIMEDOUT')), c.refusesAfterMs));
 			return { family: c.family, kind: c.kind, ...(c.driver ?? {}) };
 		},
 	};
@@ -534,6 +535,9 @@ test('a live source whose listing never returns, and one that is never reached, 
 	// The same through the pass's entry points, for a connection scope.
 	assert.equal((await measureResolvedScope(connectionScope('slow-sql'), 'data', undefined, { sourceTimeoutMs: 20 })).note, timedOut('slow-sql', 0.02));
 	assert.equal((await measureResolvedScope(connectionScope('slow-sql'), 'generic', undefined, { sourceTimeoutMs: 20 })).note, timedOut('slow-sql', 0.02));
+	// A source that has not answered is not asked again while its call is out: each later measure waited its own
+	// limit on the same call, and the calls on the stalled connection did not pile up.
+	assert.deepEqual(p.acquired, ['slow-sql', 'slow-kv', 'no-answer'], 'still one call per stalled source');
 
 	// A source that answers within the limit is counted as before ...
 	assert.deepEqual(counts(await measureDataSource({ poolPath: BIG, connectionId: 'quick' }, undefined, { sourceTimeoutMs: 40 })),
@@ -638,18 +642,31 @@ test('the rejection of a listing abandoned after its time limit is caught and is
 		const p = standInPool([
 			{ id: 'late-listing', kind: 'postgres', family: 'rdbms', driver: lateListing },
 			{ id: 'late-result',  kind: 'postgres', family: 'rdbms', driver: { listTables: () => new Promise(resolve => setTimeout(() => resolve({ target: 't', tables: tables(9), truncated: false }), 60)) } },
+			{ id: 'late-refusal', kind: 'postgres', family: 'rdbms', driver: tableListing(3), refusesAfterMs: 60 },
 		]);
 		const m = await measureDataSource({ poolPath: BIG, connectionId: 'late-listing' }, undefined, { sourceTimeoutMs: 15 });
 		assert.equal(m.note, timedOut('late-listing', 0.015));
 		// A result that arrives after the wait does not change the measure that was returned.
 		const late = await measureDataSource({ poolPath: BIG, connectionId: 'late-result' }, undefined, { sourceTimeoutMs: 15 });
 		assert.deepEqual([undetermined(late), late.note], [UNDETERMINED, timedOut('late-result', 0.015)]);
-		// Let both abandoned calls end.
+		// A connection that fails after the wait has ended is caught the same way.
+		const refused = await measureDataSource({ poolPath: BIG, connectionId: 'late-refusal' }, 'M', { sourceTimeoutMs: 15 });
+		assert.deepEqual([refused.sizeHint, refused.note], ['M', timedOut('late-refusal', 0.015)]);
+		// A second measure of the source whose answer is still on its way waits for the SAME call, under its own
+		// limit, and is given the count when it arrives; the stated size on it is the second caller's own.
+		const joined = await measureDataSource({ poolPath: BIG, connectionId: 'late-result' }, 'L', { sourceTimeoutMs: 2000 });
+		assert.deepEqual(counts(joined), { source: 'data-source', items: 9, files: 0, size: 'S', determined: true });
+		assert.equal(joined.sizeHint, 'L');
+		// Let the abandoned calls end.
 		await new Promise(resolve => setTimeout(resolve, 150));
 		assert.equal(rejected, 1, 'the abandoned listing did reject');
 		assert.deepEqual(unhandled, []);
 		assert.deepEqual([undetermined(late), late.note], [UNDETERMINED, timedOut('late-result', 0.015)]);
-		assert.deepEqual(p.acquired, ['late-listing', 'late-result']);
+		assert.deepEqual(p.acquired, ['late-listing', 'late-result', 'late-refusal'], 'the source measured twice was reached once');
+		// Once a call has ended, the source is asked afresh.
+		const again = await measureDataSource({ poolPath: BIG, connectionId: 'late-result' }, undefined, { sourceTimeoutMs: 2000 });
+		assert.equal(again.determined, true);
+		assert.equal(p.acquired.filter(id => id === 'late-result').length, 2);
 	} finally {
 		process.off('unhandledRejection', onUnhandled);
 	}
@@ -673,6 +690,26 @@ test('the time limit comes from the setting, a value in the options replaces it,
 		assert.equal(await noteWith({ sourceTimeoutMs: bad }), timedOut('slow-sql', 0.03), String(bad));
 	}
 	assert.equal(read, 6);
+
+	// A limit longer than a timer can wait is the longest a timer can wait, not one that ends at once: the source
+	// is still being waited on when the request is cancelled.
+	assert.equal(MAX_SOURCE_TIMEOUT_MS, 2_147_483_647);
+	for (const huge of [MAX_SOURCE_TIMEOUT_MS + 1, 1e15, Number.MAX_SAFE_INTEGER]) {
+		standInPool([{ id: 'slow-sql', kind: 'postgres', family: 'rdbms', driver: stalledSql }]);
+		const cancel = new AbortController();
+		setTimeout(() => cancel.abort(), 30);
+		const started = Date.now();
+		const m = await measureDataSource({ poolPath: BIG, connectionId: 'slow-sql' }, undefined, { signal: cancel.signal, sourceTimeoutMs: huge });
+		assert.equal(m.note, "the request was cancelled while the source 'slow-sql' was being measured", String(huge));
+		assert.ok(Date.now() - started >= 25, `${huge}: the wait did not end at once`);
+	}
+	// The same for a configured value.
+	standInPool([{ id: 'slow-sql', kind: 'postgres', family: 'rdbms', driver: stalledSql }]);
+	_setMeasureDepsForTest({ sourceTimeoutMs: () => 1e15 });
+	const cancel = new AbortController();
+	setTimeout(() => cancel.abort(), 30);
+	assert.equal((await measureDataSource({ poolPath: BIG, connectionId: 'slow-sql' }, undefined, { signal: cancel.signal })).note,
+		"the request was cancelled while the source 'slow-sql' was being measured");
 });
 
 // ---------------------------------------------------------------------------
@@ -686,7 +723,7 @@ interface ReadCounts { whole: number; byId: number; byFile: number; indexCheck: 
  * measure's own read of every entity of a repo; `indexCheck` is the same read
  * made by the scope resolution's index check, counted apart.
  */
-function countingReads(over: { getEntity?: (id: string) => Promise<Entity | null>; listEntitiesOfFile?: (file: string) => Promise<readonly Entity[]> } = {}): ReadCounts {
+function countingReads(over: { getEntity?: ((id: string) => Promise<Entity | null>) | undefined; listEntitiesOfFile?: ((file: string) => Promise<readonly Entity[]>) | undefined } = {}): ReadCounts {
 	const calls: ReadCounts = { whole: 0, byId: 0, byFile: 0, indexCheck: 0 };
 	_setMeasureDepsForTest({
 		listEntities:       async repo => { calls.whole += 1; return listEntitiesForRepo(null, repo); },

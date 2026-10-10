@@ -15,14 +15,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-import { listEntitiesForRepo, upsertEntities } from '../../../db/entities.js';
+import { loadConnections } from '../../../daemon/db/config.js';
+import { findEntitiesByFile, listEntitiesForRepo, upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
-import { addRepo } from '../../../db/repos.js';
+import { addRepo, listRepos } from '../../../db/repos.js';
 import { makeEntityId } from '../../../indexer/parser/base.js';
 import type { AnalyzeScope, AnalyzeScopeRef, ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
@@ -125,13 +125,13 @@ interface Run {
 	readonly record: RunRecord | null;
 }
 
-async function run(tag: string, args: Omit<RunAnalyzeArgs, 'runId'>, answers: { plan?: unknown } = {}, signal?: AbortSignal): Promise<Run> {
+async function run(tag: string, args: Omit<RunAnalyzeArgs, 'runId'>, answers: { plan?: unknown; onPlan?: (() => void) | undefined } = {}, signal?: AbortSignal): Promise<Run> {
 	const runId = `run-measure-${tag}-${Math.floor(Math.random() * 1e9).toString(16)}`;
 	const roles: string[] = [];
 	const routing = { router: { resolveProviderForRole: (role: string) => {
 		roles.push(role);
 		const completeStructured = async (_m: unknown, schema: unknown): Promise<unknown> => {
-			if (role === 'analyze.plan' && answers.plan !== undefined) return answers.plan;
+			if (role === 'analyze.plan' && answers.plan !== undefined) { answers.onPlan?.(); return answers.plan; }
 			return smallest(schema);
 		};
 		return { provider: { completeStructured } as unknown as LLMProvider };
@@ -289,12 +289,38 @@ test("the run driver passes its signal to the measure and to the recursive plann
 	assert.equal(classifiedOf(live).measure?.determined, true);
 	assert.equal(measured, 1);
 
-	// The run hands the same signal to the recursive planner, which hands it to the measure of each child plan
-	// (the planner's own test shows a child measured under it). Read from the source: the planner's options are
-	// built in one place.
-	const driver = readFileSync(fileURLToPath(new URL('../driver.ts', import.meta.url)), 'utf8');
-	const plannerCall = driver.slice(driver.indexOf('tree = await runRecursivePlanner({'));
-	const plannerOpts = plannerCall.slice(0, plannerCall.indexOf('} catch (err) {'));
-	assert.match(plannerOpts, /\.\.\.\(opts\.signal !== undefined \? \{ signal: opts\.signal \} : \{\}\),/);
-	assert.match(driver, /measureRequestScope\(unsized\.scopeRef, unsized\.target, args\.scopeHint, \{ signal: opts\.signal \}\)/);
+	// --- The run hands the same signal to the recursive planner, which hands it to the measure of each child plan. ---
+	// A run whose plan holds a planner task: the child plan it spawns is measured from the area it names. The
+	// measure reads the registry through its own readers, which are counted here; nothing else in a run uses them.
+	let scopeReads = 0;
+	const real = { listRepos: () => listRepos(null), findEntitiesByFile: (file: string) => findEntitiesByFile(null, file), listEntitiesForRepo: (path: string) => listEntitiesForRepo(null, path), loadConnections };
+	const counted = new Proxy(real, { get: (t, prop) => { scopeReads += 1; return Reflect.get(t, prop); } });
+	_setMeasureDepsForTest({ scope: counted });
+	const childIntent: ClassifiedIntent = { target: 'code', scope: 'XS', focused: false, scopeRef: repo(small), reasoning: 'a closer look at the one module of the repository' };
+	const withChild = {
+		planId: 'p-child', goal: 'say what the repo holds', target: 'code', scope: 'XS',
+		reasoning: 'a plan of four tasks, one of which spawns a child plan, with one aggregate task at its end',
+		tasks: [
+			{ taskId: 't01', template: 'code.discovery.modules', kind: 'leaf', params: { scopeRef: repo(small) }, produces: ['modules'], rationale: 'discover the modules of the repo for the report' },
+			{ taskId: 't02', template: 'code.subrun.deep-dive', kind: 'planner', params: { childIntent }, produces: ['report'], rationale: 'plan a closer look at the one module of the repo' },
+			{ taskId: 't03', template: 'code.surface.functional', kind: 'leaf', params: { module: 'src' }, produces: ['functional-surface'], rationale: 'surface scan of the one module of the repo' },
+			{ taskId: 't04', template: 'code.aggregate.report', kind: 'leaf', params: {}, produces: ['report'], rationale: 'aggregate the task outputs into the final report' },
+		],
+	};
+	const request = { userPrompt: 'what is here', scopeRef: repo(small), targetHint: 'code' } as const;
+	// With a signal that does not fire, the child plan is measured: the measure's readers are used again after the
+	// planner model first answered.
+	let readsAtFirstPlan: number | undefined;
+	await run('child-measured', request, { plan: withChild, onPlan: () => { readsAtFirstPlan ??= scopeReads; } }, new AbortController().signal);
+	assert.ok(readsAtFirstPlan !== undefined && readsAtFirstPlan > 0, 'the run measured its request and reached the planner');
+	assert.ok(scopeReads > readsAtFirstPlan, `the child plan was measured (${readsAtFirstPlan} readings before the plan, ${scopeReads} after)`);
+	// Cancelled while the planner model answers for the root plan: the child's measure is handed the run's signal
+	// and reads nothing.
+	scopeReads = 0;
+	readsAtFirstPlan = undefined;
+	const stop = new AbortController();
+	const stopped = await run('child-not-measured', request, { plan: withChild, onPlan: () => { readsAtFirstPlan ??= scopeReads; stop.abort(); } }, stop.signal);
+	assert.ok(readsAtFirstPlan !== undefined && readsAtFirstPlan > 0);
+	assert.equal(scopeReads, readsAtFirstPlan, 'no reading was made for a child measure after the cancellation');
+	assert.equal(stopped.result.ok, false);
 });

@@ -1,0 +1,610 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791627848863-k53fdt",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-10T10:28:00.851Z",
+    "epicCreatedAt": "2026-10-09T14:36:42.809Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 231982,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ab2cc2edb3743df",
+    "epicSlug": "bug-plan-tree-analyze-run-when",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1791627848863-k53fdt",
+    "hldEffectiveHash": "3379c56907db53fc3b4b1b396d7fd7dc601c7666ea09bb1c904a2a1d35307ff8",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The root cause is that the plan walk stores one value per output name and a later producer replaces an earlier one; changing the walk to append and project lists removes it and covers all five points of the ISSUE's fix intent.",
+          "evidence": "src/analyze/executor/walker.ts:110 `const outputs = new Map<string, unknown>();`, :198-200 `for (const [name, value] of Object.entries(result.outputs)) { outputs.set(name, value); }`, and projectUpstream (:463-474) copies one value per consumed name. A planner task's report goes through the same loop (record.outputs = { [task.produces[0]!]: childResult.root.finalReport }, :343), so the nested-plan point is covered by the same change. The design's sections map to the ISSUE's fix intent: every output in plan order with its task (3.2, 2.3), prompt with task and params (2.2), failed producers reported absent (2.4), one-producer plans unchanged (2.2 postcondition), all families and nested reports (3.1 call sites, 3.2). The prompt-size limit is left out, as the ISSUE's own 'Not in scope' says. [files: src/analyze/executor/walker.ts, docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/ISSUE.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today absentInputsFor leaves out a failed or skipped producer when another task produced the same name, and aggregateUnmet / unmetDependencies test only whether a name is present.",
+          "evidence": "walker.ts:444-448 `// Another task may have produced the same name; it is then not absent.` / `if (outputs.has(name)) continue;`. aggregateUnmet :416 `if (consumes.some(name => outputs.has(name))) return null;`. unmetDependencies :390 `if (!outputs.has(name)) { return name; }`. [files: src/analyze/executor/walker.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "All five aggregate system prompts describe one `### <taskId>` section per input, while the code titles each block with the output name.",
+          "evidence": "code.aggregate.system.md:12, data.aggregate.system.md:14, infra.aggregate.system.md:14, generic.aggregate.system.md:20 and docs.aggregate.system.md:10 each read \"A block titled `Upstream task outputs:` with one `### <taskId>` section per prior task\". renderUpstreamSection (aggregator.ts:189-208) iterates `Array.from(map.keys()).sort()` and writes `### ${id}`, where the keys are the consumed output names handed over by projectUpstream. [files: src/prompts/analyze/code.aggregate.system.md, src/prompts/analyze/data.aggregate.system.md, src/prompts/analyze/docs.aggregate.system.md, src/prompts/analyze/generic.aggregate.system.md, src/prompts/analyze/infra.aggregate.system.md, src/analyze/runtimes/shared/aggregator.ts]",
+          "action": "None. Note for the build: the same sentence in each prompt also says the body is `[unavailable: ...]` \"when the task failed\"; with the new absent rule a failed task has no sub-section at all, so that clause is worth rewording in the same edit.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The only production reader of upstreamOutputs is the shared aggregate code, reached through the five aggregate-report runtimes; the walker is the only producer of the map.",
+          "evidence": "A repo-wide search for `upstreamOutputs` in .ts/.tsx/.kt finds non-test hits only in executor/walker.ts (:246, :251), executor/types.ts (:69), runtimes/shared/aggregator.ts (:60, :108, :136, :148, :162, :167) and the five runtimes/{code,data,docs,generic,infra}/aggregate-report.ts, each passing `upstreamOutputs: args.upstreamOutputs`. The adherence code no longer reads it (scope-sources.test.ts:98 and adherence-topic-route.test.ts:443 assert that), so the ISSUE's mention of the adherence code as a reader is out of date and the design is right to leave it out. The context shaper's `upstreamTasks` (context/driver.ts:653) is a different map fed from the RPC, not from the walk. [files: src/analyze/executor/walker.ts, src/analyze/executor/types.ts, src/analyze/runtimes/shared/aggregator.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The migration's list of test files to update is every test that passes a non-empty map or reads the map it was handed.",
+          "evidence": "Search results match the list: aggregator.test.ts (:142, :219, :249, :323, :331 and the _renderUpstreamSectionForTest calls at :110-126), aggregate-absent-inputs.test.ts:38, walker-aggregate.test.ts:76 and walker-walk-failure.test.ts:74 (both `Object.fromEntries(args.upstreamOutputs)`), walker.test.ts (uses _projectUpstreamForTest and _unmetDependenciesForTest at :127-146, which the search for the field name alone would miss, and the design lists it), completeness-all-runtimes.test.ts:73 (`new Map(Object.entries(upstream))`), and live suites for code, data, generic and infra only (there is no docs aggregate-report.live.test.ts). The remaining hits pass `new Map()`. The live suites assert `report.metadata.tasksAnalyzed === SYNTHETIC_UPSTREAM.size`, which stays true with one output per name. [files: src/analyze/executor/__tests__/walker.test.ts, src/analyze/runtimes/shared/__tests__/aggregator.test.ts, src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts]",
+          "action": "None. item-length.test.ts imports `_buildMessagesForTest` from summariser/driver.js, not from the aggregate code, so it needs no look at all.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "For a plan with one producer per name, the report task's user message, the absent list and the counts (tasksAnalyzed, upstreamTasks) are what they are today.",
+          "evidence": "Today both counts are `args.upstreamOutputs.size` (aggregator.ts:136, :148), the number of names; a sum of one output per name is the same number (aggregator.test.ts:232 asserts 3 for three names). With one producer per name, a failed producer's name is never in `outputs`, so the removed `if (outputs.has(name)) continue;` (walker.ts:446) never fired and the absent list is the same; no absent name then has an output, so renderAbsentSection keeps today's wording (asserted verbatim at aggregator.test.ts:350-353 and aggregate-absent-inputs.test.ts:59-60). One detail the design words loosely: today's 'unavailable' line is written for `out === null || out === undefined` (aggregator.ts:197), and the design says 'a null value'. [files: src/analyze/runtimes/shared/aggregator.ts, src/analyze/executor/walker.ts]",
+          "action": "When building, keep the unavailable test as `value === null || value === undefined` for both the single block and a sub-section; a null-only test would render an undefined value as a json fence and break the byte-identity promise.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.2",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "UpstreamOutput can be filled from what the walk already has for every producer, including a planner task, and INV-6 keeps two tasks of one template on the same names.",
+          "evidence": "PlannedTask (src/shared/analyze-types.ts:68-77) has `taskId`, `template` and `params: Readonly<Record<string, unknown>>` for leaf and planner tasks alike, the same type the design gives UpstreamOutput.params. The accumulate step (walker.ts:195-201) runs after either dispatch with `task` in scope. validate.ts:290-306 (INV-6) compares the sorted `produces` of each task with the template's and is not touched by the design. [files: src/shared/analyze-types.ts, src/analyze/planner/validate.ts, src/analyze/executor/walker.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion has a test that would fail on today's code, and the existing harness can carry them.",
+          "evidence": "walker-aggregate.test.ts:60-94 already has the stand-ins the design names: a producer returning `${n} from ${taskId}`, a broken producer, and an aggregate that records `upstreamOutputs` and `absentInputs`. Run on today's walker, the eight-producer test (ac1) would see one value, the last (walker.ts:199); the four-planner test (ac5) one report; the failed-sibling test (ac3) an empty absent list (walker.ts:446). ac2's render test would fail because renderUpstreamSection writes one block per key (aggregator.ts:195-206), and its prompt test because all five prompts still say `### <taskId>`. ac4 is held by an expected string taken from the code before the change plus the kept assertions at walker-aggregate.test.ts:113-119, :136-140. The existing assertions on raw values (:111, :135, :187) do have to be rewritten to the list form, as the design says. [files: src/analyze/executor/__tests__/walker-aggregate.test.ts, src/analyze/runtimes/shared/__tests__/aggregator.test.ts]",
+          "action": "Two points for the build. The prompt test should assert the old sentence ('one `### <taskId>` section per prior task') is gone and the new forms are present, not that the string `<taskId>` is absent: the new `#### <name> from task <taskId> (<template>)` line contains it. And the ac4 expected string must be captured from the unchanged code and pasted in as a literal, not computed by the new renderer.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-10T10:36:18.011Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "When several tasks of a plan produce an output under the same name, the task that consumes that name now receives all of them, each with the task that produced it, where it used to receive only the last. The final report of a plan is therefore written from every directory's surface, every file's inventory and every child plan's report, and a producer that failed is named as missing even when a sibling succeeded. A plan in which each name has one producer gives the report task the same input as before."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Design the fix for ISSUE-8ab2cc2edb3743df, \"Hand a consumer every output of the tasks that share an output name\": a task that consumes an output name receives every output produced under that name by the tasks of its plan that finished ok, each attributable to the task that produced it, in plan order; the aggregate task's prompt presents all of them with the producing task and enough of its parameters to tell them apart; failed or skipped producers of a name another task did produce are reported as absent with their task and reason; a plan in which every name has one producer behaves as today (same aggregate prompt, same records, same results); it holds for every family and for a nested plan's report consumed by its parent. Not in scope: which tasks the planner chooses, and the size of the aggregate task's input (Story s3 of the analyzer Epic)."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "runAggregator",
+          "signature": "runAggregator(args: RunAggregatorArgs): Promise<AggregateReport>",
+          "parameters": [
+            {
+              "name": "args",
+              "type": "RunAggregatorArgs",
+              "purpose": "Unchanged apart from one field: `upstreamOutputs` is now ReadonlyMap<string, readonly UpstreamOutput[]>, every output produced under each consumed name, in plan order. The five aggregate-report runtimes pass `args.upstreamOutputs` on as today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "AggregateReport",
+            "meaning": "Unchanged in shape. `metadata.tasksAnalyzed` (and the logged `upstreamTasks`) is the number of outputs received, summed over the names; for a plan with one producer per name that is the number it is today."
+          },
+          "errors": [
+            {
+              "type": "Error (a plain Error, unchanged; its message begins 'aggregator prompt missing', 'aggregator-llm-unavailable' or 'aggregator-schema-unrecoverable')",
+              "condition": "As today: the model call fails or the prompt file is missing. A prompt that is too long for the model is one of these and is Story s3's subject."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Every output in the map is in the user message, under its name, attributable to its task."
+          ]
+        },
+        {
+          "name": "renderUpstreamSection",
+          "signature": "renderUpstreamSection(map: ReadonlyMap<string, readonly UpstreamOutput[]>): string",
+          "parameters": [
+            {
+              "name": "map",
+              "type": "ReadonlyMap<string, readonly UpstreamOutput[]>",
+              "purpose": "The consumer's inputs. Names are rendered in sorted order, as today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "For a name with ONE output, exactly today's block: `### <name>` and the value as stable JSON in a json fence (or today's 'unavailable' line for a null value). For a name with SEVERAL, a heading `### <name> (<n> outputs, one per task)` followed, in plan order, by one sub-block per output: `#### <name> from task <taskId> (<template>)`, a line `params: <the task's params as stable JSON>`, and the value in a json fence. An empty map renders today's sentence."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "For a map in which every name has one output, the string is byte-identical to today's."
+          ]
+        },
+        {
+          "name": "projectUpstream",
+          "signature": "projectUpstream(task: PlannedTask, outputs: ReadonlyMap<string, readonly UpstreamOutput[]>): ReadonlyMap<string, readonly UpstreamOutput[]>",
+          "parameters": [
+            {
+              "name": "task",
+              "type": "PlannedTask",
+              "purpose": "The consuming task; its `consumes` names are projected, as today.",
+              "optional": false
+            },
+            {
+              "name": "outputs",
+              "type": "ReadonlyMap<string, readonly UpstreamOutput[]>",
+              "purpose": "The plan's outputs so far: per name, the outputs of the tasks that finished ok, in plan order.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReadonlyMap<string, readonly UpstreamOutput[]>",
+            "meaning": "For each consumed name that has at least one output, the whole list."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "absentInputsFor",
+          "signature": "absentInputsFor(task: PlannedTask, tasks: readonly PlannedTask[], outputs: ReadonlyMap<string, readonly UpstreamOutput[]>, perTask: ReadonlyMap<string, TaskExecutionRecord>): AbsentInput[]",
+          "parameters": [
+            {
+              "name": "task",
+              "type": "PlannedTask",
+              "purpose": "The aggregate-report task.",
+              "optional": false
+            },
+            {
+              "name": "tasks",
+              "type": "readonly PlannedTask[]",
+              "purpose": "The plan's tasks, in order.",
+              "optional": false
+            },
+            {
+              "name": "outputs",
+              "type": "ReadonlyMap<string, readonly UpstreamOutput[]>",
+              "purpose": "The plan's outputs so far.",
+              "optional": false
+            },
+            {
+              "name": "perTask",
+              "type": "ReadonlyMap<string, TaskExecutionRecord>",
+              "purpose": "The records of the tasks that ran.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "AbsentInput[]",
+            "meaning": "One entry per name of every failed or skipped task, with that task's id and reason, WHETHER OR NOT another task produced the same name (today such an entry is left out when a sibling succeeded); then, as today, one entry with no producing task for a consumed name no task of the plan produces. The shared aggregate code's renderAbsentSection is changed with it. Today it words each entry by name ('<name>: task <taskId> should have produced it') and tells the model it has nothing about an absent input; for a name that also has outputs that would contradict the outputs the model was just given. So for such a name the line says that the output of task <taskId> under <name> is absent and that the other outputs under that name are available, and the closing instruction speaks of the absent output of that task, not of the name. When no absent name has an output, the section is byte-identical to today's."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "For a plan with one producer per name the list is the same as today's."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "UpstreamOutput (new type) and TemplateExecuteArgs.upstreamOutputs",
+        "change": "field-modify",
+        "details": "A new exported type in src/analyze/executor/types.ts: UpstreamOutput = { taskId: string; template: string; params: Readonly<Record<string, unknown>>; value: unknown }: one output of one task that finished ok, with what is needed to tell it from its siblings. TemplateExecuteArgs.upstreamOutputs changes from ReadonlyMap<string, unknown> (one value per name) to ReadonlyMap<string, readonly UpstreamOutput[]> (every output under the name, in plan order; a name with no output is not in the map). Today a second producer of a name replaces the first; that is the invariant this change removes. The doc comment of the field is rewritten to say so. The only production reader is the shared aggregate code; a runtime that does not read the map is unaffected.",
+        "schemaDiff": "+ export interface UpstreamOutput { readonly taskId: string; readonly template: string; readonly params: Readonly<Record<string, unknown>>; readonly value: unknown }\n~ TemplateExecuteArgs.upstreamOutputs: ReadonlyMap<string, unknown> -> ReadonlyMap<string, readonly UpstreamOutput[]>\n~ RunAggregatorArgs.upstreamOutputs: the same change",
+        "callSites": [
+          "src/analyze/executor/types.ts",
+          "src/analyze/executor/walker.ts",
+          "src/analyze/runtimes/shared/aggregator.ts",
+          "src/analyze/runtimes/code/aggregate-report.ts",
+          "src/analyze/runtimes/data/aggregate-report.ts",
+          "src/analyze/runtimes/docs/aggregate-report.ts",
+          "src/analyze/runtimes/generic/aggregate-report.ts",
+          "src/analyze/runtimes/infra/aggregate-report.ts"
+        ]
+      },
+      {
+        "entity": "The plan walk's map of outputs",
+        "change": "invariant-change",
+        "details": "executePlan's `outputs` becomes a Map from output name to a list of UpstreamOutput. A task that finishes ok APPENDS one entry (its task id, template, params and the value) to the list of each name it produces; nothing is replaced. Today's invariant, one value per name with the last producer winning, is what is removed. A planner task appends its child plan's final report under its one output name the same way, so a parent's report task receives every child's report. Each plan of a tree still has its own map. The dependency rules keep their meaning over the new map: unmetDependencies and aggregateUnmet ask whether a name has at least one output, exactly as `outputs.has(name)` does today.",
+        "callSites": [
+          "src/analyze/executor/walker.ts"
+        ]
+      },
+      {
+        "entity": "The aggregate prompts' description of their input",
+        "change": "field-modify",
+        "details": "The five aggregate system prompts (src/prompts/analyze/code, data, docs, generic, infra .aggregate.system.md) describe the block `Upstream task outputs:`. Each of the five says it has one `### <taskId>` section per input (src/prompts/analyze/code.aggregate.system.md, data.aggregate.system.md, docs.aggregate.system.md, generic.aggregate.system.md and infra.aggregate.system.md), which is not what is rendered today (the title is the output name). Each prompt's description is corrected to the form actually rendered: one `### <output name>` section per name, and, when several tasks produced the name, one `#### <name> from task <taskId> (<template>)` sub-section per task with its `params:` line; the report must cover every sub-section and may tell them apart by the task's parameters. No other instruction of the prompts changes.",
+        "callSites": [
+          "src/prompts/analyze/code.aggregate.system.md",
+          "src/prompts/analyze/data.aggregate.system.md",
+          "src/prompts/analyze/docs.aggregate.system.md",
+          "src/prompts/analyze/generic.aggregate.system.md",
+          "src/prompts/analyze/infra.aggregate.system.md"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "One of several producers of a name fails and the others succeed (for example one of eight functional-surface tasks).",
+          "detection": "The plan walk records the task as failed and appends nothing for it; absentInputsFor finds a failed or skipped record for a task whose name is in the plan and no longer skips it because a sibling produced the name.",
+          "response": "The report task runs on the outputs that exist and is handed an AbsentInput for the failed producer, with its task id and its own reason, as a wholly absent name is today.",
+          "userImpact": "The report covers the seven that succeeded and says which one is missing and why. Today the failure is hidden: the name counts as present.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Every producer of a consumed name fails.",
+          "detection": "The name has no output in the walk's map; aggregateUnmet and unmetDependencies see it as they do today.",
+          "response": "Unchanged: the report task runs on its other inputs, or is skipped when it has none; each failed producer is listed as absent.",
+          "userImpact": "As today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The report task's prompt, now holding every output, is longer than the model accepts.",
+          "detection": "The model call in runAggregator throws; classifyError turns it into the aggregate failure, as today.",
+          "response": "Unchanged: the report task fails with the model's reason ('Prompt is too long'). This design does not shorten or split the input.",
+          "userImpact": "A large plan can now fail where it used to return a report written from one output of many. That report was wrong; handling an input too large for one pass is Story s3 of the analyzer Epic.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A child plan produced no report and its sibling child plans did.",
+          "detection": "The planner task is failed with 'child-plan-unavailable' and appends nothing; absentInputsFor lists it.",
+          "response": "The parent's report task receives every sibling's report and the absent entry for the failed child, with the child's cause.",
+          "userImpact": "The parent's report covers the children that reported and names the one that did not.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A plan in which every output name has one producer.",
+          "expected": "The report task's user message is byte-identical to today's; the absent list, the task records, tasksCompleted and tasksFailed are the same."
+        },
+        {
+          "input": "Eight tasks of one template produce `functional-surface`, each for one directory (the live run).",
+          "expected": "The report task receives eight outputs under the name, in plan order, each with its task id, its template and its params (which hold the directory); the prompt has one sub-section per task."
+        },
+        {
+          "input": "A root plan with four planner tasks that each produce `report`.",
+          "expected": "The root's report task receives four reports under `report`, each attributed to its planner task; today it receives the last one."
+        },
+        {
+          "input": "A task that is not the report task consumes a name that several tasks produced.",
+          "expected": "It runs when at least one output exists and receives all that exist. It is not told which producers failed: absent inputs are handed to the report task only, as today."
+        },
+        {
+          "input": "A producer's output value is null.",
+          "expected": "With one producer, today's 'unavailable' line; with several, the same line in that task's sub-section."
+        },
+        {
+          "input": "Two producers of a name have identical params.",
+          "expected": "Both are rendered; their task ids tell them apart."
+        },
+        {
+          "input": "The report task consumes no name (an empty `consumes`).",
+          "expected": "Unchanged: it runs with an empty map and today's sentence; the absent list is still built from the plan's tasks."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A task's own record (its `outputs`, status and error) is not changed by this design; each task already keeps its own output there.",
+          "source": "c2"
+        },
+        {
+          "text": "The report task is skipped only when it consumes at least one name and none has an output; a task that is not the report task is skipped when a consumed name has no output.",
+          "source": "c1"
+        },
+        {
+          "text": "The report task is the last task of its plan and its `report` is the plan's final report.",
+          "source": "c1"
+        },
+        {
+          "text": "For a plan with one producer per name the report task's user message, including the order of the names (sorted) and the form of each block, is what it is today.",
+          "source": "c3"
+        },
+        {
+          "text": "A consumer is given only the names in its own `consumes`.",
+          "source": "c1"
+        },
+        {
+          "text": "A plan cannot give two tasks of one template different output names (INV-6); this design does not change plan validation.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by `npx tsx --test` under Node 22; test files are `__tests__/*.test.ts` beside the code (as src/analyze/executor/__tests__/walker-aggregate.test.ts and src/analyze/runtimes/shared/__tests__/aggregator.test.ts)",
+      "testLevels": [
+        {
+          "level": "integration",
+          "purpose": "Through the plan walk, a consumer receives every output produced under a name, and a failed producer is reported.",
+          "subjects": [
+            "through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params",
+            "a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task",
+            "when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged",
+            "a task that is not the report task receives every output of a name it consumes"
+          ],
+          "fixturesNeeded": [
+            "runExecutor with stand-in runtimes that record the upstreamOutputs and absentInputs they are handed (the pattern of walker-aggregate.test.ts)",
+            "a plan of the shape of the live run kept in docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/measurements/live/"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The report task's prompt presents every output, and is unchanged where each name has one producer.",
+          "subjects": [
+            "a map in which every name has one output renders a user message byte-identical to the one rendered before the change",
+            "a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section",
+            "each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs",
+            "each of the five aggregate prompts describes the block as it is rendered and no longer says one section per task id"
+          ],
+          "fixturesNeeded": [
+            "the message builder's test seam in aggregator.test.ts",
+            "a copy of the user message rendered by the code before the change, kept as the expected string for the one-producer case",
+            "a stand-in model that returns a fixed report and keeps the prompt it was given"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Plans with one producer per name behave as before.",
+          "subjects": [
+            "for a plan with one producer per name the existing assertions on the absent list, the task records, tasksCompleted and tasksFailed are kept unchanged, and the assertions on what a consumer was handed are rewritten to the list form (one entry with the expected task id, template, params and value)"
+          ],
+          "fixturesNeeded": [
+            "the existing fixtures of walker.test.ts, walker-aggregate.test.ts and walker-walk-failure.test.ts"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params",
+            "a task that is not the report task receives every output of a name it consumes"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section",
+            "each of the five aggregate prompts describes the block as it is rendered and no longer says one section per task id"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "a map in which every name has one output renders a user message byte-identical to the one rendered before the change",
+            "for a plan with one producer per name the existing assertions on the absent list, the task records, tasksCompleted and tasksFailed are kept unchanged, and the assertions on what a consumer was handed are rewritten to the list form (one entry with the expected task id, template, params and value)"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs",
+            "a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The plan walk keeps one value per output name and a later producer replaces an earlier one (s1: the reading of walker.ts). A consumer is handed one value per consumed name through TemplateExecuteArgs.upstreamOutputs, a ReadonlyMap<string, unknown> (s1: the reading of types.ts). The only reader is the shared aggregate code, through the five aggregate-report runtimes, which renders one block per name (s1: the text search of readers). A failed producer is not reported absent when a sibling produced the same name (s1: absentInputsFor). The code aggregate prompt describes one section per task id, which is not what is rendered (s1: the prompt search).",
+      "stateAfter": "The walk keeps, per name, the list of outputs of the tasks that finished ok, in plan order, each with its task id, template and params. A consumer is handed the whole list for each name it consumes. The shared aggregate code renders today's block for a name with one output and one sub-section per task for a name with several. Every failed or skipped producer is reported absent. The five aggregate prompts describe the block as it is rendered.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the UpstreamOutput type; change the type of upstreamOutputs on TemplateExecuteArgs and on the shared aggregate code's arguments; change the walk to append and to project lists, and the absent-input rule to list every failed producer; change the rendering and the two counts in the shared aggregate code. These go together: the type change does not compile in parts. Update the tests that build a non-empty map by hand or assert on the map a consumer was handed: src/analyze/runtimes/shared/__tests__/aggregator.test.ts, src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts, src/analyze/executor/__tests__/walker-aggregate.test.ts and src/analyze/executor/__tests__/walker-walk-failure.test.ts (both assert the raw values a stand-in was handed) and src/analyze/executor/__tests__/walker.test.ts, src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts (its helper builds the map from an object of raw values and hands a non-empty one to each of the five aggregate runtimes; an empty array there would be read as a name with no output) and the four live suites src/analyze/runtimes/code, data, generic and infra /__tests__/aggregate-report.live.test.ts. This list is every test file found by a text search for `upstreamOutputs` that passes a non-empty map or reads the map it was handed. Two more files name the map and need no change of behaviour, only a look: src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts and adherence-topic-route.test.ts (they hand the adherence check a map it must not read, and one stand-in reads only the map's keys). The live suites are skipped without INSRC_LIVE_TESTS and the typecheck does not compile tests, so the usual gate will not show them left on the old shape: they are brought to the new shape all the same and run once with the stand-in removed or read for type-correctness.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Correct the description of the input block in the five aggregate prompts.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Update the guide (docs/daemon.md, the section on the final report being written from the inputs that exist) and the framework design page where they describe what the report task receives.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API changes: the field is internal to the analyze framework and plans are executed fresh on every run. No stored data is rewritten: a task's own record keeps its shape, and the map of upstream outputs is never stored. A plan with one producer per name gives its report task the same user message as before. What changes for a reader of a report: a plan with several producers of a name now has a report written from all of them, and its prompt is longer in proportion, so a plan large enough can fail at the report task with the model's 'Prompt is too long' where it used to return a report written from one output; that limit is Story s3's subject. The system prompts of the report task change by a few lines for every run.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "The upstream map holds a list of produced outputs per name",
+        "oneLineSummary": "TemplateExecuteArgs.upstreamOutputs becomes a map from output name to the list of outputs produced under it, each with its producing task.",
+        "approach": "The walk keeps, per plan, a map from output name to a list of produced outputs in plan order; each entry is { taskId, template, params, value }. A task that finishes ok appends to the list of each name it produces; nothing is replaced. A consumer is given, for each name it consumes, the whole list. The type of `upstreamOutputs` changes from ReadonlyMap<string, unknown> to ReadonlyMap<string, readonly UpstreamOutput[]>, so no reader can take one value where there are several: the only reader, the shared aggregate code, is changed with it. The aggregate prompt keeps today's block for a name with one producer (`### <name>` and the value), and for a name with several renders one sub-block per producer, titled with the task id, the template and the task's parameters. The absent-input rule lists every failed or skipped producer, also when another producer of the name succeeded. The log and metadata counts become counts of outputs.",
+        "pros": [
+          "A name can no longer silently carry one value of many: the type says a list",
+          "One representation, read by one place (the shared aggregate code)",
+          "A plan with one producer per name renders the same prompt as today",
+          "The producing task and its parameters travel with each output"
+        ],
+        "cons": [
+          "The type of a field of TemplateExecuteArgs changes; the tests that build a non-empty map by hand are updated",
+          "The aggregate prompt grows with the number of producers, which Story s3 has to bound"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Keep the map; add a second field with every producer's output",
+        "oneLineSummary": "upstreamOutputs stays one value per name; a new optional field carries the per-producer list.",
+        "approach": "TemplateExecuteArgs keeps `upstreamOutputs: ReadonlyMap<string, unknown>` (the last producer's value, as today) and gains `upstreamByProducer: ReadonlyMap<string, readonly UpstreamOutput[]>`. The shared aggregate code reads the new field; any other reader keeps working unchanged.",
+        "pros": [
+          "No existing type changes; every existing test compiles as it is",
+          "Smallest diff outside the walk and the aggregate code"
+        ],
+        "cons": [
+          "The old field still holds the wrong answer (one output of several) and a future reader can take it without noticing: the defect stays reachable",
+          "Two fields say what a task receives, and they can disagree",
+          "The same data is carried twice"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Fixes the aggregate report but leaves the old field holding one output of several, where a later reader can take it."
+      },
+      {
+        "id": "a3",
+        "name": "Give each task's output its own name in the map",
+        "oneLineSummary": "The walk stores an output under `<name>@<taskId>` and the consumer's `consumes` is expanded to match.",
+        "approach": "The walk keys the plan's outputs by output name and task id together. When it projects a consumer's inputs it expands each consumed name to every key of that name, in plan order. The map's type stays ReadonlyMap<string, unknown>; the keys carry the producer. The aggregate code renders one block per key.",
+        "pros": [
+          "The map's type does not change",
+          "Every output keeps its own key"
+        ],
+        "cons": [
+          "The producer is encoded in a string a reader has to parse, and the template and parameters are not in it",
+          "A plan with one producer per name gets a different key (`name@t01`) and so a different prompt than today, unless single producers are special-cased",
+          "The dependency rules, which test names, have to strip the suffix everywhere"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Keeps every output but encodes the producer in a key string without its template or parameters, and changes the prompt of a plan with one producer per name unless special-cased."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/analyze/executor/walker.ts",
+      "quotedText": "outputs.set(name, value);"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/analyze/executor/types.ts",
+      "quotedText": "readonly upstreamOutputs: ReadonlyMap<string, unknown>;"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/runtimes/shared/aggregator.ts",
+      "quotedText": "function renderUpstreamSection(map: ReadonlyMap<string, unknown>): string {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/prompts/analyze/code.aggregate.system.md",
+      "quotedText": "- A block titled `Upstream task outputs:` with one `### <taskId>`"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/analyze/planner/validate.ts",
+      "quotedText": "// INV-6: produces matches template"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/ISSUE.md",
+      "quotedText": "A task that consumes an output name receives every output produced under that name by the tasks of its plan that finished `ok`"
+    },
+    {
+      "id": "c7",
+      "kind": "stakeholder",
+      "ref": "The acceptance criteria this design states, from the five points of the issue's fix intent",
+      "quotedText": "ac1: a consumer receives every output produced under a name it consumes, each attributable to its task, in plan order. ac2: the report task's prompt presents all of them with the producing task and its parameters. ac3: a failed or skipped producer of a name a sibling produced is reported absent with its task and reason. ac4: a plan with one producer per name behaves as before (same prompt, records and results). ac5: it holds for every family and for a nested plan's report consumed by its parent."
+    }
+  ]
+}

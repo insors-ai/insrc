@@ -1286,17 +1286,32 @@ test('density is restored from the webview state, saved on change and mirrored t
       notices: [{ code: 'unplanned-task', message: 'odd', itemIds: ['S1'], artifactIds: [], fileNames: [] }] as never }),
     item({ id: 'S2', title: 'Plain', stage: 'complete' }),
   ]);
-  const rendered: { texts: string[]; labels: string[] }[] = [];
+  // Every screen: the four views, an epic's board, a story's three tabs and an issue, at either density.
+  const screens: unknown[][] = [
+    [], [{ type: 'set-view', view: 'epics' }], [{ type: 'set-view', view: 'standalone' }], [{ type: 'set-view', view: 'issues' }],
+    [{ type: 'set-view', view: 'epics' }, { type: 'open-epic', epicItemId: EPIC_A }],
+    [{ type: 'open-item', itemId: 'E20261009aaaaaaaa:S003' }],
+    [{ type: 'open-item', itemId: 'E20261009aaaaaaaa:S003' }, { type: 'set-item-tab', tab: 'evidence' }],
+    [{ type: 'open-item', itemId: 'E20261009aaaaaaaa:S003' }, { type: 'set-item-tab', tab: 'linked' }],
+    [{ type: 'open-item', itemId: 'H9999aaaa0000bbbb' }],
+  ];
+  const rendered: Record<string, { texts: string[]; labels: string[] }[]> = { compact: [], comfortable: [] };
   for (const density of ['compact', 'comfortable'] as const) {
-    const b = await liveBoard(snap);
-    b.w.el[`density-${density}`]!.listeners['click']!();
-    b.relay();
-    assert.equal(b.w.el['body']!.attrs['data-density'], density);
-    const board = b.w.el['main']!;
-    rendered.push({ texts: texts(board), labels: cardsIn(board).map(c => c.attrs['aria-label']!) });
+    for (const intents of screens) {
+      const b = await liveBoard(itemsSnapshot());
+      b.w.el[`density-${density}`]!.listeners['click']!();
+      for (const i of intents) b.w.posted.push({ v: 1, payload: i });
+      b.relay();
+      assert.equal(b.w.el['body']!.attrs['data-density'], density);
+      const main = b.w.el['main']!;
+      rendered[density]!.push({ texts: texts(main), labels: cardsIn(main).map(c => c.attrs['aria-label']!) });
+    }
   }
-  assert.deepEqual(rendered[0], rendered[1], 'the same content at either density');
-  assert.ok(rendered[0]!.texts.includes('Review blocked') && rendered[0]!.texts.includes('Unplanned task'));
+  assert.deepEqual(rendered['compact'], rendered['comfortable'], 'every screen shows the same content at either density');
+  assert.deepEqual(new Set(screens.map((_, k) => rendered['compact']![k]!.texts.join('|'))).size, screens.length, 'nine different screens were rendered');
+  assert.ok(rendered['compact']![5]!.texts.includes('Two records disagree') && rendered['compact']![6]!.texts.includes('Records'));
+  const b0 = await liveBoard(snap);
+  assert.ok(texts(b0.w.el['main']!).includes('Review blocked') && texts(b0.w.el['main']!).includes('Unplanned task'));
 });
 
 test('the refresh announcement text is unchanged after statusView takes now', async () => {

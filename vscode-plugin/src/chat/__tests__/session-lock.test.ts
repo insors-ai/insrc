@@ -233,7 +233,7 @@ test('a lock file from another window is honoured while its pid is alive, and a 
   // Window A holds the session with a live CLI process.
   const a = await windowA.acquire('s1', { timeoutMs: 60_000 });
   const created = readLock(dir, 's1');
-  assert.deepEqual({ ...created, token: undefined }, { sessionId: 's1', cliPid: null, hostPid: 1, startedAt: null, token: undefined }, 'created at grant');
+  assert.deepEqual({ ...created, token: undefined }, { sessionId: 's1', cliPid: null, hostPid: 1, startedAt: null, token: undefined, output: null }, 'created at grant');
   assert.equal(typeof created?.token, 'string', 'carries its lease token');
   table.set(500, 7);
   const proc = fakeLiveProc(500);
@@ -526,4 +526,28 @@ test('a failed pid update removes its temp file', async () => {
   const { readdirSync } = await import('node:fs');
   assert.deepEqual(readdirSync(dir).filter((f) => f.endsWith('.tmp')), [], 'no orphaned temp file');
   proc.exitNow();
+});
+
+test("the lock record carries the holder's session file and turn after attach", async () => {
+  const dir = lockDir();
+  const table = procTable();
+  table.set(2, 1);
+  table.set(810, 3);
+  const locks = createFileSessionLocks({ fs: fsp, lockDir: dir, hostPid: 2, pollMs: 5, ...table.deps });
+  const lease = await locks.acquire('s1', { timeoutMs: 60_000 });
+  const proc = { ...fakeLiveProc(810), cursor: { turnId: 'claude-123' }, outPath: '/home/u/.insrc/chat-output/s1.ndjson' };
+  lease.attach(proc);
+  await waitFor(() => readLock(dir, 's1')?.cliPid === 810);
+  assert.deepEqual(readLock(dir, 's1')?.output, { sessionFile: '/home/u/.insrc/chat-output/s1.ndjson', turnId: 'claude-123' });
+  proc.exitNow();
+  await waitFor(() => readLock(dir, 's1') === undefined);
+
+  // A process without a session file (pipe turn) records none.
+  const plain = await locks.acquire('s2', { timeoutMs: 60_000 });
+  table.set(811, 4);
+  const p2 = fakeLiveProc(811);
+  plain.attach(p2);
+  await waitFor(() => readLock(dir, 's2')?.cliPid === 811);
+  assert.equal(readLock(dir, 's2')?.output, null);
+  p2.exitNow();
 });

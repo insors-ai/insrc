@@ -24,6 +24,10 @@ export interface LeaseProcess {
   /** Settles when the process has exited (either way). */
   readonly exit: Promise<unknown>;
   kill(signal: 'SIGTERM' | 'SIGKILL'): void;
+  /** With a session output file (session-output.ts): the turn whose segment the process writes. */
+  readonly cursor?: { readonly turnId: string } | undefined;
+  /** With a session output file: that file. */
+  readonly outPath?: string | undefined;
 }
 
 export interface SessionLease {
@@ -262,6 +266,8 @@ export interface LockFileRecord {
   readonly startedAt: number | null;
   /** Unique per lease: tells two leases of one host apart, so a lease only ever removes its own file. */
   readonly token: string;
+  /** The session output file and turn segment the holder's process writes, when it has one. */
+  readonly output: { readonly sessionFile: string; readonly turnId: string } | null;
 }
 
 /** The slice of node:fs/promises the file-backed registry uses. */
@@ -345,6 +351,10 @@ function parseRecord(text: string): LockFileRecord | undefined {
       hostPid: r.hostPid,
       startedAt: typeof r.startedAt === 'number' ? r.startedAt : null,
       token: typeof r.token === 'string' ? r.token : '',
+      output:
+        typeof r.output === 'object' && r.output !== null && typeof r.output.sessionFile === 'string' && typeof r.output.turnId === 'string'
+          ? { sessionFile: r.output.sessionFile, turnId: r.output.turnId }
+          : null,
     };
   } catch {
     return undefined;
@@ -376,8 +386,13 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
   let fallbackLogged = false;
 
   const fileOf = (sessionId: string): string => `${deps.lockDir}/${lockFileName(sessionId)}`;
-  const recordText = (sessionId: string, token: string, cliPid: number | null, startedAt: number | null): string =>
-    JSON.stringify({ sessionId, cliPid, hostPid: deps.hostPid, startedAt, token } satisfies LockFileRecord);
+  const recordText = (
+    sessionId: string,
+    token: string,
+    cliPid: number | null,
+    startedAt: number | null,
+    output: LockFileRecord['output'] = null,
+  ): string => JSON.stringify({ sessionId, cliPid, hostPid: deps.hostPid, startedAt, token, output } satisfies LockFileRecord);
 
   const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> =>
     new Promise((resolve) => {
@@ -500,7 +515,10 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
         const pid = proc.pid;
         const tmp = `${file}.${token}.tmp`;
         void deps.fs
-          .writeFile(tmp, recordText(sessionId, token, pid, startTime(pid) ?? null))
+          .writeFile(
+            tmp,
+            recordText(sessionId, token, pid, startTime(pid) ?? null, proc.outPath !== undefined && proc.cursor !== undefined ? { sessionFile: proc.outPath, turnId: proc.cursor.turnId } : null),
+          )
           .then(async () => {
             // Never overwrite a file this lease no longer owns (taken over meanwhile).
             if (parseRecord(await deps.fs.readFile(file, 'utf8'))?.token !== token) throw Object.assign(new Error('lock file taken over'), { code: 'ETAKEN' });

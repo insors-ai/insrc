@@ -77,6 +77,20 @@ export interface ChatSession {
    */
   mode?: PermissionMode;
   transcript: TranscriptEntry[];
+  /**
+   * Story E202610101d04e560:S001: while a turn's output segment (session-output.ts) has not been
+   * fully handled, where the panel got to. Sessions live in globalState, shared by every window,
+   * so ownerHostPid names the extension host following it. Optional for back-compat.
+   */
+  liveTurn?: LiveTurn;
+}
+
+/** A turn still being read from the session output file. */
+export interface LiveTurn {
+  readonly cursor: { readonly turnId: string; readonly generation: number; readonly offset: number };
+  readonly ownerHostPid: number;
+  readonly pid?: number | undefined;
+  readonly startedAt?: number | null | undefined;
 }
 
 export interface ChatSummary {
@@ -117,6 +131,8 @@ export interface MementoStoreDeps {
    * so extension-local history (k3) stays bounded. Unset = S003 unbounded behaviour.
    */
   readonly maxSessions?: number;
+  /** Called with the id of each session evicted beyond the cap (so its output files can go too). */
+  readonly onEvict?: ((sessionId: string) => void) | undefined;
 }
 
 const INDEX_KEY = 'insrc.chat.index';
@@ -190,7 +206,14 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
     reordered.push(session.id);
     if (reordered.length > maxSessions) {
       const cut = reordered.length - maxSessions;
-      for (const id of reordered.slice(0, cut)) void memento.update(SESSION_PREFIX + id, undefined);
+      for (const id of reordered.slice(0, cut)) {
+        void memento.update(SESSION_PREFIX + id, undefined);
+        try {
+          deps.onEvict?.(id);
+        } catch {
+          /* cleanup is best-effort; eviction itself has happened */
+        }
+      }
       writeIndex(reordered.slice(cut));
     } else {
       writeIndex(reordered);

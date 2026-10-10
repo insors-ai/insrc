@@ -806,7 +806,7 @@ test('opening an epic and then a story replaces #main each time, and nothing fro
   assert.equal(cardsIn(main).length, 0, 'no card from the epic board stays under the story');
   assert.equal(findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage').length, 0, 'and no stage section');
   assert.ok(texts(main).includes('Columns'), 'the story\'s own screen');
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic', '/', 'S001']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery', '/', 'Epics', '/', 'Board epic', '/', 'S001']);
 
   // Choosing another view leaves the story's screen.
   click(buttonsIn(b.w.el['crumbs']!, 'crumb')[0]!);
@@ -881,7 +881,7 @@ test('an Epics row opens that epic\'s board with its header, breadcrumb and ← 
   assert.equal(buttonsIn(main, 'view').length, 0, 'no view control inside an epic');
   assert.equal(buttonsIn(main, 'attention').length, 1);
   assert.equal(findAll(main, e => e.tag === 'input')[0]!.attrs['placeholder'], 'Search this epic');
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery', '/', 'Epics', '/', 'Board epic']);
   const crumbButtons = buttonsIn(b.w.el['crumbs']!, 'crumb');
   assert.deepEqual(crumbButtons.map(c => c.textContent), ['Delivery', 'Epics'], 'the earlier crumbs return to Epics; the current place is not a button');
   b.w.posted.length = 0;
@@ -952,11 +952,11 @@ test('a narrow pane shortens the breadcrumb and folds empty stages into Other st
   assert.deepEqual(stages(), ['scoped', 'complete', 'fold'], 'empty stages fold into one section');
   const fold = findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage fold')[0]!;
   assert.deepEqual(texts(fold), ['Other stages · 0 matching', 'Design & plan 0 · Ready · design approved 0 · Ready · plan approved 0 · Build recorded 0']);
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['← Epics', 'Board epic'], 'only the back step and the current place');
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['← Epics', '/', 'Board epic'], 'only the back step and the current place: no wordmark');
 
   b.w.resize(900);
   assert.equal(stages().length, 6, 'widening re-renders the wide form');
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery', '/', 'Epics', '/', 'Board epic']);
 
   // Under Needs attention the empty stages fold into one line at any width.
   click(buttonsIn(main, 'attention')[0]!);
@@ -969,7 +969,7 @@ test('a narrow pane shortens the breadcrumb and folds empty stages into Other st
 test('Back restores the saved scroll and focuses the card that opened the story; Escape goes back', async () => {
   const b = await liveBoard(screensSnapshot());
   const main = b.w.el['main']!;
-  assert.equal(focusState.active, findAll(main, e => e.tag === 'h1')[0], 'a new screen focuses its heading');
+  assert.equal(focusState.active, findAll(main, e => e.attrs['data-view'] === 'all')[0], 'a new list screen focuses its chosen view');
   b.w.scroll(420);
   click(cardOf(main, 'SA1'));
   b.relay();
@@ -1037,7 +1037,7 @@ test('empty replaces the screen, no matches replaces the list area with Clear fi
   assert.equal(shownScreen(b.w), 'panel');
   assert.deepEqual(texts(main).slice(0, 2), ['No work items yet', 'The workspace was read successfully. No epic, story or issue records were found.']);
   assert.deepEqual(texts(b.w.el['banner']!), []);
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery']);
 
   // Partial evidence sits in the banner, with its records to inspect.
   const notice = { code: 'store-incomplete', message: 'PLAN-x could not be parsed.', itemIds: [], artifactIds: ['PLAN-x'], fileNames: [] };
@@ -1056,8 +1056,8 @@ test('CSP string unchanged, exactly one aria-live region, and the script uses te
   assert.match(doc, /content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-N0NCE';"/);
   assert.deepEqual(doc.match(/aria-live="[^"]+"/g), ['aria-live="polite"'], 'the announcer is the only live region');
   assert.match(doc, /<p id="status" role="status"><\/p>/, 'the status keeps its role without aria-live');
-  for (const part of ['<span class="wordmark">insrc</span>', '<nav id="crumbs" class="crumbs" aria-label="Breadcrumb"></nav>', '<span class="readonly">Read-only</span>',
-    '<div id="banner"></div>', '<main id="main"></main>']) assert.ok(doc.includes(part), part);
+  for (const part of ['<nav id="crumbs" class="crumbs" aria-label="Breadcrumb"></nav>', '<span class="readonly">Read-only</span>',
+    '<div id="banner"></div>', '<main id="main" class="body"></main>']) assert.ok(doc.includes(part), part);
   for (const gone of ['id="details"', 'id="board"', 'id="scope-chips"', 'role="tablist"', 'id="tab-']) assert.ok(!doc.includes(gone), `no ${gone}`);
   assert.doesNotMatch(BOARD_WEBVIEW_SCRIPT, /innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(/);
 
@@ -1135,7 +1135,7 @@ test('opening a story replaces the screen: #main holds only the story screen, wi
   assert.equal(findAll(b.main, e => e.attrs['class'] === 'filters').length, 0, 'a story screen has no filters');
   assert.deepEqual(buttonsIn(b.main, 'back').map(x => x.textContent), ['← Back to epic']);
   assert.deepEqual(findAll(b.main, e => e.tag === 'h1').map(h => h.textContent), ['Section navigation']);
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic', '/', 'S003']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery', '/', 'Epics', '/', 'Board epic', '/', 'S003']);
   assert.equal(findAll(b.main, e => e.attrs['class'] === 'kicker')[0]!.textContent, 'STORY · AAAAAAAA / S003');
   assert.equal(focusState.active, findAll(b.main, e => e.tag === 'h1')[0], 'the story\'s heading has focus');
 });
@@ -1239,7 +1239,7 @@ test('the issue screen opens what it corrects, or shows the parent notice, and l
   b.relay();
   assert.equal(shownScreen(b.w), 'issue');
   assert.deepEqual(buttonsIn(main, 'back').map(x => x.textContent), ['← Issues']);
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Issues', '/', '9999AAAA']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery', '/', 'Issues', '/', '9999AAAA']);
   const open = findAll(main, e => e.tag === 'button' && e.textContent === 'Open what it corrects →')[0]!;
   assert.ok(texts(main).includes('Corrects Section navigation · Complete'));
   const fixes = findAll(main, e => e.attrs['aria-label'] === 'Fix stories')[0]!;
@@ -1353,6 +1353,60 @@ function mockProductSelectors(): string[] {
 
 /** Selectors of BOARD_STYLE's top-level rules. */
 const boardSelectors = (): Set<string> => new Set([...BOARD_STYLE.replace(/@container[^{]*\{(?:[^{}]*\{[^}]*\})*\}/g, '').matchAll(/([^{}]+)\{[^}]*\}/g)].flatMap(m => m[1]!.split(',').map(x => x.trim())));
+
+test('the live region and density control sit in a small footer, and a new list screen focuses its chosen view', async () => {
+  // The page wrapper holds the app bar, the banner, the screen and then the footer with the one live region and density.
+  const doc = renderBoardDocument('N0NCE');
+  const at = (part: string) => { const i = doc.indexOf(part); assert.ok(i >= 0, part); return i; };
+  assert.ok(at('<div class="page">') < at('<header class="appbar">') && at('<header class="appbar">') < at('<div id="banner">')
+    && at('<div id="banner">') < at('<main id="main" class="body">') && at('<main id="main" class="body">') < at('<footer class="foot">'), 'page, app bar, banner, screen, footer');
+  const foot = doc.slice(at('<footer class="foot">'), at('</footer>'));
+  assert.match(foot, /<p id="announce" aria-live="polite" aria-atomic="true"><\/p>/);
+  assert.match(foot, /<div class="seg density" role="group" aria-label="Density"><button id="density-compact"[^>]*>Compact<\/button><button id="density-comfortable"[^>]*>Comfortable<\/button><\/div>/);
+  assert.deepEqual(doc.match(/aria-live="[^"]+"/g), ['aria-live="polite"'], 'one live region');
+  assert.equal(doc.match(/<script nonce="N0NCE">/g)?.length, 1, 'one nonce\'d script');
+  assert.doesNotMatch(doc.slice(0, at('<footer')), /density-/, 'density is not in the app bar');
+
+  // A new list screen has no heading, so its chosen view takes focus; the footer's density still switches.
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  assert.equal(findAll(main, e => e.tag === 'h1').length, 0, 'a list screen has no heading');
+  assert.equal(focusState.active, findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'all')[0]);
+  click(findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'issues')[0]!);
+  b.relay();
+  assert.equal(focusState.active, findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'issues')[0], 'each new list screen focuses its own view');
+  b.w.el['density-compact']!.listeners['click']!();
+  assert.equal(b.w.el['body']!.attrs['data-density'], 'compact');
+
+  // A screen the reader returns to, whose opener is no longer shown, focuses the first target instead of throwing.
+  const list = lastScreen(b.ch)!;
+  b.w.deliver({ v: 1, payload: { type: 'screen', model: { ...list, entryId: 990, restored: true, focusItemId: 'gone' } } });
+  assert.equal(focusState.active, findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'issues')[0], 'the chosen view, as on a fresh list screen');
+  click(findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'epics')[0]!);
+  b.relay();
+  click(findAll(main, e => e.attrs['data-epic'] === EPIC_A)[0]!);
+  b.relay();
+  const epic = lastScreen(b.ch)!;
+  b.w.deliver({ v: 1, payload: { type: 'screen', model: { ...epic, entryId: 991, restored: true, focusItemId: 'gone' } } });
+  assert.equal(focusState.active, findAll(main, e => e.tag === 'h1')[0], 'the heading on a screen that has one');
+});
+
+test('the breadcrumb renders the wordmark, crumbs and current place, without the wordmark when narrow', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const crumbs = b.w.el['crumbs']!;
+  const kinds = () => crumbs.children.map(c => `${c.tag}.${c.attrs['class'] ?? ''}:${c.textContent}`);
+  assert.deepEqual(kinds(), ['span.wordmark:insrc', 'span.here:Delivery'], 'the top level is the wordmark and Delivery');
+  assert.equal(crumbs.children[1]!.attrs['aria-current'], 'page');
+  click(findAll(b.w.el['main']!, e => e.tag === 'button' && e.attrs['data-view'] === 'epics')[0]!);
+  b.relay();
+  click(findAll(b.w.el['main']!, e => e.attrs['data-epic'] === EPIC_A)[0]!);
+  b.relay();
+  assert.deepEqual(kinds(), ['span.wordmark:insrc', 'button.crumb:Delivery', 'span.sep:/', 'button.crumb:Epics', 'span.sep:/', 'span.here:Board epic']);
+  b.w.resize(400);
+  assert.deepEqual(kinds(), ['button.crumb:← Epics', 'span.sep:/', 'span.here:Board epic'], 'narrow: the back step and the current place, no wordmark');
+  b.w.resize(900);
+  assert.equal(kinds()[0], 'span.wordmark:insrc', 'widening brings the wordmark back');
+});
 
 test('BOARD_STYLE carries the mocks\' product rules with theme colours and no hiding rule', () => {
   // The mocks' anchors are the board's buttons; the details marker is hidden by list-style alone.

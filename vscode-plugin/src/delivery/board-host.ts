@@ -100,7 +100,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `byId('refresh').addEventListener('click',function(){send({type:'refresh'});});`,
   // Presentation memory: scroll per trail entry, the reader's section toggles per entry and stage, the narrow flag.
   `const scrollOf={},openOf={};`,
-  `let model=null,shownEntry=null,shownKind=null,narrow=false,head=null,bodyEl=null,search=null;`,
+  `let model=null,shownEntry=null,shownKind=null,narrow=false,head=null,top=null,bodyEl=null,search=null;`,
   `const isNarrow=function(){const w=document.documentElement.clientWidth;return typeof w==='number'&&w>0&&w<=480;};`,
   `window.addEventListener('scroll',function(){if(shownEntry!==null)scrollOf[shownEntry]=window.scrollY||0;});`,
   `window.addEventListener('resize',function(){if(model!==null&&isNarrow()!==narrow)render(model);});`,
@@ -110,17 +110,18 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `const keyed=function(e,k){e.setAttribute('data-key',k);return e;};`,
   `const focusedKey=function(){const a=document.activeElement;return a&&a.getAttribute?a.getAttribute('data-key'):null;};`,
   `const findKey=function(root,k){if(root.getAttribute&&root.getAttribute('data-key')===k)return root;for(const c of root.children){const f=findKey(c,k);if(f)return f;}return null;};`,
-  // The breadcrumb: earlier crumbs are buttons back to their trail entry, the last is the current place. A narrow
-  // pane shows only the back step and the current place.
+  // The breadcrumb: the wordmark, then earlier crumbs as buttons back to their trail entry, separators, and the current
+  // place. A narrow pane leaves the wordmark out and shows only the back step and the current place.
+  `const here=function(text){const s=make('span',text,'here');s.setAttribute('aria-current','page');return s;};`,
   `function renderCrumbs(m){clear(crumbsEl);const last=m.crumbs[m.crumbs.length-1];`,
-  `const current=function(text){const s=make('span',text,'crumb current');s.setAttribute('aria-current','page');return s;};`,
-  `if(narrow){if(m.back!==null)crumbsEl.appendChild(keyed(button(m.back.label,function(){send({type:'back'});},'crumb'),'crumb-back'));crumbsEl.appendChild(current(last.label));return;}`,
+  `if(narrow){if(m.back!==null){crumbsEl.appendChild(keyed(button(m.back.label,function(){send({type:'back'});},'crumb'),'crumb-back'));crumbsEl.appendChild(make('span','/','sep'));}crumbsEl.appendChild(here(last.label));return;}`,
+  `crumbsEl.appendChild(make('span','insrc','wordmark'));`,
   `m.crumbs.forEach(function(c,i){if(i>0)crumbsEl.appendChild(make('span','/','sep'));`,
-  `if(i===m.crumbs.length-1)crumbsEl.appendChild(current(c.label));`,
+  `if(i===m.crumbs.length-1)crumbsEl.appendChild(here(c.label));`,
   `else if(c.index<last.index)crumbsEl.appendChild(keyed(button(c.label,function(){send({type:'go-to-crumb',index:c.index});},'crumb'),'crumb-'+i));`,
   `else crumbsEl.appendChild(make('span',c.label,'crumb'));});}`,
   // The filter bar: the four views (on one of the four views only), Needs attention, and the search box.
-  `function buildFilters(f){const bar=make('div',undefined,'filters');`,
+  `function buildFilters(f,back){const bar=make('div',undefined,'filters');if(back!==null)bar.appendChild(keyed(button(back.label,function(){send({type:'back'});},'btn ghost back'),'back'));`,
   `if(f.views){const g=make('div',undefined,'views');g.setAttribute('role','group');g.setAttribute('aria-label','View');`,
   `for(const v of VIEWS){const b=keyed(button(L.views[v],function(){send({type:'set-view',view:v});},'view'),'view-'+v);b.setAttribute('data-view',v);g.appendChild(b);}bar.appendChild(g);}`,
   `const att=keyed(button(L.needsAttention,function(){send({type:'set-attention',on:att.getAttribute('aria-pressed')!=='true'});},'chip attention'),'attention');bar.appendChild(att);`,
@@ -246,27 +247,30 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `else{const ul=make('ul',undefined,'linked');ul.setAttribute('aria-label','Fix stories');for(const f of e.fixStories){const li=make('li');const r=link('STORY · '+f.title,{type:'open-item',itemId:f.itemId},'item-'+f.itemId);r.setAttribute('data-item-id',f.itemId);li.appendChild(r);if(f.stageLabel!==null)li.appendChild(pill(f.stageLabel,'neutral'));ul.appendChild(li);}left.appendChild(ul);}`,
   `left.appendChild(recordsTable(d));const side=make('div',undefined,'item-side');const why=whyBox(d);if(why!==null)side.appendChild(why);side.appendChild(chainList(d));cols.appendChild(left);cols.appendChild(side);bodyEl.appendChild(cols);}`,
   `function renderItem(b){if(b.kind==='story')renderStory(b);else renderIssue(b);}`,
+  `function firstTarget(){return main.querySelectorAll('h1')[0]||findKey(head,'view-'+(model.filters===null?'':model.filters.view))||null;}`,
   `function render(m){const fresh=m.entryId!==shownEntry||m.body.kind!==shownKind;model=m;narrow=isNarrow();renderCrumbs(m);`,
   `const keep=fresh?null:focusedKey();`,
   `if(fresh){clear(main);search=null;head=make('div',undefined,'screen-head');bodyEl=make('div',undefined,'screen-body');main.appendChild(head);main.appendChild(bodyEl);main.setAttribute('data-screen',m.body.kind);`,
-  `if(m.back!==null)head.appendChild(keyed(button(m.back.label,function(){send({type:'back'});},'back'),'back'));`,
-  `const h=keyed(make('h1',m.title,'screen-title'),'title');h.setAttribute('tabindex','-1');head.appendChild(h);if(m.filters!==null)head.appendChild(buildFilters(m.filters));}`,
-  `else head.querySelectorAll('h1.screen-title').forEach(function(h){h.textContent=m.title;});`,
+  `top=make('div',undefined,'screen-top');head.appendChild(top);if(m.filters!==null)head.appendChild(buildFilters(m.filters,m.back));}`,
+  `clear(top);if(m.back!==null&&m.filters===null)top.appendChild(keyed(button(m.back.label,function(){send({type:'back'});},'btn ghost back'),'back'));`,
+  // The four list screens lead with their filter bar and have no heading; every other screen has one.
+  `if(!(m.filters!==null&&m.filters.views)){const h=keyed(make('h1',m.title),'title');h.setAttribute('tabindex','-1');top.appendChild(h);}`,
   `markFilters(m.filters);clear(bodyEl);`,
   `switch(m.body.kind){case 'stages':renderStages(m.body);break;case 'epics':renderEpics(m.body);break;case 'issues':renderIssues(m.body);break;default:renderItem(m.body);}`,
   `if(keep!==null){const f=findKey(main,keep)||findKey(crumbsEl,keep);if(f)f.focus();}`,
-  // A new screen starts at the top with its heading focused; a screen the reader returned to gets its scroll back and
-  // focuses what was opened from it.
-  `if(fresh){shownEntry=m.entryId;shownKind=m.body.kind;const h=head.querySelectorAll('h1.screen-title')[0];`,
-  `if(m.restored){window.scrollTo(0,scrollOf[m.entryId]||0);const o=m.focusItemId===null?null:findKey(bodyEl,'item-'+m.focusItemId)||findKey(bodyEl,'epic-'+m.focusItemId);(o||h).focus();}`,
-  `else{window.scrollTo(0,0);h.focus();}}}`,
+  // A new screen starts at the top with its first focus target focused: its heading, or on a list screen (which has
+  // none) the chosen view. A screen the reader returned to gets its scroll back and focuses what was opened from it,
+  // or that first target when the opener is no longer shown.
+  `if(fresh){shownEntry=m.entryId;shownKind=m.body.kind;const target=firstTarget();`,
+  `if(m.restored){window.scrollTo(0,scrollOf[m.entryId]||0);const o=m.focusItemId===null?null:findKey(bodyEl,'item-'+m.focusItemId)||findKey(bodyEl,'epic-'+m.focusItemId);const f=o||target;if(f)f.focus();}`,
+  `else{window.scrollTo(0,0);if(target)target.focus();}}}`,
   `window.addEventListener('message',function(e){`,
   `const msg=e.data;if(!msg||msg.v!==1||!msg.payload)return;const p=msg.payload;`,
   `if(p.type==='status'){const s=p.status;`,
   `const line=s.state==='loading'?'Refreshing\\u2026'+(s.freshnessLabel?' \\u00b7 '+s.freshnessLabel:''):s.freshnessLabel||s.message||'';`,
   `status.textContent=line+(s.stale?' (stale)':'');status.setAttribute('data-state',s.state);clear(banner);`,
   // With nothing to show behind it the panel replaces the screen; otherwise it sits above the screen, which stays.
-  `const panel=s.panel||null;if(panel!==null&&panel.placement==='body'){clear(main);clear(crumbsEl);crumbsEl.appendChild(make('span','Delivery','crumb current'));model=null;shownEntry=null;shownKind=null;head=null;bodyEl=null;search=null;main.setAttribute('data-screen','panel');renderPanel(main,panel);}`,
+  `const panel=s.panel||null;if(panel!==null&&panel.placement==='body'){clear(main);clear(crumbsEl);crumbsEl.appendChild(make('span','insrc','wordmark'));crumbsEl.appendChild(here('Delivery'));model=null;shownEntry=null;shownKind=null;head=null;top=null;bodyEl=null;search=null;main.setAttribute('data-screen','panel');renderPanel(main,panel);}`,
   `else if(panel!==null)renderPanel(banner,panel);return;}`,
   `if(p.type==='screen'){render(p.model);return;}`,
   // The one live region (s5): cleared, then set, so a repeated text is announced again.
@@ -431,21 +435,22 @@ export function renderBoardDocument(nonce: string): string {
   return (
     `<!DOCTYPE html><html><head><meta charset="utf-8">` +
     `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
-    `<title>${BOARD_TITLE}</title><style>${BOARD_STYLE}</style></head><body>` +
-    // App bar: wordmark and breadcrumb; the freshness line, the read-only marker, refresh and density.
-    `<header class="appbar"><div class="brand"><span class="wordmark">insrc</span><nav id="crumbs" class="crumbs" aria-label="Breadcrumb"></nav></div>` +
+    `<title>${BOARD_TITLE}</title><style>${BOARD_STYLE}</style></head><body><div class="page">` +
+    // App bar: the breadcrumb (the script puts the wordmark first); the freshness line, the read-only marker, refresh.
+    `<header class="appbar"><nav id="crumbs" class="crumbs" aria-label="Breadcrumb"></nav>` +
     // The status line keeps role=status but is not a live region: #announce is the one announcer (s5).
     `<div class="appbar-tools"><p id="status" role="status"></p><span class="readonly">Read-only</span>` +
-    `<button id="refresh" type="button">Refresh</button>` +
-    `<div class="density" role="group" aria-label="Density">` +
-    `<button id="density-compact" type="button" aria-pressed="false">Compact</button>` +
-    `<button id="density-comfortable" type="button" aria-pressed="true">Comfortable</button>` +
-    `</div></div></header>` +
-    `<p id="announce" class="announce" aria-live="polite" aria-atomic="true"></p>` +
+    `<button id="refresh" type="button">Refresh</button></div></header>` +
     // A failed refresh over a shown board and partial evidence sit here, above the screen, which stays usable.
     `<div id="banner"></div>` +
     // One screen at a time: each screen message replaces what is here.
-    `<main id="main"></main>` +
+    `<main id="main" class="body"></main>` +
+    // The footer: the one live region and the density control, small and out of the way.
+    `<footer class="foot"><p id="announce" aria-live="polite" aria-atomic="true"></p>` +
+    `<div class="seg density" role="group" aria-label="Density">` +
+    `<button id="density-compact" type="button" aria-pressed="false">Compact</button>` +
+    `<button id="density-comfortable" type="button" aria-pressed="true">Comfortable</button>` +
+    `</div></footer></div>` +
     `<script nonce="${attr(nonce)}">${BOARD_WEBVIEW_SCRIPT}</script></body></html>`
   );
 }

@@ -14,9 +14,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { getDb } from '../../../../db/client.js';
 import { findEntitiesByFile, listEntitiesForRepo, upsertEntities } from '../../../../db/entities.js';
@@ -28,7 +29,10 @@ import type { Entity, LLMProvider } from '../../../../shared/types.js';
 import type { Completeness } from '../../../completeness.js';
 import { runWithRoutingContext } from '../../../context/shaper-provider.js';
 import type { RoutingSeamContext } from '../../../context/shaper-provider.js';
-import type { PlannedTask, TemplateExecuteArgs, TemplateRuntime } from '../../../executor/types.js';
+import { buildCompleteness } from '../../../completeness.js';
+import { purgeAllTaskOutputs, readTaskOutput, registerTemplateRuntime, runExecutor, _resetRuntimeRegistryForTests } from '../../../executor/index.js';
+import type { AbsentInput, PlannedTask, TemplateExecuteArgs, TemplateRuntime } from '../../../executor/types.js';
+import type { PlanTask } from '../../../planner/types.js';
 import { codeAdherenceCheckRuntime } from '../../code/adherence-check.js';
 import { dataAdherenceCheckRuntime } from '../../data/adherence-check.js';
 import { infraAdherenceCheckRuntime } from '../../infra/adherence-check.js';
@@ -354,4 +358,81 @@ test('an override that yields no constraint fails naming the override and does n
 	);
 	assert.deepEqual([enumerations, judgings], [0, 0], 'the topic was not tried');
 	assert.equal(existsSync(recordPath(runId)), false);
+});
+
+test('run through the plan walk, a failed check\'s reason is in the task\'s record and in tasksFailed, and the plan\'s report is still written from the other tasks', async () => {
+	// The real infra check, a stand-in for another task of the plan, and a stand-in for the task that writes the report.
+	const whole = buildCompleteness({ returned: 1, basis: 'graph' });
+	let absentSeen: readonly AbsentInput[] | undefined;
+	_resetRuntimeRegistryForTests();
+	registerTemplateRuntime(infraAdherenceCheckRuntime);
+	registerTemplateRuntime({ templateId: 'demo.families', execute: async () => ({ outputs: new Map([['families', ['ci']]]), completeness: whole }) });
+	registerTemplateRuntime({
+		templateId: 'demo.aggregate',
+		execute: async (a) => { absentSeen = a.absentInputs; return { outputs: new Map([['report', { from: [...a.upstreamOutputs.keys()] }]]), completeness: whole }; },
+	});
+
+	const runId = uniqueRun('walk');
+	const plan = {
+		planId: 'p', goal: 'g', target: 'infra', scope: 'XS', reasoning: 'r',
+		tasks: [
+			{ taskId: 't01', template: 'demo.families', kind: 'leaf', params: {}, produces: ['families'], rationale: 'r' },
+			// The documents say nothing on this topic.
+			{ taskId: 't02', template: 'infra.adherence.check', kind: 'leaf', params: { infraSubject: '.github/workflows/ci.yml', constraintTopic: 'zzzunmatchedzzz' }, produces: ['adherence-report'], rationale: 'r' },
+			{ taskId: 't03', template: 'demo.aggregate', kind: 'leaf', params: {}, consumes: ['families', 'adherence-report'], produces: ['report'], rationale: 'r' },
+		],
+	} as unknown as PlanTask;
+	const intent: ClassifiedIntent = { target: 'infra', scope: 'XS', focused: true, focus: 'ci', scopeRef: { kind: 'repo', value: REPO }, reasoning: 'test' };
+	try {
+		const result = await runWithRoutingContext(routing, () => runExecutor({ tree: { plan, children: new Map(), childErrors: new Map() }, intent, runId }));
+
+		// The check's own reason, as the walk records a task whose runtime threw.
+		const reason = `runtime-threw: infra.adherence.check: the documents of ${REPO} state no constraint on "zzzunmatchedzzz" (no section of the documents matches the topic)`;
+		assert.deepEqual(result.root.tasksFailed, [{ taskId: 't02', reason }]);
+		const stored = readTaskOutput(runId, 't02');
+		assert.deepEqual([stored?.status, stored?.error, stored?.outputs], ['failed', reason, undefined]);
+		assert.equal(judgings, 0, 'nothing was judged');
+
+		// The report is still written, from the task that succeeded, and is told what is absent and why.
+		assert.deepEqual(result.root.finalReport, { from: ['families'] });
+		assert.equal(result.root.tasksCompleted, 2);
+		assert.deepEqual(absentSeen, [{ name: 'adherence-report', producedBy: 't02', reason }]);
+	} finally {
+		_resetRuntimeRegistryForTests();
+		purgeAllTaskOutputs(runId);
+	}
+});
+
+test('no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs', () => {
+	const analyze = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+	const prompts = join(analyze, '..', 'prompts', 'analyze');
+	const files = (dir: string, ext: string): string[] => readdirSync(dir).flatMap((name) => {
+		if (name === '__tests__') return [];
+		const full = join(dir, name);
+		return statSync(full).isDirectory() ? files(full, ext) : name.endsWith(ext) ? [full] : [];
+	});
+	/** Code without its comments: a comment may say what was removed. */
+	const code = (file: string): string => readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
+
+	const templates = files(join(analyze, 'planner', 'templates'), '.ts');
+	const runtimes = files(join(analyze, 'runtimes'), '.ts');
+	const promptFiles = files(prompts, '.md');
+	// The scan reads what it means to: the three adherence templates, the shared check and the prompts are among the files.
+	for (const expected of ['planner/templates/code/index.ts', 'planner/templates/data/index.ts', 'planner/templates/infra/index.ts', 'planner/templates/shared-schemas.ts', 'runtimes/shared/adherence.ts', 'runtimes/infra/adherence-check.ts']) {
+		assert.ok([...templates, ...runtimes].includes(join(analyze, expected)), expected);
+	}
+	assert.ok(promptFiles.some(f => f.endsWith('planner.system.md')) && promptFiles.some(f => f.endsWith('code.adherence-check.system.md')));
+
+	const naming = [
+		...[...templates, ...runtimes].filter(f => code(f).includes('constraintsSource')),
+		// A prompt is read whole: all of it is shown to a model.
+		...promptFiles.filter(f => readFileSync(f, 'utf8').includes('constraintsSource')),
+	];
+	assert.deepEqual(naming, []);
+
+	// The parameter the check does read is there (the scan would notice a name).
+	assert.ok(code(join(analyze, 'planner/templates/shared-schemas.ts')).includes('constraintTopic'));
+	assert.ok(code(join(analyze, 'runtimes/shared/adherence.ts')).includes("params['constraintTopic']"));
+	// The check takes nothing from another task.
+	assert.ok(!code(join(analyze, 'runtimes/shared/adherence.ts')).includes('upstreamOutputs'));
 });

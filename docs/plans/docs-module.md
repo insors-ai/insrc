@@ -134,7 +134,11 @@ Per existing planner convention (see [runtimes/code/](../../src/insrc/analyze/ru
 Cross-cutting -- lives IN the existing code/data/infra target families:
 
 - `code.adherence.check` -- leaf.
-  - `params.constraints`: array of `{ constraintText: string; sourceCitation: DocCitation }` extracted from docs (either passed in from an upstream `docs.constraint.enumerate` task, or looked up by an in-runtime docs retrieval when `params.subject` is passed)
+  - The constraints it judges against are given in one of three ways, read in this order; the first that is given is used alone:
+    1. `params.constraints`: an inline array of `{ constraint, sourceEntityId?, file?, heading? }` (an empty array counts as not given)
+    2. `params.constraintIds`: ids of summarised documents, whose stored `keyConstraints` are used (section 8.5)
+    3. `params.constraintTopic`: the check looks the constraints up itself, with the same enumeration `docs.constraint.enumerate` uses, in the documents of the repository it reads; one enumeration per run, repository and topic is kept as a record in the run's directory and reused by the other checks of the run
+  - A check is never given its constraints by another task of the plan. The earlier `params.constraintsSource` (the output of an upstream `docs.constraint.enumerate` task) was removed on 2026-10-10: a code, data or infra plan cannot hold a docs task, and plan validation now refuses the parameter in every plan. A plan whose check gives none of the three is refused at validation too.
   - `params.codeSubject`: string identifier or entity path the check applies to
   - Runtime: hydrates the code subject via graph queries, retrieves the doc sections, runs an LLM that produces `{ matches: [...], drifts: [...], missingImpl: [...], contradictions: [...] }` per constraint
   - Produces `code.adherence.report`
@@ -362,8 +366,9 @@ The docs shaper's `run`-mode bundle-building becomes cheaper + more grounded:
 
 The adherence-check template gets constraints from summaries directly instead of re-extracting from prose every run:
 
-- `code.adherence.check` accepts `params.docCitations` OR `params.constraintIds` (referencing entries in a doc summary's `keyConstraints` array)
-- Runtime: pulls constraints from `getDocSummariesForRepo` + filters by `subject`/`family`
+- `code.adherence.check` (and the data and infra checks) accept `params.constraintIds`: ids of summarised documents, whose `keyConstraints` are the constraints judged against
+- Runtime: reads the constraints of those documents from the live project context
+- This is one of the three ways a check gets its constraints (section 3.5); when neither it nor an inline list is given, the check enumerates the constraints on `params.constraintTopic` from the documents themselves, which reads the prose and not the summaries
 
 **Escape hatch:** shapers can always bypass summaries and go direct to full-body retrieval when they need the surrounding context. Summaries are an optimisation, not an authority.
 
@@ -372,7 +377,7 @@ The adherence-check template gets constraints from summaries directly instead of
 Ships AFTER the base docs module (Phase 5). Ordering:
 
 - **Phase 6** -- summariser prompt + LLM call + persistence. Runs at index-time as a background job. Live-context assembly function ships alongside. No shaper integration yet.
-- **Phase 7** -- docs shaper reads summaries in `run`-mode. Adherence check accepts `constraintIds`.
+- **Phase 7** -- docs shaper reads summaries in `run`-mode. Adherence check accepts `constraintIds`. (Since 2026-10-10 the check also accepts `constraintTopic` and no longer accepts `constraintsSource`; see section 3.5.)
 - **Phase 8** -- code/data/infra shapers optionally consult summaries when populating `artefacts` doc citations. Zero-work if summaries aren't available yet.
 
 Each phase reversible: summariser can be turned off (feature flag on the indexer job, NOT on the docs module) with no shaper-side change; the retriever fallback path always works.

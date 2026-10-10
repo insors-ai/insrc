@@ -956,6 +956,63 @@ task t02.t05 (<template>) failed: <that task's reason>`, followed by every
 other task of the child that did not complete, each with its task path and its
 reason.
 
+### How an adherence check gets its constraints
+
+An adherence check (`code.adherence.check`, `data.adherence.check`,
+`infra.adherence.check`) compares a subject with the constraints the documents
+state. It is given those constraints in one of three ways, read in this order;
+the first that is given is used alone:
+
+| Parameter | What the check does |
+|---|---|
+| `constraints` | Uses the inline list. An empty list counts as not given. |
+| `constraintIds` | Uses the stored key constraints of the summarised documents with those ids. |
+| `constraintTopic` | Looks the constraints up itself: it enumerates, from the documents of the repository it reads, the constraints on that topic. `maxConstraintSources` (1 to 30) says how many document sections the lookup reads. |
+
+The topic is a subject in the documents' own words ("build and test rules for
+CI workflows"), not a file path. The documents read are those of the whole
+repository the check reads, whatever the check's own scope: for a scope that is
+a manifest directory it is the repository that contains the directory, for a
+connection the repository that declares it.
+
+A plan must give each check one of the three. A plan whose check gives none
+fails validation, so the planner plans again:
+
+```
+task t12 (infra.adherence.check): an adherence check needs constraints to check against, and this task gives none. Give `constraintTopic` (the subject to look up in the repository's documents; the check finds the constraints itself), `constraints` (a non-empty inline list), or `constraintIds` (a non-empty list of ids of summarised documents); or leave the task out of the plan.
+```
+
+A check is never given its constraints by another task. The parameter
+`constraintsSource`, which named an upstream task's output, was removed: plan
+validation refuses it in every plan, with a message that says to give
+`constraintTopic` instead.
+
+**One lookup per topic in a run.** The first check of a run that asks for a
+topic makes the lookup and writes it to
+`~/.insrc/analyze/<runId>/constraints/<key>.json`; every later check of the
+run on the same topic (letters and spacing aside) and the same
+`maxConstraintSources` reads that file, so the checks of one run judge against
+the same list. The plans of a tree share it. The file holds the repository, the
+topic, the task that made the lookup and the lookup's whole result. A lookup
+that fails is not written, and the next check tries again.
+
+**What the report carries.** The `adherence-report` holds, beside its findings,
+`constraints` (the list the check judged against, each with its source
+document) and `constraintSource`: `{ kind: 'documents', topic, repoPath,
+retrievedSectionCount, record }`, `{ kind: 'inline' }` or
+`{ kind: 'stored-documents', ids }`. What the lookup left out (a limit of
+sections it reached, a section it read only in part, a search by meaning that
+did not run) is in the task's completeness record.
+
+**Why a check fails.** Each cause has its own reason on the failed task:
+
+| Reason | Cause |
+|---|---|
+| `the documents of <repo> state no constraint on "<topic>" (...)` | The lookup finished and found nothing: no section matches the topic, or the sections read state no constraint. The check is not shown as passed. |
+| `the constraints on "<topic>" could not be enumerated from the documents of <repo>: <cause>` | The lookup could not be made (the model that reads the sections could not be called). |
+| `params.constraints holds no usable constraint` / `none of the <n> ids in params.constraintIds names a summarised document with a constraint` | An override was given and yields nothing. The topic is not tried in its place. |
+| `the model call that judges adherence failed: ...` | The constraints were found and the judging call failed. The lookup's record stays. |
+
 ### The final report is written from the inputs that exist
 
 The last task of every plan writes the report. It used to be skipped as soon

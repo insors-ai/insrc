@@ -31,7 +31,8 @@
  *        call execute({task, intent, upstreamOutputs, runId}).
  *        Validate the returned outputs cover exactly the template's
  *        produces (ExecutorOutputShapeError if not).
- *     4. Persist the task record to <runRoot>/tasks/<taskId>.json.
+ *     4. Persist the task record to <runRoot>/tasks/<taskId>.json; a
+ *        child plan's task goes to its own plan's directory (cache.ts).
  *        A record that cannot be written fails that task, and the
  *        walk goes on; an error not tied to a task propagates.
  *     5. Merge the task's outputs into `outputs`.
@@ -155,7 +156,7 @@ async function executePlan(
 			};
 			// The task is already a failure of the plan; a record that cannot be
 			// written does not change that, and the walk goes on.
-			persistTaskRecord(runId, task, record);
+			persistTaskRecord(runId, task, record, parentTaskPath);
 			perTask.set(task.taskId, record);
 			failed.add(task.taskId);
 			tasksFailed.push({ taskId: task.taskId, reason: record.error! });
@@ -188,7 +189,7 @@ async function executePlan(
 
 		// Step 4 + 5: persist + accumulate. A record that cannot be written
 		// fails THIS task: its outputs are not handed on, and the walk goes on.
-		result = persistTaskRecord(runId, task, result);
+		result = persistTaskRecord(runId, task, result, parentTaskPath);
 		perTask.set(task.taskId, result);
 
 		if (result.status === 'ok') {
@@ -324,7 +325,7 @@ async function executePlannerTask(
 	const childResult = await executePlan(childNode, intent, runId, opts);
 
 	if (childResult.root.finalReport === undefined) {
-		const reason = 'child-plan-unavailable: child aggregator produced no report';
+		const reason = `child-plan-unavailable: ${childFailureCause(childNode, childResult, opts.parentTaskPath)}`;
 		log.warn({ runId, taskId: task.taskId }, reason);
 		return { record: failedRecord(task, reason), childResult };
 	}
@@ -347,6 +348,30 @@ async function executePlannerTask(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Why a child plan produced no report, for its planner task's failure: the
+ * child's aggregate task with its own reason, then every other task of the
+ * child that failed or was skipped, each by its task path and its reason.
+ * `childPath` is the planner task's own path, which the child's tasks sit under.
+ */
+function childFailureCause(
+	childNode:   PlanTreeNode,
+	childResult: ExecutorResult,
+	childPath:   string | undefined,
+): string {
+	const base = 'child aggregator produced no report';
+	const aggregate = childNode.plan.tasks[childNode.plan.tasks.length - 1];
+	const record = aggregate !== undefined ? childResult.root.perTask.get(aggregate.taskId) : undefined;
+	if (aggregate === undefined || record === undefined || record.status === 'ok') return base;
+
+	const cause = `${base}: its aggregate task ${appendTaskPath(childPath, aggregate.taskId)} (${aggregate.template}) `
+		+ `${record.status === 'failed' ? 'failed' : 'was skipped'}: ${record.error ?? record.status}`;
+	const others = childResult.root.tasksFailed.filter(f => f.taskId !== aggregate.taskId);
+	if (others.length === 0) return cause;
+	return `${cause}; other tasks of the child plan that did not complete: `
+		+ others.map(f => `${appendTaskPath(childPath, f.taskId)}: ${f.reason}`).join('; ');
+}
 
 /**
  * Returns null when every consumed name is in outputs and no
@@ -473,9 +498,15 @@ function checkOutputShape(
  * is written too when it can be; when it cannot, the failure is still in the
  * plan's result.
  */
-function persistTaskRecord(runId: string, task: PlannedTask, record: TaskExecutionRecord): TaskExecutionRecord {
+function persistTaskRecord(
+	runId:  string,
+	task:   PlannedTask,
+	record: TaskExecutionRecord,
+	/** The path of the planner task whose child plan this task belongs to; none for the root plan. */
+	parentTaskPath: string | undefined,
+): TaskExecutionRecord {
 	try {
-		writeTaskOutput(runId, record);
+		writeTaskOutput(runId, record, parentTaskPath);
 		return record;
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
@@ -483,7 +514,7 @@ function persistTaskRecord(runId: string, task: PlannedTask, record: TaskExecuti
 		// A task that had already failed or been skipped keeps its own reason.
 		if (record.status !== 'ok') return record;
 		const failed = failedRecord(task, `task-record-unwritable: ${msg}`);
-		try { writeTaskOutput(runId, failed); }
+		try { writeTaskOutput(runId, failed, parentTaskPath); }
 		catch (again) {
 			log.warn({ runId, taskId: task.taskId, err: (again as Error).message }, "the task's failure could not be written either; it is in the plan's result");
 		}

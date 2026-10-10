@@ -925,6 +925,17 @@ record written before the change has none, and nothing requires one.
 A task whose record cannot be written fails with
 `task-record-unwritable: <the error>`; the tasks after it still run.
 
+A task of a child plan keeps its own record, in its plan's directory and under
+its full task path: the task `t01` of the child plan of `t02` is at
+`tasks/t02/tasks/t02.t01.json`. The root plan's records stay at
+`tasks/<taskId>.json`.
+
+A planner task whose child plan wrote no report fails with the child's cause:
+`child-plan-unavailable: child aggregator produced no report: its aggregate
+task t02.t05 (<template>) failed: <that task's reason>`, followed by every
+other task of the child that did not complete, each with its task path and its
+reason.
+
 ### The final report is written from the inputs that exist
 
 The last task of every plan writes the report. It used to be skipped as soon

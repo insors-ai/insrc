@@ -107,7 +107,8 @@ export const PATHS = {
   // Leaf tasks land here; planner-template tasks ALSO land here
   // (carrying the child plan's aggregator output) and additionally
   // hold a sibling directory <runRoot>/tasks/<taskId>/ for the
-  // child plan's persistence layout.
+  // child plan's persistence layout. A child plan's own tasks are
+  // stored in that directory (see analyze/executor/cache.ts), not here.
   analyzeTaskOutput: (runId: string, taskId: string): string =>
     join(INSRC_DIR, 'analyze', runId, 'tasks', `${taskId}.json`),
   analyzeContext: (runId: string): string =>

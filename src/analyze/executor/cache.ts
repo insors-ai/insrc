@@ -8,6 +8,11 @@
  *
  * Each task's completion writes a record to
  *   ~/.insrc/analyze/<runId>/tasks/<taskId>.json
+ * for a task of the root plan. A task of a child plan is stored in its own
+ * plan's directory, under its full task path, so that the plans of one tree
+ * (which share a run id, and whose task ids are unique only within a plan)
+ * never share a file:
+ *   ~/.insrc/analyze/<runId>/tasks/t02/tasks/t02.t01.json
  *
  * For planner-template tasks the OUTPUT is the child plan's
  * aggregator output (materialized under the `report` produces
@@ -31,21 +36,31 @@ import {
 	unlinkSync,
 	writeFileSync,
 } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
 import { PATHS } from '../../shared/paths.js';
+import { planDirFor } from '../planner/cache.js';
 
+import { taskPath } from './plan-sources.js';
 import type { TaskExecutionRecord } from './types.js';
 
 const log = getLogger('analyze:executor:cache');
 
-export function taskOutputPathFor(runId: string, taskId: string): string {
-	return PATHS.analyzeTaskOutput(runId, taskId);
+/**
+ * Where a task's record is stored. `parentTaskPath` is the path of the
+ * planner task whose child plan the task belongs to; leave it out for a task
+ * of the root plan.
+ */
+export function taskOutputPathFor(runId: string, taskId: string, parentTaskPath?: string | undefined): string {
+	if (parentTaskPath === undefined || parentTaskPath.length === 0) {
+		return PATHS.analyzeTaskOutput(runId, taskId);
+	}
+	return join(planDirFor({ runId, parentTaskPath }), 'tasks', `${taskPath(parentTaskPath, taskId)}.json`);
 }
 
-export function writeTaskOutput(runId: string, record: TaskExecutionRecord): string {
-	const path = taskOutputPathFor(runId, record.taskId);
+export function writeTaskOutput(runId: string, record: TaskExecutionRecord, parentTaskPath?: string | undefined): string {
+	const path = taskOutputPathFor(runId, record.taskId, parentTaskPath);
 	atomicWriteJson(path, record);
 	log.debug(
 		{ runId, taskId: record.taskId, status: record.status, produces: record.produces },
@@ -54,8 +69,8 @@ export function writeTaskOutput(runId: string, record: TaskExecutionRecord): str
 	return path;
 }
 
-export function readTaskOutput(runId: string, taskId: string): TaskExecutionRecord | null {
-	const path = taskOutputPathFor(runId, taskId);
+export function readTaskOutput(runId: string, taskId: string, parentTaskPath?: string | undefined): TaskExecutionRecord | null {
+	const path = taskOutputPathFor(runId, taskId, parentTaskPath);
 	if (!existsSync(path)) return null;
 	try {
 		return JSON.parse(readFileSync(path, 'utf8')) as TaskExecutionRecord;

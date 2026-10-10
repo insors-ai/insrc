@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>insrc delivery board — screen mocks</title>
+<!--
+  Screen mocks for the delivery board rework (feedback log: docs/plans/delivery-board-ux-feedback.md;
+  PRD: docs/insrc-delivery-board-prd.html, §03–§05, §08, mocks A–F).
+  Self-contained: no external scripts, fonts or requests. Colours are named after the VS Code theme
+  variables the webview would read (--vscode-*), set here to the Dark Modern defaults; "Light" switches
+  them to Light Modern values. Data is illustrative.
+-->
+<style>
+:root{--vscode-font-family:system-ui,-apple-system,"Segoe UI",sans-serif;--vscode-editor-font-family:ui-monospace,SFMono-Regular,Consolas,monospace;--vscode-foreground:#cccccc;--vscode-descriptionForeground:#9d9d9d;--vscode-editor-background:#1f1f1f;--vscode-sideBar-background:#181818;--vscode-editorWidget-background:#252526;--vscode-panel-border:#3c3c3c;--vscode-focusBorder:#0078d4;--vscode-textLink-foreground:#4daafc;--vscode-button-background:#0078d4;--vscode-button-foreground:#ffffff;--vscode-button-secondaryBackground:#313131;--vscode-button-secondaryForeground:#cccccc;--vscode-input-background:#313131;--vscode-input-border:#3c3c3c;--vscode-testing-iconPassed:#73c991;--vscode-editorWarning-foreground:#cca700;--vscode-errorForeground:#f85149;--vscode-inputValidation-warningBackground:#352a05;--vscode-inputValidation-warningBorder:#b89500;--vscode-inputValidation-errorBackground:#5a1d1d;--vscode-inputValidation-errorBorder:#be1100;--vscode-list-activeSelectionBackground:#04395e;--vscode-list-activeSelectionForeground:#ffffff;--vscode-list-hoverBackground:#2a2d2e;--vscode-textBlockQuote-background:#2b2b2b;--page:#111214;--note:#8b93a7}
+body.light{--vscode-foreground:#3b3b3b;--vscode-descriptionForeground:#717171;--vscode-editor-background:#ffffff;--vscode-sideBar-background:#f8f8f8;--vscode-editorWidget-background:#f8f8f8;--vscode-panel-border:#e5e5e5;--vscode-focusBorder:#005fb8;--vscode-textLink-foreground:#005fb8;--vscode-button-background:#005fb8;--vscode-button-secondaryBackground:#e5e5e5;--vscode-button-secondaryForeground:#3b3b3b;--vscode-input-background:#ffffff;--vscode-input-border:#cecece;--vscode-testing-iconPassed:#388a34;--vscode-editorWarning-foreground:#8a6100;--vscode-errorForeground:#c72e0f;--vscode-inputValidation-warningBackground:#fff4d2;--vscode-inputValidation-warningBorder:#bf8803;--vscode-inputValidation-errorBackground:#fde7e9;--vscode-inputValidation-errorBorder:#c72e0f;--vscode-list-activeSelectionBackground:#e8e8e8;--vscode-list-activeSelectionForeground:#000000;--vscode-list-hoverBackground:#f2f2f2;--vscode-textBlockQuote-background:#f2f2f2;--page:#e9ebf0;--note:#5c6578}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--page);color:var(--vscode-foreground);font:13px/1.45 var(--vscode-font-family)}
+a{color:var(--vscode-textLink-foreground);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:2px}
+
+/* Gallery chrome (not part of the product) */
+.gallery{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+.index{padding:18px 16px;border-right:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);position:sticky;top:0;height:100vh;overflow:auto}
+.index h1{font-size:14px;margin:0 0 4px}
+.index p{color:var(--note);font-size:12px;margin:0 0 14px}
+.index ol{list-style:none;margin:0;padding:0}
+.index li a{display:block;padding:4px 6px;border-radius:4px;color:var(--vscode-foreground);font-size:12px}
+.index li a.current{background:var(--vscode-list-activeSelectionBackground);color:var(--vscode-list-activeSelectionForeground)}
+.index .group{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--note);margin:14px 0 4px}
+.index .tools{display:flex;gap:6px;margin-top:16px}
+.stage-area{padding:20px 28px 40px;min-width:0;overflow-x:auto}
+.screen{display:none}
+.screen.shown{display:block}
+.screen-title{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px}
+.screen-title h2{font-size:15px;margin:0}
+.screen-title span{color:var(--note);font-size:12px}
+.notes{max-width:1100px;margin:12px 0 0;color:var(--note);font-size:12px;columns:2;column-gap:28px}
+.notes p{margin:0 0 6px;break-inside:avoid}
+.notes strong{color:var(--vscode-foreground)}
+
+@media (max-width:900px){
+  .gallery{grid-template-columns:1fr}
+  .index{position:static;height:auto;border-right:0;border-bottom:1px solid var(--vscode-panel-border)}
+  .index ol{display:flex;flex-wrap:wrap;gap:2px 6px}
+  .stage-area{padding:16px}
+  .notes{columns:1}
+}
+
+/* The VS Code editor tab the board lives in */
+.tab{container-type:inline-size;min-width:320px;max-width:1100px;border:1px solid var(--vscode-panel-border);border-radius:6px;overflow:hidden;background:var(--vscode-editor-background);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.tab.narrow{max-width:380px}
+.tabstrip{display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;background:var(--vscode-sideBar-background);border-bottom:1px solid var(--vscode-panel-border);font-size:12px;color:var(--vscode-descriptionForeground)}
+.tabstrip b{color:var(--vscode-foreground);font-weight:500}
+
+/* Product: app bar */
+.appbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 14px;padding:8px 16px;border-bottom:1px solid var(--vscode-panel-border)}
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+.wordmark{font-weight:700;color:var(--vscode-textLink-foreground)}
+.crumbs .sep{color:var(--vscode-descriptionForeground)}
+.crumbs .here{color:var(--vscode-foreground);font-weight:600;overflow-wrap:anywhere}
+.appbar-tools{display:flex;align-items:center;gap:10px;color:var(--vscode-descriptionForeground);font-size:12px}
+button,.btn{font:inherit;font-size:12px;color:var(--vscode-button-secondaryForeground);background:var(--vscode-button-secondaryBackground);border:1px solid transparent;border-radius:4px;padding:3px 10px;cursor:pointer;display:inline-block}
+.btn.primary{background:var(--vscode-button-background);color:var(--vscode-button-foreground)}
+.btn.ghost{background:none;color:var(--vscode-textLink-foreground);padding:3px 0}
+.body{padding:14px 16px 18px}
+
+/* Product: filter bar (the five filters) */
+.filterbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
+.seg{display:inline-flex;border:1px solid var(--vscode-panel-border);border-radius:6px;overflow:hidden}
+.seg a{padding:4px 12px;font-size:12px;color:var(--vscode-descriptionForeground);border-right:1px solid var(--vscode-panel-border)}
+.seg a:last-child{border-right:0}
+.seg a[aria-current="page"]{background:var(--vscode-list-activeSelectionBackground);color:var(--vscode-list-activeSelectionForeground);font-weight:600;text-decoration:none}
+.toggle{border-radius:999px;padding:3px 12px;font-size:12px;border:1px solid var(--vscode-panel-border);background:none;color:var(--vscode-descriptionForeground)}
+.toggle[aria-pressed="true"]{border-color:var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);color:var(--vscode-editorWarning-foreground)}
+.search{margin-left:auto;min-width:200px;padding:4px 8px;border:1px solid var(--vscode-input-border);background:var(--vscode-input-background);color:var(--vscode-descriptionForeground);border-radius:4px;font-size:12px}
+
+.count-line{color:var(--vscode-descriptionForeground);font-size:12px;margin:0 0 12px}
+
+/* Product: pills, kicker, meter */
+.pill{display:inline-block;border-radius:999px;padding:0 8px;font-size:11px;line-height:18px;border:1px solid var(--vscode-panel-border);color:var(--vscode-descriptionForeground);white-space:nowrap}
+.ok{color:var(--vscode-testing-iconPassed);border-color:var(--vscode-testing-iconPassed)}
+.warn{color:var(--vscode-editorWarning-foreground);background:var(--vscode-inputValidation-warningBackground);border-color:var(--vscode-inputValidation-warningBorder)}
+.bad{color:var(--vscode-errorForeground);background:var(--vscode-inputValidation-errorBackground);border-color:var(--vscode-inputValidation-errorBorder)}
+.stage-pill{color:var(--vscode-foreground);border-color:var(--vscode-focusBorder)}
+.pills{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.kicker{font:11px/1.4 var(--vscode-editor-font-family);letter-spacing:.3px;color:var(--vscode-descriptionForeground)}
+.muted{color:var(--vscode-descriptionForeground);font-size:12px}
+.meter{height:5px;border-radius:3px;background:var(--vscode-panel-border);margin-top:5px}
+.meter span{display:block;height:5px;border-radius:3px;background:var(--vscode-testing-iconPassed)}
+
+/* Product: stage accordions */
+.acc{border:1px solid var(--vscode-panel-border);border-radius:6px;margin:0 0 8px;background:var(--vscode-editor-background)}
+.acc>summary{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:8px 12px;cursor:pointer;font-weight:600}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary::before{content:"\25B8";color:var(--vscode-descriptionForeground);width:10px}
+.acc[open]>summary::before{content:"\25BE"}
+.acc>summary .count{margin-left:auto}
+.acc>summary .hint{font-weight:400}
+.acc[data-empty] summary{color:var(--vscode-descriptionForeground);font-weight:500}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));gap:8px;padding:0 12px 12px}
+.card{display:block;border:1px solid var(--vscode-panel-border);border-radius:6px;padding:9px 10px;background:var(--vscode-editorWidget-background);color:var(--vscode-foreground);text-decoration:none}
+.card:hover{border-color:var(--vscode-focusBorder);text-decoration:none}
+.card .t{font-weight:600;margin:2px 0 3px}
+.card .pills{margin-top:6px}
+.empty-line{padding:0 12px 10px 34px;color:var(--vscode-descriptionForeground);font-size:12px}
+
+/* Product: list rows (epics, issues) */
+.rows{border-top:1px solid var(--vscode-panel-border)}
+.row{display:grid;grid-template-columns:minmax(220px,1fr) 150px auto;gap:6px 20px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--vscode-panel-border);color:var(--vscode-foreground)}
+.row:hover{background:var(--vscode-list-hoverBackground);text-decoration:none}
+.row .name{font-weight:600;color:var(--vscode-textLink-foreground)}
+.issue-row{grid-template-columns:minmax(220px,1fr) auto}
+
+/* Product: work-item screens */
+.head{margin:0 0 12px}
+.head h1{font-size:19px;line-height:1.3;margin:3px 0 8px;letter-spacing:-.2px}
+.purpose{max-width:760px;margin:10px 0 0}
+.subtabs{display:flex;gap:18px;border-bottom:1px solid var(--vscode-panel-border);margin:14px 0 14px;font-size:12px}
+.subtabs a{padding:7px 0;color:var(--vscode-descriptionForeground);border-bottom:2px solid transparent}
+.subtabs a[aria-current="page"]{color:var(--vscode-foreground);border-bottom-color:var(--vscode-focusBorder);font-weight:600;text-decoration:none}
+.cols{display:grid;grid-template-columns:minmax(340px,1.45fr) minmax(280px,1fr);gap:22px}
+.label{font-size:10px;font-weight:650;letter-spacing:1px;text-transform:uppercase;color:var(--vscode-descriptionForeground);margin:0 0 8px}
+.task{border-top:1px solid var(--vscode-panel-border);padding:8px 0}
+.task:last-of-type{border-bottom:1px solid var(--vscode-panel-border)}
+.task>summary{cursor:pointer;font-weight:600}
+.task p{margin:6px 0}
+.checks{list-style:none;padding:0;margin:6px 0;font-size:12px}
+.checks li::before{content:"\2610  ";color:var(--vscode-descriptionForeground)}
+.why{background:var(--vscode-textBlockQuote-background);border-left:3px solid var(--vscode-textLink-foreground);border-radius:0 4px 4px 0;padding:9px 12px;margin:0 0 6px}
+.chain{list-style:none;margin:0;padding:0}
+.chain li{display:grid;grid-template-columns:52px minmax(80px,1fr) auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--vscode-panel-border)}
+.chain b{font-size:12px}
+.warnbox{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);border-radius:0 4px 4px 0;padding:9px 12px;margin:12px 0}
+.item{padding:9px 0;border-bottom:1px solid var(--vscode-panel-border)}
+.item:last-child{border-bottom:0}
+.between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.quote{border-left:2px solid var(--vscode-textLink-foreground);padding:6px 12px;margin:0 0 10px}
+.file{font:11px/1.7 var(--vscode-editor-font-family);background:var(--vscode-editorWidget-background);border:1px solid var(--vscode-panel-border);border-radius:4px;padding:8px 10px}
+.file .focus{display:block;color:var(--vscode-editorWarning-foreground);background:var(--vscode-inputValidation-warningBackground)}
+table.records{width:100%;border-collapse:collapse;font-size:12px}
+.records th{text-align:left;font-weight:600;color:var(--vscode-descriptionForeground);border-bottom:1px solid var(--vscode-panel-border);padding:6px 6px 6px 0}
+.records td{border-bottom:1px solid var(--vscode-panel-border);padding:8px 6px 8px 0;vertical-align:top}
+
+/* Layouts by the board's own width (a VS Code tab or sidebar), not the window */
+@container (max-width:760px){
+  .cols{grid-template-columns:minmax(0,1fr)}
+  .row{grid-template-columns:minmax(0,1fr) 120px}
+  .row>:last-child{grid-column:1/-1;justify-self:start}
+  .issue-row{grid-template-columns:minmax(0,1fr)}
+  .search{margin-left:0;flex:1 1 100%;min-width:0}
+  .head.between{flex-wrap:wrap}
+}
+@container (max-width:480px){
+  .crumbs .wordmark{display:none}
+  .row{grid-template-columns:minmax(0,1fr)}
+  .seg a{padding:4px 9px}
+  .body{padding:12px}
+}
+
+/* Product: state panels */
+.panel{border:1px solid var(--vscode-panel-border);border-radius:6px;padding:14px 16px;background:var(--vscode-editorWidget-background)}
+.panel.warnp{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground)}
+.panel h3{font-size:14px;margin:0 0 4px}
+.panel p{margin:4px 0}
+.states{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:14px}
+.table-wrap{overflow-x:auto}
+table.records{min-width:620px}
+.center{text-align:center;padding:26px 16px}
+</style>
+</head>
+<body>
+<div class="gallery">
+<nav class="index" aria-label="Screens">
+  <h1>Delivery board — screens</h1>
+  <p>Mocks for the screen-based rework. Click through inside a screen, or pick one here.</p>
+  <div class="group">Lists</div>
+  <ol>
+    <li><a href="#all-work">1 · All work (board)</a></li>
+    <li><a href="#epics">2 · Epics (portfolio)</a></li>
+    <li><a href="#epic-board">3 · One epic's board</a></li>
+    <li><a href="#standalone">4 · Standalone work</a></li>
+    <li><a href="#issues">5 · Issues</a></li>
+    <li><a href="#attention">6 · Needs attention (on All work)</a></li>
+  </ol>
+  <div class="group">Work items</div>
+  <ol>
+    <li><a href="#story">7 · Story — overview &amp; tasks</a></li>
+    <li><a href="#story-evidence">8 · Story — workflow evidence</a></li>
+    <li><a href="#story-linked">9 · Story — linked work</a></li>
+    <li><a href="#story-conflict">10 · Story — completion conflict</a></li>
+    <li><a href="#issue">11 · Issue</a></li>
+  </ol>
+  <div class="group">Narrow pane</div>
+  <ol>
+    <li><a href="#narrow-board">12 · Epic board, narrow</a></li>
+    <li><a href="#narrow-story">13 · Story, narrow</a></li>
+  </ol>
+  <div class="group">States</div>
+  <ol>
+    <li><a href="#states">14 · Empty, no matches, failed, partial</a></li>
+  </ol>
+  <div class="tools"><button type="button" id="theme">Light</button></div>
+</nav>
+
+<main class="stage-area">
+
+<!-- 1 ─────────────────────────────── All work -->
+<section class="screen" id="all-work">
+  <div class="screen-title"><h2>1 · All work</h2><span>The board's home: every story and issue, grouped by stage</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><span class="here">Delivery</span></div>
+      <div class="appbar-tools"><span>Updated just now</span><span>Read-only</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <div class="filterbar">
+        <nav class="seg" aria-label="Show"><a href="#all-work" aria-current="page">All work</a><a href="#epics">Epics</a><a href="#standalone">Standalone</a><a href="#issues">Issues</a></nav>
+        <a class="toggle" href="#attention" role="button" aria-pressed="false">Needs attention</a>
+        <span class="search">Search titles, ids, epics</span>
+      </div>
+      <p class="count-line">12 items · 3 need attention</p>
+      <details class="acc" open><summary>Scoped <span class="pill count">2</span></summary>
+        <div class="cards">
+          <a class="card" href="#story"><div class="kicker">STORY · BFE98FF7 / S004</div><div class="t">Companion diagrams render in the review pane</div><div class="muted">Build VS Code plugin UI integration</div><div class="pills"><span class="pill warn">Approval due</span></div></a>
+          <a class="card" href="#issue"><div class="kicker">ISSUE · 7224D0D4 · SIZED</div><div class="t">Publish purpose, size, issue body and feedback in the snapshot</div><div class="muted">Standalone</div></a>
+        </div>
+      </details>
+      <details class="acc" open><summary>Design &amp; plan <span class="pill count">3</span></summary>
+        <div class="cards">
+          <a class="card" href="#story"><div class="kicker">STORY · BFE98FF7 / S002</div><div class="t">Show functional requirements from the structured record</div><div class="muted">Build VS Code plugin UI integration</div><div class="pills"><span class="pill bad">Review blocked</span></div></a>
+          <a class="card" href="#issue"><div class="kicker">ISSUE · B2687832 · SIZED</div><div class="t">Make the VS Code delivery board match the PRD's UX mocks</div><div class="muted">Corrects E2 · Delivery board (VS Code)</div><div class="pills"><span class="pill warn">Design approval due</span></div></a>
+          <a class="card" href="#story"><div class="kicker">STORY · 9B72686C / S003</div><div class="t">Refuse a task scope its family does not allow</div><div class="muted">Harden artifact creation flows · Size S</div></a>
+        </div>
+      </details>
+      <details class="acc" data-empty><summary>Ready · design approved <span class="hint muted">· nothing at this stage</span><span class="pill count">0</span></summary></details>
+      <details class="acc" open><summary>Ready · plan approved <span class="pill count">1</span></summary>
+        <div class="cards">
+          <a class="card" href="#story"><div class="kicker">STORY · BFE98FF7 / S001</div><div class="t">Read a generated document as a structured, navigable document</div><div class="muted">Build VS Code plugin UI integration · Size M · 0/3 tasks recorded</div><div class="pills"><span class="pill ok">Plan approved</span></div></a>
+        </div>
+      </details>
+      <details class="acc" data-empty><summary>Build recorded <span class="hint muted">· nothing at this stage</span><span class="pill count">0</span></summary></details>
+      <details class="acc"><summary>Complete <span class="pill count">6</span><span class="hint muted">· 1 needs attention</span></summary>
+        <div class="cards"><a class="card" href="#story-conflict"><div class="kicker">STORY · E2C6705F / S001</div><div class="t">Section navigation in the review pane</div></a></div>
+      </details>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>Filters.</strong> Exactly five: four views (All work, Epics, Standalone, Issues) as one single-choice control, and Needs attention as a toggle that applies on top of any of them. Epics are never chips; one is chosen on the Epics screen (2).</p>
+    <p><strong>Stages.</strong> Six collapsible sections stacked vertically, in workflow order, each with its count. Non-empty stages start open; empty ones start closed with "nothing at this stage", but stay listed. Cards inside a section wrap into a grid as wide as the pane allows.</p>
+    <p><strong>Large stages.</strong> A stage holding many cards (Complete is usually the largest) starts closed and says how many need attention, so the screen leads with work in progress.</p>
+    <p><strong>Cards.</strong> Kicker (kind · compact id), title, epic or "Standalone", size and task results when recorded, then at most the badges that matter (review blocked, decision due, validation conflict). A card opens its item's own screen (7 or 11); the board is not shown beneath it.</p>
+    <p><strong>Freshness.</strong> "Updated just now" sits in the app bar; Refresh re-reads. The breadcrumb is just "Delivery" at the top level.</p>
+    <p><strong>Ready columns.</strong> The two Ready stages are alternatives (with and without a plan step), kept as two sections as the PRD requires.</p>
+  </div>
+</section>
+
+<!-- 2 ─────────────────────────────── Epics -->
+<section class="screen" id="epics">
+  <div class="screen-title"><h2>2 · Epics</h2><span>PRD mock A: where each epic stands</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><a href="#all-work">Delivery</a><span class="sep">/</span><span class="here">Epics</span></div>
+      <div class="appbar-tools"><span>Updated just now</span><span>Read-only</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <div class="filterbar">
+        <nav class="seg" aria-label="Show"><a href="#all-work">All work</a><a href="#epics" aria-current="page">Epics</a><a href="#standalone">Standalone</a><a href="#issues">Issues</a></nav>
+        <a class="toggle" href="#epics" role="button" aria-pressed="false">Needs attention</a>
+        <span class="search">Search epics</span>
+      </div>
+      <p class="count-line">31 epics · completion counts approved stories, not validated tasks</p>
+      <div class="rows">
+        <a class="row" href="#epic-board"><div><div class="kicker">EPIC · BFE98FF7</div><div class="name">Build VS Code plugin UI integration</div><div class="muted">4 stories · 9 tasks</div></div><div><span class="muted">1 of 4 stories complete</span><div class="meter" role="meter" aria-valuenow="1" aria-valuemin="0" aria-valuemax="4"><span style="width:25%"></span></div></div><span class="pill warn">2 need attention</span></a>
+        <a class="row" href="#epic-board"><div><div class="kicker">EPIC · 9B72686C</div><div class="name">Harden artifact creation flows</div><div class="muted">3 stories · 11 tasks</div></div><div><span class="muted">2 of 3 stories complete</span><div class="meter"><span style="width:66%"></span></div></div><span class="pill warn">1 needs attention</span></a>
+        <a class="row" href="#epic-board"><div><div class="kicker">EPIC · E2C6705F</div><div class="name">Complete generated artifact companion wiring</div><div class="muted">3 stories · 8 tasks</div></div><div><span class="muted">3 of 3 stories complete</span><div class="meter"><span style="width:100%"></span></div></div><span class="pill ok">No open gates</span></a>
+        <a class="row" href="#epic-board"><div><div class="kicker">EPIC · 6A131558</div><div class="name">E2 · Delivery board (VS Code)</div><div class="muted">5 stories · 23 tasks · 1 issue</div></div><div><span class="muted">5 of 5 stories complete</span><div class="meter"><span style="width:100%"></span></div></div><span class="pill ok">No open gates</span></a>
+      </div>
+      <p class="muted" style="margin-top:12px">Work outside any epic is under <a href="#standalone">Standalone</a>.</p>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>Rows.</strong> One per epic: kicker, title, story and task counts (and issues), "n of N stories complete" with a meter that names its denominator, and an attention pill ("No open gates" when none).</p>
+    <p><strong>Drill-down.</strong> The whole row opens that epic's board (3). This replaces the per-epic chips of the current build.</p>
+    <p><strong>Filters.</strong> Search matches epic titles and ids; Needs attention keeps only epics with something needing attention.</p>
+    <p><strong>Standalone.</strong> Never shown as a fake epic; it is its own view (4), linked here.</p>
+  </div>
+</section>
+
+<!-- 3 ─────────────────────────────── One epic's board -->
+<section class="screen" id="epic-board">
+  <div class="screen-title"><h2>3 · One epic's board</h2><span>Selecting an epic opens its scoped board</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><a href="#all-work">Delivery</a><span class="sep">/</span><a href="#epics">Epics</a><span class="sep">/</span><span class="here">Build VS Code plugin UI integration</span></div>
+      <div class="appbar-tools"><span>Updated just now</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <div class="between head">
+        <div><div class="kicker">EPIC · BFE98FF7</div><h1>Build VS Code plugin UI integration</h1>
+          <div class="pills"><span class="pill">4 stories</span><span class="pill">9 tasks</span><span class="pill warn">2 need attention</span></div></div>
+        <div style="min-width:180px"><span class="muted">1 of 4 stories complete</span><div class="meter"><span style="width:25%"></span></div></div>
+      </div>
+      <div class="filterbar">
+        <a class="btn ghost" href="#epics">← Epics</a>
+        <a class="toggle" href="#epic-board" role="button" aria-pressed="false">Needs attention</a>
+        <span class="search">Search this epic</span>
+      </div>
+      <details class="acc" open><summary>Scoped <span class="pill count">1</span></summary>
+        <div class="cards"><a class="card" href="#story"><div class="kicker">STORY · BFE98FF7 / S004</div><div class="t">Companion diagrams render in the review pane</div><div class="pills"><span class="pill warn">Approval due</span></div></a></div></details>
+      <details class="acc" open><summary>Design &amp; plan <span class="pill count">1</span></summary>
+        <div class="cards"><a class="card" href="#story"><div class="kicker">STORY · BFE98FF7 / S002</div><div class="t">Show functional requirements from the structured record</div><div class="pills"><span class="pill bad">Review blocked</span></div></a></div></details>
+      <details class="acc" data-empty><summary>Ready · design approved <span class="hint muted">· nothing at this stage</span><span class="pill count">0</span></summary></details>
+      <details class="acc" open><summary>Ready · plan approved <span class="pill count">1</span></summary>
+        <div class="cards"><a class="card" href="#story"><div class="kicker">STORY · BFE98FF7 / S001</div><div class="t">Read a generated document as a structured, navigable document</div><div class="muted">Size M · 0/3 tasks recorded</div></a></div></details>
+      <details class="acc" data-empty><summary>Build recorded <span class="hint muted">· nothing at this stage</span><span class="pill count">0</span></summary></details>
+      <details class="acc" open><summary>Complete <span class="pill count">1</span></summary>
+        <div class="cards"><a class="card" href="#story-conflict"><div class="kicker">STORY · BFE98FF7 / S003</div><div class="t">Section navigation in the review pane</div><div class="muted">2/3 tasks passed</div><div class="pills"><span class="pill bad">Validation conflict</span></div></a></div></details>
+      <p class="muted">Issues correcting this epic's stories: <a href="#issue">1 open</a></p>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>Context.</strong> Only this epic's stories (and issues that correct them). The breadcrumb names the path, and "← Epics" returns to the portfolio with its search and scroll kept.</p>
+    <p><strong>Header.</strong> The epic's own summary line and meter, the same numbers as its row on screen 2.</p>
+    <p><strong>Filters.</strong> Search and Needs attention apply within the epic. The four-view control is not shown here: this screen is inside Epics.</p>
+    <p><strong>Purpose.</strong> When the read model publishes the epic's problem statement (ISSUE-7224d0d4), it goes under the title.</p>
+  </div>
+</section>
+
+<!-- 4 ─────────────────────────────── Standalone -->
+<section class="screen" id="standalone">
+  <div class="screen-title"><h2>4 · Standalone work</h2><span>Stories and issues outside any epic</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><a href="#all-work">Delivery</a><span class="sep">/</span><span class="here">Standalone</span></div>
+      <div class="appbar-tools"><span>Updated just now</span><span>Read-only</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <div class="filterbar">
+        <nav class="seg" aria-label="Show"><a href="#all-work">All work</a><a href="#epics">Epics</a><a href="#standalone" aria-current="page">Standalone</a><a href="#issues">Issues</a></nav>
+        <a class="toggle" href="#standalone" role="button" aria-pressed="false">Needs attention</a>
+        <span class="search">Search standalone work</span>
+      </div>
+      <p class="count-line">5 items · 1 needs attention</p>
+      <details class="acc" open><summary>Scoped <span class="pill count">1</span></summary>
+        <div class="cards"><a class="card" href="#issue"><div class="kicker">ISSUE · 7224D0D4 · SIZED</div><div class="t">Publish purpose, size, issue body and feedback in the snapshot</div></a></div></details>
+      <details class="acc" open><summary>Design &amp; plan <span class="pill count">1</span></summary>
+        <div class="cards"><a class="card" href="#issue"><div class="kicker">ISSUE · B2687832 · SIZED</div><div class="t">Make the VS Code delivery board match the PRD's UX mocks</div><div class="pills"><span class="pill warn">Design approval due</span></div></a></div></details>
+      <details class="acc" data-empty><summary>Ready · design approved <span class="hint muted">· nothing at this stage</span><span class="pill count">0</span></summary></details>
+      <details class="acc" data-empty><summary>Ready · plan approved <span class="hint muted">· nothing at this stage</span><span class="pill count">0</span></summary></details>
+      <details class="acc" data-empty><summary>Build recorded <span class="hint muted">· nothing at this stage</span><span class="pill count">0</span></summary></details>
+      <details class="acc"><summary>Complete <span class="pill count">3</span></summary></details>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>Same board, different scope.</strong> The All work board limited to items flagged standalone. Standalone work is never counted towards an epic.</p>
+    <p><strong>Cards</strong> show "Standalone" in place of an epic line only on All work; here it would repeat, so it is left off.</p>
+  </div>
+</section>
+
+<!-- 5 ─────────────────────────────── Issues -->
+<section class="screen" id="issues">
+  <div class="screen-title"><h2>5 · Issues</h2><span>Defects, with their stage, parent and fix work</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><a href="#all-work">Delivery</a><span class="sep">/</span><span class="here">Issues</span></div>
+      <div class="appbar-tools"><span>Updated just now</span><span>Read-only</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <div class="filterbar">
+        <nav class="seg" aria-label="Show"><a href="#all-work">All work</a><a href="#epics">Epics</a><a href="#standalone">Standalone</a><a href="#issues" aria-current="page">Issues</a></nav>
+        <a class="toggle" href="#issues" role="button" aria-pressed="false">Needs attention</a>
+        <span class="search">Search issues</span>
+      </div>
+      <p class="count-line">13 issues · 2 need attention</p>
+      <div class="rows">
+        <a class="row issue-row" href="#issue"><div><div class="kicker">ISSUE · B2687832 · SIZED DEFECT</div><div class="name">Make the VS Code delivery board match the PRD's UX mocks</div><div class="muted">Corrects E2 · Delivery board (VS Code) · fix story S001 · Complete</div></div><div class="pills"><span class="pill stage-pill">Complete</span></div></a>
+        <a class="row issue-row" href="#issue"><div><div class="kicker">ISSUE · 7224D0D4 · SIZED DEFECT</div><div class="name">Publish purpose, size, issue body and feedback in the snapshot</div><div class="muted">Corrects E1 · Delivery read model · no fix story yet</div></div><div class="pills"><span class="pill stage-pill">Scoped</span></div></a>
+        <a class="row issue-row" href="#issue"><div><div class="kicker">ISSUE · 99BC81BB · SIZED DEFECT</div><div class="name">insrc_build_step can't resolve sN/tN in a multi-epic repo</div><div class="muted">Standalone · fix story S1 · Ready · plan approved</div></div><div class="pills"><span class="pill stage-pill">Ready · plan approved</span></div></a>
+        <a class="row issue-row" href="#issue"><div><div class="kicker">ISSUE · 2D9E9E69 · SIZED DEFECT</div><div class="name">Dev-chat Approve silently does nothing</div><div class="muted"><span class="pill warn">Parent not found</span> corrects "dev-chat-approvals", which is not in the store</div></div><div class="pills"><span class="pill stage-pill">Ready · plan approved</span><span class="pill warn">Unresolved parent</span></div></a>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>A list, not a board.</strong> Each issue row shows its magnitude, title, what it corrects (a story, an epic, or standalone), its fix story and stage. An issue whose parent can't be resolved stays listed with an "Unresolved parent" pill.</p>
+    <p><strong>Drill-down.</strong> A row opens the issue screen (11).</p>
+    <p><strong>Open choice:</strong> a stage-grouped issue board instead of a list. The PRD says "defect cards using the same evidence-based stages"; a list sorted by stage satisfies that with less chrome.</p>
+  </div>
+</section>
+
+<!-- 6 ─────────────────────────────── Needs attention -->
+<section class="screen" id="attention">
+  <div class="screen-title"><h2>6 · Needs attention</h2><span>The toggle applied on top of All work</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><a href="#all-work">Delivery</a><span class="sep">/</span><span class="here">Needs attention</span></div>
+      <div class="appbar-tools"><span>Updated just now</span><span>Read-only</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <div class="filterbar">
+        <nav class="seg" aria-label="Show"><a href="#all-work" aria-current="page">All work</a><a href="#epics">Epics</a><a href="#standalone">Standalone</a><a href="#issues">Issues</a></nav>
+        <a class="toggle" href="#all-work" role="button" aria-pressed="true">Needs attention ×</a>
+        <span class="search">Search titles, ids, epics</span>
+      </div>
+      <p class="count-line">3 of 12 items need attention · <a href="#all-work">Show all</a></p>
+      <details class="acc" open><summary>Scoped <span class="pill count">1</span></summary>
+        <div class="cards"><a class="card" href="#story"><div class="kicker">STORY · BFE98FF7 / S004</div><div class="t">Companion diagrams render in the review pane</div><div class="pills"><span class="pill warn">Approval due</span></div></a></div></details>
+      <details class="acc" open><summary>Design &amp; plan <span class="pill count">1</span></summary>
+        <div class="cards"><a class="card" href="#story"><div class="kicker">STORY · BFE98FF7 / S002</div><div class="t">Show functional requirements from the structured record</div><div class="pills"><span class="pill bad">Review blocked</span></div></a></div></details>
+      <details class="acc" open><summary>Complete <span class="pill count">1</span></summary>
+        <div class="cards"><a class="card" href="#story-conflict"><div class="kicker">STORY · E2C6705F / S001</div><div class="t">Section navigation in the review pane</div><div class="pills"><span class="pill bad">Validation conflict</span></div></a></div></details>
+      <p class="muted">3 stages have nothing needing attention: Ready · design approved, Ready · plan approved, Build recorded.</p>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>Toggle, not a view.</strong> Needs attention narrows whichever view is chosen (here All work); it shows pressed, with × to clear, and the breadcrumb says so.</p>
+    <p><strong>Counts.</strong> "3 of 12" keeps the denominator visible. Stages with nothing needing attention collapse into one line instead of three empty sections.</p>
+    <p><strong>What counts.</strong> Pending decisions, rejections, unresolved review blocks, failed validation, validation conflicts and unresolved references (PRD §05). A warn verdict alone does not.</p>
+  </div>
+</section>
+
+<!-- 7 ─────────────────────────────── Story overview -->
+<section class="screen" id="story">
+  <div class="screen-title"><h2>7 · Story — overview &amp; tasks</h2><span>PRD mock B: its own screen, nothing else on it</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><a href="#all-work">Delivery</a><span class="sep">/</span><a href="#epics">Epics</a><span class="sep">/</span><a href="#epic-board">Build VS Code plugin UI integration</a><span class="sep">/</span><span class="here">S001</span></div>
+      <div class="appbar-tools"><span>Updated just now</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <a class="btn ghost" href="#epic-board">← Back to epic</a>
+      <div class="head">
+        <div class="kicker" style="margin-top:8px">STORY · BFE98FF7 / S001</div>
+        <h1>Read a generated document as a structured, navigable document</h1>
+        <div class="pills"><span class="pill stage-pill">Ready · plan approved</span><span class="pill">Size M</span><span class="pill">3 planned tasks</span><span class="pill">0/3 results recorded</span></div>
+        <p class="purpose">A reviewer opens a pending document, reads its headings and sections, and jumps directly to the part that needs attention.</p>
+      </div>
+      <nav class="subtabs" aria-label="Story"><a href="#story" aria-current="page">Overview &amp; tasks</a><a href="#story-evidence">Workflow evidence</a><a href="#story-linked">Linked work</a></nav>
+      <div class="cols">
+        <div>
+          <div class="label">Planned tasks</div>
+          <details class="task" open><summary>T1 · Project structured records through the artifact view</summary>
+            <div class="pills" style="margin-top:6px"><span class="pill">Validation unrecorded</span><span class="pill">No dependencies</span></div>
+            <p class="muted">Expose functional requirements and companion definitions alongside the existing rendered document.</p>
+            <ul class="checks"><li>Present fields are forwarded without changing their structure.</li><li>Absent fields remain absent.</li><li>The existing artifact read path remains available.</li></ul>
+            <p class="muted">Acceptance checks describe what must hold; an empty box is not a failed result.</p>
+          </details>
+          <details class="task"><summary>T2 · Render document structure in the review pane</summary><div class="pills"><span class="pill">Validation unrecorded</span><span class="pill">Depends on T1</span></div></details>
+          <details class="task"><summary>T3 · Add navigation between document sections</summary><div class="pills"><span class="pill">Validation unrecorded</span><span class="pill">Depends on T2</span></div></details>
+        </div>
+        <div>
+          <div class="label">Why this stage?</div>
+          <div class="why">An approved PLAN is present, and this full-chain story requires one. No BUILD record has been found.</div>
+          <p class="muted">This does not mean a coding session is active.</p>
+          <div class="label" style="margin-top:14px">Artifact chain</div>
+          <ul class="chain">
+            <li><b>DEF</b><span class="muted">Epic definition</span><span class="pill ok">Approved</span></li>
+            <li><b>HLD</b><span class="muted">Shared framework</span><span class="pill ok">Approved</span></li>
+            <li><b>LLD</b><span class="muted">Story design · review pass</span><span class="pill ok">Approved</span></li>
+            <li><b>PLAN</b><span class="muted">Task sequence · review pass</span><span class="pill ok">Approved</span></li>
+            <li><b>BUILD</b><span class="muted">—</span><span class="pill">Not recorded</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>A screen, not a pane.</strong> Opening a card replaces the board with this screen. The breadcrumb shows where it was opened from (epic board here; "Delivery / S001" from All work, "Delivery / Standalone / …" from Standalone) and "← Back" returns there with filters, search and scroll kept.</p>
+    <p><strong>Context changes</strong> (choosing another view, scope or epic) leave this screen; nothing from a previous context stays on screen.</p>
+    <p><strong>Tasks.</strong> Expandable rows with their description, result, dependencies (navigable to the task) and acceptance checks.</p>
+    <p><strong>Why this stage + chain.</strong> The stage explanation in words, then the route's chain: DEF/HLD from the epic, the story's LLD/PLAN/BUILD, and "Not recorded" for anything the route expects but nothing records. Each row opens its record in the review pane.</p>
+    <p><strong>Purpose and size</strong> come from ISSUE-7224d0d4 (read-model fields). Until that lands the paragraph and size chip are absent, not empty.</p>
+  </div>
+</section>
+
+<!-- 8 ─────────────────────────────── Story evidence -->
+<section class="screen" id="story-evidence">
+  <div class="screen-title"><h2>8 · Story — workflow evidence</h2><span>Every record behind the story, with its gates</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><a href="#all-work">Delivery</a><span class="sep">/</span><a href="#epics">Epics</a><span class="sep">/</span><a href="#epic-board">Build VS Code plugin UI integration</a><span class="sep">/</span><span class="here">S001</span></div>
+      <div class="appbar-tools"><span>Updated just now</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <a class="btn ghost" href="#epic-board">← Back to epic</a>
+      <div class="head"><div class="kicker" style="margin-top:8px">STORY · BFE98FF7 / S001</div><h1>Read a generated document as a structured, navigable document</h1></div>
+      <nav class="subtabs" aria-label="Story"><a href="#story">Overview &amp; tasks</a><a href="#story-evidence" aria-current="page">Workflow evidence</a><a href="#story-linked">Linked work</a></nav>
+      <div class="table-wrap"><table class="records">
+        <thead><tr><th>Record</th><th>Approval</th><th>Review</th><th>Revised</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><b>DEF</b> <span class="kicker">DEF-bfe98ff7</span><div class="muted">from the epic</div></td><td><span class="pill ok">Approved</span> <span class="muted">29 Sep</span></td><td><span class="pill ok">Review passed</span></td><td class="muted">29 Sep 10:02</td><td><a class="btn" href="#story-evidence">Open in review</a></td></tr>
+          <tr><td><b>LLD</b> <span class="kicker">LLD-bfe98ff7-s1</span></td><td><span class="pill ok">Approved</span> <span class="muted">30 Sep</span></td><td><span class="pill">Review blocked</span> <span class="muted">overridden: "accepted risk on fallback render"</span></td><td class="muted">30 Sep 14:40</td><td><a class="btn" href="#story-evidence">Open in review</a></td></tr>
+          <tr><td><b>PLAN</b> <span class="kicker">PLAN-bfe98ff7-s1</span></td><td><span class="pill ok">Approved</span> <span class="muted">1 Oct</span></td><td><span class="muted">no review needed</span></td><td class="muted">1 Oct 09:15</td><td><a class="btn" href="#story-evidence">Open read-only</a></td></tr>
+          <tr><td><b>CR</b> <span class="kicker">CR-bfe98ff7-s1</span></td><td class="muted">—</td><td><span class="pill warn">Review warned</span></td><td class="muted">1 Oct 11:43</td><td><a class="btn" href="#story-evidence">Open read-only</a></td></tr>
+        </tbody>
+      </table></div>
+      <div class="label" style="margin-top:16px">Notices</div>
+      <div class="warnbox"><b>Code review without a build record.</b> CR-bfe98ff7-s1 reviewed code before any BUILD was recorded for this story. The stage is unchanged by it.</div>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>All records</strong>, including the ones that are not chain steps (CR, SPEC, EXT, AMD). Approval, review verdict, any override with its reason, and the revision time, as separate columns so no one signal hides another.</p>
+    <p><strong>Opening a record</strong> uses the existing viewer: the review pane when the record has rendered markdown, otherwise read-only text. The board never edits anything.</p>
+    <p><strong>Notices</strong> (data-quality and route notices) for this item sit here in words.</p>
+  </div>
+</section>
+
+<!-- 9 ─────────────────────────────── Story linked -->
+<section class="screen" id="story-linked">
+  <div class="screen-title"><h2>9 · Story — linked work</h2><span>Epic, dependencies and issues, all navigable</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><a href="#all-work">Delivery</a><span class="sep">/</span><a href="#epics">Epics</a><span class="sep">/</span><a href="#epic-board">Build VS Code plugin UI integration</a><span class="sep">/</span><span class="here">S001</span></div>
+      <div class="appbar-tools"><span>Updated just now</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <a class="btn ghost" href="#epic-board">← Back to epic</a>
+      <div class="head"><div class="kicker" style="margin-top:8px">STORY · BFE98FF7 / S001</div><h1>Read a generated document as a structured, navigable document</h1></div>
+      <nav class="subtabs" aria-label="Story"><a href="#story">Overview &amp; tasks</a><a href="#story-evidence">Workflow evidence</a><a href="#story-linked" aria-current="page">Linked work</a></nav>
+      <div class="cols">
+        <div>
+          <div class="label">Epic</div>
+          <a class="item between" href="#epic-board" style="display:flex"><span>Build VS Code plugin UI integration</span><span class="muted">1 of 4 complete</span></a>
+          <div class="label" style="margin-top:14px">Depends on</div>
+          <div class="item muted">No recorded story dependencies.</div>
+          <div class="label" style="margin-top:14px">Needed by</div>
+          <a class="item between" href="#story" style="display:flex"><span>S002 · Show functional requirements from the structured record</span><span class="pill stage-pill">Design &amp; plan</span></a>
+        </div>
+        <div>
+          <div class="label">Issues correcting this story</div>
+          <a class="item" href="#issue" style="display:block"><div class="kicker">ISSUE · 85E6A586 · SIZED</div><div>The experience mock is published as a diagram of the card's JSON</div><div class="pills" style="margin-top:4px"><span class="pill stage-pill">Ready · plan approved</span></div></a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>Only recorded links.</strong> The parent epic, story dependencies from the define, and issues whose recorded parent is this story. No relationships are inferred from prose.</p>
+    <p><strong>Every row navigates</strong> to that item's screen; the breadcrumb then follows the new item, and Back returns here.</p>
+  </div>
+</section>
+
+<!-- 10 ─────────────────────────────── Completion conflict -->
+<section class="screen" id="story-conflict">
+  <div class="screen-title"><h2>10 · Story — completion conflict</h2><span>PRD mock C: approval and failed validation, side by side</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><a href="#all-work">Delivery</a><span class="sep">/</span><a href="#epics">Epics</a><span class="sep">/</span><a href="#epic-board">Complete generated artifact companion wiring</a><span class="sep">/</span><span class="here">S001</span></div>
+      <div class="appbar-tools"><span>Updated just now</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <a class="btn ghost" href="#epic-board">← Back to epic</a>
+      <div class="head"><div class="kicker" style="margin-top:8px">STORY · E2C6705F / S001</div><h1>Section navigation in the review pane</h1>
+        <div class="pills"><span class="pill stage-pill">Complete</span><span class="pill bad">1 failed task result</span><span class="pill warn">Review: warn</span></div></div>
+      <div class="warnbox"><b>Two records disagree.</b><br>The BUILD record carries an approval stamp, while T2 is still recorded as failed. The board shows both facts and changes neither.</div>
+      <nav class="subtabs" aria-label="Story"><a href="#story-conflict" aria-current="page">Overview &amp; tasks</a><a href="#story-evidence">Workflow evidence</a><a href="#story-linked">Linked work</a></nav>
+      <div class="cols">
+        <div>
+          <div class="label">Task validation</div>
+          <div class="item between"><span>T1 · Project records</span><span class="pill ok">Passed</span></div>
+          <div class="item between"><span>T2 · Render structure</span><span class="pill bad">Failed</span></div>
+          <div class="item between"><span>T3 · Section navigation</span><span class="pill">Unrecorded</span></div>
+        </div>
+        <div>
+          <div class="label">Completion evidence</div>
+          <div class="item"><b>BUILD approved</b><div class="muted">1 Oct, 11:43 UTC · BUILD-e2c6705f-s1</div></div>
+          <div class="item"><b>Code review: warn</b><div class="muted">Warnings are recorded apart from completion · CR-e2c6705f-s1</div></div>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:12px">No automatic rollback, reopening or verdict correction.</p>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>The warning comes first</strong>, before any task is expanded, and names both records. Completion stays a ledger fact; validation stays a separate result.</p>
+    <p><strong>The card</strong> for this story keeps its place in Complete with a "Validation conflict" badge (screen 1).</p>
+  </div>
+</section>
+
+<!-- 11 ─────────────────────────────── Issue -->
+<section class="screen" id="issue">
+  <div class="screen-title"><h2>11 · Issue</h2><span>PRD mock D: the defect, its parent, its fix work and feedback</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><a href="#all-work">Delivery</a><span class="sep">/</span><a href="#issues">Issues</a><span class="sep">/</span><span class="here">B2687832</span></div>
+      <div class="appbar-tools"><span>Updated just now</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <div class="between"><a class="btn ghost" href="#issues">← Issues</a><a class="btn" href="#epic-board">Open what it corrects →</a></div>
+      <div class="head"><div class="kicker" style="margin-top:8px">ISSUE · B2687832 · SIZED DEFECT</div><h1>Make the VS Code delivery board match the PRD's UX mocks</h1>
+        <div class="pills"><span class="pill stage-pill">Design &amp; plan</span><span class="pill">Corrects E2 · Delivery board</span><span class="pill warn">Design approval due</span></div></div>
+      <div class="cols">
+        <div>
+          <div class="label">Observed → expected</div>
+          <div class="item"><b>Observed</b><p class="muted">Opening the board shows unstyled text; the Epics tab repeats every epic's whole board; details open below the board.</p></div>
+          <div class="item"><b>Expected</b><p class="muted">The screens in the PRD's mocks A–F, with drill-down and back navigation.</p></div>
+          <div class="item"><b>Fix intent</b><p class="muted">Present mocks A–F within the board module, keeping the CSP, text-only rendering, theme colours and performance targets.</p></div>
+          <div class="item"><b>Associated fix story</b><div class="between" style="margin-top:4px"><a href="#story">S001 · Make the VS Code delivery board match the PRD's UX mocks</a><span class="pill stage-pill">Design &amp; plan</span></div><div class="muted">Tasks appear here once a plan is recorded.</div></div>
+        </div>
+        <div>
+          <div class="label">Recorded feedback · read-only</div>
+          <div class="quote"><div class="between"><b>Review note</b><span class="pill">Open</span></div><p>Keep the diagram companions as they are; change only how the UX companion renders.</p><div class="muted">Anchored to the reviewed revision.</div></div>
+          <div class="label">Location</div>
+          <div class="file">vscode-plugin/src/delivery/board-host.ts<span class="focus">Line 120 · webview renderer</span></div>
+          <p class="muted">Reading feedback changes nothing in the code or the approval state.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>Its own screen</strong>, opened from the Issues list (breadcrumb "Delivery / Issues / …") or from a story's Linked work.</p>
+    <p><strong>Parent.</strong> "Open what it corrects" goes to the parent story or epic. A parent that can't be resolved shows as an "Unresolved parent" notice in place of the button; the issue is never dropped.</p>
+    <p><strong>Observed, expected, fix intent and feedback</strong> need ISSUE-7224d0d4's read-model fields. Until then this column shows the title, stage, parent and fix story only.</p>
+    <p><strong>Several fix stories</strong> are listed one under another, each with its own stage and link.</p>
+  </div>
+</section>
+
+<!-- 12 ─────────────────────────────── Narrow board -->
+<section class="screen" id="narrow-board">
+  <div class="screen-title"><h2>12 · Epic board, narrow pane</h2><span>PRD mock E: the same screen, stacked</span></div>
+  <div class="tab narrow">
+    <div class="tabstrip"><b>Delivery</b></div>
+    <header class="appbar">
+      <div class="crumbs"><a href="#epics">← Epics</a><span class="sep">/</span><span class="here">VS Code integration</span></div>
+      <div class="appbar-tools"><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <div class="head"><div class="kicker">EPIC · BFE98FF7</div><h1 style="font-size:16px">Build VS Code plugin UI integration</h1>
+        <span class="muted">1 of 4 stories complete</span><div class="meter"><span style="width:25%"></span></div></div>
+      <div class="filterbar"><a class="toggle" href="#narrow-board" role="button" aria-pressed="true">Needs attention ×</a><span class="search">Search this epic</span></div>
+      <p class="count-line">2 of 4 stories need attention</p>
+      <details class="acc" open><summary>Design &amp; plan <span class="pill count">1</span></summary>
+        <div class="cards"><a class="card" href="#narrow-story"><div class="kicker">STORY · S002</div><div class="t">Show functional requirements from the structured record</div><div class="pills"><span class="pill bad">Review blocked</span></div><div class="muted" style="margin-top:4px">No task plan recorded</div></a></div></details>
+      <details class="acc" open><summary>Complete <span class="pill count">1</span></summary>
+        <div class="cards"><a class="card" href="#story-conflict"><div class="kicker">STORY · S003</div><div class="t">Section navigation in the review pane</div><div class="pills"><span class="pill bad">Validation conflict</span></div><div class="muted" style="margin-top:4px">Completion approved · failed results present</div></a></div></details>
+      <details class="acc" data-empty><summary>Other stages <span class="hint muted">· 0 matching</span></summary><div class="empty-line">Scoped 0 · Ready · design approved 0 · Ready · plan approved 0 · Build recorded 0</div></details>
+    </div>
+  </div>
+  <div class="notes" style="columns:1;max-width:560px">
+    <p><strong>One layout everywhere.</strong> Stages are already stacked sections, so a narrow pane only narrows the card grid to one card per row; nothing is compressed sideways.</p>
+    <p><strong>Short breadcrumb.</strong> The app bar keeps the back step and the current place; the wordmark and full path are dropped below about 480 px.</p>
+    <p><strong>Empty stages fold</strong> into one "Other stages · 0 matching" section (mock E), now possible because sections collapse.</p>
+  </div>
+</section>
+
+<!-- 13 ─────────────────────────────── Narrow story -->
+<section class="screen" id="narrow-story">
+  <div class="screen-title"><h2>13 · Story, narrow pane</h2><span>The story screen in a sidebar-width pane</span></div>
+  <div class="tab narrow">
+    <div class="tabstrip"><b>Delivery</b></div>
+    <header class="appbar">
+      <div class="crumbs"><a href="#narrow-board">← VS Code integration</a><span class="sep">/</span><span class="here">S002</span></div>
+      <div class="appbar-tools"><button type="button">Refresh</button></div>
+    </header>
+    <div class="body">
+      <div class="kicker">STORY · BFE98FF7 / S002</div>
+      <h1 style="font-size:16px;margin:3px 0 8px">Show functional requirements from the structured record</h1>
+      <div class="pills"><span class="pill stage-pill">Design &amp; plan</span><span class="pill bad">Review blocked</span></div>
+      <nav class="subtabs" aria-label="Story"><a href="#narrow-story" aria-current="page">Overview</a><a href="#story-evidence">Evidence</a><a href="#story-linked">Linked</a></nav>
+      <div class="label">Why this stage?</div>
+      <div class="why">An LLD exists and is not approved; its review is blocked with 2 unresolved MED findings.</div>
+      <div class="label" style="margin-top:12px">Artifact chain</div>
+      <ul class="chain">
+        <li><b>DEF</b><span class="muted"></span><span class="pill ok">Approved</span></li>
+        <li><b>HLD</b><span class="muted"></span><span class="pill ok">Approved</span></li>
+        <li><b>LLD</b><span class="muted">review blocked</span><span class="pill warn">Pending</span></li>
+        <li><b>PLAN</b><span class="muted"></span><span class="pill">Not recorded</span></li>
+        <li><b>BUILD</b><span class="muted"></span><span class="pill">Not recorded</span></li>
+      </ul>
+      <div class="label" style="margin-top:12px">Planned tasks</div>
+      <p class="muted">No task plan recorded yet.</p>
+    </div>
+  </div>
+  <div class="notes" style="columns:1;max-width:560px">
+    <p><strong>Columns become one.</strong> The story screen's two columns stack: the stage explanation and chain first (they answer "why is it here?"), then the tasks.</p>
+    <p><strong>Sub-tab labels shorten</strong> to fit; their order and targets stay the same.</p>
+  </div>
+</section>
+
+<!-- 14 ─────────────────────────────── States -->
+<section class="screen" id="states">
+  <div class="screen-title"><h2>14 · Empty, no matches, refresh failed, partial data</h2><span>PRD mock F: four situations that must never look alike</span></div>
+  <div class="tab">
+    <div class="tabstrip"><b>Delivery board</b></div>
+    <header class="appbar">
+      <div class="crumbs"><span class="wordmark">insrc</span><span class="here">Delivery</span></div>
+      <div class="appbar-tools"><span>Updated 10 minutes ago</span><span class="pill warn">Stale</span><button type="button">Refresh</button></div>
+    </header>
+    <div class="body states">
+      <div class="panel center"><div class="label">1 · Empty workspace</div><h3>No work items yet</h3><p class="muted">The workspace was read successfully. No epic, story or issue records were found.</p><p><a href="#all-work">What appears on this board?</a></p></div>
+      <div class="panel center"><div class="label">2 · No filter matches</div><h3>Nothing matches this view</h3><p class="muted">Work exists, but none matches the search "deployment" with Needs attention on.</p><p><button type="button" class="btn primary">Clear search and filters</button></p></div>
+      <div class="panel warnp"><div class="label">3 · Refresh failed</div><h3>Showing the last successful snapshot</h3><p>Could not reach the daemon. Your board and place are kept.</p><p class="muted">Last updated 10 minutes ago.</p><p><button type="button" class="btn">Retry</button></p></div>
+      <div class="panel warnp"><div class="label">4 · Partial data</div><h3>Some evidence could not be read</h3><p>One malformed record and one unresolved parent reference. Everything readable is shown.</p>
+        <details><summary>Inspect affected records</summary><p><span class="kicker">PLAN-example-S003.json</span> — invalid record; task coverage for its story is unknown.</p><p><span class="kicker">ISSUE-example.json</span> — parent story not found; the issue stays listed.</p></details></div>
+    </div>
+  </div>
+  <div class="notes">
+    <p><strong>Where they appear.</strong> Empty and unavailable (no snapshot at all) replace the whole body. No matches replaces the list area of the current screen, under the filters, and its action clears search and Needs attention but keeps the view. Refresh failed and partial data sit as a banner above the current screen's content, which stays usable.</p>
+    <p><strong>Never blank.</strong> Each state says what was read, what was not, and what to do. An unavailable daemon with no earlier snapshot shows "The delivery board is unavailable" with Retry, never an empty board.</p>
+  </div>
+</section>
+
+</main>
+</div>
+<script>
+(function () {
+  var screens = Array.prototype.slice.call(document.querySelectorAll('.screen'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.index a'));
+  function show() {
+    var id = (location.hash || '#all-work').slice(1);
+    if (!document.getElementById(id)) id = 'all-work';
+    screens.forEach(function (s) { s.classList.toggle('shown', s.id === id); });
+    links.forEach(function (a) { a.classList.toggle('current', a.getAttribute('href') === '#' + id); });
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', show);
+  show();
+  var theme = document.getElementById('theme');
+  theme.addEventListener('click', function () {
+    var light = document.body.classList.toggle('light');
+    theme.textContent = light ? 'Dark' : 'Light';
+  });
+})();
+</script>
+</body>
+</html>

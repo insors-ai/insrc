@@ -232,6 +232,9 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `if(b.epic!==null){const e=b.epic;const row=link(e.title,{type:'open-epic',epicItemId:e.epicItemId},'epic-'+e.epicItemId);row.setAttribute('data-epic',e.epicItemId);const wrap=make('span');wrap.appendChild(row);wrap.appendChild(make('span',' · '+e.completionLabel,'muted'));section('Epic',[wrap],'');}`,
   `else{const parent=d.linked.filter(function(l){return l.relation==='parent';});if(parent.length>0)section('Part of',parent.map(function(l){return link(l.title,{type:'open-item',itemId:l.itemId},'item-'+l.itemId);}),'');}`,
   `const corrects=d.linked.filter(function(l){return l.relation==='corrects';});if(corrects.length>0)section('Corrects',corrects.map(function(l){return link(l.title,{type:'open-item',itemId:l.itemId},'item-'+l.itemId);}),'');`,
+  // Children: one with a screen of its own opens it; a task has none, so it is named here and expanded on Overview & tasks.
+  `const children=d.linked.filter(function(l){return l.relation==='child';});if(children.length>0)section('Children',children.map(function(l){`,
+  `if(l.kind==='task')return make('span','TASK \u00b7 '+l.title+' \u00b7 on '+L.itemTabs.overview.long,'muted');const r=link(KICKER[l.kind]+' \u00b7 '+l.title,openLink(l),'item-'+l.itemId);r.setAttribute('data-item-id',l.itemId);return r;}),'');`,
   `section('Issues correcting this story',d.correctedBy.map(function(l){const r=link('ISSUE · '+l.title+(l.stageLabel===null?'':' · '+l.stageLabel),openLink(l),'item-'+l.itemId);r.setAttribute('data-item-id',l.itemId);return r;}),'No issue records this story as its parent.');}`,
   // The issue screen: what it corrects, its fix stories, why it is at its stage, the chain and its records.
   `function renderIssue(b){const d=b.details,e=b.entry;itemTop(d);const acts=make('div',undefined,'item-actions');`,

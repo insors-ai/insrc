@@ -226,7 +226,8 @@ export interface ItemDetailsViewModel {
   readonly conflict: { readonly headline: string; readonly text: string } | null;
   readonly evidence: readonly EvidenceRowView[];
   readonly notices: readonly string[];
-  readonly linked: readonly { readonly itemId: string; readonly title: string; readonly relation: 'parent' | 'child' | 'corrects' }[];
+  /** Recorded links: the parent, each child (a story's tasks, an issue's fix stories) and what the item corrects. */
+  readonly linked: readonly { readonly itemId: string; readonly kind: LinkView['kind']; readonly title: string; readonly relation: 'parent' | 'child' | 'corrects' }[];
   /** The issues whose recorded parent is this item, in snapshot order. */
   readonly correctedBy: readonly LinkView[];
   readonly sourceIds: readonly string[];

@@ -168,10 +168,10 @@ function chipsOf(item: DeliveryItemView, labels: DisplayLabels): BadgeView[] {
 const KICKER_KIND = { epic: 'EPIC', story: 'STORY', task: 'TASK', issue: 'ISSUE' } as const;
 
 function linkedItems(item: DeliveryItemView, byId: ItemIndex): ItemDetailsViewModel['linked'] {
-  const linked: { itemId: string; title: string; relation: 'parent' | 'child' | 'corrects' }[] = [];
+  const linked: { itemId: string; kind: DeliveryItemView['kind']; title: string; relation: 'parent' | 'child' | 'corrects' }[] = [];
   const add = (id: string | null, relation: 'parent' | 'child' | 'corrects'): void => {
     const other = id === null ? undefined : byId.get(id);
-    if (other !== undefined) linked.push({ itemId: other.id, title: titleOf(other), relation });
+    if (other !== undefined) linked.push({ itemId: other.id, kind: other.kind, title: titleOf(other), relation });
   };
   add(item.parentId, 'parent');
   for (const id of item.childIds) add(id, 'child');

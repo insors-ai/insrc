@@ -1191,7 +1191,10 @@ test('linked work lists the epic, children and correcting issues, each opening i
   click(tabsIn(b.main)[2]!);
   b.relay();
   const panel = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
-  assert.deepEqual(findAll(panel, e => e.tag === 'h2').map(h => h.textContent), ['Epic', 'Issues correcting this story']);
+  assert.deepEqual(findAll(panel, e => e.tag === 'h2').map(h => h.textContent), ['Epic', 'Children', 'Issues correcting this story']);
+  const children = findAll(panel, e => e.tag === 'ul' && e.attrs['class'] === 'linked')[1]!;
+  assert.deepEqual(texts(children), ['TASK · Project records · on Overview & tasks', 'TASK · Render structure · on Overview & tasks'],
+    'the story\'s children are its tasks, which have no screen of their own: named here, expanded on the overview');
   const links = findAll(panel, e => e.tag === 'button');
   assert.deepEqual(links.map(l => l.textContent), ['Board epic', 'ISSUE · Jump is off by one · Design & plan']);
   assert.ok(texts(panel).includes(' · 2 of 3 stories complete'), 'the epic with its completion');

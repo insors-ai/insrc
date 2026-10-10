@@ -82,7 +82,7 @@ test('the details give the daemon\'s stage reason and the records it cites', () 
   assert.equal(d.stageLabel, 'Ready · plan approved');
   assert.deepEqual(d.stageReason, { text: 'The PLAN is approved; no build is recorded.', artifactIds: ['LLD-x', 'PLAN-x'] });
   assert.deepEqual(d.sourceIds, ['s2', 'LLD-x']);
-  assert.deepEqual(d.linked, [{ itemId: 'E1', title: 'Board epic', relation: 'parent' }]);
+  assert.deepEqual(d.linked, [{ itemId: 'E1', kind: 'epic', title: 'Board epic', relation: 'parent' }]);
   assert.deepEqual(d.tasks, []);
   assert.equal(d.taskCounts, null);
   assert.equal(d.conflict, null);
@@ -90,7 +90,7 @@ test('the details give the daemon\'s stage reason and the records it cites', () 
   const epic = buildItemDetails(snap, 'E1', NONE, null, DISPLAY_LABELS)!;
   assert.equal(epic.stageLabel, null);
   assert.equal(epic.stageReason, null);
-  assert.deepEqual(epic.linked, [{ itemId: 'E1:S002', title: 'Cards', relation: 'child' }]);
+  assert.deepEqual(epic.linked, [{ itemId: 'E1:S002', kind: 'story', title: 'Cards', relation: 'child' }]);
 });
 
 test('an approved build with failed tasks shows the approval, the failed rows and a sentence explaining the conflict', () => {

@@ -21,7 +21,9 @@
     "epicSlug": "defect-installed-daemon-runs-out-lmdb",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-10T12:01:29.521Z",
+    "parentRef": null
   },
   "body": {
     "title": "Keep the daemon within the LMDB semaphore limit, and let it stop when a store operation fails",

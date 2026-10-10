@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-10T06:06:33.828Z  ·  **Updated:** 2026-10-10T06:08:59.072Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-10T06:06:33.828Z  ·  **Updated:** 2026-10-10T06:34:14.808Z
 
-**Commit:** 7fadde2d
+**Commit:** 769030cf
 
 ## Scope
 
@@ -26,9 +26,38 @@ A child plan's task record is now stored in its own plan's directory under its f
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-8f90988572f4d5b2.json` — **insrc-build** (2026-10-10T06:08:59.072Z)
-- `docs/daemon.md` — **insrc-build** (2026-10-10T06:08:59.072Z)
-- `src/analyze/executor/__tests__/walker.test.ts` — **insrc-build** (2026-10-10T06:08:59.072Z)
-- `src/analyze/executor/cache.ts` — **insrc-build** (2026-10-10T06:08:59.072Z)
-- `src/analyze/executor/walker.ts` — **insrc-build** (2026-10-10T06:08:59.072Z)
-- `src/shared/paths.ts` — **insrc-build** (2026-10-10T06:08:59.072Z)
+- `.insrc/artifacts/BUILD-0ee73dc7a00c0f11-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/BUILD-4fb22dc28697cc14-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/CR-0ee73dc7a00c0f11-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/CR-4fb22dc28697cc14-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/CR-8f90988572f4d5b2-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/ISSUE-0ee73dc7a00c0f11.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/ISSUE-4fb22dc28697cc14.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/ISSUE-8f90988572f4d5b2.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/TESTS-0ee73dc7a00c0f11-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/TESTS-4fb22dc28697cc14-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/build-start/0ee73dc7a00c0f11-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/build-start/4fb22dc28697cc14-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `design/analyze-plan-builder.md` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `docs/daemon.md` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `docs/standalone/bug-analyze-planner-gives-plan-task-E202610090ee73dc7/S001/BUILD.md` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `docs/standalone/bug-analyze-planner-gives-plan-task-E202610090ee73dc7/S001/CR.md` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `docs/standalone/bug-analyze-planner-gives-plan-task-E202610090ee73dc7/S001/TESTS.md` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `docs/standalone/bug-analyzer-s-plan-tree-child-E202610108f909885/S001/CR.md` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `docs/standalone/bug-data-plan-task-names-connection-E202610094fb22dc2/S001/BUILD.md` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `docs/standalone/bug-data-plan-task-names-connection-E202610094fb22dc2/S001/CR.md` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `docs/standalone/bug-data-plan-task-names-connection-E202610094fb22dc2/S001/TESTS.md` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/context/invariants.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/executor/__tests__/walker.test.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/executor/cache.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/executor/types.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/executor/walker.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/planner/__tests__/templates.test.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/planner/templates/code/index.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/planner/templates/docs/index.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/planner/templates/infra/index.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/planner/templates/shared-schemas.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/planner/validate.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/runtimes/data/__tests__/data-runtimes.test.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/analyze/runtimes/data/_shared.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `src/shared/paths.ts` — **insrc-build** (2026-10-10T06:34:14.808Z)

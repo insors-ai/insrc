@@ -8,12 +8,13 @@
     "createdAt": "2026-10-10T06:16:08.279Z",
     "authoredBy": "controller",
     "triageRationale": "bugfix, magnitude small: a typed error for the refusal and one more code in the plan walk's mapping; the one open decision (own code or an existing one) is taken in the fix as the issue allows.",
-    "updatedAt": "2026-10-10T06:16:23.276Z"
+    "updatedAt": "2026-10-10T06:34:14.992Z",
+    "approvedAt": "2026-10-10T06:34:15.028Z"
   },
   "body": {
     "focus": "Fix ISSUE-4fb22dc28697cc14: a task refused because it names a connection outside the request's connection scope is recorded as a scope refusal: its task record and its entry in tasksFailed carry a code a client can read, and the reason is the error's own message with no 'runtime-threw:' in front. The refusal's message and the point of refusal stay as they are; the three existing codes keep their meaning; the daemon guide lists the code.",
     "producesLld": false,
-    "commit": "a7353b78",
+    "commit": "769030cf",
     "tasks": [
       {
         "id": "S001",
@@ -27,59 +28,17 @@
     "changeLog": [
       {
         "target": {
-          "file": ".insrc/artifacts/ISSUE-4fb22dc28697cc14.json"
+          "file": ".insrc/artifacts/BUILD-8f90988572f4d5b2-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T06:16:23.276Z"
+        "timestamp": "2026-10-10T06:34:14.992Z"
       },
       {
         "target": {
-          "file": "docs/daemon.md"
+          "file": "docs/standalone/bug-analyzer-s-plan-tree-child-E202610108f909885/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T06:16:23.276Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/context/invariants.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-10T06:16:23.276Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/executor/__tests__/walker.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-10T06:16:23.276Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/executor/types.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-10T06:16:23.276Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/executor/walker.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-10T06:16:23.276Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-10T06:16:23.276Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/runtimes/data/_shared.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-10T06:16:23.276Z"
+        "timestamp": "2026-10-10T06:34:14.992Z"
       }
     ]
   }

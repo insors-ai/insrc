@@ -8,12 +8,13 @@
     "createdAt": "2026-10-10T06:23:00.767Z",
     "authoredBy": "controller",
     "triageRationale": "bugfix, magnitude small: the templates' scopeRef schema is built per family from the existing table and the plan validator's parameter rule names a refused kind; no design decision open.",
-    "updatedAt": "2026-10-10T06:23:16.048Z"
+    "updatedAt": "2026-10-10T06:34:15.036Z",
+    "approvedAt": "2026-10-10T06:34:15.073Z"
   },
   "body": {
     "focus": "Fix ISSUE-0ee73dc7a00c0f11: a plan in which a task's scopeRef has a kind its template's family does not accept fails plan validation, with a message that names the task, the kind it was given and the kinds its family accepts. The catalog shown to the planner lists, for each template, only the kinds of scope its family accepts. The kinds per family come from the one existing table (TARGET_TO_KINDS). A plan whose tasks all carry accepted kinds validates and runs as today; the runtime's own refusal stays.",
     "producesLld": false,
-    "commit": "ea47877a",
+    "commit": "769030cf",
     "tasks": [
       {
         "id": "S001",
@@ -27,66 +28,31 @@
     "changeLog": [
       {
         "target": {
-          "file": ".insrc/artifacts/ISSUE-0ee73dc7a00c0f11.json"
+          "file": ".insrc/artifacts/BUILD-4fb22dc28697cc14-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T06:23:16.048Z"
+        "timestamp": "2026-10-10T06:34:15.036Z"
       },
       {
         "target": {
-          "file": "design/analyze-plan-builder.md"
+          "file": ".insrc/artifacts/BUILD-8f90988572f4d5b2-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T06:23:16.048Z"
+        "timestamp": "2026-10-10T06:34:15.036Z"
       },
       {
         "target": {
-          "file": "docs/daemon.md"
+          "file": "docs/standalone/bug-analyzer-s-plan-tree-child-E202610108f909885/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T06:23:16.048Z"
+        "timestamp": "2026-10-10T06:34:15.036Z"
       },
       {
         "target": {
-          "file": "src/analyze/planner/__tests__/templates.test.ts"
+          "file": "docs/standalone/bug-data-plan-task-names-connection-E202610094fb22dc2/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T06:23:16.048Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/planner/templates/code/index.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-10T06:23:16.048Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/planner/templates/docs/index.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-10T06:23:16.048Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/planner/templates/infra/index.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-10T06:23:16.048Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/planner/templates/shared-schemas.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-10T06:23:16.048Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/planner/validate.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-10T06:23:16.048Z"
+        "timestamp": "2026-10-10T06:34:15.036Z"
       }
     ]
   }

@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-10T06:23:00.767Z  ·  **Updated:** 2026-10-10T06:23:16.048Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-10T06:23:00.767Z  ·  **Updated:** 2026-10-10T06:34:15.036Z
 
-**Commit:** ea47877a
+**Commit:** 769030cf
 
 ## Scope
 
@@ -26,12 +26,7 @@ Each template's scopeRef schema is now built from its family's row of the one ta
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-0ee73dc7a00c0f11.json` — **insrc-build** (2026-10-10T06:23:16.048Z)
-- `design/analyze-plan-builder.md` — **insrc-build** (2026-10-10T06:23:16.048Z)
-- `docs/daemon.md` — **insrc-build** (2026-10-10T06:23:16.048Z)
-- `src/analyze/planner/__tests__/templates.test.ts` — **insrc-build** (2026-10-10T06:23:16.048Z)
-- `src/analyze/planner/templates/code/index.ts` — **insrc-build** (2026-10-10T06:23:16.048Z)
-- `src/analyze/planner/templates/docs/index.ts` — **insrc-build** (2026-10-10T06:23:16.048Z)
-- `src/analyze/planner/templates/infra/index.ts` — **insrc-build** (2026-10-10T06:23:16.048Z)
-- `src/analyze/planner/templates/shared-schemas.ts` — **insrc-build** (2026-10-10T06:23:16.048Z)
-- `src/analyze/planner/validate.ts` — **insrc-build** (2026-10-10T06:23:16.048Z)
+- `.insrc/artifacts/BUILD-4fb22dc28697cc14-S001.json` — **insrc-build** (2026-10-10T06:34:15.036Z)
+- `.insrc/artifacts/BUILD-8f90988572f4d5b2-S001.json` — **insrc-build** (2026-10-10T06:34:15.036Z)
+- `docs/standalone/bug-analyzer-s-plan-tree-child-E202610108f909885/S001/BUILD.md` — **insrc-build** (2026-10-10T06:34:15.036Z)
+- `docs/standalone/bug-data-plan-task-names-connection-E202610094fb22dc2/S001/BUILD.md` — **insrc-build** (2026-10-10T06:34:15.036Z)

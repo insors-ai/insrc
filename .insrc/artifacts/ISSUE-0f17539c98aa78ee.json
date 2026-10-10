@@ -21,7 +21,11 @@
     "epicSlug": "bug-analyze-planner-plans-adherence-check",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-10T06:40:44.536Z",
+    "parentRef": {
+      "slug": "bug-analyze-planner-plans-adherence-check"
+    }
   },
   "body": {
     "title": "Plan no adherence check that has no constraints to check",

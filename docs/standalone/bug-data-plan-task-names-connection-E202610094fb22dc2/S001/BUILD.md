@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-10T06:16:08.279Z  ·  **Updated:** 2026-10-10T06:16:23.276Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-10T06:16:08.279Z  ·  **Updated:** 2026-10-10T06:34:14.992Z
 
-**Commit:** a7353b78
+**Commit:** 769030cf
 
 ## Scope
 
@@ -26,11 +26,5 @@ The refusal of a task that names a connection outside the request's connection s
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-4fb22dc28697cc14.json` — **insrc-build** (2026-10-10T06:16:23.276Z)
-- `docs/daemon.md` — **insrc-build** (2026-10-10T06:16:23.276Z)
-- `src/analyze/context/invariants.ts` — **insrc-build** (2026-10-10T06:16:23.276Z)
-- `src/analyze/executor/__tests__/walker.test.ts` — **insrc-build** (2026-10-10T06:16:23.276Z)
-- `src/analyze/executor/types.ts` — **insrc-build** (2026-10-10T06:16:23.276Z)
-- `src/analyze/executor/walker.ts` — **insrc-build** (2026-10-10T06:16:23.276Z)
-- `src/analyze/runtimes/data/__tests__/data-runtimes.test.ts` — **insrc-build** (2026-10-10T06:16:23.276Z)
-- `src/analyze/runtimes/data/_shared.ts` — **insrc-build** (2026-10-10T06:16:23.276Z)
+- `.insrc/artifacts/BUILD-8f90988572f4d5b2-S001.json` — **insrc-build** (2026-10-10T06:34:14.992Z)
+- `docs/standalone/bug-analyzer-s-plan-tree-child-E202610108f909885/S001/BUILD.md` — **insrc-build** (2026-10-10T06:34:14.992Z)

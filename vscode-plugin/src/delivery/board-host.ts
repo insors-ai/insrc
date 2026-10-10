@@ -15,28 +15,30 @@
  * disposed an outstanding answer is discarded without being dispatched, posted
  * or logged, and the next open() starts a new panel with a fresh state.
  *
- * The host also keeps the board's paging (E2 s2): show-more raises one
- * column's page, and a scope, search or attention change resets it. Every
- * derive keeps the new state only when it renders, and items whose stage is
- * not one of the six are logged once per applied refresh.
+ * Navigation (ISSUE-348d4663): every reader intent becomes a navigate event
+ * over the state's trail of screens, after the host has checked any id it
+ * names against the shown snapshot. Paging lives in each trail entry. Every
+ * derive keeps the new state only when it renders, each screen change is
+ * announced once, and items whose stage is not one of the six are logged once
+ * per applied refresh.
  *
  * The document is CSP-locked (default-src 'none') with one nonce'd script that
  * renders the status and the board's columns, cards and controls as text
  * (textContent only) and posts only BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
  *
- * The item details (E2 s4): while an item is selected, every derive also posts
- * its details after the view message, from the details memory
- * (details-memory.ts). The host tells the memory each state it keeps, routes
- * open-evidence to it, and starts a new memory with each panel.
+ * The item details (E2 s4): a story's or issue's screen is built from the
+ * details memory (details-memory.ts). The host tells the memory the item of
+ * each state it keeps (null on any other screen), routes open-evidence to it,
+ * and starts a new memory with each panel.
  */
 
 import { attr, type ChatPanelChannel, type ChatPanelLogger } from '../chat/chat-panel.js';
 import type { Envelope } from '../chat/protocol.js';
-import { isPlaceable, placeableCount, showMore, titleOf, unknownStages, type BoardPaging } from './board-model.js';
-import { parseBoardUpMessage, type BoardDownMessage, type BoardScope, type BoardUpMessage } from './board-protocol.js';
+import { isPlaceable, placeableCount, titleOf, unknownStages } from './board-model.js';
+import { parseBoardUpMessage, type BoardUpMessage, type ListView } from './board-protocol.js';
 import {
-  boardDownMessages, initialBoardState, reduceBoardState, shownSnapshot, statusView,
-  type BoardEvent, type BoardSelection, type BoardState,
+  boardDownMessages, currentEntry, currentItemId, initialBoardState, reduceBoardState, shownSnapshot, statusView,
+  type BoardEvent, type BoardState, type NavIntent,
 } from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
@@ -393,8 +395,6 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   };
   let channel: ChatPanelChannel | undefined;
   let state: BoardState = initialBoardState();
-  /** The visible card limit per column; reset by a scope, search or attention change, kept across refreshes. */
-  let paging: BoardPaging = {};
   let nextSeq = 0;
   /** Bumped on every dispose; an answer from an earlier panel generation is discarded. */
   let generation = 0;
@@ -404,43 +404,31 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   });
   let memory = newMemory();
 
-  /** The details message for a state: posted while an item is selected and a snapshot is shown. */
-  function detailsMessage(s: BoardState): Envelope<BoardDownMessage> | null {
-    const shown = shownSnapshot(s.status);
-    const id = s.selection.selectedItemId;
-    if (shown === null || id === null) return null;
-    return { v: 1, payload: { type: 'details', model: memory.model(shown.snapshot, id) } };
-  }
-
   /** A re-derive after an answer arrives; a throw is logged, and apply() leaves the board as it was. */
   function applyAfterRead(what: string): void {
     try {
-      apply(state, paging);
+      apply(state);
     } catch (err) {
       log.error(`delivery board: ${what} could not be shown: ${errorText(err)}`);
     }
   }
 
   /**
-   * Derive the messages first; the new state and paging are kept only when their messages can be built, so a bad
-   * snapshot or selection never becomes the board's, and a throw while deriving leaves both as they were and posts
-   * nothing. Posting itself is fire-and-forget (ChatPanelChannel.postMessage never rejects inward).
+   * Derive the messages first; the new state is kept only when its messages can be built, so a bad snapshot or
+   * navigation never becomes the board's, and a throw while deriving leaves it as it was and posts nothing. Posting
+   * itself is fire-and-forget (ChatPanelChannel.postMessage never rejects inward).
    */
-  function apply(next: BoardState, nextPaging: BoardPaging): void {
-    const details = detailsMessage(next);
-    const now = deps.now();
-    const messages = details === null
-      ? boardDownMessages(next, DISPLAY_LABELS, nextPaging, now)
-      : [...boardDownMessages(next, DISPLAY_LABELS, nextPaging, now), details];
-    // Told before anything is kept, so a throw here leaves state and paging as they were and posts nothing.
-    memory.kept(shownSnapshot(next.status)?.snapshot ?? null, next.selection.selectedItemId);
+  function apply(next: BoardState): void {
+    const shown = shownSnapshot(next.status)?.snapshot ?? null;
+    const messages = boardDownMessages(next, DISPLAY_LABELS, deps.now(), id => (shown === null ? null : memory.model(shown, id)));
+    // Told before anything is kept, so a throw here leaves state as it was and posts nothing.
+    memory.kept(shown, currentItemId(next.selection));
     state = next;
-    paging = nextPaging;
     for (const m of messages) channel?.postMessage(m);
   }
 
-  function dispatch(event: BoardEvent, nextPaging: BoardPaging = paging): void {
-    apply(reduceBoardState(state, event), nextPaging);
+  function dispatch(event: BoardEvent): void {
+    apply(reduceBoardState(state, event));
   }
 
   function elapsedMs(since: string): number {
@@ -514,14 +502,18 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     refresh().catch((err: unknown) => log.error(`delivery board: refresh failed unexpectedly: ${errorText(err)}`));
   }
 
-  /** One announcement per settled refresh (s5): the snapshot-wide counts when ready, else the status message. */
+  /**
+   * One announcement per settled refresh (s5): the snapshot-wide counts when ready, else the status message; led by
+   * the notice when the refresh removed what the reader was viewing.
+   */
   function announceRefresh(seq: number): void {
     if (seq !== state.latestSeq || state.status.state === 'loading') return;
     const shown = shownSnapshot(state.status);
     if (state.status.state === 'ready' && shown !== null) {
       const n = placeableCount(shown.snapshot);
       const attention = shown.snapshot.items.filter(i => isPlaceable(i) && i.needsAttention).length;
-      announce(`Board refreshed: ${n} item${n === 1 ? '' : 's'}, ${attention} needing attention`);
+      const lead = state.selectionNotice === null ? '' : `${state.selectionNotice} `;
+      announce(`${lead}Board refreshed: ${n} item${n === 1 ? '' : 's'}, ${attention} needing attention`);
       return;
     }
     const message = statusView(state.status, deps.now()).message;
@@ -541,65 +533,69 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     log.warn(`delivery board: refresh ${seq} left items with unknown stages off the board: ${named}`);
   }
 
-  /** An epic scope must name an epic in the shown snapshot. */
-  function knownScope(scope: BoardScope): boolean {
-    if (scope.kind !== 'epic') return true;
-    const shown = shownSnapshot(state.status);
-    return shown !== null && shown.snapshot.items.some(i => i.kind === 'epic' && i.id === scope.epicItemId);
+  /** The shown snapshot's item with this id, if any. */
+  function itemOnBoard(id: string) {
+    return shownSnapshot(state.status)?.snapshot.items.find(i => i.id === id);
   }
 
-  /** A followed link must name an item in the shown snapshot. */
-  function onBoard(itemId: string): boolean {
-    const shown = shownSnapshot(state.status);
-    return shown !== null && shown.snapshot.items.some(i => i.id === itemId);
+  /** The screen the reader is on, in words, for the announcement (s5). */
+  function screenWords(s: BoardState, opened: boolean): string | null {
+    const screen = currentEntry(s.selection).screen;
+    if (screen.kind === 'list') return opened ? `Showing ${DISPLAY_LABELS.views[screen.view]}` : DISPLAY_LABELS.views[screen.view];
+    const item = itemOnBoard(screen.kind === 'epic' ? screen.epicItemId : screen.itemId);
+    if (item === undefined) return null;
+    if (screen.kind === 'epic') return opened ? `Epic: ${titleOf(item)}` : titleOf(item);
+    const stage = item.stage === null ? '' : ` \u00b7 ${labelOf(DISPLAY_LABELS.stage, item.stage.stage)}`;
+    return opened ? `Opened: ${titleOf(item)}${stage}` : titleOf(item);
   }
 
-  /** Posted after the state is kept, so a failure here is only logged by the message handler (s5). */
-  function announceSelection(itemId: string): void {
-    const item = shownSnapshot(state.status)?.snapshot.items.find(i => i.id === itemId);
-    if (item === undefined) return;
-    announce(`Selected: ${titleOf(item)}${item.stage === null ? '' : ` \u00b7 ${labelOf(DISPLAY_LABELS.stage, item.stage.stage)}`}`);
+  /**
+   * Navigate, then announce once when the screen changed: 'Opened: …', 'Epic: …' or 'Showing …' for a new screen,
+   * 'Back to …' for a return. Posted after the state is kept, so a failure here is only logged by the message handler.
+   */
+  function go(intent: NavIntent): void {
+    const before = currentEntry(state.selection).id;
+    dispatch({ type: 'navigate', intent });
+    if (currentEntry(state.selection).id === before) return;
+    const back = intent.type === 'back' || intent.type === 'go-to-crumb';
+    const words = screenWords(state, !back);
+    if (words !== null) announce(back ? `Back to ${words}` : words);
   }
 
-  function select(selection: BoardSelection, nextPaging: BoardPaging = paging): void {
-    dispatch({ type: 'selection-changed', selection }, nextPaging);
+  /** open-epic must name an epic on the board; open-item a story or issue on it, and an epic id opens the epic. */
+  function open(id: string, asEpic: boolean): void {
+    const item = itemOnBoard(id);
+    if (item !== undefined && item.kind === 'epic') { go({ type: 'open-epic', epicItemId: id }); return; }
+    if (!asEpic && item !== undefined && isPlaceable(item)) { go({ type: 'open-item', itemId: id }); return; }
+    log.warn('delivery board: ignored a link to an item that is not on the board');
   }
 
   function handle(msg: BoardUpMessage): void {
-    const sel = state.selection;
     switch (msg.type) {
-      case 'ready': apply(state, paging); return;
+      case 'ready': apply(state); return;
       case 'refresh': startRefresh(); return;
-      case 'set-view':
-        // The four-view screens arrive with the navigation trail (t3); until then only the three tabs switch.
-        if (msg.view === 'all' || msg.view === 'standalone') return;
-        select({ ...sel, view: msg.view });
+      // The old tabs' 'board' is All work until the screens replace them (t4).
+      case 'set-view': go({ type: 'set-view', view: msg.view === 'board' ? 'all' : msg.view }); return;
+      case 'open-epic': open(msg.epicItemId, true); return;
+      case 'open-item': open(msg.itemId, false); return;
+      // The old page's messages, mapped onto the trail until t7 removes them.
+      case 'set-scope': {
+        const view: ListView = msg.scope.kind === 'standalone' ? 'standalone' : 'all';
+        if (msg.scope.kind === 'epic') open(msg.scope.epicItemId, true);
+        else go({ type: 'set-view', view });
         return;
-      case 'set-scope':
-        if (!knownScope(msg.scope)) {
-          log.warn('delivery board: ignored a scope naming an epic that is not on the board');
-          return;
-        }
-        select({ ...sel, scope: msg.scope }, {});
-        return;
-      case 'set-search': select({ ...sel, search: msg.search }, {}); return;
-      case 'set-attention': select({ ...sel, needsAttentionOnly: msg.on }, {}); return;
-      // Clears the search and the attention filter, keeps the scope and the view; paging resets like any filter change.
-      case 'clear-filters': select({ ...sel, search: '', needsAttentionOnly: false }, {}); return;
-      case 'select-item':
-        if (!onBoard(msg.itemId)) {
-          log.warn('delivery board: ignored a link to an item that is not on the board');
-          return;
-        }
-        select({ ...sel, selectedItemId: msg.itemId });
-        if (msg.itemId !== sel.selectedItemId) announceSelection(msg.itemId);
-        return;
-      case 'close-details':
-        select({ ...sel, selectedItemId: null });
-        channel?.postMessage({ v: 1, payload: { type: 'details', model: null } });
-        return;
-      case 'set-density': select({ ...sel, density: msg.density }); return;
-      case 'show-more': apply(state, showMore(paging, msg.stage)); return;
+      }
+      case 'select-item': open(msg.itemId, false); return;
+      case 'close-details': if (currentItemId(state.selection) !== null) go({ type: 'back' }); return;
+      case 'set-item-tab': go({ type: 'set-item-tab', tab: msg.tab }); return;
+      case 'back': go({ type: 'back' }); return;
+      case 'go-to-crumb': go({ type: 'go-to-crumb', index: msg.index }); return;
+      case 'set-search': dispatch({ type: 'navigate', intent: { type: 'set-search', search: msg.search } }); return;
+      case 'set-attention': dispatch({ type: 'navigate', intent: { type: 'set-attention', on: msg.on } }); return;
+      // Clears the search and the attention filter of the screen shown; its paging resets like any filter change.
+      case 'clear-filters': dispatch({ type: 'navigate', intent: { type: 'clear-filters' } }); return;
+      case 'show-more': dispatch({ type: 'navigate', intent: { type: 'show-more', stage: msg.stage } }); return;
+      case 'set-density': dispatch({ type: 'set-density', density: msg.density }); return;
       case 'open-evidence': memory.openEvidence(msg.itemId, msg.artifactId); return;
     }
   }
@@ -608,7 +604,6 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     generation++;
     channel = undefined;
     state = initialBoardState();
-    paging = {};
     nextSeq = 0;
     memory.dispose();
     memory = newMemory();

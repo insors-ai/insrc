@@ -8,14 +8,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, placeableCount, selectMatches, showMore, unknownStages, type BoardPaging } from '../board-model.js';
+import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, placeableCount, selectMatches, showMore, unknownStages, type BoardPaging, type MatchFilter } from '../board-model.js';
 import type { StagesBody } from '../board-protocol.js';
-import { INITIAL_SELECTION, type BoardSelection } from '../board-state.js';
 import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
 import { evidence as fixtureEvidence, item, snapshot } from './board-fixtures.js';
 
-const build = (snap: ReturnType<typeof snapshot>, selection: Partial<BoardSelection> = {}, paging: BoardPaging = {}): StagesBody =>
-  buildBoardViewModel(snap, { ...INITIAL_SELECTION, ...selection }, paging, DISPLAY_LABELS);
+/** Every screen's filter before the reader narrows it: everything in scope, no search, no attention filter. */
+const ALL: MatchFilter = { scope: { kind: 'all' }, search: '', needsAttentionOnly: false };
+const build = (snap: ReturnType<typeof snapshot>, filter: Partial<MatchFilter> = {}, paging: BoardPaging = {}): StagesBody =>
+  buildBoardViewModel(snap, { ...ALL, ...filter }, paging, DISPLAY_LABELS);
 
 const cardIds = (m: StagesBody): string[][] => m.sections.map(c => c.cards.map(k => k.itemId));
 /** Matches on the screen, and how many of them need attention, summed over the sections. */
@@ -202,14 +203,14 @@ test('selectMatches returns the board\'s matches in snapshot order, each with it
     item({ id: 'S9', standalone: true, stage: 'shipped' }),
     item({ id: 'T1', kind: 'task' }),
   ]);
-  const all = selectMatches(snap, INITIAL_SELECTION, DISPLAY_LABELS);
+  const all = selectMatches(snap, ALL, DISPLAY_LABELS);
   assert.deepEqual(all.map(m => [m.item.id, m.stage, m.epic?.id ?? null, m.card.itemId]),
     [['E1:S001', 'scoped', 'E1', 'E1:S001'], ['E1:S002', 'complete', 'E1', 'E1:S002'], ['I1', 'design-plan', 'E1', 'I1']],
     'snapshot order; epics, tasks and unknown stages are not matches');
   assert.equal(placeableCount(snap), 3);
   assert.equal(itemsOf(build(snap)), all.length, 'the board counts exactly these matches');
 
-  const searched = selectMatches(snap, { ...INITIAL_SELECTION, search: 'board' }, DISPLAY_LABELS);
+  const searched = selectMatches(snap, { ...ALL, search: 'board' }, DISPLAY_LABELS);
   assert.deepEqual(searched.map(m => m.item.id), ['E1:S001']);
   assert.deepEqual(cardIds(build(snap, { search: 'board' })).flat(), ['E1:S001']);
 });

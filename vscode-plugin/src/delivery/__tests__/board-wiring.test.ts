@@ -143,7 +143,7 @@ test('the board receives the review pane when the chat setting creates one, and 
     { artifactId: 'LLD-x', kind: 'LLD', mdPath: 'docs/e/S001/LLD.md', openWith: 'review-view', approval: { state: 'pending', at: null }, review: null, reviewCurrency: null },
   ] as never })]);
 
-  /** Register the board over fakes, open it, select S1 and ask to open its LLD; returns what reached the pane and the daemon. */
+  /** Register the board over fakes, open it, open S1's screen and ask to open its LLD; returns what reached the pane and the daemon. */
   async function run(withPane: boolean) {
     const handlers = new Map<string, () => Promise<void>>();
     const toHost: ((m: unknown) => void)[] = [];
@@ -166,10 +166,14 @@ test('the board receives the review pane when the chat setting creates one, and 
     await handlers.get('insrc.delivery.openBoard')!();
     await flush();
     const sendUp = (payload: unknown) => { for (const l of toHost) l({ v: 1, payload }); };
-    sendUp({ type: 'select-item', itemId: 'S1' });
+    sendUp({ type: 'open-item', itemId: 'S1' });
     sendUp({ type: 'open-evidence', itemId: 'S1', artifactId: 'LLD-x' });
     await flush();
-    const details = panel.posted.map(m => (m as { payload: { type: string; model?: { openedRecord?: unknown } } }).payload).filter(p => p.type === 'details');
+    // The story's own screen carries its details.
+    const details = panel.posted
+      .map(m => (m as { payload: { type: string; model?: { body?: { kind: string; details?: { openedRecord?: unknown } } } } }).payload)
+      .filter(p => p.type === 'screen' && p.model?.body?.kind === 'story')
+      .map(p => p.model!.body!);
     return { paneOpens, rpcCalls, details };
   }
 
@@ -181,5 +185,5 @@ test('the board receives the review pane when the chat setting creates one, and 
   assert.deepEqual(without.paneOpens, []);
   assert.deepEqual(without.rpcCalls.map(c => c.method), ['workflow.delivery', 'workflow.deliveryEvidence'], 'without a pane the board reads the record');
   assert.deepEqual(without.rpcCalls[1]!.params, { repo: '/ws', artifactId: 'LLD-x' });
-  assert.deepEqual(without.details.at(-1)!.model!.openedRecord, { artifactId: 'LLD-x', text: '# LLD' }, 'and shows it read-only');
+  assert.deepEqual(without.details.at(-1)!.details!.openedRecord, { artifactId: 'LLD-x', text: '# LLD' }, 'and shows it read-only');
 });

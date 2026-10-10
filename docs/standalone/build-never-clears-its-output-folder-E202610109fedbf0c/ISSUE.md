@@ -1,0 +1,21 @@
+<!-- insrc:artifact ISSUE-9fedbf0c2d222653 -->
+
+# The build keeps compiled files whose source has been removed
+
+## Reproduction
+
+Seen on 2026-10-10 in both output folders. Story s2 of the analyzer epic removed `src/analyze/classifier/scope-picker.ts` and `src/prompts/analyze/scope-picker.system.md`. After `npm run build` in the repository, and after an update of the installed daemon, both `out/` folders still hold `analyze/classifier/scope-picker.js` (with its `.d.ts` and map files) and `prompts/analyze/scope-picker.system.md`. To reproduce: remove a source file, build, and list the output folder. Observed: the compiled file is still there. Expected: the output folder holds the compiled form of the sources that exist, and nothing else.
+
+## Root cause
+
+The build command is `tsc && node copy-assets.mjs`. The compiler writes an output for each source it is given and never deletes one, and the asset copy step copies files in and removes none. Neither step clears the output folder first. The installed daemon is updated by pulling the repository and running the same build in place, so its output folder keeps every file a past version ever produced.
+
+## Fix intent
+
+After a build, the output folder holds only what the current sources produce: a compiled file or a copied asset whose source is gone is no longer there. The same holds for the installed daemon after an update. A build that fails does not leave the daemon without the output it was running from.
+
+## Citations
+
+- **[[c1]]** `code` `package.json` — ""build": "tsc && node copy-assets.mjs","
+- **[[c2]]** `code` `scripts/daemon-ctl.sh` — "( cd "$DAEMON_SRC" && npm run build ) >>"$LOG_FILE" 2>&1 || die "npm run build failed (see $LOG_FILE)" 4"
+- **[[c3]]** `doc` `docs/plans/handover-2026-10-10.md` — "The build keeps compiled files whose source is gone."

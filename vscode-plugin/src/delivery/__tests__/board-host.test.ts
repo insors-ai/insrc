@@ -1235,7 +1235,7 @@ test('the issue screen opens what it corrects, or shows the parent notice, and l
   assert.ok(texts(main).includes('Corrects Section navigation · Complete'));
   const fixes = findAll(main, e => e.attrs['aria-label'] === 'Fix stories')[0]!;
   assert.deepEqual(texts(fixes), ['STORY · Fix the jump', 'Scoped'], 'each fix story with its stage');
-  assert.ok(findAll(main, e => e.attrs['class'] === 'table-wrap').length === 1 && texts(main).includes('Why this stage?'), 'records and why');
+  assert.ok(texts(main).includes('Records') && texts(main).includes('No records yet.') && texts(main).includes('Why this stage?'), 'records (none yet, said so) and why');
   b.w.posted.length = 0;
   click(open);
   assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-item', itemId: STORY_C }]);
@@ -1318,25 +1318,27 @@ test('the refresh announcement text is unchanged after statusView takes now', as
   assert.match(last.text, /^The refresh failed at 2026-10-09T12:00:00.000Z: bad store Showing the board from 2026-10-09T10:00:00.000Z\.$/);
 });
 
-test('BOARD_STYLE has only var(--vscode-*) colours, no display:none/visibility:hidden/clip, six equal columns when wide, density rules and :focus-visible', () => {
+test('BOARD_STYLE keeps a 320px minimum, card and column minimums, the records table scroll wrapper and only var(--vscode-*) colours, with no hiding rule', () => {
   assert.doesNotMatch(BOARD_STYLE, /#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\(/, 'no literal colour');
   for (const v of BOARD_STYLE.match(/var\(--[a-zA-Z-]+/g) ?? []) assert.match(v, /^var\(--(vscode-|gap|pad|small)/, v);
-  for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /text-overflow/, /overflow:\s*hidden/, /height:\s*0/]) {
+  for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /text-overflow/, /overflow:\s*hidden/, /height:\s*0[;}]/]) {
     assert.doesNotMatch(BOARD_STYLE, hiding, `no ${hiding} rule`);
   }
-  assert.match(BOARD_STYLE, /\.board\{display:grid;grid-template-columns:repeat\(6,minmax\(0,1fr\)\);/, 'six equal columns when wide');
+  // Minimum widths: the page, the card grid, the epic row's name, the story's two columns, the records table.
+  assert.match(BOARD_STYLE, /body\{[^}]*min-width:320px;/);
+  assert.match(BOARD_STYLE, /#main\{container-type:inline-size;\}/);
+  assert.match(BOARD_STYLE, /\.cards\{display:grid;grid-template-columns:repeat\(auto-fill,minmax\(min\(240px,100%\),1fr\)\);/);
+  assert.match(BOARD_STYLE, /\.epic-row\{grid-template-columns:minmax\(220px,1fr\) /);
+  assert.match(BOARD_STYLE, /\.item-cols\{display:grid;grid-template-columns:minmax\(340px,1\.4fr\) minmax\(280px,1fr\);/);
+  assert.match(BOARD_STYLE, /@container \(max-width:760px\)\{\.item-cols\{grid-template-columns:minmax\(0,1fr\);\}\.item-side\{order:-1;\}\}/, 'the stage explanation and chain come first when stacked');
+  assert.match(BOARD_STYLE, /\.table-wrap\{overflow-x:auto;/);
+  assert.match(BOARD_STYLE, /table\.records\{min-width:620px;/);
+  // The old composite page is gone.
+  for (const gone of [/repeat\(6,/, /@media \(max-width:600px\)/, /#details/, /\.layout/]) assert.doesNotMatch(BOARD_STYLE, gone, `no ${gone}`);
   for (const tone of ['success', 'warning', 'danger', 'neutral']) assert.match(BOARD_STYLE, new RegExp(`\\[data-tone="${tone}"\\]\\{color:var\\(--vscode-`), `${tone} pills are tinted from the theme`);
+  // Density changes spacing and font size only.
   assert.match(BOARD_STYLE, /body\[data-density="compact"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;]+;font-size:[^;}]+;\}/);
   assert.match(BOARD_STYLE, /body\[data-density="comfortable"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;}]+;\}/);
   assert.match(BOARD_STYLE, /:focus-visible\{outline:2px solid var\(--vscode-focusBorder\)/);
-});
-
-test('BOARD_STYLE\'s 600 px block orders empty stage sections after non-empty ones and contains no hiding rule', () => {
-  const narrow = /@media \(max-width:600px\)\{(.*)\}$/.exec(BOARD_STYLE)?.[1] ?? '';
-  assert.ok(narrow.length > 0, 'the narrow block closes the stylesheet');
-  assert.match(narrow, /\.board>section\{flex:1 0 100%;\}/, 'non-empty stages each take a full row');
-  assert.match(narrow, /\.board>section\[data-empty="true"\]\{order:1;flex:0 0 auto;\}/, 'empty stages come after and wrap onto one line');
-  for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /overflow:\s*hidden/, /height:\s*0/]) {
-    assert.doesNotMatch(narrow, hiding, `no ${hiding} rule in the narrow block`);
-  }
+  assert.match(BOARD_STYLE, /\.stage>summary\{cursor:pointer;/, 'a closed section\'s summary stays visible and clickable');
 });

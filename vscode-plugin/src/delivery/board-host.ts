@@ -209,7 +209,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `if(t.acceptanceChecks!==null&&t.acceptanceChecks.length>0){const cl=make('ul',undefined,'task-checks');cl.setAttribute('aria-label','Acceptance checks');for(const c of t.acceptanceChecks)cl.appendChild(make('li',c));row.appendChild(cl);}`,
   `list.appendChild(row);}box.appendChild(list);if(d.planNotice!==null)box.appendChild(make('p',d.planNotice,'plan-notice'));return box;}`,
   // Every record behind the item, with approval, review and override in their own columns, and how it opens.
-  `function recordsTable(d){const box=make('div');box.appendChild(make('h2','Records'));const wrap=make('div',undefined,'table-wrap');const t=make('table',undefined,'records');`,
+  `function recordsTable(d){const box=make('div');box.appendChild(make('h2','Records'));if(d.evidence.length===0){box.appendChild(make('p','No records yet.','muted'));return box;}const wrap=make('div',undefined,'table-wrap');const t=make('table',undefined,'records');`,
   `const hr=make('tr');for(const h of ['Record','Approval','Review','Override',''])hr.appendChild(make('th',h));const thead=make('thead');thead.appendChild(hr);t.appendChild(thead);const tb=make('tbody');`,
   `for(const r of d.evidence){const tr=make('tr');tr.setAttribute('data-artifact-id',r.artifactId);tr.appendChild(make('td',r.kindLabel+' '+r.artifactId));`,
   `tr.appendChild(make('td',r.approvalLabel+(r.approvedAt===null?'':' · '+r.approvedAt)));tr.appendChild(make('td',r.reviewLabel===null?'—':r.reviewLabel));tr.appendChild(make('td',r.overrideLabel===null?'—':r.overrideLabel));`,
@@ -285,94 +285,127 @@ export const BOARD_WEBVIEW_SCRIPT = [
 ].join('');
 
 /**
- * The board's one stylesheet (E2 s5, restyled to the PRD's mocks A-F by ISSUE-b2687832), under the existing style-src
- * 'unsafe-inline'. Theme colours come only from VS Code's --vscode-* variables: the PRD's tones map to the testing,
- * warning, error and description colours over the input-validation and widget backgrounds. Wide panes set the six
- * board columns side by side and, when an item is open, the details as a side column; below 600 px the same sections
- * stack into one list grouped by stage, empty stages wrapping onto one compact line after the others. No rule hides
- * content: the DOM is the same at every width and density, and only the [hidden] details pane is out of view while
- * nothing is selected. Density changes spacing and font size only.
+ * The board's one stylesheet (E2 s5; screens, ISSUE-348d4663), under the existing style-src 'unsafe-inline'. Theme
+ * colours come only from VS Code's --vscode-* variables: the PRD's tones map to the testing, warning, error and
+ * description colours over the input-validation and widget backgrounds. One layout at every width: stages are stacked
+ * collapsible sections whose cards wrap into a grid as wide as the screen allows, and every grid keeps a minimum
+ * width, so a narrow pane gets fewer columns rather than squeezed ones. #main is a size container: the story's two
+ * columns stack below 760 px (the stage explanation and chain first), and rows go to one column below 480 px. The body
+ * never shrinks below 320 px, and the records table scrolls sideways inside its wrapper rather than squeezing. No rule
+ * hides content; a closed stage section is a native <details> the reader opens, and its summary always shows the
+ * label, the count and any attention hint. Density changes spacing and font size only.
  */
 export const BOARD_STYLE = [
-  `body{font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);color:var(--vscode-foreground);background:var(--vscode-editor-background);margin:0;padding:0 16px 16px;line-height:1.45;}`,
+  `body{font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);color:var(--vscode-foreground);background:var(--vscode-editor-background);margin:0;padding:0 16px 16px;line-height:1.45;min-width:320px;}`,
   `button{font:inherit;color:var(--vscode-button-secondaryForeground);background:var(--vscode-button-secondaryBackground);border:1px solid var(--vscode-contrastBorder,transparent);border-radius:4px;padding:3px 10px;cursor:pointer;}`,
   `button:hover{background:var(--vscode-button-secondaryHoverBackground);}`,
   `button[aria-pressed="true"]{color:var(--vscode-button-foreground);background:var(--vscode-button-background);}`,
-  `input,select{font:inherit;color:var(--vscode-input-foreground);background:var(--vscode-input-background);border:1px solid var(--vscode-input-border,transparent);border-radius:4px;padding:3px 8px;}`,
+  `input{font:inherit;color:var(--vscode-input-foreground);background:var(--vscode-input-background);border:1px solid var(--vscode-input-border,transparent);border-radius:4px;padding:3px 8px;}`,
   `:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:2px;}`,
+  `h1,h2,h3{font-weight:600;}`,
+  `ul{margin:0;padding:0;list-style:none;}`,
   // App bar: wordmark and breadcrumb on the left, freshness, read-only marker, refresh and density on the right.
   `.appbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;margin:0 -16px;padding:8px 16px;background:var(--vscode-sideBar-background,var(--vscode-editorWidget-background));border-bottom:1px solid var(--vscode-panel-border);}`,
   `.brand,.appbar-tools,.density{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}`,
   `.wordmark{font-weight:700;color:var(--vscode-textLink-foreground);}`,
-  `.crumb,#status,.readonly,#totals,.muted{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
+  `.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;overflow-wrap:anywhere;}`,
+  `.crumb{background:none;border:0;padding:0;color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
+  `button.crumb{color:var(--vscode-textLink-foreground);}`,
+  `button.crumb:hover{background:none;text-decoration:underline;}`,
+  `.crumb.current{color:var(--vscode-foreground);font-weight:600;}`,
+  `.sep{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
+  `#status,.readonly,.muted,.totals{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
   `#status{margin:0;}`,
-  `.page-title{font-size:1.4em;font-weight:600;margin:14px 0 2px;}`,
   `.announce{color:var(--vscode-descriptionForeground);font-size:var(--small);margin:0;min-height:1em;}`,
-  // Underline tabs.
-  `.tabs{display:flex;gap:18px;border-bottom:1px solid var(--vscode-panel-border);margin:10px 0 0;}`,
-  `.tabs button{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:6px 0;color:var(--vscode-descriptionForeground);}`,
-  `.tabs button[aria-pressed="true"],.tabs button[aria-selected="true"]{background:none;color:var(--vscode-foreground);border-bottom-color:var(--vscode-focusBorder);font-weight:600;}`,
-  // Chip toolbar: search, scope chips and the attention chip.
-  `.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0;}`,
-  `.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}`,
+  // The screen: Back, the title, the filter bar, then the body.
+  `#main{container-type:inline-size;}`,
+  `.back{background:none;border:0;padding:0;margin:12px 0 0;color:var(--vscode-textLink-foreground);}`,
+  `.back:hover{background:none;text-decoration:underline;}`,
+  `.screen-title{font-size:1.4em;margin:8px 0 4px;overflow-wrap:anywhere;}`,
+  // The heading takes focus only so a screen reader starts there; it is not a control, so it draws no focus ring.
+  `.screen-title:focus{outline:none;}`,
+  // The filter bar: the four views as one segmented control, Needs attention, the search box.
+  `.filters{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0;}`,
+  `.views{display:inline-flex;flex-wrap:wrap;border:1px solid var(--vscode-panel-border);border-radius:4px;}`,
+  `.view{border:0;border-radius:0;background:none;color:var(--vscode-descriptionForeground);padding:4px 12px;}`,
+  `.view[aria-pressed="true"]{color:var(--vscode-button-foreground);background:var(--vscode-button-background);}`,
   `.chip{border-radius:999px;padding:2px 10px;font-size:var(--small);border:1px solid var(--vscode-panel-border);background:var(--vscode-editorWidget-background);color:var(--vscode-descriptionForeground);}`,
   `.chip[aria-pressed="true"]{border-color:var(--vscode-focusBorder);background:var(--vscode-list-activeSelectionBackground,var(--vscode-button-background));color:var(--vscode-list-activeSelectionForeground,var(--vscode-button-foreground));}`,
+  `.search{flex:1 1 12rem;min-width:10rem;max-width:24rem;}`,
+  `.totals{margin:8px 0;}`,
+  `.link{background:none;border:0;padding:0;color:var(--vscode-textLink-foreground);text-align:left;}`,
+  `.link:hover{background:none;text-decoration:underline;}`,
+  `.show-all{margin-left:8px;}`,
   // Tone pills: the label carries the meaning, the tone only tints it.
-  `.badges{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0;padding:0;list-style:none;}`,
-  `.badge,.pill,.count{display:inline-block;border-radius:999px;padding:0 8px;font-size:var(--small);border:1px solid var(--vscode-panel-border);background:var(--vscode-editorWidget-background);color:var(--vscode-descriptionForeground);}`,
+  `.badges{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0;}`,
+  `.badge,.pill,.count{display:inline-block;border-radius:999px;padding:0 8px;font-size:var(--small);font-weight:400;border:1px solid var(--vscode-panel-border);background:var(--vscode-editorWidget-background);color:var(--vscode-descriptionForeground);}`,
   `[data-tone="success"]{color:var(--vscode-testing-iconPassed);border-color:var(--vscode-testing-iconPassed);}`,
   `[data-tone="warning"]{color:var(--vscode-editorWarning-foreground);background:var(--vscode-inputValidation-warningBackground);border-color:var(--vscode-inputValidation-warningBorder);}`,
   `[data-tone="danger"]{color:var(--vscode-errorForeground);background:var(--vscode-inputValidation-errorBackground);border-color:var(--vscode-inputValidation-errorBorder);}`,
   `[data-tone="neutral"]{color:var(--vscode-descriptionForeground);}`,
-  // State panels.
+  // State panels: in the banner above a screen, or in place of it.
   `.panel{border:1px solid var(--vscode-panel-border);border-radius:6px;padding:12px 16px;margin:10px 0;background:var(--vscode-editorWidget-background);}`,
   `.panel[data-kind="unavailable"],.panel[data-kind="refresh-failed"],.panel[data-kind="partial"]{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);}`,
   `.panel-title{font-weight:600;margin:0 0 4px;}`,
-  `.panel-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}`,
-  `.link{background:none;border:0;padding:0;color:var(--vscode-textLink-foreground);text-align:left;}`,
-  `.link:hover{background:none;text-decoration:underline;}`,
-  `.row-title{font-weight:600;font-size:1em;}`,
-  `.details-head h2{font-size:1.15em;margin:2px 0 6px;}`,
-  `.details-chips{margin:8px 0;}`,
   `.panel p{margin:4px 0;}`,
-  // Layout: the details pane precedes the board in the DOM, so a narrow pane shows it first.
-  `.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start;}`,
-  `#details{border:1px solid var(--vscode-panel-border);border-radius:6px;padding:var(--pad) 14px;background:var(--vscode-editorWidget-background);overflow-wrap:anywhere;}`,
-  `#details pre{white-space:pre-wrap;overflow-wrap:anywhere;}`,
-  `.details-conflict{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);color:var(--vscode-foreground);border-radius:0 4px 4px 0;padding:8px 12px;margin:10px 0;}`,
-  `.why{background:var(--vscode-textBlockQuote-background);border-left:3px solid var(--vscode-textLink-foreground);border-radius:0 4px 4px 0;padding:8px 12px;margin:8px 0;}`,
-  `.chain{list-style:none;margin:6px 0;padding:0;}`,
+  `.panel-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}`,
+  // Stage sections: a summary with the label, the count and any hint; the cards wrap into a grid with a minimum width.
+  `.stage{border-top:1px solid var(--vscode-panel-border);padding:4px 0;}`,
+  `.stage>summary{cursor:pointer;font-weight:600;padding:6px 0;}`,
+  `.stage>summary>span{margin-left:8px;}`,
+  `.stage>summary>.stage-label{margin-left:4px;}`,
+  `.fold{margin:8px 0;}`,
+  `.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));gap:var(--gap);margin:6px 0 10px;}`,
+  `.card{border:1px solid var(--vscode-panel-border);border-radius:6px;background:var(--vscode-editorWidget-background);padding:var(--pad);overflow-wrap:anywhere;cursor:pointer;}`,
+  `.card:hover{border-color:var(--vscode-focusBorder);}`,
+  `.kicker{font-family:var(--vscode-editor-font-family);font-size:0.8em;letter-spacing:0.3px;color:var(--vscode-descriptionForeground);overflow-wrap:anywhere;}`,
+  `.card-title{font-weight:600;margin:2px 0;}`,
+  `.card-epic,.card-tasks{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
+  `.more{margin:0 0 10px;}`,
+  // Epic rows: the name in a column at least 220 px wide, the counts, meter and attention beside it.
+  `.rows>li{border-bottom:1px solid var(--vscode-panel-border);}`,
+  `.epic-row,.issue-row{display:grid;width:100%;text-align:left;background:none;border:0;border-radius:0;padding:12px 4px;color:var(--vscode-foreground);overflow-wrap:anywhere;}`,
+  `.epic-row:hover,.issue-row:hover{background:var(--vscode-list-hoverBackground);}`,
+  `.epic-row{grid-template-columns:minmax(220px,1fr) minmax(11rem,16rem);column-gap:18px;align-items:center;}`,
+  `.epic-row>.kicker,.epic-row>.row-title{grid-column:1;}`,
+  `.epic-row>.epic-summary{grid-column:2;grid-row:1/span 2;}`,
+  `.issue-row{gap:2px;}`,
+  `.row-title{font-weight:600;}`,
+  `.epic-summary p{margin:0;}`,
+  `.meter{display:block;height:5px;border-radius:3px;background:var(--vscode-panel-border);margin:6px 0;}`,
+  `.meter>span{display:block;height:5px;border-radius:3px;background:var(--vscode-testing-iconPassed);}`,
+  `.standalone-link{margin:12px 0;}`,
+  // A story's or issue's screen: chips, the conflict warning, tabs, and two columns with minimum widths.
+  `.item-chips{margin:8px 0;}`,
+  `.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}`,
+  `.conflict{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);color:var(--vscode-foreground);border-radius:0 4px 4px 0;padding:8px 12px;margin:10px 0;}`,
+  `.conflict p{margin:4px 0 0;}`,
+  `.item-tabs{display:flex;flex-wrap:wrap;gap:4px 18px;border-bottom:1px solid var(--vscode-panel-border);margin:12px 0;}`,
+  `.tab{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:6px 0;color:var(--vscode-descriptionForeground);}`,
+  `.tab[aria-selected="true"]{color:var(--vscode-foreground);border-bottom-color:var(--vscode-focusBorder);font-weight:600;}`,
+  `.item-cols{display:grid;grid-template-columns:minmax(340px,1.4fr) minmax(280px,1fr);gap:24px;align-items:start;}`,
+  `.item-cols h2,.tab-panel h2{font-size:1em;margin:12px 0 6px;}`,
+  `.item-actions{margin:8px 0;}`,
+  `.why{background:var(--vscode-textBlockQuote-background);border-left:3px solid var(--vscode-textLink-foreground);border-radius:0 4px 4px 0;padding:8px 12px;margin:12px 0;}`,
+  `.why p{margin:4px 0;}`,
   `.chain li{display:grid;grid-template-columns:4.5em minmax(0,1fr);gap:8px;padding:6px 0;border-bottom:1px solid var(--vscode-panel-border);}`,
   `.task{border-top:1px solid var(--vscode-panel-border);padding:6px 0;}`,
   `.task summary{cursor:pointer;font-weight:600;}`,
-  `.task-checks{list-style:none;padding:0;margin:6px 0;}`,
+  `.task-checks{margin:6px 0;}`,
   `.task-checks li::before{content:"\\2610  ";color:var(--vscode-descriptionForeground);}`,
-  // Board: six equal columns; each column heading carries a count chip.
-  `.board{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--gap);align-items:start;}`,
-  `.board ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--gap);}`,
-  `.board ul.badges{flex-direction:row;flex-wrap:wrap;gap:4px;}`,
-  // The epics and issues views list rows, not columns.
-  `.board[data-view="epics"],.board[data-view="issues"]{display:block;}`,
-  `.issue{border-bottom:1px solid var(--vscode-panel-border);padding:10px 0;}`,
-  `.board h2{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:var(--small);font-weight:600;margin:0 0 8px;}`,
-  `.card{border:1px solid var(--vscode-panel-border);border-radius:6px;background:var(--vscode-editorWidget-background);padding:var(--pad);overflow-wrap:anywhere;cursor:pointer;}`,
-  `.card:hover{border-color:var(--vscode-focusBorder);}`,
-  `.kicker{font-family:var(--vscode-editor-font-family);font-size:0.8em;letter-spacing:0.3px;color:var(--vscode-descriptionForeground);}`,
-  `.card-title{font-weight:600;margin:2px 0;}`,
-  `.card-epic,.card-tasks{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
-  // Epic rollup rows: name and counts, the completion meter, the attention chip.
-  `.epic-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(7rem,9rem) auto;gap:8px 18px;align-items:center;padding:12px 0;border-bottom:1px solid var(--vscode-panel-border);}`,
-  `.epic-row h2{font-size:1em;margin:2px 0;}`,
-  `.epic-row p{margin:0;}`,
-  `.meter{height:5px;border-radius:3px;background:var(--vscode-panel-border);margin-top:6px;}`,
-  `.meter>span{display:block;height:5px;border-radius:3px;background:var(--vscode-testing-iconPassed);}`,
+  `.linked li{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:4px 0;}`,
+  `.table-wrap{overflow-x:auto;margin:6px 0;}`,
+  `table.records{min-width:620px;width:100%;border-collapse:collapse;}`,
+  `table.records th,table.records td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--vscode-panel-border);vertical-align:top;}`,
+  `table.records th{color:var(--vscode-descriptionForeground);font-weight:600;font-size:var(--small);}`,
+  `pre{white-space:pre-wrap;overflow-wrap:anywhere;}`,
   `body[data-density="comfortable"]{--gap:10px;--pad:8px;--small:0.9em;}`,
   `body[data-density="compact"]{--gap:4px;--pad:3px;--small:0.85em;font-size:0.92em;}`,
   `body:not([data-density]){--gap:10px;--pad:8px;--small:0.9em;}`,
-  // Wide: an open item sits in a side column beside the board.
-  `@media (min-width:1000px){.layout:has(> #details:not([hidden])){grid-template-columns:minmax(0,1fr) minmax(18rem,26rem);}#details{grid-column:2;grid-row:1;position:sticky;top:8px;}.board{grid-column:1;grid-row:1;}}`,
-  // Narrow: one list grouped by stage; empty stages wrap onto one compact line after the others.
-  `@media (max-width:600px){.board{display:flex;flex-wrap:wrap;gap:12px 8px;}.board>section{flex:1 0 100%;}.board>section[data-empty="true"]{order:1;flex:0 0 auto;}.board>section[data-empty="true"] h2{margin:0;}.board h2{font-size:1em;margin:8px 0 4px;}.epic-row{grid-template-columns:minmax(0,1fr) minmax(6rem,8rem);}.epic-row>:last-child{grid-column:1/-1;}}`,
+  // Below 760 px the story's columns stack, the stage explanation and the chain first.
+  `@container (max-width:760px){.item-cols{grid-template-columns:minmax(0,1fr);}.item-side{order:-1;}}`,
+  // Below 480 px a row's name and its counts stack too.
+  `@container (max-width:480px){.epic-row{grid-template-columns:minmax(0,1fr);}.epic-row>.epic-summary{grid-column:1;grid-row:auto;}}`,
 ].join('');
 
 export function renderBoardDocument(nonce: string): string {

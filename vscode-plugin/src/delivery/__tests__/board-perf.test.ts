@@ -50,7 +50,7 @@ function boardOverScript() {
   return { w, host, send: (payload: unknown) => toHost?.({ v: 1, payload }) };
 }
 
-const cards = (w: ReturnType<typeof runScript>) => cardsIn(w.el['board']!).length;
+const cards = (w: ReturnType<typeof runScript>) => cardsIn(w.el['main']!).length;
 
 test('a 500-item, 1,000-record board renders within one second and each filter change within 150 ms, best of three', async (t) => {
   const snap = largeSnapshot();
@@ -69,13 +69,13 @@ test('a 500-item, 1,000-record board renders within one second and each filter c
     first = Math.min(first, performance.now() - t0);
     assert.ok(cards(board.w) > 0, 'the board was rendered');
   }
-  assert.ok(cardsIn(board.w.el['board']!).some(c => c.children.some(k => k.attrs['class'] === 'card-tasks')), 'the cards carry their task summaries');
+  assert.ok(cardsIn(board.w.el['main']!).some(c => c.children.some(k => k.attrs['class'] === 'card-tasks')), 'the cards carry their task summaries');
 
-  // Each filter change on the last board: search, attention and scope, each best of three, reset between runs.
+  // Each filter change on the last board: search, attention and the view, each best of three, reset between runs.
   const changes: { name: string; apply: unknown; reset: unknown }[] = [
     { name: 'search', apply: { type: 'set-search', search: 'story 1' }, reset: { type: 'set-search', search: '' } },
     { name: 'attention', apply: { type: 'set-attention', on: true }, reset: { type: 'set-attention', on: false } },
-    { name: 'scope', apply: { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'E07' } }, reset: { type: 'set-scope', scope: { kind: 'all' } } },
+    { name: 'view', apply: { type: 'set-view', view: 'standalone' }, reset: { type: 'set-view', view: 'all' } },
   ];
   const timings: Record<string, number> = {};
   for (const c of changes) {

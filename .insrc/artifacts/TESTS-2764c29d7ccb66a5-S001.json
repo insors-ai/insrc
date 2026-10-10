@@ -4,7 +4,7 @@
     "epicHash": "2764c29d7ccb66a5",
     "storyId": "S001",
     "createdAt": "2026-10-10T15:41:06.406Z",
-    "updatedAt": "2026-10-10T15:41:06.406Z",
+    "updatedAt": "2026-10-10T15:43:41.783Z",
     "standalone": true
   },
   "body": {
@@ -72,6 +72,84 @@
               },
               {
                 "title": "an unregistered repository has no stored files and its removal of unresolved relations does nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "c8667e0b",
+        "ranAt": "2026-10-10T15:43:41.783Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-depth-for-repo.test.ts",
+                "title": "a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a clean-up job for a registered repository with nothing stored is processed without error",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a clean-up job for a registered repository with nothing stored is processed without error",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/queue-depth-for-repo.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 538,
+            "titles": [
+              {
+                "title": "depthForRepo counts repoPath-named jobs (full/reembed/doc-summarise-repo) for that repo",
+                "result": "pass"
+              },
+              {
+                "title": "depthForRepo counts file/config-file jobs whose filePath is under the repo (repoPath+sep)",
+                "result": "pass"
+              },
+              {
+                "title": "repo-agnostic jobs (config-full/config-reindex/doc-summarise-entity) and other-repo jobs do NOT count",
+                "result": "pass"
+              },
+              {
+                "title": "depthForRepo returns 0 for a repo with no queued jobs; get depth() is the global total",
+                "result": "pass"
+              },
+              {
+                "title": "a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/reconcile.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 792,
+            "titles": [
+              {
+                "title": "a clean-up job for a registered repository with nothing stored is processed without error",
                 "result": "pass"
               }
             ],

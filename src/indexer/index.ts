@@ -4,8 +4,14 @@ import { createHash } from 'node:crypto';
 import { join, extname, resolve, relative, sep } from 'node:path';
 import type { DbClient } from '../db/client.js';
 import type { RegisteredRepo, IndexJob, ConfigScope } from '../shared/types.js';
-import { upsertEntities } from '../db/entities.js';
-import { upsertRelations, deleteRelationsForFile, deleteUnresolvedForFile } from '../db/relations.js';
+import { upsertEntities, listEntityFilesForRepo, deleteEntitiesById } from '../db/entities.js';
+import {
+  upsertRelations,
+  deleteRelationsForFile,
+  deleteUnresolvedForFile,
+  deleteUnresolvedForRepoFile,
+} from '../db/relations.js';
+import { deleteCachedExplorationsForRepo } from '../db/exploration-cache.js';
 import { runCrossFileResolver } from './cross-file-resolver.js';
 import { resolveExternalEndpoints } from './external-endpoints.js';
 import { resolveMessagingEndpoints } from './messaging-endpoints.js';
@@ -149,6 +155,19 @@ function contentHash(source: string): string {
 // IndexerService
 // ---------------------------------------------------------------------------
 
+/**
+ * The check of a file's presence the index clean-up uses. Returns when
+ * the file can be stat'ed and throws the file system's error otherwise;
+ * the error's `code` decides between "absent" and "could not be told".
+ */
+export type FilePresenceCheck = (filePath: string) => void;
+
+const statPresence: FilePresenceCheck = filePath => { statSync(filePath); };
+
+/** Error codes that mean the file is not there: no such entry, or a
+ *  directory on its path has been replaced by a file. */
+const ABSENT_CODES = new Set(['ENOENT', 'ENOTDIR']);
+
 /** What one index clean-up pass did (see `IndexerService.reconcileRepo`). */
 export interface ReconcileResult {
   /** Stored files of the repo that were compared with the disk. */
@@ -191,12 +210,16 @@ export class IndexerService {
    *  watcher's existing 200 ms event-debounce. */
   private readonly settleWindowMs: number;
 
+  /** How the clean-up pass asks whether a stored file is still on disk. */
+  private readonly filePresence: FilePresenceCheck;
+
   constructor(
     db: DbClient,
     queue: IndexQueue,
     watcher: Watcher,
     configStore?: ConfigStore | undefined,
     settleWindowMs: number = 2000,
+    filePresence: FilePresenceCheck = statPresence,
   ) {
     this.db             = db;
     this.queue          = queue;
@@ -204,6 +227,7 @@ export class IndexerService {
     this.supported      = new Set(supportedExtensions());
     this.configStore    = configStore ?? null;
     this.settleWindowMs = settleWindowMs;
+    this.filePresence   = filePresence;
   }
 
   /**
@@ -370,19 +394,110 @@ export class IndexerService {
   // Job handlers
   // -------------------------------------------------------------------------
 
-  /** The `reconcile` job: the clean-up pass for one repo. */
+  /**
+   * The `reconcile` job: the clean-up pass for one repo, then -- only when
+   * it removed something -- one whole-repo resolver run and the removal of
+   * the repo's cached exploration results, all inside the job. It arms no
+   * settle timer: the settle pass runs on a timer outside the queue, and
+   * one per removed file would mean one whole-repo resolver run per file.
+   */
   private async reconcileJob(repoPath: string): Promise<void> {
     const result = await this.reconcileRepo(repoPath);
+    if (result.removedAbsent + result.removedIgnored > 0) {
+      await this.resolveAfterReconcile(repoPath);
+      // The cache key carries the repo's lastIndexed, which this job does
+      // not stamp; without this an exploration cached before the clean-up
+      // could still answer with the removed files.
+      await deleteCachedExplorationsForRepo(repoPath);
+    }
     log.info({ repo: repoPath, ...result }, 'index clean-up complete');
   }
 
   /**
    * Compare the files the store holds for `repoPath` with the disk and
-   * the repo's ignore list, and remove the stale ones. Returns the counts.
+   * the repo's ignore list, and remove the stale ones: a file that is no
+   * longer on disk, or that has a path segment (relative to the repo) in
+   * the ignore list. Only THIS repo's entities and unresolved relations
+   * of the file go -- the watcher's file deletes match a path in every
+   * repo, which would strip a nested repo's entities for files it does
+   * not ignore. Runs no resolver and touches no cache; the callers
+   * (`reconcileJob`, `fullIndex`) do what has to follow.
    */
   async reconcileRepo(repoPath: string): Promise<ReconcileResult> {
-    void repoPath;
-    return { compared: 0, removedAbsent: 0, removedIgnored: 0, notChecked: 0 };
+    let compared = 0, removedAbsent = 0, removedIgnored = 0, notChecked = 0;
+
+    // A repo whose root is away (unmounted volume, moved directory) would
+    // make every stored file look deleted. Remove nothing.
+    let rootIsDir = false;
+    try { rootIsDir = statSync(repoPath).isDirectory(); } catch { rootIsDir = false; }
+    if (!rootIsDir) {
+      log.warn({ repo: repoPath }, 'index clean-up skipped: repo root is not a directory');
+      return { compared, removedAbsent, removedIgnored, notChecked };
+    }
+
+    const ignoreSet = new Set(resolveRepoIgnore(repoPath));
+    const stored = await listEntityFilesForRepo(this.db, repoPath);
+
+    for (const [file, ids] of stored) {
+      compared++;
+
+      let reason: 'absent' | 'ignored' | null = null;
+      if (hasIgnoredSegment(file, repoPath, ignoreSet)) {
+        reason = 'ignored';
+      } else {
+        try {
+          this.filePresence(file);
+        } catch (err) {
+          const code = (err as NodeJS.ErrnoException | null)?.code;
+          if (code !== undefined && ABSENT_CODES.has(code)) {
+            reason = 'absent';
+          } else {
+            // Permission / IO error: presence unknown, so keep the file.
+            notChecked++;
+            log.debug({ file, code }, 'index clean-up: presence not determined, keeping');
+          }
+        }
+      }
+      if (reason === null) continue;
+
+      await deleteEntitiesById(this.db, ids);
+      await deleteUnresolvedForRepoFile(this.db, repoPath, file);
+      if (reason === 'absent') removedAbsent++; else removedIgnored++;
+    }
+
+    return { compared, removedAbsent, removedIgnored, notChecked };
+  }
+
+  /**
+   * The resolver work that follows a clean-up that removed files: one
+   * whole-repo cross-file pass, then the two endpoint passes (non-fatal,
+   * as in the settle pass).
+   */
+  protected async resolveAfterReconcile(repoPath: string): Promise<void> {
+    const sourceRoots = detectSourceRoots(repoPath);
+    const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots });
+    log.info({ repo: repoPath, ...cf }, 'cross-file pass after index clean-up');
+    try {
+      await resolveExternalEndpoints({ db: this.db, repo: repoPath });
+    } catch (err) {
+      log.warn(
+        { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
+        'external-endpoint pass after index clean-up failed (non-fatal)',
+      );
+    }
+    try {
+      await resolveMessagingEndpoints({ db: this.db, repo: repoPath });
+    } catch (err) {
+      log.warn(
+        { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
+        'messaging-endpoint pass after index clean-up failed (non-fatal)',
+      );
+    }
+  }
+
+  /** Test seam: how many per-repo settle timers are armed. */
+  _armedSettleTimersForTest(): number {
+    return this.settleTimers.size;
   }
 
   private async fullIndex(repoPath: string): Promise<void> {
@@ -546,7 +661,14 @@ export class IndexerService {
       this.scheduleSettle(repoPath, filePath);
       return;
     }
-    // create or update
+    // create or update. A file the repo's ignore list excludes is not
+    // indexed: the walker applies the list, but a `file` job (the watcher,
+    // or the daemon's `index.file` request for any path) did not, so an
+    // ignored file could re-enter the index between two clean-ups.
+    if (hasIgnoredSegment(filePath, repoPath, new Set(resolveRepoIgnore(repoPath)))) {
+      log.debug({ file: filePath, event }, 'file event skipped: excluded by the repo ignore list');
+      return;
+    }
     await this.indexFile(filePath, repoPath, true);
     this.scheduleSettle(repoPath, filePath);
     // Doc-summariser follow-up: if the touched file produced doc /

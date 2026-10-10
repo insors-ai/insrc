@@ -4,7 +4,7 @@
     "epicHash": "2764c29d7ccb66a5",
     "storyId": "S001",
     "createdAt": "2026-10-10T15:41:06.406Z",
-    "updatedAt": "2026-10-10T15:41:06.406Z",
+    "updatedAt": "2026-10-10T15:43:41.783Z",
     "authoredBy": "controller",
     "standalone": true
   },
@@ -13,9 +13,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "Added listEntityFilesForRepo (src/db/entities.ts) and deleteUnresolvedForRepoFile (src/db/relations.ts), both limited to one repository, with three tests over a temporary store. Five mutations of the two functions were each caught by a test.",
+    "summary": "Added the `reconcile` job kind to IndexJob, counted and deduplicated it per repository in the queue, and dispatched it from processJob to a reconcileRepo method that is a stub in this task. Four mutations were each caught by a test.",
     "testRecord": {
       "md": "docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/TESTS.md"
     },
@@ -25,30 +29,65 @@
           "file": ".insrc/artifacts/PLAN-2764c29d7ccb66a5-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T15:41:06.406Z"
+        "timestamp": "2026-10-10T15:43:41.783Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/queue-depth-for-repo.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T15:43:41.783Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/queue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T15:43:41.783Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/entity-files-for-repo.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T15:41:06.406Z"
+        "timestamp": "2026-10-10T15:43:41.783Z"
       },
       {
         "target": {
           "file": "src/db/entities.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T15:41:06.406Z"
+        "timestamp": "2026-10-10T15:43:41.783Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T15:41:06.406Z"
+        "timestamp": "2026-10-10T15:43:41.783Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/reconcile.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T15:43:41.783Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T15:43:41.783Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T15:43:41.783Z"
       }
     ],
-    "commit": "0d26867b"
+    "commit": "c8667e0b"
   }
 }

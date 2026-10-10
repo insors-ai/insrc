@@ -127,8 +127,9 @@ test('unknownStages counts every stage id outside the six, and those items are i
   assert.equal(unknownStages(snapshot([item({ id: 'X', stage: 'scoped' })])).size, 0);
 });
 
-const ev = (artifactId: string, state: 'approved' | 'rejected' | 'pending', review: unknown = null) =>
-  fixtureEvidence(artifactId, 'LLD', { openWith: 'review-view', approval: { state, at: null }, review: review as never });
+/** An LLD evidence entry with this approval state (a known one, or a code this build does not know) and review. */
+const ev = (artifactId: string, state: string, review: unknown = null) =>
+  fixtureEvidence(artifactId, 'LLD', { openWith: 'review-view', approval: { state: state as never, at: null }, review: review as never });
 const verdictOf = (effectiveVerdict: 'pass' | 'warn' | 'block', blocking: boolean) => review({ verdict: effectiveVerdict, effectiveVerdict, blocking });
 const cardOfId = (m: StagesBody, id: string) => m.sections.flatMap(c => c.cards).find(c => c.itemId === id);
 const columnOf = (m: StagesBody, id: string) => m.sections.find(c => c.cards.some(k => k.itemId === id))?.stage;
@@ -253,12 +254,9 @@ test('accessibleLabel carries the compactId and task summary, and badges are unc
 });
 
 test('an approval state or review verdict this build does not know shows its code, ranks worst and is neutral, with no undefined label', () => {
-  const evOf = (artifactId: string, state: string, verdict: string | null) => fixtureEvidence(artifactId, 'LLD', {
-    approval: { state: state as never, at: null },
-    review: verdict === null ? null : { ...verdictOf('pass', false), verdict: verdict as never, effectiveVerdict: verdict as never },
-  });
+  const unknownVerdict = review({ verdict: 'escalated' as never, effectiveVerdict: 'escalated' as never });
   const s1 = item({ id: 'S1', stage: 'design-plan', reasonIds: ['A', 'B'],
-    evidence: [evOf('A', 'approved', 'pass'), evOf('B', 'superseded', 'escalated')] as never });
+    evidence: [ev('A', 'approved', verdictOf('pass', false)), ev('B', 'superseded', unknownVerdict)] as never });
   const card = cardOfId(build(snapshot([s1])), 'S1')!;
   assert.deepEqual(card.badges.slice(0, 2), [
     { kind: 'approval', label: 'superseded', tone: 'neutral' },

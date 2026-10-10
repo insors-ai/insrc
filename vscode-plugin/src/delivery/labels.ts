@@ -55,6 +55,11 @@ export function labelOf<K extends string>(table: Readonly<Record<K, string>>, co
   return Object.hasOwn(table, code) ? table[code] : String(code);
 }
 
+/** A count with its noun: '1 item', '3 items'. Every count the board writes in words goes through this. */
+export function plural(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
 /** An ISO time as 'YYYY-MM-DD HH:MM UTC', or the string itself when it is not one; every timestamp the board shows. */
 export function readableTime(iso: string): string {
   const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(iso);

@@ -16,7 +16,7 @@ import type {
   ReviewVerdict,
   TaskResult,
 } from '../delivery-contract.js';
-import { DISPLAY_LABELS, msBetween, readableTime, STAGE_ORDER } from '../labels.js';
+import { DISPLAY_LABELS, msBetween, plural, readableTime, STAGE_ORDER } from '../labels.js';
 
 // Exhaustive member lists: each Record fails to compile if its union gains or loses a member.
 const STAGES: Record<DeliveryStage, true> = {
@@ -90,4 +90,8 @@ test('msBetween measures from one ISO time to a later one, counts a future time 
   assert.equal(msBetween('2026-10-09T10:00:00.000Z', '2026-10-09T10:01:30.000Z'), 90_000);
   assert.equal(msBetween('2026-10-09T10:05:00.000Z', '2026-10-09T10:00:00.000Z'), 0);
   assert.equal(msBetween('sometime', '2026-10-09T10:00:00.000Z'), null);
+});
+
+test('plural writes a count with the noun that fits it', () => {
+  assert.deepEqual([plural(0, 'item', 'items'), plural(1, 'item', 'items'), plural(2, 'story', 'stories')], ['0 items', '1 item', '2 stories']);
 });

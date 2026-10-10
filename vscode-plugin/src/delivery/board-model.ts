@@ -16,7 +16,7 @@
 
 import type { BadgeView, BoardScope, CardView, StagesBody, StageSectionView, StatePanelView } from './board-protocol.js';
 import type { AttentionReason, DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
-import { approvalTone, labelOf, STAGE_ORDER, verdictTone, type DisplayLabels } from './labels.js';
+import { approvalTone, labelOf, plural, STAGE_ORDER, verdictTone, type DisplayLabels } from './labels.js';
 
 /** Cards shown per column before show-more, and how many each show-more adds. */
 export const BOARD_PAGE_SIZE = 50;
@@ -286,7 +286,6 @@ export function attentionLabel(count: number): string {
   return count === 1 ? '1 needs attention' : `${count} need attention`;
 }
 
-const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
 
 /** 'N items · M need attention'; with Needs attention on, 'M of N items need attention' (N counted without the toggle). */
 export function totalsLabel(matched: number, needing: number, attentionOnly: boolean, unfiltered: number, noun: readonly [string, string]): string {

@@ -18,7 +18,7 @@ import type { DeliveryEvidenceView, DeliveryItemView, DeliverySnapshot } from '.
 import type { DisplayLabels } from './labels.js';
 import type { BadgeView, ChainRowView, EvidenceRowView, ItemDetailsViewModel, LinkView, TaskRowView } from './board-protocol.js';
 import { badgesOf, compactIdOf, indexItems, isCardKind, taskSummaryOf, titleOf, type ItemIndex } from './board-model.js';
-import { approvalTone, labelOf, readableTime, taskResultTone } from './labels.js';
+import { approvalTone, labelOf, plural, readableTime, taskResultTone } from './labels.js';
 
 export interface PlanTaskView {
   readonly id: string;
@@ -68,7 +68,7 @@ function conflictSentence(item: DeliveryItemView, byId: ItemIndex): string | nul
     return t === undefined ? id : titleOf(t);
   });
   const parts: string[] = [];
-  if (failed.length > 0) parts.push(`${failed.length} task result${failed.length === 1 ? '' : 's'} failed (${failed.join(', ')})`);
+  if (failed.length > 0) parts.push(`${plural(failed.length, 'task result', 'task results')} failed (${failed.join(', ')})`);
   if (item.conflict.storyLevelFailed) parts.push('the story-level result failed');
   if (parts.length === 0) return 'The build is approved while a validation result failed.';
   return `The build is approved while ${parts.join(' and ')}.`;

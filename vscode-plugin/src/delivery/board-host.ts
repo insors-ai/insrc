@@ -45,7 +45,7 @@ import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
 import { createDetailsMemory, type DetailsMemory } from './details-memory.js';
 import { errorText } from './guards.js';
-import { DISPLAY_LABELS, msBetween } from './labels.js';
+import { DISPLAY_LABELS, msBetween, plural } from './labels.js';
 
 export const BOARD_VIEW_TYPE = 'insrc.deliveryBoard';
 export const BOARD_TITLE = 'Delivery board';
@@ -507,7 +507,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const at = deps.now();
     if (seq !== state.latestSeq) {
       const n = result.ok ? result.value.items.length : 0;
-      const answer = result.ok ? `${n} item${n === 1 ? '' : 's'}` : result.failure.kind;
+      const answer = result.ok ? plural(n, 'item', 'items') : result.failure.kind;
       log.warn(`delivery board: dropped the answer to refresh ${seq} (${answer}); refresh ${state.latestSeq} is newer (${elapsed(started)})`);
       return;
     }

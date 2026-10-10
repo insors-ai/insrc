@@ -27,7 +27,7 @@ import type {
   BoardDownMessage, BoardScreen, CrumbView, Density, Envelope, ItemDetailsViewModel, ItemTab, ListView, ScreenBody, ScreenModel,
   StatePanelView, StatusView,
 } from './board-protocol.js';
-import { labelOf, msBetween, readableTime, type DisplayLabels } from './labels.js';
+import { labelOf, msBetween, plural, readableTime, type DisplayLabels } from './labels.js';
 
 export interface AppliedSnapshot {
   readonly snapshot: DeliverySnapshot;
@@ -245,7 +245,7 @@ function partialNotice(s: DeliverySnapshot): string | null {
   if (!isPartial(s)) return null;
   const parts: string[] = [];
   if (s.unreadableCount > 0) {
-    parts.push(`${s.unreadableCount} record${s.unreadableCount === 1 ? '' : 's'} could not be read; every readable item is shown.`);
+    parts.push(`${plural(s.unreadableCount, 'record', 'records')} could not be read; every readable item is shown.`);
   }
   for (const n of s.notices) parts.push(n.message);
   return parts.join(' ');
@@ -259,7 +259,7 @@ function freshnessLabel(takenAt: string | null, now: string): string | null {
   if (ms < 60_000) return 'Updated just now';
   if (ms < 3_600_000) {
     const minutes = Math.floor(ms / 60_000);
-    return `Updated ${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+    return `Updated ${plural(minutes, 'minute', 'minutes')} ago`;
   }
   return `Updated ${readableTime(takenAt)}`;
 }
@@ -269,7 +269,7 @@ function partialPanel(s: DeliverySnapshot): StatePanelView | null {
   if (!isPartial(s)) return null;
   const affected: { artifactIds: readonly string[]; text: string }[] = [];
   if (s.unreadableCount > 0) {
-    affected.push({ artifactIds: [], text: `${s.unreadableCount} record${s.unreadableCount === 1 ? '' : 's'} could not be read.` });
+    affected.push({ artifactIds: [], text: `${plural(s.unreadableCount, 'record', 'records')} could not be read.` });
   }
   for (const n of s.notices) affected.push({ artifactIds: [...n.artifactIds], text: n.message });
   return {
@@ -418,7 +418,7 @@ export function refreshAnnouncement(state: BoardState, now: string): string | nu
     const n = placeable.length;
     const attention = placeable.filter(i => i.needsAttention).length;
     const lead = state.selectionNotice === null ? '' : `${state.selectionNotice} `;
-    return `${lead}Board refreshed: ${n} item${n === 1 ? '' : 's'}, ${attention} needing attention`;
+    return `${lead}Board refreshed: ${plural(n, 'item', 'items')}, ${attention} needing attention`;
   }
   return statusView(state.status, now).message;
 }

@@ -11,6 +11,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import type { ChatPanelChannel } from '../../chat/chat-panel.js';
 import { BOARD_STYLE, BOARD_VIEW_TYPE, BOARD_WEBVIEW_SCRIPT, createDeliveryBoardHost, renderBoardDocument } from '../board-host.js';
@@ -1340,29 +1342,76 @@ test('the refresh announcement text is unchanged after statusView takes now', as
   assert.match(last.text, /^The refresh failed at 2026-10-09T12:00:00.000Z: bad store Showing the board from 2026-10-09T10:00:00.000Z\.$/);
 });
 
-test('BOARD_STYLE keeps a 320px minimum, card and column minimums, the records table scroll wrapper and only var(--vscode-*) colours, with no hiding rule', () => {
+/** The mocks' product rules (from '.appbar' to '.center', outside the container rules), as selector lists. */
+function mockProductSelectors(): string[] {
+  const html = readFileSync(fileURLToPath(new URL('../../../../docs/plans/delivery-board-screen-mocks.html', import.meta.url)), 'utf8');
+  const css = html.slice(html.indexOf('<style>') + 7, html.indexOf('</style>'));
+  const product = css.slice(css.indexOf('.appbar{'), css.indexOf('}', css.indexOf('.center{')) + 1).replace(/\/\*[^*]*\*\//g, '');
+  const outside = product.replace(/@container[^{]*\{(?:[^{}]*\{[^}]*\})*\s*\}/g, '');
+  return [...outside.matchAll(/([^{}]+)\{[^}]*\}/g)].map(m => m[1]!.trim()).filter(sel => sel.length > 0);
+}
+
+/** Selectors of BOARD_STYLE's top-level rules. */
+const boardSelectors = (): Set<string> => new Set([...BOARD_STYLE.replace(/@container[^{]*\{(?:[^{}]*\{[^}]*\})*\}/g, '').matchAll(/([^{}]+)\{[^}]*\}/g)].flatMap(m => m[1]!.split(',').map(x => x.trim())));
+
+test('BOARD_STYLE carries the mocks\' product rules with theme colours and no hiding rule', () => {
+  // The mocks' anchors are the board's buttons; the details marker is hidden by list-style alone.
+  const retarget: Record<string, string | null> = {
+    '.seg a': '.seg button', '.seg a:last-child': '.seg button:last-child', '.seg a[aria-current="page"]': '.seg button[aria-current="page"]',
+    '.subtabs a': '.subtabs button', '.subtabs a[aria-current="page"]': '.subtabs button[aria-selected="true"]',
+    '.acc>summary::-webkit-details-marker': null,
+    // Mock-only content the board does not show: the purpose paragraph, quoted text, file excerpts and the gallery's state grid.
+    '.purpose': null, '.quote': null, '.file': null, '.file .focus': null, '.states': null,
+  };
+  const have = boardSelectors();
+  const missing: string[] = [];
+  for (const list of mockProductSelectors()) {
+    for (const raw of list.split(',').map(x => x.trim())) {
+      const sel = raw in retarget ? retarget[raw] : raw;
+      if (sel !== null && sel !== undefined && !have.has(sel)) missing.push(raw);
+    }
+  }
+  assert.deepEqual(missing, [], 'every mock product selector has a board rule');
+  assert.ok(have.has('.seg button:first-child'), 'the segmented group rounds its first button instead of clipping');
+  assert.doesNotMatch(BOARD_STYLE, /\.seg a\b|\.subtabs a\b/, 'no anchor selectors: the board uses buttons');
+  assert.doesNotMatch(BOARD_STYLE, /wordmark\{display/, 'the wordmark is never hidden by CSS');
+  assert.match(BOARD_STYLE, /\.acc>summary\{list-style:none;/);
+
+  // Theme colours only; no rule hides content.
   assert.doesNotMatch(BOARD_STYLE, /#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\(/, 'no literal colour');
   for (const v of BOARD_STYLE.match(/var\(--[a-zA-Z-]+/g) ?? []) assert.match(v, /^var\(--(vscode-|gap|pad|small)/, v);
   for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /text-overflow/, /overflow:\s*hidden/, /height:\s*0[;}]/]) {
     assert.doesNotMatch(BOARD_STYLE, hiding, `no ${hiding} rule`);
   }
-  // Minimum widths: the page, the card grid, the epic row's name, the story's two columns, the records table.
+  for (const tone of ['success', 'warning', 'danger']) assert.match(BOARD_STYLE, new RegExp(`\\[data-tone="${tone}"\\]\\{color:var\\(--vscode-`), `${tone} pills are tinted from the theme`);
+  assert.match(BOARD_STYLE, /\[data-tone="neutral"\]\{color:var\(--vscode-descriptionForeground\);\}/);
+
+  // Minimum widths: the page, the card grid, the rows' name column, the story's two columns, the records table.
   assert.match(BOARD_STYLE, /body\{[^}]*min-width:320px;/);
-  assert.match(BOARD_STYLE, /#main\{container-type:inline-size;\}/);
   assert.match(BOARD_STYLE, /\.cards\{display:grid;grid-template-columns:repeat\(auto-fill,minmax\(min\(240px,100%\),1fr\)\);/);
-  assert.match(BOARD_STYLE, /\.epic-row\{grid-template-columns:minmax\(220px,1fr\) /);
-  assert.match(BOARD_STYLE, /\.item-cols\{display:grid;grid-template-columns:minmax\(340px,1\.4fr\) minmax\(280px,1fr\);/);
-  assert.match(BOARD_STYLE, /@container \(max-width:760px\)\{\.item-cols\{grid-template-columns:minmax\(0,1fr\);\}\.item-side\{order:-1;\}\}/, 'the stage explanation and chain come first when stacked');
-  assert.match(BOARD_STYLE, /\.table-wrap\{overflow-x:auto;/);
-  assert.match(BOARD_STYLE, /table\.records\{min-width:620px;/);
-  // The old composite page is gone.
-  for (const gone of [/repeat\(6,/, /@media \(max-width:600px\)/, /#details/, /\.layout/]) assert.doesNotMatch(BOARD_STYLE, gone, `no ${gone}`);
-  for (const tone of ['success', 'warning', 'danger', 'neutral']) assert.match(BOARD_STYLE, new RegExp(`\\[data-tone="${tone}"\\]\\{color:var\\(--vscode-`), `${tone} pills are tinted from the theme`);
-  // Density changes spacing and font size only.
+  assert.match(BOARD_STYLE, /\.row\{display:grid;grid-template-columns:minmax\(220px,1fr\) 150px auto;/);
+  assert.match(BOARD_STYLE, /\.issue-row\{grid-template-columns:minmax\(220px,1fr\) auto;\}/);
+  assert.match(BOARD_STYLE, /\.cols\{display:grid;grid-template-columns:minmax\(340px,1\.45fr\) minmax\(280px,1fr\);/);
+  assert.match(BOARD_STYLE, /\.table-wrap\{overflow-x:auto;\}/);
+  assert.match(BOARD_STYLE, /table\.records\{min-width:620px;\}/);
+
+  // Density changes spacing and the small text only.
   assert.match(BOARD_STYLE, /body\[data-density="compact"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;]+;font-size:[^;}]+;\}/);
   assert.match(BOARD_STYLE, /body\[data-density="comfortable"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;}]+;\}/);
   assert.match(BOARD_STYLE, /:focus-visible\{outline:2px solid var\(--vscode-focusBorder\)/);
-  assert.match(BOARD_STYLE, /\.stage>summary\{cursor:pointer;/, 'a closed section\'s summary stays visible and clickable');
+});
+
+test('the narrow layout applies the mocks\' container rules to the body', () => {
+  // The container is the page wrapper, so its rules reach .body (a container query cannot style its own container).
+  assert.match(BOARD_STYLE, /\.page\{container-type:inline-size;/);
+  assert.doesNotMatch(BOARD_STYLE, /(^|\})(#main|\.body)\{[^}]*container-type/, 'neither main nor .body is the container');
+  const rule = (width: number): string => BOARD_STYLE.match(new RegExp(`@container \\(max-width:${width}px\\)\\{((?:[^{}]*\\{[^}]*\\})*)\\}`))?.[1] ?? '';
+  const at760 = rule(760);
+  for (const r of ['.cols{grid-template-columns:minmax(0,1fr);}', '.row{grid-template-columns:minmax(0,1fr) 120px;}', '.issue-row{grid-template-columns:minmax(0,1fr);}',
+    '.search{margin-left:0;flex:1 1 100%;min-width:0;}', '.head.between{flex-wrap:wrap;}']) assert.ok(at760.includes(r), `760: ${r}`);
+  const at480 = rule(480);
+  for (const r of ['.row{grid-template-columns:minmax(0,1fr);}', '.seg button{padding:4px 9px;}', '.body{padding:12px;}']) assert.ok(at480.includes(r), `480: ${r}`);
+  assert.doesNotMatch(at480, /wordmark|\.seg a/);
 });
 
 test('a refresh timing that cannot be measured says so in the log instead of reading as instant', async () => {

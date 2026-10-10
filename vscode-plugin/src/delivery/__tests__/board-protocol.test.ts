@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-/** E2 s1 / sc3 — only well-formed v1 up-messages get past the parser. */
+/** E2 s1 / sc3, ISSUE-348d4663 — only well-formed v1 up-messages get past the parser. */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,17 +17,13 @@ test('every valid up-message parses and a wrong version, unknown type or mistype
   const valid: BoardUpMessage[] = [
     { type: 'ready' },
     { type: 'refresh' },
-    { type: 'set-view', view: 'board' },
+    { type: 'set-view', view: 'all' },
     { type: 'set-view', view: 'epics' },
-    { type: 'set-view', view: 'issues' },
-    { type: 'set-scope', scope: { kind: 'all' } },
-    { type: 'set-scope', scope: { kind: 'standalone' } },
-    { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'E20261007aaaaaaaa' } },
     { type: 'set-search', search: '' },
     { type: 'set-search', search: 'board' },
     { type: 'set-attention', on: true },
-    { type: 'select-item', itemId: 'E20261007aaaaaaaa:S001' },
-    { type: 'close-details' },
+    { type: 'open-item', itemId: 'E20261007aaaaaaaa:S001' },
+    { type: 'back' },
     { type: 'open-evidence', itemId: 'E20261007aaaaaaaa:S001', artifactId: 'LLD-aaaaaaaaaaaaaaaa-s1' },
     { type: 'set-density', density: 'compact' },
     { type: 'set-density', density: 'comfortable' },
@@ -42,11 +38,9 @@ test('every valid up-message parses and a wrong version, unknown type or mistype
     env({ type: 'refresh' }, 2),
     env({ type: 'approve', artifactId: 'LLD-x' }),
     env({ type: 'set-view', view: 'kanban' }),
-    env({ type: 'set-scope', scope: { kind: 'epic' } }),
-    env({ type: 'set-scope', scope: 'all' }),
     env({ type: 'set-search', search: 3 }),
     env({ type: 'set-attention', on: 'yes' }),
-    env({ type: 'select-item', itemId: '' }),
+    env({ type: 'open-item', itemId: '' }),
     env({ type: 'open-evidence', itemId: 'x' }),
     env({ type: 'set-density', density: 'cozy' }),
     env('refresh'),
@@ -101,4 +95,14 @@ test('every new up-message parses and a malformed crumb, back or set-view gives 
     env({ type: 'back' }, 2),
   ];
   for (const raw of invalid) assert.equal(parseBoardUpMessage(raw), null, JSON.stringify(raw));
+});
+
+test('the removed set-scope, select-item, close-details and set-view board give null', () => {
+  for (const gone of [
+    { type: 'set-scope', scope: { kind: 'all' } },
+    { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'E20261007aaaaaaaa' } },
+    { type: 'select-item', itemId: 'E20261007aaaaaaaa:S001' },
+    { type: 'close-details' },
+    { type: 'set-view', view: 'board' },
+  ]) assert.equal(parseBoardUpMessage(env(gone)), null, JSON.stringify(gone));
 });

@@ -71,7 +71,7 @@ export function verdictTone(verdict: ReviewVerdict): 'success' | 'warning' | 'ne
   return verdict === 'pass' ? 'success' : verdict === 'warn' ? 'warning' : 'neutral';
 }
 
-/** The six stages in workflow order, the order the board shows its columns. */
+/** The six stages in workflow order, the order the board shows its stage sections. */
 export const STAGE_ORDER: readonly DeliveryStage[] = [
   'scoped',
   'design-plan',

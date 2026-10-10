@@ -4,20 +4,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * The delivery board's view model (E2 s2, sc5): a pure function from the shown
- * snapshot, the reader's selection and the host's paging to six stage columns
- * of cards.
+ * The delivery board's cards and board screens (E2 s2, sc5; screens, ISSUE-348d4663): a pure function from the shown
+ * snapshot, a screen's filter and its paging to six stage sections of cards.
  *
- * Cards are the stories and issues whose stage is one of the six. An item
- * matches when it is in scope, contains the search and, with Needs attention
- * on, the daemon says it needs attention. Matches go to the column of their
- * stage in snapshot order (sorted by id, so equal timestamps cannot reorder
- * them), every count is taken before paging, and each column then shows its
- * first page. Nothing the daemon decided (stage, attention, conflict) is
+ * Cards are the stories and issues whose stage is one of the six. An item matches when it is in the screen's scope,
+ * contains the search and, with Needs attention on, the daemon says it needs attention. Matches go to the section of
+ * their stage in snapshot order (sorted by id, so equal timestamps cannot reorder them), every count is taken before
+ * paging, and each section then shows its first page. Nothing the daemon decided (stage, attention, conflict) is
  * derived here. The same arguments always give an equal model.
  */
 
-import type { BadgeView, BoardScope, BoardViewModel, CardView, StagesBody, StageSectionView, StatePanelView } from './board-protocol.js';
+import type { BadgeView, BoardScope, CardView, StagesBody, StageSectionView, StatePanelView } from './board-protocol.js';
 import type { AttentionReason, DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
 import { approvalTone, labelOf, STAGE_ORDER, verdictTone, type DisplayLabels } from './labels.js';
 
@@ -258,17 +255,12 @@ export function selectMatches(snapshot: DeliverySnapshot, filter: MatchFilter, l
   return out;
 }
 
-/** The epics the scope control offers, in snapshot order; every view carries the same list. */
-export function scopeOptionsOf(snapshot: DeliverySnapshot): BoardViewModel['scopeOptions'] {
-  return snapshot.items.filter(i => i.kind === 'epic').map(e => ({ epicItemId: e.id, title: titleOf(e) }));
-}
-
 /** How many matches the daemon says need attention; every view counts it this way. */
 export function attentionCount(matches: readonly MatchedCard[]): number {
   return matches.filter(m => m.item.needsAttention).length;
 }
 
-/** Matches bucketed by stage, every stage present, in STAGE_ORDER; each bucket keeps snapshot order. The board's columns use it. */
+/** Matches bucketed by stage, every stage present, in STAGE_ORDER; each bucket keeps snapshot order. The board screens' stage sections use it. */
 export function groupByStage(matches: readonly MatchedCard[]): ReadonlyMap<DeliveryStage, readonly MatchedCard[]> {
   const out = new Map<DeliveryStage, MatchedCard[]>(STAGE_ORDER.map(s => [s, []]));
   for (const m of matches) out.get(m.stage)?.push(m);

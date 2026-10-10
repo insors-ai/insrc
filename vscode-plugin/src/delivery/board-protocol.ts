@@ -10,11 +10,13 @@
  * the host resolves against its current snapshot, so a crafted message cannot
  * name a path. parseBoardUpMessage is the gate every inbound message passes.
  *
- * The 'items' down-message (HLD amendment AMD-6a1315585c38c41c-1) carried s1's
- * interim item list; s2's board view model (sc5) replaces it, and the variant
- * stays declared but unsent. The 'show-more' up-message (AMD-6a1315585c38c41c-2)
- * asks for the next page of one column. The epic rollup and issue view models
- * are s3's; the item details model (sc6) and its task and evidence rows are s4's.
+ * Screens (ISSUE-348d4663): two down-messages carry what the board shows, the
+ * status and one screen, which replaces the whole screen; the up-messages name
+ * where the reader goes (one of the four views, an epic, an item, a tab, Back,
+ * a crumb) and what they filter. The 'show-more' up-message
+ * (AMD-6a1315585c38c41c-2) asks for the next page of one stage. The card and
+ * rollup row views are s2's and s3's; the item details model (sc6) and its task
+ * and evidence rows are s4's.
  */
 
 import type { Envelope } from '../chat/protocol.js';
@@ -51,13 +53,6 @@ export interface StatusView {
   readonly panel: StatePanelView | null;
 }
 
-export interface ItemListEntry {
-  readonly itemId: string;
-  readonly kind: 'epic' | 'story' | 'task' | 'issue';
-  readonly title: string | null;
-  readonly stageLabel: string | null;
-}
-
 /** One text-labelled signal on a card (sc5); colour comes from tone but the label always carries the meaning. */
 export interface BadgeView {
   /** 'stage' and 'tasks' appear only among the details chips. */
@@ -83,29 +78,10 @@ export interface CardView {
   readonly accessibleLabel: string;
 }
 
-export interface ColumnView {
-  readonly stage: DeliveryStage;
-  readonly label: string;
-  /** Matches in the selection, including cards behind show-more. */
-  readonly total: number;
-  readonly cards: readonly CardView[];
-  readonly hiddenCount: number;
-}
-
-/** What the board view shows for a snapshot and selection (sc5, owned by s2). */
-export interface BoardViewModel {
-  readonly columns: readonly ColumnView[];
-  readonly totals: { readonly items: number; readonly needsAttention: number };
-  readonly scopeOptions: readonly { readonly epicItemId: string; readonly title: string }[];
-  readonly emptySelection: boolean;
-  /** The panel the view shows instead of matches: no matches (with Clear filters), or, for issues, none on the board. */
-  readonly emptyPanel: StatePanelView | null;
-}
-
-/** One epic's rollup row (s3): counts only, no cards. The 'Not in an epic' row has no epic id and no compact id. */
+/** One epic's row on Epics, and its board's summary (s3): counts only, no cards, over the epic's whole scope. */
 export interface EpicRollupRowView {
-  readonly epicItemId: string | null;
-  readonly compactId: string | null;
+  readonly epicItemId: string;
+  readonly compactId: string;
   readonly title: string;
   readonly storiesTotal: number;
   readonly storiesComplete: number;
@@ -120,19 +96,6 @@ export interface EpicRollupRowView {
   /** 'No open gates', '1 needs attention' or 'N need attention'. */
   readonly attentionLabel: string;
   readonly attentionTone: 'warning' | 'success';
-}
-
-/** The epic rollup (s3): one row per listed epic, then the work that counts towards no epic. */
-export interface EpicRollupViewModel {
-  readonly epics: readonly EpicRollupRowView[];
-  readonly notInEpic: EpicRollupRowView;
-  readonly totals: { readonly items: number; readonly needsAttention: number };
-  /** The epics the scope control offers, as on the board, so the control stays current on every tab. */
-  readonly scopeOptions: BoardViewModel['scopeOptions'];
-  readonly selectedItemId: string | null;
-  readonly emptySelection: boolean;
-  /** The panel the view shows instead of matches: no matches (with Clear filters), or, for issues, none on the board. */
-  readonly emptyPanel: StatePanelView | null;
 }
 
 /** A followable reference to another work item; ids only, resolved by the host. */
@@ -153,18 +116,6 @@ export interface IssueEntryView {
   readonly parentNotice: string | null;
   /** Each fix story among the issue's children, in childIds order. */
   readonly fixStories: readonly LinkView[];
-}
-
-/** The issue view (s3): each matching issue with its parent and its fix stories. */
-export interface IssueViewModel {
-  readonly issues: readonly IssueEntryView[];
-  readonly totals: { readonly issues: number; readonly needsAttention: number };
-  /** The epics the scope control offers, as on the board. */
-  readonly scopeOptions: BoardViewModel['scopeOptions'];
-  readonly selectedItemId: string | null;
-  readonly emptySelection: boolean;
-  /** The panel the view shows instead of matches: no matches (with Clear filters), or, for issues, none on the board. */
-  readonly emptyPanel: StatePanelView | null;
 }
 
 /** One task of the selected story (s4): its result, and its dependencies and checks from the story's PLAN. */
@@ -345,15 +296,10 @@ export interface ScreenModel {
 /** Host -> webview. Each message replaces what it names; nothing is merged. */
 export type BoardDownMessage =
   | { readonly type: 'status'; readonly status: StatusView }
-  | { readonly type: 'items'; readonly items: readonly ItemListEntry[] }
-  | { readonly type: 'board'; readonly model: StagesBody }
-  | { readonly type: 'epics'; readonly model: EpicsBody }
-  | { readonly type: 'issues'; readonly model: IssuesBody }
-  | { readonly type: 'details'; readonly model: ItemDetailsViewModel | null }
   | { readonly type: 'screen'; readonly model: ScreenModel }
   | { readonly type: 'announce'; readonly text: string };
 
-export type BoardView = 'board' | 'epics' | 'issues';
+/** What a board screen matches: everything, standalone work, or one epic's work. Internal to the host's matching. */
 export type BoardScope = { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' };
 export type Density = 'compact' | 'comfortable';
 
@@ -361,17 +307,14 @@ export type Density = 'compact' | 'comfortable';
 export type BoardUpMessage =
   | { readonly type: 'ready' }
   | { readonly type: 'refresh' }
-  | { readonly type: 'set-view'; readonly view: BoardView | ListView }
+  | { readonly type: 'set-view'; readonly view: ListView }
   | { readonly type: 'open-epic'; readonly epicItemId: string }
   | { readonly type: 'open-item'; readonly itemId: string }
   | { readonly type: 'set-item-tab'; readonly tab: ItemTab }
   | { readonly type: 'back' }
   | { readonly type: 'go-to-crumb'; readonly index: number }
-  | { readonly type: 'set-scope'; readonly scope: BoardScope }
   | { readonly type: 'set-search'; readonly search: string }
   | { readonly type: 'set-attention'; readonly on: boolean }
-  | { readonly type: 'select-item'; readonly itemId: string }
-  | { readonly type: 'close-details' }
   | { readonly type: 'open-evidence'; readonly itemId: string; readonly artifactId: string }
   | { readonly type: 'set-density'; readonly density: Density }
   | { readonly type: 'show-more'; readonly stage: DeliveryStage }
@@ -379,17 +322,8 @@ export type BoardUpMessage =
 
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
 
-/** The set-view values accepted: the four views, and the old 'board' until the screens replace the tabs. */
-const SET_VIEW_VALUES: readonly (BoardView | ListView)[] = ['all', 'epics', 'standalone', 'issues', 'board'];
+const LIST_VIEWS: readonly ListView[] = ['all', 'epics', 'standalone', 'issues'];
 const ITEM_TABS: readonly ItemTab[] = ['overview', 'evidence', 'linked'];
-
-function parseScope(v: unknown): BoardScope | null {
-  if (!isObject(v)) return null;
-  if (v['kind'] === 'all') return { kind: 'all' };
-  if (v['kind'] === 'standalone') return { kind: 'standalone' };
-  if (v['kind'] === 'epic' && isNonEmptyString(v['epicItemId'])) return { kind: 'epic', epicItemId: v['epicItemId'] };
-  return null;
-}
 
 /** The typed intent when raw is a v1 envelope carrying a known, well-typed up-message; null otherwise. */
 export function parseBoardUpMessage(raw: unknown): BoardUpMessage | null {
@@ -398,9 +332,8 @@ export function parseBoardUpMessage(raw: unknown): BoardUpMessage | null {
   switch (p['type']) {
     case 'ready': return { type: 'ready' };
     case 'refresh': return { type: 'refresh' };
-    case 'close-details': return { type: 'close-details' };
     case 'set-view': {
-      const view = SET_VIEW_VALUES.find(v => v === p['view']);
+      const view = LIST_VIEWS.find(v => v === p['view']);
       return view === undefined ? null : { type: 'set-view', view };
     }
     case 'open-epic':
@@ -418,16 +351,10 @@ export function parseBoardUpMessage(raw: unknown): BoardUpMessage | null {
       const index = p['index'];
       return typeof index === 'number' && Number.isInteger(index) && index >= 0 ? { type: 'go-to-crumb', index } : null;
     }
-    case 'set-scope': {
-      const scope = parseScope(p['scope']);
-      return scope === null ? null : { type: 'set-scope', scope };
-    }
     case 'set-search':
       return typeof p['search'] === 'string' ? { type: 'set-search', search: p['search'] } : null;
     case 'set-attention':
       return typeof p['on'] === 'boolean' ? { type: 'set-attention', on: p['on'] } : null;
-    case 'select-item':
-      return isNonEmptyString(p['itemId']) ? { type: 'select-item', itemId: p['itemId'] } : null;
     case 'open-evidence':
       return isNonEmptyString(p['itemId']) && isNonEmptyString(p['artifactId'])
         ? { type: 'open-evidence', itemId: p['itemId'], artifactId: p['artifactId'] }

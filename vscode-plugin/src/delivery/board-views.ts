@@ -4,18 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * The delivery board's other two views (E2 s3): the epic rollup and the issue
- * view. Both build from the board's own match step (selectMatches), so the
- * same snapshot and selection give the same matches, in the same order, as the
- * board. Pure and vscode-free.
+ * The Epics and Issues screens (E2 s3; screens, ISSUE-348d4663), and an epic's
+ * row, which is also the summary on its board. Both build from the board's own
+ * match step (selectMatches), so the same snapshot and filter give the same
+ * matches, in the same order, as a board screen. Pure and vscode-free.
  */
 
 import { attentionCount, attentionLabel, compactIdOf, indexItems, isPlaceable, selectionPanel, selectMatches, titleOf, totalsLabel, type MatchedCard, type MatchFilter } from './board-model.js';
 import type { EpicRollupRowView, EpicsBody, IssueEntryView, IssuesBody, LinkView } from './board-protocol.js';
 import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
 import { labelOf, STAGE_ORDER, type DisplayLabels } from './labels.js';
-
-export const NOT_IN_EPIC_TITLE = 'Not in an epic';
 
 /** Shown when an issue's recorded parent is not in the snapshot and the daemon gave no notice for it. */
 export const PARENT_NOT_ON_BOARD = 'Parent not on the board';
@@ -27,13 +25,13 @@ export function completionLabel(complete: number, total: number): string {
 
 export { attentionLabel };
 
-function rowOf(epicItemId: string | null, title: string, matches: readonly MatchedCard[]): EpicRollupRowView {
+function rowOf(epicItemId: string, title: string, matches: readonly MatchedCard[]): EpicRollupRowView {
   const stories = matches.filter(m => m.item.kind === 'story');
   const storiesComplete = stories.filter(m => m.stage === 'complete').length;
   const needing = attentionCount(matches);
   return {
     epicItemId,
-    compactId: epicItemId === null ? null : compactIdOf(epicItemId),
+    compactId: compactIdOf(epicItemId),
     title,
     storiesTotal: stories.length,
     storiesComplete,

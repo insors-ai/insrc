@@ -23,8 +23,9 @@
  * per applied refresh.
  *
  * The document is CSP-locked (default-src 'none') with one nonce'd script that
- * renders the status and the board's columns, cards and controls as text
- * (textContent only) and posts only BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
+ * renders the status and one screen at a time (its breadcrumb, filters, stage
+ * sections, rows and item tabs) as text (textContent only) and posts only
+ * BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
  *
  * The item details (E2 s4): a story's or issue's screen is built from the
  * details memory (details-memory.ts). The host tells the memory the item of
@@ -35,7 +36,7 @@
 import { attr, type ChatPanelChannel, type ChatPanelLogger } from '../chat/chat-panel.js';
 import type { Envelope } from '../chat/protocol.js';
 import { isPlaceable, placeableCount, titleOf, unknownStages } from './board-model.js';
-import { parseBoardUpMessage, type BoardUpMessage, type ListView } from './board-protocol.js';
+import { parseBoardUpMessage, type BoardUpMessage } from './board-protocol.js';
 import {
   boardDownMessages, currentEntry, currentItemId, initialBoardState, reduceBoardState, shownSnapshot, statusView,
   type BoardEvent, type BoardState, type NavIntent,
@@ -619,19 +620,9 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     switch (msg.type) {
       case 'ready': apply(state); return;
       case 'refresh': startRefresh(); return;
-      // The old tabs' 'board' is All work until the screens replace them (t4).
-      case 'set-view': go({ type: 'set-view', view: msg.view === 'board' ? 'all' : msg.view }); return;
+      case 'set-view': go({ type: 'set-view', view: msg.view }); return;
       case 'open-epic': open(msg.epicItemId, true); return;
       case 'open-item': open(msg.itemId, false); return;
-      // The old page's messages, mapped onto the trail until t7 removes them.
-      case 'set-scope': {
-        const view: ListView = msg.scope.kind === 'standalone' ? 'standalone' : 'all';
-        if (msg.scope.kind === 'epic') open(msg.scope.epicItemId, true);
-        else go({ type: 'set-view', view });
-        return;
-      }
-      case 'select-item': open(msg.itemId, false); return;
-      case 'close-details': if (currentItemId(state.selection) !== null) go({ type: 'back' }); return;
       case 'set-item-tab': go({ type: 'set-item-tab', tab: msg.tab }); return;
       case 'back': go({ type: 'back' }); return;
       case 'go-to-crumb': go({ type: 'go-to-crumb', index: msg.index }); return;

@@ -9,19 +9,37 @@
  * accidentally diverge on the ScopeRef shape.
  */
 
-/** ScopeRef shape (matches AnalyzeScopeRef from shared/analyze-types.ts). */
-export const SCOPE_REF_SCHEMA = {
-	type:                 'object',
-	additionalProperties: false,
-	required:             ['kind', 'value'],
-	properties: {
-		kind: {
-			type: 'string',
-			enum: ['repo', 'module', 'file', 'symbol', 'connection', 'manifest-dir', 'workspace'],
+import type { AnalyzeTarget } from '../../../shared/analyze-types.js';
+import { TARGET_TO_KINDS } from '../../classifier/validate.js';
+
+/**
+ * ScopeRef shape for a task of one family (matches AnalyzeScopeRef from
+ * shared/analyze-types.ts). Its `kind` lists only the kinds of scope that
+ * family accepts, read from the one table the classifier and the runtimes
+ * use (`TARGET_TO_KINDS`), so the catalog shown to the planner, the plan
+ * validator and the runtime cannot disagree.
+ */
+export function scopeRefSchemaFor(target: AnalyzeTarget) {
+	return {
+		type:                 'object',
+		additionalProperties: false,
+		required:             ['kind', 'value'],
+		properties: {
+			kind: {
+				type: 'string',
+				enum: [...TARGET_TO_KINDS[target]],
+			},
+			value: { type: 'string', minLength: 1 },
 		},
-		value: { type: 'string', minLength: 1 },
-	},
-} as const;
+	} as const;
+}
+
+/**
+ * ScopeRef shape with every kind of scope: for an intent whose kind of source
+ * is not fixed by the template (a subrun task's `childIntent`). A task's own
+ * `scopeRef` uses `scopeRefSchemaFor(<its family>)`.
+ */
+export const SCOPE_REF_SCHEMA = scopeRefSchemaFor('generic');
 
 /**
  * Aggregator inputSchema -- common to every per-target terminal

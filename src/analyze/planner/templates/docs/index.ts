@@ -23,8 +23,12 @@ import {
 	AGGREGATOR_INPUT_SCHEMA,
 	AGGREGATOR_OUTPUT_SCHEMA,
 	SCOPE_REF_SCHEMA,
+	scopeRefSchemaFor,
 } from '../shared-schemas.js';
 import { registerTemplate } from '../registry.js';
+
+/** A docs task's `scopeRef`: only the kinds of scope the docs family accepts. */
+const DOCS_SCOPE_REF_SCHEMA = scopeRefSchemaFor('docs');
 
 // ---------------------------------------------------------------------------
 // Leaf templates
@@ -42,7 +46,7 @@ export const docsDiscoveryInventory: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['scopeRef'],
 		properties: {
-			scopeRef: SCOPE_REF_SCHEMA,
+			scopeRef: DOCS_SCOPE_REF_SCHEMA,
 		},
 	},
 	produces:    ['docs-inventory'],

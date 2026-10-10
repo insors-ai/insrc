@@ -40,10 +40,13 @@ import {
 	getTemplatesForTarget,
 	registerBuiltinTemplates,
 	registerTemplate,
+	renderCatalog,
 	TemplateRegistrationError,
+	validatePlan,
 } from '../index.js';
+import { TARGET_TO_KINDS } from '../../classifier/validate.js';
 import { _resetTemplateBootstrapLatchForTests } from '../templates/bootstrap.js';
-import type { AnalyzeTaskTemplate } from '../types.js';
+import type { AnalyzeTaskTemplate, PlanTask } from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -270,5 +273,87 @@ test('aggregator templates produce exactly [\'report\']', () => {
 	for (const t of aggregators) {
 		assert.deepEqual([...t.produces!], ['report'],
 			`aggregator ${t.id} should produce ['report'], got ${JSON.stringify(t.produces)}`);
+	}
+});
+
+// ---------------------------------------------------------------------------
+// A task's scope: only the kinds its family accepts
+// ---------------------------------------------------------------------------
+
+/** The `kind` list a template's own `scopeRef` parameter declares, if it has one. */
+function declaredKinds(t: AnalyzeTaskTemplate): readonly string[] | undefined {
+	const scopeRef = (t.inputSchema?.['properties'] as Record<string, { properties?: { kind?: { enum?: string[] } } }> | undefined)?.['scopeRef'];
+	return scopeRef?.properties?.kind?.enum;
+}
+
+test("every builtin template's scopeRef lists exactly the kinds of scope its family accepts, and the catalog shows the planner those kinds only", () => {
+	freshRegistry();
+	registerBuiltinTemplates();
+	const withScope = getTemplateCatalog().filter(t => declaredKinds(t) !== undefined);
+	// The code, docs and infra tasks that take a scope: 3 + 1 + 6.
+	assert.deepEqual(
+		withScope.map(t => t.id).sort(),
+		[
+			'code.discovery.entrypoints', 'code.discovery.modules', 'code.structure.module-tree',
+			'docs.discovery.inventory',
+			'infra.discovery.families', 'infra.inventory.ci', 'infra.inventory.docker', 'infra.inventory.helm',
+			'infra.inventory.kubernetes', 'infra.inventory.terraform',
+		],
+	);
+	for (const t of withScope) {
+		assert.deepEqual(declaredKinds(t), [...TARGET_TO_KINDS[t.target]], t.id);
+	}
+
+	// What the planner is shown for an infra task names no kind the family refuses.
+	const ci = renderCatalog([getTemplate('infra.inventory.ci')!]);
+	for (const kind of ['repo', 'manifest-dir', 'workspace']) assert.ok(ci.includes(`"${kind}"`), kind);
+	for (const kind of ['file', 'module', 'symbol', 'connection']) assert.ok(!ci.includes(`"${kind}"`), kind);
+});
+
+test('a plan whose task carries a kind of scope its family does not accept fails validation with the task, the kind and the accepted kinds', () => {
+	freshRegistry();
+	registerBuiltinTemplates();
+	const catalog = getTemplatesForTarget('infra');
+	// The plan of the live run: one CI inventory task per workflow file.
+	const plan = (kind: string, value: string): PlanTask => ({
+		planId:    'p-root',
+		goal:      'inventory the CI of the repository',
+		target:    'infra',
+		scope:     'XS',
+		reasoning: 'find the IaC families, then inventory the CI workflows, then write the report from both',
+		tasks: [
+			{ taskId: 't01', template: 'infra.discovery.families', kind: 'leaf', params: { scopeRef: { kind: 'repo', value: '/r' } }, produces: ['families'], rationale: 'find the IaC families present in the repository' },
+			{ taskId: 't02', template: 'infra.inventory.ci', kind: 'leaf', params: { scopeRef: { kind, value } }, produces: [...getTemplate('infra.inventory.ci')!.produces!], rationale: 'inventory the CI workflows of the repository' },
+			{ taskId: 't03', template: 'infra.aggregate.report', kind: 'leaf', params: {}, produces: ['report'], consumes: ['families'], rationale: 'write the report from the families and the inventory' },
+		],
+	});
+
+	const refused = validatePlan(plan('file', '/r/.github/workflows/ci.yml'), catalog);
+	assert.equal(refused?.invariantId, 'INV-5');
+	assert.equal(
+		refused?.message,
+		"task t02 (infra.inventory.ci): scopeRef.kind='file' is not a kind of scope the 'infra' family accepts. "
+		+ 'Accepted kinds: repo, manifest-dir, workspace.',
+	);
+	assert.deepEqual(refused?.target, { index: 1, taskId: 't02', template: 'infra.inventory.ci', kind: 'file', accepted: ['repo', 'manifest-dir', 'workspace'] });
+
+	// Every kind the family accepts validates, as before.
+	for (const kind of TARGET_TO_KINDS.infra) {
+		assert.equal(validatePlan(plan(kind, '/r'), catalog), null, kind);
+	}
+
+	// The same holds for the other families: a code task with a connection, a docs task with a symbol.
+	for (const [template, kind, family] of [
+		['code.discovery.modules', 'connection', 'code'],
+		['docs.discovery.inventory', 'symbol', 'docs'],
+	] as const) {
+		const tmpl = getTemplate(template)!;
+		const one: PlanTask = {
+			planId: 'p-root', goal: 'check one task', target: family, scope: 'XS', reasoning: 'one task with a refused kind of scope',
+			tasks: [{ taskId: 't01', template, kind: 'leaf', params: { scopeRef: { kind, value: 'x' } }, produces: [...tmpl.produces!], rationale: 'a task whose scope kind its family refuses' }],
+		};
+		const failure = validatePlan(one, getTemplatesForTarget(family));
+		assert.equal(failure?.invariantId, 'INV-5', template);
+		assert.match(failure?.message ?? '', new RegExp(`scopeRef\\.kind='${kind}' is not a kind of scope the '${family}' family accepts\\. Accepted kinds: ${TARGET_TO_KINDS[family].join(', ')}\\.$`));
 	}
 });

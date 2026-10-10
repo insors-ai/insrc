@@ -21,7 +21,11 @@
     "epicSlug": "bug-analyze-planner-gives-plan-task",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-10T06:20:22.812Z",
+    "parentRef": {
+      "slug": "bug-analyze-planner-gives-plan-task"
+    }
   },
   "body": {
     "title": "Reject at plan validation a task scope its family does not accept",

@@ -15,9 +15,12 @@ import type { AnalyzeTaskTemplate } from '../../types.js';
 import {
 	AGGREGATOR_INPUT_SCHEMA,
 	AGGREGATOR_OUTPUT_SCHEMA,
-	SCOPE_REF_SCHEMA,
+	scopeRefSchemaFor,
 } from '../shared-schemas.js';
 import { registerTemplate } from '../registry.js';
+
+/** A infra task's `scopeRef`: only the kinds of scope the infra family accepts. */
+const INFRA_SCOPE_REF_SCHEMA = scopeRefSchemaFor('infra');
 
 export const infraDiscoveryFamilies: AnalyzeTaskTemplate = {
 	id:          'infra.discovery.families',
@@ -31,7 +34,7 @@ export const infraDiscoveryFamilies: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['scopeRef'],
 		properties: {
-			scopeRef: SCOPE_REF_SCHEMA,
+			scopeRef: INFRA_SCOPE_REF_SCHEMA,
 		},
 	},
 	produces:    ['families'],
@@ -49,7 +52,7 @@ export const infraInventoryKubernetes: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['scopeRef'],
 		properties: {
-			scopeRef: SCOPE_REF_SCHEMA,
+			scopeRef: INFRA_SCOPE_REF_SCHEMA,
 		},
 	},
 	produces:    ['k8s-inventory'],
@@ -67,7 +70,7 @@ export const infraInventoryTerraform: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['scopeRef'],
 		properties: {
-			scopeRef: SCOPE_REF_SCHEMA,
+			scopeRef: INFRA_SCOPE_REF_SCHEMA,
 		},
 	},
 	produces:    ['tf-inventory'],
@@ -85,7 +88,7 @@ export const infraInventoryHelm: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['scopeRef'],
 		properties: {
-			scopeRef: SCOPE_REF_SCHEMA,
+			scopeRef: INFRA_SCOPE_REF_SCHEMA,
 		},
 	},
 	produces:    ['helm-inventory'],
@@ -103,7 +106,7 @@ export const infraInventoryDocker: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['scopeRef'],
 		properties: {
-			scopeRef: SCOPE_REF_SCHEMA,
+			scopeRef: INFRA_SCOPE_REF_SCHEMA,
 		},
 	},
 	produces:    ['docker-inventory'],
@@ -121,7 +124,7 @@ export const infraInventoryCi: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['scopeRef'],
 		properties: {
-			scopeRef: SCOPE_REF_SCHEMA,
+			scopeRef: INFRA_SCOPE_REF_SCHEMA,
 		},
 	},
 	produces:    ['ci-inventory'],

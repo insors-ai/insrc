@@ -18,9 +18,12 @@ import type { AnalyzeTaskTemplate } from '../../types.js';
 import {
 	AGGREGATOR_INPUT_SCHEMA,
 	AGGREGATOR_OUTPUT_SCHEMA,
-	SCOPE_REF_SCHEMA,
+	scopeRefSchemaFor,
 } from '../shared-schemas.js';
 import { registerTemplate } from '../registry.js';
+
+/** A code task's `scopeRef`: only the kinds of scope the code family accepts. */
+const CODE_SCOPE_REF_SCHEMA = scopeRefSchemaFor('code');
 
 export const codeDiscoveryModules: AnalyzeTaskTemplate = {
 	id:          'code.discovery.modules',
@@ -34,7 +37,7 @@ export const codeDiscoveryModules: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['scopeRef'],
 		properties: {
-			scopeRef: SCOPE_REF_SCHEMA,
+			scopeRef: CODE_SCOPE_REF_SCHEMA,
 		},
 	},
 	produces:    ['modules'],
@@ -70,7 +73,7 @@ export const codeDiscoveryEntrypoints: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['scopeRef'],
 		properties: {
-			scopeRef: SCOPE_REF_SCHEMA,
+			scopeRef: CODE_SCOPE_REF_SCHEMA,
 		},
 	},
 	produces:    ['entrypoints'],
@@ -149,7 +152,7 @@ export const codeStructureModuleTree: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['scopeRef'],
 		properties: {
-			scopeRef: SCOPE_REF_SCHEMA,
+			scopeRef: CODE_SCOPE_REF_SCHEMA,
 			maxDepth: { type: 'integer', minimum: 1, maximum: 12 },
 		},
 	},

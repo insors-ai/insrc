@@ -833,6 +833,19 @@ row gives:
 Before, the code and docs tasks accepted `repo` and `manifest-dir` only, and
 no data task accepted a `connection`.
 
+A plan is held to the same rows before it runs. The catalog shown to the
+planner lists, for each task that takes a scope, only its family's kinds, and a
+plan in which a task carries another kind fails validation, so the planner
+plans again:
+
+```
+task t02 (infra.inventory.ci): scopeRef.kind='file' is not a kind of scope the 'infra' family accepts. Accepted kinds: repo, manifest-dir, workspace.
+```
+
+Before, such a plan was accepted and the task failed when it ran, with
+`scope-ref-kind-target-mismatch`. A task still refuses the kind itself when it
+runs.
+
 - A code or docs task keeps to the **area** the scope names: for a `module`
   scope the entities or documents whose file lies under that directory, for a
   `file` scope that file's, for a `symbol` scope the one entity. For a

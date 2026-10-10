@@ -21,7 +21,9 @@
     "epicSlug": "index-never-reconciled-against-files-disk",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-10T14:57:59.329Z",
+    "parentRef": null
   },
   "body": {
     "title": "The index keeps the entities of files that are deleted or are now ignored",

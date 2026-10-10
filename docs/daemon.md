@@ -1053,7 +1053,9 @@ root report from one child plan of four, and neither said so.
   task runs on the others and is told that this task's output under the name
   is absent, with the task's id and its reason, and that the other outputs
   under the name are available. It used not to be told: the name counted as
-  present.
+  present. When only one output of the name is left, it is still shown in the
+  per-task form (`### <name> (1 output, one per task)`), so the report can say
+  which task it came from.
 - A task that is not the report task runs when a name it consumes has at least
   one output, and receives all that exist. It is not told which producers
   failed; that list goes to the report task only.

@@ -449,6 +449,22 @@ test('a name with several outputs renders one sub-section per task in plan order
 		'#### report from task t02 (code.subrun.deep-dive)\nparams: {}\n```json\n"b"\n```',
 	].join('\n\n'));
 
+	// One output left of several (a sibling producer of the name is absent): the
+	// per-task form, so the output is attributable. An absent name nothing
+	// produced, or an absent entry with no producer, changes nothing.
+	const survivor = new Map([['modules', [{ taskId: 't04', template: 'code.discovery.modules', params: { dir: 'src/pay' }, value: ['pay'] }]]]);
+	const attributed = [
+		'Upstream task outputs:',
+		'### modules (1 output, one per task)',
+		'#### modules from task t04 (code.discovery.modules)\nparams: {"dir":"src/pay"}\n```json\n[\n  "pay"\n]\n```',
+	].join('\n\n');
+	const plain = 'Upstream task outputs:\n\n### modules\n```json\n[\n  "pay"\n]\n```';
+	assert.equal(_renderUpstreamSectionForTest(survivor, [{ name: 'modules', producedBy: 't02', reason: 'r' }]), attributed);
+	assert.equal(_renderUpstreamSectionForTest(survivor, [{ name: 'module-tree', producedBy: 't02', reason: 'r' }]), plain);
+	assert.equal(_renderUpstreamSectionForTest(survivor, [{ name: 'modules', producedBy: null, reason: 'r' }]), plain);
+	assert.equal(_renderUpstreamSectionForTest(survivor, []), plain);
+	assert.equal(_renderUpstreamSectionForTest(survivor), plain);
+
 	// A name with no output is read as not there.
 	assert.match(_renderUpstreamSectionForTest(new Map([['modules', []]])), /^No upstream outputs were available/);
 });

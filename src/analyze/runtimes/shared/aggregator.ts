@@ -174,7 +174,7 @@ function countOutputs(map: ReadonlyMap<string, readonly UpstreamOutput[]>): numb
 }
 
 function buildMessages(args: BuildMessagesArgs): LLMMessage[] {
-	const upstreamSection = renderUpstreamSection(args.upstreamOutputs);
+	const upstreamSection = renderUpstreamSection(args.upstreamOutputs, args.absentInputs);
 	const focusSection = args.focus !== undefined && args.focus.length > 0
 		? `\nFocus: ${args.focus}\n`
 		: '';
@@ -202,8 +202,17 @@ function buildMessages(args: BuildMessagesArgs): LLMMessage[] {
  * heading and one sub-block per task, in plan order, each titled with its
  * task id and template and carrying the task's params, so that the model can
  * tell the outputs apart. Names are in sorted order.
+ *
+ * A name whose one output is all that is left of several (a sibling producer
+ * of the name is in `absent`) is rendered in the per-task form too: the model
+ * is told that another task's output under the name is absent, and must be
+ * able to say which task the output it has came from.
  */
-function renderUpstreamSection(map: ReadonlyMap<string, readonly UpstreamOutput[]>): string {
+function renderUpstreamSection(
+	map:     ReadonlyMap<string, readonly UpstreamOutput[]>,
+	absent?: readonly AbsentInput[] | undefined,
+): string {
+	const partlyAbsent = new Set((absent ?? []).filter(a => a.producedBy !== null).map(a => a.name));
 	// A name with no output is not in the map; an empty list is read the same way.
 	const names = Array.from(map.keys()).filter(name => (map.get(name) ?? []).length > 0).sort();
 	if (names.length === 0) {
@@ -212,11 +221,11 @@ function renderUpstreamSection(map: ReadonlyMap<string, readonly UpstreamOutput[
 	const blocks: string[] = ['Upstream task outputs:'];
 	for (const name of names) {
 		const list = map.get(name)!;
-		if (list.length === 1) {
+		if (list.length === 1 && !partlyAbsent.has(name)) {
 			blocks.push(`### ${name}\n` + renderValue(list[0]!.value, name));
 			continue;
 		}
-		blocks.push(`### ${name} (${list.length} outputs, one per task)`);
+		blocks.push(`### ${name} (${list.length} ${list.length === 1 ? 'output' : 'outputs'}, one per task)`);
 		for (const out of list) {
 			blocks.push(
 				`#### ${name} from task ${out.taskId} (${out.template})\n` +

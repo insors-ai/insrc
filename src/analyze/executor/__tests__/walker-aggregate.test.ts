@@ -446,6 +446,13 @@ test("when one of several producers of a name fails, the report task runs on the
 		{ name: 'modules', producedBy: 't01', reason: 'runtime-threw: the graph store is closed' },
 		{ name: 'functional-surface', producedBy: 't02', reason: 'dependency-unavailable: modules' },
 	]);
+	// The one output left of the two is shown with its task, so the report can say which it covers.
+	const left = promptFor(seen[0]!);
+	assert.ok(left.includes(
+		'### functional-surface (1 output, one per task)\n\n' +
+		'#### functional-surface from task t03 (demo.ok)\nparams: {}\n```json\n"functional-surface from t03"\n```'));
+	assert.ok(left.includes('- functional-surface: the output of task t02 under this name is absent; the other outputs under functional-surface are available.'));
+	assert.ok(left.includes('- modules: task t01 should have produced it.'), 'a wholly absent name keeps its wording beside it');
 
 	// No absent name has an output: the section is the one it always was, whole.
 	register();

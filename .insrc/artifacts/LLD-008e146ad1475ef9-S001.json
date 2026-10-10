@@ -37,10 +37,22 @@
           "ref": "fix-targets-defect",
           "item": "fix-targets-defect",
           "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The bounded wait and the handed measure address root causes 1 and 3 of the ISSUE at the place they occur: one wait in measureConnection covers both the single-source and the pool path, and the context builder gets a way to be handed the run's measure.",
+          "evidence": "src/analyze/measure.ts:444-494: measureConnection is the only function that awaits `pool.acquire(id)` (456) and the unbounded listings `r.listTables({ complete: true })` (466), `k.listNamespaces({ complete: true })` (476), `listFilesForConnection` (484). measureDataSource calls it at 438; measureDataPool calls it directly at 512 (`await measureConnection(pool, id, undefined)`), not through measureDataSource, as the design says. No signal or timer exists anywhere in the file today. src/analyze/context/driver.ts:1372-1378 reads only `{ intent, sizeHint }` from the input and always measures, so it has no way to be handed a measure, which is root cause 3. src/daemon/db/pool.ts:131-136 shares `entry.building` between callers, so abandoning the wait does not start a second connection attempt. [files: src/analyze/measure.ts, src/analyze/context/driver.ts, src/daemon/db/pool.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "fix-targets-defect.2",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
           "severity": "MED",
-          "premise": "After the change, a code or docs request scoped to one file or one symbol no longer causes every stored entity of its repository to be read and built (the ISSUE's second fix intent; the design's Summary and the 2.2 postcondition 'A symbol scope whose entity is found in its repository causes no read of the repository's entities').",
-          "evidence": "The design narrows only the read in measureStoredArea (measure.ts:344 `const entities = await readEntities(scope.repoPath);`). But measureRequestScope resolves the scope first (measure.ts:292-294) through `resolveTaskScope(scopeRef, target, 'the request measure', depsForTest?.scope)` for every target that is not generic, and resolveTaskScope runs `if (GRAPH_FAMILIES.has(family)) { await ensureNonEmptyClosure(scope, readers); }` (task-scope.ts:73-75, GRAPH_FAMILIES = code, docs). ensureNonEmptyClosure reads the whole repository: invariants.ts:234-236 `const entities = deps !== undefined ? await deps.listEntitiesForRepo(best.path) : await listEntitiesForRepo(null, best.path);` (its comment says 'no need to materialise the full list', but listEntitiesForRepo in db/entities.ts:779-793 builds every entity of the repo). So the run driver (driver.ts:317), the plan RPC (analyze-rpc.ts:460), the classify RPC (analyze-rpc.ts:348) and the recursive planner (recursive.ts:140), which all go through measureRequestScope, still read and build every entity of the repository for a code or docs file/symbol scope, once, before measureResolvedScope is reached. The design does not name this read. Only callers of measureResolvedScope with a scope already resolved (the context builder, analyze-step start.ts:69) get the saving the design describes. [files: src/analyze/measure.ts, src/analyze/runtimes/shared/task-scope.ts, src/analyze/context/invariants.ts]",
-          "action": "Either extend the design to the index check inside the measure's scope resolution (for a file or symbol scope, prove the repository is indexed from the narrow read, as resolveSymbol already does at context/scope.ts:201-215, and skip or narrow the listEntitiesForRepo call of ensureNonEmptyClosure), or state plainly in 2.1/2.2, the Summary and ac4 that the saving applies to the measure's own read only and that measureRequestScope still reads the whole repository once in its index check for code and docs, and say whether that remainder is accepted or filed.",
+          "premise": "The design leaves out nothing from the ISSUE's second fix intent: 'a file or a symbol scope does not cause every entity of its repository to be read'.",
+          "evidence": "The design narrows only the measure's own read (measureStoredArea, measure.ts:344). On the production path the same request still reads every entity of the repository: measureRequestScope resolves through resolveTaskScope (measure.ts:294), which for code and docs calls ensureNonEmptyClosure (task-scope.ts:73-74), which does `await listEntitiesForRepo(null, best.path)` and only reads `.length` (invariants.ts:234-237). The design states this one read openly and defers it to ISSUE-61045de91faef1a0, so its own accounting ('one whole-repository read where it causes two today') is correct per call of measureRequestScope. It is still a part of the fix intent that is not delivered. Two further whole-repository reads in the same run are not mentioned: the builder's own `ensureNonEmptyClosure(scope)` for a code run (context/driver.ts:379-380) and the run driver's `resolveTaskScope(intent.scopeRef, intent.target, 'the run')` before planning (orchestrator/driver.ts:368-370). A symbol scope also pays a full entity-table scan while it is resolved (`deps.findEntitiesByFile(filePath)`, context/scope.ts:205), before any measure is taken. [files: src/analyze/runtimes/shared/task-scope.ts, src/analyze/context/invariants.ts, src/analyze/context/driver.ts, src/analyze/orchestrator/driver.ts, src/analyze/context/scope.ts]",
+          "action": "No code change to the design is needed if the deferral is accepted. Record the acceptance where the gate reads it: either amend the ISSUE's fix intent and ac4 to say 'the measure's own read is no wider than the scope needs', or have the stakeholder accept this finding with a note that the remaining index-check reads belong to ISSUE-61045de91faef1a0. Add the two other index-check reads (context/driver.ts:380, orchestrator/driver.ts:370) to that issue so its scope is complete.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -50,8 +62,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today the run driver measures the request and the context builder then measures the same resolved scope a second time; the plan RPC has the same double measure; the builder's input has no field for a measure.",
-          "evidence": "orchestrator/driver.ts:317 `const measure = await measureRequestScope(unsized.scopeRef, unsized.target, args.scopeHint);` then driver.ts:348-349 `shaper.buildRunBundle({ intent }, ...)`. context/driver.ts:1372-1378: `const { intent: given, sizeHint } = args.inputs as RunShapeInput; ... const area = await (steps.measureArea ?? measureResolvedScope)(args.scope, unsized.target, sizeHint);`. analyze-rpc.ts:460 measures and analyze-rpc.ts:475-478 calls `shaper.buildRunBundle({ intent }, { runId: parsed.runId })`.",
+          "premise": "Today a run measures the named area twice: the run driver and the plan RPC each measure, then call buildRunBundle({ intent }, ...), and the builder measures the same resolved scope again for its planning call.",
+          "evidence": "src/analyze/orchestrator/driver.ts:317 `const measure = await measureRequestScope(unsized.scopeRef, unsized.target, args.scopeHint);` then 348-350 `shaper.buildRunBundle({ intent }, {...})`. src/daemon/analyze-rpc.ts:460 `const measure = await measureRequestScope(parsed.intent.scopeRef, parsed.intent.target, parsed.intent.scope);` then 475-476 `shaper.buildRunBundle({ intent }, { runId: parsed.runId })`. src/analyze/context/driver.ts:1373 drops the intent's size (`const { scope: _notRead, ...unsized } = given;`) and 1378 measures: `const area = await (steps.measureArea ?? measureResolvedScope)(args.scope, unsized.target, sizeHint);`. The run driver has a signal (`opts.signal?.aborted`, orchestrator/driver.ts:248) that never reaches the measure. [files: src/analyze/orchestrator/driver.ts, src/daemon/analyze-rpc.ts, src/analyze/context/driver.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -62,9 +74,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The live-source waits have no bound and no signal reaches the measuring pass, and measureDataPool calls measureConnection directly (not measureDataSource); loading the pool is done separately in both.",
-          "evidence": "measure.ts:456 `driver = await pool.acquire(id);`, :466 `await r.listTables({ complete: true })`, :476 `await k.listNamespaces({ complete: true })`, :484 `await listFilesForConnection(...)`, none bounded; none of the three exported functions takes options. measure.ts:502-512: measureDataPool does `acquireDataPool(poolPath)`, `pool.reload()`, then `await measureConnection(pool, id, undefined)` per id. measureDataSource (428-439) loads the pool and calls measureConnection. The doc comment at measure.ts:497-499 still says 'one call of measureDataSource per connection id', which is stale; the design's reading of the code is the correct one.",
-          "action": "None for the design. The builder may correct the stale comment above measureDataPool while changing it.",
+          "premise": "The store offers a point read by id and a per-file read; the per-file read has no index and passes over every row of the entity table of all repositories, so a file scope saves only the building of the other files' entities.",
+          "evidence": "src/db/entities.ts:585-593 getEntity: `store.entityIdByString.get(id)` then `readEntityRow(store, u64)`, no range scan. 795-811 findEntitiesByFile: `for (const { key, value } of store.entity.getRange())`, decodes each row, resolves its repo path and compares `toAbsolutePath(row.filePath, repoPath) !== file`; it takes no repository argument, so rows of every repository are visited. The design's modest statement of the saving is right for a further reason it does not give: listEntitiesForRepo (779-793) also walks `store.entity.getRange()` over the whole table and decodes every row, skipping only on `row.repoId !== repoId`. So neither read avoids the table scan today; the narrow read saves the id lookup and entity construction for the repository's other files. [files: src/db/entities.ts]",
+          "action": "None. When building, keep the comment on the file read honest about this (both reads scan the table until ISSUE-61045de91faef1a0).",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -74,21 +86,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The run driver, the plan RPC and the bundle RPC are the only production callers of buildRunBundle, and the other measuring callers (classify RPC, freeform probe, analyze-step start) take one measure and build no run context.",
-          "evidence": "A search of src for `buildRunBundle(` outside tests gives exactly orchestrator/driver.ts:348, daemon/analyze-rpc.ts:295 (buildRun, passes its caller's input) and daemon/analyze-rpc.ts:475 (plan). Measuring callers outside measure.ts: driver.ts:317, recursive.ts:140, analyze-rpc.ts:348 and :460, mcp/analyze-step/phases/start.ts:69, explore/freeform-probe.ts:92-93. The freeform probe measures only when no size is handed (`ctx.requestSize ?? (await measureOwnRequest(ctx, target)).size`, freeform-probe.ts:131), and the context builder hands it one (context/driver.ts:1474 `requestSize: area.size`), so it adds no second measure inside a run.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The run driver has a cancellation signal of its own to pass, the recursive planner's options can carry it to the child measure, and the bundle cache key already leaves out everything but the unsized intent, so a `measure` field is left out with no change to keyedInputs.",
-          "evidence": "orchestrator/driver.ts:247-248 `const checkAborted = ... if (opts.signal?.aborted !== true) return null;` and :330 checkAborted('plan', intent) right after the measure. planner/types.ts:61-75 PlanBuilderOpts has runId, bypassCache, onLlmToken and no signal today; recursive.ts:108-140 walk() receives `opts` and calls measureRequestScope for each child, so a signal on opts reaches it. context/driver.ts:555-560 keyedInputs returns `{ intent: unsized }` for a run input, which drops sizeHint and would drop a new `measure` field as written.",
-          "action": "None. Note for the builder: keyedInputs needs no edit, only a test.",
+          "premise": "The list of callers is complete: buildRunBundle has exactly three production callers (run driver, plan RPC, bundle RPC), and the measuring functions' other callers (classify RPC, freeform probe, analyze-step start, recursive planner) are as the design names them.",
+          "evidence": "A search of src/ outside __tests__ for `buildRunBundle(` gives orchestrator/driver.ts:348, daemon/analyze-rpc.ts:295 (buildRun: passes `{ intent, sizeHint? }` as it is) and daemon/analyze-rpc.ts:475 (plan), and no other. Callers of the measure: orchestrator/driver.ts:317, planner/recursive.ts:140, daemon/analyze-rpc.ts:348 (classify) and 460 (plan), explore/freeform-probe.ts:92-93, mcp/analyze-step/phases/start.ts:69 (measureResolvedScope, no builder call), context/driver.ts:1378. PlanBuilderOpts has no `signal` today and RunShapeInput has no `measure` (context/types.ts:183 ends at `sizeHint`), so both are true field additions. The catalog group 'Analysis & memory' exists (config-catalog.ts:87, 89) and the model reader is at mcp/code-review-step/handler.ts:106-113 (`JSON.parse(readFileSync(PATHS.config, 'utf8'))`, fail-safe). [files: src/analyze/orchestrator/driver.ts, src/daemon/analyze-rpc.ts, src/analyze/planner/recursive.ts, src/analyze/explore/freeform-probe.ts, src/mcp/analyze-step/phases/start.ts, src/config/analyze.ts]",
+          "action": "One point to carry into the build: the design places the setting's reader in src/config/analyze.ts and requires it to be read each time, not cached. loadAnalyzeConfig there is cached for the daemon's lifetime (`let cached` at 217, returned at 262-263). The reader must be a separate function that reads the file itself, as readFreshnessTimeoutMs does; it must not be a field of AnalyzeConfig.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -98,9 +98,21 @@
           "item": "preserved-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "For a symbol or file scope the narrow reads (getEntity by id; findEntitiesByFile filtered to the scope's repository) give the same counts as the whole-repository read narrowed by inAreaOf.",
-          "evidence": "inAreaOf (task-scope.ts:102-103): symbol `e => e.id === scope.entityId`, file `e => e.file === scope.filePath`. Both store reads build the entity with the same function, so `file` is the same string: rowToDomainEntity sets `file: toAbsolutePath(row.filePath, repoRoot)` (entities.ts:122) and findEntitiesByFile matches on `toAbsolutePath(row.filePath, repoPath) !== file` (entities.ts:805). getEntity (entities.ts:585-593) is a point read through entityIdByString and returns `repo` so the repository filter is possible; findEntitiesByFile scans `store.entity.getRange()` over all repositories, as the design states. A symbol scope always carries repoPath, filePath and entityId (context/scope.ts:231-238). The fallback to the whole read when the narrow read finds nothing keeps the `holds no stored entity` result of measure.ts:345-348.",
+          "premise": "For a symbol or file scope the narrow read, kept to entities of the scope's repository, gives the same items, files and size as narrowing the whole-repository read with inAreaOf.",
+          "evidence": "src/analyze/runtimes/shared/task-scope.ts:102-103: `if (scope.kind === 'symbol') return e => e.id === scope.entityId;` and `if (scope.kind === 'file') return e => e.file === scope.filePath;`. measureNamedArea (measure.ts:153-168) counts the entities of `scope.repoPath` that pass that test and adds `e.file` to the file set only when it is not empty, which is the design's 'files 1 (0 when the entity has no file path)'. Entity.file is built as `toAbsolutePath(row.filePath, repoRoot)` (entities.ts:122), the same expression findEntitiesByFile compares with its argument (entities.ts:805), so the file read returns exactly the rows whose Entity.file equals scope.filePath, across repositories; the design's filter to the scope's repository removes the others. Entity ids are unique keys (`entityIdByString`), so getEntity plus a check of `repo === scope.repoPath` equals the symbol filter. The fallback to the whole-repository read when the narrow read finds nothing keeps `the repository ... holds no stored entity` (measure.ts:345-348) and the count of 0 for an indexed repository. [files: src/analyze/runtimes/shared/task-scope.ts, src/analyze/measure.ts, src/db/entities.ts]",
           "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.2",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The bundle cache key does not depend on the size or the stated size today, and adding a handed measure to the input does not change it.",
+          "evidence": "src/analyze/context/driver.ts:555-560: keyedInputs returns `{ intent: unsized }` for a run input, built from the intent alone after `const { scope: _size, ...unsized } = intent;`. It is an allow-list: any other field of RunShapeInput, `sizeHint` today and `measure` after the change, is not in the key without any edit to this function. The cache is read before the pipeline (driver.ts:360-367, `readBundle(runId, cacheKey, ...)`), so on a hit no measure is taken with or without a handed one, as today. [files: src/analyze/context/driver.ts]",
+          "action": "None. The design's step 'leave it out of the bundle cache key' needs no code in keyedInputs; the test of the key is still worth having because it guards the allow-list.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -109,34 +121,22 @@
           "ref": "tests",
           "item": "tests",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "The ac4 tests (counting readers stood in through _setMeasureDepsForTest: listEntities, getEntity, listEntitiesOfFile) show that a file or symbol scope 'does not ask the store for every entity of the repository'.",
-          "evidence": "The counting reader the test names is MeasureDeps.listEntities (measure.ts:247, used only by readEntities at :260-261). The whole-repository read that remains is made through a different reader, the scope readers: `resolveTaskScope(scopeRef, target, 'the request measure', depsForTest?.scope)` (measure.ts:294) leading to `deps.listEntitiesForRepo(best.path)` (invariants.ts:235). The existing fixtures drive measureRequestScope with scope readers that are not counted (measure-pass.test.ts:116-118 for file and symbol scopes). A test that counts only `listEntities` passes while the request still reads the whole repository in its index check, so ac4 as the ISSUE words it ('does not cause every entity of its repository to be read') is not shown by the test the design maps to it. [files: src/analyze/measure.ts, src/analyze/context/invariants.ts, src/analyze/__tests__/measure-pass.test.ts]",
-          "action": "State which entry point the ac4 test drives and count the scope readers' listEntitiesForRepo as well as MeasureDeps.listEntities. If the index-check read is kept, the test and ac4 must say so (assert it is the only whole-repository read); if it is removed, assert that neither reader is called for a file or symbol scope of a code request through measureRequestScope.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "tests.2",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
           "severity": "LOW",
-          "premise": "The ac1 and ac2 tests can be built on the existing stand-ins: a stand-in pool whose acquire or listing never settles, driven with a short sourceTimeoutMs and an AbortController, would fail without the fix.",
-          "evidence": "measure-pass.test.ts:249-267 builds a stand-in pool (`acquire: async (id) => { acquired.push(id); ... }`) installed with `_setDataPoolSourceForTest`, and records which connections were acquired (asserted at :359-360 and :410), so 'the remaining sources of a pool are not asked' is observable. Without the bounded wait a listing that never settles would leave the test awaiting forever at measure.ts:466, so the test fails (by timeout) without the fix. The handed-measure tests have their seam too: PipelineSteps.measureArea (context/driver.ts:1259-1260) is already stood in at pipeline-outcome.test.ts:141.",
-          "action": "None. Give the never-settling tests their own test timeout so a regression fails that test and does not hang the sweep.",
+          "premise": "The seams the design's tests rely on exist, and each acceptance criterion's test would fail on today's code.",
+          "evidence": "ac1/ac2/ac3: src/analyze/__tests__/measure-pass.test.ts already stands pools and drivers in through `_setDataPoolSourceForTest` (line 266) with drivers given as plain objects (`listTables: async () => ...`, 273, 326, 335), so a listing or an acquire that never settles can be stood in; on today's code such a test does not return (measure.ts:456, 466 await directly), and the options argument does not exist. ac4: MeasureDeps has `listEntities` and `scope` readers (measure.ts:243-252) and the test file already counts reads with them (line 204); today a symbol or file scope calls `readEntities(scope.repoPath)` (measure.ts:344), so a 'listEntities was not called' assertion fails without the fix. ac5: PipelineSteps has `measureArea` (context/driver.ts:1260) and pipeline-outcome.test.ts stands it in (line 141); today the pipeline calls it unconditionally (1378), so 'not called when a measure is handed' fails without the fix. A whole run with a stand-in model over a sandboxed store exists (orchestrator/__tests__/scope-before-plan.test.ts:88-103, the run context builds), so the run-level count of one measure is reachable: today it is two. [files: src/analyze/__tests__/measure-pass.test.ts, src/analyze/context/__tests__/pipeline-outcome.test.ts, src/analyze/orchestrator/__tests__/scope-before-plan.test.ts, src/analyze/measure.ts]",
+          "action": "Two cautions for the build. (1) Without the fix the ac1 and ac2 tests hang instead of failing an assertion; give each a short per-test timeout so the falsifying run fails fast and visibly. (2) The run-level ac5 test must count a reader that only the measure uses (`listEntities` of MeasureDeps), not the scope readers' `listEntitiesForRepo`, which the index checks call several times in a run (task-scope.ts:74, context/driver.ts:380, orchestrator/driver.ts:370) and would hide the difference.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
         "high": 0,
-        "med": 2,
-        "low": 6,
+        "med": 1,
+        "low": 7,
         "unverified": 0
       },
       "template": "design-issue",
-      "reviewedAt": "2026-10-10T13:41:32.886Z",
+      "reviewedAt": "2026-10-10T13:43:54.725Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     }
@@ -194,7 +194,7 @@
           ],
           "returns": {
             "type": "RequestMeasure",
-            "meaning": "Unchanged in shape. Two new reasons for a measure that is not determined: a live source that did not answer within the limit, and a request that was cancelled. One read this design does not change: for a code or docs request the scope is resolved through resolveTaskScope, whose index check (ensureNonEmptyClosure in src/analyze/context/invariants.ts) asks the store for every entity of the repository to see that it holds any. So through measureRequestScope a file or symbol scope of a code or docs request causes one whole-repository read, the index check, where it causes two today (the index check and the measure's own read); through measureResolvedScope, with a scope already resolved, it causes none. Answering the index check without building the repository's entities is recorded on ISSUE-61045de91faef1a0."
+            "meaning": "Unchanged in shape. Two new reasons for a measure that is not determined: a live source that did not answer within the limit, and a request that was cancelled. One read this design does not change: for a code or docs request the scope is resolved through resolveTaskScope, whose index check (ensureNonEmptyClosure in src/analyze/context/invariants.ts) asks the store for every entity of the repository to see that it holds any. So through measureRequestScope a file or symbol scope of a code or docs request causes one whole-repository read, the index check, where it causes two today (the index check and the measure's own read); through measureResolvedScope, with a scope already resolved, it causes none. Answering the index check without building the repository's entities is recorded on ISSUE-61045de91faef1a0. That issue also holds the other reads of the same kind that a run makes and that this design does not touch: the context builder's own index check for a code run (src/analyze/context/driver.ts), the run driver's scope check before planning (src/analyze/orchestrator/driver.ts), and the scan of the entity table made while a symbol scope is resolved (src/analyze/context/scope.ts). What this design delivers of the issue's second point is therefore the measure's own read, and no more."
           },
           "errors": [],
           "preconditions": [],

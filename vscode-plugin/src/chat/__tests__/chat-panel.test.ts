@@ -2652,3 +2652,50 @@ test('closing the panel mid-turn leaves a session-file turn running with its cur
   assert.equal(store.get(id)?.liveTurn?.cursor.offset, 60, 'its cursor is saved for a later resume');
   proc.exitNow();
 });
+
+test('a failing store save or a failing process stop never becomes an unhandled rejection', async () => {
+  const unhandled: unknown[] = [];
+  const onUnhandled = (r: unknown): void => void unhandled.push(r);
+  process.on('unhandledRejection', onUnhandled);
+  try {
+    // The store refuses every save: the turn still runs and the failure is logged.
+    const fc = fakeChannel();
+    const warns: string[] = [];
+    const base = createInMemoryChatSessionStore();
+    const store = { ...base, save: () => { throw new Error('memento write failed'); } };
+    const { adapter, procs } = procAdapter();
+    const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', logger: { warn: (m) => warns.push(m), error: () => {} } });
+    host.open();
+    fc.send(env('submit-turn', { text: 'hi' }));
+    await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+    assert.match(warns.join('\n'), /not saved: memento write failed/);
+    procs[0]!.exitNow();
+
+    // Stop on a process whose stop() rejects.
+    const fc2 = fakeChannel();
+    const proc = fakeLiveProc(1800);
+    const failing = { ...proc, stop: () => Promise.reject(new Error('not signalable')) };
+    const adapter2: StreamAdapter = {
+      async *run(_req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+        opts?.onSpawn?.(failing);
+        yield { kind: 'assistant-delta', turnId: 'x', text: 'busy' };
+        await proc.exit;
+      },
+      async *resume(): AsyncIterable<TurnEvent> {},
+      cancel: async () => {},
+      decide: () => {},
+      capabilities: { resume: true },
+    };
+    const host2 = createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: adapter2 }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+    host2.open();
+    fc2.send(env('submit-turn', { text: 'go' }));
+    await waitFor(() => turnEvents(fc2).some((e) => e.kind === 'assistant-delta'));
+    fc2.send(env('cancel-turn'));
+    await new Promise((r) => setTimeout(r, 30));
+    proc.exitNow();
+    await new Promise((r) => setTimeout(r, 10));
+    assert.deepEqual(unhandled, [], 'no unhandled rejection');
+  } finally {
+    process.off('unhandledRejection', onUnhandled);
+  }
+});

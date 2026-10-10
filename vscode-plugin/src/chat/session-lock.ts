@@ -375,8 +375,8 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
   const startTime = deps.processStartTime ?? defaultProcessStartTime;
   const pollMs = deps.pollMs ?? 500;
   const now = deps.now ?? Date.now;
-  // Logged once per host; the fallback itself applies to one acquire, so the next one retries the file.
-  let fallbackLogged = false;
+  // Logged once per distinct reason; the fallback itself applies to one acquire, so the next one retries the file.
+  let fallbackLoggedFor: string | undefined;
 
   const fileOf = (sessionId: string): string => `${deps.lockDir}/${lockFileName(sessionId)}`;
   const recordText = (
@@ -415,6 +415,29 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
       if ((await deps.fs.readFile(file, 'utf8')) === judged) await deps.fs.unlink(file);
     } catch {
       /* already gone */
+    }
+  };
+
+  /**
+   * The holder's process details live in a sidecar named by the lease's token, never in the lock
+   * file itself: the lock file is written once (exclusively) and never rewritten, so no write of
+   * ours can clobber a lock file another window has just created.
+   */
+  const sidecarOf = (file: string, token: string): string => `${file}.${token}.holder`;
+
+  /** A lock record with its holder's details from the sidecar, when the lock file has none. */
+  const withHolder = async (file: string, rec: LockFileRecord): Promise<LockFileRecord> => {
+    if (rec.cliPid !== null || rec.token === '') return rec;
+    try {
+      const h = JSON.parse(await deps.fs.readFile(sidecarOf(file, rec.token), 'utf8')) as Partial<LockFileRecord>;
+      return {
+        ...rec,
+        cliPid: typeof h.cliPid === 'number' ? h.cliPid : null,
+        startedAt: typeof h.startedAt === 'number' ? h.startedAt : null,
+        output: parseRecord(JSON.stringify({ hostPid: 0, output: h.output }))?.output ?? null,
+      };
+    } catch {
+      return rec; // no sidecar yet: the holder has not started its process
     }
   };
 
@@ -460,16 +483,22 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
         if (errCode(e) === 'ENOENT') continue; // removed between the write and the read
         throw e;
       }
-      const rec = parseRecord(text);
+      const parsed = parseRecord(text);
+      const rec = parsed === undefined ? undefined : await withHolder(file, parsed);
+      const dropSidecar = async (): Promise<void> => {
+        if (parsed !== undefined && parsed.token !== '') await deps.fs.unlink(sidecarOf(file, parsed.token)).catch(() => {});
+      };
       if (rec === undefined || !holderAlive(rec)) {
         log.warn(`[chat-lock] session ${sessionId}: replacing a stale lock file`);
         await unlinkIfUnchanged(file, text);
+        await dropSidecar();
         continue;
       }
       onWaiting();
       if (now() >= deadline) {
         await stopHolder(sessionId, rec, opts.timeoutMs);
         await unlinkIfUnchanged(file, text);
+        await dropSidecar();
         continue;
       }
       await sleep(Math.min(pollMs, Math.max(0, deadline - now())), opts.signal);
@@ -479,11 +508,13 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
   /** The lease over the in-memory one that also keeps the lock file in step with the process. */
   const fileLease = (sessionId: string, token: string, inner: SessionLease): SessionLease => {
     const file = fileOf(sessionId);
+    const sidecar = sidecarOf(file, token);
     let removed = false;
-    /** Removes the file only while it still carries this lease's token. */
+    /** Removes this lease's sidecar, and the lock file while it still carries this lease's token. */
     const removeFile = async (): Promise<void> => {
       if (removed) return;
       removed = true;
+      await deps.fs.unlink(sidecar).catch(() => {});
       try {
         if (parseRecord(await deps.fs.readFile(file, 'utf8'))?.token === token) await deps.fs.unlink(file);
       } catch {
@@ -496,20 +527,21 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
         proc.exit.then(removeFile, removeFile);
         if (!inner.held() || proc.pid === undefined) return;
         const pid = proc.pid;
-        const tmp = `${file}.${token}.tmp`;
+        const holder = {
+          cliPid: pid,
+          startedAt: startTime(pid) ?? null,
+          output: proc.outPath !== undefined && proc.cursor !== undefined ? { sessionFile: proc.outPath, turnId: proc.cursor.turnId } : null,
+        };
+        const tmp = `${sidecar}.tmp`;
         void deps.fs
-          .writeFile(
-            tmp,
-            recordText(sessionId, token, pid, startTime(pid) ?? null, proc.outPath !== undefined && proc.cursor !== undefined ? { sessionFile: proc.outPath, turnId: proc.cursor.turnId } : null),
-          )
+          .writeFile(tmp, JSON.stringify(holder))
+          .then(() => deps.fs.rename(tmp, sidecar)) // only this lease ever writes this path
           .then(async () => {
-            // Never overwrite a file this lease no longer owns (taken over meanwhile).
-            if (parseRecord(await deps.fs.readFile(file, 'utf8'))?.token !== token) throw Object.assign(new Error('lock file taken over'), { code: 'ETAKEN' });
-            await deps.fs.rename(tmp, file);
+            if (removed) await deps.fs.unlink(sidecar).catch(() => {}); // the process exited meanwhile
           })
-          .catch((e: unknown) => {
-            log.error(`[chat-lock] session ${sessionId}: could not record pid ${pid} (${errCode(e) ?? String(e)})`);
-            return deps.fs.unlink(tmp).catch(() => {});
+          .catch(async (e: unknown) => {
+            await deps.fs.unlink(tmp).catch(() => {});
+            if (!removed) log.error(`[chat-lock] session ${sessionId}: could not record pid ${pid} (${errCode(e) ?? String(e)})`);
           });
       },
       held: () => inner.held(),
@@ -539,8 +571,9 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
           inner.release();
           throw e;
         }
-        if (!fallbackLogged) log.error(`[chat-lock] lock directory ${deps.lockDir} unusable (${errCode(e) ?? String(e)}); locking within this window only for this turn`);
-        fallbackLogged = true;
+        const reason = errCode(e) ?? String(e);
+        if (fallbackLoggedFor !== reason) log.error(`[chat-lock] lock directory ${deps.lockDir} unusable (${reason}); locking within this window only for this turn`);
+        fallbackLoggedFor = reason;
         return inner;
       }
       return fileLease(sessionId, token, inner);

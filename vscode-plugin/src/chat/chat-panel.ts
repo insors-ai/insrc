@@ -154,6 +154,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   let resumedProc: TurnProcess | undefined;
   // Detaches from the live turn (stops reading, leaves its process running) — set while one runs.
   let detachLive: (() => void) | undefined;
+  /** Forgets which turn the panel is reading live (the one place these refs are reset together). */
+  const clearLiveRefs = (): void => {
+    activeIterator = undefined;
+    activeProvider = undefined;
+    activeTurnId = undefined;
+  };
+  /** Persists a session; a persistence failure is logged and never breaks a turn. */
+  const trySave = (target: ChatSession): void => {
+    try {
+      deps.store.save(target);
+    } catch (err) {
+      log.warn(`[chat] session ${target.id} not saved: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
   const lockTimeoutMs = (): number => deps.turnLockTimeoutMs?.() ?? DEFAULT_TURN_LOCK_TIMEOUT_MS;
   // The wait of a turn that is queued behind the session's previous process; aborting it drops
   // the turn without stopping anything (a newer submit, Stop, a chat switch).
@@ -264,7 +278,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
     if (typeof adapter.resume !== 'function') return;
     s.liveTurn = { ...live, ownerHostPid: hostPid };
-    deps.store.save(s);
+    trySave(s);
     const ctl = new AbortController();
     following = { sessionId: s.id, ctl };
     let lastSave = Date.now();
@@ -283,7 +297,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
               s.liveTurn = { ...s.liveTurn, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset } };
               if (Date.now() - lastSave >= CURSOR_SAVE_MS) {
                 lastSave = Date.now();
-                deps.store.save(s);
+                trySave(s);
               }
             },
           },
@@ -297,7 +311,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         }
         if (!ctl.signal.aborted) {
           if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
-          deps.store.save(s);
+          trySave(s);
           if (session === s) postHistory();
         }
       } catch (err) {
@@ -669,9 +683,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const prov = activeProvider;
     const tid = activeTurnId;
     const proc = liveProc;
-    activeIterator = undefined;
-    activeProvider = undefined;
-    activeTurnId = undefined;
+    clearLiveRefs();
     liveProc = undefined;
     if (it !== undefined) {
       try {
@@ -687,7 +699,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         /* provider gone / already finished — nothing to cancel */
       }
     }
-    if (proc !== undefined) await proc.stop();
+    if (proc !== undefined) {
+      try {
+        await proc.stop();
+      } catch {
+        /* already gone / not signalable — callers fire this and forget it */
+      }
+    }
   };
 
   /** Stop (the Stop control): end the live turn, and a turn followed after a reload, at once. */
@@ -696,7 +714,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const resumed = resumedProc;
     resumedProc = undefined;
     await stopLive();
-    if (resumed !== undefined) await resumed.stop();
+    if (resumed !== undefined) await resumed.stop().catch(() => {});
   };
 
   /**
@@ -713,9 +731,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (detach !== undefined && liveProc?.cursor !== undefined) {
       detachLive = undefined;
       liveProc = undefined;
-      activeIterator = undefined;
-      activeProvider = undefined;
-      activeTurnId = undefined;
+      clearLiveRefs();
       detach();
       return;
     }
@@ -791,7 +807,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Then ask the LLM for a better title in the background (keeps `derived` on failure).
       void applyTitle(s, prompt);
     }
-    deps.store.save(s);
+    trySave(s); // runTurn is fired and forgotten: a failing save must not become an unhandled rejection
 
     let adapter;
     try {
@@ -842,11 +858,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       let lastCursorSave = 0;
       const saveCursorNow = (): void => {
         lastCursorSave = Date.now();
-        try {
-          deps.store.save(s);
-        } catch {
-          /* persistence failure must not break the turn */
-        }
+        trySave(s);
       };
       const onProgress = (c: TurnCursor): void => {
         const live = s.liveTurn;
@@ -876,11 +888,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         detachThis = (): void => {
           detached = true;
           if (s.liveTurn !== undefined) runningTurns.delete(s.liveTurn.cursor.turnId); // resumable now
-          try {
-            deps.store.save(s); // the cursor and the rows handled so far
-          } catch {
-            /* persistence failure must not surface */
-          }
+          trySave(s); // the cursor and the rows handled so far
           void iterator.return?.(undefined); // stop reading; the CLI keeps writing to the session file
         };
         if (myGen === generation) detachLive = detachThis;
@@ -940,18 +948,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       } catch (err) {
         if (!disposed && myGen === generation) {
           post({ type: 'turn-event', event: { kind: 'error', turnId: activeTurnId ?? 'none', message: err instanceof Error ? err.message : String(err) } });
-          try {
-            deps.store.save(s);
-          } catch {
-            /* persistence failure must not surface */
-          }
+          trySave(s);
         }
       } finally {
-        if (myGen === generation) {
-          activeIterator = undefined;
-          activeProvider = undefined;
-          activeTurnId = undefined;
-        }
+        if (myGen === generation) clearLiveRefs();
         if (detachThis !== undefined && detachLive === detachThis) detachLive = undefined;
       }
     });

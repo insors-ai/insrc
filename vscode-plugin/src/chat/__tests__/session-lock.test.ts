@@ -10,7 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as fsp from 'node:fs/promises';
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -219,8 +219,16 @@ function procTable(): {
 }
 
 const lockDir = (): string => mkdtempSync(join(tmpdir(), 'chat-locks-'));
-const readLock = (dir: string, id: string): LockFileRecord | undefined =>
-  existsSync(join(dir, `${id}.lock`)) ? (JSON.parse(readFileSync(join(dir, `${id}.lock`), 'utf8')) as LockFileRecord) : undefined;
+/** The lock record as a reader sees it: the lock file merged with its holder's sidecar, if any. */
+const readLock = (dir: string, id: string): LockFileRecord | undefined => {
+  const file = join(dir, `${id}.lock`);
+  if (!existsSync(file)) return undefined;
+  const rec = JSON.parse(readFileSync(file, 'utf8')) as LockFileRecord;
+  const sidecar = `${file}.${rec.token}.holder`;
+  if (rec.cliPid !== null || !existsSync(sidecar)) return rec;
+  const h = JSON.parse(readFileSync(sidecar, 'utf8')) as Pick<LockFileRecord, 'cliPid' | 'startedAt' | 'output'>;
+  return { ...rec, cliPid: h.cliPid, startedAt: h.startedAt, output: h.output };
+};
 
 test('a lock file from another window is honoured while its pid is alive, and a stale file (dead pid or mismatched start time) is replaced', async () => {
   const dir = lockDir();
@@ -523,7 +531,6 @@ test('a failed pid update removes its temp file', async () => {
   await waitFor(() => l.error.length === 1);
   await tick(10);
   assert.match(l.error[0] ?? '', /could not record pid 990 \(EXDEV\)/);
-  const { readdirSync } = await import('node:fs');
   assert.deepEqual(readdirSync(dir).filter((f) => f.endsWith('.tmp')), [], 'no orphaned temp file');
   proc.exitNow();
 });
@@ -550,4 +557,33 @@ test("the lock record carries the holder's session file and turn after attach", 
   await waitFor(() => readLock(dir, 's2')?.cliPid === 811);
   assert.equal(readLock(dir, 's2')?.output, null);
   p2.exitNow();
+});
+
+test('the lock file is never rewritten after it is created; holder details live in a sidecar that goes with the lease', async () => {
+  const dir = lockDir();
+  const table = procTable();
+  table.set(2, 1);
+  table.set(820, 6);
+  const locks = createFileSessionLocks({ fs: fsp, lockDir: dir, hostPid: 2, pollMs: 5, ...table.deps });
+  const lease = await locks.acquire('s1', { timeoutMs: 60_000 });
+  const lockText = readFileSync(join(dir, 's1.lock'), 'utf8');
+  const proc = fakeLiveProc(820);
+  lease.attach(proc);
+  await waitFor(() => readLock(dir, 's1')?.cliPid === 820);
+  assert.equal(readFileSync(join(dir, 's1.lock'), 'utf8'), lockText, 'the lock file itself is unchanged');
+  assert.equal(readdirSync(dir).filter((f) => f.endsWith('.holder')).length, 1, 'one sidecar for the lease');
+  proc.exitNow();
+  await waitFor(() => readdirSync(dir).length === 0);
+
+  // A process that exits before its details are recorded leaves nothing behind and logs no error.
+  const l = logs();
+  const quick = createFileSessionLocks({ fs: fsp, lockDir: dir, hostPid: 2, pollMs: 5, logger: l.logger, ...table.deps });
+  const lease2 = await quick.acquire('s2', { timeoutMs: 60_000 });
+  table.set(821, 7);
+  const fast = fakeLiveProc(821);
+  fast.exitNow();
+  lease2.attach(fast);
+  await tick(30);
+  assert.deepEqual(readdirSync(dir), [], 'no lock file or sidecar left');
+  assert.deepEqual(l.error, [], 'no false error');
 });

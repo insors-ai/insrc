@@ -1,0 +1,221 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "0f17539c98aa78ee",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T07:36:48.435Z",
+    "updatedAt": "2026-10-10T10:20:30.601Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "approvedAt": "2026-10-10T10:20:30.806Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "Task 4: a test that runs the real infra adherence check through the plan walk, a source scan for the removed parameter, docs/plans/docs-module.md and a new section of docs/daemon.md. Four mutations each fail the intended test. The whole analyze suite was run at the commit before the Story (7f274d55) and at task t4 (cf0bdc19) and compared by test name: no test changed its result; the same two files fail in both runs (freeform-probe-scope.test.ts and phase5-explorations-params.test.ts, a SIGABRT in the LMDB library's close, not this Story's); 3 test names are gone by design and 19 are new. The comparison and both raw outputs are in docs/standalone/bug-analyze-planner-plans-adherence-check-E202610090f17539c/S001/measurements/ (analyze-suite-comparison-t4.md, analyze-suite-before-7f274d55.tap, analyze-suite-after-cf0bdc19.tap).",
+    "testRecord": {
+      "md": "docs/standalone/bug-analyze-planner-plans-adherence-check-E202610090f17539c/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-0f17539c98aa78ee-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-0f17539c98aa78ee-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/docs-module.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-analyze-planner-plans-adherence-check-E202610090f17539c/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-analyze-planner-plans-adherence-check-E202610090f17539c/S001/measurements/analyze-suite-after-cf0bdc19.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-analyze-planner-plans-adherence-check-E202610090f17539c/S001/measurements/analyze-suite-before-7f274d55.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-analyze-planner-plans-adherence-check-E202610090f17539c/S001/measurements/analyze-suite-comparison-t4.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/__tests__/templates.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/invariant-fix-hints.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/code/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/data/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/infra/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/shared-schemas.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/code/adherence-check.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/data/adherence-check.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/infra/adherence-check.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-constraints.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/adherence-topic-constraints.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/adherence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/paths.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T10:20:30.601Z"
+      }
+    ],
+    "commit": "8687e16d"
+  }
+}

@@ -21,7 +21,11 @@
     "epicSlug": "bug-analyzer-s-plan-tree-child",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-10T06:06:21.546Z",
+    "parentRef": {
+      "slug": "bug-analyzer-s-plan-tree-child"
+    }
   },
   "body": {
     "title": "A child plan's task records overwrite its parent's, and a failed child's cause does not reach its parent",

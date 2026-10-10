@@ -25,7 +25,7 @@
  */
 
 import type { Completeness } from '../completeness.js';
-import type { ScopeErrorCode } from '../context/invariants.js';
+import type { TaskRefusalCode } from '../context/invariants.js';
 import type {
 	ClassifiedIntent,
 	PlanTask,
@@ -158,12 +158,14 @@ export interface PlanExecutionResult {
 	readonly tasksFailed:    ReadonlyArray<FailedTask>;
 }
 
-/** One failed or skipped task of a plan. `code` is present when the task failed
- *  on a refused scope: the scope error's code, as a request's failure states it. */
+/** One failed or skipped task of a plan. `code` is present when the task was
+ *  refused: the scope error's code, as a request's failure states it, or
+ *  `connection-outside-scope` for a task that names a connection other than
+ *  the one the request's scope is. */
 export interface FailedTask {
 	readonly taskId: string;
 	readonly reason: string;
-	readonly code?:  ScopeErrorCode | undefined;
+	readonly code?:  TaskRefusalCode | undefined;
 }
 
 export interface TaskExecutionRecord {
@@ -174,9 +176,9 @@ export interface TaskExecutionRecord {
 	readonly status:       'ok' | 'failed' | 'skipped-dependency-unavailable';
 	readonly outputs?:     Readonly<Record<string, unknown>>;
 	readonly error?:       string;
-	/** Present when the task failed because its scope was refused: the scope
-	 *  error's code. `error` is then the error's own message, with no prefix. */
-	readonly code?:        ScopeErrorCode | undefined;
+	/** Present when the task was refused: the scope error's code, or
+	 *  `connection-outside-scope`. `error` is then the error's own message, with no prefix. */
+	readonly code?:        TaskRefusalCode | undefined;
 	readonly completedAt?: string;
 	/**
 	 * The runtime's completeness record, for a task that ran. Absent on a

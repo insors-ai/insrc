@@ -1,13 +1,12 @@
 /**
- * docs/plans/docs-module.md Phase 7. Tests for the adherence-check
- * runner's constraint-sourcing priority:
- *   1. params.constraintsSource -> upstream task's `constraints`
- *   2. params.constraints (inline)
- *   3. params.constraintIds -> LiveProjectContext keyConstraints
- *
- * Priority 1 + 2 already covered by the code adherence-check
- * runtime's existing pattern; this file focuses on priority 3
- * (constraintIds -- new in Phase 7).
+ * docs/plans/docs-module.md Phase 7. Tests for how the adherence check
+ * resolves its constraints from the two overrides, through the seam:
+ *   1. params.constraints (inline; an empty list counts as not given)
+ *   2. params.constraintIds -> LiveProjectContext keyConstraints
+ * and for what it does with none. The third way, params.constraintTopic
+ * (the check enumerates from the documents), is tested in
+ * adherence-topic-route.test.ts. params.constraintsSource, the upstream
+ * task's `constraints`, is no longer read.
  */
 
 import { test } from 'node:test';
@@ -129,7 +128,8 @@ test('inline params.constraints pass through untouched', async () => {
 			{ constraint: 'boot validation is required' },
 		],
 	});
-	const resolved = await _resolveConstraintsForTest(args, args.task.params as Record<string, unknown>);
+	const { constraints: resolved, source } = await _resolveConstraintsForTest(args, args.task.params as Record<string, unknown>, REPO);
+	assert.deepEqual(source, { kind: 'inline' });
 	assert.equal(resolved.length, 2);
 	assert.equal(resolved[0]!.constraint, 'no direct cloud REST');
 	assert.equal(resolved[0]!.sourceEntityId, 'aaa');
@@ -154,7 +154,8 @@ test('constraintIds hydrate keyConstraints from summarised docs', async () => {
 	}));
 
 	const args = makeExecuteArgs({ constraintIds: [d1.id, d2.id] });
-	const resolved = await _resolveConstraintsForTest(args, args.task.params as Record<string, unknown>);
+	const { constraints: resolved, source } = await _resolveConstraintsForTest(args, args.task.params as Record<string, unknown>, REPO);
+	assert.equal(source.kind, 'stored-documents');
 	assert.equal(resolved.length, 3);
 
 	const byText = new Map(resolved.map(r => [r.constraint, r]));
@@ -172,62 +173,74 @@ test('constraintIds skip ids that do not resolve to summarised docs', async () =
 	}));
 
 	const args = makeExecuteArgs({ constraintIds: [d.id, 'nonexistent-id-1234'] });
-	const resolved = await _resolveConstraintsForTest(args, args.task.params as Record<string, unknown>);
+	const { constraints: resolved, source } = await _resolveConstraintsForTest(args, args.task.params as Record<string, unknown>, REPO);
+	assert.equal(source.kind, 'stored-documents');
 	assert.equal(resolved.length, 1);
 	assert.equal(resolved[0]!.constraint, 'real constraint');
 });
 
-test('constraintIds fall through when the priority-1 upstream is missing', async () => {
-	const d = makeDoc(`${REPO}/design/a.md`, 'a');
-	await upsertEntities(null, [d]);
-	await writeDocSummary(null, d.id, REPO, makeSummary({
-		keyConstraints: ['fell-through'],
-	}));
-
-	// Both `constraintsSource` referenced AND `constraintIds` provided.
-	// Since the source task isn't in upstreamOutputs, priority 1 misses;
-	// priority 3 takes over.
-	const args = makeExecuteArgs({
-		constraintsSource: 'missing-taskId',
-		constraintIds:     [d.id],
-	});
-	const resolved = await _resolveConstraintsForTest(args, args.task.params as Record<string, unknown>);
-	assert.equal(resolved.length, 1);
-	assert.equal(resolved[0]!.constraint, 'fell-through');
-});
-
-// ---------------------------------------------------------------------------
-// Priority 1 wins over priority 2 + 3 when upstream produces valid constraints
-// ---------------------------------------------------------------------------
-
-test('priority-1 upstream overrides both inline and constraintIds', async () => {
+test('a constraintsSource in the params is not read: beside usable ids the ids are used, and the upstream outputs are never looked at', async () => {
 	const d = makeDoc(`${REPO}/design/a.md`, 'a');
 	await upsertEntities(null, [d]);
 	await writeDocSummary(null, d.id, REPO, makeSummary({
 		keyConstraints: ['from-summary'],
 	}));
 
+	// An upstream output under the very name the parameter gives: it used to win.
 	const args = makeExecuteArgs({
 		constraintsSource: 't-upstream',
-		constraints:       [{ constraint: 'inline-constraint' }],
 		constraintIds:     [d.id],
 	});
 	(args.upstreamOutputs as Map<string, unknown>).set('t-upstream', {
-		constraints: [
-			{ constraint: 'from-upstream', sourceEntityId: 'up-eid', file: '/u.md', heading: 'U' },
-		],
+		constraints: [{ constraint: 'from-upstream', sourceEntityId: 'up-eid', file: '/u.md', heading: 'U' }],
 	});
-	const resolved = await _resolveConstraintsForTest(args, args.task.params as Record<string, unknown>);
-	assert.equal(resolved.length, 1);
-	assert.equal(resolved[0]!.constraint, 'from-upstream');
+	// A map that fails the test if the check so much as asks it for a value.
+	const guarded = new Proxy(args.upstreamOutputs as Map<string, unknown>, {
+		get: (_t, prop) => { throw new Error(`the check read upstreamOutputs.${String(prop)}`); },
+	});
+	const { constraints: resolved, source } = await _resolveConstraintsForTest(
+		{ ...args, upstreamOutputs: guarded }, args.task.params as Record<string, unknown>, REPO,
+	);
+	assert.deepEqual(resolved.map(r => r.constraint), ['from-summary']);
+	assert.deepEqual(source, { kind: 'stored-documents', ids: [d.id] });
 });
 
 // ---------------------------------------------------------------------------
-// None of the three -> empty
+// The order of the overrides, and what an empty one means
 // ---------------------------------------------------------------------------
 
-test('returns empty when no constraints source is provided', async () => {
-	const args = makeExecuteArgs({});
-	const resolved = await _resolveConstraintsForTest(args, args.task.params as Record<string, unknown>);
-	assert.equal(resolved.length, 0);
+test('an inline list wins over ids; an empty inline list counts as not given and the ids are used', async () => {
+	const d = makeDoc(`${REPO}/design/a.md`, 'a');
+	await upsertEntities(null, [d]);
+	await writeDocSummary(null, d.id, REPO, makeSummary({
+		keyConstraints: ['from-summary'],
+	}));
+
+	const both = makeExecuteArgs({ constraints: [{ constraint: 'inline-constraint' }], constraintIds: [d.id] });
+	const first = await _resolveConstraintsForTest(both, both.task.params as Record<string, unknown>, REPO);
+	assert.deepEqual([first.constraints.map(r => r.constraint), first.source], [['inline-constraint'], { kind: 'inline' }]);
+
+	// It used to be taken, yield nothing, and fail the check.
+	const emptyInline = makeExecuteArgs({ constraints: [], constraintIds: [d.id] });
+	const second = await _resolveConstraintsForTest(emptyInline, emptyInline.task.params as Record<string, unknown>, REPO);
+	assert.deepEqual([second.constraints.map(r => r.constraint), second.source], [['from-summary'], { kind: 'stored-documents', ids: [d.id] }]);
+});
+
+// ---------------------------------------------------------------------------
+// None of the three -> the check has nothing to judge against
+// ---------------------------------------------------------------------------
+
+test('with no source of constraints the check throws, naming constraintTopic, constraints and constraintIds', async () => {
+	for (const params of [{}, { constraints: [] }, { constraintIds: [] }, { constraintTopic: '   ' }, { constraintsSource: 't-upstream' }]) {
+		const args = makeExecuteArgs(params);
+		await assert.rejects(
+			() => _resolveConstraintsForTest(args, args.task.params as Record<string, unknown>, REPO),
+			(err: Error) => {
+				assert.match(err.message, /^code\.adherence\.check: no constraints to check against\. Give one of: /, JSON.stringify(params));
+				for (const name of ['params.constraintTopic', 'params.constraints', 'params.constraintIds']) assert.ok(err.message.includes(name), name);
+				assert.ok(!err.message.includes('constraintsSource'));
+				return true;
+			},
+		);
+	}
 });

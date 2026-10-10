@@ -13,6 +13,10 @@
 
 import type { AnalyzeTaskTemplate } from '../../types.js';
 import {
+	ADHERENCE_CONSTRAINTS_DESCRIPTION,
+	ADHERENCE_CONSTRAINT_ANY_OF,
+	ADHERENCE_CONSTRAINT_PARAMS,
+	ADHERENCE_REPORT_SOURCE_PROPERTIES,
 	AGGREGATOR_INPUT_SCHEMA,
 	AGGREGATOR_OUTPUT_SCHEMA,
 } from '../shared-schemas.js';
@@ -93,34 +97,17 @@ export const dataAdherenceCheck: AnalyzeTaskTemplate = {
 	target:      'data',
 	family:      'adherence',
 	kind:        'leaf',
-	revision:    'r1',
-	description: 'Check data-layer adherence against a set of doc-derived constraints. `dataSubject` names a connection / table / dataset; constraints come from an upstream docs.constraint.enumerate task OR params.constraints inline. Preserves BOTH doc and data positions on contradictions -- reader decides.',
+	revision:    'r2',
+	description: 'Check data-layer adherence against the constraints the documents state. `dataSubject` names a connection / table / dataset. Preserves BOTH doc and data positions on contradictions -- reader decides. ' + ADHERENCE_CONSTRAINTS_DESCRIPTION,
 	inputSchema: {
 		type:                 'object',
 		additionalProperties: false,
 		required:             ['dataSubject'],
+		// One of the three ways to give constraints; plan validation requires that it is not empty.
+		anyOf:                ADHERENCE_CONSTRAINT_ANY_OF,
 		properties: {
 			dataSubject:       { type: 'string', minLength: 1 },
-			constraintsSource: { type: 'string' },
-			constraints:       {
-				type:  'array',
-				items: {
-					type:                 'object',
-					additionalProperties: true,
-					required:             ['constraint'],
-					properties: {
-						constraint:     { type: 'string' },
-						sourceEntityId: { type: 'string' },
-						file:           { type: 'string' },
-						heading:        { type: 'string' },
-					},
-				},
-			},
-			constraintIds:     {
-				type:  'array',
-				items: { type: 'string' },
-				description: 'Doc-summary entity ids whose keyConstraints hydrate as the constraint set (docs/plans/docs-module.md Phase 7).',
-			},
+			...ADHERENCE_CONSTRAINT_PARAMS,
 			maxSourceExcerpts: { type: 'integer', minimum: 1, maximum: 30 },
 		},
 	},
@@ -135,6 +122,7 @@ export const dataAdherenceCheck: AnalyzeTaskTemplate = {
 			drifts:         { type: 'array' },
 			missingImpl:    { type: 'array' },
 			contradictions: { type: 'array' },
+			...ADHERENCE_REPORT_SOURCE_PROPERTIES,
 		},
 	},
 };

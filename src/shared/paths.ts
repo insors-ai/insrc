@@ -107,11 +107,18 @@ export const PATHS = {
   // Leaf tasks land here; planner-template tasks ALSO land here
   // (carrying the child plan's aggregator output) and additionally
   // hold a sibling directory <runRoot>/tasks/<taskId>/ for the
-  // child plan's persistence layout.
+  // child plan's persistence layout. A child plan's own tasks are
+  // stored in that directory (see analyze/executor/cache.ts), not here.
   analyzeTaskOutput: (runId: string, taskId: string): string =>
     join(INSRC_DIR, 'analyze', runId, 'tasks', `${taskId}.json`),
   analyzeContext: (runId: string): string =>
     join(INSRC_DIR, 'analyze', runId, 'context'),
+  // One enumeration of document constraints per run, repository and
+  // topic, made by an adherence check and read back by its siblings:
+  // ~/.insrc/analyze/<runId>/constraints/<key>.json
+  // (analyze/runtimes/shared/adherence-topic-constraints.ts makes the key).
+  analyzeConstraintRecord: (runId: string, key: string): string =>
+    join(INSRC_DIR, 'analyze', runId, 'constraints', `${key}.json`),
   logDir:      LOG_DIR,
   daemonLog:   join(LOG_DIR, 'daemon.log'),
   agentLog:    join(LOG_DIR, 'agent.log'),

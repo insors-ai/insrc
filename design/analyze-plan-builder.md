@@ -72,7 +72,7 @@ The Plan Validator runs after the LLM's schema check and before the plan is pers
 2. **Stable IDs.** `taskId` is `^t\d{2,3}$`, unique within the list, in monotonic order matching the array position (`t01`, `t02`, …).
 3. **Templates exist.** Every `template` id is in the registered catalog.
 4. **Templates are target-correct.** Every template's declared `target` matches the plan's `target`.
-5. **Params validate.** Each `params` validates against the template's `inputSchema` (ajv).
+5. **Params validate.** Each `params` validates against the template's `inputSchema` (ajv). A task's `scopeRef` must have a kind of scope its template's family accepts, and a subrun task's `childIntent.scopeRef` a kind its child intent's `target` accepts; the kinds per family are one table (`TARGET_TO_KINDS`), from which each template's `scopeRef` schema is built, so the catalog, this rule and the runtime agree.
 6. **`produces` matches template.** Per task, `produces` is exactly the template's declared `produces`. For planner-template tasks, that's always exactly `['report']` (the child Plan's terminal aggregator output is materialized under that name).
 7. **`consumes` references valid producers.** Every name in `consumes` is produced by a task earlier in **this** Plan. Cross-plan consumption isn't expressible here.
 8. **Kind matches template.** `PlannedTask.kind === template.kind`. The planner can't recast a leaf template as a planner template or vice versa.

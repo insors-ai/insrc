@@ -26,11 +26,13 @@ import { Ajv, type ErrorObject } from 'ajv';
 
 import type {
 	AnalyzeScope,
+	AnalyzeScopeRef,
 	AnalyzeTarget,
 	AnalyzeTaskTemplate,
 	PlanTask,
 	PlannedTask,
 } from '../../shared/analyze-types.js';
+import { isKindCompatibleWithTarget, TARGET_TO_KINDS } from '../classifier/validate.js';
 
 /** Catalog-key -> template, indexed once at the start of validation. */
 type CatalogIndex = ReadonlyMap<string, AnalyzeTaskTemplate>;
@@ -63,6 +65,99 @@ export const SCOPE_BAND: Readonly<Record<AnalyzeScope, { readonly lo: number; re
 	L:  { lo: 30, hi: 60 },
 	XL: { lo: 40, hi: 80 },
 });
+
+/**
+ * A scope of the task whose kind does not go with its kind of source, or null:
+ *   - the task's own `scopeRef`, against its template's family;
+ *   - a subrun task's `childIntent.scopeRef`, against the child intent's own
+ *     `target`, which is the family the child plan is built for.
+ * The kinds come from the one table the classifier and the runtimes use, so a
+ * plan that passes here is not refused for a scope's kind when it runs. Only a
+ * parameter the template declares is checked; a value that is not an object
+ * with a string `kind` (or a child intent with no known `target`) is left to
+ * the schema.
+ */
+function refusedScopeKind(
+	task: PlannedTask,
+	tmpl: AnalyzeTaskTemplate,
+): { readonly kind: string; readonly accepted: readonly string[]; readonly message: string } | null {
+	const declared = tmpl.inputSchema?.['properties'] as Record<string, unknown> | undefined;
+	const params = task.params as Record<string, unknown> | undefined;
+	const refusal = (where: string, scopeRef: unknown, family: AnalyzeTarget) => {
+		if (typeof scopeRef !== 'object' || scopeRef === null) return null;
+		const kind = (scopeRef as Record<string, unknown>)['kind'];
+		if (typeof kind !== 'string') return null;
+		if (isKindCompatibleWithTarget(family, kind as AnalyzeScopeRef['kind'])) return null;
+		const accepted: readonly string[] = TARGET_TO_KINDS[family];
+		return {
+			kind,
+			accepted,
+			message:
+				`task ${task.taskId} (${task.template}): ${where}.kind='${kind}' is not a kind of scope ` +
+				`the '${family}' family accepts. Accepted kinds: ${accepted.join(', ')}.`,
+		};
+	};
+
+	if (declared?.['scopeRef'] !== undefined) {
+		const own = refusal('scopeRef', params?.['scopeRef'], tmpl.target);
+		if (own !== null) return own;
+	}
+	const childIntent = params?.['childIntent'];
+	if (declared?.['childIntent'] !== undefined && typeof childIntent === 'object' && childIntent !== null) {
+		const child = childIntent as Record<string, unknown>;
+		const target = child['target'];
+		if (typeof target === 'string' && Object.hasOwn(TARGET_TO_KINDS, target)) {
+			return refusal('childIntent.scopeRef', child['scopeRef'], target as AnalyzeTarget);
+		}
+	}
+	return null;
+}
+
+/** The three ways an adherence check is given its constraints, as the planner is told them. */
+const CONSTRAINT_WAYS =
+	'`constraintTopic` (the subject to look up in the repository\'s documents; the check finds the constraints itself), ' +
+	'`constraints` (a non-empty inline list), or `constraintIds` (a non-empty list of ids of summarised documents)';
+
+/**
+ * An adherence-check task that cannot be run as planned, or null. Applies to a
+ * template that declares a `constraintTopic` parameter (the adherence checks):
+ *   - the task carries `constraintsSource`, which is no longer read: a check
+ *     does not take its constraints from another task's output;
+ *   - the task gives no source of constraints that is not empty. The schema's
+ *     `anyOf` accepts an empty list; this check is what requires content.
+ * The check itself reads an inline list, then ids, then the topic
+ * (runtimes/shared/adherence.ts), and throws when it has none; a plan that
+ * passes here does not reach that throw.
+ */
+function missingConstraintSource(
+	task: PlannedTask,
+	tmpl: AnalyzeTaskTemplate,
+): { readonly problem: 'constraints-source-removed' | 'no-constraint-source'; readonly message: string } | null {
+	const declared = tmpl.inputSchema?.['properties'] as Record<string, unknown> | undefined;
+	if (declared?.['constraintTopic'] === undefined) return null;
+	const params = (task.params ?? {}) as Record<string, unknown>;
+
+	if (params['constraintsSource'] !== undefined) {
+		return {
+			problem: 'constraints-source-removed',
+			message:
+				`task ${task.taskId} (${task.template}): \`constraintsSource\` is no longer accepted: an adherence check does not take ` +
+				`its constraints from another task's output. Remove it and give ${CONSTRAINT_WAYS}.`,
+		};
+	}
+
+	const topic = params['constraintTopic'];
+	const hasTopic  = typeof topic === 'string' && topic.trim().length > 0;
+	const hasInline = Array.isArray(params['constraints']) && params['constraints'].length > 0;
+	const hasIds    = Array.isArray(params['constraintIds']) && params['constraintIds'].length > 0;
+	if (hasTopic || hasInline || hasIds) return null;
+	return {
+		problem: 'no-constraint-source',
+		message:
+			`task ${task.taskId} (${task.template}): an adherence check needs constraints to check against, and this task gives none. ` +
+			`Give ${CONSTRAINT_WAYS}; or leave the task out of the plan.`,
+	};
+}
 
 /** Reduce the lower bound for focused intents (INV-13 note). */
 function focusedLowerBound(scope: AnalyzeScope): number {
@@ -160,6 +255,26 @@ export function validatePlan(
 		const t = plan.tasks[i]!;
 		const tmpl = index.get(t.template)!;
 		if (tmpl.inputSchema === undefined) continue; // no schema declared -> nothing to validate
+		// A kind of scope the task's family (or its child intent's) does not accept:
+		// said in words the planner can act on, before the schema's own (terser) enum error.
+		const refusedKind = refusedScopeKind(t, tmpl);
+		if (refusedKind !== null) {
+			return {
+				invariantId: 'INV-5',
+				message:     refusedKind.message,
+				target:      { index: i, taskId: t.taskId, template: t.template, kind: refusedKind.kind, accepted: refusedKind.accepted },
+			};
+		}
+		// An adherence check with nothing to check against, or with the removed
+		// upstream-task parameter: also said in words, before the schema's error.
+		const noSource = missingConstraintSource(t, tmpl);
+		if (noSource !== null) {
+			return {
+				invariantId: 'INV-5',
+				message:     noSource.message,
+				target:      { index: i, taskId: t.taskId, template: t.template, problem: noSource.problem },
+			};
+		}
 		const v = paramAjv.compile(tmpl.inputSchema);
 		const ok = v(t.params) as boolean;
 		if (!ok) {

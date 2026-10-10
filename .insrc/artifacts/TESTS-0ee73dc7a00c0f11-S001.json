@@ -1,0 +1,133 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "0ee73dc7a00c0f11",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T06:23:16.048Z",
+    "updatedAt": "2026-10-10T06:23:16.048Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "ea47877a",
+        "ranAt": "2026-10-10T06:23:16.048Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/planner/__tests__/templates.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/analyze/planner/__tests__/templates.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/templates.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 801,
+            "titles": [
+              {
+                "title": "registerTemplate accepts a well-formed template",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate rejects id collision",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate rejects missing inputSchema",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate rejects empty produces",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate rejects missing description",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate: family=aggregate without isAggregator flag is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate: isAggregator without family=aggregate is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate: family=aggregate AND isAggregator:true is accepted",
+                "result": "pass"
+              },
+              {
+                "title": "registerBuiltinTemplates registers exactly 27 builtins (7 code + 5 data + 8 infra + 1 generic + 6 docs) without collision",
+                "result": "pass"
+              },
+              {
+                "title": "registerBuiltinTemplates is idempotent (latch prevents double-register)",
+                "result": "pass"
+              },
+              {
+                "title": "every per-target subset has its own aggregator",
+                "result": "pass"
+              },
+              {
+                "title": "getTemplatesForTarget(code) returns 7 code templates (6 leaf + 1 planner)",
+                "result": "pass"
+              },
+              {
+                "title": "getTemplatesForTarget(data) returns 5 data templates",
+                "result": "pass"
+              },
+              {
+                "title": "getTemplatesForTarget(infra) returns 8 infra templates",
+                "result": "pass"
+              },
+              {
+                "title": "getTemplatesForTarget(docs) returns 6 docs templates (5 leaf + 1 planner)",
+                "result": "pass"
+              },
+              {
+                "title": "getTemplatesForTarget(generic) returns the FULL catalog (INV-4 permits cross-target)",
+                "result": "pass"
+              },
+              {
+                "title": "every builtin template has a syntactically valid inputSchema (Ajv compiles)",
+                "result": "pass"
+              },
+              {
+                "title": "every builtin template produces non-empty string entries",
+                "result": "pass"
+              },
+              {
+                "title": "every builtin template id namespaces its target as the leading prefix",
+                "result": "pass"
+              },
+              {
+                "title": "every builtin template description is at least one sentence (>= 20 chars)",
+                "result": "pass"
+              },
+              {
+                "title": "aggregator templates produce exactly ['report']",
+                "result": "pass"
+              },
+              {
+                "title": "every builtin template's scopeRef lists exactly the kinds of scope its family accepts, and the catalog shows the planner those kinds only",
+                "result": "pass"
+              },
+              {
+                "title": "a plan whose task carries a kind of scope its family does not accept fails validation with the task, the kind and the accepted kinds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

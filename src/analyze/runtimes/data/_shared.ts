@@ -15,6 +15,7 @@
 
 import type { TemplateExecuteArgs } from '../../executor/types.js';
 import { acquirePool } from '../../../daemon/db/index.js';
+import { ConnectionOutsideScopeError } from '../../context/invariants.js';
 import type { ResolvedScope } from '../../context/scope.js';
 import { resolveTaskScope } from '../shared/task-scope.js';
 
@@ -67,10 +68,7 @@ export function dataScopeOf(scope: ResolvedScope): DataScope {
  */
 export function connectionWithinScope(scope: DataScope, named: string, templateLabel: string): string {
 	if (scope.connectionId !== undefined && scope.connectionId !== named) {
-		throw new Error(
-			`${templateLabel}: the request's scope is the connection '${scope.connectionId}', ` +
-				`and this task names the connection '${named}'. A task under a connection scope works on that connection only.`,
-		);
+		throw new ConnectionOutsideScopeError(templateLabel, scope.connectionId, named);
 	}
 	return named;
 }

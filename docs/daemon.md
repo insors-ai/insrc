@@ -833,6 +833,20 @@ row gives:
 Before, the code and docs tasks accepted `repo` and `manifest-dir` only, and
 no data task accepted a `connection`.
 
+A plan is held to the same rows before it runs. The catalog shown to the
+planner lists, for each task that takes a scope, only its family's kinds, and a
+plan in which a task carries another kind fails validation, so the planner
+plans again:
+
+```
+task t02 (infra.inventory.ci): scopeRef.kind='file' is not a kind of scope the 'infra' family accepts. Accepted kinds: repo, manifest-dir, workspace.
+```
+
+Before, such a plan was accepted and the task failed when it ran, with
+`scope-ref-kind-target-mismatch`. A task still refuses the kind itself when it
+runs. The scope of a child plan (`childIntent.scopeRef` of a subrun task) is
+held to the row of the child intent's own `target` in the same way.
+
 - A code or docs task keeps to the **area** the scope names: for a `module`
   scope the entities or documents whose file lies under that directory, for a
   `file` scope that file's, for a `symbol` scope the one entity. For a
@@ -916,14 +930,88 @@ carry an optional `code`:
 ]
 ```
 
-`code` is one of `scope-ref-kind-target-mismatch`, `scope-ref-unresolved` and
-`scope-not-indexed`, and is present only for those three. Such a task's
-`reason` is the error's message with no `runtime-threw:` in front. Every other
-failure has no `code`, and an entry without one has no `code` key at all. A
-record written before the change has none, and nothing requires one.
+`code` is one of `scope-ref-kind-target-mismatch`, `scope-ref-unresolved`,
+`scope-not-indexed` and `connection-outside-scope`, and is present only for
+those four. Such a task's `reason` is the error's message with no
+`runtime-threw:` in front. Every other failure has no `code`, and an entry
+without one has no `code` key at all. A record written before the change has
+none, and nothing requires one.
+
+`connection-outside-scope` is a task's code only: under a `connection` scope, a
+task that names another connection is refused before the pool hands that
+connection over. No request fails with it, so it is not in the table of a
+request's error codes.
 
 A task whose record cannot be written fails with
 `task-record-unwritable: <the error>`; the tasks after it still run.
+
+A task of a child plan keeps its own record, in its plan's directory and under
+its full task path: the task `t01` of the child plan of `t02` is at
+`tasks/t02/tasks/t02.t01.json`. The root plan's records stay at
+`tasks/<taskId>.json`.
+
+A planner task whose child plan wrote no report fails with the child's cause:
+`child-plan-unavailable: child aggregator produced no report: its aggregate
+task t02.t05 (<template>) failed: <that task's reason>`, followed by every
+other task of the child that did not complete, each with its task path and its
+reason.
+
+### How an adherence check gets its constraints
+
+An adherence check (`code.adherence.check`, `data.adherence.check`,
+`infra.adherence.check`) compares a subject with the constraints the documents
+state. It is given those constraints in one of three ways, read in this order;
+the first that is given is used alone:
+
+| Parameter | What the check does |
+|---|---|
+| `constraints` | Uses the inline list. An empty list counts as not given. |
+| `constraintIds` | Uses the stored key constraints of the summarised documents with those ids. |
+| `constraintTopic` | Looks the constraints up itself: it enumerates, from the documents of the repository it reads, the constraints on that topic. `maxConstraintSources` (1 to 30) says how many document sections the lookup reads. |
+
+The topic is a subject in the documents' own words ("build and test rules for
+CI workflows"), not a file path. The documents read are those of the whole
+repository the check reads, whatever the check's own scope: for a scope that is
+a manifest directory it is the repository that contains the directory, for a
+connection the repository that declares it.
+
+A plan must give each check one of the three. A plan whose check gives none
+fails validation, so the planner plans again:
+
+```
+task t12 (infra.adherence.check): an adherence check needs constraints to check against, and this task gives none. Give `constraintTopic` (the subject to look up in the repository's documents; the check finds the constraints itself), `constraints` (a non-empty inline list), or `constraintIds` (a non-empty list of ids of summarised documents); or leave the task out of the plan.
+```
+
+A check is never given its constraints by another task. The parameter
+`constraintsSource`, which named an upstream task's output, was removed: plan
+validation refuses it in every plan, with a message that says to give
+`constraintTopic` instead.
+
+**One lookup per topic in a run.** The first check of a run that asks for a
+topic makes the lookup and writes it to
+`~/.insrc/analyze/<runId>/constraints/<key>.json`; every later check of the
+run on the same topic (letters and spacing aside) and the same
+`maxConstraintSources` reads that file, so the checks of one run judge against
+the same list. The plans of a tree share it. The file holds the repository, the
+topic, the task that made the lookup and the lookup's whole result. A lookup
+that fails is not written, and the next check tries again.
+
+**What the report carries.** The `adherence-report` holds, beside its findings,
+`constraints` (the list the check judged against, each with its source
+document) and `constraintSource`: `{ kind: 'documents', topic, repoPath,
+retrievedSectionCount, record }`, `{ kind: 'inline' }` or
+`{ kind: 'stored-documents', ids }`. What the lookup left out (a limit of
+sections it reached, a section it read only in part, a search by meaning that
+did not run) is in the task's completeness record.
+
+**Why a check fails.** Each cause has its own reason on the failed task:
+
+| Reason | Cause |
+|---|---|
+| `the documents of <repo> state no constraint on "<topic>" (...)` | The lookup finished and found nothing: no section matches the topic, or the sections read state no constraint. The check is not shown as passed. |
+| `the constraints on "<topic>" could not be enumerated from the documents of <repo>: <cause>` | The lookup could not be made (the model that reads the sections could not be called). |
+| `params.constraints holds no usable constraint` / `none of the <n> ids in params.constraintIds names a summarised document with a constraint` | An override was given and yields nothing. The topic is not tried in its place. |
+| `the model call that judges adherence failed: ...` | The constraints were found and the judging call failed. The lookup's record stays. |
 
 ### The final report is written from the inputs that exist
 

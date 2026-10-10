@@ -84,6 +84,18 @@ export class ScopeNotIndexedError extends Error {
 	}
 }
 
+/** A task under a connection scope names a connection other than the scope's
+ *  own. Only a task is refused this way: the request's own scope is in order. */
+export class ConnectionOutsideScopeError extends Error {
+	constructor(templateLabel: string, scopeConnectionId: string, named: string) {
+		super(
+			`${templateLabel}: the request's scope is the connection '${scopeConnectionId}', ` +
+				`and this task names the connection '${named}'. A task under a connection scope works on that connection only.`,
+		);
+		this.name = 'ConnectionOutsideScopeError';
+	}
+}
+
 /** The code of each of the three scope errors, as a request's failure states it. */
 export type ScopeErrorCode = 'scope-not-indexed' | 'scope-ref-unresolved' | 'scope-ref-kind-target-mismatch';
 
@@ -100,7 +112,8 @@ export type ScopeErrorMapping =
  * It lives beside the classes so that everything that turns one of them into a
  * coded failure can call it without importing each other: the plan tree's
  * mapping (orchestrator/driver.ts), the daemon's (daemon/analyze-rpc.ts), and
- * the plan walk, which the run driver itself imports.
+ * the plan walk (through `taskRefusalMapping`), which the run driver itself
+ * imports.
  */
 export function scopeErrorMapping(err: unknown): ScopeErrorMapping | undefined {
 	if (err instanceof ScopeNotIndexedError) {
@@ -109,6 +122,22 @@ export function scopeErrorMapping(err: unknown): ScopeErrorMapping | undefined {
 	if (err instanceof ScopeRefUnresolvedError) return { code: 'scope-ref-unresolved', message: err.message };
 	if (err instanceof ScopeKindTargetMismatchError) return { code: 'scope-ref-kind-target-mismatch', message: err.message };
 	return undefined;
+}
+
+/** The code a refused task carries: one of the three scope codes, or the code
+ *  of a task that names a connection outside the request's connection scope. */
+export type TaskRefusalCode = ScopeErrorCode | 'connection-outside-scope';
+
+/**
+ * The ONE mapping from an error a task was refused with to its code: the three
+ * scope errors (through `scopeErrorMapping`) and the connection refusal, which
+ * no request fails with and so is not a `ScopeErrorCode`. Returns `undefined`
+ * for any other error. The plan walk records a task's failure through it.
+ */
+export function taskRefusalMapping(err: unknown): { readonly code: TaskRefusalCode; readonly message: string } | undefined {
+	if (err instanceof ConnectionOutsideScopeError) return { code: 'connection-outside-scope', message: err.message };
+	const scoped = scopeErrorMapping(err);
+	return scoped !== undefined ? { code: scoped.code, message: scoped.message } : undefined;
 }
 
 /**

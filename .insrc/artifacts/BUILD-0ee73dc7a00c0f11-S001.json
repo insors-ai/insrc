@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "0ee73dc7a00c0f11",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T06:23:00.767Z",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix, magnitude small: the templates' scopeRef schema is built per family from the existing table and the plan validator's parameter rule names a refused kind; no design decision open.",
+    "updatedAt": "2026-10-10T06:34:15.036Z",
+    "approvedAt": "2026-10-10T06:34:15.073Z"
+  },
+  "body": {
+    "focus": "Fix ISSUE-0ee73dc7a00c0f11: a plan in which a task's scopeRef has a kind its template's family does not accept fails plan validation, with a message that names the task, the kind it was given and the kinds its family accepts. The catalog shown to the planner lists, for each template, only the kinds of scope its family accepts. The kinds per family come from the one existing table (TARGET_TO_KINDS). A plan whose tasks all carry accepted kinds validates and runs as today; the runtime's own refusal stays.",
+    "producesLld": false,
+    "commit": "769030cf",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "Each template's scopeRef schema is now built from its family's row of the one table (TARGET_TO_KINDS) by scopeRefSchemaFor, so the catalog shown to the planner lists only the kinds of scope the family accepts, and the plan validator's parameter rule (INV-5) fails a plan whose task carries another kind with a message naming the task, the kind and the accepted kinds. The runtime's refusal is unchanged. A subrun task's childIntent keeps the schema with every kind, because its kind of source is not fixed by the template; checking a child intent's kind against its own target is not part of this fix. Two tests over the real catalog in src/analyze/planner/__tests__/templates.test.ts; three mutations each fail them.",
+    "testRecord": {
+      "md": "docs/standalone/bug-analyze-planner-gives-plan-task-E202610090ee73dc7/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-4fb22dc28697cc14-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:34:15.036Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-8f90988572f4d5b2-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:34:15.036Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-analyzer-s-plan-tree-child-E202610108f909885/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:34:15.036Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-data-plan-task-names-connection-E202610094fb22dc2/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:34:15.036Z"
+      }
+    ]
+  }
+}

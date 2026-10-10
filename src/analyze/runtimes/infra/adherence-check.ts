@@ -113,6 +113,9 @@ export const infraAdherenceCheckRuntime: TemplateRuntime = {
 				missingImpl:    result.missingImpl,
 				contradictions: result.contradictions,
 				diagnostics:    result.diagnostics,
+				// What the check judged against, and where it came from.
+				constraints:      result.constraints,
+				constraintSource: result.constraintSource,
 			}]]),
 			completeness: result.completeness,
 		};

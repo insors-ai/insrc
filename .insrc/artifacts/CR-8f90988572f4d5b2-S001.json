@@ -1,0 +1,124 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791612711681-4x50yh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-10T06:11:51.750Z",
+    "model": "claude:opus",
+    "elapsedMs": 73064,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8f90988572f4d5b2",
+    "storyId": "S001",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "8f90988572f4d5b2",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "docs/daemon.md",
+        "src/analyze/executor/__tests__/walker.test.ts",
+        "src/analyze/executor/cache.ts",
+        "src/analyze/executor/walker.ts",
+        "src/shared/paths.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/executor/__tests__/walker.test.ts:833",
+            "message": "Present but unverified. The two tests added by this Story ('every task of every plan in a tree keeps its own record' and 'a planner task whose child produced no report fails with the child's cause') do exercise the changed behaviour: taskOutputPathFor / readTaskOutput with a parentTaskPath, writeTaskOutput and persistTaskRecord for child-plan tasks through runExecutor, and childFailureCause in both its 'failed' and 'was skipped' forms including the 'other tasks' tail. Their pass-state cannot be confirmed: no build record is available, and my attempt to run the file in this review was not permitted. The empty testsReaching on all five entries is not evidence of a missing test: the entries are file-level diff entities with no graph edges at all, so I am not reporting them as not-exercised. Run this file (Node 22) before relying on the coverage.",
+            "expectationRef": "taskOutputPathFor, writeTaskOutput, readTaskOutput (cache.ts); childFailureCause, persistTaskRecord (walker.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/executor/walker.ts:358",
+            "message": "childFailureCause's bare fallback is not exercised. When the child plan has no tasks, has no record for its last task, or its last task completed 'ok' yet no final report exists, the function returns the old text 'child aggregator produced no report' with no cause. Both new test cases take the branch where the aggregate task failed or was skipped; none reaches this return.",
+            "expectationRef": "childFailureCause (fallback return when the aggregate task has no record or status 'ok')",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/executor/walker.ts:517",
+            "message": "The unwritable-record path is not exercised for a child plan's task. persistTaskRecord now passes parentTaskPath to the second writeTaskOutput call (the 'task-record-unwritable' failure record), but the diff adds no test where a child-plan task's record cannot be written, so nothing confirms that the failure record goes to the child's directory rather than the root's.",
+            "expectationRef": "persistTaskRecord (task-record-unwritable retry write with parentTaskPath)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/executor/__tests__/walker.test.ts:876",
+            "message": "A plan nested two levels deep is checked only as a path string. The assertion on taskOutputPathFor('rid', 't01', 't02.t05') confirms the path format, but no test runs a tree with a child of a child, so writing and reading records at depth two, and the task paths childFailureCause prints when its childPath is itself nested (the 't02.t05' form the docs describe), are not exercised by a run.",
+            "expectationRef": "taskOutputPathFor / childFailureCause with a nested parentTaskPath (depth 2 or more)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/executor/cache.ts:71",
+            "message": "Correctness risk: the new `parentTaskPath` argument is optional on `taskOutputPathFor` / `writeTaskOutput` / `readTaskOutput`, and the diff threads it only through the walker's three write sites. Any other caller that reads or removes a single task record without it (resume/reuse checks, report source collection, a per-task delete) still compiles, but now resolves to the ROOT plan's `tasks/<taskId>.json` — for a child task that is the root's same-named record (wrong content, not a miss). No non-test reader passing the argument is visible in the changed set, so confirm every existing caller of these three functions, and that the purge really is recursive (the test asserts it, but the purge itself is unchanged here).",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/executor/walker.ts:367",
+            "message": "Correctness risk (narrow): `childFailureCause` returns the bare 'child aggregator produced no report' whenever the aggregate task has no record or its record is `ok`, and that early return also discards `childResult.root.tasksFailed`. In exactly the cases where the aggregate is not the culprit (it ran `ok` but yielded no report, or the child walk never recorded it), the other failed/skipped child tasks are the only available cause and they are dropped — the same loss this Story sets out to fix. Appending the 'other tasks' list on that branch too would close it.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/executor/walker.ts:368",
+            "message": "Duplication: the walker composes a child task's full path with `appendTaskPath(childPath, taskId)`, while the cache composes the same thing with `taskPath(parentTaskPath, taskId)` imported from plan-sources. The record's file name and the task path quoted in the failure message must stay identical (the docs promise `t02.t05` in both), yet they come from two helpers. Use one.",
+            "counterpartRef": "taskPath (src/analyze/executor/plan-sources.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/executor/cache.ts:45",
+            "message": "Avoidable coupling: the low-level record store now imports `taskPath` from `plan-sources.js`, a higher-level module that consumes an `ExecutorResult` (`collectPlanSources(tree, result)`). If plan-sources reads records through this cache, now or later, that is an import cycle. The path-joining helper belongs in a leaf module (or beside `planDirFor`) that both can import.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/executor/__tests__/walker.test.ts:873",
+            "message": "Taste / portability: the two path assertions match literal `/` separators (`/tasks\\/t02\\/tasks\\/t02\\.t01\\.json$/`) against a path built with `node:path` `join`, so they fail on a platform with a different separator. Harmless on the supported darwin/linux targets.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 7
+    }
+  }
+}

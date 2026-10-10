@@ -52,6 +52,7 @@ import type {
 } from '../types.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { PlanTreeNode } from '../../planner/recursive.js';
+import { collectPlanSources } from '../plan-sources.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -804,6 +805,42 @@ test("a runtime that throws each typed scope error is a failed task with that co
 	}
 });
 
+test('a task refused for naming a connection outside the scope is a failed task with a code and its own message', async () => {
+	const { connectionWithinScope } = await import('../../runtimes/data/_shared.js');
+	_resetRuntimeRegistryForTests();
+	// The refusal as the data tasks raise it, and a plain error with the same words.
+	const refuse = (): never => { connectionWithinScope({ poolPath: '/r', connectionId: 'ledger-db' }, 'audit-db', 'data.discovery.objects'); throw new Error('not refused'); };
+	let message = '';
+	try { refuse(); } catch (err) { message = (err as Error).message; }
+	registerTemplateRuntime({ templateId: 'demo.refused', execute: async () => refuse() });
+	registerTemplateRuntime(throwingRuntime('demo.same-words', message));
+	registerTemplateRuntime(stubRuntime('demo.aggregator', { report: 'r' }));
+
+	const runId = uniqueRunId('connection-code');
+	const plan = mkPlan([
+		mkTask({ taskId: 't01', template: 'demo.refused',    produces: ['a'] }),
+		mkTask({ taskId: 't02', template: 'demo.same-words', produces: ['b'] }),
+		mkTask({ taskId: 't03', template: 'demo.aggregator', produces: ['report'], consumes: ['a', 'b'] }),
+	]);
+	try {
+		const result = await runExecutor({ tree: mkNode(plan), intent: SAMPLE_INTENT, runId });
+		assert.equal(
+			message,
+			"data.discovery.objects: the request's scope is the connection 'ledger-db', and this task names the connection 'audit-db'. "
+			+ 'A task under a connection scope works on that connection only.',
+		);
+		assert.deepEqual(result.root.tasksFailed.slice(0, 2), [
+			{ taskId: 't01', reason: message, code: 'connection-outside-scope' },
+			{ taskId: 't02', reason: `runtime-threw: ${message}` },
+		]);
+		const stored = readTaskOutput(runId, 't01');
+		assert.deepEqual([stored?.status, stored?.code, stored?.error], ['failed', 'connection-outside-scope', message]);
+		assert.ok(!('code' in readTaskOutput(runId, 't02')!));
+	} finally {
+		purgeAllTaskOutputs(runId);
+	}
+});
+
 test('the plan walk imports nothing from the run driver', async () => {
 	const { readFileSync } = await import('node:fs');
 	const { fileURLToPath } = await import('node:url');
@@ -811,4 +848,188 @@ test('the plan walk imports nothing from the run driver', async () => {
 	const imports = [...src.matchAll(/^import[^;]*?from\s+'([^']+)';/gms)].map(m => m[1]!);
 	assert.ok(imports.includes('../context/invariants.js'), 'the shared mapping comes from beside the error classes');
 	assert.deepEqual(imports.filter(i => i.includes('orchestrator')), []);
+});
+
+// ---------------------------------------------------------------------------
+// A plan tree's records and a failed child's cause
+// ---------------------------------------------------------------------------
+
+function plannerTask(taskId: string): PlannedTask {
+	return mkTask({
+		taskId,
+		template:  'code.subrun.deep-dive',
+		kind:      'planner',
+		produces:  ['report'],
+		rationale: 'planner task fixture whose child plan the walk executes',
+	});
+}
+
+test('every task of every plan in a tree keeps its own record', async () => {
+	_resetRuntimeRegistryForTests();
+	registerTemplateRuntime(stubRuntime('root.discovery',  { items: ['root'] }));
+	registerTemplateRuntime(stubRuntime('root.aggregator', { report: { from: 'root-agg' } }));
+	registerTemplateRuntime(stubRuntime('a.discovery',     { items: ['a'] }));
+	registerTemplateRuntime(stubRuntime('a.aggregator',    { report: { from: 'a-agg' } }));
+	registerTemplateRuntime(stubRuntime('b.discovery',     { items: ['b'] }));
+	registerTemplateRuntime(stubRuntime('b.aggregator',    { report: { from: 'b-agg' } }));
+
+	// The root and both children each have a t01 and a t02.
+	const child = (family: string): PlanTreeNode => mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: `${family}.discovery`,  produces: ['items'] }),
+		mkTask({ taskId: 't02', template: `${family}.aggregator`, produces: ['report'], consumes: ['items'] }),
+	]));
+	const rootNode = mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: 'root.discovery', produces: ['items'] }),
+		plannerTask('t02'),
+		plannerTask('t03'),
+		mkTask({ taskId: 't04', template: 'root.aggregator', produces: ['report'], consumes: ['items', 'report'] }),
+	]), new Map([['t02', child('a')], ['t03', child('b')]]));
+
+	const runId = uniqueRunId('tree-records');
+	try {
+		const result = await runExecutor({ tree: rootNode, intent: SAMPLE_INTENT, runId });
+		assert.equal(result.root.tasksFailed.length, 0);
+
+		// The root's records are where they were, and are the root's own.
+		assert.deepEqual(readTaskOutput(runId, 't01')?.outputs, { items: ['root'] });
+		assert.equal(readTaskOutput(runId, 't02')?.kind, 'planner');
+		assert.deepEqual(readTaskOutput(runId, 't02')?.outputs, { report: { from: 'a-agg' } });
+		assert.deepEqual(readTaskOutput(runId, 't03')?.outputs, { report: { from: 'b-agg' } });
+
+		// Each child's records are apart from the root's and from its sibling's.
+		assert.deepEqual(readTaskOutput(runId, 't01', 't02')?.outputs, { items: ['a'] });
+		assert.deepEqual(readTaskOutput(runId, 't02', 't02')?.outputs, { report: { from: 'a-agg' } });
+		assert.deepEqual(readTaskOutput(runId, 't01', 't03')?.outputs, { items: ['b'] });
+		assert.deepEqual(readTaskOutput(runId, 't02', 't03')?.outputs, { report: { from: 'b-agg' } });
+
+		const paths = [
+			taskOutputPathFor(runId, 't01'), taskOutputPathFor(runId, 't02'),
+			taskOutputPathFor(runId, 't01', 't02'), taskOutputPathFor(runId, 't02', 't02'),
+			taskOutputPathFor(runId, 't01', 't03'), taskOutputPathFor(runId, 't02', 't03'),
+		];
+		assert.equal(new Set(paths).size, paths.length);
+		assert.match(taskOutputPathFor(runId, 't01', 't02'), /tasks\/t02\/tasks\/t02\.t01\.json$/);
+		assert.match(taskOutputPathFor('rid', 't01', 't02.t05'), /tasks\/t02\/tasks\/t02\.t05\/tasks\/t02\.t05\.t01\.json$/);
+
+		// Removing the run's records removes the children's too.
+		purgeAllTaskOutputs(runId);
+		for (const path of paths) assert.equal(existsSync(path), false, path);
+	} finally {
+		purgeAllTaskOutputs(runId);
+	}
+});
+
+test('a planner task whose child produced no report fails with the child\'s cause', async () => {
+	_resetRuntimeRegistryForTests();
+	registerTemplateRuntime(stubRuntime('demo.discovery',      { items: ['x'] }));
+	registerTemplateRuntime(stubRuntime('demo.aggregator',     { report: 'r' }));
+	registerTemplateRuntime(throwingRuntime('child.aggregator', 'Prompt is too long'));
+	registerTemplateRuntime(throwingRuntime('child.broken',     'BOOM'));
+
+	const rootPlan = mkPlan([
+		plannerTask('t01'),
+		mkTask({ taskId: 't02', template: 'demo.aggregator', produces: ['report'], consumes: ['report'] }),
+	]);
+
+	// The child's aggregate task itself fails.
+	const aggregateFails = mkNode(rootPlan, new Map([['t01', mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: 'demo.discovery',   produces: ['items'] }),
+		mkTask({ taskId: 't02', template: 'child.aggregator', produces: ['report'], consumes: ['items'] }),
+	]))]]));
+	const runId = uniqueRunId('child-cause');
+	try {
+		const result = await runExecutor({ tree: aggregateFails, intent: SAMPLE_INTENT, runId });
+		const expected = 'child-plan-unavailable: child aggregator produced no report: '
+			+ 'its aggregate task t01.t02 (child.aggregator) failed: runtime-threw: Prompt is too long';
+		assert.equal(result.root.perTask.get('t01')?.error, expected);
+		assert.deepEqual(result.root.tasksFailed[0], { taskId: 't01', reason: expected });
+		assert.equal(readTaskOutput(runId, 't01')?.error, expected);
+		assert.equal(collectPlanSources(aggregateFails, result)[0]?.failure, expected);
+	} finally {
+		purgeAllTaskOutputs(runId);
+	}
+
+	// The child's aggregate task is skipped because the task before it failed.
+	const producerFails = mkNode(rootPlan, new Map([['t01', mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: 'child.broken',     produces: ['items'] }),
+		mkTask({ taskId: 't02', template: 'child.aggregator', produces: ['report'], consumes: ['items'] }),
+	]))]]));
+	const runId2 = uniqueRunId('child-cause-skipped');
+	try {
+		const result = await runExecutor({ tree: producerFails, intent: SAMPLE_INTENT, runId: runId2 });
+		assert.equal(
+			result.root.perTask.get('t01')?.error,
+			'child-plan-unavailable: child aggregator produced no report: '
+			+ 'its aggregate task t01.t02 (child.aggregator) was skipped: dependency-unavailable: items; '
+			+ 'other tasks of the child plan that did not complete: t01.t01: runtime-threw: BOOM',
+		);
+	} finally {
+		purgeAllTaskOutputs(runId2);
+	}
+
+	// The child's aggregate task finishes with no report; the only cause is another task's failure.
+	registerTemplateRuntime(stubRuntime('child.empty', { report: undefined }));
+	const noReport = mkNode(rootPlan, new Map([['t01', mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: 'child.broken', produces: ['items'] }),
+		mkTask({ taskId: 't02', template: 'child.empty',  produces: ['report'] }),
+	]))]]));
+	const runId3 = uniqueRunId('child-cause-no-report');
+	try {
+		const result = await runExecutor({ tree: noReport, intent: SAMPLE_INTENT, runId: runId3 });
+		assert.equal(
+			result.root.perTask.get('t01')?.error,
+			'child-plan-unavailable: child aggregator produced no report; '
+			+ 'other tasks of the child plan that did not complete: t01.t01: runtime-threw: BOOM',
+		);
+	} finally {
+		purgeAllTaskOutputs(runId3);
+	}
+});
+
+test('a plan two levels down keeps its own records and names its tasks by their full path', async () => {
+	_resetRuntimeRegistryForTests();
+	registerTemplateRuntime(stubRuntime('demo.discovery',       { items: ['x'] }));
+	registerTemplateRuntime(stubRuntime('demo.aggregator',      { report: 'r' }));
+	registerTemplateRuntime(throwingRuntime('deep.aggregator',  'Prompt is too long'));
+
+	// root t02 -> child t05 -> grandchild, whose aggregate task fails.
+	const grandchild = mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: 'demo.discovery',  produces: ['items'] }),
+		mkTask({ taskId: 't02', template: 'deep.aggregator', produces: ['report'], consumes: ['items'] }),
+	]));
+	const child = mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: 'demo.discovery', produces: ['items'] }),
+		plannerTask('t05'),
+		mkTask({ taskId: 't06', template: 'demo.aggregator', produces: ['report'], consumes: ['report'] }),
+	]), new Map([['t05', grandchild]]));
+	const rootNode = mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: 'demo.discovery', produces: ['items'] }),
+		plannerTask('t02'),
+		mkTask({ taskId: 't03', template: 'demo.aggregator', produces: ['report'], consumes: ['items', 'report'] }),
+	]), new Map([['t02', child]]));
+
+	const runId = uniqueRunId('two-levels');
+	try {
+		const result = await runExecutor({ tree: rootNode, intent: SAMPLE_INTENT, runId });
+
+		// One t01 at each of the three levels, each with its own record.
+		assert.equal(readTaskOutput(runId, 't01')?.template, 'demo.discovery');
+		assert.equal(readTaskOutput(runId, 't01', 't02')?.status, 'ok');
+		assert.equal(readTaskOutput(runId, 't01', 't02.t05')?.status, 'ok');
+		assert.equal(readTaskOutput(runId, 't02', 't02.t05')?.error, 'runtime-threw: Prompt is too long');
+		assert.equal(readTaskOutput(runId, 't02')?.kind, 'planner');
+
+		// The cause travels up both levels, each task named by its full path.
+		const deep = 'child-plan-unavailable: child aggregator produced no report: '
+			+ 'its aggregate task t02.t05.t02 (deep.aggregator) failed: runtime-threw: Prompt is too long';
+		assert.equal(readTaskOutput(runId, 't05', 't02')?.error, deep);
+		assert.equal(
+			result.root.perTask.get('t02')?.error,
+			'child-plan-unavailable: child aggregator produced no report: '
+			+ 'its aggregate task t02.t06 (demo.aggregator) was skipped: dependency-unavailable: report; '
+			+ `other tasks of the child plan that did not complete: t02.t05: ${deep}`,
+		);
+	} finally {
+		purgeAllTaskOutputs(runId);
+	}
 });

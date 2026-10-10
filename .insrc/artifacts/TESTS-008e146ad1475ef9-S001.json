@@ -1,0 +1,239 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "008e146ad1475ef9",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T14:08:41.695Z",
+    "updatedAt": "2026-10-10T14:08:41.695Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "169e973a",
+        "ranAt": "2026-10-10T14:08:41.695Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a live source whose listing never returns, and one that is never reached, is reported as not determined after the time limit with the reason that the listing timed out, and is never a count",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "a live source whose listing never returns, and one that is never reached, is reported as not determined after the time limit with the reason that the listing timed out, and is never a count",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a request cancelled while a source is being measured stops at once and the remaining sources of a pool are not asked; a signal already aborted reads nothing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "a request cancelled while a source is being measured stops at once and the remaining sources of a pool are not asked; a signal already aborted reads nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "one stalled connection among several does not stop the others from being measured, each has its own time limit, and the sum is not a count",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "one stalled connection among several does not stop the others from being measured, each has its own time limit, and the sum is not a count",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the rejection of a listing abandoned after its time limit is caught and is not an unhandled rejection",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "the rejection of a listing abandoned after its time limit is caught and is not an unhandled rejection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/data-source-listing-timeout.test.ts",
+                "title": "the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the setting analyzer.dataSourceListingTimeoutMs is in the configuration catalog as a number with a default of 120000",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/data-source-listing-timeout.test.ts",
+                "title": "the setting analyzer.dataSourceListingTimeoutMs is in the configuration catalog as a number with a default of 120000",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "the real CONFIG_CATALOG has 37 rows (flat models.* surface; shaper*/summariser* now derived; + codeReview.enforce + codeReview.freshnessTimeoutMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/__tests__/measure-pass.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2640,
+            "titles": [
+              {
+                "title": "measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)",
+                "result": "pass"
+              },
+              {
+                "title": "measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)",
+                "result": "pass"
+              },
+              {
+                "title": "a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)",
+                "result": "pass"
+              },
+              {
+                "title": "measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)",
+                "result": "pass"
+              },
+              {
+                "title": "measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not",
+                "result": "pass"
+              },
+              {
+                "title": "dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id",
+                "result": "pass"
+              },
+              {
+                "title": "an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)",
+                "result": "pass"
+              },
+              {
+                "title": "a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution",
+                "result": "pass"
+              },
+              {
+                "title": "a live source whose listing never returns, and one that is never reached, is reported as not determined after the time limit with the reason that the listing timed out, and is never a count",
+                "result": "pass"
+              },
+              {
+                "title": "a request cancelled while a source is being measured stops at once and the remaining sources of a pool are not asked; a signal already aborted reads nothing",
+                "result": "pass"
+              },
+              {
+                "title": "one stalled connection among several does not stop the others from being measured, each has its own time limit, and the sum is not a count",
+                "result": "pass"
+              },
+              {
+                "title": "the rejection of a listing abandoned after its time limit is caught and is not an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/config-catalog-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 385,
+            "titles": [
+              {
+                "title": "src/config/** contains no import of src/cli (static scan of resolved specifiers)",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption",
+                "result": "pass"
+              },
+              {
+                "title": "the src/cli re-export is reference-identical to the src/config definition (no duplicate literal)",
+                "result": "pass"
+              },
+              {
+                "title": "the real CONFIG_CATALOG has 37 rows (flat models.* surface; shaper*/summariser* now derived; + codeReview.enforce + codeReview.freshnessTimeoutMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs)",
+                "result": "pass"
+              },
+              {
+                "title": "RETIRED_PATHS covers exactly the 6 declared legacy entries and is disjoint from every CONFIG_CATALOG path",
+                "result": "pass"
+              },
+              {
+                "title": "real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real catalog — second pass changed === false",
+                "result": "pass"
+              },
+              {
+                "title": "ConfigCatalogError is the class thrown for catalog-integrity failures (not a bare Error)",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every catalog row has a non-empty group",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every enum row carries a non-empty enumValues; every non-enum row omits it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/data-source-listing-timeout.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 504,
+            "titles": [
+              {
+                "title": "the setting analyzer.dataSourceListingTimeoutMs is in the configuration catalog as a number with a default of 120000",
+                "result": "pass"
+              },
+              {
+                "title": "the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

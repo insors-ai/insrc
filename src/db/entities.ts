@@ -792,6 +792,35 @@ export async function listEntitiesForRepo(_db: DbClient, repo: string): Promise<
 	return out;
 }
 
+/**
+ * The files the store holds for one repo: each non-empty absolute file
+ * path mapped to the string ids of THIS repo's entities in it. One pass
+ * over the entity table, no entity construction. Entities with an empty
+ * file path (external endpoints) belong to no file and are left out.
+ * An unregistered repo yields an empty map.
+ */
+export async function listEntityFilesForRepo(
+	_db: DbClient,
+	repo: string,
+): Promise<Map<string, string[]>> {
+	const store = await getGraphStore();
+	const out = new Map<string, string[]>();
+	const repoId = lookupRepoIdInTxn(store, repo);
+	if (repoId === undefined) return out;
+	for (const { key, value } of store.entity.getRange()) {
+		const row = decodeEntityRow(value as Buffer);
+		if (row.repoId !== repoId) continue;
+		if (row.filePath === '') continue;
+		const stringId = lookupStringIdByU64(store, decodeKeyU64(key as Buffer));
+		if (stringId === undefined) continue;
+		const file = toAbsolutePath(row.filePath, repo);
+		const ids = out.get(file);
+		if (ids === undefined) out.set(file, [stringId]);
+		else ids.push(stringId);
+	}
+	return out;
+}
+
 export async function findEntitiesByFile(_db: DbClient, file: string): Promise<Entity[]> {
 	const store = await getGraphStore();
 	// `file` from callers is an absolute path; rows store the

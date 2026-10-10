@@ -16,7 +16,7 @@
 
 import type { DeliveryEvidenceView, DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
 import type { DisplayLabels } from './labels.js';
-import type { BadgeView, ChainRowView, EvidenceRowView, ItemDetailsViewModel, TaskRowView } from './board-protocol.js';
+import type { BadgeView, ChainRowView, EvidenceRowView, ItemDetailsViewModel, LinkView, TaskRowView } from './board-protocol.js';
 import { badgesOf, compactIdOf, indexItems, isCardKind, taskSummaryOf, titleOf, type ItemIndex } from './board-model.js';
 import { approvalTone, labelOf, taskResultTone } from './labels.js';
 
@@ -73,6 +73,12 @@ function conflictSentence(item: DeliveryItemView, byId: ItemIndex): string | nul
   return `The build is approved while ${parts.join(' and ')}.`;
 }
 
+/** An ISO time as 'YYYY-MM-DD HH:MM UTC', or the string itself when it is not one. */
+function readableTime(iso: string): string {
+  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(iso);
+  return m === null ? iso : `${m[1]} ${m[2]} UTC`;
+}
+
 function evidenceRow(entry: DeliveryEvidenceView, labels: DisplayLabels): EvidenceRowView {
   const review = entry.review;
   let reviewLabel: string | null = null;
@@ -87,6 +93,7 @@ function evidenceRow(entry: DeliveryEvidenceView, labels: DisplayLabels): Eviden
     reviewLabel,
     overrideLabel: review?.override == null ? null : `Overridden: ${review.override.reason}`,
     opensIn: entry.openWith === 'review-view' && entry.mdPath !== null ? 'review-pane' : 'read-only',
+    approvedAt: entry.approval.at == null ? null : readableTime(entry.approval.at),
   };
 }
 
@@ -172,6 +179,13 @@ function linkedItems(item: DeliveryItemView, byId: ItemIndex): ItemDetailsViewMo
   return linked;
 }
 
+/** The issues whose recorded parent resolves to the item, in snapshot order, as followable links. */
+function correctedByOf(item: DeliveryItemView, snapshot: DeliverySnapshot, labels: DisplayLabels): LinkView[] {
+  return snapshot.items
+    .filter(i => i.kind === 'issue' && i.correctsRef?.resolvedItemId === item.id)
+    .map(i => ({ itemId: i.id, kind: i.kind, title: titleOf(i), stageLabel: i.stage === null ? null : labelOf(labels.stage, i.stage.stage) }));
+}
+
 /** The sc6 details for itemId, or null when the id is not in the snapshot. */
 export function buildItemDetails(
   snapshot: DeliverySnapshot,
@@ -199,6 +213,7 @@ export function buildItemDetails(
     evidence: item.evidence.map(e => evidenceRow(e, labels)),
     notices: item.notices.map(n => `${labelOf(labels.notice, n.code)}: ${n.message}`),
     linked: linkedItems(item, byId),
+    correctedBy: correctedByOf(item, snapshot, labels),
     sourceIds: [...item.sourceIds],
     planNotice: plan.state === 'failed' ? `The plan could not be read: ${plan.message}` : null,
     openedRecord: opened !== null && item.evidence.some(e => e.artifactId === opened.artifactId) ? opened : null,

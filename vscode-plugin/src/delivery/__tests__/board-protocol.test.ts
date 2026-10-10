@@ -68,3 +68,37 @@ test('parseBoardUpMessage accepts { type: \'clear-filters\' } and rejects it wit
   }
   assert.equal(parseBoardUpMessage(env({ type: 'clear-filters' }, 2)), null, 'a wrong version is still rejected');
 });
+
+test('every new up-message parses and a malformed crumb, back or set-view gives null', () => {
+  const valid: BoardUpMessage[] = [
+    { type: 'set-view', view: 'all' },
+    { type: 'set-view', view: 'epics' },
+    { type: 'set-view', view: 'standalone' },
+    { type: 'set-view', view: 'issues' },
+    { type: 'open-epic', epicItemId: 'E20261007aaaaaaaa' },
+    { type: 'open-item', itemId: 'E20261007aaaaaaaa:S001' },
+    { type: 'set-item-tab', tab: 'overview' },
+    { type: 'set-item-tab', tab: 'evidence' },
+    { type: 'set-item-tab', tab: 'linked' },
+    { type: 'back' },
+    { type: 'go-to-crumb', index: 0 },
+    { type: 'go-to-crumb', index: 3 },
+  ];
+  for (const m of valid) assert.deepEqual(parseBoardUpMessage(env(m)), m, JSON.stringify(m));
+
+  const invalid: unknown[] = [
+    env({ type: 'set-view', view: 'All work' }),
+    env({ type: 'open-epic', epicItemId: '' }),
+    env({ type: 'open-epic', itemId: 'E20261007aaaaaaaa' }),
+    env({ type: 'open-item', itemId: 7 }),
+    env({ type: 'set-item-tab', tab: 'records' }),
+    env({ type: 'back', steps: 2 }),
+    env({ type: 'clear-filters', search: '' }),
+    env({ type: 'go-to-crumb', index: -1 }),
+    env({ type: 'go-to-crumb', index: 1.5 }),
+    env({ type: 'go-to-crumb', index: '1' }),
+    env({ type: 'go-to-crumb' }),
+    env({ type: 'back' }, 2),
+  ];
+  for (const raw of invalid) assert.equal(parseBoardUpMessage(raw), null, JSON.stringify(raw));
+});

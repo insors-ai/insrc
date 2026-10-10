@@ -12,6 +12,7 @@ import { boardDownMessages, initialBoardState, INITIAL_SELECTION, reduceBoardSta
 import type { BoardDownMessage, StatusView } from '../board-protocol.js';
 import type { DeliveryItem, DeliverySnapshot } from '../delivery-contract.js';
 import type { DeliveryFailureKind } from '../delivery-client.js';
+import { selectionPanel } from '../board-model.js';
 import { DISPLAY_LABELS } from '../labels.js';
 import { item as fixtureItem, snapshot } from './board-fixtures.js';
 
@@ -150,7 +151,7 @@ test('statusView panel kinds \u2014 empty, unavailable, refresh-failed (stale wi
   const empty = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([]))]);
   assert.deepEqual(at(empty).panel, {
     kind: 'empty', title: 'No work items yet', text: 'The workspace was read successfully. No epic, story or issue records were found.',
-    action: null, stale: false, affected: [],
+    action: null, stale: false, affected: [], placement: 'body',
   });
 
   const down = at(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'daemon-unavailable', 'daemon is not running')])).panel!;
@@ -165,7 +166,7 @@ test('statusView panel kinds \u2014 empty, unavailable, refresh-failed (stale wi
   const partial = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A')], { unreadableCount: 2, notices: [notice] }))]);
   assert.deepEqual(at(partial).panel, {
     kind: 'partial', title: 'Some evidence could not be read', text: 'Every readable item is shown; counts may not cover every record.',
-    action: null, stale: false,
+    action: null, stale: false, placement: 'banner',
     affected: [{ artifactIds: [], text: '2 records could not be read.' }, { artifactIds: ['PLAN-x'], text: 'PLAN-x could not be parsed.' }],
   });
 });
@@ -180,4 +181,19 @@ test('boardDownMessages with now keeps status first and the selected view\'s mod
   assert.ok(first.type === 'status');
   assert.equal(first.status.freshnessLabel, 'Updated just now', 'the status is phrased against the clock it is given');
   assert.deepEqual(boardDownMessages(initialBoardState(), DISPLAY_LABELS, {}, NOW).map(e => e.payload.type), ['status'], 'no snapshot, status only');
+});
+
+test('statusView places empty and snapshot-less failures in the body and stale failures and partial evidence in the banner', () => {
+  const placement = (state: BoardState): string | undefined => statusView(state.status, NOW).panel?.placement;
+  const loaded = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A')]))]);
+
+  assert.equal(placement(run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([]))])), 'body', 'empty replaces the screen');
+  assert.equal(placement(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'daemon-unavailable', 'down')])), 'body', 'unavailable with no snapshot');
+  assert.equal(placement(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'read-failed', 'bad')])), 'body', 'a first refresh that failed');
+  assert.equal(placement(run([{ type: 'refresh-requested', seq: 2 }, failed(2, 'timed-out', 'slow')], loaded)), 'banner', 'a failure over a stale board');
+  assert.equal(placement(run([{ type: 'refresh-requested', seq: 2 }, failed(2, 'daemon-unavailable', 'down')], loaded)), 'banner', 'unavailable over a stale board');
+  const partial = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A')], { unreadableCount: 1 }))]);
+  assert.equal(placement(partial), 'banner', 'partial evidence');
+  assert.equal(selectionPanel('no-matches', DISPLAY_LABELS).placement, 'body');
+  assert.equal(selectionPanel('no-issues', DISPLAY_LABELS).placement, 'body');
 });

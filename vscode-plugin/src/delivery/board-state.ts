@@ -162,7 +162,7 @@ function partialPanel(s: DeliverySnapshot): StatePanelView | null {
   return {
     kind: 'partial', title: 'Some evidence could not be read',
     text: 'Every readable item is shown; counts may not cover every record.',
-    action: null, stale: false, affected,
+    action: null, stale: false, affected, placement: 'banner',
   };
 }
 
@@ -184,7 +184,7 @@ export function statusView(status: LoadStatus, now: string): StatusView {
     case 'empty':
       return {
         state: 'empty', takenAt, message: 'This workspace has no recorded delivery work yet.', partialNotice: null, stale: false, freshnessLabel: freshness,
-        panel: { kind: 'empty', title: 'No work items yet', text: 'The workspace was read successfully. No epic, story or issue records were found.', action: null, stale: false, affected: [] },
+        panel: { kind: 'empty', title: 'No work items yet', text: 'The workspace was read successfully. No epic, story or issue records were found.', action: null, stale: false, affected: [], placement: 'body' },
       };
     case 'unavailable':
     case 'failed': {
@@ -195,7 +195,8 @@ export function statusView(status: LoadStatus, now: string): StatusView {
         kind: status.state === 'unavailable' ? 'unavailable' : 'refresh-failed',
         title: stale ? 'Showing the last successful snapshot' : prefix,
         text: stale ? `${prefix}: ${status.message}. Your board and selection are preserved.` : status.message,
-        action: 'retry', stale, affected: [],
+        // With no board to fall back on the panel replaces the screen; over a stale board it sits above it.
+        action: 'retry', stale, affected: [], placement: stale ? 'banner' : 'body',
       };
       return { state: status.state, takenAt, message: `${prefix} at ${status.at}: ${status.message}${since}`, partialNotice: partial, stale, freshnessLabel: freshness, panel };
     }

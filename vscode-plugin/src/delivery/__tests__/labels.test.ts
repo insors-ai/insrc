@@ -68,3 +68,15 @@ test('DISPLAY_LABELS carries chain.notRecorded, conflictHeadline and noMatchesTi
   assert.equal(DISPLAY_LABELS.noMatchesTitle, 'Nothing matches this view');
   for (const k of ['noMatchesText', 'noIssuesTitle', 'noIssuesText'] as const) assert.ok(DISPLAY_LABELS[k].length > 0, k);
 });
+
+test('DISPLAY_LABELS carries the view, item-tab, attention and stage-section labels', () => {
+  assert.deepEqual(DISPLAY_LABELS.views, { all: 'All work', epics: 'Epics', standalone: 'Standalone', issues: 'Issues' });
+  assert.deepEqual(DISPLAY_LABELS.itemTabs, {
+    overview: { long: 'Overview & tasks', short: 'Overview' },
+    evidence: { long: 'Workflow evidence', short: 'Evidence' },
+    linked: { long: 'Linked work', short: 'Linked' },
+  });
+  assert.equal(DISPLAY_LABELS.needsAttention, 'Needs attention');
+  assert.equal(DISPLAY_LABELS.nothingAtStage, 'nothing at this stage');
+  assert.equal(DISPLAY_LABELS.otherStages, 'Other stages · 0 matching');
+});

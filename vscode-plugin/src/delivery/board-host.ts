@@ -570,7 +570,11 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     switch (msg.type) {
       case 'ready': apply(state, paging); return;
       case 'refresh': startRefresh(); return;
-      case 'set-view': select({ ...sel, view: msg.view }); return;
+      case 'set-view':
+        // The four-view screens arrive with the navigation trail (t3); until then only the three tabs switch.
+        if (msg.view === 'all' || msg.view === 'standalone') return;
+        select({ ...sel, view: msg.view });
+        return;
       case 'set-scope':
         if (!knownScope(msg.scope)) {
           log.warn('delivery board: ignored a scope naming an epic that is not on the board');

@@ -36,6 +36,8 @@ export interface StatePanelView {
   readonly stale: boolean;
   /** What could not be read: each store notice with its records, and the unreadable-record count. */
   readonly affected: readonly { readonly artifactIds: readonly string[]; readonly text: string }[];
+  /** 'body' replaces the screen's content (or its list area); 'banner' sits above a screen that stays usable. */
+  readonly placement: 'body' | 'banner';
 }
 
 export interface StatusView {
@@ -202,6 +204,8 @@ export interface EvidenceRowView {
   readonly reviewLabel: string | null;
   readonly overrideLabel: string | null;
   readonly opensIn: 'review-pane' | 'read-only';
+  /** When the record was approved, as 'YYYY-MM-DD HH:MM UTC'; null when it carries no approval time. */
+  readonly approvedAt: string | null;
 }
 
 /** The details of the selected item (s4, sc6), built from the shown snapshot alone. */
@@ -223,11 +227,118 @@ export interface ItemDetailsViewModel {
   readonly evidence: readonly EvidenceRowView[];
   readonly notices: readonly string[];
   readonly linked: readonly { readonly itemId: string; readonly title: string; readonly relation: 'parent' | 'child' | 'corrects' }[];
+  /** The issues whose recorded parent is this item, in snapshot order. */
+  readonly correctedBy: readonly LinkView[];
   readonly sourceIds: readonly string[];
   /** Set when the PLAN read failed; the rest of the details still render. */
   readonly planNotice: string | null;
   /** The read-only text of an evidence-read record the reader opened, rendered as preformatted text. */
   readonly openedRecord: { readonly artifactId: string; readonly text: string } | null;
+}
+
+/** The four views the reader chooses between; Needs attention narrows whichever is chosen. */
+export type ListView = 'all' | 'epics' | 'standalone' | 'issues';
+
+/** The story screen's tabs. */
+export type ItemTab = 'overview' | 'evidence' | 'linked';
+
+/** Where the reader is: one of the four views, one epic's board, or one story's or issue's own screen. */
+export type BoardScreen =
+  | { readonly kind: 'list'; readonly view: ListView }
+  | { readonly kind: 'epic'; readonly epicItemId: string }
+  | { readonly kind: 'item'; readonly itemId: string; readonly tab: ItemTab };
+
+/** One stage of a board screen, shown as a collapsible section. */
+export interface StageSectionView {
+  readonly stage: DeliveryStage;
+  readonly label: string;
+  /** Matches in the stage, including cards behind show-more. */
+  readonly total: number;
+  readonly cards: readonly CardView[];
+  readonly hiddenCount: number;
+  readonly attentionCount: number;
+  /** Whether the section starts open; the webview keeps the reader's own choice once made. */
+  readonly defaultOpen: boolean;
+  /** 'nothing at this stage' for an empty stage; null otherwise. */
+  readonly emptyText: string | null;
+  /** How many need attention, for a section that starts closed with matches; null otherwise. */
+  readonly hint: string | null;
+}
+
+/** A board screen (All work, Standalone, or one epic's board): six stage sections. */
+export interface StagesBody {
+  readonly kind: 'stages';
+  /** The epic's own row (the same numbers as on Epics) on an epic's board; null otherwise. */
+  readonly epic: EpicRollupRowView | null;
+  readonly totalsLabel: string;
+  /** True when Needs attention is on, so the totals line offers Show all. */
+  readonly showAll: boolean;
+  readonly sections: readonly StageSectionView[];
+  /** The empty stages folded into one line: always under Needs attention, and in a narrow pane. */
+  readonly fold: { readonly always: boolean; readonly text: string };
+  readonly emptyPanel: StatePanelView | null;
+}
+
+/** The Epics screen: one row per epic, each opening that epic's board. */
+export interface EpicsBody {
+  readonly kind: 'epics';
+  readonly totalsLabel: string;
+  readonly rows: readonly EpicRollupRowView[];
+  readonly emptyPanel: StatePanelView | null;
+}
+
+/** The Issues screen: a list of issues in stage order. */
+export interface IssuesBody {
+  readonly kind: 'issues';
+  readonly totalsLabel: string;
+  readonly issues: readonly IssueEntryView[];
+  readonly emptyPanel: StatePanelView | null;
+}
+
+/** A story's own screen, on one of its tabs. */
+export interface StoryBody {
+  readonly kind: 'story';
+  readonly tab: ItemTab;
+  readonly details: ItemDetailsViewModel;
+  /** The story's epic with its completion, for Linked work; null for a story in no epic. */
+  readonly epic: EpicRollupRowView | null;
+}
+
+/** An issue's own screen. */
+export interface IssueBody {
+  readonly kind: 'issue';
+  readonly details: ItemDetailsViewModel;
+  readonly entry: IssueEntryView;
+}
+
+export type ScreenBody = StagesBody | EpicsBody | IssuesBody | StoryBody | IssueBody;
+
+/** One breadcrumb step; index is the trail entry it returns to. */
+export interface CrumbView {
+  readonly label: string;
+  readonly index: number;
+}
+
+/** Everything one screen shows. Each screen message replaces the whole screen. */
+export interface ScreenModel {
+  /** The trail entry's id; the webview keys its scroll and section memory on it. */
+  readonly entryId: number;
+  /** True when the reader came back to this screen (Back or a crumb): scroll and focus are restored. */
+  readonly restored: boolean;
+  /** The card or row the reader opened from this screen, to focus on return. */
+  readonly focusItemId: string | null;
+  readonly title: string;
+  readonly crumbs: readonly CrumbView[];
+  readonly back: { readonly label: string } | null;
+  /** null on a story or issue screen; views is true only on one of the four views. */
+  readonly filters: {
+    readonly views: boolean;
+    readonly view: ListView | null;
+    readonly search: string;
+    readonly searchPlaceholder: string;
+    readonly needsAttentionOnly: boolean;
+  } | null;
+  readonly body: ScreenBody;
 }
 
 /** Host -> webview. Each message replaces what it names; nothing is merged. */
@@ -238,6 +349,7 @@ export type BoardDownMessage =
   | { readonly type: 'epics'; readonly model: EpicRollupViewModel }
   | { readonly type: 'issues'; readonly model: IssueViewModel }
   | { readonly type: 'details'; readonly model: ItemDetailsViewModel | null }
+  | { readonly type: 'screen'; readonly model: ScreenModel }
   | { readonly type: 'announce'; readonly text: string };
 
 export type BoardView = 'board' | 'epics' | 'issues';
@@ -248,7 +360,12 @@ export type Density = 'compact' | 'comfortable';
 export type BoardUpMessage =
   | { readonly type: 'ready' }
   | { readonly type: 'refresh' }
-  | { readonly type: 'set-view'; readonly view: BoardView }
+  | { readonly type: 'set-view'; readonly view: BoardView | ListView }
+  | { readonly type: 'open-epic'; readonly epicItemId: string }
+  | { readonly type: 'open-item'; readonly itemId: string }
+  | { readonly type: 'set-item-tab'; readonly tab: ItemTab }
+  | { readonly type: 'back' }
+  | { readonly type: 'go-to-crumb'; readonly index: number }
   | { readonly type: 'set-scope'; readonly scope: BoardScope }
   | { readonly type: 'set-search'; readonly search: string }
   | { readonly type: 'set-attention'; readonly on: boolean }
@@ -260,6 +377,10 @@ export type BoardUpMessage =
   | { readonly type: 'clear-filters' };
 
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+
+/** The set-view values accepted: the four views, and the old 'board' until the screens replace the tabs. */
+const SET_VIEW_VALUES: readonly (BoardView | ListView)[] = ['all', 'epics', 'standalone', 'issues', 'board'];
+const ITEM_TABS: readonly ItemTab[] = ['overview', 'evidence', 'linked'];
 
 function parseScope(v: unknown): BoardScope | null {
   if (!isObject(v)) return null;
@@ -277,8 +398,25 @@ export function parseBoardUpMessage(raw: unknown): BoardUpMessage | null {
     case 'ready': return { type: 'ready' };
     case 'refresh': return { type: 'refresh' };
     case 'close-details': return { type: 'close-details' };
-    case 'set-view':
-      return p['view'] === 'board' || p['view'] === 'epics' || p['view'] === 'issues' ? { type: 'set-view', view: p['view'] } : null;
+    case 'set-view': {
+      const view = SET_VIEW_VALUES.find(v => v === p['view']);
+      return view === undefined ? null : { type: 'set-view', view };
+    }
+    case 'open-epic':
+      return isNonEmptyString(p['epicItemId']) ? { type: 'open-epic', epicItemId: p['epicItemId'] } : null;
+    case 'open-item':
+      return isNonEmptyString(p['itemId']) ? { type: 'open-item', itemId: p['itemId'] } : null;
+    case 'set-item-tab': {
+      const tab = ITEM_TABS.find(t => t === p['tab']);
+      return tab === undefined ? null : { type: 'set-item-tab', tab };
+    }
+    // Carries nothing but its type, like clear-filters.
+    case 'back':
+      return Object.keys(p).length === 1 ? { type: 'back' } : null;
+    case 'go-to-crumb': {
+      const index = p['index'];
+      return typeof index === 'number' && Number.isInteger(index) && index >= 0 ? { type: 'go-to-crumb', index } : null;
+    }
     case 'set-scope': {
       const scope = parseScope(p['scope']);
       return scope === null ? null : { type: 'set-scope', scope };

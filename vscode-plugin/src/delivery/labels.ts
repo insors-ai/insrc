@@ -19,6 +19,7 @@ import type {
   ReviewVerdict,
   TaskResult,
 } from './delivery-contract.js';
+import type { ItemTab, ListView } from './board-protocol.js';
 
 export interface DisplayLabels {
   readonly stage: Readonly<Record<DeliveryStage, string>>;
@@ -38,6 +39,15 @@ export interface DisplayLabels {
   /** The panel of an issue view over a board that has no issues at all (nothing is filtered out). */
   readonly noIssuesTitle: string;
   readonly noIssuesText: string;
+  /** The four views, as the view control and the breadcrumb name them. */
+  readonly views: Readonly<Record<ListView, string>>;
+  /** The story screen's tabs: the long label, and the short one a narrow pane uses. */
+  readonly itemTabs: Readonly<Record<ItemTab, { readonly long: string; readonly short: string }>>;
+  readonly needsAttention: string;
+  /** An empty stage section's summary text. */
+  readonly nothingAtStage: string;
+  /** The one section the empty stages fold into in a narrow pane. */
+  readonly otherStages: string;
 }
 
 /** A label from the table, or the code itself when the daemon publishes one this build does not know. */
@@ -123,4 +133,13 @@ export const DISPLAY_LABELS: DisplayLabels = {
   noMatchesText: 'Work exists, but none matches the current search, scope and attention filter.',
   noIssuesTitle: 'No issues on the board',
   noIssuesText: 'There are no issues on the board.',
+  views: { all: 'All work', epics: 'Epics', standalone: 'Standalone', issues: 'Issues' },
+  itemTabs: {
+    overview: { long: 'Overview & tasks', short: 'Overview' },
+    evidence: { long: 'Workflow evidence', short: 'Evidence' },
+    linked: { long: 'Linked work', short: 'Linked' },
+  },
+  needsAttention: 'Needs attention',
+  nothingAtStage: 'nothing at this stage',
+  otherStages: 'Other stages · 0 matching',
 };

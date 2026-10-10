@@ -268,8 +268,8 @@ export function groupByStage(matches: readonly MatchedCard[]): ReadonlyMap<Deliv
 /** The panel a view shows when its selection matches nothing, or (issues only) when the board has no issues. */
 export function selectionPanel(kind: 'no-matches' | 'no-issues', labels: DisplayLabels): StatePanelView {
   return kind === 'no-matches'
-    ? { kind, title: labels.noMatchesTitle, text: labels.noMatchesText, action: 'clear-filters', stale: false, affected: [] }
-    : { kind, title: labels.noIssuesTitle, text: labels.noIssuesText, action: null, stale: false, affected: [] };
+    ? { kind, title: labels.noMatchesTitle, text: labels.noMatchesText, action: 'clear-filters', stale: false, affected: [], placement: 'body' }
+    : { kind, title: labels.noIssuesTitle, text: labels.noIssuesText, action: null, stale: false, affected: [], placement: 'body' };
 }
 
 export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: BoardSelection, paging: BoardPaging, labels: DisplayLabels): BoardViewModel {

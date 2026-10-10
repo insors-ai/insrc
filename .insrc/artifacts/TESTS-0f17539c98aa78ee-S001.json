@@ -4,7 +4,7 @@
     "epicHash": "0f17539c98aa78ee",
     "storyId": "S001",
     "createdAt": "2026-10-10T07:36:48.435Z",
-    "updatedAt": "2026-10-10T07:52:01.773Z",
+    "updatedAt": "2026-10-10T07:53:57.776Z",
     "standalone": true
   },
   "body": {
@@ -655,8 +655,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "cf0bdc19",
-        "ranAt": "2026-10-10T07:52:01.773Z",
+        "commit": "b44225ad",
+        "ranAt": "2026-10-10T07:53:57.776Z",
         "testsPassed": true,
         "tests": [
           {
@@ -696,7 +696,7 @@
             "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 341,
+            "durationMs": 345,
             "titles": [
               {
                 "title": "the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path",
@@ -733,7 +733,7 @@
             "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1547,
+            "durationMs": 1498,
             "titles": [
               {
                 "title": "a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path",

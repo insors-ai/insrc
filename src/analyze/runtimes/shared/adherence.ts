@@ -76,7 +76,7 @@ export interface ConstraintInput {
 export type ConstraintSource =
 	/** Enumerated from the repository's documents on a topic; `record` is the
 	 *  enumeration's record file, absent when it could not be written. */
-	| { readonly kind: 'documents'; readonly topic: string; readonly repoPath: string; readonly retrievedSectionCount: number; readonly record?: string }
+	| { readonly kind: 'documents'; readonly topic: string; readonly repoPath: string; readonly retrievedSectionCount: number; readonly record?: string | undefined }
 	| { readonly kind: 'inline' }
 	| { readonly kind: 'stored-documents'; readonly ids: readonly string[] };
 
@@ -436,8 +436,11 @@ async function constraintsFromDocuments(
 	topic:    string,
 ): Promise<ResolvedConstraints> {
 	const templateId = args.task.template;
-	const maxSources = typeof params['maxConstraintSources'] === 'number'
-		? Math.max(1, Math.min(30, params['maxConstraintSources'] as number))
+	// Plan validation holds the value to a whole number from 1 to 30; a task
+	// built outside the planner may not be, so anything else is left out.
+	const given = params['maxConstraintSources'];
+	const maxSources = typeof given === 'number' && Number.isInteger(given)
+		? Math.max(1, Math.min(30, given))
 		: undefined;
 
 	let found: Awaited<ReturnType<typeof constraintsForTopic>>;

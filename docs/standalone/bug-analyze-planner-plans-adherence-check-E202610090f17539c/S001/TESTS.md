@@ -148,7 +148,7 @@ Run at 2026-10-10T07:49:03.725Z on commit `106fc6b0`. Tests check: **passed**. 4
 
 ## t4
 
-Run at 2026-10-10T07:52:01.773Z on commit `cf0bdc19`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-10T07:53:57.776Z on commit `b44225ad`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks**
 

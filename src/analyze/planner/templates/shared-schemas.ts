@@ -70,7 +70,7 @@ export const ADHERENCE_CONSTRAINT_PARAMS = {
 			additionalProperties: true,
 			required:             ['constraint'],
 			properties: {
-				constraint:     { type: 'string' },
+				constraint:     { type: 'string', minLength: 1 },
 				sourceEntityId: { type: 'string' },
 				file:           { type: 'string' },
 				heading:        { type: 'string' },
@@ -80,7 +80,7 @@ export const ADHERENCE_CONSTRAINT_PARAMS = {
 	},
 	constraintIds: {
 		type:        'array',
-		items:       { type: 'string' },
+		items:       { type: 'string', minLength: 1 },
 		description: 'Ids of summarised documents; their stored key constraints are used. Read when `constraints` is absent or empty; `constraintTopic` is then not read.',
 	},
 } as const;

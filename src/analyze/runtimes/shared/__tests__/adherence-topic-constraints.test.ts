@@ -187,6 +187,11 @@ test('a record that is unreadable, of another version or of another topic is enu
 		['another topic under the same key', JSON.stringify({ ...goodRecord, topic: 'release rules' })],
 		['another repository under the same key', JSON.stringify({ ...goodRecord, repoPath: '/r/elsewhere' })],
 		['no enumeration inside', JSON.stringify({ ...goodRecord, output: null })],
+		['made with another limit of sections', JSON.stringify({ ...goodRecord, maxSources: 3 })],
+		// A record whose enumeration is not whole: a check would fail on the missing part.
+		['an enumeration with no completeness record', JSON.stringify({ ...goodRecord, output: { ...goodRecord.output, completeness: undefined } })],
+		['an enumeration with no count of sections', JSON.stringify({ ...goodRecord, output: { ...goodRecord.output, retrievedSectionCount: undefined } })],
+		['a constraint with no text', JSON.stringify({ ...goodRecord, output: { ...goodRecord.output, constraints: [{ sourceEntityId: 'x' }] } })],
 	];
 	let expected = 1;
 	for (const [what, text] of bad) {
@@ -202,6 +207,15 @@ test('a record that is unreadable, of another version or of another topic is enu
 	// A good record is read, not made again.
 	assert.equal((await ask(runId, 'CI workflow rules')).reused, true);
 	assert.equal(modelCalls, expected);
+
+	// A record that cannot be read at all (a directory stands at its path): enumerated
+	// again; it cannot be overwritten either, so the call returns with no record path.
+	rmSync(path);
+	mkdirSync(path);
+	const unreadable = await ask(runId, 'CI workflow rules');
+	assert.equal(modelCalls, expected + 1);
+	assert.deepEqual([unreadable.reused, unreadable.record, unreadable.output.constraints.length], [false, undefined, 2]);
+	rmSync(path, { recursive: true });
 
 	// --- the record cannot be written: a file stands where the records' directory would be ---
 	const blocked = uniqueRun('unwritable');

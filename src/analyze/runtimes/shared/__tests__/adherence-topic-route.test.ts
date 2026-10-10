@@ -204,6 +204,12 @@ test('four checks with one topic in one run make one enumeration; a topic that d
 	assert.equal(enumerations, 3);
 	await check(codeAdherenceCheckRuntime, uniqueRun('four-other'), { constraintTopic: TOPIC });
 	assert.equal(enumerations, 4);
+
+	// A limit that is not a whole number is left out (the record is the one with no limit); one out of range is held to 1..30.
+	const fractional = await check(codeAdherenceCheckRuntime, runId, { constraintTopic: TOPIC, maxConstraintSources: 2.5 });
+	assert.deepEqual([enumerations, fractional.constraintSource], [4, reports[0]!.constraintSource]);
+	const tooMany = await check(codeAdherenceCheckRuntime, runId, { constraintTopic: TOPIC, maxConstraintSources: 99 });
+	assert.equal((tooMany.constraintSource as { record?: string }).record, recordPath(runId, TOPIC, 30));
 });
 
 test('the enumeration\'s reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record', async () => {

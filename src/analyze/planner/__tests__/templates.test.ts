@@ -476,6 +476,10 @@ test('an adherence task with a topic, with an inline list, or with stored-docume
 		for (const params of fails) {
 			assert.equal(inv5(adherencePlan(template, target, { ...subject, ...params }))?.target?.['problem'], 'no-constraint-source', `${template} ${JSON.stringify(params)}`);
 		}
+		// A list whose items are empty is refused by the schema: the check could not use it, and would not try the topic beside it.
+		for (const params of [{ constraints: [{ constraint: '' }] }, { constraintIds: [''] }, { constraints: [{ constraint: '' }], constraintTopic: 'refund rules' }]) {
+			assert.match(inv5(adherencePlan(template, target, { ...subject, ...params }))?.message ?? '', /^task t01: params failed inputSchema: .*must NOT have fewer than 1 characters/, `${template} ${JSON.stringify(params)}`);
+		}
 
 		// The removed parameter: alone, and beside a source that would otherwise do.
 		const removed = `task t01 (${template}): \`constraintsSource\` is no longer accepted: an adherence check does not take `

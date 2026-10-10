@@ -63,7 +63,7 @@ export interface ConstraintsForTopicArgs {
 export interface ConstraintsForTopicResult {
 	readonly output:  DocConstraintEnumerateOutput;
 	/** The record's path; absent when the record could not be written. */
-	readonly record?: string;
+	readonly record?: string | undefined;
 	/** True when the enumeration was read from a record and not made. */
 	readonly reused:  boolean;
 }
@@ -188,8 +188,15 @@ function notThisRecord(parsed: unknown, args: ConstraintsForTopicArgs): string |
 	if (r['repoPath'] !== args.repoPath) return 'it is of another repository';
 	if (typeof r['topic'] !== 'string' || normaliseTopic(r['topic']) !== normaliseTopic(args.topic)) return 'it is of another topic';
 	if ((r['maxSources'] ?? null) !== (args.maxSources ?? null)) return 'it was made with another limit of sections';
+	// The enumeration inside must be whole: a check reads its constraints, its
+	// count of sections and its completeness, and must not fail on a part that is missing.
 	const output = r['output'] as Record<string, unknown> | null | undefined;
 	if (typeof output !== 'object' || output === null || !Array.isArray(output['constraints'])) return 'it holds no enumeration';
+	if (typeof output['completeness'] !== 'object' || output['completeness'] === null) return "its enumeration has no completeness record";
+	if (typeof output['retrievedSectionCount'] !== 'number') return 'its enumeration does not say how many sections were retrieved';
+	for (const c of output['constraints'] as unknown[]) {
+		if (typeof c !== 'object' || c === null || typeof (c as Record<string, unknown>)['constraint'] !== 'string') return 'one of its constraints has no text';
+	}
 	return null;
 }
 

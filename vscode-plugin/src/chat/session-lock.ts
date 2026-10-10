@@ -17,6 +17,7 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { abortableSleep, errCode, REAL_TIMERS, type Timers } from './async-util.js';
 
 /** The slice of a started CLI process a lease is tied to. */
 export interface LeaseProcess {
@@ -62,10 +63,7 @@ export interface LockLogger {
   error(msg: string): void;
 }
 
-export interface LockTimers {
-  setTimeout(fn: () => void, ms: number): unknown;
-  clearTimeout(handle: unknown): void;
-}
+export type LockTimers = Timers;
 
 export interface MemorySessionLocksDeps {
   /** Wait after SIGTERM, and again after SIGKILL, for the exit. Default 5000 ms. */
@@ -93,10 +91,6 @@ export class LockWaitSuperseded extends Error {
 export const DEFAULT_GRACE_MS = 5000;
 
 const NOOP_LOGGER: LockLogger = { warn: () => {}, error: () => {} };
-const REAL_TIMERS: LockTimers = {
-  setTimeout: (fn, ms) => setTimeout(fn, ms),
-  clearTimeout: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
-};
 
 /** Whether `p` settles within `ms`. */
 function settlesWithin(p: Promise<unknown>, ms: number, timers: LockTimers): Promise<boolean> {
@@ -339,7 +333,6 @@ export function defaultProcessStartTime(pid: number): number | undefined {
 
 const lockFileName = (sessionId: string): string => `${sessionId.replace(/[^A-Za-z0-9_-]/g, '_')}.lock`;
 
-const errCode = (e: unknown): string | undefined => (e as NodeJS.ErrnoException | undefined)?.code;
 
 function parseRecord(text: string): LockFileRecord | undefined {
   try {
@@ -394,17 +387,7 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
     output: LockFileRecord['output'] = null,
   ): string => JSON.stringify({ sessionId, cliPid, hostPid: deps.hostPid, startedAt, token, output } satisfies LockFileRecord);
 
-  const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> =>
-    new Promise((resolve) => {
-      if (signal?.aborted === true) return resolve();
-      const handle = timers.setTimeout(done, ms);
-      function done(): void {
-        timers.clearTimeout(handle);
-        signal?.removeEventListener('abort', done);
-        resolve();
-      }
-      signal?.addEventListener('abort', done, { once: true });
-    });
+  const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> => abortableSleep(ms, signal, timers);
 
   /** Whether the recorded process is still the one that took the lock (pid not reused). */
   const sameProcess = (rec: LockFileRecord): boolean =>

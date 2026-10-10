@@ -20,6 +20,7 @@
 
 import { appendFile, mkdir, open, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
+import { abortableSleep, errCode } from './async-util.js';
 
 /** Where a reader is in a turn's segment: the byte offset just after the last line it handled. */
 export interface SegmentCursor {
@@ -58,7 +59,6 @@ export interface SessionOutputFs {
   readTextSync(path: string): string | undefined;
 }
 
-const errCode = (e: unknown): string | undefined => (e as NodeJS.ErrnoException | undefined)?.code;
 
 export const nodeSessionOutputFs: SessionOutputFs = {
   mkdir: async (p) => {
@@ -233,17 +233,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     throw new SegmentGone(cursor);
   };
 
-  const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> =>
-    new Promise((resolve) => {
-      if (signal?.aborted === true) return resolve();
-      const t = setTimeout(done, ms);
-      function done(): void {
-        clearTimeout(t);
-        signal?.removeEventListener('abort', done);
-        resolve();
-      }
-      signal?.addEventListener('abort', done, { once: true });
-    });
+  const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> => abortableSleep(ms, signal);
 
   return {
     async beginTurn(sessionId: string, turnId: string): Promise<TurnSegment> {

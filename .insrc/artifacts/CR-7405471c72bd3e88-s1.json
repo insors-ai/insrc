@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791627767680-j2w2ps",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-10T10:22:47.680Z",
+    "model": "claude:opus",
+    "elapsedMs": 77191,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7405471c72bd3e88",
+    "storyId": "s1",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "7405471c72bd3e88",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-model.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-perf.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+        "vscode-plugin/src/delivery/board-host.ts",
+        "vscode-plugin/src/delivery/board-model.ts",
+        "vscode-plugin/src/delivery/board-protocol.ts",
+        "vscode-plugin/src/delivery/board-state.ts",
+        "vscode-plugin/src/delivery/board-views.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/__tests__/board-perf.test.ts:124",
+            "message": "Present but unverified: the promised evidence (headless-Chrome screenshots of each screen beside its mock at 1200, 600 and 360 px) isn't an automated test. It isn't in the grounding, and I couldn't confirm the screenshot files exist because the git inspection command needed approval. This is not reported as missing; check the artifacts by hand.",
+            "expectationRef": "evidence: headless-Chrome screenshots of each screen beside its mock at 1200, 600 and 360 px",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-host.ts:1",
+            "message": "The graph grounding is hollow. Production symbols with empty testsReaching (createDeliveryBoardHost, refresh, handle, go, open, reset, renderBoardDocument, reduceBoardState, boardDownMessages, screenModel, sectionDefaults, foldOf, selectMatches, parseBoardUpMessage and others) are reached only through test helpers (setup/openWith/liveBoard/build), and the indexer recorded no test→symbol edges for them. Coverage was judged by running the suite instead: board-host, board-model, board-views and board-perf tests ran 69 tests, 69 passed, 0 failed, 0 skipped, including every promised automated test (board-host.test.ts:1358,1395,1412,1457,1480,1510,1546,1591,1613,1660; board-model.test.ts:320; board-views.test.ts:202; board-perf.test.ts:124). No not-exercised HIGH is raised from the empty edges.",
+            "expectationRef": "testsReaching grounding for board-host.ts / board-state.ts / board-model.ts / board-protocol.ts / board-views.ts",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

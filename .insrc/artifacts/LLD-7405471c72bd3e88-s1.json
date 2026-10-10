@@ -1,0 +1,606 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791616689463-hu88u5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-10T07:23:33.502Z",
+    "epicCreatedAt": "2026-10-10T07:10:07.093Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 324037,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7405471c72bd3e88",
+    "epicSlug": "defect-delivery-board-shipped-issue-348d4663",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1791616689463-hu88u5",
+    "hldEffectiveHash": "78f14a8f5f70363b5a7eac2ab07c76ebf9c4f277a99587b1a04a9d1c799d2fa6",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers every part of ISSUE-7405471c's fix intent: port the mocks' stylesheet into BOARD_STYLE with --vscode-* colours, align the webview markup screen by screen, group Issues into the board's collapsible stage sections with the same defaults, keep the live region and density visible but unobtrusive, and compare headless-Chrome screenshots at 1200/600/360 px.",
+          "evidence": "ISSUE.md 'Fix intent' lists these four bullets. The LLD covers each one: §2.4 BOARD_STYLE (the mocks' product rules from .appbar to .center, mapped to theme variables); §2.5 BOARD_WEBVIEW_SCRIPT (mocks' markup per screen); §2.1/§3.1–3.3 IssueSectionView, built by the shared sectionDefaults/foldOf; §2.3 footer.foot holding #announce and a small segmented density control; §5 smoke level and migration step 4 (screenshots at 1200, 600 and 360 px). The 'What stays' list (CSP, textContent, no hiding rules, one live region, both densities, 1 s / 150 ms targets) is restated in §4 invariants c1–c5. [files: docs/standalone/defect-delivery-board-shipped-issue-348d4663-E202610107405471c/ISSUE.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today the section defaults (open, emptyText, hint) and the fold text are computed inline in buildBoardViewModel, and IssuesBody carries one flat, stage-sorted issues array.",
+          "evidence": "board-model.ts:307-324 computes `defaultOpen = all.length > 0 && (stage !== 'complete' || attentionOnly)`, `emptyText`, `hint: !defaultOpen && all.length>0 && needing>0 ? attentionLabel(needing) : null` and foldText inline. Line 333 has `fold: { always: attentionOnly, text: foldText }`. board-protocol.ts:243-248 has `IssuesBody { kind:'issues'; totalsLabel; issues: readonly IssueEntryView[]; emptyPanel }`. board-views.ts:107-110 stable-sorts the issue matches by STAGE_ORDER rank. board-host.ts:427 places `<p id=\"announce\" ... aria-live=\"polite\">` after the app bar, and lines 423-425 render two full density buttons. [files: vscode-plugin/src/delivery/board-model.ts, vscode-plugin/src/delivery/board-protocol.ts, vscode-plugin/src/delivery/board-views.ts, vscode-plugin/src/delivery/board-host.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The mocks' product rules contain exactly three content-hiding rules (the details marker, the segmented group's overflow:hidden, and the narrow wordmark). Every other hiding rule belongs to the gallery chrome (.screen, .tab).",
+          "evidence": "A search of delivery-board-screen-mocks.html for hiding rules finds: line 35 `.screen{display:none}` (gallery), line 53 `.tab{...overflow:hidden...box-shadow:rgba(...)}` (gallery), line 72 `.seg{...overflow:hidden}`, line 97 `.acc>summary::-webkit-details-marker{display:none}`, line 157 `.crumbs .wordmark{display:none}`. The last three are exactly the design's three replacements. The only non-var colour in the product range is absent: the rgba is on .tab, which is excluded. [files: docs/plans/delivery-board-screen-mocks.html]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The readers of IssuesBody.issues that must change are board-views.ts (builder), board-state.ts (the issue screen's entry lookup) and board-host.ts (the webview's renderIssues). The list is complete.",
+          "evidence": "A search for `.issues` and IssuesBody in vscode-plugin/src finds: board-views.ts:104-139 (builder), board-state.ts:399 `buildIssueView(...).issues.find(e => e.card.itemId === item.id)` (covered by 'look the issue screen's entry up across the sections'), board-host.ts:185 `for(const e of b.issues)` (renderIssues, rewritten in §2.5), and board-views.test.ts:78,165-198 (covered by migration step 4's test rewrite). There are no other production readers. [files: vscode-plugin/src/delivery/board-state.ts, vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/delivery/board-views.ts, vscode-plugin/src/delivery/__tests__/board-views.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Removing the h1 from list screens keeps the restore-focus behaviour 'as today' ('a restored screen restores scroll and focuses its opener').",
+          "evidence": "board-host.ts:260-262: `const h=head.querySelectorAll('h1.screen-title')[0]; if(m.restored){...const o=...findKey(bodyEl,'item-'+m.focusItemId)||findKey(bodyEl,'epic-'+m.focusItemId);(o||h).focus();} else{...h.focus();}`. Today a restored screen whose opener is no longer shown (for example, after a refresh the opened item no longer matches the filter) falls back to the h1. The design removes the h1 from the four list screens and only names a new focus target for fresh screens (the chosen view button). It does not name the fallback for a restored list screen with no opener. Built as written, `h` is undefined there, and `(o||h).focus()` throws a TypeError, so the rest of render is skipped. The title-update branch at line 254 also keys on h1.screen-title. [files: vscode-plugin/src/delivery/board-host.ts]",
+          "action": "State the restore fallback for list screens (the chosen view button, as for a fresh list screen) in §2.5's postconditions, and add a test: Back to a list screen whose opener no longer matches.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "preserved-behaviour.2",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Porting the mocks' rules 'with the same selectors and values', with #main as the inline-size container, reproduces the mocks' narrow layouts.",
+          "evidence": "In the mocks the container is the gallery's .tab (line 53 `container-type:inline-size`), and .body is a descendant of it. The design makes #main (which is also `main#main.body`) the container. A container query cannot style the container element itself, so `@container (max-width:480px){ .body{padding:12px} }` (mocks line 160) would never apply. Also, `.seg a{padding:4px 9px}` (line 159) targets anchors, while the design's nav.seg holds four buttons, so a verbatim copy of that rule matches nothing. The narrow layout would then differ from mock 11/360 px. [files: docs/plans/delivery-board-screen-mocks.html]",
+          "action": "Make the container a wrapper around main.body (or the body element), or restate the .body padding rule outside the container query. Retarget `.seg a` to `.seg button` in the port.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac4 (Issues grouped by stage) is proved by tests that fail without the fix, and the no-hiding style check that ac1 relies on already exists to be extended.",
+          "evidence": "IssuesBody has no `sections` field today (board-protocol.ts:243-248), so the named board-views.test.ts test ('groups issues into stage sections…') and the board-host 'collapsible stage boxes' test cannot pass without the change. board-host.test.ts:1346 already scans BOARD_STYLE for `/display:\\s*none/, /visibility:\\s*hidden/, /clip/, /text-overflow/, /overflow:\\s*hidden/, /height:\\s*0[;}]/`, matching invariant c4. [files: vscode-plugin/src/delivery/__tests__/board-host.test.ts, vscode-plugin/src/delivery/__tests__/board-views.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "ac6's proving test, the existing perf test, covers the Issues screen, as §5 states ('including the Issues screen').",
+          "evidence": "board-perf.test.ts:56 is the test the design maps to ac6 ('a 500-item, 1,000-record board renders within one second…'). A search of board-perf.test.ts for 'issues' finds no match, so the test never opens the Issues screen today. The acceptance mapping cites this existing title unchanged, so the new sectioned Issues render would not be timed unless the test is extended. [files: vscode-plugin/src/delivery/__tests__/board-perf.test.ts]",
+          "action": "In §5, name the extension explicitly: board-perf.test.ts switches to the Issues view and asserts the 150 ms target.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 3,
+        "low": 5,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-10T07:23:43.996Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "preserved-behaviour.1": {
+        "findingId": "preserved-behaviour.1",
+        "status": "resolved",
+        "note": "Applied: §2.5 postconditions now name the restore fallback (chosen view button on list screens, h1 elsewhere) and title updates no longer key on h1.screen-title; a Back-with-gone-opener test is added.",
+        "resolvedAt": "2026-10-10T07:25:33.772Z"
+      },
+      "preserved-behaviour.2": {
+        "findingId": "preserved-behaviour.2",
+        "status": "resolved",
+        "note": "Applied: §2.4 makes a div.page wrapper the inline-size container so the .body padding rule applies, and retargets .seg a to .seg button; a test pins both.",
+        "resolvedAt": "2026-10-10T07:25:33.773Z"
+      },
+      "tests.2": {
+        "findingId": "tests.2",
+        "status": "resolved",
+        "note": "Applied: §5 extends board-perf.test.ts to switch to the Issues view and assert 150 ms; added to ac6.",
+        "resolvedAt": "2026-10-10T07:25:33.773Z"
+      }
+    },
+    "approvedAt": "2026-10-10T07:34:41.936Z",
+    "rangeBase": "e10b78f36854ebd4f2d26bd960bd37dad117c66b"
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "The delivery board takes its look from the approved mocks: their stylesheet becomes the board's, with every colour drawn from the VS Code theme, and each screen is built with the mocks' structure. Stages become bordered boxes with the count at the right, the four list screens lead with their filters, epic rows sit on one line, and story and issue screens use the mocks' section labels, chain rows and buttons. The Issues screen is grouped by stage in the same collapsible boxes as the board screens. The announcement line and density control move to a small footer so they stay available without crowding the screen."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Style the delivery board's screens as the approved mocks, and group Issues by stage"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "buildIssueView",
+          "signature": "function buildIssueView(snapshot: DeliverySnapshot, filter: MatchFilter, labels: DisplayLabels): IssuesBody",
+          "parameters": [
+            {
+              "name": "filter",
+              "type": "MatchFilter",
+              "purpose": "Scope all, plus the Issues screen's search and attention flag (unchanged).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "IssuesBody",
+            "meaning": "The issues grouped into six IssueSectionView in STAGE_ORDER, each holding its IssueEntryView rows in snapshot order, with the totals label, showAll, fold and the no-matches or no-issues panel. The flat issues array is replaced by sections."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Each section's defaultOpen, emptyText and hint follow the same rule as the board screens' StageSectionView (open when it holds issues, except Complete, which starts closed unless Needs attention is on; an empty section is closed with 'nothing at this stage'; a closed section with issues needing attention carries attentionLabel(n)).",
+            "fold.always is true exactly when Needs attention is on and fold.text names the empty stages, as on the board screens.",
+            "Every matching issue appears in exactly one section, the section of its stage; counts and totals are unchanged from today."
+          ]
+        },
+        {
+          "name": "buildBoardViewModel",
+          "signature": "function buildBoardViewModel(snapshot: DeliverySnapshot, filter: MatchFilter, paging: BoardPaging, labels: DisplayLabels): StagesBody",
+          "parameters": [
+            {
+              "name": "filter",
+              "type": "MatchFilter",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "StagesBody",
+            "meaning": "Unchanged output; its section-default and fold rules move into shared helpers (sectionDefaults, foldOf in board-model.ts) that buildIssueView also uses."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Board screens produce equal models before and after the refactor."
+          ]
+        },
+        {
+          "name": "renderBoardDocument",
+          "signature": "function renderBoardDocument(nonce: string): string",
+          "parameters": [
+            {
+              "name": "nonce",
+              "type": "string",
+              "purpose": "Script nonce.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The same CSP. Shell in the mocks' structure: header.appbar with nav#crumbs.crumbs (the wordmark is rendered by the script as the breadcrumb's first element) and div.appbar-tools (#status, Read-only, #refresh); #banner; main#main.body; then footer.foot holding p#announce (the only aria-live region, muted, small) and the density control as a small segmented group (#density-compact, #density-comfortable)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Exactly one aria-live region; one nonce'd script; no element is hidden by CSS."
+          ]
+        },
+        {
+          "name": "BOARD_STYLE",
+          "signature": "const BOARD_STYLE: string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The mocks' product rules (docs/plans/delivery-board-screen-mocks.html, from '.appbar' to '.center', excluding the gallery chrome, .tab and .tabstrip) with the same selectors and values, plus the board's own page rules: body background var(--vscode-editor-background), font from --vscode-font-family/--vscode-font-size, min-width 320px; a div.page wrapper (around header, banner, main.body and footer) as the inline-size container, matching the mocks, where the gallery's .tab is the container and .body sits inside it, so the mocks' '@container (max-width:480px){ .body{padding:12px} }' applies; density custom properties (--gap, --pad, --small) applied to card and section spacing; tone rules keyed on data-tone (success = .ok, warning = .warn, danger = .bad, neutral = the plain pill); .stage-pill for the stage chip; the footer's small muted line and segmented density control. Three mock rules are replaced so nothing is hidden: the details marker is removed with list-style:none on the summary only (no ::-webkit-details-marker{display:none}); the mocks' '.seg a' rules are retargeted to '.seg button' (the board's view group holds buttons, not anchors); the segmented group's rounded ends come from radii on its first and last buttons instead of overflow:hidden; the wordmark is not hidden below 480 px (the script leaves it out of the narrow breadcrumb)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Only var(--vscode-*) colours (plus transparent); no display:none, visibility:hidden, clip, overflow:hidden, height:0 or text-overflow.",
+            "The minimums stay: body 320px, cards minmax(min(240px,100%),1fr), rows minmax(220px,1fr), cols minmax(340px,1.45fr) minmax(280px,1fr), records table 620px inside .table-wrap{overflow-x:auto}; the two container rules at 760 and 480 px follow the mocks (cols stack; rows drop to two then one column; the search box takes a full line)."
+          ]
+        },
+        {
+          "name": "BOARD_WEBVIEW_SCRIPT",
+          "signature": "const BOARD_WEBVIEW_SCRIPT: string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "Renders each screen in the mocks' markup and classes. Breadcrumb: span.wordmark (left out when narrow), crumbs as button links, span.sep '/', span.here for the current place. List screens: no heading; div.filterbar with nav.seg (four buttons, aria-current='page' on the chosen view), button.toggle (aria-pressed; '×' when on), input.search (placeholder from the model); p.count-line (with Show all); then the body. Board screens: details.acc per stage (data-empty when empty; summary = label, span.hint.muted '· nothing at this stage' or '· N needs attention', span.pill.count with the total at the right), div.cards of li.card (div.kicker, div.t, div.muted with the epic line and task summary joined by ' · ', div.pills of tone pills). Epic board: div.between.head (div.kicker 'EPIC · id', h1, div.pills with 'N stories', 'N tasks' and the attention pill; on the right the completion label over div.meter), then div.filterbar with a ghost '← Epics' button, the toggle and the search. Epics: div.rows of button.row (div with kicker, div.name, div.muted counts | div with the completion label over the meter | the attention pill) and the Standalone link. Issues: the same details.acc sections holding div.rows of button.row.issue-row (div with kicker, div.name, div.muted 'Corrects … · fix story …' | div.pills with the badges). Story: a ghost back button, div.head (kicker, h1, div.pills with span.pill.stage-pill first, then the task-summary and badge pills), the conflict as div.warnbox, nav.subtabs of button role=tab, then div.cols with div.label headings (Planned tasks; Why this stage?; Artifact chain), details.task rows, ul.checks, div.why, ul.chain of li (b kind | span.muted record id and review | tone pill). Evidence: table.records in div.table-wrap with Record | Approval | Review | open, the override shown in the Review cell. Linked: div.label headings with div.item rows. Issue: div.between with the ghost back button and button.btn 'Open what it corrects →' (or the Unresolved parent pill), div.head with the stage-pill, then div.cols (Fix stories, records; Why this stage?, chain). State panels: div.panel (h3 title) with .warnp for refresh-failed, unavailable and partial."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Text only through textContent; only BoardUpMessage envelopes are posted; the same messages as today.",
+            "A new list screen focuses its chosen view button (it has no heading); a new epic, story or issue screen focuses its h1. A restored screen restores scroll and focuses its opener, as today; when the opener is no longer shown, focus falls back to the screen's first focus target: the chosen view button on a list screen, the h1 on the others. Title updates no longer key on h1.screen-title, so no path focuses a missing element.",
+            "Every control keeps its keyboard behaviour: Enter/Space and the arrows on cards and rows, Left/Right on the view group and story tabs, Escape for Back."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "IssueSectionView (board-protocol.ts)",
+        "change": "new",
+        "details": "{ stage: DeliveryStage; label: string; total: number; attentionCount: number; defaultOpen: boolean; emptyText: string | null; hint: string | null; issues: readonly IssueEntryView[] }.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-views.ts",
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "IssuesBody (board-protocol.ts)",
+        "change": "field-modify",
+        "details": "Becomes { kind: 'issues'; totalsLabel; showAll: boolean; sections: readonly IssueSectionView[]; fold: { always: boolean; text: string }; emptyPanel }. The flat issues array is removed; the issue screen's entry is looked up across the sections.",
+        "schemaDiff": "- issues: IssueEntryView[]\n+ showAll, sections: IssueSectionView[], fold",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-views.ts",
+          "vscode-plugin/src/delivery/board-state.ts",
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "section defaults (board-model.ts)",
+        "change": "invariant-change",
+        "details": "The open/empty/hint rule and the fold text, today inside buildBoardViewModel, become shared helpers used by both board screens and the Issues screen, so the two group by the same rule.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-model.ts",
+          "vscode-plugin/src/delivery/board-views.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An issue's stage is not one of the six (a newer daemon).",
+          "detection": "buildIssueView only takes placeable matches (isPlaceable checks the stage against STAGE_ORDER), so the issue never reaches a section.",
+          "response": "It is left off the Issues screen, as it is left off the board screens, and the host's once-per-refresh unknown-stage log names it.",
+          "userImpact": "The issue is missing from the list, with a log line explaining why; nothing breaks.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Building the Issues body throws on a malformed snapshot.",
+          "detection": "apply() derives the screen message before keeping state; the throw reaches the message handler or refresh fallback.",
+          "response": "Unchanged: the previous screen stays and the failure is logged, or the refresh shows as failed over the previous board.",
+          "userImpact": "The previous screen stays.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A stylesheet rule ported from the mocks would hide content (display:none, overflow:hidden).",
+          "detection": "The style test scans BOARD_STYLE for display:none, visibility:hidden, clip, overflow:hidden, height:0 and text-overflow.",
+          "response": "The test fails the build; the three known cases are ported with non-hiding equivalents.",
+          "userImpact": "None in the shipped board.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The webview state cannot be read (density).",
+          "detection": "savedState() wraps vs.getState in try/catch (unchanged).",
+          "response": "Comfortable density; the footer control shows it.",
+          "userImpact": "Default density.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Issues screen under Needs attention with issues needing attention in only one stage.",
+          "expected": "That stage's section opens; the other stages fold into one line, as on the board screens; the totals read 'M of N issues need attention' with Show all."
+        },
+        {
+          "input": "Issues screen with no issues at all.",
+          "expected": "The no-issues panel replaces the sections; no empty boxes."
+        },
+        {
+          "input": "Issues screen with a search matching nothing.",
+          "expected": "The no-matches panel with Clear filters replaces the sections."
+        },
+        {
+          "input": "A list screen opened fresh (set-view).",
+          "expected": "Focus goes to the chosen view button in the segmented group, since list screens have no heading."
+        },
+        {
+          "input": "A narrow pane (<= 480 px).",
+          "expected": "The breadcrumb shows only the back step and the current place (no wordmark); rows drop to one column; the search box takes a full line; empty stages fold, on the Issues screen too."
+        },
+        {
+          "input": "The reader opens or closes an issue stage section, then a refresh arrives.",
+          "expected": "The section keeps the reader's choice, as board sections do (remembered per trail entry and stage)."
+        },
+        {
+          "input": "A story with no task plan and no records.",
+          "expected": "Planned tasks says 'No task plan recorded yet.' and Records says 'No records yet.', in the mocks' layout."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Every screen is built from the host's screen message; navigation and messages are those of ISSUE-348d4663.",
+          "source": "c1"
+        },
+        {
+          "text": "The stage sections follow one rule for defaults, hints and folding, computed in the host.",
+          "source": "c2"
+        },
+        {
+          "text": "The board takes its look from the approved mocks, with colours only from --vscode-* variables.",
+          "source": "c3"
+        },
+        {
+          "text": "No CSS rule hides content (no display:none, visibility:hidden, clip, overflow:hidden, height:0 or text-overflow).",
+          "source": "c4"
+        },
+        {
+          "text": "The webview tests boot the real script on the fake DOM; the perf test's 1 s and 150 ms targets hold.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via tsx (npx tsx --test 'src/**/__tests__/*.test.ts' in vscode-plugin), node:assert/strict; webview behaviour through the fake-DOM harness board-webview-harness.ts booting the real BOARD_WEBVIEW_SCRIPT; visual comparison with headless Chrome",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The Issues screen's stage sections and the shared section rule.",
+          "subjects": [
+            "board-views.ts buildIssueView: six sections in stage order, each issue in its stage's section, defaults/hints/fold as the board screens, panels",
+            "board-model.ts sectionDefaults/foldOf shared by both builders; buildBoardViewModel output unchanged"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The webview builds the mocks' markup and classes on every screen.",
+          "subjects": [
+            "board-host.test.ts: list screens (no heading, filterbar with seg/toggle/search, count-line, acc stage boxes with right-hand count and muted hint, cards)",
+            "board-host.test.ts: epic board head (kicker, h1, pills, meter) and ghost back in the filterbar",
+            "board-host.test.ts: Epics rows (row with name, completion over meter, attention pill) and Issues grouped in acc sections of issue rows",
+            "board-host.test.ts: story and issue screens (ghost back, head with stage-pill, warnbox, subtabs, label headings, chain rows b | muted | pill, records table, 'Open what it corrects' button)",
+            "board-host.test.ts: document shell (appbar, crumbs with wordmark rendered by the script, footer with the live region and density), focus on new list screens, BOARD_STYLE carries the mocks' rules with no hiding rule",
+            "board-host.test.ts: Back to a list screen whose opener no longer matches the filter focuses the chosen view button and does not throw",
+            "board-host.test.ts: the container is a wrapper around main.body, and BOARD_STYLE has no '.seg a' selector"
+          ],
+          "fixturesNeeded": [
+            "board-host.test.ts screensSnapshot/itemsSnapshot fixtures (existing)"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Performance and the visual comparison.",
+          "subjects": [
+            "board-perf.test.ts: extended to switch to the Issues view (set-view issues) on the 500-item board and assert the 150 ms target for that change, alongside the existing 1 s first screen and 150 ms filter/drill-down",
+            "headless-Chrome screenshots of each screen beside its mock at 1200, 600 and 360 px, saved as evidence"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "board-host.test.ts: 'list screens use the mocks' filter bar, count line and stage boxes, with no heading'",
+            "board-host.test.ts: 'BOARD_STYLE carries the mocks' product rules with theme colours and no hiding rule'",
+            "board-host.test.ts: 'the narrow layout applies the mocks' container rules to the body'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "board-host.test.ts: 'the epic board and Epics rows follow the mocks: head with meter, rows with completion and attention on one line'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "board-host.test.ts: 'story and issue screens follow the mocks: stage pill, section labels, chain rows and the Open what it corrects button'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "board-views.test.ts: 'the Issues body groups issues into stage sections with the board screens' defaults and fold'",
+            "board-host.test.ts: 'the Issues screen shows its issues in collapsible stage boxes'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "board-host.test.ts: 'the live region and density control sit in a small footer, and a new list screen focuses its chosen view'",
+            "board-host.test.ts: 'Back to a list screen whose opener is gone focuses the chosen view'"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "board-perf.test.ts: 'a 500-item, 1,000-record board renders within one second and each filter change or drill-down within 150 ms, best of three'",
+            "board-perf.test.ts: 'switching the 500-item board to the Issues screen renders within 150 ms, best of three'"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per s1: BOARD_STYLE is a stylesheet written to the LLD's layout rules, BOARD_WEBVIEW_SCRIPT builds its own markup (h1 on every screen, flat stage sections, stacked epic summaries, h2 headings, chain pill under the kind), the live region and density sit under and in the app bar, and IssuesBody carries one flat issues array.",
+      "stateAfter": "BOARD_STYLE is the mocks' product stylesheet with theme colours and non-hiding replacements; the webview builds the mocks' markup on every screen; IssuesBody carries stage sections built by the same rule as the board screens; the live region and density sit in a small footer.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Move the section-default and fold rules into shared helpers in board-model.ts; give IssuesBody stage sections and build them in buildIssueView; look the issue screen's entry up across the sections.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Replace BOARD_STYLE with the mocks' product rules, mapped to theme variables, with the three non-hiding replacements.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Rewrite the document shell and the webview script's markup screen by screen to the mocks' structure, including the Issues stage boxes and the footer.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Rewrite the markup and style tests; run the full suite, typecheck and perf test; capture each screen beside its mock at three widths; package and install the extension.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The webview protocol is private to one extension build (host and script ship together), so the IssuesBody change cannot meet an old webview. The command, the delivery client and the daemon read model are unchanged; the webview's saved density keeps its shape.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Port the mocks' stylesheet and class names; issues as stage sections in the body",
+        "oneLineSummary": "BOARD_STYLE becomes the mocks' product rules (with non-hiding replacements), the webview builds the mocks' markup and classes, and IssuesBody carries stage sections of issue rows.",
+        "approach": "Take the mocks' product rules verbatim as the new BOARD_STYLE (app bar, crumbs, buttons, filterbar/seg/toggle/search, count-line, pills with tone and stage-pill, kicker, meter, acc boxes, cards, rows, head, subtabs, cols, label, task, checks, why, chain, warnbox, item, between, records table, panel, the two container rules), keeping the page-level rules the board needs (min-width 320px, density custom properties, tone rules on data-tone). Replace the mocks' three hiding rules with equivalents that hide nothing: list-style:none on the summary (no ::-webkit-details-marker display:none), per-child corner radii on the segmented group instead of overflow:hidden, and the wordmark simply left out of the narrow breadcrumb the script already builds. The webview script emits the mocks' structure and class names screen by screen (no heading on list screens, .between.head on the epic board, ghost back links, .subtabs, .cols with .label headings, chain rows b | muted | pill, .row grids for epics and issues). IssuesBody gains sections: one IssueSectionView per stage with the same defaults as StageSectionView (open, emptyText, hint, attentionCount) and the same fold, holding IssueEntryView rows; the screen renders them in the same .acc boxes as the board screens. The live region and density move into a small footer under the screen.",
+        "pros": [
+          "The approved mocks become the source of the look, rule for rule, so the board and the mocks cannot drift apart again.",
+          "Issues reuse the board screens' stage-section defaults and rendering, so the two group alike.",
+          "No host or protocol change beyond IssuesBody; navigation and messages stay as they are."
+        ],
+        "cons": [
+          "Every webview and style test that pins today's class names is rewritten.",
+          "The mocks' three hiding rules must be replaced by hand."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Restyle the existing markup to look like the mocks; issues grouped in the webview",
+        "oneLineSummary": "Keep today's class names and markup, rewrite BOARD_STYLE until it looks like the mocks, and group the flat issue list by stage in the webview script.",
+        "approach": "Leave BOARD_WEBVIEW_SCRIPT's structure as it is and tune BOARD_STYLE selectors (details.stage, .epic-row, .item-cols, h1.screen-title) to approximate the mocks. Group the issues in the script by reading each entry's stageLabel and building sections client-side; IssuesBody stays a flat list.",
+        "pros": [
+          "Fewer markup tests change.",
+          "No protocol change."
+        ],
+        "cons": [
+          "The markup differs from the mocks (an h1 on every screen, stacked epic summaries, the pill under the chain kind), so CSS alone cannot reach their layout; the look would still drift.",
+          "Grouping in the webview duplicates the host's stage-section rules (defaults, hints, fold) in a string-built script, so issues and stories could group differently."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheaper but repeats the root cause: the markup stays unlike the mocks."
+      },
+      {
+        "id": "a3",
+        "name": "Load the mocks' stylesheet file into the webview",
+        "oneLineSummary": "Ship the mocks' CSS as a separate asset loaded by the webview, and change only the markup.",
+        "approach": "Extract the mocks' style block into an asset file served to the webview through a local resource root, and adapt the markup. Group issues in IssuesBody as in a1.",
+        "pros": [
+          "A single stylesheet file shared by the mocks and the product."
+        ],
+        "cons": [
+          "The CSP is default-src 'none' with inline styles only; loading a stylesheet resource widens it, which ISSUE-348d4663 and E2 require to stay unchanged.",
+          "The mocks' file carries gallery chrome and hiding rules that would ship with it."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Breaks the CSP invariant."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/LLD.md",
+      "quotedText": "Screens, trail and messages of ISSUE-348d4663"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/board-model.ts",
+      "quotedText": "buildBoardViewModel section defaults and fold"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/plans/delivery-board-screen-mocks.html",
+      "quotedText": "the mocks' product stylesheet and markup"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+      "quotedText": "BOARD_STYLE no-hiding regexes"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/__tests__/board-perf.test.ts",
+      "quotedText": "1 s first screen, 150 ms per change"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/defect-delivery-board-shipped-issue-348d4663-E202610107405471c/ISSUE.md",
+      "quotedText": "ISSUE-7405471c fix intent"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s1..s8 of this run"
+    }
+  ]
+}

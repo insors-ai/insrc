@@ -19,7 +19,7 @@ import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, CHAT_MARKDOWN_TOKENS } from './markdown-style.js';
 import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
 import type { ProviderRegistry, ProviderId, TurnProcess } from './cli-adapter.js';
-import { createMemorySessionLocks, type SessionLease, type SessionLocks } from './session-lock.js';
+import { createMemorySessionLocks, LockWaitAborted, LockWaitSuperseded, type SessionLease, type SessionLocks } from './session-lock.js';
 // S001 (bugfix): a value import — the pure classifier that tells a tool-permission gate apart from
 // a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial } from './cli-adapter.js';
@@ -626,7 +626,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           if (!disposed && myGen === generation) post({ type: 'turn-event', event: { kind: 'status', turnId: 'waiting', phase: 'waiting' } });
         },
       });
-    } catch {
+    } catch (err) {
+      // Dropped while waiting (newer submit / Stop / chat switch): nothing to run, nothing to say.
+      if (err instanceof LockWaitAborted || err instanceof LockWaitSuperseded) return undefined;
+      const message = `could not lock chat session: ${err instanceof Error ? err.message : String(err)}`;
+      log.error(`[chat] session ${s.id}: ${message}`);
+      if (!disposed && myGen === generation) post({ type: 'turn-event', event: { kind: 'error', turnId: 'none', message } });
       return undefined;
     } finally {
       if (waitCtl === ctl) waitCtl = undefined;

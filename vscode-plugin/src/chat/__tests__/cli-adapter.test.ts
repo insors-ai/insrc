@@ -16,6 +16,7 @@ import type { AdapterDeps, ProviderId, TurnProcess, TurnRequest, SessionHandle, 
 import type { TurnEvent } from '../stream-events.js';
 import {
   makeFakeSpawner,
+  tick,
   CLAUDE_TEXT_TURN,
   CLAUDE_TOOL_TURN,
   CLAUDE_ERROR_TURN,
@@ -239,7 +240,6 @@ test('cancel(): kills the in-flight subprocess and yields a terminal done(ok:fal
 
 // ---- S001 (E20261010d6a4bc79): the process outlives its stream ---------------
 
-const tick = (ms = 0): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 /** Settles with the stream's events, or rejects if it has not completed within `ms`. */
 function collectWithin(stream: AsyncIterable<TurnEvent>, ms: number): Promise<TurnEvent[]> {

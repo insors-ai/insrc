@@ -2362,3 +2362,24 @@ test('Stop ends the running process at once and cancels a waiting message; the g
   assert.deepEqual(answers, ['answer-1', 'answer-2', 'answer-3'], 'one answer per started turn, none from a dropped one');
   procs[2]!.exitNow();
 });
+
+test('a lock failure other than a dropped wait is logged and shown, never a silent no-op', async () => {
+  const fc = fakeChannel();
+  const { adapter, runs } = procAdapter();
+  const errors: string[] = [];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    logger: { warn: () => {}, error: (m) => errors.push(m) },
+    sessionLocks: { acquire: () => Promise.reject(new Error('lock store broke')) },
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'hi' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'error'));
+  const err = turnEvents(fc).find((e) => e.kind === 'error') as { message: string };
+  assert.match(err.message, /could not lock chat session: lock store broke/);
+  assert.match(errors.join('\n'), /could not lock chat session: lock store broke/);
+  assert.equal(runs(), 0, 'no CLI was started');
+});

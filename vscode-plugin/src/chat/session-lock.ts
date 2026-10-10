@@ -298,7 +298,8 @@ function parseRecord(text: string): LockFileRecord | undefined {
  * The in-memory registry plus one lock file per session. The file is created exclusively
  * when the lease is granted (cliPid null), rewritten with the CLI's pid and start time on
  * attach, and removed when that process exits or the lease is released. Any fs failure
- * other than "the file exists" falls back to the in-memory lease, logged once.
+ * other than "the file exists" falls back to the in-memory lease for that acquire only (logged
+ * once), so a transient failure never turns cross-window locking off for later turns.
  */
 export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks {
   const memory = createMemorySessionLocks(deps);
@@ -309,7 +310,8 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
   const killGroup = deps.killGroup ?? defaultKillGroup;
   const startTime = deps.processStartTime ?? defaultProcessStartTime;
   const pollMs = deps.pollMs ?? 500;
-  let fellBack = false;
+  // Logged once per host; the fallback itself applies to one acquire, so the next one retries the file.
+  let fallbackLogged = false;
 
   const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> =>
     new Promise((resolve) => {
@@ -366,13 +368,12 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
         opts.onWaiting?.();
       };
       const inner = await memory.acquire(sessionId, { ...opts, onWaiting });
-      if (fellBack) return inner;
       const file = `${deps.lockDir}/${lockFileName(sessionId)}`;
       const record = (cliPid: number | null, startedAt: number | null): string =>
         JSON.stringify({ sessionId, cliPid, hostPid: deps.hostPid, startedAt } satisfies LockFileRecord);
       const fallBack = (e: unknown): SessionLease => {
-        if (!fellBack) log.error(`[chat-lock] lock directory ${deps.lockDir} unusable (${errCode(e) ?? String(e)}); locking within this window only`);
-        fellBack = true;
+        if (!fallbackLogged) log.error(`[chat-lock] lock directory ${deps.lockDir} unusable (${errCode(e) ?? String(e)}); locking within this window only for this turn`);
+        fallbackLogged = true;
         return inner;
       };
 

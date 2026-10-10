@@ -24,12 +24,8 @@ import {
   stopProcess,
   type SessionLease,
 } from '../session-lock.js';
-import { fakeLiveProc, waitFor, type FakeLiveProc } from './fixtures.js';
+import { fakeLiveProc, tick, waitFor } from './fixtures.js';
 
-/** A fake process. `exitsOn` names the signal it dies of; 'never' ignores both. */
-const fakeProc = (pid: number, exitsOn: 'SIGTERM' | 'SIGKILL' | 'never' = 'SIGTERM'): FakeLiveProc => fakeLiveProc(pid, exitsOn);
-
-const tick = (ms = 0): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 function logs(): { warn: string[]; error: string[]; logger: { warn(m: string): void; error(m: string): void } } {
   const warn: string[] = [];
@@ -58,7 +54,7 @@ function track<T>(p: Promise<T>): { state: () => 'pending' | 'granted' | 'reject
 test("one lease per session; a second acquire waits until the holder's process exits, then is granted", async () => {
   const locks = createMemorySessionLocks();
   const first = await locks.acquire('s1', { timeoutMs: 60_000 });
-  const proc = fakeProc(101);
+  const proc = fakeLiveProc(101);
   first.attach(proc);
 
   let waited = 0;
@@ -97,7 +93,7 @@ test('past the timeout the holder is stopped (SIGTERM, then SIGKILL after the gr
 
   // Dies on SIGTERM: one signal, then granted.
   const a = await locks.acquire('s1', { timeoutMs: 60_000 });
-  const polite = fakeProc(201, 'SIGTERM');
+  const polite = fakeLiveProc(201, 'SIGTERM');
   a.attach(polite);
   const b = track(locks.acquire('s1', { timeoutMs: 20 }));
   await tick(10);
@@ -110,7 +106,7 @@ test('past the timeout the holder is stopped (SIGTERM, then SIGKILL after the gr
 
   // Ignores SIGTERM: SIGKILL after the grace, granted only after the exit.
   const lease = b.value() as SessionLease;
-  const stubborn = fakeProc(202, 'SIGKILL');
+  const stubborn = fakeLiveProc(202, 'SIGKILL');
   lease.attach(stubborn);
   const c = track(locks.acquire('s1', { timeoutMs: 10 }));
   await tick(25);
@@ -122,7 +118,7 @@ test('past the timeout the holder is stopped (SIGTERM, then SIGKILL after the gr
 
   // Never exits: granted after the second grace, with an error logged.
   const lease2 = c.value() as SessionLease;
-  const stuck = fakeProc(203, 'never');
+  const stuck = fakeLiveProc(203, 'never');
   lease2.attach(stuck);
   const d = track(locks.acquire('s1', { timeoutMs: 10 }));
   await tick(55);
@@ -142,7 +138,7 @@ test('past the timeout the holder is stopped (SIGTERM, then SIGKILL after the gr
 test('a process that exits by itself grants the waiter at once, without any stop', async () => {
   const locks = createMemorySessionLocks({ graceMs: 30 });
   const a = await locks.acquire('s1', { timeoutMs: 60_000 });
-  const proc = fakeProc(301);
+  const proc = fakeLiveProc(301);
   a.attach(proc);
   const b = track(locks.acquire('s1', { timeoutMs: 40 }));
   await tick(10);
@@ -155,7 +151,7 @@ test('a process that exits by itself grants the waiter at once, without any stop
 test('an aborted wait is cancelled without stopping anything, and a newer waiter replaces an older one', async () => {
   const locks = createMemorySessionLocks({ graceMs: 10 });
   const a = await locks.acquire('s1', { timeoutMs: 60_000 });
-  const proc = fakeProc(401);
+  const proc = fakeLiveProc(401);
   a.attach(proc);
 
   // Abort: rejects, nothing signalled, even past its timeout.
@@ -185,9 +181,9 @@ test('an aborted wait is cancelled without stopping anything, and a newer waiter
 });
 
 test('stopProcess reports whether the exit was confirmed', async () => {
-  assert.equal(await stopProcess(fakeProc(1, 'SIGTERM'), 10), true);
-  assert.equal(await stopProcess(fakeProc(2, 'SIGKILL'), 10), true);
-  assert.equal(await stopProcess(fakeProc(3, 'never'), 10), false);
+  assert.equal(await stopProcess(fakeLiveProc(1, 'SIGTERM'), 10), true);
+  assert.equal(await stopProcess(fakeLiveProc(2, 'SIGKILL'), 10), true);
+  assert.equal(await stopProcess(fakeLiveProc(3, 'never'), 10), false);
 });
 
 /** A fake process table: liveness and start time per pid, with recorded group signals. */
@@ -236,7 +232,7 @@ test('a lock file from another window is honoured while its pid is alive, and a 
   const a = await windowA.acquire('s1', { timeoutMs: 60_000 });
   assert.deepEqual(readLock(dir, 's1'), { sessionId: 's1', cliPid: null, hostPid: 1, startedAt: null }, 'created at grant');
   table.set(500, 7);
-  const proc = fakeProc(500);
+  const proc = fakeLiveProc(500);
   a.attach(proc);
   await waitFor(() => readLock(dir, 's1')?.cliPid === 500);
   assert.equal(readLock(dir, 's1')?.startedAt, 7, 'records the start time');
@@ -270,7 +266,7 @@ test('a lock file from another window is honoured while its pid is alive, and a 
   // The holder's exit removes its file.
   const e = await windowA.acquire('s4', { timeoutMs: 60_000 });
   table.set(501, 3);
-  const p2 = fakeProc(501);
+  const p2 = fakeLiveProc(501);
   e.attach(p2);
   await waitFor(() => readLock(dir, 's4')?.cliPid === 501);
   p2.exitNow();
@@ -314,7 +310,7 @@ test('an unwritable lock directory falls back to memory', async () => {
   const locks = createFileSessionLocks({ fs: fsp, lockDir: join(blocker, 'chat-locks'), hostPid: 2, logger: l.logger, ...procTable().deps });
 
   const a = await locks.acquire('s1', { timeoutMs: 60_000 });
-  const proc = fakeProc(800);
+  const proc = fakeLiveProc(800);
   a.attach(proc);
   const b = track(locks.acquire('s1', { timeoutMs: 60_000 }));
   await tick(20);
@@ -325,6 +321,12 @@ test('an unwritable lock directory falls back to memory', async () => {
   await locks.acquire('s2', { timeoutMs: 60_000 });
   assert.equal(l.error.length, 1, 'one logged error');
   assert.match(l.error[0] ?? '', /unusable \(ENOTDIR\); locking within this window only/);
+
+  // The failure is not sticky: once the directory is usable, the next turn uses its lock file.
+  await fsp.rm(blocker);
+  await locks.acquire('s3', { timeoutMs: 60_000 });
+  assert.equal(readLock(join(blocker, 'chat-locks'), 's3')?.hostPid, 2, 'cross-window locking resumed');
+  assert.equal(l.error.length, 1, 'still logged only once');
 });
 
 test('the file-backed lock works with the real default seams (pid liveness, start time, fs)', async (t) => {

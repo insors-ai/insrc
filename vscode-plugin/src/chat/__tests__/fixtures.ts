@@ -50,6 +50,9 @@ export interface FakeSpawner {
   readonly procs: FakeProcHandle[];
 }
 
+/** Resolves after `ms` (default: the next macrotask). */
+export const tick = (ms = 0): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
 /** Polls `fn` every 5 ms until it holds; throws when `ms` passes first. */
 export async function waitFor(fn: () => boolean, ms = 1500): Promise<void> {
   const start = Date.now();

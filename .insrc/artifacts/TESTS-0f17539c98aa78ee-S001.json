@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "0f17539c98aa78ee",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T07:36:48.435Z",
+    "updatedAt": "2026-10-10T07:36:48.435Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "a4b64f96",
+        "ranAt": "2026-10-10T07:36:48.435Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "one enumeration per run, repository and topic is made, recorded under the run's directory with its whole output, and read back; a topic that differs only in case or spacing reuses it; a different maxSources, topic or run does not; a failed enumeration is not recorded and one with no constraint is",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-constraints.test.ts",
+                "title": "one enumeration per run, repository and topic is made, recorded under the run's directory with its whole output, and read back; a topic that differs only in case or spacing reuses it; a different maxSources, topic or run does not; a failed enumeration is not recorded and one with no constraint is",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-constraints.test.ts",
+                "title": "the seam replaces the enumeration, and is handed the topic, the repository, the limit and no area",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a record that is unreadable, of another version or of another topic is enumerated again and overwritten; a record that cannot be written does not fail the check",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-constraints.test.ts",
+                "title": "a record that is unreadable, of another version or of another topic is enumerated again and overwritten; a record that cannot be written does not fail the check",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-constraints.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1091,
+            "titles": [
+              {
+                "title": "one enumeration per run, repository and topic is made, recorded under the run's directory with its whole output, and read back; a topic that differs only in case or spacing reuses it; a different maxSources, topic or run does not; a failed enumeration is not recorded and one with no constraint is",
+                "result": "pass"
+              },
+              {
+                "title": "a record that is unreadable, of another version or of another topic is enumerated again and overwritten; a record that cannot be written does not fail the check",
+                "result": "pass"
+              },
+              {
+                "title": "the seam replaces the enumeration, and is handed the topic, the repository, the limit and no area",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

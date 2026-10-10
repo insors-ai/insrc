@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -118,3 +118,13 @@ Run at 2026-10-10T14:18:34.157Z on commit `15a3b403`. Tests check: **passed**. 7
 | `src/analyze/orchestrator/__tests__/run-measure.test.ts` | 0 | 3 | 1.1 s |  |
 | `src/analyze/planner/__tests__/recursive.test.ts` | 0 | 13 | 0.7 s |  |
 | `src/daemon/__tests__/analyze-rpc-measure.test.ts` | 0 | 3 | 1.2 s |  |
+
+## t4
+
+Run at 2026-10-10T14:20:57.351Z on commit `54001963`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: the whole analyze suite and the config suite at the commit before the Story and at this task's commit, compared by test name: no test that passed before fails after**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-comparison-t4.md, with the raw outputs suites-before-0dadf958.tap and suites-after-d7380e11.tap beside it

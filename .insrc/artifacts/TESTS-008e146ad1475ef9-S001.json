@@ -4,7 +4,7 @@
     "epicHash": "008e146ad1475ef9",
     "storyId": "S001",
     "createdAt": "2026-10-10T14:08:41.695Z",
-    "updatedAt": "2026-10-10T14:18:34.157Z",
+    "updatedAt": "2026-10-10T14:20:57.351Z",
     "standalone": true
   },
   "body": {
@@ -620,6 +620,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "54001963",
+        "ranAt": "2026-10-10T14:20:57.351Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the whole analyze suite and the config suite at the commit before the Story and at this task's commit, compared by test name: no test that passed before fails after",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-comparison-t4.md, with the raw outputs suites-before-0dadf958.tap and suites-after-d7380e11.tap beside it"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

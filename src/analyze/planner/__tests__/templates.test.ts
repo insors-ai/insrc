@@ -357,3 +357,46 @@ test('a plan whose task carries a kind of scope its family does not accept fails
 		assert.match(failure?.message ?? '', new RegExp(`scopeRef\\.kind='${kind}' is not a kind of scope the '${family}' family accepts\\. Accepted kinds: ${TARGET_TO_KINDS[family].join(', ')}\\.$`));
 	}
 });
+
+test('the scope of a child plan is held to the kinds its own kind of source accepts', () => {
+	freshRegistry();
+	registerBuiltinTemplates();
+	const subrun = (template: string, target: string, kind: string): PlanTask => ({
+		planId: 'p-root', goal: 'check one subrun task', target: template.startsWith('docs') ? 'docs' : 'code', scope: 'XS',
+		reasoning: 'one subrun task whose child intent names a scope for its own kind of source',
+		tasks: [{
+			taskId: 't01', template, kind: 'planner', produces: ['report'], rationale: 'a deep dive into one area by a child plan',
+			params: { childIntent: { target, scope: 'S', focused: false, scopeRef: { kind, value: '/r/x' }, reasoning: 'the child plan looks at one area' } },
+		}],
+	});
+	for (const template of ['code.subrun.deep-dive', 'docs.subrun.deep-dive']) {
+		const catalog = getTemplatesForTarget(template.startsWith('docs') ? 'docs' : 'code');
+		const refused = validatePlan(subrun(template, 'infra', 'file'), catalog);
+		assert.equal(refused?.invariantId, 'INV-5', template);
+		assert.equal(
+			refused?.message,
+			`task t01 (${template}): childIntent.scopeRef.kind='file' is not a kind of scope the 'infra' family accepts. `
+			+ 'Accepted kinds: repo, manifest-dir, workspace.',
+		);
+		// A kind the child's own kind of source accepts is not refused by this rule.
+		const accepted = validatePlan(subrun(template, 'infra', 'manifest-dir'), catalog);
+		assert.notEqual(accepted?.invariantId, 'INV-5', `${template}: ${accepted?.message}`);
+	}
+	// A child intent may carry every kind of scope: the schema with all of them is the generic row.
+	assert.deepEqual([...TARGET_TO_KINDS.generic], ['repo', 'module', 'file', 'symbol', 'connection', 'manifest-dir', 'workspace']);
+});
+
+test('a scopeRef that is not an object, or whose kind is not a string, still fails validation by the schema', () => {
+	freshRegistry();
+	registerBuiltinTemplates();
+	const tmpl = getTemplate('infra.discovery.families')!;
+	for (const scopeRef of ['repo', { kind: 7, value: '/r' }, { value: '/r' }]) {
+		const plan: PlanTask = {
+			planId: 'p-root', goal: 'check one task', target: 'infra', scope: 'XS', reasoning: 'one task whose scopeRef is malformed',
+			tasks: [{ taskId: 't01', template: tmpl.id, kind: 'leaf', params: { scopeRef }, produces: [...tmpl.produces!], rationale: 'a task with a malformed scope' }],
+		};
+		const failure = validatePlan(plan, getTemplatesForTarget('infra'));
+		assert.equal(failure?.invariantId, 'INV-5', JSON.stringify(scopeRef));
+		assert.match(failure?.message ?? '', /^task t01: params failed inputSchema: \/scopeRef/, JSON.stringify(scopeRef));
+	}
+});

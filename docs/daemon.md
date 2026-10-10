@@ -844,7 +844,8 @@ task t02 (infra.inventory.ci): scopeRef.kind='file' is not a kind of scope the '
 
 Before, such a plan was accepted and the task failed when it ran, with
 `scope-ref-kind-target-mismatch`. A task still refuses the kind itself when it
-runs.
+runs. The scope of a child plan (`childIntent.scopeRef` of a subrun task) is
+held to the row of the child intent's own `target` in the same way.
 
 - A code or docs task keeps to the **area** the scope names: for a `module`
   scope the entities or documents whose file lies under that directory, for a

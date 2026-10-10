@@ -7,11 +7,87 @@
     "storyId": "S001",
     "createdAt": "2026-10-10T06:23:00.767Z",
     "authoredBy": "controller",
-    "triageRationale": "bugfix, magnitude small: the templates' scopeRef schema is built per family from the existing table and the plan validator's parameter rule names a refused kind; no design decision open."
+    "triageRationale": "bugfix, magnitude small: the templates' scopeRef schema is built per family from the existing table and the plan validator's parameter rule names a refused kind; no design decision open.",
+    "updatedAt": "2026-10-10T06:23:16.048Z"
   },
   "body": {
     "focus": "Fix ISSUE-0ee73dc7a00c0f11: a plan in which a task's scopeRef has a kind its template's family does not accept fails plan validation, with a message that names the task, the kind it was given and the kinds its family accepts. The catalog shown to the planner lists, for each template, only the kinds of scope its family accepts. The kinds per family come from the one existing table (TARGET_TO_KINDS). A plan whose tasks all carry accepted kinds validates and runs as today; the runtime's own refusal stays.",
     "producesLld": false,
-    "commit": "eb86616c"
+    "commit": "ea47877a",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "Each template's scopeRef schema is now built from its family's row of the one table (TARGET_TO_KINDS) by scopeRefSchemaFor, so the catalog shown to the planner lists only the kinds of scope the family accepts, and the plan validator's parameter rule (INV-5) fails a plan whose task carries another kind with a message naming the task, the kind and the accepted kinds. The runtime's refusal is unchanged. A subrun task's childIntent keeps the schema with every kind, because its kind of source is not fixed by the template; checking a child intent's kind against its own target is not part of this fix. Two tests over the real catalog in src/analyze/planner/__tests__/templates.test.ts; three mutations each fail them.",
+    "testRecord": {
+      "md": "docs/standalone/bug-analyze-planner-gives-plan-task-E202610090ee73dc7/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-0ee73dc7a00c0f11.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:23:16.048Z"
+      },
+      {
+        "target": {
+          "file": "design/analyze-plan-builder.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:23:16.048Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:23:16.048Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/__tests__/templates.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:23:16.048Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/code/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:23:16.048Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/docs/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:23:16.048Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/infra/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:23:16.048Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/shared-schemas.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:23:16.048Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:23:16.048Z"
+      }
+    ]
   }
 }

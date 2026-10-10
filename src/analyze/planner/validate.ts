@@ -26,12 +26,13 @@ import { Ajv, type ErrorObject } from 'ajv';
 
 import type {
 	AnalyzeScope,
+	AnalyzeScopeRef,
 	AnalyzeTarget,
 	AnalyzeTaskTemplate,
 	PlanTask,
 	PlannedTask,
 } from '../../shared/analyze-types.js';
-import { TARGET_TO_KINDS } from '../classifier/validate.js';
+import { isKindCompatibleWithTarget, TARGET_TO_KINDS } from '../classifier/validate.js';
 
 /** Catalog-key -> template, indexed once at the start of validation. */
 type CatalogIndex = ReadonlyMap<string, AnalyzeTaskTemplate>;
@@ -66,31 +67,50 @@ export const SCOPE_BAND: Readonly<Record<AnalyzeScope, { readonly lo: number; re
 });
 
 /**
- * A task's `scopeRef` whose kind its template's family does not accept, or
- * null. The kinds come from the one table the classifier and the runtimes use,
- * so a plan that passes here is not refused for its kind when the task runs.
- * Only a template that declares a `scopeRef` parameter is checked; a
- * `scopeRef` that is not an object with a string `kind` is left to the schema.
+ * A scope of the task whose kind does not go with its kind of source, or null:
+ *   - the task's own `scopeRef`, against its template's family;
+ *   - a subrun task's `childIntent.scopeRef`, against the child intent's own
+ *     `target`, which is the family the child plan is built for.
+ * The kinds come from the one table the classifier and the runtimes use, so a
+ * plan that passes here is not refused for a scope's kind when it runs. Only a
+ * parameter the template declares is checked; a value that is not an object
+ * with a string `kind` (or a child intent with no known `target`) is left to
+ * the schema.
  */
 function refusedScopeKind(
 	task: PlannedTask,
 	tmpl: AnalyzeTaskTemplate,
 ): { readonly kind: string; readonly accepted: readonly string[]; readonly message: string } | null {
-	const declared = (tmpl.inputSchema?.['properties'] as Record<string, unknown> | undefined)?.['scopeRef'];
-	if (declared === undefined) return null;
-	const scopeRef = (task.params as Record<string, unknown> | undefined)?.['scopeRef'];
-	if (typeof scopeRef !== 'object' || scopeRef === null) return null;
-	const kind = (scopeRef as Record<string, unknown>)['kind'];
-	if (typeof kind !== 'string') return null;
-	const accepted: readonly string[] = TARGET_TO_KINDS[tmpl.target];
-	if (accepted.includes(kind)) return null;
-	return {
-		kind,
-		accepted,
-		message:
-			`task ${task.taskId} (${task.template}): scopeRef.kind='${kind}' is not a kind of scope ` +
-			`the '${tmpl.target}' family accepts. Accepted kinds: ${accepted.join(', ')}.`,
+	const declared = tmpl.inputSchema?.['properties'] as Record<string, unknown> | undefined;
+	const params = task.params as Record<string, unknown> | undefined;
+	const refusal = (where: string, scopeRef: unknown, family: AnalyzeTarget) => {
+		if (typeof scopeRef !== 'object' || scopeRef === null) return null;
+		const kind = (scopeRef as Record<string, unknown>)['kind'];
+		if (typeof kind !== 'string') return null;
+		if (isKindCompatibleWithTarget(family, kind as AnalyzeScopeRef['kind'])) return null;
+		const accepted: readonly string[] = TARGET_TO_KINDS[family];
+		return {
+			kind,
+			accepted,
+			message:
+				`task ${task.taskId} (${task.template}): ${where}.kind='${kind}' is not a kind of scope ` +
+				`the '${family}' family accepts. Accepted kinds: ${accepted.join(', ')}.`,
+		};
 	};
+
+	if (declared?.['scopeRef'] !== undefined) {
+		const own = refusal('scopeRef', params?.['scopeRef'], tmpl.target);
+		if (own !== null) return own;
+	}
+	const childIntent = params?.['childIntent'];
+	if (declared?.['childIntent'] !== undefined && typeof childIntent === 'object' && childIntent !== null) {
+		const child = childIntent as Record<string, unknown>;
+		const target = child['target'];
+		if (typeof target === 'string' && Object.hasOwn(TARGET_TO_KINDS, target)) {
+			return refusal('childIntent.scopeRef', child['scopeRef'], target as AnalyzeTarget);
+		}
+	}
+	return null;
 }
 
 /** Reduce the lower bound for focused intents (INV-13 note). */
@@ -189,8 +209,8 @@ export function validatePlan(
 		const t = plan.tasks[i]!;
 		const tmpl = index.get(t.template)!;
 		if (tmpl.inputSchema === undefined) continue; // no schema declared -> nothing to validate
-		// A kind of scope the task's family does not accept: said in words the
-		// planner can act on, before the schema's own (terser) enum error.
+		// A kind of scope the task's family (or its child intent's) does not accept:
+		// said in words the planner can act on, before the schema's own (terser) enum error.
 		const refusedKind = refusedScopeKind(t, tmpl);
 		if (refusedKind !== null) {
 			return {

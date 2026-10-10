@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791613558846-do077w",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-10T06:25:58.891Z",
+    "model": "claude:opus",
+    "elapsedMs": 77829,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0ee73dc7a00c0f11",
+    "storyId": "S001",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "0ee73dc7a00c0f11",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "design/analyze-plan-builder.md",
+        "docs/daemon.md",
+        "src/analyze/planner/__tests__/templates.test.ts",
+        "src/analyze/planner/templates/code/index.ts",
+        "src/analyze/planner/templates/docs/index.ts",
+        "src/analyze/planner/templates/infra/index.ts",
+        "src/analyze/planner/templates/shared-schemas.ts",
+        "src/analyze/planner/validate.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/planner/__tests__/templates.test.ts:289",
+            "message": "Present but unverified: the two new tests in this file are the only cover for the Story's behaviour (the per-family scopeRef kind lists, the catalog shown to the planner, and the INV-5 refusal in validatePlan), and their pass-state could not be confirmed. No build record was supplied and the reviewer's attempt to run this file was not permitted. The testsReaching edges are empty for every changed symbol, but that is the graph having no edges for file-level diff entities, not a missing test: the diff itself shows these tests calling validatePlan, renderCatalog and the registered code, docs and infra templates. Run `npx tsx --test src/analyze/planner/__tests__/templates.test.ts` under Node 22 and record the result before completion.",
+            "expectationRef": "validatePlan (INV-5 scope-kind refusal) / scopeRefSchemaFor",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/planner/templates/shared-schemas.ts:42",
+            "message": "SCOPE_REF_SCHEMA changed from a literal list of seven kinds to scopeRefSchemaFor('generic'), so the kinds a subrun task's childIntent accepts (src/analyze/planner/templates/docs/index.ts:188) now depend on the `generic` row of TARGET_TO_KINDS. No test pins this. The new test's declaredKinds helper reads only a template's top-level `scopeRef` parameter, so the nested childIntent.scopeRef is never asserted. Today the row holds the same seven kinds in the same order, so behaviour is unchanged, but narrowing that row would silently narrow what a child intent may carry with no test failing.",
+            "expectationRef": "SCOPE_REF_SCHEMA (childIntent scopeRef accepts every kind)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/planner/validate.ts:82",
+            "message": "Two of refusedScopeKind's early returns are not exercised by the Story's tests: a `scopeRef` that is not an object, and a `scopeRef` whose `kind` is not a string. The doc comment says these are 'left to the schema', but no new test shows such a plan still failing INV-5 with the schema's own error rather than passing or throwing. The other branches are exercised: a template with no scopeRef parameter (the aggregator task t03), an accepted kind, and a refused kind for infra, code and docs.",
+            "expectationRef": "refusedScopeKind (malformed scopeRef falls through to the schema)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/planner/validate.ts:79",
+            "message": "Correctness gap: `refusedScopeKind` only checks a task's top-level `params.scopeRef`. A planner-kind subrun task carries its scope at `params.childIntent.scopeRef`, whose schema is still the all-kinds `SCOPE_REF_SCHEMA` (src/analyze/planner/templates/docs/index.ts:188) next to a free `childIntent.target`. A plan with `childIntent: { target: 'infra', scopeRef: { kind: 'file', ... } }` therefore still passes INV-5 and is only refused later, when `recursive.ts` runs the child (`measureRequestScope(childIntent.scopeRef, childIntent.target, ...)`). That is the same accept-then-fail-at-runtime defect this Story closes for leaf tasks, and it contradicts the new doc claims that \"a plan that passes here is not refused for its kind when the task runs\" (validate.ts doc comment) and \"the catalog, this rule and the runtime agree\" (design/analyze-plan-builder.md). Either check `childIntent.scopeRef.kind` against `TARGET_TO_KINDS[childIntent.target]` in the same pass, or narrow the doc claims to leaf tasks. No test covers the subrun case.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/planner/validate.ts:75",
+            "message": "Duplication: `refusedScopeKind` re-implements the membership test `TARGET_TO_KINDS[target].includes(kind)` that `isKindCompatibleWithTarget` already exports from the same module it imports the table from, and composes a second, differently worded message for the same refusal that `checkKindTargetMatch` reports at runtime (\"is incompatible with target=... Allowed kinds for this target\" vs \"is not a kind of scope the ... family accepts. Accepted kinds\"). The table is shared so the two cannot disagree on the verdict; only the predicate and the wording are duplicated. Calling `isKindCompatibleWithTarget` would keep one predicate.",
+            "counterpartRef": "isKindCompatibleWithTarget (src/analyze/classifier/validate.ts:104)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/planner/templates/shared-schemas.ts:42",
+            "message": "`SCOPE_REF_SCHEMA` used to list all seven kinds literally; it is now `scopeRefSchemaFor('generic')`, so \"every kind of scope\" holds only while the `generic` row of `TARGET_TO_KINDS` stays the full set. Verified true today (the row lists all seven), but nothing pins it: narrowing the `generic` row for classifier reasons would silently narrow what a subrun task's `childIntent.scopeRef` accepts. A one-line assertion that the generic row equals the full kind union would pin it.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/planner/templates/infra/index.ts:22",
+            "message": "Taste: comment grammar, \"A infra task's\" should read \"An infra task's\".",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 5
+    }
+  }
+}

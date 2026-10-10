@@ -19,7 +19,7 @@ import {
 } from '../shared-schemas.js';
 import { registerTemplate } from '../registry.js';
 
-/** A infra task's `scopeRef`: only the kinds of scope the infra family accepts. */
+/** An infra task's `scopeRef`: only the kinds of scope the infra family accepts. */
 const INFRA_SCOPE_REF_SCHEMA = scopeRefSchemaFor('infra');
 
 export const infraDiscoveryFamilies: AnalyzeTaskTemplate = {

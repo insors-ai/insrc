@@ -1,0 +1,21 @@
+<!-- insrc:artifact ISSUE-9fffe3e22fc548f9 -->
+
+# The request measure counts a workspace's repositories with a second copy of its counting rule, and recognises an absolute path only by a leading slash
+
+## Reproduction
+
+Neither part was seen to give a wrong result; both were read from the code by the code review of Story s2 of the analyzer epic (findings 10 and 11) and left open. (1) Read `measureReposUnder` and `measureNamedArea` in the request measure: each walks a list of stored entities, adds to a count of items and collects the distinct file paths. A change to how an entity or a file is counted has to be made in both, and nothing makes them agree. (2) Give the function that completes the file paths a lookup names a path that is absolute on a platform whose absolute paths do not start with `/` (a drive letter): it joins the path to the root a second time. On macOS and Linux, the supported platforms, the result is right.
+
+## Root cause
+
+(1) The measure of a workspace that no registered repository contains sums over the repositories under it with its own loop instead of using the function that counts a named area. (2) The helper tests `file.startsWith('/')` to decide whether a path is already absolute, where the platform's own rule for an absolute path would be the test.
+
+## Fix intent
+
+(1) The items and files of a workspace's repositories are counted by the same rule as any other named area, in one place; the counts it returns do not change. (2) A path a lookup names is recognised as absolute by the platform's rule, so it is never joined to the root when it is already complete; on the supported platforms nothing changes.
+
+## Citations
+
+- **[[c1]]** `code` `src/analyze/measure.ts` — "async function measureReposUnder(workspace: string, sizeHint: AnalyzeScope | undefined): Promise<RequestMeasure> {"
+- **[[c2]]** `code` `src/analyze/explore/types.ts` — "if (file.startsWith('/')) return file;"
+- **[[c3]]** `doc` `docs/plans/handover-2026-10-10.md` — "`measureReposUnder` repeats the"

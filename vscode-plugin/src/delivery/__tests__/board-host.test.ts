@@ -1077,6 +1077,184 @@ test('CSP string unchanged, exactly one aria-live region, and the script uses te
   for (const m of b.w.posted) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
 });
 
+/** A story with tasks, a conflict, records, a correcting issue, and an issue with a fix story. */
+function itemsSnapshot(): DeliverySnapshot {
+  return screensSnapshot([
+    item({ id: 'E20261009aaaaaaaa:S003', parentId: 'E20261009aaaaaaaa', title: 'Section navigation', stage: 'complete',
+      childIds: ['E20261009aaaaaaaa:S003:T1', 'E20261009aaaaaaaa:S003:T2'],
+      tasks: [{ taskItemId: 'E20261009aaaaaaaa:S003:T1', result: 'passed', planned: true }, { taskItemId: 'E20261009aaaaaaaa:S003:T2', result: 'failed', planned: true }],
+      validation: { passed: 1, failed: 1, unrecorded: 0, unplanned: 0 },
+      conflict: { failedTaskItemIds: ['E20261009aaaaaaaa:S003:T2'], storyLevelFailed: false },
+      evidence: [
+        ev('BUILD-c', 'BUILD', { approval: { state: 'approved', at: '2026-10-01T11:43:00.000Z' } }),
+        ev('CR-c', 'CR', { approval: { state: 'pending', at: null } }),
+        ev('LLD-c', 'LLD', { mdPath: 'docs/e/S003/LLD.md', openWith: 'review-view' }),
+      ],
+      notices: [{ code: 'review-without-build', message: 'CR-c reviewed code early.', itemIds: [], artifactIds: ['CR-c'], fileNames: [], attention: false }] as never }),
+    item({ id: 'E20261009aaaaaaaa:S003:T1', kind: 'task', parentId: 'E20261009aaaaaaaa:S003', title: 'Project records' }),
+    item({ id: 'E20261009aaaaaaaa:S003:T2', kind: 'task', parentId: 'E20261009aaaaaaaa:S003', title: 'Render structure' }),
+    item({ id: 'H9999aaaa0000bbbb', kind: 'issue', title: 'Jump is off by one', stage: 'design-plan', standalone: true,
+      correctsRef: { resolvedItemId: 'E20261009aaaaaaaa:S003' } as never, childIds: ['H9999aaaa0000bbbb:S001'] }),
+    item({ id: 'H9999aaaa0000bbbb:S001', parentId: 'H9999aaaa0000bbbb', title: 'Fix the jump', stage: 'scoped' }),
+    item({ id: 'H7777cccc0000dddd', kind: 'issue', title: 'Lost parent', stage: 'scoped', standalone: true,
+      correctsRef: { slug: 'gone', resolvedItemId: null } as never,
+      notices: [{ code: 'unresolved-parent', message: "corrects 'gone', which is not in the store", itemIds: [], artifactIds: [], fileNames: [], attention: true }] as never }),
+    item({ id: 'H5555eeee0000ffff', kind: 'issue', title: 'Epic-level', stage: 'scoped', correctsRef: { resolvedItemId: 'E20261009bbbbbbbb' } as never }),
+  ]);
+}
+const STORY_C = 'E20261009aaaaaaaa:S003';
+const tabsIn = (root: FakeEl) => findAll(root, e => e.attrs['role'] === 'tab');
+
+/** Open the board, choose Epics, open epic A and then the story with this id. */
+async function onStory(id: string) {
+  const b = await liveBoard(itemsSnapshot());
+  const main = b.w.el['main']!;
+  click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'epics')!);
+  b.relay();
+  click(findAll(main, e => e.attrs['data-epic'] === EPIC_A)[0]!);
+  b.relay();
+  // Complete starts closed: its cards are still in the DOM, inside the section.
+  click(cardOf(main, id));
+  b.relay();
+  return { ...b, main };
+}
+
+test('opening a story replaces the screen: #main holds only the story screen, with its breadcrumb and Back, and no card from the list it came from', async () => {
+  const b = await onStory(STORY_C);
+  assert.equal(screenOf(b.w), 'story');
+  assert.equal(cardsIn(b.main).length, 0, 'no card of the epic board stays');
+  assert.equal(findAll(b.main, e => e.attrs['class'] === 'filters').length, 0, 'a story screen has no filters');
+  assert.deepEqual(buttonsIn(b.main, 'back').map(x => x.textContent), ['← Back to epic']);
+  assert.deepEqual(findAll(b.main, e => e.tag === 'h1').map(h => h.textContent), ['Section navigation']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic', '/', 'S003']);
+  assert.equal(findAll(b.main, e => e.attrs['class'] === 'kicker')[0]!.textContent, 'STORY · AAAAAAAA / S003');
+  assert.equal(focusState.active, findAll(b.main, e => e.tag === 'h1')[0], 'the story\'s heading has focus');
+});
+
+test('the story tabs post set-item-tab; overview shows the conflict first, tasks, why and chain; evidence is a records table with open buttons', async () => {
+  const b = await onStory(STORY_C);
+  const tabs = tabsIn(b.main);
+  assert.deepEqual(tabs.map(t => [t.textContent, t.attrs['aria-selected'], t.attrs['tabindex']]), [
+    ['Overview & tasks', 'true', '0'], ['Workflow evidence', 'false', '-1'], ['Linked work', 'false', '-1'],
+  ]);
+  const body = findAll(b.main, e => e.attrs['class'] === 'screen-body')[0]!;
+  const order = body.children.map(c => c.attrs['class'] ?? c.tag);
+  assert.ok(order.indexOf('conflict') >= 0 && order.indexOf('conflict') < order.indexOf('item-tabs'), `the warning comes before the tabs and any task: ${order}`);
+  const conflict = findAll(body, e => e.attrs['class'] === 'conflict')[0]!;
+  assert.deepEqual([conflict.attrs['role'], texts(conflict)[0]], ['note', 'Two records disagree']);
+  const panel = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
+  const tasks = findAll(panel, e => e.tag === 'details' && e.attrs['class'] === 'task');
+  assert.deepEqual(tasks.map(t => texts(t.children[0]!)[0]), ['Project records', 'Render structure']);
+  assert.deepEqual(findAll(tasks[1]!, e => e.attrs['class'] === 'pill').map(x => [x.textContent, x.attrs['data-tone']]), [['Failed', 'danger']]);
+  assert.ok(texts(panel).includes('Why this stage?'));
+  assert.ok(findAll(panel, e => e.attrs['class'] === 'chain').length === 1, 'the artifact chain');
+  const cols = findAll(panel, e => e.attrs['class'] === 'item-cols')[0]!;
+  assert.deepEqual(cols.children.map(c => c.attrs['class']), ['item-main', 'item-side'], 'tasks beside why and chain');
+
+  // Left/Right walk the tabs; a tab posts set-item-tab and the panel follows.
+  tabs[0]!.listeners['keydown']!(keyEvent('ArrowRight'));
+  assert.equal(focusState.active, tabs[1]);
+  b.w.posted.length = 0;
+  click(tabs[1]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'set-item-tab', tab: 'evidence' }]);
+  b.relay();
+  const evidence = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
+  assert.equal(evidence.attrs['data-tab'], 'evidence');
+  assert.equal(findAll(evidence, e => e.attrs['class'] === 'task').length, 0, 'evidence shows no tasks');
+  const wrap = findAll(evidence, e => e.attrs['class'] === 'table-wrap')[0]!;
+  const rows = findAll(wrap, e => e.tag === 'tr' && e.attrs['data-artifact-id'] !== undefined);
+  assert.deepEqual(rows.map(r => r.children.slice(0, 4).map(c => c.textContent)), [
+    ['BUILD BUILD-c', 'Approved · 2026-10-01 11:43 UTC', '—', '—'],
+    ['CR CR-c', 'Pending', '—', '—'],
+    ['LLD LLD-c', 'Approved', '—', '—'],
+  ], 'every record, with approval, review and override in their own columns');
+  assert.deepEqual(rows.map(r => findAll(r, e => e.tag === 'button')[0]!.textContent), ['Open read-only', 'Open read-only', 'Open in review']);
+  assert.ok(texts(evidence).includes('Code review without a build record: CR-c reviewed code early.'), 'notices in words');
+  b.w.posted.length = 0;
+  click(findAll(rows[0]!, e => e.tag === 'button')[0]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-evidence', itemId: STORY_C, artifactId: 'BUILD-c' }]);
+  b.relay();
+  b.s.evidence.at(-1)!.resolve({ ok: true, value: { artifactId: 'BUILD-c', kind: 'BUILD', meta: {}, body: {}, renderedMarkdown: '# Build <b>x</b>' } });
+  await flush();
+  b.pump();
+  const pre = findAll(b.main, e => e.tag === 'pre')[0]!;
+  assert.deepEqual([pre.attrs['class'], pre.textContent], ['opened-record', '# Build <b>x</b>'], 'the opened record as preformatted text');
+  assert.equal(findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!.attrs['data-tab'], 'evidence', 'still on the tab the reader chose');
+
+  // A narrow pane uses the short tab labels.
+  b.w.resize(360);
+  assert.deepEqual(tabsIn(b.main).map(t => t.textContent), ['Overview', 'Evidence', 'Linked']);
+});
+
+test('linked work lists the epic, children and correcting issues, each opening its own screen', async () => {
+  const b = await onStory(STORY_C);
+  click(tabsIn(b.main)[2]!);
+  b.relay();
+  const panel = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
+  assert.deepEqual(findAll(panel, e => e.tag === 'h2').map(h => h.textContent), ['Epic', 'Issues correcting this story']);
+  const links = findAll(panel, e => e.tag === 'button');
+  assert.deepEqual(links.map(l => l.textContent), ['Board epic', 'ISSUE · Jump is off by one · Design & plan']);
+  assert.ok(texts(panel).includes(' · 2 of 3 stories complete'), 'the epic with its completion');
+  b.w.posted.length = 0;
+  click(links[0]!);
+  click(links[1]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-epic', epicItemId: EPIC_A }, { type: 'open-item', itemId: 'H9999aaaa0000bbbb' }]);
+  b.w.posted.length = 0;
+  click(links[1]!);
+  b.relay();
+  assert.equal(screenOf(b.w), 'issue');
+  assert.deepEqual(texts(b.w.el['crumbs']!).at(-1), '9999AAAA');
+  assert.deepEqual(buttonsIn(b.main, 'back').map(x => x.textContent), ['← Back to S003']);
+
+  // A fix story of an issue is part of that issue; a standalone story has no Epic section.
+  click(findAll(b.main, e => e.attrs['data-item-id'] === 'H9999aaaa0000bbbb:S001')[0]!);
+  b.relay();
+  click(tabsIn(b.main)[2]!);
+  b.relay();
+  const fixPanel = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
+  assert.deepEqual(findAll(fixPanel, e => e.tag === 'h2').map(h => h.textContent), ['Part of', 'Issues correcting this story']);
+  assert.deepEqual(findAll(fixPanel, e => e.tag === 'button').map(x => x.textContent), ['Jump is off by one']);
+  assert.ok(texts(fixPanel).includes('No issue records this story as its parent.'));
+  assert.deepEqual(b.s.logs.warn, []);
+});
+
+test('the issue screen opens what it corrects, or shows the parent notice, and lists its fix stories', async () => {
+  const b = await liveBoard(itemsSnapshot());
+  const main = b.w.el['main']!;
+  click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'issues')!);
+  b.relay();
+  click(findAll(main, e => e.attrs['class'] === 'issue-row' && e.attrs['data-item-id'] === 'H9999aaaa0000bbbb')[0]!);
+  b.relay();
+  assert.equal(screenOf(b.w), 'issue');
+  assert.deepEqual(buttonsIn(main, 'back').map(x => x.textContent), ['← Issues']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Issues', '/', '9999AAAA']);
+  const open = findAll(main, e => e.tag === 'button' && e.textContent === 'Open what it corrects →')[0]!;
+  assert.ok(texts(main).includes('Corrects Section navigation · Complete'));
+  const fixes = findAll(main, e => e.attrs['aria-label'] === 'Fix stories')[0]!;
+  assert.deepEqual(texts(fixes), ['STORY · Fix the jump', 'Scoped'], 'each fix story with its stage');
+  assert.ok(findAll(main, e => e.attrs['class'] === 'table-wrap').length === 1 && texts(main).includes('Why this stage?'), 'records and why');
+  b.w.posted.length = 0;
+  click(open);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-item', itemId: STORY_C }]);
+
+  // An epic parent opens the epic; an unresolved parent shows its notice and no button.
+  click(findAll(b.w.el['crumbs']!, e => e.tag === 'button' && e.textContent === 'Issues')[0]!);
+  b.relay();
+  click(findAll(main, e => e.attrs['class'] === 'issue-row' && e.attrs['data-item-id'] === 'H5555eeee0000ffff')[0]!);
+  b.relay();
+  b.w.posted.length = 0;
+  click(findAll(main, e => e.tag === 'button' && e.textContent === 'Open what it corrects →')[0]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-epic', epicItemId: 'E20261009bbbbbbbb' }]);
+  b.w.posted.length = 0;
+  main.listeners['keydown']!(keyEvent('Escape'));
+  b.relay();
+  click(findAll(main, e => e.attrs['class'] === 'issue-row' && e.attrs['data-item-id'] === 'H7777cccc0000dddd')[0]!);
+  b.relay();
+  assert.equal(findAll(main, e => e.textContent === 'Open what it corrects →').length, 0);
+  assert.ok(texts(main).includes('Unresolved parent') && texts(main).includes("corrects 'gone', which is not in the store"));
+  assert.ok(texts(main).includes('No fix story yet'));
+});
+
 test('density is restored from the webview state, saved on change and mirrored to the host, and both densities render every screen', async () => {
   // Restored from saved state.
   const restored = runScript({ state: { density: 'compact', other: 1 } });

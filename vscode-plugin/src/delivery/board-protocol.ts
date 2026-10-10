@@ -239,11 +239,26 @@ export interface EpicsBody {
   readonly emptyPanel: StatePanelView | null;
 }
 
-/** The Issues screen: a list of issues in stage order. */
+/** One stage of the Issues screen: the same collapsible section, with the same defaults, as a board screen's. */
+export interface IssueSectionView {
+  readonly stage: DeliveryStage;
+  readonly label: string;
+  readonly total: number;
+  readonly attentionCount: number;
+  readonly defaultOpen: boolean;
+  readonly emptyText: string | null;
+  readonly hint: string | null;
+  readonly issues: readonly IssueEntryView[];
+}
+
+/** The Issues screen: six stage sections of issues, folded and opened as a board screen's. */
 export interface IssuesBody {
   readonly kind: 'issues';
   readonly totalsLabel: string;
-  readonly issues: readonly IssueEntryView[];
+  /** True when Needs attention is on, so the totals line offers Show all. */
+  readonly showAll: boolean;
+  readonly sections: readonly IssueSectionView[];
+  readonly fold: { readonly always: boolean; readonly text: string };
   readonly emptyPanel: StatePanelView | null;
 }
 

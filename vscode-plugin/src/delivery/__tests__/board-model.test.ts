@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, idParts, placeableCount, selectMatches, showMore, unknownStages, type BoardPaging, type MatchFilter } from '../board-model.js';
+import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, foldOf, idParts, placeableCount, sectionDefaults, selectMatches, showMore, unknownStages, type BoardPaging, type MatchFilter } from '../board-model.js';
 import type { StagesBody } from '../board-protocol.js';
 import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
 import { evidence as fixtureEvidence, item, review, snapshot } from './board-fixtures.js';
@@ -315,4 +315,22 @@ test('idParts reads the hash and story number of a published id, and nothing fro
   assert.deepEqual(idParts('Habcdef0123456789'), { hash: 'ABCDEF01', story: null });
   assert.equal(idParts('E20261009abcdef01:S001:T1'), null);
   assert.equal(idParts('slug:R(raw)'), null);
+});
+
+test('sectionDefaults and foldOf give the board screens\' existing section models', () => {
+  const snap = snapshot([
+    item({ id: 'S1', stage: 'scoped' }),
+    item({ id: 'S2', stage: 'complete', needsAttention: true }),
+  ]);
+  for (const attentionOnly of [false, true]) {
+    const m = build(snap, { needsAttentionOnly: attentionOnly });
+    for (const sec of m.sections) {
+      assert.deepEqual(sectionDefaults(sec.stage, sec.total, sec.attentionCount, attentionOnly, DISPLAY_LABELS),
+        { defaultOpen: sec.defaultOpen, emptyText: sec.emptyText, hint: sec.hint }, `${sec.stage}, attention ${attentionOnly}`);
+    }
+    assert.deepEqual(foldOf(m.sections, attentionOnly), m.fold);
+  }
+  assert.deepEqual(sectionDefaults('complete', 2, 1, false, DISPLAY_LABELS), { defaultOpen: false, emptyText: null, hint: '1 needs attention' });
+  assert.deepEqual(sectionDefaults('scoped', 0, 0, true, DISPLAY_LABELS), { defaultOpen: false, emptyText: DISPLAY_LABELS.nothingAtStage, hint: null });
+  assert.deepEqual(foldOf([{ label: 'A', total: 0 }, { label: 'B', total: 1 }], false), { always: false, text: 'A 0' });
 });

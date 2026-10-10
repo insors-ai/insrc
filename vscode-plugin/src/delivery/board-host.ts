@@ -182,7 +182,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `const p=make('p','Work outside any epic is under ','muted standalone-link');p.appendChild(button(L.views.standalone,function(){send({type:'set-view',view:'standalone'});},'link'));bodyEl.appendChild(p);}`,
   // The Issues screen: a list in stage order; a row opens the issue's screen.
   `function renderIssues(b){renderTotals(b.totalsLabel,false);if(b.emptyPanel!==null){renderPanel(bodyEl,b.emptyPanel);return;}`,
-  `const ul=make('ul',undefined,'rows');ul.setAttribute('aria-label','Issues');for(const e of b.issues){const li=make('li');`,
+  `const ul=make('ul',undefined,'rows');ul.setAttribute('aria-label','Issues');const all=[];for(const sec of b.sections){for(const x of sec.issues)all.push(x);}for(const e of all){const li=make('li');`,
   `const row=keyed(button('',function(){send({type:'open-item',itemId:e.card.itemId});},'issue-row'),'item-'+e.card.itemId);row.setAttribute('data-item-id',e.card.itemId);row.setAttribute('aria-label',e.card.accessibleLabel);`,
   `row.appendChild(make('span','ISSUE \\u00b7 '+e.card.compactId,'kicker'));row.appendChild(make('span',e.card.title,'row-title'));`,
   `const what=e.parent!==null?'Corrects '+e.parent.title:e.parentNotice!==null?e.parentNotice:e.card.standalone?'Standalone':'';`,

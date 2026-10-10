@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791643794801-wn1135",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-10T14:50:20.602Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 25799,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "ed920ce9247c9d92",
+    "epicSlug": "daemon-test-suite-can-hang-when",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "The daemon test suite can hang when two test runs overlap",
+    "reproduction": "Seen three times during Story s2 of the analyzer epic, not reproduced on demand. The daemon suite hung once in `src/daemon/__tests__/model-catalog.test.ts` and twice in `src/daemon/tools/builtins/code/__tests__/migration-walk.test.ts`. Each time another test run was still going, or the child processes of a run that had timed out were. Both files pass when run alone, and the suite passes when it is the only run. To try it: start the daemon suite, and while it runs start it a second time, or leave the children of a timed-out run alive and start the suite. Observed: one of the two files never finishes. Expected: two test runs on one machine do not block each other, or a run that cannot proceed because of another says so and ends.",
+    "rootCause": "Not diagnosed. What is known is the circumstance: every hang came with a second run alive, and none came without one. What the two test files share with another run was not looked for; candidates that were not checked are a file or directory both runs write, a port, and the graph store. A related case is known: a test process left without a parent that holds the live graph store makes other test files abort; that one aborts where this one hangs, and whether they have the same cause is not known.",
+    "fixIntent": "What the two test files share with a concurrent run is found and stated. Either the tests no longer share it, so that overlapping runs each finish, or a run that cannot proceed because of another fails with a message that names what it is waiting for, within a bounded time. A hang with no output is no longer a possible outcome of these two files."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/handover-2026-10-10.md",
+      "quotedText": "The daemon suite can hang when two test runs overlap."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/model-catalog.test.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/code/__tests__/migration-walk.test.ts"
+    }
+  ]
+}

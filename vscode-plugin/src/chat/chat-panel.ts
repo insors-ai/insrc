@@ -19,7 +19,7 @@ import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, CHAT_MARKDOWN_TOKENS } from './markdown-style.js';
 import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
 import type { ProviderRegistry, ProviderId, TurnCursor, TurnProcess } from './cli-adapter.js';
-import { createMemorySessionLocks, defaultProcessStartTime, LockWaitAborted, LockWaitSuperseded, runLeased, type SessionLease, type SessionLocks } from './session-lock.js';
+import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, LockWaitAborted, LockWaitSuperseded, runLeased, type SessionLease, type SessionLocks } from './session-lock.js';
 // S001 (bugfix): a value import — the pure classifier that tells a tool-permission gate apart from
 // a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial } from './cli-adapter.js';
@@ -96,6 +96,8 @@ export interface ChatPanelHostDeps {
   readonly hostPid?: number | undefined;
   /** A pid's process start time, recorded with the cursor so a reused pid is never followed. */
   readonly processStartTime?: ((pid: number) => number | undefined) | undefined;
+  /** Whether a pid is alive (another window's extension host owning a saved cursor). */
+  readonly isAlive?: ((pid: number) => boolean) | undefined;
 }
 
 /** How often a running turn's cursor (and transcript) is saved at most. */
@@ -144,6 +146,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const locks = deps.sessionLocks ?? createMemorySessionLocks({ logger: log });
   const hostPid = deps.hostPid ?? process.pid;
   const startTime = deps.processStartTime ?? defaultProcessStartTime;
+  const isAlive = deps.isAlive ?? defaultIsAlive;
+  // Turns this host is reading live (runTurn); a saved cursor for one of them is not resumed.
+  const runningTurns = new Set<string>();
+  // The saved turn this host is following after a reload (resume), if any.
+  let following: { readonly sessionId: string; readonly ctl: AbortController } | undefined;
+  let resumedProc: TurnProcess | undefined;
   const lockTimeoutMs = (): number => deps.turnLockTimeoutMs?.() ?? DEFAULT_TURN_LOCK_TIMEOUT_MS;
   // The wait of a turn that is queued behind the session's previous process; aborting it drops
   // the turn without stopping anything (a newer submit, Stop, a chat switch).
@@ -236,6 +244,69 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // instead would race the not-yet-attached listener and be lost, leaving an empty dropdown +
   // transcript even though the store has the sessions (the root cause of the "history disappeared"
   // regression). A no-agentic-CLI environment surfaces the same error a fresh open would.
+  /**
+   * Follow a session's saved turn (its output still being read from the session file, e.g. after
+   * a window reload) from where it was left. Only the cursor's owner follows it: this host, or any
+   * host once the owner's extension host is gone (it then takes ownership). Events after the cursor
+   * are posted (while the session is shown) and appended; the cursor is cleared at the end.
+   */
+  const followLiveTurn = (s: ChatSession): void => {
+    const live = s.liveTurn;
+    if (live === undefined || following?.sessionId === s.id || runningTurns.has(live.cursor.turnId)) return;
+    if (live.ownerHostPid !== hostPid && isAlive(live.ownerHostPid)) return; // another window follows it
+    let adapter;
+    try {
+      adapter = deps.providers.get(s.provider);
+    } catch {
+      return;
+    }
+    if (typeof adapter.resume !== 'function') return;
+    s.liveTurn = { ...live, ownerHostPid: hostPid };
+    deps.store.save(s);
+    const ctl = new AbortController();
+    following = { sessionId: s.id, ctl };
+    let lastSave = Date.now();
+    const turnId = live.cursor.turnId;
+    void (async () => {
+      try {
+        const events = adapter.resume(
+          { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null },
+          {
+            signal: ctl.signal,
+            onAttach: (p) => {
+              resumedProc = p;
+            },
+            onProgress: (c) => {
+              if (s.liveTurn?.cursor.turnId !== c.turnId) return;
+              s.liveTurn = { ...s.liveTurn, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset } };
+              if (Date.now() - lastSave >= CURSOR_SAVE_MS) {
+                lastSave = Date.now();
+                deps.store.save(s);
+              }
+            },
+          },
+        );
+        for await (const ev of events) {
+          if (ctl.signal.aborted) break;
+          if (!disposed && session === s) post({ type: 'turn-event', event: ev });
+          appendEvent(s, ev);
+          if (ev.kind === 'done' && ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
+          if (ev.kind === 'done' || ev.kind === 'error') break;
+        }
+        if (!ctl.signal.aborted) {
+          if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
+          deps.store.save(s);
+          if (session === s) postHistory();
+        }
+      } catch (err) {
+        log.warn(`[chat] session ${s.id}: could not resume turn ${turnId}: ${err instanceof Error ? err.message : String(err)}`);
+      } finally {
+        if (following?.ctl === ctl) following = undefined;
+        resumedProc = undefined;
+      }
+    })();
+  };
+
   const postInitialState = (): void => {
     post({ type: 'theme', theme });
     const available = deps.providers.available;
@@ -249,6 +320,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     permissionMode = modeOf(session); // S001 (bugfix): adopt the active session's persisted mode
     post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript, mode: permissionMode });
     postHistory();
+    followLiveTurn(session);
   };
 
   // LLM chat titling: after the first turn, an INJECTED deriveTitle (extension.ts wires the
@@ -718,6 +790,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // host, so a reloaded window can follow it from there.
         if (proc.cursor !== undefined) {
           const { turnId, generation: gen, offset } = proc.cursor;
+          runningTurns.add(turnId);
+          proc.exit.then(
+            () => runningTurns.delete(turnId),
+            () => runningTurns.delete(turnId),
+          );
           s.liveTurn = {
             cursor: { turnId, generation: gen, offset },
             ownerHostPid: hostPid,
@@ -924,6 +1001,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
         post({ type: 'session-restored', sessionId: s.id, transcript: s.transcript, mode: permissionMode });
         postHistory(); // S005: keep the dropdown selection/order in sync
+        followLiveTurn(s);
         return;
       }
       case 'set-edit-mode': {

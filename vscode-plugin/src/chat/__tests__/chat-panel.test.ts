@@ -2462,3 +2462,82 @@ test('a turn records its cursor on the session as lines are handled and clears i
   plain.procs[0]!.exitNow();
   proc.exitNow();
 });
+
+/** A saved session whose turn's output is still being read (as a reloaded window finds it). */
+function storeWithLiveTurn(ownerHostPid: number): { store: ReturnType<typeof createInMemoryChatSessionStore>; id: string } {
+  const store = createInMemoryChatSessionStore();
+  const s = store.create('claude');
+  s.transcript.push({ role: 'user', text: 'long job', at: 't' }, { role: 'assistant', text: 'started', at: 't' });
+  s.liveTurn = { cursor: { turnId: 't1', generation: 1, offset: 100 }, ownerHostPid, pid: 900, startedAt: 5 };
+  store.save(s);
+  return { store, id: s.id };
+}
+
+/** An adapter whose resume() records its request and yields the scripted events. */
+function resumeAdapter(events: TurnEvent[], gate?: Promise<void>): { adapter: StreamAdapter; requests: unknown[] } {
+  const requests: unknown[] = [];
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {},
+    async *resume(req): AsyncIterable<TurnEvent> {
+      requests.push(req);
+      if (gate !== undefined) await gate;
+      for (const ev of events) yield ev;
+    },
+    cancel: async () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  return { adapter, requests };
+}
+
+test('after a reload (a new host over the same store) a session with a live cursor is followed from the saved offset, only new events are posted and appended, and the cursor is cleared at the end', async () => {
+  const { store, id } = storeWithLiveTurn(1); // the old extension host (pid 1) is gone
+  let release!: () => void;
+  const gate = new Promise<void>((r) => (release = r));
+  const { adapter, requests } = resumeAdapter([{ kind: 'assistant-delta', turnId: 't1', text: 'finished later' }, { kind: 'done', turnId: 't1', ok: true }], gate);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 2, isAlive: (pid) => pid === 2 });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  await waitFor(() => requests.length === 1);
+  assert.deepEqual(requests[0], { cursor: { sessionId: id, turnId: 't1', generation: 1, offset: 100 }, pid: 900, startedAt: 5 }, 'followed from the saved cursor');
+  assert.equal(store.get(id)?.liveTurn?.ownerHostPid, 2, 'this host took ownership');
+  release();
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.deepEqual(turnEvents(fc).map((e) => e.kind), ['assistant-delta', 'done'], 'only the new events are posted');
+  const texts = store.get(id)!.transcript.filter((r) => r.role === 'assistant').map((r) => (r as { text: string }).text);
+  assert.deepEqual(texts, ['started', 'finished later'], 'the new events are appended after the stored ones');
+  await waitFor(() => store.get(id)?.liveTurn === undefined);
+});
+
+test('a cursor whose generation is gone (rolled over twice) is cleared without resuming', async () => {
+  // The adapter finds nothing left to resume (SegmentGone) and ends without events.
+  const { store, id } = storeWithLiveTurn(1);
+  const { adapter, requests } = resumeAdapter([]);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 2, isAlive: (pid) => pid === 2 });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  await waitFor(() => requests.length === 1);
+  await waitFor(() => store.get(id)?.liveTurn === undefined);
+  assert.deepEqual(turnEvents(fc), [], 'nothing posted');
+  assert.equal(store.get(id)!.transcript.length, 2, 'the stored transcript is unchanged');
+});
+
+test("a second live window that is not the cursor's owner does not follow it; once the owner host is gone it takes over", async () => {
+  const { store, id } = storeWithLiveTurn(1);
+  const alive = new Set([1, 2]); // the owner window (host 1) is still open
+  const { adapter, requests } = resumeAdapter([{ kind: 'done', turnId: 't1', ok: true }]);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 2, isAlive: (pid) => alive.has(pid) });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(requests.length, 0, 'the owner window follows it, not this one');
+  assert.equal(store.get(id)?.liveTurn?.ownerHostPid, 1);
+
+  alive.delete(1); // the owner window closed
+  fc.send(env('ready'));
+  await waitFor(() => requests.length === 1);
+  await waitFor(() => store.get(id)?.liveTurn === undefined);
+});

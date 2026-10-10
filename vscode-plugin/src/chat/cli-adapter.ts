@@ -32,7 +32,7 @@ import { closeSync, openSync } from 'node:fs';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
 import { DEFAULT_GRACE_MS, defaultIsAlive, defaultKillGroup, defaultProcessStartTime, signalGroup, stopProcess } from './session-lock.js';
-import { parseMarker, type SegmentCursor, type SessionOutput } from './session-output.js';
+import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from './session-output.js';
 
 export type ProviderId = 'claude' | 'codex';
 
@@ -1012,6 +1012,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         opts?.onProgress?.(cursor);
       }
     } catch (err) {
+      if (err instanceof SegmentGone) {
+        // The file rolled over past this turn: there is nothing left to resume.
+        log.warn(`[chat:${mapper.id}] ${err.message}`);
+        return;
+      }
       yield { kind: 'error', turnId, message: `the output of this turn could not be read: ${err instanceof Error ? err.message : String(err)}` };
       return;
     }

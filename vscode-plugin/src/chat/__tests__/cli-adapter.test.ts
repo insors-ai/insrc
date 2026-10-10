@@ -1241,11 +1241,10 @@ test('resume() from a saved offset yields only the later events, ends at the ter
   assert.deepEqual(gone.map((e) => e.kind), ['status', 'error']);
   assert.match((gone[1] as { message: string }).message, /the turn ended without a result/);
 
-  // A cursor whose generation is gone ends with an error instead of hanging.
+  // A cursor whose generation is gone (rolled over past it) ends at once with nothing to resume.
   const lost: TurnEvent[] = [];
   for await (const ev of adapter.resume({ cursor: { ...seg2.cursor, generation: 99 }, pid: process.pid, startedAt: null })) lost.push(ev);
-  assert.equal(lost.length, 1);
-  assert.match((lost[0] as { message: string }).message, /could not be read/);
+  assert.deepEqual(lost, [], 'nothing to resume, no hang');
 });
 
 test("resume()'s handed-over process stops the recorded pid's group only while its start time matches", async () => {

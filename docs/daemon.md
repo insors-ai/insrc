@@ -293,6 +293,69 @@ npx --no-install tsx cli/index.ts repo add    /path/to/my/repo
   Scala. Everything else is captured as a `file` entity without
   structural sub-entities.
 
+### The index is cleaned of files that are gone or ignored
+
+Indexing adds and updates. A separate clean-up pass removes what
+should no longer be in the index, so that a repo's index holds only
+files that exist on disk and that the repo's ignore list
+(`<repo>/.insrc/config.json`, key `ignore`) does not exclude.
+
+**When it runs.**
+
+- At daemon start, for every repo that is already indexed. It is
+  queued like any other index job, so start-up does not wait for it.
+- Inside every full index (a first index, or a re-index), after the
+  files are indexed and before relations between files are resolved.
+
+It does not run when the ignore list is edited while the daemon is
+running; a directory added to the list is cleaned out at the next
+daemon start or the next full index. You do not need to remove and
+re-add a repo to get rid of stale files.
+
+**What it removes.** For each file the index holds for the repo:
+
+- a file that is no longer on disk (also one whose parent directory
+  has been replaced by a file), and
+- a file with a path segment, relative to the repo, that is in the
+  ignore list (for example everything under `out/` once `out` is
+  ignored), whether or not the file still exists.
+
+The file's entities go with their relations, their unresolved
+relations and their vectors. Only the cleaned repo's entities are
+removed: where one registered repo lies under a directory that its
+registered parent ignores, the parent's clean-up leaves the child's
+entities for the same files. After a clean-up at daemon start that
+removed something, relations are resolved once for the repo and the
+repo's cached exploration results are dropped, so an analysis is not
+answered from a result computed before the clean-up.
+
+**What it keeps.**
+
+- A file that exists and is not ignored, even if the file listing
+  would not index it today (a minified file, a file git leaves out).
+- A file whose presence cannot be determined (a permission or I/O
+  error). The log line of the pass counts these as `notChecked`.
+- Entities that belong to no file (external endpoints).
+- Everything, when the repo's own directory is missing (an unmounted
+  volume, a moved repo): the pass removes nothing and logs a warning.
+
+The pass logs `index clean-up complete` with four counts:
+`compared`, `removedAbsent`, `removedIgnored` and `notChecked`.
+
+**An ignored file is not indexed by a file event.** A create or
+update event for a file under an ignored directory indexes nothing,
+whether it comes from the watcher or from an `index.file` request. A
+delete event still removes what the index holds for the file.
+
+**One limit.** When a kept file had a resolved relation to an entity
+of a removed file, that relation goes with the removed entity and is
+not tried again until the kept file is next indexed. A file deleted
+while the daemon is watching behaves the same way.
+
+Counts that come from the index fall when stale files are removed: a
+repo's statistics, the size a request is measured as, and the files
+an analysis or a search can return.
+
 ---
 
 ## Configuration

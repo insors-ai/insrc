@@ -10,7 +10,7 @@
  * matches, in the same order, as a board screen. Pure and vscode-free.
  */
 
-import { attentionCount, attentionLabel, compactIdOf, foldOf, groupByStage, indexItems, isPlaceable, sectionDefaults, selectionPanel, selectMatches, titleOf, totalsLabel, type MatchedCard, type MatchFilter } from './board-model.js';
+import { attentionCount, attentionLabel, compactIdOf, foldOf, groupByStage, indexItems, isPlaceable, sectionHead, selectionPanel, selectMatches, titleOf, totalsLabel, type MatchedCard, type MatchFilter } from './board-model.js';
 import type { EpicRollupRowView, EpicSectionView, EpicsBody, IssueEntryView, IssueSectionView, IssuesBody, LinkView } from './board-protocol.js';
 import type { DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
 import { labelOf, STAGE_ORDER, type DisplayLabels } from './labels.js';
@@ -87,10 +87,7 @@ export function buildEpicRollup(snapshot: DeliverySnapshot, filter: Pick<MatchFi
   const sections: EpicSectionView[] = STAGE_ORDER.map(stage => {
     const rows = byStage.get(stage) ?? [];
     const needing = rows.filter(r => r.attentionCount > 0).length;
-    return {
-      stage, label: labelOf(labels.stage, stage), total: rows.length, attentionCount: needing,
-      ...sectionDefaults(stage, rows.length, needing, filter.needsAttentionOnly, labels), rows,
-    };
+    return { ...sectionHead(stage, rows.length, needing, filter.needsAttentionOnly, labels), rows };
   });
   return {
     kind: 'epics',
@@ -158,11 +155,7 @@ export function buildIssueView(snapshot: DeliverySnapshot, filter: MatchFilter, 
   const sections: IssueSectionView[] = STAGE_ORDER.map(stage => {
     const inStage = byStage.get(stage) ?? [];
     const needing = attentionCount(inStage);
-    return {
-      stage, label: labelOf(labels.stage, stage), total: inStage.length, attentionCount: needing,
-      ...sectionDefaults(stage, inStage.length, needing, attentionOnly, labels),
-      issues: inStage.map(m => issueEntryOf(m, byId, labels)),
-    };
+    return { ...sectionHead(stage, inStage.length, needing, attentionOnly, labels), issues: inStage.map(m => issueEntryOf(m, byId, labels)) };
   });
   const anyIssue = snapshot.items.some(i => i.kind === 'issue' && isPlaceable(i));
   const unfiltered = attentionOnly

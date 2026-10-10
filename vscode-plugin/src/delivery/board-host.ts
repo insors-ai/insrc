@@ -73,6 +73,7 @@ const SCRIPT_LABELS = {
   itemTabs: DISPLAY_LABELS.itemTabs,
   needsAttention: DISPLAY_LABELS.needsAttention,
   otherStages: DISPLAY_LABELS.otherStages,
+  noStories: DISPLAY_LABELS.noStories,
 };
 
 /**
@@ -191,10 +192,10 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `function epicRow(r){const row=keyed(button('',function(){send({type:'open-epic',epicItemId:r.epicItemId});},'row'),'epic-'+r.epicItemId);row.setAttribute('data-epic',r.epicItemId);row.setAttribute('role','listitem');`,
   `const name=make('div');name.appendChild(make('div','EPIC \\u00b7 '+r.compactId,'kicker'));name.appendChild(make('div',r.title,'name'));name.appendChild(make('div',countsOf(r).join(' \\u00b7 '),'muted'));`,
   `row.appendChild(name);row.appendChild(completion(r));row.appendChild(pill(r.attentionLabel,r.attentionTone,'pill attention-count'));return row;}`,
-  `const epicRows=function(label,list){const rows=make('div',undefined,'rows');rows.setAttribute('role','list');rows.setAttribute('aria-label',label);for(const r of list)rows.appendChild(epicRow(r));return rows;};`,
+  `function epicRowList(label,list){const rows=make('div',undefined,'rows');rows.setAttribute('role','list');rows.setAttribute('aria-label',label);for(const r of list)rows.appendChild(epicRow(r));return rows;}`,
   `function renderEpics(b){renderTotals(b.totalsLabel,false);if(b.emptyPanel!==null)renderPanel(bodyEl,b.emptyPanel);`,
-  `else{const fold=b.fold.always||narrow;for(const sec of b.sections){if(fold&&sec.total===0)continue;const d=accBox(sec,['epic','epics']);if(sec.rows.length>0)d.appendChild(epicRows(sec.label,sec.rows));bodyEl.appendChild(d);}`,
-  `if(fold)renderFold(b);if(b.noStories.length>0){const box=make('div',undefined,'no-stories');box.appendChild(make('div','No stories yet','label'));box.appendChild(epicRows('No stories yet',b.noStories));bodyEl.appendChild(box);}}`,
+  `else{const fold=b.fold.always||narrow;for(const sec of b.sections){if(fold&&sec.total===0)continue;const d=accBox(sec,['epic','epics']);if(sec.rows.length>0)d.appendChild(epicRowList(sec.label,sec.rows));bodyEl.appendChild(d);}`,
+  `if(fold)renderFold(b);if(b.noStories.length>0){const box=make('div',undefined,'no-stories');box.appendChild(make('div',L.noStories,'label'));box.appendChild(epicRowList(L.noStories,b.noStories));bodyEl.appendChild(box);}}`,
   `const p=make('p','Work outside any epic is under ','muted standalone-link');p.appendChild(button(L.views.standalone,function(){send({type:'set-view',view:'standalone'});},'link'));bodyEl.appendChild(p);}`,
   // The Issues screen: the same stage boxes, each holding its issues' rows; a row opens the issue's screen.
   `function issueRow(e){const row=keyed(button('',function(){send({type:'open-item',itemId:e.card.itemId});},'row issue-row'),'item-'+e.card.itemId);row.setAttribute('data-item-id',e.card.itemId);row.setAttribute('aria-label',e.card.accessibleLabel);row.setAttribute('role','listitem');`,

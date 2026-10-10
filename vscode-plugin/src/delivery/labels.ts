@@ -48,6 +48,8 @@ export interface DisplayLabels {
   readonly nothingAtStage: string;
   /** The one section the empty stages fold into in a narrow pane. */
   readonly otherStages: string;
+  /** The Epics screen's note for epics with no stories, which have no stage. */
+  readonly noStories: string;
 }
 
 /** A label from the table, or the code itself when the daemon publishes one this build does not know. */
@@ -162,4 +164,5 @@ export const DISPLAY_LABELS: DisplayLabels = {
   needsAttention: 'Needs attention',
   nothingAtStage: 'nothing at this stage',
   otherStages: 'Other stages · 0 matching',
+  noStories: 'No stories yet',
 };

@@ -1,0 +1,456 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "8ab2cc2edb3743df",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T12:08:41.130Z",
+    "updatedAt": "2026-10-10T12:08:41.130Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "ff6107ec",
+        "ranAt": "2026-10-10T12:08:41.130Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+                "title": "an absent output of one of several producers is worded by its task and the others are said to be available; a name with no output keeps the old wording",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a task that is not the report task receives every output of a name it consumes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a task that is not the report task receives every output of a name it consumes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a map in which every name has one output renders a user message byte-identical to the one rendered before the change",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+                "title": "a map in which every name has one output renders a user message byte-identical to the one rendered before the change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+                "title": "a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+                "title": "each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "for a plan with one producer per name the existing assertions on the absent list, the task records, tasksCompleted and tasksFailed are kept unchanged, and the assertions on what a consumer was handed are rewritten to the list form (one entry with the expected task id, template, params and value)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+                "title": "a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/executor/__tests__/walker.test.ts",
+                "title": "projectUpstream: limits to consumed names only",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+                "title": "each of the five aggregate-report runtimes hands absentInputs to the aggregator",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 940,
+            "titles": [
+              {
+                "title": "a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)",
+                "result": "pass"
+              },
+              {
+                "title": "a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)",
+                "result": "pass"
+              },
+              {
+                "title": "a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path",
+                "result": "pass"
+              },
+              {
+                "title": "through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params",
+                "result": "pass"
+              },
+              {
+                "title": "a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task",
+                "result": "pass"
+              },
+              {
+                "title": "when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a task that is not the report task receives every output of a name it consumes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 629,
+            "titles": [
+              {
+                "title": "a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/executor/__tests__/walker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 611,
+            "titles": [
+              {
+                "title": "unmetDependencies: no consumes -> null",
+                "result": "pass"
+              },
+              {
+                "title": "unmetDependencies: every consume present -> null",
+                "result": "pass"
+              },
+              {
+                "title": "unmetDependencies: first missing name reported",
+                "result": "pass"
+              },
+              {
+                "title": "projectUpstream: limits to consumed names only",
+                "result": "pass"
+              },
+              {
+                "title": "checkOutputShape: exact match -> null",
+                "result": "pass"
+              },
+              {
+                "title": "checkOutputShape: missing name reported",
+                "result": "pass"
+              },
+              {
+                "title": "checkOutputShape: extra name reported",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: 2-task happy path -- discovery + aggregator",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: missing runtime -> task fails; downstream cascades",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: runtime throws -> failed status with reason; cascade",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: runtime returns extra/missing produces -> output-shape-mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: planner-template task materialises child report as parent.report",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: planner task whose child build failed -> child-plan-unavailable + cascade",
+                "result": "pass"
+              },
+              {
+                "title": "taskOutputPathFor: lands under ~/.insrc/analyze/<runId>/tasks/<taskId>.json",
+                "result": "pass"
+              },
+              {
+                "title": "readTaskOutput: miss returns null",
+                "result": "pass"
+              },
+              {
+                "title": "purgeTaskOutput on a missing slot is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: 2-task happy path emits started+completed per task in plan order",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: failed task emits started + completed with status=\"failed\"",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: planner-template task -- child plan events fire BETWEEN parent started + completed, with parentTaskPath set",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: throwing subscriber does not crash the executor",
+                "result": "pass"
+              },
+              {
+                "title": "SINGLE-PASS: child plan tasks execute exactly once (regression for the executePlanNode double-walk)",
+                "result": "pass"
+              },
+              {
+                "title": "the plan walk copies the record to the task record, and a runtime that returns none is recorded as failed",
+                "result": "pass"
+              },
+              {
+                "title": "a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)",
+                "result": "pass"
+              },
+              {
+                "title": "a task refused for naming a connection outside the scope is a failed task with a code and its own message",
+                "result": "pass"
+              },
+              {
+                "title": "the plan walk imports nothing from the run driver",
+                "result": "pass"
+              },
+              {
+                "title": "every task of every plan in a tree keeps its own record",
+                "result": "pass"
+              },
+              {
+                "title": "a planner task whose child produced no report fails with the child's cause",
+                "result": "pass"
+              },
+              {
+                "title": "a plan two levels down keeps its own records and names its tasks by their full path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 588,
+            "titles": [
+              {
+                "title": "each of the five aggregate-report runtimes hands absentInputs to the aggregator",
+                "result": "pass"
+              },
+              {
+                "title": "each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 583,
+            "titles": [
+              {
+                "title": "stableStringify: object keys sorted",
+                "result": "pass"
+              },
+              {
+                "title": "stableStringify: Map entries sorted + emitted as object",
+                "result": "pass"
+              },
+              {
+                "title": "stableStringify: arrays preserve order",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: empty map -> \"No upstream outputs\" sentinel",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: tasks emitted in sorted taskId order",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: null upstream rendered as unavailable note",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: JSON output rendered in fenced block",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: system has prompt content, user has Target/Scope/upstream",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: focus is included in the user message when present",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: focus omitted when undefined",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: Ollama-down patterns -> aggregator-llm-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: arbitrary error -> aggregator-schema-unrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: non-Error -> aggregator-internal wrapper",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: stub provider -> report carries LLM output + runtime metadata",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: focus passed through to the user message",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: provider throws ECONNREFUSED -> rethrown as aggregator-llm-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: provider throws arbitrary error -> aggregator-schema-unrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: missing prompt file -> \"aggregator prompt missing\"",
+                "result": "pass"
+              },
+              {
+                "title": "AGGREGATE_LLM_SCHEMA: requires summary + findings, additionalProperties false",
+                "result": "pass"
+              },
+              {
+                "title": "the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent",
+                "result": "pass"
+              },
+              {
+                "title": "a map in which every name has one output renders a user message byte-identical to the one rendered before the change",
+                "result": "pass"
+              },
+              {
+                "title": "a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section",
+                "result": "pass"
+              },
+              {
+                "title": "an absent output of one of several producers is worded by its task and the others are said to be available; a name with no output keeps the old wording",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -18,7 +18,8 @@ import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from './render-reg
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, CHAT_MARKDOWN_TOKENS } from './markdown-style.js';
 import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
-import type { ProviderRegistry, ProviderId } from './cli-adapter.js';
+import type { ProviderRegistry, ProviderId, TurnProcess } from './cli-adapter.js';
+import { createMemorySessionLocks, type SessionLease, type SessionLocks } from './session-lock.js';
 // S001 (bugfix): a value import — the pure classifier that tells a tool-permission gate apart from
 // a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial } from './cli-adapter.js';
@@ -84,7 +85,17 @@ export interface ChatPanelHostDeps {
    * first prompt then stays as the title). Injected in tests to decouple from the CLI.
    */
   readonly deriveTitle?: (input: { provider: ProviderId; prompt: string; cwd: string }) => Promise<string | undefined>;
+  /**
+   * The registry a turn takes its session's lease from before it starts a CLI process, so only
+   * one process works on a session at a time. Absent -> an in-memory registry (this window only).
+   */
+  readonly sessionLocks?: SessionLocks | undefined;
+  /** Live read of how long a turn waits for the session's previous process before stopping it. */
+  readonly turnLockTimeoutMs?: (() => number) | undefined;
 }
+
+/** insrc.chat.turnLockTimeoutMs default: 10 minutes. */
+export const DEFAULT_TURN_LOCK_TIMEOUT_MS = 600_000;
 
 export interface ChatPanelHost {
   open(): void;
@@ -123,6 +134,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   let activeProvider: import('./cli-adapter.js').ProviderId | undefined;
   let activeIterator: AsyncIterator<TurnEvent> | undefined;
   let generation = 0;
+  const locks = deps.sessionLocks ?? createMemorySessionLocks({ logger: log });
+  const lockTimeoutMs = (): number => deps.turnLockTimeoutMs?.() ?? DEFAULT_TURN_LOCK_TIMEOUT_MS;
+  // The wait of a turn that is queued behind the session's previous process; aborting it drops
+  // the turn without stopping anything (a newer submit, Stop, a chat switch).
+  let waitCtl: AbortController | undefined;
+  // The newest CLI process this host started; kept until it exits, even after its answer, so Stop
+  // can end a process that is still running in the background.
+  let liveProc: TurnProcess | undefined;
   // S001 (bugfix): the SINGLE chat mode (Manual / Edit Automatically / Auto). It is now a PERSISTED
   // per-session preference: it tracks the ACTIVE session's stored mode (synced on open/switch/
   // restore) and is applied to the NEXT turn's buildArgs. Default 'manual' so tool use surfaces as
@@ -553,23 +572,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   };
 
   /**
-   * Stop the in-flight turn (supersede or dispose). The reliable reap is
-   * cancel(turnId) through the turn's OWN captured provider (never the current
-   * session's, which may have switched after a new-chat/open-chat). Abandoning the
-   * async iterator (.return()) is best-effort cleanup that applies when the adapter
-   * generator next settles at a yield. LIMITATION: a turn that has emitted NO event
-   * yet has no known turnId, so it cannot be force-cancelled here — real claude/codex
-   * emit a session-init event within ms, so activeTurnId is set almost immediately;
-   * a pathological zero-output hang is reaped only when its stream finally settles.
-   * Idempotent.
+   * Stop: drop a waiting turn and end the running CLI process at once (no lock timeout). Used by
+   * the Stop control, a chat switch and dispose. The reap is cancel(turnId) through the turn's OWN
+   * captured provider (never the current session's, which may have switched), plus the process
+   * handed over by onSpawn, which also covers a process still running after its answer.
+   * Abandoning the async iterator (.return()) is best-effort cleanup. Resolves once the process
+   * has exited (or there was none). Idempotent.
    */
-  const cancelActive = (): void => {
+  const cancelActive = async (): Promise<void> => {
+    waitCtl?.abort();
+    waitCtl = undefined;
     const it = activeIterator;
     const prov = activeProvider;
     const tid = activeTurnId;
+    const proc = liveProc;
     activeIterator = undefined;
     activeProvider = undefined;
     activeTurnId = undefined;
+    liveProc = undefined;
     if (it !== undefined) {
       try {
         void it.return?.(undefined);
@@ -579,11 +599,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
     if (prov !== undefined && tid !== undefined) {
       try {
-        deps.providers.get(prov).cancel(tid);
+        await deps.providers.get(prov).cancel(tid);
       } catch {
         /* provider gone / already finished — nothing to cancel */
       }
     }
+    if (proc !== undefined) await proc.stop();
   };
 
   async function runTurn(text: unknown, allowedTools?: readonly string[], opts?: { readonly suppressEcho?: boolean }): Promise<void> {
@@ -591,9 +612,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const prompt = text.trim();
     if (prompt === '' || session === undefined) return; // empty submit is a no-op
 
-    // Single-in-flight: supersede any prior turn (kill it + bump generation) so the
-    // stale loop stops posting — the transcript never interleaves.
-    cancelActive();
+    // Single-in-flight per panel: the newest message wins. A turn still waiting for the lock is
+    // dropped, and the generation bump stops the previous loop posting (the transcript never
+    // interleaves). The previous turn's process is NOT killed: this turn waits for it below.
+    waitCtl?.abort();
+    waitCtl = undefined;
     const myGen = ++generation;
     const s = session;
 
@@ -632,6 +655,31 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
       : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant };
 
+    // One CLI process per session: wait until the session's previous process has exited
+    // (in this window or another), stopping it only after the lock timeout.
+    const ctl = new AbortController();
+    waitCtl = ctl;
+    let lease: SessionLease;
+    try {
+      lease = await locks.acquire(s.id, {
+        timeoutMs: lockTimeoutMs(),
+        signal: ctl.signal,
+        onWaiting: () => {
+          log.warn(`[chat] session ${s.id}: waiting for the previous turn's process to exit`);
+          if (!disposed && myGen === generation) post({ type: 'turn-event', event: { kind: 'status', turnId: 'waiting', phase: 'waiting' } });
+        },
+      });
+    } catch {
+      return; // dropped while waiting (newer submit / Stop / chat switch): nothing to run
+    } finally {
+      if (waitCtl === ctl) waitCtl = undefined;
+    }
+    if (disposed || myGen !== generation) {
+      lease.release();
+      return;
+    }
+    let attached = false;
+
     // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn),
     // so the diff + revert are computed against the true pre-turn content (k8 observer).
     // S001 (bugfix): the merged chat mode now governs edits (via claude's permission flags), so the
@@ -640,15 +688,30 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (governor !== undefined) await governor.beginTurn({ mode: 'auto', cwd: deps.cwd() });
 
     // Hold the iterator explicitly so cancelActive() can .return() it even while it
-    // is parked awaiting its first event.
-    const iterator = adapter.run(req)[Symbol.asyncIterator]();
+    // is parked awaiting its first event. The lease follows the started process: it is
+    // released when that process exits, not when its answer ends.
+    const onSpawn = (proc: TurnProcess): void => {
+      attached = true;
+      lease.attach(proc);
+      if (myGen === generation) liveProc = proc;
+      const forget = (): void => {
+        if (liveProc === proc) liveProc = undefined;
+      };
+      proc.exit.then(forget, forget);
+    };
+    const iterator = adapter.run(req, { onSpawn })[Symbol.asyncIterator]();
     activeIterator = iterator;
     activeProvider = s.provider;
     try {
       for (;;) {
         const next = await iterator.next();
-        if (disposed || myGen !== generation) break; // superseded/disposed -> stop posting
         if (next.done === true) break;
+        // Superseded/disposed: post nothing more, but keep reading so the superseded turn's CLI
+        // never stalls on a full pipe; its process (and the lease) end when it exits.
+        if (disposed || myGen !== generation) {
+          if (next.value.kind === 'done' || next.value.kind === 'error') break;
+          continue;
+        }
         const ev = next.value;
         activeTurnId = ev.turnId;
         post({ type: 'turn-event', event: ev });
@@ -677,12 +740,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           deps.store.save(s);
           if (governor !== undefined) void governor.resolveTurn();
           postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
+          void iterator.return?.(undefined); // finish the generator; the process is left to exit
           break;
         }
         if (ev.kind === 'error') {
           deps.store.save(s); // persist the errored turn's transcript rows too
           if (governor !== undefined) void governor.resolveTurn();
           postHistory(); // S005: a first-turn error still set the title -> refresh the dropdown label
+          void iterator.return?.(undefined);
           break;
         }
       }
@@ -701,6 +766,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         activeProvider = undefined;
         activeTurnId = undefined;
       }
+      // No process was handed over (spawn failed, or an adapter without onSpawn): the turn's
+      // loop is all the lease guarded, so it ends here.
+      if (!attached) lease.release();
     }
   }
 
@@ -758,7 +826,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       case 'cancel-turn':
         // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.
         // Idempotent when no turn is active (cancelActive() no-ops).
-        cancelActive();
+        void cancelActive();
         return;
       case 'new-chat': {
         if (typeof msg.provider !== 'string') return;
@@ -770,7 +838,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         }
         // Switching the active session must stop any in-flight turn first, or its
         // deltas would paint into the newly-restored session's view.
-        cancelActive();
+        void cancelActive();
         ++generation;
         // A DRAFT (unsaved): the new chat is not written to history until its first turn, so
         // repeatedly starting/abandoning new chats never leaves empty sessions behind.
@@ -790,7 +858,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           postHistory();
           return;
         }
-        cancelActive();
+        void cancelActive();
         ++generation;
         session = s;
         permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
@@ -924,7 +992,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     disposed = false;
     channel = ch;
     channel.onDidDispose(() => {
-      cancelActive();
+      void cancelActive();
       disposed = true;
       channel = undefined;
     });
@@ -946,7 +1014,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // A restored panel arrived. Supersede any live channel (kill its in-flight turn + dispose
       // it) so exactly one channel remains, then wire the restored one in place.
       if (channel !== undefined) {
-        cancelActive();
+        void cancelActive();
         try {
           channel.dispose();
         } catch {
@@ -957,7 +1025,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       wireChannel(ch);
     },
     dispose(): void {
-      cancelActive();
+      void cancelActive();
       disposed = true;
       channel?.dispose();
       channel = undefined;

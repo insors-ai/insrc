@@ -9,8 +9,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createChatPanelHost, type ChatPanelChannel, type ChatEditGovernanceDeps } from '../chat-panel.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
-import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest } from '../cli-adapter.js';
+import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, TurnProcess, RunOptions } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
+import { markerFor, WAITING_LABEL } from '../markers.js';
 import { defaultComputeDiff, type DiffView } from '../edit-governor.js';
 
 interface FakeChannel {
@@ -129,12 +130,13 @@ test('submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before d
   assert.equal(runCount, 1, 'StreamAdapter.run called exactly once (passthrough)');
 });
 
-test('single-in-flight: a second submit supersedes the first — no interleave + prior turn reaped (H1/M2)', async () => {
+test('single-in-flight: a second submit supersedes the first — no interleave; it waits for the first instead of killing it (H1/M2)', async () => {
   const fc = fakeChannel();
-  // One 'claude' adapter that serves both runs: run #1 (A) streams then HANGS until
-  // cancel('A'); run #2 (B) streams to done. cancel(turnId) is the reliable reap.
+  // One 'claude' adapter that serves both runs: run #1 (A) streams then keeps running until the
+  // test lets it finish; run #2 (B) streams to done. A is never cancelled: B waits for it.
   const cancelled = new Set<string>();
-  const reaped = new Set<string>();
+  let releaseA!: () => void;
+  const aDone = new Promise<void>((r) => (releaseA = r));
   const scripts: Array<{ id: string; events: TurnEvent[]; hang?: boolean }> = [
     { id: 'A', events: [{ kind: 'status', turnId: 'A', phase: 'thinking' }, { kind: 'assistant-delta', turnId: 'A', text: 'from-A' }], hang: true },
     { id: 'B', events: [{ kind: 'assistant-delta', turnId: 'B', text: 'from-B' }, { kind: 'done', turnId: 'B', ok: true }] },
@@ -143,18 +145,17 @@ test('single-in-flight: a second submit supersedes the first — no interleave +
   const adapter: StreamAdapter = {
     async *run(): AsyncIterable<TurnEvent> {
       const script = scripts[call++]!;
-      try {
-        for (const ev of script.events) {
-          if (cancelled.has(script.id)) return;
-          await Promise.resolve();
-          yield ev;
-        }
-        if (script.hang) while (!cancelled.has(script.id)) await new Promise((r) => setTimeout(r, 5));
-      } finally {
-        reaped.add(script.id);
+      for (const ev of script.events) {
+        await Promise.resolve();
+        yield ev;
+      }
+      if (script.hang) {
+        await aDone;
+        yield { kind: 'assistant-delta', turnId: 'A', text: 'late-A' };
+        yield { kind: 'done', turnId: 'A', ok: true };
       }
     },
-    cancel: (turnId) => { cancelled.add(turnId); },
+    cancel: async (turnId) => { cancelled.add(turnId); },
     decide: () => {},
     capabilities: { resume: true },
   };
@@ -164,12 +165,15 @@ test('single-in-flight: a second submit supersedes the first — no interleave +
   await waitFor(() => turnEvents(fc).some((e) => (e as { turnId: string }).turnId === 'A'));
   const postsAtSupersede = turnEvents(fc).length;
   fc.send(env('submit-turn', { text: 'B' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'status' && (e as { phase: string }).phase === 'waiting'));
+  assert.equal(call, 1, 'B has not started while A is still running');
+  assert.equal(cancelled.size, 0, 'A was not killed by the newer message');
+  releaseA();
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
   const idsAfter = turnEvents(fc).slice(postsAtSupersede).map((e) => (e as { turnId: string }).turnId);
   assert.ok(!idsAfter.includes('A'), 'no A events after B superseded it (no interleave)');
   assert.ok(turnEvents(fc).some((e) => (e as { turnId: string }).turnId === 'B'), 'B streamed to completion');
-  await waitFor(() => reaped.has('A'), 1000);
-  assert.equal(reaped.has('A'), true, 'the superseded turn A was cancelled via provider.cancel(A) and reaped');
+  assert.equal(call, 2, 'B started once A had finished');
 });
 
 test('new-chat mid-stream stops the prior turn (no cross-session post) (M3)', async () => {
@@ -1625,7 +1629,7 @@ function trackedChannel(): { fc: FakeChannel; disposed(): boolean } {
   return { fc, disposed: () => disposed };
 }
 
-test('S001 adopt(channel) wires + posts theme/session-restored/history-list (restored panel shows history)', () => {
+test('S001 adopt(channel) wires + posts theme/session-restored/history-list (restored panel shows history)', async () => {
   const store = createInMemoryChatSessionStore();
   store.create('claude'); // seed history
   const host = createChatPanelHost({
@@ -1652,6 +1656,8 @@ test('S001 adopt(channel) wires + posts theme/session-restored/history-list (res
   const ad2 = fakeChannel();
   host2.adopt(ad2.channel);
   ad2.send(env('submit-turn', { text: 'hi' }));
+  // The turn starts after its session lease is granted (an async step), so wait for it.
+  await waitFor(() => ran, 1000);
   assert.equal(ran, true, 'onMessage is wired on the adopted channel (submit-turn reached the host)');
 });
 
@@ -2246,4 +2252,151 @@ test('S004 (ux polish): a selection-decision with an empty/invalid selected list
   await new Promise((r) => setTimeout(r, 20));
   assert.ok(!turnEvents(fc).some((e) => e.kind === 'selection-outcome'), 'empty selection posts no outcome');
   assert.equal(seen.length, 1, 'no follow-on run for an empty selection');
+});
+
+// ---- S001 (E20261010d6a4bc79): one CLI process per session ------------------------------
+
+interface FakeTurnProc extends TurnProcess {
+  readonly signals: string[];
+  exited(): boolean;
+  exitNow(): void;
+}
+
+/** A started CLI process that stays alive after its answer until exitNow() or a signal ends it. */
+function fakeTurnProc(pid: number, dies: 'SIGTERM' | 'SIGKILL' = 'SIGTERM'): FakeTurnProc {
+  let done = false;
+  let settle!: (v: { code: number | null; signal: string | null }) => void;
+  const exit = new Promise<{ code: number | null; signal: string | null }>((r) => (settle = r));
+  const end = (v: { code: number | null; signal: string | null }): void => {
+    done = true;
+    settle(v);
+  };
+  const signals: string[] = [];
+  const proc: FakeTurnProc = {
+    pid,
+    exit,
+    signals,
+    exited: () => done,
+    exitNow: () => end({ code: 0, signal: null }),
+    kill(signal) {
+      signals.push(signal);
+      if (signal === dies || signal === 'SIGKILL') end({ code: null, signal });
+    },
+    async stop() {
+      proc.kill('SIGTERM');
+      await exit;
+    },
+  };
+  return proc;
+}
+
+/** An adapter whose every run hands over a fake process (onSpawn), answers, and leaves it running. */
+function procAdapter(text = (n: number) => `answer-${n}`): { adapter: StreamAdapter; procs: FakeTurnProc[]; runs: () => number } {
+  const procs: FakeTurnProc[] = [];
+  let n = 0;
+  const adapter: StreamAdapter = {
+    async *run(_req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+      const id = `t${++n}`;
+      const proc = fakeTurnProc(1000 + n);
+      procs.push(proc);
+      opts?.onSpawn?.(proc);
+      await Promise.resolve();
+      yield { kind: 'assistant-delta', turnId: id, text: text(n) };
+      yield { kind: 'done', turnId: id, ok: true };
+    },
+    cancel: async () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  return { adapter, procs, runs: () => n };
+}
+
+const waitingPosted = (fc: FakeChannel): boolean =>
+  turnEvents(fc).some((e) => e.kind === 'status' && (e as { phase: string }).phase === 'waiting');
+
+test("a message sent while the previous CLI process is still alive after its answer waits, shows 'Waiting for the previous turn to finish', and starts only after that process exits", async () => {
+  const fc = fakeChannel();
+  const { adapter, procs, runs } = procAdapter();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'first' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.equal(procs[0]!.exited(), false, 'the first CLI keeps running after its answer');
+
+  fc.send(env('submit-turn', { text: 'second' }));
+  await waitFor(() => waitingPosted(fc));
+  const waiting = turnEvents(fc).find((e) => e.kind === 'status' && (e as { phase: string }).phase === 'waiting')!;
+  assert.equal(markerFor(waiting)?.label, WAITING_LABEL, "the webview shows 'Waiting for the previous turn to finish'");
+  assert.equal(WAITING_LABEL, 'Waiting for the previous turn to finish');
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(runs(), 1, 'the second turn has not started while the first process is alive');
+  assert.deepEqual(procs[0]!.signals, [], 'the first process was not stopped');
+
+  procs[0]!.exitNow();
+  await waitFor(() => runs() === 2);
+  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'done').length === 2);
+  assert.ok(turnEvents(fc).some((e) => e.kind === 'assistant-delta' && (e as { text: string }).text === 'answer-2'), 'the second turn ran after the exit');
+  procs[1]!.exitNow();
+});
+
+test('with a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed', async () => {
+  const fc = fakeChannel();
+  const { adapter, procs, runs } = procAdapter();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    turnLockTimeoutMs: () => 40,
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'first' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('submit-turn', { text: 'second' }));
+  await waitFor(() => waitingPosted(fc));
+  assert.deepEqual(procs[0]!.signals, [], 'not stopped before the timeout');
+  let exitedBeforeStart: boolean | undefined;
+  await waitFor(() => {
+    if (runs() === 2 && exitedBeforeStart === undefined) exitedBeforeStart = procs[0]!.exited();
+    return runs() === 2;
+  });
+  assert.deepEqual(procs[0]!.signals, ['SIGTERM'], 'the holder was stopped after the timeout');
+  assert.equal(exitedBeforeStart, true, 'the new turn started only after the exit was confirmed');
+  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'done').length === 2);
+  procs[1]!.exitNow();
+});
+
+test('Stop ends the running process at once and cancels a waiting message; the generation guard still keeps superseded events out of the transcript', async () => {
+  const fc = fakeChannel();
+  const { adapter, procs, runs } = procAdapter();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'first' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('submit-turn', { text: 'second' }));
+  await waitFor(() => waitingPosted(fc));
+
+  fc.send(env('cancel-turn'));
+  await waitFor(() => procs[0]!.exited(), 200);
+  assert.deepEqual(procs[0]!.signals, ['SIGTERM'], 'Stop ended the running process at once (no timeout wait)');
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(runs(), 1, 'the waiting message was cancelled, not started');
+
+  // A newer message replaces a waiting one: only the latest runs, and nothing from the dropped
+  // one reaches the transcript.
+  fc.send(env('submit-turn', { text: 'third' }));
+  await waitFor(() => runs() === 2);
+  fc.send(env('submit-turn', { text: 'fourth' }));
+  fc.send(env('submit-turn', { text: 'fifth' }));
+  await waitFor(() => waitingPosted(fc));
+  procs[1]!.exitNow();
+  await waitFor(() => runs() === 3);
+  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'done').length === 3);
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(runs(), 3, "'fourth' was replaced by 'fifth' and never ran");
+  const saved = store.list()[0]!;
+  const answers = store.get(saved.id)!.transcript.filter((r) => r.role === 'assistant').map((r) => (r as { text: string }).text);
+  assert.deepEqual(answers, ['answer-1', 'answer-2', 'answer-3'], 'one answer per started turn, none from a dropped one');
+  procs[2]!.exitNow();
 });

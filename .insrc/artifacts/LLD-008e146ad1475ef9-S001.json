@@ -139,6 +139,12 @@
       "reviewedAt": "2026-10-10T13:43:54.725Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-10T13:54:28.560Z",
+    "rangeBase": "44e699cff37ab7da7e7b549850c28744f0c2db51",
+    "reviewOverride": {
+      "reason": "Accepted by the stakeholder on 2026-10-10: the remaining index-check reads and the entity-table scan for a file scope belong to ISSUE-61045de91faef1a0. This design delivers the measure's own read only. ISSUE-008e146a keeps its original wording.",
+      "at": "2026-10-10T13:54:28.557Z"
     }
   },
   "body": {

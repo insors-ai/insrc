@@ -11,6 +11,7 @@
 
 import { deriveAnswerReport, isCompletenessRecord } from '../completeness.js';
 import type { AnswerReport, ReportSource } from '../completeness.js';
+import type { RequestMeasure } from '../measure.js';
 import type { ExecutedExploration } from './types.js';
 
 /** How a lookup is named in the report: its type, then the id the plan gave it. */
@@ -29,8 +30,11 @@ export const NO_COMPLETENESS_RECORD = 'the lookup returned no completeness recor
  * defect of that lookup. It is listed as a failed source, as the plan walk
  * lists a task whose runtime returned none: the answer is still written from
  * the other lookups, it cannot read as complete, and it names the lookup.
+ *
+ * A measure of the request, when one is given, goes into the report as it is;
+ * a report built without one is exactly the report of the lookups.
  */
-export function reportFromLookups(results: readonly ExecutedExploration[]): AnswerReport {
+export function reportFromLookups(results: readonly ExecutedExploration[], measure?: RequestMeasure): AnswerReport {
 	const sources: ReportSource[] = results.map((r): ReportSource => {
 		const base = { sourceId: lookupSourceId(r), sourceKind: 'lookup' as const };
 		const out = r.output;
@@ -39,5 +43,6 @@ export function reportFromLookups(results: readonly ExecutedExploration[]): Answ
 		const completeness = (out as { completeness?: unknown }).completeness;
 		return isCompletenessRecord(completeness) ? { ...base, completeness } : { ...base, failure: NO_COMPLETENESS_RECORD };
 	});
-	return deriveAnswerReport(sources);
+	const report = deriveAnswerReport(sources);
+	return measure !== undefined ? { ...report, measure } : report;
 }

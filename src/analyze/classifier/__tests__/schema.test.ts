@@ -28,23 +28,21 @@ import {
 	validateIntentShape,
 	validateIntentShapeWithErrors,
 } from '../schema.js';
-import type { ClassifiedIntent } from '../types.js';
+import type { UnsizedIntent } from '../../measure.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
 
-const MINIMAL_VALID: ClassifiedIntent = {
+const MINIMAL_VALID: UnsizedIntent = {
 	target:    'code',
-	scope:     'M',
 	focused:   false,
 	scopeRef:  { kind: 'repo', value: '/abs/path' },
 	reasoning: 'minimal-valid fixture',
 };
 
-const FOCUSED_VALID: ClassifiedIntent = {
+const FOCUSED_VALID: UnsizedIntent = {
 	target:    'data',
-	scope:     'S',
 	focused:   true,
 	focus:     'where is PII',
 	scopeRef:  { kind: 'connection', value: 'prod-db' },
@@ -83,7 +81,8 @@ test('SCOPE_REF_KIND_ENUM enumerates the seven kinds', () => {
 test('CLASSIFIED_INTENT_SCHEMA declares every required field', () => {
 	const required = CLASSIFIED_INTENT_SCHEMA.required;
 	assert.deepEqual([...(required as readonly string[])].sort(), [
-		'focused', 'reasoning', 'scope', 'scopeRef', 'target',
+		// No size: the classifier states none, and the request's size is measured.
+		'focused', 'reasoning', 'scopeRef', 'target',
 	]);
 });
 
@@ -103,9 +102,9 @@ test('validateIntentShape accepts a focused intent with focus field', () => {
 // Required-field rejection
 // ---------------------------------------------------------------------------
 
-for (const field of ['target', 'scope', 'focused', 'scopeRef', 'reasoning'] as const) {
+for (const field of ['target', 'focused', 'scopeRef', 'reasoning'] as const) {
 	test(`validateIntentShape rejects an intent missing '${field}'`, () => {
-		const partial = { ...MINIMAL_VALID } as Partial<ClassifiedIntent>;
+		const partial = { ...MINIMAL_VALID } as Partial<UnsizedIntent>;
 		delete partial[field];
 		const r = validateIntentShapeWithErrors(partial);
 		assert.equal(r.ok, false);
@@ -121,7 +120,8 @@ test('validateIntentShape rejects target outside the enum', () => {
 	assert.equal(validateIntentShape({ ...MINIMAL_VALID, target: 'invented' }), false);
 });
 
-test('validateIntentShape rejects scope outside the enum', () => {
+test('validateIntentShape rejects an answer that carries a size, valid or not', () => {
+	assert.equal(validateIntentShape({ ...MINIMAL_VALID, scope: 'M' }), false);
 	assert.equal(validateIntentShape({ ...MINIMAL_VALID, scope: 'XXL' }), false);
 });
 

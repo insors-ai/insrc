@@ -159,6 +159,24 @@ export const RETIRED_PATHS: readonly RetiredPath[] = [
 ];
 
 /**
+ * Declared-RETIRED role ids: roles that no longer exist, for which a user may
+ * still have a stored per-role tier.
+ *
+ * A per-role value is stored under a key that itself holds dots
+ * (`models.tasks["analyze.scope.pick"]`, and again per repo under
+ * `models.byRepo.<repo>.tasks`), so RETIRED_PATHS cannot name it: the
+ * reconcile splits a retired path on every dot. The reconcile's prune removes
+ * each id listed here from `models.tasks` and from the `tasks` of every entry
+ * of `models.byRepo`.
+ *
+ * INVARIANT (enforced by reconcileConfig): no id here is in the role taxonomy.
+ */
+export const RETIRED_ROLE_IDS: readonly string[] = [
+	// The model call that picked a request's size. The size is measured now.
+	'analyze.scope.pick',
+];
+
+/**
  * One-time relocations from the old nested model config to the flat models.*
  * surface. Run by the reconcile before fill + prune (see reconcile.ts). The
  * derived surfaces (shaperProvider/shaperModel ⟸ tiers.core, summariser* ⟸

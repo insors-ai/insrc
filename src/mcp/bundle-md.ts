@@ -18,7 +18,7 @@
  *     drop citation blocks. The bundle's discipline is the point.
  */
 
-import { completenessHeadLine, isAnswerReport, renderCompletenessLine } from '../analyze/completeness.js';
+import { completenessHeadLine, isAnswerReport, renderReportHead } from '../analyze/completeness.js';
 import type { AnalyzeContextBundle, BundleLayerName } from '../analyze/context/types.js';
 
 const LAYER_HEADINGS: Readonly<Record<BundleLayerName, string>> = {
@@ -118,7 +118,7 @@ export function renderAnalyzeFailure(error: {
 	if (!isAnswerReport(report)) return failure;
 	const reason = error.data?.['reason'];
 	return [
-		renderCompletenessLine(report),
+		renderReportHead(report),
 		...(typeof reason === 'string' ? [`The answer step failed: ${reason}.`] : []),
 		failure,
 	].join('\n\n');

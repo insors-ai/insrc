@@ -49,6 +49,7 @@ import type {
 } from '../../../analyze/context/types.js';
 import type { BundleLayers } from '../../../analyze/context/driver.js';
 import { reportFromLookups } from '../../../analyze/explore/answer-report.js';
+import { measureLookupResults } from '../../../analyze/measure.js';
 
 const log = getLogger('mcp:analyze-step:bundle');
 
@@ -106,7 +107,9 @@ export async function handleBundle(
 	// The agent writes the seven layers and nothing else; a bundle in which it
 	// supplied a `report` was already rejected above as 'bundle-schema',
 	// because the schema it was given has no such field.
-	const report = reportFromLookups(state.executed?.results ?? []);
+	// Its measure is taken from the same results, with the caller's stated size as the hint.
+	const results = state.executed?.results ?? [];
+	const report = reportFromLookups(results, measureLookupResults(results, state.sizeHint));
 	const bundle: AnalyzeContextBundle = { ...layers, meta, report };
 
 	// (4) Render.

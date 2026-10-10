@@ -23,6 +23,6 @@ import type { ClassifiedIntent } from '../../shared/analyze-types.js';
  * that a later widening of the step tool's scope cannot go round the
  * table.
  */
-export async function stepScope(intent: ClassifiedIntent, deps?: ScopeDeps): Promise<ResolvedScope> {
+export async function stepScope(intent: Pick<ClassifiedIntent, 'target' | 'scopeRef'>, deps?: ScopeDeps): Promise<ResolvedScope> {
 	return resolveScopeForTarget(intent.scopeRef, intent.target, deps);
 }

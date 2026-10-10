@@ -60,7 +60,8 @@ interface TableMeta {
 	readonly sortKey?: string;
 }
 
-class DynamoDriver implements KvDriver {
+/** Exported for its tests; the registry is how the daemon reaches it. */
+export class DynamoDriver implements KvDriver {
 	readonly family = 'kv' as const;
 	readonly kind = 'dynamodb';
 
@@ -165,8 +166,9 @@ class DynamoDriver implements KvDriver {
 		this.client.destroy();
 	}
 
-	async listNamespaces(opts?: { readonly limit?: number }): Promise<KvNamespaceList> {
-		const limit = Math.min(Math.max(1, Math.floor(opts?.limit ?? 200)), 1000);
+	async listNamespaces(opts?: { readonly limit?: number; readonly complete?: boolean }): Promise<KvNamespaceList> {
+		// The complete mode: every namespace, with no limit.
+		const limit = opts?.complete === true ? Infinity : Math.min(Math.max(1, Math.floor(opts?.limit ?? 200)), 1000);
 		const out: KvNamespace[] = [];
 		let lastEvaluated: string | undefined;
 		let truncated = false;

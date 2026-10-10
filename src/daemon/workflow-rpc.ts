@@ -45,7 +45,8 @@ import { WORKFLOW_NAMES, type ArtifactMetaBase, type ArtifactModelAttribution, t
 import { modelSummary } from '../workflow/attribution.js';
 import { augmentStandaloneParams, epicKeyFor } from '../mcp/workflow-step/phases/start.js';
 import { buildRun } from './analyze-rpc.js';
-import { completenessHeadLine, isAnswerReport, renderCompletenessLine, type AnswerReport } from '../analyze/completeness.js';
+import { completenessHeadLine, isAnswerReport, renderReportHead, type AnswerReport } from '../analyze/completeness.js';
+import type { UnsizedIntent } from '../analyze/measure.js';
 
 const log = getLogger('daemon:workflow-rpc');
 
@@ -544,10 +545,10 @@ export function makeTokenAccumulator(): {
 	};
 }
 
-function classifiedIntent(intent: WorkflowIntent): ClassifiedIntent {
+/** The intent of a workflow step's grounding request. It carries no size, and the runner states none: the context builder measures the request. */
+function classifiedIntent(intent: WorkflowIntent): UnsizedIntent {
 	return {
 		target:    'code',
-		scope:     'M',
 		focused:   true,
 		focus:     intent.focus,
 		scopeRef:  { kind: 'workspace', value: intent.repoPath },
@@ -588,7 +589,7 @@ export class AnalyzeGroundingFailedError extends Error {
 	constructor(runner: string, error: { readonly code: string; readonly message: string; readonly data?: Readonly<Record<string, unknown>> | undefined }) {
 		const report = isAnswerReport(error.data?.['report']) ? error.data['report'] : undefined;
 		const failure = `workflow.run: analyze grounding failed for step '${runner}' (${error.code}): ${error.message}`;
-		super(report !== undefined ? `${renderCompletenessLine(report)}\n${failure}` : failure);
+		super(report !== undefined ? `${renderReportHead(report)}\n${failure}` : failure);
 		this.name = 'AnalyzeGroundingFailedError';
 		this.code = error.code;
 		const reason = error.data?.['reason'];
@@ -613,6 +614,8 @@ async function groundingFor(
 }
 
 export const _groundingForTest = groundingFor;
+/** Test hook: the intent of a workflow step's grounding request. */
+export const _groundingIntentForTest = classifiedIntent;
 
 /** The `meta.model` label matching what `buildShaperProvider` resolves — the
  *  chosen provider along the chain: per-repo override > explicit config >

@@ -25,6 +25,7 @@
  */
 
 import type { ResolvedScope } from '../context/scope.js';
+import type { AnalyzeScope } from '../../shared/analyze-types.js';
 import { getCachedExploration, putCachedExploration } from '../../db/exploration-cache.js';
 import { getLogger } from '../../shared/logger.js';
 import type { StructuredSchema } from '../../shared/types.js';
@@ -133,6 +134,9 @@ export interface ExecutePlanArgs {
 	readonly plan:             ExplorationPlan;
 	/** The request's resolved scope, handed to each runner. */
 	readonly scope?:           ResolvedScope | undefined;
+	/** The request's measured size (of the area it names), handed to each
+	 *  runner. Absent for a caller that has not measured its request. */
+	readonly requestSize?:     AnalyzeScope | undefined;
 }
 
 export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> {
@@ -213,6 +217,7 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 						readDep:      (id: string) => outputsById.get(id),
 						ignoreFilter,
 						scope:        args.scope,
+						requestSize:  args.requestSize,
 					};
 					output = await runner(exp, ctx);
 					if (cacheable) {
@@ -518,6 +523,7 @@ export async function stepPlan(
 					readDep:      (id: string) => outputsById.get(id),
 					ignoreFilter,
 					scope:        args.scope,
+					requestSize:  args.requestSize,
 				};
 				// The same conversion as every other lookup: a prepare that throws is
 				// a lookup that could not run. It becomes the failed output for THIS
@@ -579,6 +585,7 @@ export async function stepPlan(
 						readDep:      (id: string) => outputsById.get(id),
 						ignoreFilter,
 						scope:        args.scope,
+						requestSize:  args.requestSize,
 					};
 					output = await runner(exp, ctx);
 					await putCachedExploration(

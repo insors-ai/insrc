@@ -38,6 +38,7 @@ import { ScopeKindTargetMismatchError, ScopeNotIndexedError } from '../invariant
 import type { ResolvedScope } from '../scope.js';
 import type { AnalyzeContextBundle } from '../types.js';
 import { buildCompleteness } from '../../completeness.js';
+import type { AnswerReport } from '../../completeness.js';
 
 /** A stand-in lookup's record: every lookup output states its completeness. */
 const WHOLE = buildCompleteness({ returned: 1, basis: 'graph' });
@@ -83,6 +84,9 @@ const PLAN: ExplorationPlan = {
 const RAW: RawBundle = { system: 'sys', focus: 'Intent focus: none', summary: 'sum', structure: 'st', surface: 'su', artefacts: 'a', upstream: 'u' };
 
 interface Seen { decompose: Array<{ scope: ResolvedScope; intent: ClassifiedIntent }>; executePlan: Array<{ repoPath: string; scope?: ResolvedScope }>; synthesize: number }
+
+/** A report without its measure: these tests are about the completeness part. The measure has its own tests. */
+const sansMeasure = (report: AnswerReport | undefined): unknown => { if (report === undefined) return undefined; const { measure: _m, ...rest } = report; return rest; };
 
 function standIns(over: Partial<PipelineSteps> = {}): { steps: PipelineSteps; seen: Seen } {
 	const seen: Seen = { decompose: [], executePlan: [], synthesize: 0 };
@@ -240,7 +244,7 @@ test("runShaper's run-mode bundle carries the report derived from the executed l
 	const bundle = await call(unfocused({ kind: 'repo', value: repo }), steps, forbiddenLoop().provider, 'report');
 
 	assert.equal(seen.synthesize, 1);
-	assert.deepEqual(bundle.report, {
+	assert.deepEqual(sansMeasure(bundle.report), {
 		completeness: {
 			complete:   false,
 			incomplete: [{ sourceId: 'search.text [e2]', sourceKind: 'lookup', reason: 'limit of 30 hits reached (the search stops at 30 hits)' }],
@@ -256,7 +260,7 @@ test("runShaper's run-mode bundle carries the report derived from the executed l
 	// Every lookup complete: the report says so.
 	const allWhole = standIns();
 	const whole = await call(unfocused({ kind: 'repo', value: repo }), allWhole.steps, forbiddenLoop().provider, 'report-whole');
-	assert.deepEqual(whole.report, { completeness: { complete: true, incomplete: [], failed: [] } });
+	assert.deepEqual(sansMeasure(whole.report), { completeness: { complete: true, incomplete: [], failed: [] } });
 });
 
 test('a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups', async () => {
@@ -288,7 +292,7 @@ test('a lookup that returns no completeness record is listed as failed, and the 
 
 	assert.equal(seen.synthesize, 1, 'the answer was written');
 	assert.equal(bundle.summary, 'sum');
-	assert.deepEqual(bundle.report, {
+	assert.deepEqual(sansMeasure(bundle.report), {
 		completeness: {
 			complete:   false,
 			incomplete: [],
@@ -343,7 +347,8 @@ test('a bundle cached before the change is not returned', async () => {
 	const keyAt = (version: number): string => createHash('sha256')
 		.update('analyze-context-bundle:').update(String(version))
 		.update('|prompt:').update(prompt)
-		.update('|inputs:').update(_stableStringifyForTest({ intent })).digest('hex');
+		// The intent's size is not part of the key: the size the builder works with is measured.
+		.update('|inputs:').update(_stableStringifyForTest({ intent: (({ scope: _size, ...unsized }) => unsized)(intent) })).digest('hex');
 	assert.equal(_computeCacheKeyForTest(prompt, { intent }), keyAt(2), 'the key is built from the current version');
 	assert.notEqual(keyAt(1), keyAt(2));
 

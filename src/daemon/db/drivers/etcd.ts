@@ -37,7 +37,8 @@ import { inferShape } from './shape-common.js';
 
 const log = getLogger('db-etcd');
 
-class EtcdDriver implements KvDriver {
+/** Exported for its tests; the registry is how the daemon reaches it. */
+export class EtcdDriver implements KvDriver {
 	readonly family = 'kv' as const;
 	readonly kind = 'etcd';
 

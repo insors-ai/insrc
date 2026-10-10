@@ -11,21 +11,13 @@ You receive a user's raw request, the scope reference they surfaced, and a small
   - `docs` — questions about design docs, plans, requirements, ADRs, RFCs, specs, READMEs, changelogs, or "why did we decide X" style prose retrieval. Pick this whenever the answer lives in prose rather than in code / config / manifests.
   - `generic` — broad requests like "analyze this repo", "tell me about this workspace" that legitimately span multiple lenses. The Plan Builder dispatches sub-plans across per-target shapers.
 
-- **`scope`** — `XS | S | M | L | XL`. INVERTED depth policy:
-  - `XS` — most detailed, narrowest. A single function / file / table / manifest.
-  - `S`  — narrow but multi-symbol; a module / subsystem / handful of related tables.
-  - `M`  — a module set / mid-sized subsystem / a small connection / a small IaC dir.
-  - `L`  — a whole repo / large connection / whole environment of manifests.
-  - `XL` — a workspace / multi-repo / multi-connection / multi-environment view. STRUCTURAL.
-  Note the inversion: bigger scope = less detail per unit, more structural breadth.
-
 - **`focused`** — `true` if the user's question is a SPECIFIC inquiry (e.g. "where is PII handled?", "what tables back the checkout flow?"); `false` if it's a generic understanding request ("understand this codebase").
 
 - **`focus`** — REQUIRED when `focused=true`. A short, concrete restatement of the user's question (a sentence fragment is fine). Omit when `focused=false`.
 
 - **`scopeRef`** — `{ kind, value }`. Mirror what the user surfaced. Only refine if the workspace context makes a more specific kind obvious (e.g. user said `workspace=/foo`, but `/foo` is itself a single registered repo → upgrade to `kind=repo`). Never invent a value the user did not surface.
 
-- **`reasoning`** — 1-2 sentences explaining the target + scope choice in terms of the user's request + the workspace context.
+- **`reasoning`** — 1-2 sentences explaining the target choice in terms of the user's request + the workspace context.
 
 ## Scope-kind / target compatibility (HARD RULE)
 
@@ -51,7 +43,6 @@ Respond with ONLY the JSON object matching the ClassifiedIntent schema. No markd
 
 Required keys:
   `target` (string enum)
-  `scope` (string enum)
   `focused` (boolean)
   `scopeRef` (object `{ kind, value }`)
   `reasoning` (string)

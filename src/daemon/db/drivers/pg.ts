@@ -84,7 +84,8 @@ const IDLE_TIMEOUT_MS = 30_000;
 // Driver class
 // ---------------------------------------------------------------------------
 
-class PostgresDriver implements RdbmsDriver {
+/** Exported for its tests; the registry is how the daemon reaches it. */
+export class PostgresDriver implements RdbmsDriver {
 	readonly family = 'rdbms' as const;
 	readonly kind = 'postgres';
 
@@ -262,8 +263,9 @@ class PostgresDriver implements RdbmsDriver {
 		return executeTemporalGapStats({ ...this.orchestratorDeps(target, cols), request });
 	}
 
-	async listTables(opts?: { schema?: string; limit?: number }): Promise<TableListing> {
-		const cap = clampListLimit(opts?.limit);
+	async listTables(opts?: { schema?: string; limit?: number; complete?: boolean }): Promise<TableListing> {
+		// The complete mode: every table, with no limit in the query.
+		const cap = opts?.complete === true ? null : clampListLimit(opts?.limit);
 		const schemaFilter = typeof opts?.schema === 'string' && /^[A-Za-z_][A-Za-z0-9_]*$/.test(opts.schema)
 			? opts.schema : null;
 		const params: unknown[] = [];
@@ -272,11 +274,11 @@ class PostgresDriver implements RdbmsDriver {
 			params.push(schemaFilter);
 			where += ` AND table_schema = $1`;
 		}
-		const sql = `SELECT table_schema, table_name, table_type FROM information_schema.tables ${where} ORDER BY table_schema, table_name LIMIT ${cap + 1}`;
+		const sql = `SELECT table_schema, table_name, table_type FROM information_schema.tables ${where} ORDER BY table_schema, table_name${cap === null ? '' : ` LIMIT ${cap + 1}`}`;
 		const res = await withTimeout(this.pool.query(sql, params as unknown[]), SAMPLE_TIMEOUT_MS);
 		const rows = res.rows as { table_schema: string; table_name: string; table_type: string }[];
-		const truncated = rows.length > cap;
-		const sliced = truncated ? rows.slice(0, cap) : rows;
+		const truncated = cap !== null && rows.length > cap;
+		const sliced = cap !== null && truncated ? rows.slice(0, cap) : rows;
 		return {
 			target: 'postgres',
 			tables: sliced.map(r => ({

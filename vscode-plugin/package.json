@@ -2,7 +2,7 @@
   "name": "insrc-vscode",
   "displayName": "insrc",
   "description": "insrc for VS Code \u2014 local-first, Ollama-backed code-knowledge and the tracked workflow, wired into your AI assistant.",
-  "version": "0.5.12",
+  "version": "0.5.13",
   "publisher": "insors",
   "license": "MIT",
   "repository": {
@@ -707,17 +707,6 @@
             ],
             "default": "cheap",
             "markdownDescription": "Model tier for the `analyze.classify` role (peripheral). Leave at the default to use the daemon's routing.",
-            "scope": "machine"
-          },
-          "insrc.models.tasks.analyze.scope.pick": {
-            "type": "string",
-            "enum": [
-              "cheap",
-              "mid",
-              "core"
-            ],
-            "default": "cheap",
-            "markdownDescription": "Model tier for the `analyze.scope.pick` role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.analyze.adherence": {

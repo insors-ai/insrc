@@ -34,7 +34,8 @@ import { inferShape } from './shape-common.js';
 
 const log = getLogger('db-nats');
 
-class NatsKvDriver implements KvDriver {
+/** Exported for its tests; the registry is how the daemon reaches it. */
+export class NatsKvDriver implements KvDriver {
 	readonly family = 'kv' as const;
 	readonly kind = 'nats';
 
@@ -101,13 +102,14 @@ class NatsKvDriver implements KvDriver {
 		}
 	}
 
-	async listNamespaces(opts?: { readonly limit?: number }): Promise<KvNamespaceList> {
+	async listNamespaces(opts?: { readonly limit?: number; readonly complete?: boolean }): Promise<KvNamespaceList> {
 		// NATS KV has multiple buckets per server. The connection config
 		// pins a single bucket, so for now we report just that bucket --
 		// listing all buckets across the JetStream cluster would need an
 		// explicit JSM call (jsm.streams.list filtered by KV_*) and is
 		// gated on whether the user actually wants cross-bucket listing.
-		const limit = Math.min(Math.max(1, Math.floor(opts?.limit ?? 200)), 1000);
+		// The one bucket is the whole listing, with a limit or in the complete mode.
+		const limit = opts?.complete === true ? Infinity : Math.min(Math.max(1, Math.floor(opts?.limit ?? 200)), 1000);
 		void limit;
 		return {
 			namespaces: [{ name: this.bucket, kind: 'bucket' }],

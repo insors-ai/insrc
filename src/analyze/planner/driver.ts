@@ -229,11 +229,17 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 		// Stamp parentTaskPath from the call site (INV-15). The LLM
 		// may or may not have emitted it; either way the call site is
 		// authoritative.
+		//
+		// The plan's size is stamped the same way. The task band (INV-13)
+		// is read for the plan's own `scope`, and that must be the intent's
+		// measured size: were the model's figure kept, a model could choose
+		// its own band by writing another size in its plan.
 		const stamped: PlanTask = (() => {
 			const { parentTaskPath: _ignored, ...rest } = raw;
+			const sized = { ...rest, scope: intent.scope };
 			return parentTaskPath !== undefined
-				? { ...rest, parentTaskPath }
-				: rest;
+				? { ...sized, parentTaskPath }
+				: sized;
 		})();
 
 		// Wire-layer re-validation (defensive).

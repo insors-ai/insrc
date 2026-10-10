@@ -26,6 +26,8 @@ import { stepScope } from '../scope.js';
 import { pickSynthesizerKey } from '../synthesizer-key.js';
 import type { StepInputStart, StepOutputDone, StepOutputEmitPlan } from '../types.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
+import { measureResolvedScope } from '../../../analyze/measure.js';
+import type { UnsizedIntent } from '../../../analyze/measure.js';
 import { getLogger } from '../../../shared/logger.js';
 import { SCHEMA_VERSION } from '../../../analyze/context/schema.js';
 
@@ -48,11 +50,9 @@ export async function handleStart(
 
 	const runId  = `mcp-step-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const target = input.target ?? 'code';
-	const scope  = input.scope  ?? 'M';
 
-	const intent: ClassifiedIntent = {
+	const unsized: UnsizedIntent = {
 		target,
-		scope,
 		focused:  true,
 		focus:    input.focus,
 		scopeRef: { kind: 'workspace', value: repoPath },
@@ -61,7 +61,14 @@ export async function handleStart(
 
 	// Check the pairing and resolve the scope before anything is
 	// minted: a refused pairing throws here, so no state exists for it.
-	const resolvedScope = await stepScope(intent);
+	const resolvedScope = await stepScope(unsized);
+
+	// The size the planning prompt is given: counted from the area the scope
+	// names. A size the caller stated is a hint, carried in the state to the
+	// phases that measure what the lookups returned. No default is taken.
+	const area = await measureResolvedScope(resolvedScope, target, input.scope);
+	const scope = area.size;
+	const intent: ClassifiedIntent = { ...unsized, scope };
 
 	const synthesizerKey = pickSynthesizerKey(target);
 	const repoIndexedAt  = (await resolveRepoLastIndexedAt(repoPath)) ?? null;
@@ -102,6 +109,7 @@ export async function handleStart(
 		repoPath,
 		repoIndexedAt,
 		intent,
+		...(input.scope !== undefined ? { sizeHint: input.scope } : {}),
 		synthesizerKey,
 		stage:          'awaiting_plan',
 	};

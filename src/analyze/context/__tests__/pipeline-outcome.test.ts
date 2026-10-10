@@ -15,6 +15,8 @@ import type { LoadedConnections } from '../../../daemon/db/config.js';
 import type { AnalyzeScopeRef, ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 import { buildCompleteness } from '../../completeness.js';
+import type { AnswerReport } from '../../completeness.js';
+import type { RequestMeasure } from '../../measure.js';
 import type { ExecutedPlan, ExplorationPlan } from '../../explore/types.js';
 import {
 	DecomposerLlmUnavailableError,
@@ -49,6 +51,11 @@ import type { AnalyzeContextBundle } from '../types.js';
 type RawBundle = Omit<AnalyzeContextBundle, 'meta'>;
 
 const REPO = '/work/app';
+
+/** What the stand-in measuring step returns for every scope. */
+const AREA: RequestMeasure = { source: 'named-area', items: 600, files: 100, characters: null, size: 'M', determined: true };
+/** A report without its measure: these tests are about the completeness part. The measure has its own tests. */
+const sansMeasure = (report: AnswerReport | undefined): unknown => { if (report === undefined) return undefined; const { measure: _m, ...rest } = report; return rest; };
 
 const INTENT: ClassifiedIntent = {
 	target:    'code',
@@ -130,6 +137,8 @@ function steps(over: StandIns = {}): { steps: PipelineSteps; calls: Calls } {
 			return (over.fallback ?? _fallbackFreeformPlanForTest)(intent, shaperId);
 		},
 		lastIndexedAt: async () => 1_700_000_000_000,
+		// The named area is measured by a stand-in: these tests read no store. It measures M, the size INTENT states.
+		measureArea: async (_scope, _target, sizeHint) => ({ ...AREA, ...(sizeHint !== undefined ? { sizeHint } : {}) }),
 	};
 	return { steps: s, calls };
 }
@@ -180,7 +189,7 @@ test('focused request on a repo: stand-in arguments and bundle equal the recorde
 	// The outcome also carries the executed lookups and the report derived from them.
 	assert.ok(outcome.kind === 'bundle');
 	assert.equal(outcome.found.results.length, 1);
-	assert.deepEqual(outcome.found.report, { completeness: { complete: true, incomplete: [], failed: [] } });
+	assert.deepEqual(sansMeasure(outcome.found.report), { completeness: { complete: true, incomplete: [], failed: [] } });
 	// The baseline is what each step received before the outcome type
 	// existed, taken from the call sites as they stood (the pipeline had
 	// no seam then, so it could not be recorded by running it; the three
@@ -197,11 +206,15 @@ test('focused request on a repo: stand-in arguments and bundle equal the recorde
 		// needs what the request named. The path, closure, last-indexed
 		// time and plan -- what the lookup cache key is made from -- are unchanged.
 		scope: dirScope(INTENT),
+		// Added by the measure: the size of the area the request names, for a lookup that sizes its own work.
+		requestSize: 'M',
 	}]);
 	assert.equal(calls.executed.length, 1);
 	assert.deepEqual(Object.keys(calls.synthesize[0] as object).sort(), ['executed', 'intent', 'runId', 'target']);
 	assert.deepEqual(calls.synthesize, [{
-		runId: 'r1', intent: INTENT, executed: calls.executed[0], target: 'code',
+		// The answer step's intent has the size measured from what the lookups returned (one item, no file: XS),
+		// not the size of the named area the planning call was given.
+		runId: 'r1', intent: { ...INTENT, scope: 'XS' }, executed: calls.executed[0], target: 'code',
 	}]);
 	// The very object the lookups returned, not a copy or a subset.
 	assert.equal((calls.synthesize[0] as { executed: ExecutedPlan }).executed, calls.executed[0]);
@@ -290,7 +303,7 @@ test('pipeline returns a bundle for an unfocused intent on a repo, a module and 
 		// The planning call was made, and it received the unfocused intent as it is.
 		assert.equal(calls.decompose.length, 1, kind);
 		const planned = calls.decompose[0] as { intent: ClassifiedIntent };
-		assert.equal(planned.intent, unfocused, kind);
+		assert.deepEqual(planned.intent, unfocused, kind);
 		assert.equal(planned.intent.focused, false, kind);
 		assert.equal(planned.intent.focus, undefined, kind);
 		// ... its plan was executed where the scope resolved to, and an answer written.
@@ -379,6 +392,7 @@ test('module scope: lookup path and cache key unchanged', async () => {
 		runId: 'r1', repoPath: moduleDir, closureRepos: [moduleDir],
 		repoLastIndexedAtMs: 1_700_000_000_000n, plan: PLAN,
 		scope,
+		requestSize: 'M',
 	}]);
 	assert.deepEqual(seen, [moduleDir]);
 	// NOT the repo root.
@@ -554,7 +568,7 @@ test("the pipeline's three causes after the lookups ran carry the results and th
 		assert.equal(r.calls.executed.length, 1);
 		assert.equal(o.found?.results, r.calls.executed[0]?.results);
 		assert.equal(o.found?.results.length, 1);
-		assert.deepEqual(o.found?.report, { completeness: { complete: true, incomplete: [], failed: [] } });
+		assert.deepEqual(sansMeasure(o.found?.report), { completeness: { complete: true, incomplete: [], failed: [] } });
 
 		assert.throws(() => settlePipelineOutcome(o, stamp), (err: unknown) => {
 			assert.ok(err instanceof ShaperAnswerStepFailedError, `got ${(err as Error).name}`);
@@ -596,7 +610,7 @@ test('a missing answer prompt found after the lookups ran carries the results an
 	assert.equal(cause(answer.outcome), 'answer-prompt-missing');
 	const o = answer.outcome as DidNotProceed;
 	assert.equal(o.found?.results, answer.calls.executed[0]?.results);
-	assert.deepEqual(o.found?.report, { completeness: { complete: true, incomplete: [], failed: [] } });
+	assert.deepEqual(sansMeasure(o.found?.report), { completeness: { complete: true, incomplete: [], failed: [] } });
 	assert.throws(() => settlePipelineOutcome(o, stamp), (err: unknown) => {
 		// Its own error: a fault of the installation, not a failed answer step.
 		assert.ok(err instanceof ShaperPromptMissingError, `got ${(err as Error).name}`);

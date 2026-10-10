@@ -39,11 +39,12 @@ The daemon does **not**:
 8. [Usage via Claude Code (MCP)](#usage-via-claude-code)
 9. [Usage via Codex CLI (MCP)](#usage-via-codex-cli)
 10. [What an answer says about its completeness](#what-an-answer-says-about-its-completeness)
-11. [What a plan-tree run does about scope, failed tasks and runs that died](#what-a-plan-tree-run-does-about-scope-failed-tasks-and-runs-that-died)
-12. [What a build records about its tests](#what-a-build-records-about-its-tests)
-13. [CLI reference](#cli-reference)
-14. [Troubleshooting](#troubleshooting)
-15. [Uninstall](#uninstall)
+11. [How a request's size is measured](#how-a-requests-size-is-measured)
+12. [What a plan-tree run does about scope, failed tasks and runs that died](#what-a-plan-tree-run-does-about-scope-failed-tasks-and-runs-that-died)
+13. [What a build records about its tests](#what-a-build-records-about-its-tests)
+14. [CLI reference](#cli-reference)
+15. [Troubleshooting](#troubleshooting)
+16. [Uninstall](#uninstall)
 
 ---
 
@@ -656,6 +657,157 @@ The IDE mirrors these types and is not changed from here. It needs:
 - the `data` member of the error payload for `answer-step-failed` and
   `shaper-prompt-missing` (see the error-code table under Troubleshooting);
 - the optional `error.data` on the output of `insrc_analyze_step`.
+
+---
+
+## How a request's size is measured
+
+Every request has a size: `XS`, `S`, `M`, `L` or `XL`. The size decides how
+many tasks a plan may have, how deep a plan tree may go, and what the planning
+call and the answer step are told about the request. The size is **counted by
+code from what the request touches**. No model picks it, no caller sets it and
+there is no default.
+
+### The table
+
+Two counts are taken, and each maps to a size by its own row. The request's
+size is the **larger** of the two.
+
+| Count | XS | S | M | L | XL |
+|---|---|---|---|---|---|
+| Files | up to 1 | up to 20 | up to 200 | up to 1,500 | more |
+| Entities or items | up to 50 | up to 500 | up to 5,000 | up to 20,000 | more |
+
+So a directory of 30 files and 60 entities is `M` (by its files), and one file
+that holds 600 entities is `M` too (by its entities).
+
+### What is counted
+
+A request is measured twice, at two different moments, from two different
+things.
+
+**The area the request names**, before anything is planned. This is the size
+the planning call is given, and for a plan-tree run it is the size of the run.
+
+| Kind of source | Scope | What is counted |
+|---|---|---|
+| code, docs, generic | repo | the stored entities of the repo, and the distinct files they lie in |
+| code, docs, generic | module, manifest directory, or a workspace inside a registered repo | the stored entities whose file lies under the directory |
+| code, docs, generic | file | the stored entities of that file |
+| code, docs, generic | symbol | the one entity |
+| generic | a workspace that no registered repo contains | the sum over the registered repos under it |
+| infra | repo, workspace, manifest directory | the files on disk that the infra tasks' own walk visits under the directory, walked to the end. The stored graph is not used: the infra tasks do not read it |
+| data, generic | connection | the objects of the live source, through the driver's listing in its complete mode: tables of a relational source, namespaces of a document or wide-column store, files of a file source |
+| data | repo, workspace, manifest directory | the sum over the connections registered at that path, each counted as above |
+
+The objects of a data source (tables, collections, files) are compared with the
+**files** row of the table: a table is the unit a data analysis reads, as a file
+is for code. So a source of 40 tables is `M`.
+
+**What the lookups returned**, after the plan of lookups has run. This is the
+size the answer step is given, and it is the measure in the answer's report.
+Items are the sum of what the lookups returned; files are the distinct files
+those results name. The length of the results in characters is recorded beside
+the counts and does not take part in the size.
+
+A plan tree measures each **child plan** from the area that child names, when
+the child is spawned. Its task band is that of its own measured size. The depth
+a tree may reach is always read for the root's measured size.
+
+### A size a caller states is a hint
+
+A caller can state a size: the `scope` input of `insrc_analyze` and
+`insrc_analyze_step`, the `scopeHint` of a run request, the `sizeHint` of a
+run-level context request, the size on the intent of a plan request, and the
+figure a planner model writes for a child plan. Each is recorded on the measure
+as `sizeHint` and **never changes the size**. It is there so a reader can see
+what was asked for beside what was found.
+
+The classifier states no size at all: its answer has no such field, and an
+answer that carries one is rejected.
+
+### When the size cannot be determined
+
+A count that cannot be taken is not read as zero, which would size the request
+as the smallest. The measure then says `determined: false`, its size is `XL`,
+the largest, its counts are 0, and its `note` gives the reason. This is the
+case for:
+
+- a scope that does not resolve, or a kind of scope its source does not accept;
+- a path the index does not hold: no registered repo contains it, or the repo
+  holds no stored entity;
+- a read of the registry or the store that fails;
+- a directory that cannot be read, or one below it (the files counted in the
+  rest are in the note, not in the counts);
+- a data source that cannot be reached, whose driver has no listing or answers
+  that listing is not supported, or whose listing reports that it was cut;
+- Redis, Valkey, KeyDB and etcd, whose listing is a sample of keys and not a
+  list of what exists;
+- a data request over several connections when any one of them could not be
+  counted;
+- an answer whose lookups all failed or are not supported.
+
+An empty directory inside an indexed repo is different: it is a count of zero,
+so it is `XS` and determined.
+
+Measuring does not refuse a request. A request that was refused for its scope
+is still refused where it was, with the same code (see
+[the scope is checked once before planning](#the-scope-is-checked-once-before-planning)).
+
+### The measure in the report, and the measure line
+
+The answer report (see [the report on the bundle](#the-report-on-the-bundle))
+carries the measure:
+
+```jsonc
+"measure": {
+  "source":     "lookup-results",  // or "named-area", "data-source"
+  "items":      40,
+  "files":      25,
+  "characters": 5120,              // null for the other two sources
+  "size":       "M",
+  "determined": true,
+  "sizeHint":   "L",               // only when a caller stated a size
+  "note":       "…"                // only when there is something to say
+}
+```
+
+On an answer from the lookup pipeline (`insrc_analyze`, `insrc_analyze_step`,
+a workflow step's grounding) the measure is the one from what the lookups
+returned. On a plan-tree run it is the measure of the area the request names;
+it is also on the run's `classified` event and in its run record. A report or a
+run record stored before the measure existed has none and is read as it is.
+
+The text form of an answer has one line for it, directly under the completeness
+line:
+
+```
+Complete.
+Size: M, measured from what the lookups returned: 25 files, 40 items, 5,120 characters. The caller asked for L.
+```
+
+```
+Size: L, measured from the area the request names: 1,204 files, 18,330 entities.
+Size: M, measured from the data source: 40 objects.
+Size: XL, not determined: the index holds nothing for the path /srv/app: no registered repository contains it.
+```
+
+### Note for clients
+
+- The run-level context request (`analyze.context.buildRun`) needs no size on
+  its intent. One that is sent is checked and not read; a stated size goes in
+  the optional `sizeHint`. The plan and task requests still carry a whole
+  intent, with its size.
+- The plan and classify requests return the measure beside their result, and
+  the intent or plan they return carries the measured size.
+- The cached run context does not depend on a stated size: two callers that
+  state different sizes for one scope share it.
+- The role `analyze.scope.pick` no longer exists. A tier stored for it under
+  `models.tasks`, or under a repo's `models.byRepo.<repo>.tasks`, is dropped
+  when the daemon reconciles its configuration. The VS Code extension no longer
+  declares a setting for it.
+- The step tool's state token carries the stated size as an optional field; a
+  token minted before the change still decodes.
 
 ---
 

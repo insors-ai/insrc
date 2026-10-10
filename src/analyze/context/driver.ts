@@ -90,6 +90,7 @@ import { executePlan } from '../explore/index.js';
 import type { ExecutedExploration, ExplorationPlan } from '../explore/index.js';
 import type { AnswerReport, PartialFinding } from '../completeness.js';
 import { reportFromLookups } from '../explore/answer-report.js';
+import { measureLookupResults, measureResolvedScope } from '../measure.js';
 import type { AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type {
 	AnalyzeContextBundle,
@@ -362,7 +363,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 			{ runId, mode: invocationMode, shaperId, file: cacheFilePathFor(runId, cacheKey) },
 			'shaper cache hit',
 		);
-		return cached;
+		return withCurrentHint(cached, inputs);
 	}
 
 	// (4.5) Pre-LLM invariant: code-shaper at run-mode against an
@@ -538,8 +539,33 @@ function computeCacheKey(
 	h.update('|prompt:');
 	h.update(promptContent);
 	h.update('|inputs:');
-	h.update(stableStringify(inputs));
+	h.update(stableStringify(keyedInputs(inputs)));
 	return h.digest('hex');
+}
+
+/**
+ * What of a set of inputs the cache key is taken over.
+ *
+ * For a run-level request the intent's size and the stated size are left
+ * out. The size the builder works with is measured: it is a function of the
+ * scope, which is in the key, and of the index, whose state already
+ * invalidates the cache. So two callers that state different sizes, or none,
+ * share one cached bundle.
+ */
+function keyedInputs(inputs: RunShaperArgs['inputs']): unknown {
+	if (!('intent' in inputs) || 'task' in inputs) return inputs;
+	const { intent } = inputs as RunShapeInput;
+	const { scope: _size, ...unsized } = intent;
+	return { intent: unsized };
+}
+
+/** A cached bundle for the current call: the hint on its report's measure is this call's, not the one it was stored with. */
+function withCurrentHint(bundle: AnalyzeContextBundle, inputs: RunShaperArgs['inputs']): AnalyzeContextBundle {
+	const measure = bundle.report?.measure;
+	if (bundle.report === undefined || measure === undefined || !('intent' in inputs) || 'task' in inputs) return bundle;
+	const { sizeHint: _stored, ...counted } = measure;
+	const sizeHint = (inputs as RunShapeInput).sizeHint;
+	return { ...bundle, report: { ...bundle.report, measure: sizeHint !== undefined ? { ...counted, sizeHint } : counted } };
 }
 
 /**
@@ -1028,7 +1054,7 @@ function deriveEmptyLayers(bundle: AnalyzeContextBundle): BundleLayerName[] {
  * MCP-integration shaperProvider config only routes the structured-
  * output call sites (decomposer, synthesizer, doc.decision.trace,
  * doc.constraint.enumerate, capability.reuse-check, classifier,
- * scope-picker, planner, summariser, adherence, aggregator) --
+ * planner, summariser, adherence, aggregator) --
  * everything reachable via `buildShaperProvider(cfg)`. Tool-loop
  * callers stay on Ollama regardless of shaperProvider.
  */
@@ -1230,6 +1256,8 @@ export interface PipelineSteps {
 	readonly fallbackFreeformPlan: (intent: ClassifiedIntent, shaperId: ShaperId) => ExplorationPlan;
 	/** The repo's last-indexed time, part of the lookup cache key. */
 	readonly lastIndexedAt:        (scopePath: string) => Promise<number | undefined>;
+	/** The measure of the area the scope names; the real measuring pass when a set of steps gives none. */
+	readonly measureArea?:         typeof measureResolvedScope | undefined;
 }
 
 /** The ONE table from a cause to its typed error. */
@@ -1339,7 +1367,20 @@ async function tryExplorationPipeline(
 	if (!('intent' in args.inputs)) {
 		return didNotProceed('invalid-input', 'run-mode inputs carry no intent');
 	}
-	const intent = (args.inputs as RunShapeInput).intent;
+	// What the request is. A size on the intent it came with is not read: the
+	// builder is the one writer of the size in this pipeline.
+	const { intent: given, sizeHint } = args.inputs as RunShapeInput;
+	const { scope: _notRead, ...unsized } = given;
+
+	// (a.0) The size for the planning call: counted from the area the scope
+	// names. The pass does not throw; an area it cannot count is the largest
+	// size, with the reason.
+	const area = await (steps.measureArea ?? measureResolvedScope)(args.scope, unsized.target, sizeHint);
+	const intent: ClassifiedIntent = { ...unsized, scope: area.size };
+	log.info(
+		{ runId: args.runId, size: area.size, determined: area.determined, files: area.files, items: area.items, sizeHint, note: area.note },
+		'exploration pipeline: the named area was measured',
+	);
 
 	// (a) Decompose. LLM unavailable / prompt missing -> fall through
 	// (there is no LLM to run anyway). Schema-unrecoverable OR an
@@ -1429,13 +1470,20 @@ async function tryExplorationPipeline(
 		repoLastIndexedAtMs: lastIndexedBigInt,
 		plan,
 		scope:            args.scope,
+		// A lookup that sizes its own work (the free-form one) takes the request's size from here.
+		requestSize:      area.size,
 	});
 
 	// (c.0) The answer report, derived from the lookups' own records before any
 	// answer is written. It does not depend on the answer. A lookup output
 	// that states nothing about its completeness is a defect of that lookup:
 	// it is listed as a failed source, and the answer is written from the rest.
-	const found: AnswerStepFound = { results: executed.results, report: reportFromLookups(executed.results) };
+	//
+	// The request's measure is taken here too, from what the lookups returned:
+	// it is the report's measure, and its size is the size the answer step is given.
+	const measure = measureLookupResults(executed.results, sizeHint);
+	const found: AnswerStepFound = { results: executed.results, report: reportFromLookups(executed.results, measure) };
+	const answerIntent: ClassifiedIntent = { ...unsized, scope: measure.size };
 
 	// (c.1) Freeform.probe short-circuit: when a plan's SOLE
 	// exploration is `freeform.probe`, the runner already emitted a
@@ -1490,7 +1538,7 @@ async function tryExplorationPipeline(
 	try {
 		const raw = await steps.synthesize({
 			runId:    args.runId,
-			intent,
+			intent:   answerIntent,
 			executed,
 			target:   synthesizeTarget,
 		});

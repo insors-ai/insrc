@@ -15,6 +15,7 @@
 
 import type { TemplateExecuteArgs } from '../../executor/types.js';
 import { acquirePool } from '../../../daemon/db/index.js';
+import type { ResolvedScope } from '../../context/scope.js';
 import { resolveTaskScope } from '../shared/task-scope.js';
 
 /** Where a data task opens its connection pool, and the one connection it is
@@ -40,7 +41,19 @@ export async function resolveDataScope(
 	args:          TemplateExecuteArgs,
 	templateLabel: string,
 ): Promise<DataScope> {
-	const scope = await resolveTaskScope(args.intent.scopeRef, 'data', templateLabel);
+	return dataScopeOf(await resolveTaskScope(args.intent.scopeRef, 'data', templateLabel));
+}
+
+/**
+ * The pool and the connection a resolved scope stands for. The rule
+ * `resolveDataScope` applies, on its own, so that the request measure can
+ * apply it to a scope it already holds.
+ *
+ * A connection scope: the pool of the repo that declares the connection, and
+ * that connection. A repo, a workspace or a manifest directory: the pool at
+ * the scope's OWN path, not at the repo that contains it, and no connection.
+ */
+export function dataScopeOf(scope: ResolvedScope): DataScope {
 	if (scope.kind === 'connection') {
 		// resolveScope gives a connection scope the one registered repo that declares it.
 		return { poolPath: scope.lookupPath, connectionId: scope.connectionId };

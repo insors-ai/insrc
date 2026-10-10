@@ -35,7 +35,7 @@ Built on the post-cleanup insrc:
 
 ### Scope buckets (size → depth policy, **inverted**)
 
-The classifier produces one of five buckets. **The relationship between size and depth is inverted**: bigger scope → more structural, less per-unit; smaller scope → more detailed, more per-unit. This is the only way to honour the accuracy-primary principle for both extremes (you cannot read every function in a 2000-file repo, but you can describe its architecture; you can fully unpack a 5-file module, but a structural-only pass would waste the budget).
+Every request falls in one of five buckets. The bucket is **measured by code** from what the request touches (the files and entities of the area its scope names, or the objects of its data source); no model picks it and there is no default. See [`docs/daemon.md`](../docs/daemon.md#how-a-requests-size-is-measured) for the table and what is counted. **The relationship between size and depth is inverted**: bigger scope → more structural, less per-unit; smaller scope → more detailed, more per-unit. This is the only way to honour the accuracy-primary principle for both extremes (you cannot read every function in a 2000-file repo, but you can describe its architecture; you can fully unpack a 5-file module, but a structural-only pass would waste the budget).
 
 | Bucket | Trigger heuristic | Depth policy |
 |---|---|---|
@@ -49,12 +49,12 @@ The bucket is observable: the user sees `scope=L`, the planner stamps it on ever
 
 ### Intent
 
-The classifier produces:
+The classifier produces every field below except `scope`, which the measuring pass adds:
 
 ```ts
 {
   target: 'code' | 'data' | 'infra' | 'generic';
-  scope: 'XS' | 'S' | 'M' | 'L' | 'XL';
+  scope: 'XS' | 'S' | 'M' | 'L' | 'XL';   // measured by code, never by the classifier
   focused: boolean;                    // generic-question vs focused-question
   focus?: string;                      // when focused, the concrete question
                                        // ("messaging patterns", "PII", "where do
@@ -192,7 +192,7 @@ Before the classifier runs, the Context Builder's **classification-shaper** prod
 
 ### 2. Classify
 
-LLM call (small, local Ollama) emits the `{ target, scope, focused, focus?, scopeRef, reasoning }` shape above, consuming the classification-context bundle from step 1. The user message + any path the user surfaced (e.g. `/analyze src/foo.ts`) is the input. Validation: target ∈ enum, scope ∈ enum, scopeRef.kind matches target (a `connection` scope on a `code` target gets rejected). `target` can be `generic` when the request is broad ("analyze this repo") and the planner is expected to dispatch sub-plans across multiple per-target shapers.
+LLM call (small, local Ollama) emits the `{ target, focused, focus?, scopeRef, reasoning }` part of the shape above (the size is measured after it, from the scope it names), consuming the classification-context bundle from step 1. The user message + any path the user surfaced (e.g. `/analyze src/foo.ts`) is the input. Validation: target ∈ enum, scope ∈ enum, scopeRef.kind matches target (a `connection` scope on a `code` target gets rejected). `target` can be `generic` when the request is broad ("analyze this repo") and the planner is expected to dispatch sub-plans across multiple per-target shapers.
 
 If `scopeRef.value` doesn't resolve (e.g. path doesn't exist) the classifier reruns with a corrective note. After two failures, the analyze run aborts with a clear `scopeRef-unresolved` error.
 
@@ -482,7 +482,7 @@ Stored under `models.analyze` in `~/.insrc/config.json`:
                                               //   strict   = fail run on any unverifiable
                                               //              source/entity citation
                                               //   permissive = surface warning, continue
-      "scopeBucketOverride": null,            // force a specific bucket; null = LLM-classified
+      "scopeBucketOverride": null,            // never implemented: the bucket is measured, and a stated size is a hint
       "maxPlanDepth": {                       // by ROOT Run's scope bucket; sets the
                                               // absolute depth ceiling across the
                                               // whole Plan tree. The root's intent

@@ -69,7 +69,8 @@ import { prismaSchemaDescription } from './rdbms-prisma.js';
 
 const log = getLogger('db-sqlite');
 
-class SqliteDriver implements RdbmsDriver {
+/** Exported for its tests; the registry is how the daemon reaches it. */
+export class SqliteDriver implements RdbmsDriver {
 	readonly family = 'rdbms' as const;
 	readonly kind = 'sqlite';
 
@@ -220,8 +221,9 @@ class SqliteDriver implements RdbmsDriver {
 		});
 	}
 
-	async listTables(opts?: { schema?: string; limit?: number }): Promise<TableListing> {
-		const cap = clampListLimit(opts?.limit);
+	async listTables(opts?: { schema?: string; limit?: number; complete?: boolean }): Promise<TableListing> {
+		// The complete mode: every table, with no limit in the query.
+		const cap = opts?.complete === true ? null : clampListLimit(opts?.limit);
 		// SQLite has a single schema (`main`); the optional `schema`
 		// filter is honored only when the user types `main`.
 		if (opts?.schema !== undefined && opts.schema !== 'main') {
@@ -231,12 +233,11 @@ class SqliteDriver implements RdbmsDriver {
 			`SELECT type, name FROM sqlite_master
 			 WHERE type IN ('table', 'view')
 			   AND name NOT LIKE 'sqlite_%'
-			 ORDER BY name
-			 LIMIT ?`,
-			[cap + 1],
+			 ORDER BY name${cap === null ? '' : '\n			 LIMIT ?'}`,
+			cap === null ? [] : [cap + 1],
 		) as { type: string; name: string }[];
-		const truncated = rows.length > cap;
-		const sliced = truncated ? rows.slice(0, cap) : rows;
+		const truncated = cap !== null && rows.length > cap;
+		const sliced = cap !== null && truncated ? rows.slice(0, cap) : rows;
 		return {
 			target: 'sqlite:main',
 			tables: sliced.map(r => ({

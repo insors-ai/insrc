@@ -34,12 +34,14 @@ export interface ListFilesOpts {
 	readonly recursive?: boolean;
 	/** Basename glob: `*.csv`, `*.parquet`. */
 	readonly pattern?: string;
-	readonly limit: number;
+	/** Absent: the walk goes to the end and `truncated` is false. */
+	readonly limit?: number | undefined;
 }
 
 /**
  * Enumerate files under `connectionPath` (which may itself be a
- * single file). Returns a bounded list ordered by relative path.
+ * single file). Returns a list ordered by relative path, bounded by
+ * `opts.limit` when one is given.
  */
 export async function listFilesForConnection(
 	connectionPath: string,
@@ -59,16 +61,17 @@ export async function listFilesForConnection(
 	}
 
 	const matcher = opts.pattern !== undefined ? globToRegex(opts.pattern) : null;
+	const limit = opts.limit ?? Infinity;
 	const out: ListedFile[] = [];
 	let truncated = false;
 
 	const walk = async (dir: string): Promise<void> => {
-		if (out.length >= opts.limit) { truncated = true; return; }
+		if (out.length >= limit) { truncated = true; return; }
 		const entries = await readdir(dir, { withFileTypes: true });
 		// Sorted walk for stable output.
 		entries.sort((a, b) => a.name.localeCompare(b.name));
 		for (const e of entries) {
-			if (out.length >= opts.limit) { truncated = true; return; }
+			if (out.length >= limit) { truncated = true; return; }
 			if (e.name.startsWith('.')) continue;          // skip hidden
 			const full = join(dir, e.name);
 			if (e.isDirectory()) {

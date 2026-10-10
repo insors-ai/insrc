@@ -5,7 +5,7 @@
  *
  * The factory is called from ~11 sites (decomposer, synthesizer,
  * doc-decision-trace, doc-constraint-enumerate, capability-reuse-
- * check, classifier, scope-picker, planner, summariser, adherence,
+ * check, classifier, planner, summariser, adherence,
  * aggregator). Changing its dispatch quietly ripples everywhere, so
  * this test pins the exact provider class returned per config kind.
  */

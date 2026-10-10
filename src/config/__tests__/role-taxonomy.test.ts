@@ -27,7 +27,7 @@ test('covers the analyze-pipeline reasoning sites (the ~11-caller scope finding)
 	const ids = new Set(reasoningRoleTaxonomy().roles.map(r => r.id));
 	for (const id of [
 		'analyze.decompose', 'analyze.synthesize', 'analyze.plan', 'analyze.classify',
-		'analyze.scope.pick', 'analyze.adherence', 'analyze.aggregate', 'analyze.narrow',
+		'analyze.adherence', 'analyze.aggregate', 'analyze.narrow',
 		'indexer.summarise',
 	]) {
 		assert.ok(ids.has(id), `taxonomy missing analyze-pipeline role: ${id}`);

@@ -31,6 +31,7 @@ import { putCachedExploration } from '../../../db/exploration-cache.js';
 import { getLogger } from '../../../shared/logger.js';
 import { stepScope } from '../scope.js';
 import { prepareAnswerTurn } from '../answer-turn.js';
+import { measureLookupResults } from '../../../analyze/measure.js';
 
 import {
 	assertStage,
@@ -208,6 +209,8 @@ export async function handleNarrow(
 		closureRepos:        [scope.lookupPath],
 		scope,
 		repoLastIndexedAtMs: BigInt(state.repoIndexedAt ?? 0),
+		// The request's size as the start phase measured it, for a lookup that sizes its own work.
+		requestSize:         state.intent.scope,
 		plan:                state.plan,
 		resumeState: {
 			results:      carriedResults,
@@ -225,6 +228,7 @@ export async function handleNarrow(
 			repoPath:       state.repoPath,
 			repoIndexedAt:  state.repoIndexedAt,
 			intent:         state.intent,
+			...(state.sizeHint !== undefined ? { sizeHint: state.sizeHint } : {}),
 			synthesizerKey: state.synthesizerKey,
 			plan:           state.plan,
 			narrow: {
@@ -254,9 +258,13 @@ export async function handleNarrow(
 	// step.kind === 'done' -- emit_bundle
 	const executed = step.executed;
 	// A missing answer prompt is reported with what the lookups found, not thrown.
+	// The size the answer turn is given is measured from what the lookups returned,
+	// with the caller's stated size as the hint.
+	const measure = measureLookupResults(executed.results, state.sizeHint);
 	const turn = prepareAnswerTurn({
-		intent:   state.intent,
+		intent:   { ...state.intent, scope: measure.size },
 		executed,
+		measure,
 		target:   state.synthesizerKey,
 	});
 	// Not retryable: the file will still be missing on the next call.
@@ -269,6 +277,7 @@ export async function handleNarrow(
 		repoPath:       state.repoPath,
 		repoIndexedAt:  state.repoIndexedAt,
 		intent:         state.intent,
+		...(state.sizeHint !== undefined ? { sizeHint: state.sizeHint } : {}),
 		synthesizerKey: state.synthesizerKey,
 		plan:           state.plan,
 		executed,

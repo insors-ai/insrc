@@ -17,14 +17,16 @@ import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { upsertEntities } from '../../../db/entities.js';
+import { loadConnections } from '../../../daemon/db/config.js';
+import { findEntitiesByFile, listEntitiesForRepo, upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
-import { addRepo } from '../../../db/repos.js';
+import { addRepo, listRepos } from '../../../db/repos.js';
 import { makeEntityId } from '../../../indexer/parser/base.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
 import type { AnswerReport } from '../../completeness.js';
 import { runWithRoutingContext } from '../../context/shaper-provider.js';
+import { _setMeasureDepsForTest } from '../../measure.js';
 import type { RoutingSeamContext } from '../../context/shaper-provider.js';
 import { runAnalyze } from '../driver.js';
 import { isRunLive } from '../index.js';
@@ -53,6 +55,7 @@ test.beforeEach(async () => {
 });
 
 test.afterEach(async () => {
+	_setMeasureDepsForTest(undefined);
 	await closeGraphStore();
 	rmSync(sandbox, { recursive: true, force: true });
 });
@@ -154,15 +157,22 @@ test('a run is live from its first read of a record until it returns, and with t
 	const id = uniqueId('two-runs');
 	const other = uniqueId('other');
 
-	/** A run held inside its size-picking step until `release` is called. */
+	/** A run held where it measures its request until `release` is called. */
 	function heldRun() {
 		let release!: () => void;
 		let entered!: () => void;
 		const gate = new Promise<void>(r => { release = r; });
 		const inside = new Promise<void>(r => { entered = r; });
-		const model = {
-			completeStructured: async () => { entered(); await gate; return { scope: 'S', reasoning: 'picked by the stand-in' }; },
-		} as unknown as LLMProvider;
+		// The run is held where it measures its request: at the first read of the registry by the measuring pass.
+		// (No model is called before the run context is built, so there is no model call to hold it in.)
+		let held = false;
+		_setMeasureDepsForTest({ scope: {
+			listRepos:           async () => { if (!held) { held = true; entered(); await gate; } return listRepos(null); },
+			findEntitiesByFile:  file => findEntitiesByFile(null, file),
+			listEntitiesForRepo: repo => listEntitiesForRepo(null, repo),
+			loadConnections,
+		} });
+		const model = { completeStructured: async () => { throw new Error('no model is called by a run that ends at the indexed check'); } } as unknown as LLMProvider;
 		const routing = { router: { resolveProviderForRole: () => ({ provider: model }) } } as unknown as RoutingSeamContext;
 		// What the run saw when it first read its request, which is before it reads any record.
 		const atFirstRead: Array<{ live: boolean; recordOnDisk: boolean }> = [];
@@ -378,11 +388,16 @@ test("the handler of an uncaught error leaves a record that already says how the
 		let entered!: () => void;
 		const gate = new Promise<void>(r => { release = r; });
 		const inside = new Promise<void>(r => { entered = r; });
-		const model = { completeStructured: async () => { entered(); await gate; return { scope: 'S', reasoning: 'stand-in' }; } } as unknown as LLMProvider;
-		const routing = { router: { resolveProviderForRole: () => ({ provider: model }) } } as unknown as RoutingSeamContext;
-		// The first run is held inside its size-picking step: it is live and its record is in progress.
-		const { scopeHint: _none, ...noSize } = hinted(shared);
-		const going = runWithRoutingContext(routing, () => runAnalyze(noSize));
+		// The first run is held where it measures its request, at the measuring pass's first read of the registry:
+		// it is live and its record is in progress.
+		let held = false;
+		_setMeasureDepsForTest({ scope: {
+			listRepos:           async () => { if (!held) { held = true; entered(); await gate; } return listRepos(null); },
+			findEntitiesByFile:  file => findEntitiesByFile(null, file),
+			listEntitiesForRepo: repo => listEntitiesForRepo(null, repo),
+			loadConnections,
+		} });
+		const going = runAnalyze(hinted(shared));
 		await inside;
 		assert.equal(readRunRecord(shared)?.status, 'in-progress');
 

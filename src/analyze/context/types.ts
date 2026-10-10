@@ -11,7 +11,9 @@
  */
 
 import type { AnswerReport } from '../completeness.js';
+import type { UnsizedIntent } from '../measure.js';
 import type {
+	AnalyzeScope,
 	AnalyzeTarget,
 	AnalyzeScopeRef,
 	ClassifiedIntent,
@@ -166,9 +168,19 @@ export interface ClassificationShapeInput {
 	readonly userPrompt: string;
 }
 
-/** Run-level input. Carries the classifier's output. */
+/**
+ * Run-level input: what the request is, and what size its caller stated.
+ *
+ * The builder is the one writer of the size in the lookup pipeline. It
+ * measures the area the scope names for the planning call and what the
+ * lookups returned for the answer step. A `scope` on the intent it is given
+ * is not read (a caller may hand over a sized intent as it stands); a size a
+ * caller STATED goes in `sizeHint`, which is recorded on the measure and
+ * never becomes the size. Neither is part of the cache key.
+ */
 export interface RunShapeInput {
-	readonly intent: ClassifiedIntent;
+	readonly intent:    UnsizedIntent & { readonly scope?: AnalyzeScope | undefined };
+	readonly sizeHint?: AnalyzeScope | undefined;
 }
 
 /**

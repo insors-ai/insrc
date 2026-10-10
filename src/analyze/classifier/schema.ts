@@ -4,7 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Ajv JSON Schema for ClassifiedIntent (the classifier's output).
+ * Ajv JSON Schema for the classifier's output: an intent with no size
+ * (UnsizedIntent). The size is added by the measuring pass.
  *
  * Used by the classifier driver to enforce the structured-output
  * shape at the wire layer (Ollama's `format: schema`) and by the
@@ -19,7 +20,7 @@
 
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
 
-import type { ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { UnsizedIntent } from '../measure.js';
 
 export const CLASSIFIER_SCHEMA_VERSION = 1;
 
@@ -42,11 +43,13 @@ export const CLASSIFIED_INTENT_SCHEMA = {
 	$id:        `https://procix.ai/insrc/classified-intent/v${CLASSIFIER_SCHEMA_VERSION}`,
 	title:      'ClassifiedIntent',
 	type:       'object',
-	required:   ['target', 'scope', 'focused', 'scopeRef', 'reasoning'],
+	// No size: the request's size is measured by code from what its scope names
+	// (src/analyze/measure.ts). An answer that still carries a `scope` is
+	// rejected, as any unknown field is.
+	required:   ['target', 'focused', 'scopeRef', 'reasoning'],
 	additionalProperties: false,
 	properties: {
 		target:    { type: 'string', enum: [...TARGET_ENUM] },
-		scope:     { type: 'string', enum: [...SCOPE_BUCKET_ENUM] },
 		focused:   { type: 'boolean' },
 		focus:     { type: 'string', minLength: 1 },
 		scopeRef:  {
@@ -83,7 +86,7 @@ export interface IntentValidationResult {
 	readonly errors: readonly string[];
 }
 
-export function validateIntentShape(value: unknown): value is ClassifiedIntent {
+export function validateIntentShape(value: unknown): value is UnsizedIntent {
 	const v = getValidator();
 	return v(value) as boolean;
 }

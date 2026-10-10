@@ -1,0 +1,137 @@
+ok 1 - ac1..ac9 each resolve to an acceptanceCriteria entry with non-empty criterion text
+ok 2 - every acceptanceMapping criterionId resolves to a back-flowed criterion — no unanchored id
+ok 3 - every dischargedBy id is a real plan task, and every plan task (except t1) is referenced by ≥1 criterion
+ok 4 - a valid tier table parses to {runner, model} TierModels
+ok 5 - a tier with a non-k1 runner is dropped (no direct-REST backend admitted)
+ok 6 - an unknown tier name is dropped
+ok 7 - coreFloor accepts only a TierName; other strings are dropped
+ok 8 - models.tasks parses valid RoleId→TierName entries and drops non-tier values
+ok 9 - byRepo tiering overrides are parsed per repo path (tasks key)
+ok 10 - absent tiering keys → {} (legacy single-provider path)
+ok 11 - empty tiers:{} / tasks:{} are treated as absent, not an error
+ok 12 - a byRepo entry with no valid tiering keys is not retained
+ok 13 - src/config/** contains no import of src/cli (static scan of resolved specifiers)
+ok 14 - src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption
+ok 15 - the src/cli re-export is reference-identical to the src/config definition (no duplicate literal)
+ok 16 - the real CONFIG_CATALOG has 36 rows (flat models.* surface; shaper*/summariser* now derived; + codeReview.enforce + codeReview.freshnessTimeoutMs + models.local.embeddingKeepAlive + five designReview.* rows)
+ok 17 - RETIRED_PATHS covers exactly the 6 declared legacy entries and is disjoint from every CONFIG_CATALOG path
+ok 18 - real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate
+ok 19 - reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real catalog — second pass changed === false
+ok 20 - ConfigCatalogError is the class thrown for catalog-integrity failures (not a bare Error)
+ok 21 - enrichment (S001): every catalog row has a non-empty group
+ok 22 - enrichment (S001): every enum row carries a non-empty enumValues; every non-enum row omits it
+ok 23 - loadBuiltCatalog returns the FRESHLY imported catalog, not the static src/cli binding
+ok 24 - a missing / moved build output resolves to null without throwing
+ok 25 - an empty catalog module resolves to null (validation: non-empty array of rows)
+ok 26 - a malformed catalog module (CONFIG_CATALOG not an array of rows) resolves to null
+ok 27 - legacy config on disk → exactly 1 writeFile + 1 rename; retired keys pruned, live namespaces byte-identical
+ok 28 - prune-only change (nothing to fill/repair) → still exactly 1 writeFile + 1 rename
+ok 29 - already-pruned/normalized config → 0 writeFile, 0 rename, mtime unchanged (steady state)
+ok 30 - ENOENT → degrades to reconcileConfig(undefined) and writes defaults once (first-boot equivalence)
+ok 31 - unreadable file (EISDIR) → nothing written, errno surfaced
+ok 32 - unreadable file (EACCES) → nothing written (skipped when running as root)
+ok 33 - corrupt / zero-byte JSON → aborts, writes NOTHING, on-disk bytes identical, no default-fill fallback
+ok 34 - write failure (ENOSPC) → temp file unlinked, no partial or half-renamed document
+ok 35 - concurrent modification between read stat and pre-rename re-stat → write abandoned, non-fatal
+ok 36 - ConfigCatalogError surfaces as a structurally distinct outcome kind from I/O and parse failures
+ok 37 - the wrapper source has no ~/.insrc or config.json string literal (path resolves via PATHS.config)
+ok 38 - boot against a legacy config: retired keys stripped, live namespaces byte-identical, then converges
+ok 39 - first boot against an empty home → surviving former-literal keys written, retired keys NOT written, canonical surfaces present
+ok 40 - update chain: newly-catalogued key added, type-invalid key repaired, retired keys pruned, live namespaces unchanged; repeat writes nothing
+ok 41 - absent catalog key → default written, path in filled
+ok 42 - present + type-valid → carried unchanged; untouched subtrees referentially preserved
+ok 43 - present + type-invalid → default substituted, path + discarded in repaired
+ok 44 - falsy-but-valid values (false, 0, "") are carried, never filled (hasOwnProperty, not truthiness)
+ok 45 - present array/object at a scalar row is detected as present (repaired), never filled
+ok 46 - null at a non-nullable declared type is repaired, not carried
+ok 47 - type-matching object with extra un-enumerated sub-keys is carried whole, no recursion to prune
+ok 48 - catalog key reconciled beside a dynamic sibling at the same level — outcomes independent
+ok 49 - partially-present ancestor chain: intermediates synthesized, only the leaf in filled, siblings untouched
+ok 50 - ancestor segment collides with a scalar: subtree replaced, CATALOG path recorded in repaired with the discarded scalar
+ok 51 - value already exactly equal to the catalog default → carried, not filled
+ok 52 - changed === (filled + repaired + pruned > 0); changed false implies config deep-equals existing
+ok 53 - non-object roots (undefined / null / array / string / number / boolean) → treated as {}, all keys filled
+ok 54 - empty catalog + empty retired → changed false, config deep-equals existing
+ok 55 - catalog row with an out-of-domain type throws ConfigCatalogError naming the path
+ok 56 - catalog row whose own default fails its own declared type throws ConfigCatalogError naming the path
+ok 57 - retired exact-path present → deleted, recorded in pruned[], changed true
+ok 58 - retired exact-path absent → no-op, not in pruned, does not set changed
+ok 59 - retired prefix root with populated subtree → whole subtree deleted, recorded ONCE as the prefix root
+ok 60 - retired prefix root present as a SCALAR → slot removed, recorded (type-agnostic delete)
+ok 61 - retired exact-path with falsy-but-present value (0/""/false) → pruned via hasOwnProperty, not truthiness
+ok 62 - retired path with a MISSING ancestor → no-op, nothing recorded
+ok 63 - un-catalogued key NOT on the retired list → preserved (blind-preservation refined)
+ok 64 - idempotence with migrate + prune: reconcileConfig(reconcileConfig(x).config) is a no-op (real catalog + RETIRED_PATHS)
+ok 65 - a retired path overlapping a live catalog row throws ConfigCatalogError naming the path
+ok 66 - existing document is never mutated — a deep-frozen input reconciles+prunes and deep-equals itself afterwards
+ok 67 - captured legacy config → migrated to the flat models.* surface, residue pruned, orphan survives
+ok 68 - no user-config input produces a ConfigCatalogError against the real catalog + RETIRED_PATHS
+ok 69 - ac1 — critical role strictly below the floor is raised: effectiveTier=floor, clamped, reason
+ok 70 - ac1 — critical role at the floor passes through (strict below-floor only): clamped=false
+ok 71 - ac1 — critical role above the floor passes through unchanged, clamped=false
+ok 72 - ac1 — floor=cheap (bottom-rank no-op floor) never clamps a critical role
+ok 73 - ac1 — off-contract configuredFloor throws InvalidTierError rather than passing an uninterpretable floor
+ok 74 - ac1 — off-contract resolvedTier throws InvalidTierError rather than emitting a guessed effectiveTier
+ok 75 - ac2 — absent floor + resolved below default: raised to the built-in default, clamped, reason
+ok 76 - ac2 — absent floor + resolved at/above the default passes through unchanged, clamped=false
+ok 77 - ac3 — peripheral role below the floor is permitted: effectiveTier=cheap, clamped=false
+ok 78 - ac3 — peripheral role with no floor is never floored by the built-in default
+ok 79 - fail-safe — unclassifiable role.criticality is treated as critical and clamped to the floor
+ok 80 - fail-safe — unclassifiable criticality at/above the floor still passes through, clamped=false
+ok 81 - the guard logs via getLogger and never uses console.*
+ok 82 - config-catalog registers models.local.embeddingKeepAlive (type string, default 24h)
+ok 83 - reconcile backfills the default into a config lacking the key, and preserves an operator override
+ok 84 - resolveEmbeddingKeepAlive coalesces empty/blank/non-string to 24h; passes real values through
+ok 85 - resolveRepoShaperProvider returns the pinned kind for a byRepo entry
+ok 86 - resolveRepoShaperProvider returns undefined when the repo has no entry
+ok 87 - resolveRepoShaperProvider returns undefined when byRepo section is absent
+ok 88 - resolveRepoShaperProvider ignores an invalid pinned kind
+ok 89 - resolveRepoShaperProvider tolerates a missing config file
+ok 90 - resolveRepoShaperModel returns the pinned model, else undefined
+ok 91 - rankOf orders cheap < mid < core and is total over the three tiers
+ok 92 - covers the analyze-pipeline reasoning sites (the ~11-caller scope finding)
+ok 93 - covers the critical workflow reasoning roles
+ok 94 - every critical role defaults to the core tier (floor-protected)
+ok 95 - peripheral defaults: synthesize → mid, tracker/summaries/probes → cheap
+ok 96 - an unknown role id resolves to undefined (downstream gap-fallback, never throws)
+ok 97 - every role id is unique
+ok 98 - every descriptor carries a valid tier + criticality
+ok 99 - buildSettingsCatalog({}) returns all options + groups + roles + tierNames with values = {}
+ok 100 - buildSettingsCatalog resolves current values from a config: set paths present, unset/absent omitted, non-catalog keys excluded
+ok 101 - buildSettingsCatalog is total: a garbage/array-shaped rawConfig never throws
+ok 102 - config.catalog handler is read-only wiring: calls buildSettingsCatalog, never writes config or reloads
+ok 103 - upsertEntry with embedding persists to Lance
+ok 104 - upsertEntry with empty embedding skips Lance write
+ok 105 - upsertEntry that changes scope replaces the Lance row
+ok 106 - vectorSearch returns hydrated ConfigEntry objects with distances
+ok 107 - vectorSearch where-filter narrows results
+ok 108 - vectorSearch returns [] on dim mismatch (legacy silent-error contract)
+ok 109 - vectorSearch on empty query returns []
+ok 110 - deleteEntry cascades the Lance row
+ok 111 - deleteByScope cascades all matching Lance rows
+ok 112 - upsertEntry + getEntry round-trip
+ok 113 - getEntry on unknown id returns null
+ok 114 - upsertEntry replaces existing row
+ok 115 - upsertEntry preserves project scope
+ok 116 - deleteEntry removes the row
+ok 117 - deleteEntry on unknown id is a silent no-op
+ok 118 - deleteByScope removes only entries with matching scope
+ok 119 - deleteByScope on empty matches is a silent no-op
+ok 120 - listEntries returns all entries when no filter
+ok 121 - listEntries filters by namespace
+ok 122 - listEntries filters by category
+ok 123 - listEntries filters by scope (uses by_scope index)
+ok 124 - listEntries combines scope + namespace + category filters
+ok 125 - upsert that changes scope updates the by_scope index
+ok 126 - vectorSearch returns [] (Phase 3.4 wires Lance)
+ok 127 - entries survive close + reopen
+ok 128 - toConfigSegments: a dot-string splits on every dot (legacy)
+ok 129 - toConfigSegments: an array is used verbatim — a dotted element stays ONE segment
+ok 130 - toConfigSegments: empty path / empty segment is rejected
+ok 131 - setConfigAtPath: a segmented path with a DOTTED leaf writes a flat key (not nested)
+ok 132 - setConfigAtPath: a byRepo path (dots AND slashes in one segment) stays flat
+ok 133 - setConfigAtPath: legacy dot-string still nests for dot-free keys
+ok 134 - setConfigAtPath: overwrites an existing leaf, preserves siblings
+ok 135 - setConfigAtPath: a non-object intermediate (scalar or array) is replaced with an object
+ok 136 - setConfigAtPath: a single-segment path sets a top-level key
+ok 137 - setConfigAtPath: an invalid path throws before mutating

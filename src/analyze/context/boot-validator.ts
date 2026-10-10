@@ -27,7 +27,6 @@ import { fileURLToPath } from 'node:url';
 
 import {
 	CLASSIFY_PROMPT_PATH,
-	SCOPE_PICKER_PROMPT_PATH,
 } from '../classifier/index.js';
 import { PLANNER_PROMPT_PATH } from '../planner/index.js';
 import { DOC_SUMMARISER_PROMPT_PATH } from '../summariser/index.js';
@@ -117,7 +116,6 @@ function collectComponentPrompts(): ReadonlyArray<{ componentId: string; relPath
 		out.push({ componentId: shaperId, relPath });
 	}
 	out.push({ componentId: 'classifier',        relPath: CLASSIFY_PROMPT_PATH });
-	out.push({ componentId: 'scope-picker',      relPath: SCOPE_PICKER_PROMPT_PATH });
 	out.push({ componentId: 'planner',           relPath: PLANNER_PROMPT_PATH });
 	out.push({ componentId: 'doc-summariser',    relPath: DOC_SUMMARISER_PROMPT_PATH });
 	out.push({ componentId: 'decomposer',            relPath: DECOMPOSE_PROMPT_PATH        });

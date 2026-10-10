@@ -86,7 +86,6 @@ const ROLES: readonly RoleDescriptor[] = [
 	{ id: 'analyze.synthesize',            criticality: 'peripheral', defaultTier: 'mid'  },  // context/synthesizer
 	{ id: 'analyze.plan',                  criticality: 'peripheral', defaultTier: 'mid'  },  // planner/driver
 	{ id: 'analyze.classify',              criticality: 'peripheral', defaultTier: 'cheap' }, // classifier/driver
-	{ id: 'analyze.scope.pick',            criticality: 'peripheral', defaultTier: 'cheap' }, // classifier/scope-picker
 	{ id: 'analyze.adherence',             criticality: 'peripheral', defaultTier: 'mid'  },  // runtimes/shared/adherence
 	{ id: 'analyze.aggregate',             criticality: 'peripheral', defaultTier: 'mid'  },  // runtimes/shared/aggregator
 	{ id: 'analyze.narrow',                criticality: 'peripheral', defaultTier: 'cheap' }, // explore probes (capability-reuse-check, doc-decision-trace, doc-constraint-enumerate)

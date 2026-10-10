@@ -25,18 +25,6 @@ export {
 } from './driver.js';
 
 export {
-	pickScope,
-	ScopePickerLlmUnavailableError,
-	ScopePickerPromptMissingError,
-	ScopePickerSchemaUnrecoverable,
-	SCOPE_PICKER_PROMPT_PATH,
-} from './scope-picker.js';
-export type {
-	PickScopeArgs,
-	PickScopeResult,
-} from './scope-picker.js';
-
-export {
 	CLASSIFIED_INTENT_SCHEMA,
 	CLASSIFIER_SCHEMA_VERSION,
 	SCOPE_BUCKET_ENUM,

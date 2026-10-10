@@ -16,6 +16,8 @@
  * writes it.
  */
 
+import type { RequestMeasure } from './measure.js';
+
 // ---------------------------------------------------------------------------
 // Completeness (sc1)
 // ---------------------------------------------------------------------------
@@ -181,8 +183,8 @@ export interface AnswerReport {
 		readonly basisNotes?: readonly string[] | undefined;
 	};
 	readonly answerFailure?: string | undefined;
-	/** Typed by Story s2. */
-	readonly measure?:  unknown;
+	/** What the request touched and its size; absent on a report made before the measure existed. */
+	readonly measure?:  RequestMeasure | undefined;
 	/** Typed by Story s3. */
 	readonly handling?: unknown;
 }
@@ -294,6 +296,50 @@ export function renderCompletenessLine(report: AnswerReport): string {
 	return `Incomplete: ${parts.join('. ')}.${notes}`;
 }
 
+const SOURCE_PHRASE: Readonly<Record<RequestMeasure['source'], string>> = {
+	'named-area':     'measured from the area the request names',
+	'data-source':    'measured from the data source',
+	'lookup-results': 'measured from what the lookups returned',
+};
+
+/** A count with its unit, in the singular for one. */
+function counted(n: number, one: string, many: string): string {
+	return `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
+}
+
+/**
+ * The one line an answer carries about its size, under the completeness line:
+ * the size, where the measure came from and the counts; the reason when it
+ * could not be determined; and what a caller asked for.
+ */
+export function renderMeasureLine(measure: RequestMeasure): string {
+	const hint = measure.sizeHint !== undefined ? ` The caller asked for ${measure.sizeHint}.` : '';
+	if (!measure.determined) {
+		return `Size: ${measure.size}, not determined: ${measure.note ?? 'no reason was recorded'}.${hint}`;
+	}
+	const counts: string[] = [];
+	if (measure.source === 'data-source') {
+		counts.push(counted(measure.items, 'object', 'objects'));
+		if (measure.files > 0) counts.push(counted(measure.files, 'file', 'files'));
+	} else {
+		counts.push(counted(measure.files, 'file', 'files'));
+		counts.push(counted(measure.items, measure.source === 'named-area' ? 'entity' : 'item', measure.source === 'named-area' ? 'entities' : 'items'));
+	}
+	if (measure.characters !== null) counts.push(counted(measure.characters, 'character', 'characters'));
+	const note = measure.note !== undefined ? ` ${measure.note}.` : '';
+	return `Size: ${measure.size}, ${SOURCE_PHRASE[measure.source]}: ${counts.join(', ')}.${note}${hint}`;
+}
+
+/**
+ * The head of an answer's text: the completeness line and, when the report
+ * has a measure, the measure line under it. Every writer of an answer's head
+ * goes through this, so the two lines are never written apart.
+ */
+export function renderReportHead(report: AnswerReport): string {
+	const line = renderCompletenessLine(report);
+	return report.measure !== undefined ? `${line}\n${renderMeasureLine(report.measure)}` : line;
+}
+
 /**
  * A reason is often a raw error message (a CLI's stderr, a search tool's
  * failure) and may span lines. The completeness line is ONE line, read as the
@@ -338,7 +384,8 @@ export const COMPLETENESS_NOT_RECORDED = 'Completeness was not recorded for this
 /**
  * The first line of an answer's text form.
  *
- * With a report it is the completeness line. Without one, a text an agent or
+ * With a report it is the report's head: the completeness line and, when
+ * the report has a measure, the measure line. Without one, a text an agent or
  * a person reads says that completeness was not recorded; a text that goes
  * into a model's prompt gets nothing, so no such sentence enters a prompt.
  */
@@ -346,6 +393,6 @@ export function completenessHeadLine(
 	report: AnswerReport | undefined,
 	whenAbsent: 'say-not-recorded' | 'nothing',
 ): string | undefined {
-	if (report !== undefined) return renderCompletenessLine(report);
+	if (report !== undefined) return renderReportHead(report);
 	return whenAbsent === 'say-not-recorded' ? COMPLETENESS_NOT_RECORDED : undefined;
 }

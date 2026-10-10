@@ -668,8 +668,10 @@ export interface RdbmsDriver extends BaseDriver {
 	 */
 	distinct(target: string, request: DistinctRequest): Promise<DistinctResult>;
 	/** Phase 1.1 -- enumerate tables / views (excluding system schemas).
-	 *  Optional `schema` filter narrows to a single schema. */
-	listTables?(opts?: { readonly schema?: string; readonly limit?: number }): Promise<TableListing>;
+	 *  Optional `schema` filter narrows to a single schema.
+	 *  `complete: true` returns every table: no limit is applied and `limit`
+	 *  is ignored. Without it the listing is limited, as before. */
+	listTables?(opts?: { readonly schema?: string; readonly limit?: number; readonly complete?: boolean }): Promise<TableListing>;
 	/** Phase 1.1 -- list indexes on one table. */
 	listIndexes?(target: string): Promise<IndexListing>;
 	/** Phase 5c.3 -- full-table functional dependency check for one (from, to) pair. */
@@ -707,8 +709,11 @@ export interface KvDriver extends BaseDriver {
 	/** Phase 0.7 -- enumerate top-level namespaces (Mongo collections,
 	 *  Cassandra tables, DynamoDB tables, NATS KV buckets, Redis
 	 *  scan-derived prefixes). KV stores without a namespace concept
-	 *  return `{ namespaces: [], supported: false }`. */
-	listNamespaces?(opts?: { readonly limit?: number }): Promise<KvNamespaceList>;
+	 *  return `{ namespaces: [], supported: false }`.
+	 *  `complete: true` returns every namespace where the store has them to
+	 *  list: no limit is applied and `limit` is ignored. A store whose
+	 *  listing is a sample of keys (Redis, etcd) ignores it. */
+	listNamespaces?(opts?: { readonly limit?: number; readonly complete?: boolean }): Promise<KvNamespaceList>;
 	/** Phase 0.8 -- shape + sample-keys for one namespace. */
 	describeNamespace?(name: string, opts?: { readonly sampleSize?: number }): Promise<KvNamespaceDescription>;
 }

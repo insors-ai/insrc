@@ -21,7 +21,7 @@ const ROLES = reasoningRoleTaxonomy().roles;
 
 test('buildPerRoleKeyMap returns one entry per taxonomy role with the right shape', () => {
   const entries = buildPerRoleKeyMap();
-  assert.equal(entries.length, ROLES.length); // 30 fixed roles
+  assert.equal(entries.length, ROLES.length); // one per role of the taxonomy
 
   for (const role of ROLES) {
     const entry = entries.find((e) => e.path === `models.tasks.${role.id}`);

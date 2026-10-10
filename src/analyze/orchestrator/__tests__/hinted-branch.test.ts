@@ -172,7 +172,10 @@ test('hinted request with a valid pairing reaches the context builder and the pl
 		assert.equal(classified.intent.target, 'code');
 		assert.equal(classified.intent.focused, true);
 		assert.equal(classified.intent.focus, 'how is this laid out');
-		assert.equal(classified.intent.scope, 'M');
+		// The size is measured, not taken from the request. The scope here is in no registered repo, so it cannot
+		// be counted: the size is the largest, and the stated size is kept as the measure's hint.
+		assert.equal(classified.intent.scope, 'XL');
+		assert.deepEqual([classified.measure?.determined, classified.measure?.size, classified.measure?.sizeHint], [false, 'XL', 'M']);
 		assert.deepEqual(classified.intent.scopeRef, { kind: 'repo', value: dirPath });
 		assert.ok(events.some(e => e.type === 'stage-started' && e.stage === 'plan'), 'the plan stage started');
 

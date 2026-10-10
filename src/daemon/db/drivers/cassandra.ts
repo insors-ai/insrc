@@ -67,7 +67,8 @@ function parseTarget(raw: string, defaultKs: string | undefined): Target {
 	return { keyspace: ks, table };
 }
 
-class CassandraDriver implements KvDriver {
+/** Exported for its tests; the registry is how the daemon reaches it. */
+export class CassandraDriver implements KvDriver {
 	readonly family = 'kv' as const;
 	readonly kind = 'cassandra';
 
@@ -154,8 +155,9 @@ class CassandraDriver implements KvDriver {
 		});
 	}
 
-	async listNamespaces(opts?: { readonly limit?: number }): Promise<KvNamespaceList> {
-		const limit = Math.min(Math.max(1, Math.floor(opts?.limit ?? 200)), 1000);
+	async listNamespaces(opts?: { readonly limit?: number; readonly complete?: boolean }): Promise<KvNamespaceList> {
+		// The complete mode: every namespace, with no limit.
+		const limit = opts?.complete === true ? Infinity : Math.min(Math.max(1, Math.floor(opts?.limit ?? 200)), 1000);
 		const res = await this.client.execute(
 			`SELECT keyspace_name, table_name FROM system_schema.tables`,
 			[], { readTimeout: SCAN_TIMEOUT_MS },

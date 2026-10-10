@@ -85,7 +85,8 @@ test('an empty prompt with a stated kind of source is accepted and gives an unfo
 		assert.deepEqual([terminal.ok, terminal.stage, terminal.error.code], [false, 'plan', 'scope-not-indexed']);
 		assert.equal(terminal.intent?.focused, false);
 		assert.ok(terminal.intent !== undefined && !('focus' in terminal.intent), 'no focus key');
-		assert.deepEqual([terminal.intent?.target, terminal.intent?.scope], ['code', 'M']);
+		// The stated size is a hint: the size is measured, and a scope in no registered repo cannot be counted.
+		assert.deepEqual([terminal.intent?.target, terminal.intent?.scope], ['code', 'XL']);
 		assert.equal(streams[streams.length - 1], 'done');
 	} finally {
 		purgeRunForTests(id);

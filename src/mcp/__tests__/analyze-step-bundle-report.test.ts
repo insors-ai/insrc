@@ -56,7 +56,8 @@ test("the step tool's bundle phase attaches the report it derives from its state
 	// One complete, one limited and one failed lookup in the tool's state.
 	const out = await handleBundle({ phase: 'bundle', bundle: LAYERS, state: awaitingBundle([WHOLE, LIMITED, FAILED]) } as StepInputBundle) as StepOutputDone;
 	assert.equal(out.next, 'done');
-	assert.deepEqual(out.report, {
+	// (The report's measure has its own test; this one is about the completeness part.)
+	assert.deepEqual((({ measure: _m, ...rest }) => rest)(out.report!), {
 		completeness: {
 			complete:   false,
 			incomplete: [{ sourceId: 'search.text [e2]', sourceKind: 'lookup', reason: 'limit of 30 hits reached (the search stops at 30 hits)' }],
@@ -75,7 +76,7 @@ test("the step tool's bundle phase attaches the report it derives from its state
 
 	// Every lookup complete: the report says so.
 	const whole = await handleBundle({ phase: 'bundle', bundle: LAYERS, state: awaitingBundle([WHOLE]) } as StepInputBundle) as StepOutputDone;
-	assert.deepEqual(whole.report, { completeness: { complete: true, incomplete: [], failed: [] } });
+	assert.deepEqual((({ measure: _m, ...rest }) => rest)(whole.report!), { completeness: { complete: true, incomplete: [], failed: [] } });
 
 	// The agent writes the seven layers. A bundle in which it also states its
 	// completeness is rejected, and the state is kept for a corrected bundle.

@@ -2,13 +2,13 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-10T15:41:06.406Z  ·  **Updated:** 2026-10-10T15:50:33.460Z
+**Standalone:** yes  ·  **Created:** 2026-10-10T15:41:06.406Z  ·  **Updated:** 2026-10-10T16:30:39.608Z
 
-**Commit:** 4268017d
+**Commit:** 53a6fc92
 
 ## Summary
 
-start() enqueues a `reconcile` job for each ready repository (whether or not the delta found changes) and for one stored as indexing with a last-indexed time, and none beside a full job. fullIndex() runs reconcileRepo after the files are indexed and before the cross-file resolver. Seven mutations of the wiring were each caught by a test. Note: the state `indexing` with a last-indexed time cannot be produced by fullIndex today, because updateRepoStatus clears the time; the rule is built as the design states it and its test hands the state to start() directly.
+The guide (docs/daemon.md, "The index is cleaned of files that are gone or ignored") describes the clean-up, when it runs, what it removes and keeps, and its limit. After the push the installed daemon was updated from da1fae76 to 48c98646; its first start removed 33 absent and 2026 ignored files from this repository's index (4680 files to 2647, JavaScript 503 to 12) and cleaned three other registered repositories. Two code reviews by the daemon led to fixes after task 4: the pass decides for the whole repository before writing and removes nothing when none of the stored files is on disk, and a failure part-way still drops the cached results and runs the resolver.
 
 ## Tasks validated
 
@@ -16,17 +16,22 @@ start() enqueues a `reconcile` job for each ready repository (whether or not the
 - ✓ `t2`
 - ✓ `t3`
 - ✓ `t4`
+- ✓ `t5`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-2764c29d7ccb66a5-S001.json` — **insrc-build** (2026-10-10T15:50:33.460Z)
-- `src/daemon/__tests__/queue-depth-for-repo.test.ts` — **insrc-build** (2026-10-10T15:50:33.460Z)
-- `src/daemon/queue.ts` — **insrc-build** (2026-10-10T15:50:33.460Z)
-- `src/db/__tests__/entity-files-for-repo.test.ts` — **insrc-build** (2026-10-10T15:50:33.460Z)
-- `src/db/entities.ts` — **insrc-build** (2026-10-10T15:50:33.460Z)
-- `src/db/relations.ts` — **insrc-build** (2026-10-10T15:50:33.460Z)
-- `src/indexer/__tests__/reconcile.test.ts` — **insrc-build** (2026-10-10T15:50:33.460Z)
-- `src/indexer/index.ts` — **insrc-build** (2026-10-10T15:50:33.460Z)
-- `src/shared/types.ts` — **insrc-build** (2026-10-10T15:50:33.460Z)
+- `.insrc/artifacts/CR-2764c29d7ccb66a5-S001.json` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `.insrc/artifacts/PLAN-2764c29d7ccb66a5-S001.json` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `docs/daemon.md` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/CR.md` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/smoke-installed-daemon.md` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `src/daemon/__tests__/queue-depth-for-repo.test.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `src/daemon/queue.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `src/db/__tests__/entity-files-for-repo.test.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `src/db/entities.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `src/db/relations.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `src/indexer/__tests__/reconcile.test.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `src/indexer/index.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `src/shared/types.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)

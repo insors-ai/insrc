@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -154,3 +154,13 @@ Run at 2026-10-10T15:50:33.460Z on commit `4268017d`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/reconcile.test.ts` | 0 | 14 | 2.3 s |  |
+
+## t5
+
+Run at 2026-10-10T16:30:39.608Z on commit `53a6fc92`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: on the installed daemon after the update, the files under this repository's build output and the deleted test file have no entities, a source file still has its entities, and the repository's count of JavaScript files has fallen**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/smoke-installed-daemon.md (before and after readings from search.by_file and repo.stats, and the daemon's log line)

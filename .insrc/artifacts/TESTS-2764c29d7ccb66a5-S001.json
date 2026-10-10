@@ -4,7 +4,7 @@
     "epicHash": "2764c29d7ccb66a5",
     "storyId": "S001",
     "createdAt": "2026-10-10T15:41:06.406Z",
-    "updatedAt": "2026-10-10T15:50:33.460Z",
+    "updatedAt": "2026-10-10T16:30:39.608Z",
     "standalone": true
   },
   "body": {
@@ -467,6 +467,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "53a6fc92",
+        "ranAt": "2026-10-10T16:30:39.608Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "on the installed daemon after the update, the files under this repository's build output and the deleted test file have no entities, a source file still has its entities, and the repository's count of JavaScript files has fallen",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/smoke-installed-daemon.md (before and after readings from search.by_file and repo.stats, and the daemon's log line)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

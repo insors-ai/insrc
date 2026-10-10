@@ -76,16 +76,6 @@ function parseParams(exp: Exploration): FreeformProbeParams {
 // ---------------------------------------------------------------------------
 
 /**
- * The exploration executor doesn't hand the runner the calling
- * intent -- runners get an `ExplorationRunnerContext` with the
- * repo path + closure + `readDep` for dependent outputs. For
- * freeform.probe we need the full `RunShapeInput` (intent) so the
- * legacy tool loop's `buildMessages` has the same input shape it
- * always did. We rebuild a minimal `RunShapeInput` from the params
- * -- the decomposer is required to seed `purpose` with the intent's
- * focus so the tool loop knows what it's answering.
- */
-/**
  * The measure of a request whose caller handed over no size.
  *
  * With a resolved scope in the context, that scope is measured. With none (a
@@ -103,6 +93,16 @@ export function measureOwnRequest(
 	return measureRequestScope({ kind: 'repo', value: ctx.repoPath }, target);
 }
 
+/**
+ * The exploration executor doesn't hand the runner the calling
+ * intent -- runners get an `ExplorationRunnerContext` with the
+ * repo path + closure + `readDep` for dependent outputs. For
+ * freeform.probe we need the full `RunShapeInput` (intent) so the
+ * legacy tool loop's `buildMessages` has the same input shape it
+ * always did. We rebuild a minimal `RunShapeInput` from the params
+ * -- the decomposer is required to seed `purpose` with the intent's
+ * focus so the tool loop knows what it's answering.
+ */
 export async function runFreeformProbe(
 	exp:  Exploration,
 	ctx:  ExplorationRunnerContext,

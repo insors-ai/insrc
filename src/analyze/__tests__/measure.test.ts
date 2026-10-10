@@ -432,3 +432,48 @@ test('filesNamedBy returns the file paths of a fixture of every lookup output ty
 	for (const type of types) assert.ok(fn.includes(`case '${type}':`), `filesNamedBy has a case for '${type}'`);
 	assert.ok(!/\bdefault\s*:/.test(fn), 'filesNamedBy has no default case, so the compiler checks the switch');
 });
+
+test('measureLookupResults never throws: an output with a count that is not a whole number, with files that cannot be read or that cannot be written as text is named in the note and the rest is counted; anything unforeseen gives a measure that is not determined', () => {
+	const good = executed(symbolHits('pay/settle.ts', 'pay/ledger.ts'), 'e1');
+	// A count that is fractional, negative or not a number: its items are not counted.
+	const withCount = (returned: number, id: string): ExecutedExploration => executed(
+		{ ...symbolHits('pay/a.ts'), completeness: { ...complete(1), returned } } as ExplorationOutput, id);
+	// An output that holds a BigInt, and one that refers to itself: neither can be written as JSON.
+	const big = { ...symbolHits('pay/b.ts'), total: 10n } as unknown as ExplorationOutput;
+	const circular = { ...symbolHits('pay/c.ts') } as unknown as Record<string, unknown>;
+	circular['self'] = circular;
+	// An output that is not shaped as its type says: no list of hits.
+	const shapeless = { type: 'search.text', completeness: complete(7) } as unknown as ExplorationOutput;
+
+	const results = [
+		good, withCount(1.5, 'e2'), withCount(-3, 'e3'), withCount(Number.NaN, 'e4'),
+		executed(big, 'e5'), executed(circular as unknown as ExplorationOutput, 'e6'), executed(shapeless, 'e7'),
+	];
+	let m!: RequestMeasure;
+	assert.doesNotThrow(() => { m = measureLookupResults(results, 'L'); });
+	assert.equal(m.determined, true);
+	assert.equal(m.source, 'lookup-results');
+	assert.equal(m.sizeHint, 'L');
+	// Items: 2 (good) + 1 (the BigInt output) + 1 (the circular one) + 7 (the shapeless one). The three bad counts add none.
+	assert.equal(m.items, 11);
+	// Files: two of the good output, one of each output whose files can be read (e2, e3, e4 share one; e5 and e6 have their own).
+	assert.equal(m.files, 5);
+	// Characters: every output that can be written as text, and no other.
+	const expected = [good, results[1]!, results[2]!, results[3]!, results[6]!].reduce((n, r) => n + JSON.stringify(r.output, null, 2).length, 0);
+	assert.equal(m.characters, expected);
+	assert.equal(m.note,
+		'the returned count of 3 result(s) is not a whole number of items and is not counted: symbol.locate [e2], symbol.locate [e3], symbol.locate [e4]; ' +
+		'the files named by 1 result(s) could not be read and are not counted: search.text [e7]; ' +
+		'the length of 2 result(s) could not be taken and is not counted: symbol.locate [e5], symbol.locate [e6]');
+	// A clean set of results has no note.
+	assert.equal(measureLookupResults([good]).note, undefined);
+
+	// Anything unforeseen: a result whose output cannot even be read. Not determined, with the reason; never thrown.
+	const unreadable = { exploration: good.exploration, get output(): ExplorationOutput { throw new Error('the output is gone'); } } as unknown as ExecutedExploration;
+	let failedMeasure!: RequestMeasure;
+	assert.doesNotThrow(() => { failedMeasure = measureLookupResults([good, unreadable], 'S'); });
+	assert.deepEqual(failedMeasure, {
+		source: 'lookup-results', items: 0, files: 0, characters: null, size: 'XL', determined: false, sizeHint: 'S',
+		note: 'the lookup results could not be measured (the output is gone)',
+	});
+});

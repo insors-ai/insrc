@@ -37,10 +37,6 @@ import { scopeErrorMapping } from './context/invariants.js';
 import { resolveScopeForTarget } from './context/scope.js';
 import type { ResolvedScope, ScopeDeps } from './context/scope.js';
 import { isCompletenessRecord } from './completeness.js';
-
-// The measure's one line is written with the completeness line, by a module
-// that loads no store: the agent tools' process reads it and opens none.
-export { renderMeasureLine } from './completeness.js';
 import { filesNamedBy } from './explore/types.js';
 import type { ExecutedExploration } from './explore/types.js';
 import { acquireDataPool, dataScopeOf } from './runtimes/data/_shared.js';
@@ -48,6 +44,10 @@ import type { DataScope } from './runtimes/data/_shared.js';
 import { walkFiles } from './runtimes/infra/_shared.js';
 import { liesUnder } from './runtimes/shared/source-modules.js';
 import { inAreaOf, resolveTaskScope } from './runtimes/shared/task-scope.js';
+
+// The measure's one line is written beside the completeness line, in a module
+// that imports nothing; it is offered from here too.
+export { renderMeasureLine } from './completeness.js';
 
 /** What a request touched, and the size it maps to. */
 export interface RequestMeasure {
@@ -179,39 +179,60 @@ export const NO_LOOKUP_RESULT_TO_COUNT = 'no lookup returned a result to count: 
  * through `filesNamedBy`. `characters` is the length of those outputs as the
  * answer step is given them; it is recorded for the handling of large results
  * and does not take part in the size.
+ *
+ * Never throws.
  */
 export function measureLookupResults(
 	results:   readonly ExecutedExploration[],
 	sizeHint?: AnalyzeScope,
 ): RequestMeasure {
-	const files = new Set<string>();
-	let items = 0;
-	let characters = 0;
-	let counted = 0;
-	/** The lookups whose output does not have the shape of its type, so the files it names cannot be read. */
-	const unreadable: string[] = [];
-	for (const r of results) {
-		const output = r.output;
-		if (output.type === 'failed' || output.type === 'unsupported') continue;
-		if (!isCompletenessRecord(output.completeness)) continue;
-		counted += 1;
-		items += output.completeness.returned;
-		// The measure is taken after the lookups ran and before the answer is
-		// written. An output that is not shaped as its type says is a defect of
-		// its lookup; it must not cost the request its answer, so it is named in
-		// the measure's note and its files are not counted.
-		try {
-			for (const file of filesNamedBy(output)) files.add(file);
-		} catch {
-			unreadable.push(`${r.exploration.type} [${r.exploration.id}]`);
+	// The measure is taken after the lookups ran and before the answer is
+	// written, so nothing here may cost the request its answer. An output that
+	// is not what its type says is a defect of its lookup: what can be counted
+	// of it is counted, and the measure's note names it. Anything unforeseen
+	// gives a measure that is not determined.
+	try {
+		const files = new Set<string>();
+		let items = 0;
+		let characters = 0;
+		let counted = 0;
+		const idOf = (r: ExecutedExploration): string => `${r.exploration.type} [${r.exploration.id}]`;
+		/** The lookups whose stated count is not a whole number that is not negative. */
+		const miscounted: string[] = [];
+		/** The lookups whose output is not shaped as its type says, so the files it names cannot be read. */
+		const unreadable: string[] = [];
+		/** The lookups whose output cannot be written as text, so its length is not known. */
+		const unmeasured: string[] = [];
+		for (const r of results) {
+			const output = r.output;
+			if (output.type === 'failed' || output.type === 'unsupported') continue;
+			if (!isCompletenessRecord(output.completeness)) continue;
+			counted += 1;
+			const returned = output.completeness.returned;
+			if (Number.isInteger(returned) && returned >= 0) items += returned;
+			else miscounted.push(idOf(r));
+			try {
+				for (const file of filesNamedBy(output)) files.add(file);
+			} catch {
+				unreadable.push(idOf(r));
+			}
+			try {
+				// The answer step is given each output as indented JSON.
+				characters += JSON.stringify(output, null, 2).length;
+			} catch {
+				unmeasured.push(idOf(r));
+			}
 		}
-		// The answer step is given each output as indented JSON.
-		characters += JSON.stringify(output, null, 2).length;
+		if (counted === 0) return notDetermined('lookup-results', NO_LOOKUP_RESULT_TO_COUNT, sizeHint);
+		const measure = determined('lookup-results', { files: files.size, items }, characters, sizeHint);
+		const notes: string[] = [];
+		if (miscounted.length > 0) notes.push(`the returned count of ${miscounted.length} result(s) is not a whole number of items and is not counted: ${miscounted.join(', ')}`);
+		if (unreadable.length > 0) notes.push(`the files named by ${unreadable.length} result(s) could not be read and are not counted: ${unreadable.join(', ')}`);
+		if (unmeasured.length > 0) notes.push(`the length of ${unmeasured.length} result(s) could not be taken and is not counted: ${unmeasured.join(', ')}`);
+		return notes.length === 0 ? measure : { ...measure, note: notes.join('; ') };
+	} catch (err) {
+		return notDetermined('lookup-results', `the lookup results could not be measured (${err instanceof Error ? err.message : String(err)})`, sizeHint);
 	}
-	if (counted === 0) return notDetermined('lookup-results', NO_LOOKUP_RESULT_TO_COUNT, sizeHint);
-	const measure = determined('lookup-results', { files: files.size, items }, characters, sizeHint);
-	if (unreadable.length === 0) return measure;
-	return { ...measure, note: `the files named by ${unreadable.length} result(s) could not be read and are not counted: ${unreadable.join(', ')}` };
 }
 
 // ---------------------------------------------------------------------------
@@ -405,15 +426,33 @@ const SAMPLED_KINDS: ReadonlySet<string> = new Set(['redis', 'valkey', 'keydb', 
  * store's keys.
  */
 export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScope): Promise<RequestMeasure> {
-	const nd = (note: string): RequestMeasure => notDetermined('data-source', note, sizeHint);
 	const id = scope.connectionId;
-	if (id === undefined) return nd('no connection is named: a data source is measured one connection at a time');
-
-	let pool: Awaited<ReturnType<typeof acquireDataPool>>;
-	let driver: Awaited<ReturnType<typeof pool.acquire>>;
+	if (id === undefined) return notDetermined('data-source', 'no connection is named: a data source is measured one connection at a time', sizeHint);
+	let pool: DataPool;
 	try {
 		pool = await acquireDataPool(scope.poolPath);
 		await pool.reload();
+	} catch (err) {
+		return notDetermined('data-source', `the source '${id}' cannot be reached (${reasonOf(err)})`, sizeHint);
+	}
+	return measureConnection(pool, id, sizeHint);
+}
+
+type DataPool = Awaited<ReturnType<typeof acquireDataPool>>;
+
+/** The measure of one connection of a pool that is already loaded. */
+async function measureConnection(pool: DataPool, id: string, sizeHint: AnalyzeScope | undefined): Promise<RequestMeasure> {
+	const nd = (note: string): RequestMeasure => notDetermined('data-source', note, sizeHint);
+
+	// A source whose listing is a sample of keys is known by its kind, which the
+	// pool's own list gives: it is not connected to only to be declared uncountable.
+	const declaredKind = pool.list().find(c => c.id === id)?.kind;
+	if (declaredKind !== undefined && SAMPLED_KINDS.has(declaredKind)) {
+		return nd(`the source '${id}' (${declaredKind}) has no namespaces to count; its listing is a sample of keys`);
+	}
+
+	let driver: Awaited<ReturnType<DataPool['acquire']>>;
+	try {
 		driver = await pool.acquire(id);
 	} catch (err) {
 		return nd(`the source '${id}' cannot be reached (${reasonOf(err)})`);
@@ -469,7 +508,8 @@ async function measureDataPool(poolPath: string, sizeHint: AnalyzeScope | undefi
 	let files = 0;
 	const uncounted: string[] = [];
 	for (const id of ids) {
-		const one = await measureDataSource({ poolPath, connectionId: id });
+		// The pool was loaded once, above: it is not reloaded for each connection.
+		const one = await measureConnection(pool, id, undefined);
 		if (!one.determined) { uncounted.push(one.note ?? `the source '${id}' could not be counted`); continue; }
 		objects += one.items;
 		files += one.files;

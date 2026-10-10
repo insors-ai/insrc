@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791608785604-tsg7hv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-10T05:06:25.851Z",
+    "model": "claude:opus",
+    "elapsedMs": 177550,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s2",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "design/analyze-context-builder.md",
+        "design/analyze-framework.md",
+        "design/analyze-plan-builder.md",
+        "docs/daemon.md",
+        "docs/plans/docs-module.md",
+        "src/analyze/__tests__/measure-pass.test.ts",
+        "src/analyze/__tests__/measure.test.ts",
+        "src/analyze/__tests__/model-schemas-draft-2020.test.ts",
+        "src/analyze/__tests__/report-head.test.ts",
+        "src/analyze/classifier/__tests__/no-size.test.ts",
+        "src/analyze/classifier/__tests__/schema.test.ts",
+        "src/analyze/classifier/driver.ts",
+        "src/analyze/classifier/index.ts",
+        "src/analyze/classifier/schema.ts",
+        "src/analyze/classifier/scope-picker.ts",
+        "src/analyze/classifier/validate.ts",
+        "src/analyze/completeness.ts",
+        "src/analyze/context/__tests__/lookup-measure.test.ts",
+        "src/analyze/context/__tests__/model-failure-callers.test.ts",
+        "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+        "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+        "src/analyze/context/__tests__/shaper-provider.test.ts",
+        "src/analyze/context/boot-validator.ts",
+        "src/analyze/context/driver.ts",
+        "src/analyze/context/types.ts",
+        "src/analyze/explore/answer-report.ts",
+        "src/analyze/explore/executor.ts",
+        "src/analyze/explore/freeform-probe.ts",
+        "src/analyze/explore/types.ts",
+        "src/analyze/measure.ts",
+        "src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+        "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+        "src/analyze/orchestrator/__tests__/run-measure.test.ts",
+        "src/analyze/orchestrator/driver.ts",
+        "src/analyze/orchestrator/types.ts",
+        "src/analyze/planner/__tests__/recursive.test.ts",
+        "src/analyze/planner/driver.ts",
+        "src/analyze/planner/recursive.ts",
+        "src/analyze/planner/types.ts",
+        "src/analyze/runtimes/data/_shared.ts",
+        "src/analyze/runtimes/infra/__tests__/walk-files.test.ts",
+        "src/analyze/runtimes/infra/_shared.ts",
+        "src/config/__tests__/retired-roles.test.ts",
+        "src/config/__tests__/role-taxonomy.test.ts",
+        "src/config/analyze.ts",
+        "src/config/config-catalog.ts",
+        "src/config/reconcile.ts",
+        "src/config/role-taxonomy.ts",
+        "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+        "src/daemon/__tests__/analyze-run-empty-prompt.test.ts",
+        "src/daemon/analyze-rpc.ts",
+        "src/daemon/db/__tests__/list-complete.test.ts",
+        "src/daemon/db/drivers/cassandra.ts",
+        "src/daemon/db/drivers/clickhouse.ts",
+        "src/daemon/db/drivers/dynamodb.ts",
+        "src/daemon/db/drivers/etcd.ts",
+        "src/daemon/db/drivers/mongodb.ts",
+        "src/daemon/db/drivers/mssql.ts",
+        "src/daemon/db/drivers/mysql.ts",
+        "src/daemon/db/drivers/nats.ts",
+        "src/daemon/db/drivers/oracle.ts",
+        "src/daemon/db/drivers/pg.ts",
+        "src/daemon/db/drivers/redis.ts",
+        "src/daemon/db/drivers/sqlite.ts",
+        "src/daemon/db/list-files.ts",
+        "src/daemon/workflow-rpc.ts",
+        "src/mcp/__tests__/analyze-step-answer-prompt-missing.test.ts",
+        "src/mcp/__tests__/analyze-step-bundle-report.test.ts",
+        "src/mcp/__tests__/analyze-step-measure.test.ts",
+        "src/mcp/analyze-step/answer-turn.ts",
+        "src/mcp/analyze-step/phases/bundle.ts",
+        "src/mcp/analyze-step/phases/narrow.ts",
+        "src/mcp/analyze-step/phases/plan.ts",
+        "src/mcp/analyze-step/phases/start.ts",
+        "src/mcp/analyze-step/scope.ts",
+        "src/mcp/analyze-step/state.ts",
+        "src/mcp/bundle-md.ts",
+        "src/mcp/server.ts",
+        "src/prompts/analyze/classification.system.md",
+        "src/prompts/analyze/classify.system.md",
+        "src/prompts/analyze/code.system.md",
+        "src/prompts/analyze/data.system.md",
+        "src/prompts/analyze/docs.system.md",
+        "src/prompts/analyze/infra.system.md",
+        "src/prompts/analyze/scope-picker.system.md",
+        "src/shared/db-driver.ts",
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/config/__tests__/per-role.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/package.json:5",
+            "message": "The extension's declared setting `insrc.models.tasks.analyze.scope.pick` is removed and the manifest version is raised from 0.5.12 to 0.5.13, so the plan's t8 check is met. The design also asks for a release of the extension in the same change, and that has not happened: the newest package in vscode-plugin/ is insrc-vscode-0.5.12.vsix, with no 0.5.13 package (the packages are untracked local files, so this was checked on disk, not from the diff). Installed 0.5.12 extensions still declare the retired role's setting. Everything else checked against the LLD and plan adheres, including the hunks not shown in the summaries (analyze-rpc.ts, reconcile.ts, the step tool's phases, workflow-rpc.ts, list-files.ts, the driver files).",
+            "expectationRef": "LLD contractDetails `pickScope` (removed): \"That declaration is removed in the same change, with the extension's per-role tests under vscode-plugin/src/config/__tests__ and a release of the extension\"; LLD migration step 7 and backwardCompat: \"the extension is released\""
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/explore/freeform-probe.ts:88",
+            "message": "The new `measureOwnRequest` function and its JSDoc were inserted between the existing JSDoc for `runFreeformProbe` and that function. Two doc blocks are now stacked above `measureOwnRequest` (the first, ending at line 87, describes the free-form runner), and `runFreeformProbe` has no doc comment of its own. Elsewhere in the touched modules each exported function carries its own JSDoc directly above it. Move `measureOwnRequest` above the runner's doc block or below the runner.",
+            "expectationRef": "module-idiom: one JSDoc block directly above the symbol it documents",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/measure.ts:43",
+            "message": "`export { renderMeasureLine } from './completeness.js';` sits in the middle of the import block, with five more `import` statements after it (lines 44-50). The other touched modules keep imports contiguous and place re-exports after them (e.g. `classifier/index.ts` is all re-exports; `completeness.ts`, `explore/answer-report.ts` and `context/driver.ts` have an unbroken import block). Move the re-export and its comment below the last import.",
+            "expectationRef": "module-idiom: contiguous import block, re-exports after imports",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/__tests__/measure-pass.test.ts:1",
+            "message": "Present but unverified: the promised smoke check has no corresponding test or stored comparison in the Story's changed set. It is a before/after comparison of suite results by test name, not a test file, and no build record was supplied, so whether it was run and what it showed cannot be confirmed from the grounding. The removed scope-picker tests and the changed classifier-size tests are visible in the diff (model-schemas-draft-2020.test.ts, model-failure-callers.test.ts, schema.test.ts), but a list naming them as removed or changed is not.",
+            "expectationRef": "no test of the analyze, planner, classifier, data-driver and daemon suites that passed before the Story's first change fails after its last, compared by test name against a baseline taken at the plan's approval; the tests of the scope picker and of the classifier's size are named as removed or changed",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/orchestrator/__tests__/run-measure.test.ts:1",
+            "message": "Present but unverified: the promised live check (one directory against the whole repository through the installed daemon) has no artifact in the changed set and no build record was supplied, so its result cannot be confirmed here. The same behaviour is exercised without the daemon by run-measure.test.ts and measure-pass.test.ts (different sizes for a directory and for the whole repo, no size-picking role resolved), but that is not the live run the plan promised.",
+            "expectationRef": "through the installed daemon, a code request scoped to one directory of this repository and the same request scoped to the whole repository return different measured sizes, each with its counts in the report, and no model call picks a size",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/measure.ts:1",
+            "message": "Present but unverified: all 27 promised unit and integration tests exist under their exact promised names (8 in measure.test.ts, 8 in measure-pass.test.ts, 2 each in lookup-measure.test.ts and no-size.test.ts, and one each in report-head, run-measure, recursive, list-complete, analyze-rpc-measure, analyze-step-measure and retired-roles; the last four were confirmed by reading the test titles in the files, because their diff text was missing from the grounding). No build record was supplied, so none of them can be stated as passing. Every changed entry has an empty testsReaching, but the entries are whole-file diff records, not graph symbols, so the empty edges say nothing about coverage; the test diffs import and call the changed modules directly (measure.ts, completeness.ts, context/driver.ts, orchestrator/driver.ts, planner/recursive.ts, explore/types.ts, freeform-probe.ts, infra/_shared.ts, data/_shared.ts, classifier/schema.ts). No not-exercised gap is reported from the empty edges.",
+            "expectationRef": "pass-state of the 27 promised unit and integration tests",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:1484",
+            "message": "Unhandled error path: `measureLookupResults(executed.results, sizeHint)` is called outside any try/catch, after the lookups have run and before the answer is written, and it can throw. Inside it only `filesNamedBy` is guarded. `JSON.stringify(output, null, 2)` (src/analyze/measure.ts, about line 210) throws on a BigInt or a circular value in an output. `sizeOfCounts` throws RangeError if the summed `completeness.returned` is fractional or negative, unless `isCompletenessRecord` (not shown in the grounding) already requires a non-negative integer. Either throw escapes `tryExplorationPipeline` and costs the request its answer, which is the outcome the function's own comment says a malformed lookup output must not cause. Guard the whole per-output body, or catch at the call site and fall back to `notDetermined('lookup-results', …)`.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/orchestrator/driver.ts:317",
+            "message": "Correctness and latency risk: `measureRequestScope` now runs in the classify stage of every run, before the scope and index checks, and again for every child plan in `planner/recursive.ts`. For a `data` target or a connection scope it connects to each live source and asks for the complete, uncapped listing (`listTables({ complete: true })`, `listNamespaces({ complete: true })`), with no timeout or abort visible in the summaries. A slow or hanging source therefore stalls the run before any refusal, and a plan tree repeats the full listings once per child. For the stored graph, `measureStoredArea` loads all entities of the repo even for a file or symbol scope, and the context builder (`tryExplorationPipeline` via `measureResolvedScope`) measures the same area a second time in the same run. The two counts are taken at different moments and can disagree if the index changes in between. Consider passing the run's measure into the context builder and bounding the live listing with a timeout that yields `determined: false`.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/measure.ts:462",
+            "message": "Avoidable work: `measureDataPool` acquires and reloads the pool, then calls `measureDataSource` per connection, which acquires and reloads the same pool again each time. That is N+1 reloads of the connections file for N connections. Separately, `measureDataSource` connects to the driver (`pool.acquire`) before checking `SAMPLED_KINDS`, so a Redis or etcd source is connected to only to be declared uncountable; the kind is already available from `pool.list()`.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/measure.ts:330",
+            "message": "Duplication: `measureReposUnder` re-implements the count loop (items plus a Set of distinct `e.file` paths, then `determined('named-area', …)`) that `measureNamedArea` already has. Summing `measureNamedArea` over a repo-kind scope per repo would keep one counting rule; note the file sets would then need to be unioned rather than the counts added.",
+            "counterpartRef": "measureNamedArea",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/explore/types.ts:760",
+            "message": "`underRoot` treats a path as absolute only when it starts with '/'. A Windows-style absolute path (`C:\\…`) from a search hit would be joined to the root, so the same file would be counted as two distinct paths. Harmless on the supported POSIX platforms; `node:path` `isAbsolute`/`join` would remove the assumption.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/orchestrator/driver.ts:320",
+            "message": "A scope that cannot be counted yields `size: 'XL'` on the intent, and the `classified` event is emitted with it before the scope check refuses the request. Anything keyed on `scope ∈ {L, XL}` (the quota warning described in design/analyze-framework.md) will announce a run 'measured as XL' for a request that is merely unindexed or unresolvable. Consumers should look at `measure.determined` before presenting the size as a measurement.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 4,
+      "low": 8
+    }
+  }
+}

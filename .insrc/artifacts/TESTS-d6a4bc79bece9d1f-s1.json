@@ -1,0 +1,1181 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "d6a4bc79bece9d1f",
+    "storyId": "s1",
+    "createdAt": "2026-10-10T15:41:15.706Z",
+    "updatedAt": "2026-10-10T16:03:41.079Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "d6c67ff8",
+        "ranAt": "2026-10-10T15:41:15.706Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "session-lock.test.ts: one lease per session; a second acquire waits until the holder's process exits, then is granted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+                "title": "one lease per session; a second acquire waits until the holder's process exits, then is granted",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+                "title": "a lease released without a process grants the waiter; release is idempotent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session-lock.test.ts: past the timeout the holder is stopped (SIGTERM, then SIGKILL after the grace period), its exit is awaited, then the lease is granted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+                "title": "past the timeout the holder is stopped (SIGTERM, then SIGKILL after the grace period), its exit is awaited, then the lease is granted",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+                "title": "stopProcess reports whether the exit was confirmed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session-lock.test.ts: an aborted wait is cancelled without stopping anything, and a newer waiter replaces an older one",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+                "title": "an aborted wait is cancelled without stopping anything, and a newer waiter replaces an older one",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+                "title": "a process that exits by itself grants the waiter at once, without any stop",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 688,
+            "titles": [
+              {
+                "title": "one lease per session; a second acquire waits until the holder's process exits, then is granted",
+                "result": "pass"
+              },
+              {
+                "title": "a lease released without a process grants the waiter; release is idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "past the timeout the holder is stopped (SIGTERM, then SIGKILL after the grace period), its exit is awaited, then the lease is granted",
+                "result": "pass"
+              },
+              {
+                "title": "a process that exits by itself grants the waiter at once, without any stop",
+                "result": "pass"
+              },
+              {
+                "title": "an aborted wait is cancelled without stopping anything, and a newer waiter replaces an older one",
+                "result": "pass"
+              },
+              {
+                "title": "stopProcess reports whether the exit was confirmed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "64b9bab6",
+        "ranAt": "2026-10-10T15:44:20.037Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "session-lock.test.ts: a lock file from another window is honoured while its pid is alive, and a stale file (dead pid or mismatched start time) is replaced",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+                "title": "a lock file from another window is honoured while its pid is alive, and a stale file (dead pid or mismatched start time) is replaced",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session-lock.test.ts: on timeout a cross-window holder's group is stopped only when its start time matches",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+                "title": "on timeout a cross-window holder's group is stopped only when its start time matches",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session-lock.test.ts: an unwritable lock directory falls back to memory",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+                "title": "an unwritable lock directory falls back to memory",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 898,
+            "titles": [
+              {
+                "title": "one lease per session; a second acquire waits until the holder's process exits, then is granted",
+                "result": "pass"
+              },
+              {
+                "title": "a lease released without a process grants the waiter; release is idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "past the timeout the holder is stopped (SIGTERM, then SIGKILL after the grace period), its exit is awaited, then the lease is granted",
+                "result": "pass"
+              },
+              {
+                "title": "a process that exits by itself grants the waiter at once, without any stop",
+                "result": "pass"
+              },
+              {
+                "title": "an aborted wait is cancelled without stopping anything, and a newer waiter replaces an older one",
+                "result": "pass"
+              },
+              {
+                "title": "stopProcess reports whether the exit was confirmed",
+                "result": "pass"
+              },
+              {
+                "title": "a lock file from another window is honoured while its pid is alive, and a stale file (dead pid or mismatched start time) is replaced",
+                "result": "pass"
+              },
+              {
+                "title": "on timeout a cross-window holder's group is stopped only when its start time matches",
+                "result": "pass"
+              },
+              {
+                "title": "an unwritable lock directory falls back to memory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "dae3426f",
+        "ranAt": "2026-10-10T15:48:24.151Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "cli-adapter.test.ts: run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+                "title": "run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+                "title": "abandoning the stream early kills the subprocess (no orphan)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cli-adapter.test.ts: cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+                "title": "cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+                "title": "cancel(): kills the in-flight subprocess and yields a terminal done(ok:false)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cli-adapter.test.ts: after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+                "title": "after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 440,
+            "titles": [
+              {
+                "title": "claude: text turn maps to status + assistant-delta(s) + done(ok)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: tool_use maps to tool-call (with mcp parse) and file-edit with a hunk diff",
+                "result": "pass"
+              },
+              {
+                "title": "claude: is_error result maps to done(ok:false)",
+                "result": "pass"
+              },
+              {
+                "title": "nothing is yielded after the terminal event, even if the stream continues",
+                "result": "pass"
+              },
+              {
+                "title": "codex: item.completed + turn.completed maps to assistant-delta + done(ok)",
+                "result": "pass"
+              },
+              {
+                "title": "an in-stream error is terminal: nothing (incl. a second done) is yielded after it",
+                "result": "pass"
+              },
+              {
+                "title": "a stdout stream error surfaces as a terminal error event (never throws/rejects)",
+                "result": "pass"
+              },
+              {
+                "title": "abandoning the stream early kills the subprocess (no orphan)",
+                "result": "pass"
+              },
+              {
+                "title": "the terminal done carries the captured native session id (resume handle for S005)",
+                "result": "pass"
+              },
+              {
+                "title": "error path 1: spawn throws synchronously -> terminal error event (never rejects)",
+                "result": "pass"
+              },
+              {
+                "title": "error path 2: ENOENT spawn error -> terminal error naming the missing CLI",
+                "result": "pass"
+              },
+              {
+                "title": "error path 3: non-zero exit with no terminal event -> error carrying the stderr tail",
+                "result": "pass"
+              },
+              {
+                "title": "error path 4: an auth-failure stderr -> a re-login error message",
+                "result": "pass"
+              },
+              {
+                "title": "error path 5: an unparseable stream line is skipped+warned, not fatal",
+                "result": "pass"
+              },
+              {
+                "title": "cancel(): kills the in-flight subprocess and yields a terminal done(ok:false)",
+                "result": "pass"
+              },
+              {
+                "title": "run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop",
+                "result": "pass"
+              },
+              {
+                "title": "cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group",
+                "result": "pass"
+              },
+              {
+                "title": "after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles",
+                "result": "pass"
+              },
+              {
+                "title": "cancel(): unknown/finished turnId is a no-op (idempotent, no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "capabilities.resume is true for both providers; a resume request passes the native flag",
+                "result": "pass"
+              },
+              {
+                "title": "ProviderRegistry.available lists only installed agentic CLIs (never Ollama)",
+                "result": "pass"
+              },
+              {
+                "title": "ProviderRegistry.get() on an absent provider throws unknown-provider",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a Bash tool_use sets ToolCallEvent.command from input.command",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a command-less tool_use omits command (renders as the tool name, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a command_execution item sets command from item.command",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a tool_call item without a command omits command (k2)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result user message emits a tool-result with the command correlated from the preceding tool_use",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result with array content is coerced to a joined string; no correlation -> command omitted",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result with empty content still emits a tool-result (empty output)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a user message with no tool_result blocks yields no tool-result (byte-identical -> [])",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a completed command_execution with output emits both a tool-call and a tool-result",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a completed command_execution WITHOUT output emits only the tool-call (byte-identical, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: concatenates the assistant text of the one-shot (no resume passed)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: a hung provider is cancel()led at the timeout -> undefined (does not stall)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: an error event -> undefined; an unknown provider -> undefined",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t3: the fake spawner records write() calls on the spawned proc (decision-relay seam)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (optional, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t4: codex buildArgs — undefined/review keep today argv; auto adds --dangerously-bypass-approvals-and-sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent (normalized via aliases)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude system/permission_denied surfaces as an approval card (the REAL CLI envelope)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant re-run (--allowedTools)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied with a top-level command sets event.command (title/detail/toolName unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied with a nested input.command sets event.command",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a top-level command takes precedence over input.command",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identical to today, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): classifyPermissionDenial marks the sandbox working-directory phrasing as dir-block",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): classifyPermissionDenial defaults everything else to tool-gate (safe default)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): realistic tool-gate messages are NOT false-positived as dir-block",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir (no sandbox widening on a click)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: an unparseable line is skipped+logged, never thrown (as today)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: decide() writes the correct control response for a live requestId; stale/unknown -> no-op (<=1 write per id)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: pending entries are auto-cleaned on cancel() -> a later decide() writes nothing (no dangling card)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: decide() on an unknown turn is a safe no-op (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a valid insrc:select marker -> a selection-request event + the raw marker stripped from the delta",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a marker-only text block emits the selection-request with NO empty assistant-delta",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a malformed insrc:select marker -> NO event, the raw text stays an assistant-delta, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a marker SPLIT across two assistant lines emits ONLY on the closing fence (half-marker never emits/leaks)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a line with no marker behaves exactly as today (assistant-delta unchanged, no selection-request)",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a valid insrc:select marker -> a selection-request event + the raw marker stripped",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a malformed marker -> NO event, the raw text stays a delta, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a marker SPLIT across two delta chunks emits ONLY on the closing fence",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a no-marker delta behaves exactly as today",
+                "result": "pass"
+              },
+              {
+                "title": "claude: tool-call and its tool-result carry the tool_use id as callId",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a command item with an id carries it as callId on both events; an id-less item omits it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "69f3dab9",
+        "ranAt": "2026-10-10T15:50:07.879Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "markers.test.ts: phase 'waiting' maps to 'Waiting for the previous turn to finish' in both markerFor and the webview mirror",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/markers.test.ts",
+                "title": "phase 'waiting' maps to 'Waiting for the previous turn to finish' in both markerFor and the webview mirror",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/markers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 318,
+            "titles": [
+              {
+                "title": "markerFor maps every sc2 status phase to the right class + label",
+                "result": "pass"
+              },
+              {
+                "title": "markerFor(tool-call): bare ev.tool with no mcp, `${server} · ${name}` with mcp (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "markerFor: file-edit/done(ok true+false)/error map to the right class + label",
+                "result": "pass"
+              },
+              {
+                "title": "markerFor(assistant-delta) -> null; an unknown/forward kind -> null (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "S004: markerFor(approval-request) -> null (live-only card, never a durable marker, k4)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): markerFor(tool-result) -> null (persisted structurally, not a flat marker, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 (ux polish): markerFor(permission-outcome) -> null (persisted structurally, not a flat marker, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): markerFor(selection-request) + markerFor(selection-outcome) -> null (persisted structurally / live-only, k4)",
+                "result": "pass"
+              },
+              {
+                "title": "every markerFor cssClass is one of the five sc1 insrc-term__marker--* stems",
+                "result": "pass"
+              },
+              {
+                "title": "parity: eval(markerWebviewSource()) computes {cssClass,label} deepEqual to markerFor for every sample (drift fails build)",
+                "result": "pass"
+              },
+              {
+                "title": "markerWebviewSource() is CSP-safe: only the five marker classes, no import/remote/asWebviewUri/vscode",
+                "result": "pass"
+              },
+              {
+                "title": "phase 'waiting' maps to 'Waiting for the previous turn to finish' in both markerFor and the webview mirror",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "702eaa71",
+        "ranAt": "2026-10-10T15:59:36.021Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat-panel.test.ts: a message sent while the previous CLI process is still alive after its answer waits, shows 'Waiting for the previous turn to finish', and starts only after that process exits",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "a message sent while the previous CLI process is still alive after its answer waits, shows 'Waiting for the previous turn to finish', and starts only after that process exits",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "single-in-flight: a second submit supersedes the first — no interleave; it waits for the first instead of killing it (H1/M2)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-panel.test.ts: with a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "with a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-panel.test.ts: Stop ends the running process at once and cancels a waiting message; the generation guard still keeps superseded events out of the transcript",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "Stop ends the running process at once and cancels a waiting message; the generation guard still keeps superseded events out of the transcript",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1223,
+            "titles": [
+              {
+                "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",
+                "result": "pass"
+              },
+              {
+                "title": "single-in-flight: a second submit supersedes the first — no interleave; it waits for the first instead of killing it (H1/M2)",
+                "result": "pass"
+              },
+              {
+                "title": "new-chat mid-stream stops the prior turn (no cross-session post) (M3)",
+                "result": "pass"
+              },
+              {
+                "title": "malformed submit-turn (non-string text) is a no-op, no unhandled rejection (M4)",
+                "result": "pass"
+              },
+              {
+                "title": "an errored turn persists its transcript rows (L3)",
+                "result": "pass"
+              },
+              {
+                "title": "empty/whitespace submit-turn is a no-op (no run)",
+                "result": "pass"
+              },
+              {
+                "title": "a terminal error TurnEvent is posted inline; unknown-provider is surfaced, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "onDidDispose cancels the active turn and stops posting further",
+                "result": "pass"
+              },
+              {
+                "title": "unknown / edit-* / docs-* inbound messages are accepted-but-ignored no-ops",
+                "result": "pass"
+              },
+              {
+                "title": "no provider installed: open posts an error notice (no crash)",
+                "result": "pass"
+              },
+              {
+                "title": "rendered shell: one nonce'd inline script + strict CSP + sc1 style + no remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "rendered shell mints a FRESH nonce per render",
+                "result": "pass"
+              },
+              {
+                "title": "S004 rendered shell: non-delta turn-events route through the marker mapper (sc1 class, not the bare bracket)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 integration: a status->tool-call(mcp)->status->file-edit->done turn posts a marker per event and persists status+done rows (ac1/ac2, k8)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a tool-result event persists a STRUCTURED role:tool-result row (command+output), never a marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a turn with NO tool-result events persists a byte-identical transcript (no tool-result rows)",
+                "result": "pass"
+              },
+              {
+                "title": "S005 shell: provider-selector options == available + history-dropdown; one script + CSP intact",
+                "result": "pass"
+              },
+              {
+                "title": "S005 shell: empty providers.available -> disabled selector",
+                "result": "pass"
+              },
+              {
+                "title": "S005 open() posts a history-list",
+                "result": "pass"
+              },
+              {
+                "title": "open()/close leaves NO empty session in history — the chat opens a draft, persisted only on first turn",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: the first turn swaps the truncated-prompt title for the LLM-derived name (+ refreshes history)",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: a failed/empty derivation keeps the truncated-prompt fallback",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: with no deriveTitle injected, the truncated-prompt fallback is kept (no built-in CLI call)",
+                "result": "pass"
+              },
+              {
+                "title": "S005 new-chat: valid provider creates a fixed-provider session + re-posts history; non-available is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S005 open-chat: restores a prior transcript; a missing id is a no-op + refreshes history",
+                "result": "pass"
+              },
+              {
+                "title": "S005 ac3 native resume: turn 2 carries resume from turn 1 done.sessionId; only the new prompt is sent",
+                "result": "pass"
+              },
+              {
+                "title": "S005 switching chat mid-stream cancels the in-flight turn (single-in-flight preserved)",
+                "result": "pass"
+              },
+              {
+                "title": "S005 a first-turn error still refreshes the history dropdown (title label)",
+                "result": "pass"
+              },
+              {
+                "title": "S008 integration: a turn persists each marker row with cssClass === markerFor(ev).cssClass (ac2); assistant rows carry none",
+                "result": "pass"
+              },
+              {
+                "title": "S008 integration: open-chat restore posts marker rows carrying their cssClass (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 shell: session-restored replay routes through the sc1 registry (keyed, single-sourced, carries the stored class); CSP/one-script/textContent intact",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the edit-review gate is RETIRED — even a legacy set-edit-mode:review turn is visualize-only (no revert)",
+                "result": "pass"
+              },
+              {
+                "title": "S006 integration: an AUTO turn renders visualize-only (no accept/reject revert on reject) + edit marker still renders",
+                "result": "pass"
+              },
+              {
+                "title": "S006 integration: set-edit-mode updates + persists session.editMode",
+                "result": "pass"
+              },
+              {
+                "title": "S006 integration: diffView=editor routes to the native editor seam (no chat edit-prompt)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: without editGovernance the host behaves as before (no edit-prompt; file-edit marker still renders)",
+                "result": "pass"
+              },
+              {
+                "title": "S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce'd script; CSP/textContent invariants intact",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the edit-prompt is always visualize-only (review flag never set) — the gate is retired",
+                "result": "pass"
+              },
+              {
+                "title": "S001 ac1: submit-turn posts a live user-row (the prompt appears during the turn, not only on reload)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 lc1: two identical prompts yield two distinct-keyed live user-rows",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac2: a cancel-turn message cancels the in-flight turn (cancelActive -> provider.cancel)",
+                "result": "pass"
+              },
+              {
+                "title": "S002: a cancel-turn with no active turn is an idempotent no-op (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 (ux-polish) ac1/ac2/t3: the leading \">\" prompt (#insrc-prompt) is the send/stop control; the trailing #insrc-send button is retired",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) ac5: the session dropdown cap doubles to 36ch; the rest of the chip is untouched",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) ac4: the no-CLI capability gate is the sole render-time disable and still wins",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) ac1/ac2/ac3: the lock starts closed and is settled at all three session transitions",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) regression: the lock is additive — the surrounding handlers are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "both message bubbles span the full row (100%) and the assistant carries no magenta left rail; wrapper stays 100%",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac1: the fixed-region layout holds — #insrc-term is the only scroll region; header + input stay flex:0",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the <body> carries no surface class — so .insrc-term-<surface>{display:block} cannot override body{display:flex} and collapse the flex-fill",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac1/k1: all pre-existing element ids remain; one inline script; no innerHTML/remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "S002: an empty submit is a host no-op (no turn starts)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac3: renderShell embeds a single #insrc-progress widget above the input, hidden at rest",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption CSS (inline, CSP-safe)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): renderShell has the SINGLE merged mode control + wires the approval seams",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac1: the input is a FLUSH 2-line prompt — #insrc-input has no box chrome, rows=2 kept, ❯ top-aligned",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac2: the placeholder gains the interrupt hint",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider + mode selects live in the footer status bar",
+                "result": "pass"
+              },
+              {
+                "title": "UI: the #insrc-history session dropdown carries a leading history/clock glyph so its purpose reads",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-095906bac5bbacaf: every image source the shell DECLARES is permitted by its own CSP (a declared-but-blocked icon must fail)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provider switching are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a turn's mode defaults to manual; set-permission-mode switches the NEXT turn (edit-auto / auto)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): an invalid set-permission-mode is dropped (mode unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t7: permission-decision is relayed to the live turn adapter.decide with (turnId, requestId, decision)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t7: permission-decision with no active turn is a safe no-op (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt(channel) wires + posts theme/session-restored/history-list (restored panel shows history)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt() supersedes an already-live channel (prior disposed; single active channel)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt() with no agentic CLI posts the same error a fresh open does",
+                "result": "pass"
+              },
+              {
+                "title": "S001 the webview posts a ready handshake AFTER attaching its message listener (initial load + every reload)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 a ready message (re)posts theme + active session + history — a reloaded webview repopulates",
+                "result": "pass"
+              },
+              {
+                "title": "S001 ready before any open-time delivery still populates history (models the dropped initial post)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): approving a permission-denied request re-runs the blocked action with the tool pre-allowed, resuming the session",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): denying a permission-denied request does NOT re-run (the turn stays denied)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a tool-gate WITH a command re-runs naming the EXACT command (not the vague nudge) + pre-allows the tool",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a tool-gate WITHOUT a command falls back to the tool-name phrasing (+ allowedTools)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a dir-block does NOT re-run/grant — it posts an informational message; argv/allowlist untouched",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-block — no re-run; posts ONLY the rejected outcome chip",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a stale/idless permission-decision (no pendingPerms entry) falls through to adapter.decide (codex/in-turn relay unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: approving a tool-gate WITH a command re-runs with [toolName] but posts ZERO user-row echoes (suppressEcho)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: a NORMAL user turn still posts its user-row echo (suppressEcho gates ONLY the synthetic grant re-run)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: the tool-name FALLBACK grant (no command) also suppresses the echo + records the approved outcome",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac3: a dir-block Approve records an approved outcome (even though it does NOT re-run)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac4: after an approve, the persisted transcript carries the outcome row and NO approval-request (the pending card never replays)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): set-permission-mode persists onto the active (saved) session",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the mode FOLLOWS the session — opening a chat adopts its persisted mode",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the webview sets the mode control from a restored session",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): renderShell wires the selection decision sink + routes selection turn-events (approval path intact)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision records the outcome (chosen LABELS) AND continues the run via a synthesized user turn",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision for an unknown/stale requestId is a safe no-op (no outcome, no run)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision with an empty/invalid selected list is dropped (no outcome, no run)",
+                "result": "pass"
+              },
+              {
+                "title": "a message sent while the previous CLI process is still alive after its answer waits, shows 'Waiting for the previous turn to finish', and starts only after that process exits",
+                "result": "pass"
+              },
+              {
+                "title": "with a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed",
+                "result": "pass"
+              },
+              {
+                "title": "Stop ends the running process at once and cancels a waiting message; the generation guard still keeps superseded events out of the transcript",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "f6728b04",
+        "ranAt": "2026-10-10T16:03:41.079Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "extension-chat-wiring.test.ts: the extension passes a file-backed lock registry and the turnLockTimeoutMs setting",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+                "title": "the extension passes a file-backed lock registry and the turnLockTimeoutMs setting",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "extension-chat-wiring.test.ts: package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+                "title": "package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 304,
+            "titles": [
+              {
+                "title": "extension.ts gates the chat command on insrc.chat.enabled (config read)",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts constructs createChatPanelHost with the real injected vscode seams + memento store",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host + protocol + store modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes the chat command + the insrc.chat.enabled config (default on)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: package.json contributes insrc.chat.diffView (string enum chat|editor, default chat)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects editGovernance seams",
+                "result": "pass"
+              },
+              {
+                "title": "S006: the edit-governor module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: package.json contributes insrc.chat.lockGroup (boolean, default true, machine scope)",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: extension.ts wires thin seams into createChatGroupLock and attaches it in the one panel adapter",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: the module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "S007: package.json contributes the insrc.chat.docsReview command",
+                "result": "pass"
+              },
+              {
+                "title": "S007: extension.ts wires the docs-review host inside the chat gate over the shared client",
+                "result": "pass"
+              },
+              {
+                "title": "S007: the docs-review host + client modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the chat opens from an editor/title icon, NOT an Activity Bar container",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the real insrc icon SVGs exist, are non-empty, and ship in the .vsix",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: extension.ts opens the chat as an editor-tab panel + gates the icon, docs-review intact",
+                "result": "pass"
+              },
+              {
+                "title": "the extension passes a file-backed lock registry and the turnLockTimeoutMs setting",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

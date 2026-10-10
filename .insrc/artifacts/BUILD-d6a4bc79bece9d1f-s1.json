@@ -1,0 +1,166 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "d6a4bc79bece9d1f",
+    "storyId": "s1",
+    "createdAt": "2026-10-10T15:41:15.706Z",
+    "updatedAt": "2026-10-10T16:38:46.117Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "approvedAt": "2026-10-10T16:38:47.248Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "package.json declares insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000); extension.ts passes createFileSessionLocks on ~/.insrc/chat-locks and a live read of the setting into createChatPanelHost. The plugin's typechecks and full suite (984 tests, 979 pass, 4 skipped, 1 known manifest-catalog failure) are recorded in docs/standalone/vs-code-plugin-chat-panel-concurrent-E20261010d6a4bc79/S001/evidence/t6/, since the gate's root typecheck excludes vscode-plugin.",
+    "testRecord": {
+      "md": "docs/standalone/vs-code-plugin-chat-panel-concurrent-E20261010d6a4bc79/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/standalone/vs-code-plugin-chat-panel-concurrent-E20261010d6a4bc79/S001/evidence/code-review/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/vs-code-plugin-chat-panel-concurrent-E20261010d6a4bc79/S001/evidence/code-review/plugin-suite.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/vs-code-plugin-chat-panel-concurrent-E20261010d6a4bc79/S001/evidence/t6/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/vs-code-plugin-chat-panel-concurrent-E20261010d6a4bc79/S001/evidence/t6/plugin-suite.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/markers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/markers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/session-lock.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/stream-events.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:46.117Z"
+      }
+    ],
+    "commit": "4bc44744"
+  }
+}

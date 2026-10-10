@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -132,3 +132,25 @@ Run at 2026-10-10T15:48:18.037Z on commit `f9041216`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/reconcile.test.ts` | 0 | 12 | 2 s |  |
+
+## t4
+
+Run at 2026-10-10T15:50:33.460Z on commit `4268017d`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready | `src/indexer/__tests__/reconcile.test.ts` |
+
+**integration: a repository left indexing with a last-indexed time gets a clean-up job at daemon start**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a repository left indexing with a last-indexed time gets a clean-up job at daemon start | `src/indexer/__tests__/reconcile.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/reconcile.test.ts` | 0 | 14 | 2.3 s |  |

@@ -1,0 +1,232 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791633280080-ts142r",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-10T11:58:18.990Z",
+    "epicCreatedAt": "2026-10-09T14:36:42.809Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 218895,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ab2cc2edb3743df",
+    "epicSlug": "bug-plan-tree-analyze-run-when",
+    "storyId": "S001",
+    "lldRunId": "wf-1791627848863-k53fdt",
+    "lldEffectiveHash": "3379c56907db53fc3b4b1b396d7fd7dc601c7666ea09bb1c904a2a1d35307ff8",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build is one large task and two small ones. The large task changes what a consuming task is handed (a list of outputs per name, each with its producing task), how the plan walk fills it, and how the report task's prompt presents it, together with the ten test files that build or read that map; it cannot be split because the type change does not compile in parts. The two small tasks correct the five report prompts' description of their input, and update the documents with a before-and-after comparison of the analyze suite."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "A consumer receives every output produced under a name, and the report task's prompt presents them all",
+        "summary": "Add the UpstreamOutput type and change upstreamOutputs to a map from output name to a list of them (src/analyze/executor/types.ts and the shared aggregate code's arguments). In the plan walk, append one entry per produced name when a task finishes ok (planner tasks included), project whole lists to a consumer, keep the dependency rules' meaning (a name is present when it has at least one output), and list every failed or skipped producer as absent whether or not a sibling produced the name. In the shared aggregate code, render today's block for a name with one output and one sub-section per task for a name with several; word the absent section per task when the name also has outputs and leave it byte-identical otherwise; count outputs for tasksAnalyzed and the log. Bring the tests that build or read the map to the new shape: aggregator.test.ts, aggregate-absent-inputs.test.ts, completeness-all-runtimes.test.ts, walker.test.ts, walker-aggregate.test.ts, walker-walk-failure.test.ts and the four live aggregate-report suites. The task is one piece because the type change does not compile in parts.",
+        "size": "L",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Through the plan walk, eight tasks of one template that each produce the same name leave the report task with eight outputs under it, in plan order, each with its task id, template and params.",
+          "A root plan with four planner tasks hands its report task four child reports, each attributed to its planner task.",
+          "When one of several producers of a name fails, the report task runs on the others and is handed that producer as absent with its task id and reason; the prompt says that task's output is absent and the others under the name are available.",
+          "For a map in which every name has one output, the user message is byte-identical to the one the code rendered before the change, and when no absent name has an output the absent section is byte-identical too.",
+          "A name with several outputs is rendered with one sub-section per task in plan order, with the task id, the template and the params; a null value renders the unavailable line in its sub-section.",
+          "Each of the five aggregate-report runtimes hands every output of a name on, and tasksAnalyzed is the number of outputs.",
+          "A task that is not the report task receives every output of a name it consumes.",
+          "The existing assertions on the absent list, the task records, tasksCompleted and tasksFailed for plans with one producer per name are unchanged and pass; the assertions on what a consumer was handed are in the list form.",
+          "The four live aggregate-report suites are type-correct for the new map (they are skipped without INSRC_LIVE_TESTS).",
+          "`npx tsc --noEmit` is clean and the executor and runtimes suites pass."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params"
+          },
+          {
+            "level": "integration",
+            "name": "a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task"
+          },
+          {
+            "level": "integration",
+            "name": "when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged"
+          },
+          {
+            "level": "integration",
+            "name": "a task that is not the report task receives every output of a name it consumes"
+          },
+          {
+            "level": "unit",
+            "name": "a map in which every name has one output renders a user message byte-identical to the one rendered before the change"
+          },
+          {
+            "level": "unit",
+            "name": "a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section"
+          },
+          {
+            "level": "unit",
+            "name": "each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs"
+          },
+          {
+            "level": "unit",
+            "name": "for a plan with one producer per name the existing assertions on the absent list, the task records, tasksCompleted and tasksFailed are kept unchanged, and the assertions on what a consumer was handed are rewritten to the list form (one entry with the expected task id, template, params and value)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "The five aggregate prompts describe their input as it is rendered",
+        "summary": "Correct, in the five aggregate system prompts (src/prompts/analyze/code, data, docs, generic and infra .aggregate.system.md), the description of the block `Upstream task outputs:`: one `### <output name>` section per name, and, when several tasks produced the name, one `#### <name> from task <taskId> (<template>)` sub-section per task with its `params:` line; the report must cover every sub-section. No other instruction of the prompts changes.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "None of the five prompts says one `### <taskId>` section per input; each describes the name section and the per-task sub-section in the words the renderer uses.",
+          "Apart from that description, each prompt's text is unchanged.",
+          "The prompt validation that runs at daemon boot still passes for the five files."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "each of the five aggregate prompts describes the block as it is rendered and no longer says one section per task id"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "The documents, and the suite before and after",
+        "summary": "Update docs/daemon.md (the section on the final report being written from the inputs that exist) and design/analyze-framework.md where they describe what the report task receives: every output under a name, each with its task; a failed producer named as absent beside its siblings; and that a large plan's report prompt grows with the number of producers, which Story s3 of the analyzer Epic is to bound. Run the whole analyze suite at the commit before the Story and at this task's commit, compare by test name, and keep the comparison and both raw outputs in the Story's measurements folder.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "docs/daemon.md and design/analyze-framework.md say what a consumer and the report task receive after the change, and name the prompt-size consequence and its owner.",
+          "The comparison of the analyze suite before and after, by test name, is in the Story's measurements folder with both raw outputs; no test that passed before fails after, and every test that is gone or new is accounted for.",
+          "`npx tsc --noEmit` is clean."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "the whole analyze suite at the commit before the Story and at this task's commit, compared by test name: no test that passed before fails after"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a task that is not the report task receives every output of a name it consumes",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a map in which every name has one output renders a user message byte-identical to the one rendered before the change",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "each of the five aggregate prompts describes the block as it is rendered and no longer says one section per task id",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "for a plan with one producer per name the existing assertions on the absent list, the task records, tasksCompleted and tasksFailed are kept unchanged, and the assertions on what a consumer was handed are rewritten to the list form (one entry with the expected task id, template, params and value)",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration"
+    }
+  ]
+}

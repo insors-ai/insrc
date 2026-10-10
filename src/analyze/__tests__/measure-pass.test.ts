@@ -18,17 +18,18 @@ import { fileURLToPath } from 'node:url';
 
 import { loadConnections } from '../../daemon/db/config.js';
 import { getDb } from '../../db/client.js';
-import { findEntitiesByFile, listEntitiesForRepo, upsertEntities } from '../../db/entities.js';
+import { findEntitiesByFile, getEntity, listEntitiesForRepo, upsertEntities } from '../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
 import { addRepo, listRepos } from '../../db/repos.js';
 import { makeEntityId } from '../../indexer/parser/base.js';
 import type { AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type { Entity, EntityKind } from '../../shared/types.js';
+import { resolveScopeForTarget } from '../context/scope.js';
 import type { ResolvedScope, ScopeDeps } from '../context/scope.js';
 import type { PlannedTask, TemplateExecuteArgs } from '../executor/types.js';
 import {
 	CANCELLED_AMONG_SOURCES, CANCELLED_BEFORE_MEASURE,
-	_setMeasureDepsForTest, measureDataSource, measureRequestScope, measureResolvedScope, sizeOfCounts,
+	_setMeasureDepsForTest, measureDataSource, measureNamedArea, measureRequestScope, measureResolvedScope, sizeOfCounts,
 } from '../measure.js';
 import type { RequestMeasure } from '../measure.js';
 import { _setDataPoolSourceForTest, dataScopeOf, resolveDataScope } from '../runtimes/data/_shared.js';
@@ -592,6 +593,8 @@ test('a request cancelled while a source is being measured stops at once and the
 	const viaRequest = await measureRequestScope(ref('repo', BIG), 'code', undefined, before);
 	assert.deepEqual([viaRequest.determined, viaRequest.note], [false, CANCELLED_BEFORE_MEASURE]);
 	assert.equal(CANCELLED_BEFORE_MEASURE, 'the request was cancelled before it was measured');
+	// A direct call for one source, too: its pool is not loaded.
+	assert.equal((await measureDataSource({ poolPath: BIG, connectionId: 'a' }, undefined, before)).note, CANCELLED_BEFORE_MEASURE);
 	assert.deepEqual([q.opened, q.acquired, entityReads, scopeReads], [[], [], 0, 0]);
 	// The same scope with a signal that has not fired is measured.
 	const live = await measureResolvedScope(repoScope(), 'code', undefined, { signal: new AbortController().signal });
@@ -664,4 +667,134 @@ test('the time limit comes from the setting, a value in the options replaces it,
 		assert.equal(await noteWith({ sourceTimeoutMs: bad }), timedOut('slow-sql', 0.03), String(bad));
 	}
 	assert.equal(read, 6);
+});
+
+// ---------------------------------------------------------------------------
+// The read of a symbol or a file scope (ISSUE-008e146a)
+// ---------------------------------------------------------------------------
+
+interface ReadCounts { whole: number; byId: number; byFile: number; indexCheck: number }
+
+/**
+ * Stand the real store's reads in, each behind a counter. `whole` is the
+ * measure's own read of every entity of a repo; `indexCheck` is the same read
+ * made by the scope resolution's index check, counted apart.
+ */
+function countingReads(over: { getEntity?: (id: string) => Promise<Entity | null>; listEntitiesOfFile?: (file: string) => Promise<readonly Entity[]> } = {}): ReadCounts {
+	const calls: ReadCounts = { whole: 0, byId: 0, byFile: 0, indexCheck: 0 };
+	_setMeasureDepsForTest({
+		listEntities:       async repo => { calls.whole += 1; return listEntitiesForRepo(null, repo); },
+		getEntity:          async id => { calls.byId += 1; return (over.getEntity ?? (i => getEntity(null, i)))(id); },
+		listEntitiesOfFile: async file => { calls.byFile += 1; return (over.listEntitiesOfFile ?? (f => findEntitiesByFile(null, f)))(file); },
+		scope:              scopeReaders({ listEntitiesForRepo: async repo => { calls.indexCheck += 1; return listEntitiesForRepo(null, repo); } }),
+	});
+	return calls;
+}
+const reset = (calls: ReadCounts): void => { calls.whole = 0; calls.byId = 0; calls.byFile = 0; calls.indexCheck = 0; };
+
+test('a symbol scope is measured with one read by id and a file scope with the read of that file\'s entities; the measure of a resolved scope (measureResolvedScope) asks the store for every entity of the repository in neither case, and the counts and the size equal those of the whole-repository read; driven through measureRequestScope for a code request, the index check of the scope resolution is the only whole-repository read', async () => {
+	const file = join(BIG, 'pay/settle.ts');
+	const symbolRef = ref('symbol', `${file}#refund`);
+	const fileRef = ref('file', file);
+	const symbolScope = await resolveScopeForTarget(symbolRef, 'code', scopeReaders());
+	const fileScope = await resolveScopeForTarget(fileRef, 'code', scopeReaders());
+	assert.deepEqual([symbolScope.kind, symbolScope.repoPath, fileScope.kind, fileScope.filePath], ['symbol', BIG, 'file', file]);
+	// What the whole-repository read gives for the same stored entities.
+	const everything = await listEntitiesForRepo(null, BIG);
+	assert.equal(everything.length, 60);
+	const wholeSymbol = measureNamedArea(symbolScope, everything);
+	const wholeFile = measureNamedArea(fileScope, everything);
+
+	const calls = countingReads();
+	// --- a resolved symbol scope: one read by id, nothing else ---
+	const symbol = await measureResolvedScope(symbolScope, 'code');
+	assert.deepEqual(calls, { whole: 0, byId: 1, byFile: 0, indexCheck: 0 });
+	assert.deepEqual(symbol, wholeSymbol);
+	assert.deepEqual(counts(symbol), { source: 'named-area', items: 1, files: 1, size: 'XS', determined: true });
+	// --- a resolved file scope: the read of that file's entities, nothing else ---
+	reset(calls);
+	const inFile = await measureResolvedScope(fileScope, 'code');
+	assert.deepEqual(calls, { whole: 0, byId: 0, byFile: 1, indexCheck: 0 });
+	assert.deepEqual(inFile, wholeFile);
+	assert.deepEqual(counts(inFile), { source: 'named-area', items: 3, files: 1, size: 'XS', determined: true });
+	// The docs and generic families read the same way; a stated size is kept as the hint.
+	reset(calls);
+	assert.deepEqual(await measureResolvedScope(fileScope, 'docs', 'L'), { ...wholeFile, sizeHint: 'L' });
+	assert.deepEqual(await measureResolvedScope(symbolScope, 'generic'), wholeSymbol);
+	assert.deepEqual(calls, { whole: 0, byId: 1, byFile: 1, indexCheck: 0 });
+
+	// --- through measureRequestScope, for a code request: the index check is the only whole-repository read ---
+	for (const [scopeRef, expected] of [[fileRef, wholeFile], [symbolRef, wholeSymbol]] as const) {
+		reset(calls);
+		assert.deepEqual(await measureRequestScope(scopeRef, 'code'), expected, scopeRef.kind);
+		assert.deepEqual([calls.whole, calls.indexCheck], [0, 1], `${scopeRef.kind}: the measure's own read is gone, the index check's remains`);
+	}
+	// A generic request has no index check: no whole-repository read at all.
+	reset(calls);
+	assert.deepEqual(await measureRequestScope(fileRef, 'generic'), wholeFile);
+	assert.deepEqual([calls.whole, calls.indexCheck], [0, 0]);
+
+	// --- an entity with no file path: one item, no file ---
+	const refund = (await getEntity(null, symbolScope.entityId!))!;
+	countingReads({ getEntity: async () => ({ ...refund, file: '' }) });
+	assert.deepEqual(counts(await measureResolvedScope(symbolScope, 'code')), { source: 'named-area', items: 1, files: 0, size: 'XS', determined: true });
+});
+
+test('a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before', async () => {
+	const file = join(BIG, 'pay/settle.ts');
+	const symbolScope = await resolveScopeForTarget(ref('symbol', `${file}#refund`), 'code', scopeReaders());
+	const fileScope = await resolveScopeForTarget(ref('file', file), 'code', scopeReaders());
+	const everything = await listEntitiesForRepo(null, BIG);
+	const elsewhere = await listEntitiesForRepo(null, SMALL);
+
+	// --- a symbol the read by id does not find, or finds in another repository: the whole read, and its result ---
+	let calls = countingReads({ getEntity: async () => null });
+	assert.deepEqual(await measureResolvedScope(symbolScope, 'code'), measureNamedArea(symbolScope, everything));
+	assert.deepEqual(calls, { whole: 1, byId: 1, byFile: 0, indexCheck: 0 });
+	calls = countingReads({ getEntity: async () => elsewhere[0]! });
+	assert.deepEqual(await measureResolvedScope(symbolScope, 'code'), measureNamedArea(symbolScope, everything));
+	assert.deepEqual(calls, { whole: 1, byId: 1, byFile: 0, indexCheck: 0 });
+	// An id that names nothing at all is, as before, a count of zero in an indexed repository.
+	calls = countingReads();
+	assert.deepEqual(counts(await measureResolvedScope({ ...symbolScope, entityId: 'no-such-entity' }, 'code')),
+		{ source: 'named-area', items: 0, files: 0, size: 'XS', determined: true });
+	assert.deepEqual(calls, { whole: 1, byId: 1, byFile: 0, indexCheck: 0 });
+
+	// --- a file whose read finds entities of another repository only: they are not counted ---
+	calls = countingReads({ listEntitiesOfFile: async () => elsewhere });
+	assert.deepEqual(await measureResolvedScope(fileScope, 'code'), measureNamedArea(fileScope, everything));
+	assert.deepEqual(calls, { whole: 1, byId: 0, byFile: 1, indexCheck: 0 });
+	// --- a file with nothing stored, in an indexed repository: a count of zero, as before ---
+	calls = countingReads();
+	const vacant: ResolvedScope = { ...fileScope, value: join(BIG, 'vacant/none.ts'), filePath: join(BIG, 'vacant/none.ts') };
+	assert.deepEqual(counts(await measureResolvedScope(vacant, 'code')), { source: 'named-area', items: 0, files: 0, size: 'XS', determined: true });
+	assert.deepEqual(calls, { whole: 1, byId: 0, byFile: 1, indexCheck: 0 });
+	// --- the same in a repository that holds no stored entity: not determined, with today's reason ---
+	calls = countingReads();
+	const unindexed: ResolvedScope = { kind: 'file', value: join(EMPTY, 'a.ts'), repoPath: EMPTY, lookupPath: EMPTY, filePath: join(EMPTY, 'a.ts') };
+	const none = await measureResolvedScope(unindexed, 'code');
+	assert.deepEqual(undetermined(none), UNDETERMINED);
+	assert.equal(none.note, `the index holds nothing for the path ${EMPTY}: the repository ${EMPTY} holds no stored entity`);
+	assert.deepEqual(calls, { whole: 1, byId: 0, byFile: 1, indexCheck: 0 });
+	// --- a file scope with no file path, a symbol scope with no entity id: the whole read only ---
+	calls = countingReads();
+	const { filePath: _noPath, ...pathless } = fileScope;
+	const { entityId: _noId, ...idless } = symbolScope;
+	assert.equal((await measureResolvedScope(pathless, 'code')).determined, true);
+	assert.equal((await measureResolvedScope(idless, 'code')).determined, true);
+	assert.deepEqual(calls, { whole: 2, byId: 0, byFile: 0, indexCheck: 0 });
+	// --- a narrow read that fails: not determined, with the failure's reason, as for any failed read ---
+	countingReads({ listEntitiesOfFile: async () => { throw new Error('the store is closed'); } });
+	const failed = await measureResolvedScope(fileScope, 'code');
+	assert.deepEqual([undetermined(failed), failed.note], [UNDETERMINED, 'the count could not be taken (the store is closed)']);
+
+	// --- every other kind of scope: the whole read, and the counts it gave before ---
+	calls = countingReads();
+	const repo = await resolveScopeForTarget(ref('repo', BIG), 'code', scopeReaders());
+	const module = await resolveScopeForTarget(ref('module', join(BIG, 'pay')), 'code', scopeReaders());
+	const directory = await resolveScopeForTarget(ref('workspace', join(BIG, 'pay')), 'code', scopeReaders());
+	assert.deepEqual(counts(await measureResolvedScope(repo, 'code')), { source: 'named-area', items: 60, files: 30, size: 'M', determined: true });
+	assert.deepEqual(counts(await measureResolvedScope(module, 'code')), { source: 'named-area', items: 5, files: 2, size: 'S', determined: true });
+	assert.deepEqual(counts(await measureResolvedScope(directory, 'code')), { source: 'named-area', items: 5, files: 2, size: 'S', determined: true });
+	assert.deepEqual(calls, { whole: 3, byId: 0, byFile: 0, indexCheck: 0 });
 });

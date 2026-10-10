@@ -29,7 +29,7 @@
 
 import { dataSourceListingTimeoutMs } from '../config/analyze.js';
 import { listFilesForConnection } from '../daemon/db/list-files.js';
-import { listEntitiesForRepo } from '../db/entities.js';
+import { findEntitiesByFile, getEntity, listEntitiesForRepo } from '../db/entities.js';
 import { listRepos } from '../db/repos.js';
 import type { AnalyzeScope, AnalyzeScopeRef, AnalyzeTarget, ClassifiedIntent } from '../shared/analyze-types.js';
 import type { KvDriver, RdbmsDriver } from '../shared/db-driver.js';
@@ -249,6 +249,10 @@ export interface MeasureDeps {
 	readonly scope?:        ScopeDeps | undefined;
 	/** All stored entities of a repo. */
 	readonly listEntities?: ((repoPath: string) => Promise<readonly Entity[]>) | undefined;
+	/** One stored entity, by its id: the read of a symbol scope. */
+	readonly getEntity?:    ((id: string) => Promise<Entity | null>) | undefined;
+	/** The stored entities of one file: the read of a file scope. */
+	readonly listEntitiesOfFile?: ((file: string) => Promise<readonly Entity[]>) | undefined;
 	/** The registered repos. */
 	readonly listRepos?:    (() => Promise<readonly RegisteredRepo[]>) | undefined;
 	/** The infra tasks' file walk. */
@@ -282,6 +286,10 @@ export function _setMeasureDepsForTest(deps: MeasureDeps | undefined): void {
 
 const readEntities = (repoPath: string): Promise<readonly Entity[]> =>
 	depsForTest?.listEntities !== undefined ? depsForTest.listEntities(repoPath) : listEntitiesForRepo(null, repoPath);
+const readEntity = (id: string): Promise<Entity | null> =>
+	depsForTest?.getEntity !== undefined ? depsForTest.getEntity(id) : getEntity(null, id);
+const readEntitiesOfFile = (file: string): Promise<readonly Entity[]> =>
+	depsForTest?.listEntitiesOfFile !== undefined ? depsForTest.listEntitiesOfFile(file) : findEntitiesByFile(null, file);
 const readRepos = (): Promise<readonly RegisteredRepo[]> =>
 	depsForTest?.listRepos !== undefined ? depsForTest.listRepos() : listRepos(null);
 
@@ -372,12 +380,39 @@ async function measureStoredArea(scope: ResolvedScope, sizeHint: AnalyzeScope | 
 		return notDetermined('named-area',
 			`the index holds nothing for the path ${scope.lookupPath}: no registered repository contains it`, sizeHint);
 	}
+	// A symbol or a file is read on its own, not out of every entity of its repo.
+	const own = await readOwnArea(scope, scope.repoPath);
+	if (own !== null) return measureNamedArea(scope, own, sizeHint);
 	const entities = await readEntities(scope.repoPath);
 	if (entities.length === 0) {
 		return notDetermined('named-area',
 			`the index holds nothing for the path ${scope.lookupPath}: the repository ${scope.repoPath} holds no stored entity`, sizeHint);
 	}
 	return measureNamedArea(scope, entities, sizeHint);
+}
+
+/**
+ * The stored entities of a symbol or file scope, read without asking for
+ * every entity of the repo: the one entity by its id, or the entities of the
+ * one file. Only entities of the scope's repo count. Null when the scope is
+ * of another kind, or the read finds none: the caller then reads the whole
+ * repo, which alone can tell a file with nothing in it from a repo that is
+ * not indexed.
+ *
+ * The read of one file's entities still passes over the rows of the entity
+ * table (the store has no index by file, ISSUE-61045de91faef1a0): what it
+ * saves is building every entity of the repo.
+ */
+async function readOwnArea(scope: ResolvedScope, repoPath: string): Promise<readonly Entity[] | null> {
+	if (scope.kind === 'symbol' && scope.entityId !== undefined) {
+		const entity = await readEntity(scope.entityId);
+		return entity !== null && entity.repo === repoPath ? [entity] : null;
+	}
+	if (scope.kind === 'file' && scope.filePath !== undefined) {
+		const inRepo = (await readEntitiesOfFile(scope.filePath)).filter(e => e.repo === repoPath);
+		return inRepo.length > 0 ? inRepo : null;
+	}
+	return null;
 }
 
 /** A workspace that no registered repo contains: every registered repo under it, each read once. */
@@ -463,6 +498,7 @@ const SAMPLED_KINDS: ReadonlySet<string> = new Set(['redis', 'valkey', 'keydb', 
 export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScope, options?: MeasureOptions): Promise<RequestMeasure> {
 	const id = scope.connectionId;
 	if (id === undefined) return notDetermined('data-source', 'no connection is named: a data source is measured one connection at a time', sizeHint);
+	if (options?.signal?.aborted === true) return notDetermined('data-source', CANCELLED_BEFORE_MEASURE, sizeHint);
 	let pool: DataPool;
 	try {
 		pool = await acquireDataPool(scope.poolPath);

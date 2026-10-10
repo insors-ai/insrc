@@ -3,14 +3,18 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-/** E2 s1 — the board host over a fake panel channel and the real reducer: open, reveal, out-of-order answers, failures, dispose, and the webview document. */
+/**
+ * E2 s1, ISSUE-348d4663 — the board host over a fake panel channel and the real reducer (open, reveal, out-of-order
+ * answers, failures, dispose, navigation), and the webview script over a fake DOM: one screen at a time, the five
+ * filters, collapsible stages, breadcrumb and Back, focus and scroll, the narrow form and the state panels.
+ */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import type { ChatPanelChannel } from '../../chat/chat-panel.js';
 import { BOARD_STYLE, BOARD_VIEW_TYPE, BOARD_WEBVIEW_SCRIPT, createDeliveryBoardHost, renderBoardDocument } from '../board-host.js';
-import { parseBoardUpMessage, type BoardDownMessage, type Envelope } from '../board-protocol.js';
+import { parseBoardUpMessage, type BoardDownMessage, type Envelope, type ScreenModel, type StagesBody } from '../board-protocol.js';
 import type { DeliveryClient, DeliveryResult } from '../delivery-client.js';
 import type { DeliveryEvidenceRecord, DeliverySnapshot } from '../delivery-contract.js';
 import { evidence as ev, item, snapshot as fixtureSnapshot } from './board-fixtures.js';
@@ -79,12 +83,18 @@ function setup() {
 /** The payloads of posted envelopes, in order; payloads() reads a fake channel's, payloadsOf() any posted list. */
 const payloadsOf = (posted: readonly unknown[]) => posted.map(m => (m as Envelope<BoardDownMessage>).payload);
 const payloads = (c: FakeChannel) => payloadsOf(c.posted);
-const lastBoard = (c: FakeChannel) => {
-  const m = payloads(c).filter(p => p.type === 'board').at(-1);
-  return m?.type === 'board' ? m.model : null;
+/** Every screen model posted, in order. */
+const screensOf = (c: FakeChannel): ScreenModel[] => payloads(c).flatMap(p => (p.type === 'screen' ? [p.model] : []));
+const lastScreen = (c: FakeChannel): ScreenModel | null => screensOf(c).at(-1) ?? null;
+/** The body of the last screen posted when it is a board screen; null otherwise. */
+const lastBoard = (c: FakeChannel): StagesBody | null => {
+  const body = lastScreen(c)?.body;
+  return body !== undefined && body.kind === 'stages' ? body : null;
 };
-/** Every card id on the last board posted, column by column. */
-const lastItems = (c: FakeChannel) => lastBoard(c)?.columns.flatMap(col => col.cards.map(k => k.itemId)) ?? null;
+/** Every card id on the last board screen posted, section by section. */
+const lastItems = (c: FakeChannel) => lastBoard(c)?.sections.flatMap(sec => sec.cards.map(k => k.itemId)) ?? null;
+/** Matches on a board screen, summed over its sections. */
+const itemsOn = (b: StagesBody | null) => (b === null ? null : b.sections.reduce((n, sec) => n + sec.total, 0));
 
 test('opening the board creates one editor-tab panel with a CSP-locked document and posts the snapshot\'s items with its taken-at time', async () => {
   const { host, channels, created, calls } = setup();
@@ -123,8 +133,8 @@ test('when the earlier refresh answers after the later one, only the later snaps
   await flush();
   assert.equal(ch.posted.length, before, 'the superseded answer posts nothing');
   assert.deepEqual(lastItems(ch), ['new']);
-  assert.equal(payloads(ch).some(p => p.type === 'board' && p.model.columns.some(c => c.cards.some(k => k.itemId === 'old'))), false);
-  assert.equal(payloads(ch).some(p => p.type === 'items'), false, "the interim 'items' message is never sent");
+  assert.equal(screensOf(ch).some(m => m.body.kind === 'stages' && m.body.sections.some(c => c.cards.some(k => k.itemId === 'old'))), false);
+  assert.deepEqual([...new Set(payloads(ch).map(p => p.type))].sort(), ['announce', 'screen', 'status'], 'only status, screen and announce are ever sent');
   assert.equal(logs.warn.length, 1);
   assert.match(logs.warn[0]!, /dropped the answer to refresh 1 \(1 item\)/);
 
@@ -207,14 +217,6 @@ test('an answer or timeout that arrives after the panel is closed is neither pos
   assert.equal(created.length, 3);
 });
 
-/** A board model for the webview tests, built by the real host from a fixture snapshot. */
-async function boardModelFor(snap: DeliverySnapshot) {
-  const { ch } = await openWith(snap);
-  const model = lastBoard(ch);
-  assert.ok(model !== null);
-  return model;
-}
-
 test('the board document inserts text only through textContent and posts only board up-messages', () => {
   const doc = renderBoardDocument('N0NCE');
   assert.doesNotMatch(doc, /innerHTML|outerHTML|insertAdjacentHTML|document\.write/);
@@ -231,93 +233,12 @@ test('the board document inserts text only through textContent and posts only bo
   assert.match(el['status']!.textContent, /<img src=x onerror=alert\(1\)>.*\(stale\)/);
   const panelOf = { kind: 'refresh-failed', title: hostile, text: hostile, action: 'retry', stale: true, affected: [{ artifactIds: [hostile], text: hostile }] };
   deliver({ v: 1, payload: { type: 'status', status: { state: 'failed', takenAt: null, message: hostile, partialNotice: null, stale: true, freshnessLabel: null, panel: panelOf } } });
-  const shown = texts(el['panel']!);
+  const shown = texts(el['banner']!);
   assert.ok(shown.filter(t => t.includes(hostile)).length >= 3, 'the panel title, text and affected record are literal text');
-  assert.equal(findAll(el['panel']!, e => e.tag === 'img').length, 0, 'markup never becomes elements');
+  assert.equal(findAll(el['banner']!, e => e.tag === 'img').length, 0, 'markup never becomes elements');
   assert.equal(el['notice'], undefined, 'the old notice line is gone');
 });
 
-test('the board view renders titles and notices containing markup and script as literal text', async () => {
-  const hostile = '<script>alert(1)</script><img src=x onerror=alert(2)>';
-  const model = await boardModelFor(fixtureSnapshot([
-    item({ id: 'E1', kind: 'epic', title: `Epic ${hostile}` }),
-    item({ id: 'S1', parentId: 'E1', title: hostile, stage: 'complete',
-      conflict: { failedTaskItemIds: ['S1:T001'], storyLevelFailed: false },
-      notices: [{ code: 'unknown-route', message: hostile, itemIds: ['S1'], artifactIds: [], fileNames: [], attention: true }] as never }),
-    item({ id: 'I1', kind: 'issue', standalone: true, title: 'Plain issue', stage: 'scoped' }),
-  ]));
-  const { deliver, el } = runScript();
-  deliver({ v: 1, payload: { type: 'board', model } });
-
-  const columns = el['board']!.children;
-  assert.equal(columns.length, 6);
-  assert.deepEqual(columns.map(c => texts(c.children[0]!)),
-    [['Scoped', '1'], ['Design & plan', '0'], ['Ready · design approved', '0'], ['Ready · plan approved', '0'], ['Build recorded', '0'], ['Complete', '1']]);
-  const cards = cardsIn(el['board']!);
-  assert.deepEqual(cards.map(c => c.attrs['data-item-id']), ['I1', 'S1']);
-  const s1 = cards[1]!;
-  assert.deepEqual(texts(s1), ['STORY · S1', hostile, `Epic: Epic ${hostile}`, 'Validation conflict', 'Unknown route'],
-    'the kicker, title, epic and badge labels are literal text');
-  assert.equal(s1.attrs['aria-label'], model.columns[5]!.cards[0]!.accessibleLabel);
-  assert.deepEqual(findAll(s1, x => x.attrs['class'] === 'badge').map(b => b.attrs['data-tone']), ['danger', 'warning']);
-  assert.deepEqual(texts(cards[0]!), ['ISSUE · I1', 'Plain issue', 'Standalone']);
-  assert.equal(el['totals']!.textContent, '2 items, 0 needing attention');
-  assert.deepEqual(texts(el['panel']!), [], 'no panel when the selection matches');
-});
-
-test('the board controls post only board up-messages, the scope control lists every epic, and an empty selection says nothing matches', async () => {
-  const model = await boardModelFor(fixtureSnapshot([
-    item({ id: 'EA', kind: 'epic', title: 'Alpha' }),
-    item({ id: 'EB', kind: 'epic', title: null }),
-    ...Array.from({ length: 55 }, (_, n) => item({ id: `EA:S${String(n).padStart(3, '0')}`, parentId: 'EA', stage: 'design-plan' })),
-  ]));
-  const { posted, deliver, el } = runScript();
-  deliver({ v: 1, payload: { type: 'board', model } });
-
-  const chips = () => el['scope-chips']!.children;
-  const chip = (v: string) => chips().find(c => c.attrs['data-scope'] === v)!;
-  assert.deepEqual(chips().map(c => [c.attrs['data-scope'], c.textContent]), [['all', 'All work'], ['standalone', 'Standalone'], ['epic:EA', 'Alpha'], ['epic:EB', 'EB']]);
-  assert.equal(chip('all').attrs['aria-pressed'], 'true');
-  assert.equal(el['scope'], undefined, 'the old scope <select> is gone');
-  assert.equal(el['attention'], undefined, 'the old attention checkbox is gone');
-
-  const more = findAll(el['board']!, x => x.tag === 'button');
-  assert.deepEqual(more.map(b => b.textContent), ['Show 5 more']);
-  more[0]!.listeners['click']!();
-  el['search']!.value = 'alpha';
-  el['search']!.listeners['input']!();
-  el['attention-chip']!.listeners['click']!();
-  for (const v of ['epic:EA', 'standalone', 'all']) chip(v).listeners['click']!();
-  const sent = posted.slice(3);   // after the boot posts: set-density, ready and the harness's refresh
-  for (const m of sent) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
-  assert.deepEqual(sent.map(m => (m as { payload: unknown }).payload), [
-    { type: 'show-more', stage: 'design-plan' },
-    { type: 'set-search', search: 'alpha' },
-    { type: 'set-attention', on: true },
-    { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'EA' } },
-    { type: 'set-scope', scope: { kind: 'standalone' } },
-    { type: 'set-scope', scope: { kind: 'all' } },
-  ]);
-
-  // An empty selection keeps the controls as the reader set them and says nothing matches.
-  chip('epic:EB').listeners['click']!();
-  const host = await openWith(fixtureSnapshot([item({ id: 'EB', kind: 'epic' }), item({ id: 'S1', standalone: true })]));
-  host.ch.send({ v: 1, payload: { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'EB' } } });
-  const none = lastBoard(host.ch);
-  assert.equal(none?.emptySelection, true, 'the host reports that the epic scope matches nothing');
-  deliver({ v: 1, payload: { type: 'board', model: none } });
-  assert.deepEqual(texts(el['panel']!).slice(0, 2), ['Nothing matches this view', 'Work exists, but none matches the current search, scope and attention filter.']);
-  assert.equal(chip('epic:EB').attrs['aria-pressed'], 'true', 'the scope chip keeps its choice');
-
-  // A refresh that removes the scoped epic keeps it selectable, with a note, so the reader can see and clear it.
-  const gone = await boardModelFor(fixtureSnapshot([item({ id: 'S1', standalone: true })]));
-  deliver({ v: 1, payload: { type: 'board', model: gone } });
-  assert.deepEqual(chips().map(c => [c.attrs['data-scope'], c.textContent, c.attrs['aria-pressed']]),
-    [['all', 'All work', 'false'], ['standalone', 'Standalone', 'false'], ['epic:EB', 'Epic no longer on the board', 'true']]);
-  assert.equal(el['search']!.value, 'alpha');
-});
-
-/** Open the board and answer its first refresh with the given snapshot. */
 async function openWith(snap: DeliverySnapshot) {
   const s = setup();
   s.host.open();
@@ -326,9 +247,10 @@ async function openWith(snap: DeliverySnapshot) {
   return { ...s, ch: s.channels[0]! };
 }
 
-const column = (c: FakeChannel, stage: string) => lastBoard(c)?.columns.find(col => col.stage === stage);
+/** A stage section of the last board screen posted. */
+const column = (c: FakeChannel, stage: string) => lastBoard(c)?.sections.find(sec => sec.stage === stage);
 
-test('show-more reveals the next page of one column, and a new search resets paging', async () => {
+test('show-more reveals the next page of one stage, and a new search resets paging', async () => {
   const many = fixtureSnapshot([
     ...Array.from({ length: 60 }, (_, n) => item({ id: `S${String(n).padStart(3, '0')}`, title: `Story ${n}` })),
     item({ id: 'C1', stage: 'complete' }),
@@ -347,15 +269,18 @@ test('show-more reveals the next page of one column, and a new search resets pag
 
   ch.send({ v: 1, payload: { type: 'set-search', search: 'story' } });
   assert.deepEqual([column(ch, 'scoped')?.cards.length, column(ch, 'scoped')?.hiddenCount], [50, 10], 'a new search resets paging');
+  ch.send({ v: 1, payload: { type: 'set-search', search: '' } });
   ch.send({ v: 1, payload: { type: 'show-more', stage: 'scoped' } });
+  ch.send({ v: 1, payload: { type: 'set-attention', on: true } });
   ch.send({ v: 1, payload: { type: 'set-attention', on: false } });
   assert.equal(column(ch, 'scoped')?.cards.length, 50, 'an attention change resets paging too');
   ch.send({ v: 1, payload: { type: 'show-more', stage: 'scoped' } });
-  ch.send({ v: 1, payload: { type: 'set-scope', scope: { kind: 'all' } } });
-  assert.equal(column(ch, 'scoped')?.cards.length, 50, 'and so does a scope change');
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'standalone' } });
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'all' } });
+  assert.equal(column(ch, 'scoped')?.cards.length, 50, 'and so does starting a new screen');
 
   const before = ch.posted.length;
-  ch.send({ v: 1, payload: { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'no-such-epic' } } });
+  ch.send({ v: 1, payload: { type: 'open-epic', epicItemId: 'no-such-epic' } });
   ch.send({ v: 1, payload: { type: 'show-more', stage: 'shipped' } });
   assert.equal(ch.posted.length, before, 'an unknown epic or stage changes nothing');
   assert.equal(logs.warn.length, 2);
@@ -365,7 +290,7 @@ test('an item with an unknown stage is left off the board and logged once per re
   const snap = fixtureSnapshot([item({ id: 'A', stage: 'shipped' }), item({ id: 'B', stage: 'shipped' }), item({ id: 'C', stage: 'scoped' })]);
   const { ch, calls, logs } = await openWith(snap);
   assert.deepEqual(lastItems(ch), ['C']);
-  assert.equal(lastBoard(ch)?.totals.items, 1);
+  assert.equal(itemsOn(lastBoard(ch)), 1);
   assert.equal(logs.warn.length, 1);
   assert.match(logs.warn[0]!, /refresh 1 left items with unknown stages off the board: shipped \(2\)/);
 
@@ -380,7 +305,7 @@ test('an item with an unknown stage is left off the board and logged once per re
   assert.equal(logs.warn.length, 2, 'the next applied refresh logs it once more');
 });
 
-test('a selection change that cannot be rendered keeps the previous board and is logged', async () => {
+test('a filter change that cannot be rendered keeps the previous board and is logged', async () => {
   // A malformed sourceIds renders while the search is empty (it is never read) and throws once a search reads it.
   const snap = fixtureSnapshot([item({ id: 'A', title: 'Alpha' }), item({ id: 'B', sourceIds: 42 as never })]);
   const { ch, logs } = await openWith(snap);
@@ -396,7 +321,7 @@ test('a selection change that cannot be rendered keeps the previous board and is
   // The previous state is kept: the search is still empty.
   ch.send({ v: 1, payload: { type: 'ready' } });
   assert.deepEqual(lastItems(ch), ['A', 'B']);
-  ch.send({ v: 1, payload: { type: 'set-view', view: 'board' } });
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
   assert.equal(logs.error.length, 1, 'with the search unchanged, later intents render');
 });
 
@@ -414,128 +339,6 @@ test('a refresh whose loading state cannot be shown is logged and asks the daemo
   assert.equal(ch.posted.length, before);
   assert.equal(logs.error.length, 1);
   assert.match(logs.error[0]!, /refresh 2 could not start: title unreadable/);
-});
-
-const lastOf = <T extends BoardDownMessage['type']>(c: FakeChannel, type: T) => {
-  const m = payloads(c).filter((p): p is Extract<BoardDownMessage, { type: T }> => p.type === type).at(-1);
-  return m ?? null;
-};
-
-test('switching views posts the selected view with the same selection, and switching back keeps the board page', async () => {
-  const many = fixtureSnapshot([
-    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
-    ...Array.from({ length: 60 }, (_, n) => item({ id: `E1:S${String(n).padStart(3, '0')}`, parentId: 'E1', title: `Board story ${n}` })),
-    item({ id: 'I1', kind: 'issue', standalone: true, stage: 'design-plan', title: 'Board bug', correctsRef: { resolvedItemId: 'E1:S000' } as never }),
-    item({ id: 'S99', standalone: true, title: 'Unrelated' }),
-  ]);
-  const { ch, logs } = await openWith(many);
-  ch.send({ v: 1, payload: { type: 'set-search', search: 'board' } });
-  ch.send({ v: 1, payload: { type: 'show-more', stage: 'scoped' } });
-  assert.equal(column(ch, 'scoped')?.cards.length, 60);
-  const boardTotal = lastBoard(ch)?.totals.items;
-
-  const before = ch.posted.length;
-  ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
-  const sent = payloads(ch).slice(before - ch.posted.length);
-  assert.deepEqual(sent.map(p => p.type), ['status', 'epics'], 'only the chosen view is posted');
-  const epics = lastOf(ch, 'epics')!.model;
-  assert.equal(epics.totals.items, boardTotal, 'the same search applies');
-  assert.deepEqual(epics.epics.map(e => e.completionLabel), ['0 of 60 stories complete']);
-  assert.deepEqual(epics.scopeOptions, [{ epicItemId: 'E1', title: 'Board epic' }], 'the scope control stays current on every tab');
-
-  ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
-  const iv = lastOf(ch, 'issues')!.model;
-  assert.deepEqual(iv.issues.map(e => [e.card.itemId, e.parent?.itemId]), [['I1', 'E1:S000']]);
-
-  ch.send({ v: 1, payload: { type: 'set-view', view: 'board' } });
-  assert.deepEqual([column(ch, 'scoped')?.cards.length, column(ch, 'scoped')?.hiddenCount], [60, 0], 'switching back keeps the page');
-  assert.equal(lastBoard(ch)?.totals.items, boardTotal);
-  assert.deepEqual(logs, { warn: [], error: [] });
-});
-
-test('a follow link naming an item that is not on the board is ignored and logged', async () => {
-  const { ch, logs } = await openWith(fixtureSnapshot([item({ id: 'A' }), item({ id: 'B' })]));
-  ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
-  const before = ch.posted.length;
-  ch.send({ v: 1, payload: { type: 'select-item', itemId: 'gone' } });
-  assert.equal(ch.posted.length, before, 'nothing is posted');
-  assert.equal(logs.warn.length, 1);
-  assert.match(logs.warn[0]!, /link to an item that is not on the board/);
-  assert.equal(lastOf(ch, 'issues')!.model.selectedItemId, null, 'the selection is unchanged');
-
-  ch.send({ v: 1, payload: { type: 'select-item', itemId: 'B' } });
-  assert.equal(lastOf(ch, 'issues')!.model.selectedItemId, 'B', 'an item on the board is selected');
-  assert.equal(logs.warn.length, 1);
-});
-
-test('the epic rollup and issue view render as text, and their tabs and links post only set-view and select-item', async () => {
-  const hostile = '<img src=x onerror=alert(1)>';
-  const snap = fixtureSnapshot([
-    item({ id: 'E1', kind: 'epic', title: `Epic ${hostile}` }),
-    item({ id: 'E1:S001', parentId: 'E1', stage: 'complete', title: 'Columns' }),
-    item({ id: 'E1:S002', parentId: 'E1', stage: 'scoped', title: hostile }),
-    item({ id: 'I1', kind: 'issue', standalone: true, stage: 'design-plan', title: 'Overflow', correctsRef: { resolvedItemId: 'E1:S001' } as never,
-      childIds: ['I1:S001', 'I1:S002'] }),
-    item({ id: 'I1:S001', parentId: 'I1', stage: 'complete', title: 'Wrap the text' }),
-    item({ id: 'I1:S002', parentId: 'I1', stage: 'design-plan', title: 'Measure first' }),
-    item({ id: 'I2', kind: 'issue', standalone: true, stage: 'scoped', title: 'Orphan',
-      correctsRef: { resolvedItemId: null } as never,
-      notices: [{ code: 'unresolved-parent', message: `cannot find ${hostile}`, itemIds: ['I2'], artifactIds: [], fileNames: [], attention: true }] as never }),
-  ]);
-  const host = await openWith(snap);
-  host.ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
-  const epics = lastOf(host.ch, 'epics')!;
-  host.ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
-  const issues = lastOf(host.ch, 'issues')!;
-
-  const { posted, deliver, el } = runScript();
-  deliver({ v: 1, payload: epics });
-  const rows = el['board']!.children;
-  assert.deepEqual(rows.map(g => texts(g)), [
-    ['EPIC · E1', `Epic ${hostile}`, '2 stories · 0 tasks', '1 of 2 stories complete', 'No open gates'],
-    ['Not in an epic', '2 stories · 0 tasks · 2 issues', '1 of 2 stories complete', 'No open gates'],
-  ], 'titles, completion labels and counts as literal text; the fix stories (parent: their issue) are not in an epic');
-  assert.equal(rows[0]!.attrs['data-epic'], 'E1');
-  assert.equal(rows[1]!.attrs['data-epic'], undefined, "the 'Not in an epic' row names no epic");
-  assert.equal(findAll(el['board']!, x => x.attrs['class'] === 'card').length, 0, 'the rollup lists counts, not cards');
-  assert.equal(el['tab-epics']!.attrs['aria-selected'], 'true');
-  assert.equal(el['tab-board']!.attrs['aria-selected'], 'false');
-  assert.equal(el['totals']!.textContent, '6 items, 0 needing attention');
-
-  deliver({ v: 1, payload: issues });
-  const entries = el['board']!.children;
-  assert.deepEqual(entries.map(e => e.attrs['data-item-id']), ['I1', 'I2']);
-  assert.deepEqual(texts(entries[0]!), ['ISSUE · I1', 'Overflow', 'Standalone', 'Stage: Design & plan', 'Corrects: ', 'Story · Columns · Complete', 'Fix stories', 'Story · Wrap the text · Complete', 'Story · Measure first · Design & plan']);
-  assert.ok(texts(entries[1]!).includes(`cannot find ${hostile}`), 'the unresolved-parent notice is literal text');
-  assert.ok(texts(entries[1]!).includes('No fix stories yet'));
-  assert.equal(el['tab-issues']!.attrs['aria-selected'], 'true');
-
-  // The links and tabs post only select-item and set-view.
-  const links = findAll(el['board']!, x => x.attrs['class'] === 'link');
-  assert.deepEqual(links.map(l => l.attrs['data-item-id']), ['E1:S001', 'I1:S001', 'I1:S002']);
-  for (const l of links) l.listeners['click']!();
-  for (const t of ['tab-board', 'tab-epics', 'tab-issues']) el[t]!.listeners['click']!();
-  const sent = posted.slice(3);   // after the boot posts: set-density, ready and the harness's refresh
-  for (const m of sent) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
-  assert.deepEqual(sent.map(m => (m as { payload: unknown }).payload), [
-    { type: 'select-item', itemId: 'E1:S001' }, { type: 'select-item', itemId: 'I1:S001' }, { type: 'select-item', itemId: 'I1:S002' },
-    { type: 'set-view', view: 'board' }, { type: 'set-view', view: 'epics' }, { type: 'set-view', view: 'issues' },
-  ]);
-
-  // An empty selection in either view says nothing matches.
-  host.ch.send({ v: 1, payload: { type: 'set-search', search: 'no such thing' } });
-  deliver({ v: 1, payload: lastOf(host.ch, 'issues')! });
-  assert.equal(texts(el['panel']!)[0], 'Nothing matches this view');
-  host.ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
-  deliver({ v: 1, payload: lastOf(host.ch, 'epics')! });
-  assert.equal(texts(el['panel']!)[0], 'Nothing matches this view');
-  assert.deepEqual(el['board']!.children.map(g => g.children[0]!.textContent), [], 'no epic matches the search');
-
-  // An issue view over a board with no issues says so, rather than that nothing matches.
-  const plain = await openWith(fixtureSnapshot([item({ id: 'S1' })]));
-  plain.ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
-  deliver({ v: 1, payload: lastOf(plain.ch, 'issues')! });
-  assert.deepEqual(texts(el['panel']!), ['No issues on the board', 'There are no issues on the board.'], 'no Clear filters: nothing is filtered out');
 });
 
 test('a logger that throws never leaves the board loading or stops a refresh', async () => {
@@ -560,7 +363,7 @@ test('a logger that throws never leaves the board loading or stops a refresh', a
   calls[1]!.resolve({ ok: true, value: fixtureSnapshot([item({ id: 'old' })]) });
   await flush();
   assert.deepEqual(lastItems(ch), ['B'], 'the newer answer is applied; the dropped one and the unknown stage are logged into a broken sink without harm');
-  ch.send({ v: 1, payload: { type: 'select-item', itemId: 'nowhere' } });
+  ch.send({ v: 1, payload: { type: 'open-item', itemId: 'nowhere' } });
   assert.deepEqual(lastItems(ch), ['B']);
 });
 
@@ -608,7 +411,8 @@ const PLAN_BODY = { tasks: [
   { id: 't1', dependsOn: [], acceptanceChecks: ['types compile'] },
   { id: 't2', dependsOn: ['t1'], acceptanceChecks: ['rows built'] },
 ] };
-const detailsOf = (c: FakeChannel) => payloads(c).filter(p => p.type === 'details').map(p => (p.type === 'details' ? p.model : null));
+/** The details of every story or issue screen posted, in order. */
+const detailsOf = (c: FakeChannel) => screensOf(c).flatMap(m => (m.body.kind === 'story' || m.body.kind === 'issue' ? [m.body.details] : []));
 const send = (c: FakeChannel, payload: unknown) => c.send({ v: 1, payload });
 
 async function openOn(s: ReturnType<typeof detailsSetup>, snap: DeliverySnapshot): Promise<FakeChannel> {
@@ -621,13 +425,13 @@ async function openOn(s: ReturnType<typeof detailsSetup>, snap: DeliverySnapshot
 test('opening a story reads its plan once per snapshot and shows the dependencies when it arrives', async () => {
   const s = detailsSetup();
   const ch = await openOn(s, storySnapshot());
-  assert.deepEqual(detailsOf(ch), [], 'nothing is selected yet, so no details are posted');
+  assert.deepEqual(detailsOf(ch), [], 'no story screen yet, so no details are posted');
 
-  send(ch, { type: 'select-item', itemId: 'S1' });
+  send(ch, { type: 'open-item', itemId: 'S1' });
   const loading = detailsOf(ch).at(-1)!;
   assert.equal(loading.itemId, 'S1');
   assert.ok(loading.tasks.every(t => t.dependsOn === null), 'the plan is still loading');
-  assert.deepEqual(payloads(ch).slice(-3).map(p => p.type), ['board', 'details', 'announce'], 'details come after the view message, and the selection announcement last (s5)');
+  assert.deepEqual(payloads(ch).slice(-3).map(p => p.type), ['status', 'screen', 'announce'], 'the story screen replaces the board, and its announcement comes last (s5)');
   assert.deepEqual(s.evidence.map(e => e.artifactId), ['PLAN-x'], 'one evidence read for the PLAN');
 
   s.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
@@ -640,11 +444,12 @@ test('opening a story reads its plan once per snapshot and shows the dependencie
   assert.equal(ready.planNotice, null);
 
   // Reopening it in the same snapshot uses the read already made.
-  send(ch, { type: 'close-details' });
-  assert.equal(detailsOf(ch).at(-1), null, 'close-details posts details null');
-  send(ch, { type: 'select-item', itemId: 'S2' });
+  send(ch, { type: 'back' });
+  assert.equal(lastScreen(ch)!.body.kind, 'stages', 'Back shows the board again');
+  send(ch, { type: 'open-item', itemId: 'S2' });
   assert.equal(detailsOf(ch).at(-1)!.itemId, 'S2');
-  send(ch, { type: 'select-item', itemId: 'S1' });
+  send(ch, { type: 'back' });
+  send(ch, { type: 'open-item', itemId: 'S1' });
   assert.equal(s.evidence.length, 1, 'no second read in the same snapshot');
   assert.deepEqual(detailsOf(ch).at(-1)!.tasks[1]!.dependsOn, ['Types']);
 
@@ -659,7 +464,7 @@ test('opening a story reads its plan once per snapshot and shows the dependencie
 test('a review-view record opens in the review pane and a build record opens read-only from the daemon as text', async () => {
   const s = detailsSetup({ reviewPane: true });
   const ch = await openOn(s, storySnapshot());
-  send(ch, { type: 'select-item', itemId: 'S1' });
+  send(ch, { type: 'open-item', itemId: 'S1' });
   s.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
   await flush();
 
@@ -698,15 +503,15 @@ test('a review-view record opens in the review pane and a build record opens rea
   assert.equal(s.evidence.length, 5);
   assert.equal(s.logs.warn.filter(w => /not the selected item's evidence/.test(w)).length, 3);
 
-  // close-details clears the opened record.
-  send(ch, { type: 'close-details' });
-  send(ch, { type: 'select-item', itemId: 'S1' });
+  // Leaving the story's screen clears the opened record.
+  send(ch, { type: 'back' });
+  send(ch, { type: 'open-item', itemId: 'S1' });
   assert.equal(detailsOf(ch).at(-1)!.openedRecord, null);
 
   // With no review pane, a review-view record is read too; rendered markdown is preferred, and a failure is shown.
   const s2 = detailsSetup();
   const ch2 = await openOn(s2, storySnapshot());
-  send(ch2, { type: 'select-item', itemId: 'S1' });
+  send(ch2, { type: 'open-item', itemId: 'S1' });
   send(ch2, { type: 'open-evidence', itemId: 'S1', artifactId: 'LLD-x' });
   assert.deepEqual(s2.evidence.map(e => e.artifactId), ['PLAN-x', 'LLD-x']);
   s2.evidence[1]!.resolve({ ok: true, value: { artifactId: 'LLD-x', kind: 'LLD', meta: {}, body: {}, renderedMarkdown: '# LLD' } });
@@ -723,7 +528,7 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
   // Failed.
   const s = detailsSetup();
   const ch = await openOn(s, storySnapshot());
-  send(ch, { type: 'select-item', itemId: 'S1' });
+  send(ch, { type: 'open-item', itemId: 'S1' });
   s.evidence[0]!.resolve({ ok: false, failure: { kind: 'read-failed', message: 'no such record' } });
   await flush();
   const failed = detailsOf(ch).at(-1)!;
@@ -734,13 +539,13 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
   // No task list, and malformed entries skipped.
   const s2 = detailsSetup();
   const ch2 = await openOn(s2, storySnapshot());
-  send(ch2, { type: 'select-item', itemId: 'S1' });
+  send(ch2, { type: 'open-item', itemId: 'S1' });
   s2.evidence[0]!.resolve({ ok: true, value: planRecord({ summary: 'no tasks' }) });
   await flush();
   assert.equal(detailsOf(ch2).at(-1)!.planNotice, 'The plan could not be read: The plan record has no task list');
   const s3 = detailsSetup();
   const ch3 = await openOn(s3, storySnapshot());
-  send(ch3, { type: 'select-item', itemId: 'S1' });
+  send(ch3, { type: 'open-item', itemId: 'S1' });
   s3.evidence[0]!.resolve({ ok: true, value: planRecord({ tasks: [
     { id: 't1', dependsOn: 'not a list' },
     null,
@@ -754,7 +559,7 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
   // Stale: a read that finishes after a newer snapshot is dropped; one after the panel closed posts nothing.
   const s4 = detailsSetup();
   const ch4 = await openOn(s4, storySnapshot());
-  send(ch4, { type: 'select-item', itemId: 'S1' });
+  send(ch4, { type: 'open-item', itemId: 'S1' });
   send(ch4, { type: 'refresh' });
   s4.snapshots[1]!.resolve({ ok: true, value: storySnapshot('2026-10-09T11:05:00.000Z') });
   await flush();
@@ -769,7 +574,7 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
   // A record read that answers after a newer snapshot was applied is dropped, as a stale plan read is.
   const s7 = detailsSetup();
   const ch7 = await openOn(s7, storySnapshot());
-  send(ch7, { type: 'select-item', itemId: 'S1' });
+  send(ch7, { type: 'open-item', itemId: 'S1' });
   send(ch7, { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' });
   send(ch7, { type: 'refresh' });
   s7.snapshots[1]!.resolve({ ok: true, value: storySnapshot('2026-10-09T11:05:00.000Z') });
@@ -778,24 +583,24 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
   await flush();
   assert.equal(detailsOf(ch7).at(-1)!.openedRecord, null, 'the old snapshot\'s record is not shown');
 
-  // A selection that cannot be rendered changes nothing, so the opened record stays.
+  // An item screen that cannot be rendered changes nothing: the screen shown stays.
   const s8 = detailsSetup();
   const broken = fixtureSnapshot([...storySnapshot().items, item({ id: 'S9', title: 'Broken', tasks: 42 as never })]);
   const ch8 = await openOn(s8, broken);
-  send(ch8, { type: 'select-item', itemId: 'S1' });
+  send(ch8, { type: 'open-item', itemId: 'S1' });
   send(ch8, { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' });
   s8.evidence[1]!.resolve({ ok: true, value: { artifactId: 'BUILD-x', kind: 'BUILD', meta: {}, body: {}, renderedMarkdown: '# Build' } });
   await flush();
-  send(ch8, { type: 'select-item', itemId: 'S9' });
-  assert.ok(s8.logs.error.some(e => /select-item could not be shown/.test(e)));
+  send(ch8, { type: 'back' });
+  send(ch8, { type: 'open-item', itemId: 'S9' });
+  assert.ok(s8.logs.error.some(e => /open-item could not be shown/.test(e)));
   send(ch8, { type: 'ready' });
-  assert.equal(detailsOf(ch8).at(-1)!.itemId, 'S1', 'the selection stays');
-  assert.deepEqual(detailsOf(ch8).at(-1)!.openedRecord, { artifactId: 'BUILD-x', text: '# Build' }, 'and so does its opened record');
+  assert.equal(lastScreen(ch8)!.body.kind, 'stages', 'the board the reader went back to stays');
 
   // A board that cannot be re-shown when an answer arrives logs the failure instead of rejecting unseen.
   const s6 = detailsSetup();
   const ch6 = await openOn(s6, storySnapshot());
-  send(ch6, { type: 'select-item', itemId: 'S1' });
+  send(ch6, { type: 'open-item', itemId: 'S1' });
   send(ch6, { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' });
   ch6.postMessage = () => { throw new Error('webview gone'); };
   s6.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
@@ -806,198 +611,12 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
 
   const s5 = detailsSetup();
   const ch5 = await openOn(s5, storySnapshot());
-  send(ch5, { type: 'select-item', itemId: 'S1' });
+  send(ch5, { type: 'open-item', itemId: 'S1' });
   ch5.close();
   const before = ch5.posted.length;
   s5.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
   await flush();
   assert.equal(ch5.posted.length, before, 'a read that finishes after the panel closed posts nothing');
-});
-
-test('the details pane renders as text and its controls post only select-item, close-details and open-evidence', async () => {
-  // The model comes from the real host over a snapshot whose title, notice and opened record carry markup.
-  const hostile = '<img src=x onerror=alert(1)>';
-  const snap = fixtureSnapshot([
-    item({ id: 'S1', title: `Details ${hostile}`, stage: 'build-recorded', parentId: 'E1', childIds: ['S1:T1'], sourceIds: ['s1'],
-      tasks: [{ taskItemId: 'S1:T1', result: 'failed', planned: true }],
-      validation: { passed: 0, failed: 1, unrecorded: 0, unplanned: 0 },
-      conflict: { failedTaskItemIds: ['S1:T1'], storyLevelFailed: false },
-      notices: [{ code: 'unplanned-task', message: `odd ${hostile}`, itemIds: ['S1'], artifactIds: [], fileNames: [] }] as never,
-      evidence: [ev('BUILD-x', 'BUILD'), ev('LLD-x', 'LLD', { mdPath: 'docs/e/S001/LLD.md', openWith: 'review-view' }), ev('PLAN-x', 'PLAN')] }),
-    item({ id: 'S1:T1', kind: 'task', parentId: 'S1', title: 'Types', sourceIds: ['t1'] }),
-    item({ id: 'E1', kind: 'epic', title: 'Board epic', childIds: ['S1'] }),
-  ]);
-  const withReason = { ...snap, items: snap.items.map(i => (i.id === 'S1' ? { ...i, stage: { ...i.stage!, reason: { text: 'A build is recorded.', artifactIds: ['BUILD-x'] } } } : i)) };
-  const s = detailsSetup();
-  const ch = await openOn(s, withReason);
-  send(ch, { type: 'select-item', itemId: 'S1' });
-  s.evidence[0]!.resolve({ ok: true, value: planRecord({ tasks: [{ id: 't1', dependsOn: ['t0'], acceptanceChecks: ['types compile'] }] }) });
-  await flush();
-  send(ch, { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' });
-  s.evidence[1]!.resolve({ ok: true, value: { artifactId: 'BUILD-x', kind: 'BUILD', meta: {}, body: {}, renderedMarkdown: `# Build ${hostile}` } });
-  await flush();
-  const model = detailsOf(ch).at(-1)!;
-  assert.ok(model.openedRecord !== null);
-
-  const { posted, deliver, el } = runScript();
-  posted.length = 0;
-  deliver({ v: 1, payload: { type: 'details', model } });
-  const pane = el['details']!;
-  assert.equal('hidden' in pane.attrs, false, 'the pane is shown');
-  const shown = texts(pane);
-  for (const t of [
-    `Details ${hostile}`, 'STORY \u00b7 S1', 'Build recorded', 'Why this stage?', 'A build is recorded.', 'From BUILD-x',
-    'Two records disagree', 'The build is approved while 1 task result failed (Types).',
-    '0 passed, 1 failed, 0 unrecorded, 0 unplanned', 'Types', 'Failed', 'Depends on t0', 'types compile',
-    'Artifact chain', 'LLD', 'PLAN', 'BUILD',
-    'BUILD BUILD-x \u00b7 Approved', 'LLD LLD-x \u00b7 Approved', `Unplanned task: odd ${hostile}`,
-    'Parent: Board epic', 'Child: Types', 'Sources: s1', 'Record BUILD-x',
-  ]) assert.ok(shown.includes(t), `shows ${t}`);
-  const pre = findAll(pane, e => e.tag === 'pre');
-  assert.equal(pre.length, 1);
-  assert.equal(pre[0]!.textContent, `# Build ${hostile}`, 'the opened record is literal text in a <pre>');
-  assert.equal(findAll(pane, e => e.tag === 'img').length, 0, 'markup never becomes elements');
-
-  // The controls: close, one open per record, and the linked items.
-  const buttons = findAll(pane, e => e.tag === 'button');
-  const click = (text: string) => buttons.find(b => b.textContent === text)!.listeners['click']!();
-  click('Close details');
-  click('Open read-only');
-  click('Open in review');
-  click('Parent: Board epic');
-  // A card click in the board view posts select-item.
-  deliver({ v: 1, payload: { type: 'board', model: lastBoard(ch) } });
-  const card = findAll(el['board']!, e => e.attrs['data-item-id'] === 'S1' && e.tag === 'li')[0]!;
-  card.listeners['click']!();
-  for (const m of posted) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
-  assert.deepEqual(posted.map(m => (m as { payload: unknown }).payload), [
-    { type: 'close-details' },
-    { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' },
-    { type: 'open-evidence', itemId: 'S1', artifactId: 'LLD-x' },
-    { type: 'select-item', itemId: 'E1' },
-    { type: 'select-item', itemId: 'S1' },
-  ]);
-
-  // A null model clears the pane.
-  deliver({ v: 1, payload: { type: 'details', model: null } });
-  assert.deepEqual(pane.children, []);
-  assert.equal('hidden' in pane.attrs, true);
-});
-
-// ---------------------------------------------------------------------------
-// E2 s5 — narrow pane, keyboard, announcements and density.
-
-test('a narrow pane stacks the columns into one list grouped by stage, and no rule hides a card, badge or warning', async () => {
-  const doc = renderBoardDocument('N0NCE');
-  assert.equal((doc.match(/<style>/g) ?? []).length, 1, 'one stylesheet');
-  assert.ok(doc.includes(`<style>${BOARD_STYLE}</style>`));
-  assert.match(doc, /content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-N0NCE';"/, 'the CSP is unchanged');
-
-  // Wide: columns side by side. Narrow: the same sections stacked, one per stage, under their headings.
-  assert.match(BOARD_STYLE, /\.board\{display:grid;/);
-  const narrow = /@media \(max-width:600px\)\{(.*)\}$/.exec(BOARD_STYLE)?.[1] ?? '';
-  assert.match(narrow, /\.board\{display:flex;flex-wrap:wrap;/, 'below 600 px the columns stack into one list');
-  assert.match(narrow, /\.board>section\{flex:1 0 100%;\}/, 'each non-empty stage takes a full row');
-  // Nothing is hidden at any width or density.
-  for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /text-overflow/, /overflow:\s*hidden/, /height:\s*0/]) {
-    assert.doesNotMatch(BOARD_STYLE, hiding, `no ${hiding} rule`);
-  }
-  // Colours come only from the theme.
-  assert.doesNotMatch(BOARD_STYLE, /#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\(/, 'no literal colour');
-  for (const v of BOARD_STYLE.match(/var\(--[a-zA-Z-]+/g) ?? []) {
-    assert.match(v, /^var\(--(vscode-|gap|pad|small)/, `${v} is a theme or density variable`);
-  }
-  // Density changes spacing and size only; focus is always visible.
-  assert.match(BOARD_STYLE, /body\[data-density="compact"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;]+;font-size:[^;}]+;\}/);
-  assert.match(BOARD_STYLE, /body\[data-density="comfortable"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;}]+;\}/);
-  assert.match(BOARD_STYLE, /:focus-visible\{outline:2px solid var\(--vscode-focusBorder\)/);
-
-  // One announcer; the status keeps its role but is not live; the density control is two pressed-state buttons.
-  assert.deepEqual(doc.match(/aria-live="[^"]+"/g), ['aria-live="polite"']);
-  assert.match(doc, /<p id="announce" class="announce" aria-live="polite" aria-atomic="true"><\/p>/);
-  assert.match(doc, /<p id="status" role="status"><\/p>/);
-  assert.match(doc, /<button id="density-compact" type="button" aria-pressed="false">Compact<\/button>/);
-  assert.match(doc, /<button id="density-comfortable" type="button" aria-pressed="true">Comfortable<\/button>/);
-
-  // The board's DOM is still one section per stage with every card and badge, whatever the width.
-  const snap = fixtureSnapshot([
-    item({ id: 'S1', stage: 'scoped', title: 'One', needsAttention: true, attentionReasons: ['rejected'] }),
-    item({ id: 'S2', stage: 'complete', title: 'Two' }),
-  ]);
-  const { ch } = await openWith(snap);
-  const { deliver, el } = runScript();
-  deliver({ v: 1, payload: { type: 'board', model: lastBoard(ch) } });
-  const sections = findAll(el['board']!, e => e.tag === 'section');
-  assert.equal(sections.length, 6, 'one group per stage');
-  assert.deepEqual(cardsIn(el['board']!).map(c => c.attrs['data-item-id']), ['S1', 'S2']);
-  assert.ok(texts(el['board']!).includes('Rejected'), 'the warning badge is rendered');
-});
-
-test('a selection and a settled refresh are each announced once, and loading, superseded answers, reloads and other intents announce nothing', async () => {
-  const s = detailsSetup();
-  const announces = (c: FakeChannel) => payloads(c).filter(p => p.type === 'announce').map(p => (p.type === 'announce' ? p.text : ''));
-  s.host.open();
-  const ch = s.channels[0]!;
-  assert.deepEqual(announces(ch), [], 'loading announces nothing');
-  const snap = fixtureSnapshot([
-    item({ id: 'S1', title: 'Details', stage: 'build-recorded', needsAttention: true, attentionReasons: ['rejected'] }),
-    item({ id: 'S2', title: 'Second', stage: 'scoped' }),
-    item({ id: 'E1', kind: 'epic', title: 'Epic' }),
-  ]);
-  s.snapshots[0]!.resolve({ ok: true, value: snap });
-  await flush();
-  assert.deepEqual(announces(ch), ['Board refreshed: 2 items, 1 needing attention'], 'counted over the placeable items of the whole snapshot');
-  assert.equal(payloads(ch).at(-1)!.type, 'announce', 'after the status and the view');
-
-  // A selection that changes announces once, after the view and details; reselecting or a missing item says nothing.
-  send(ch, { type: 'select-item', itemId: 'S1' });
-  assert.deepEqual(payloads(ch).slice(-3).map(p => p.type), ['board', 'details', 'announce']);
-  assert.equal(announces(ch).at(-1), 'Selected: Details \u00b7 Build recorded');
-  send(ch, { type: 'select-item', itemId: 'S1' });
-  send(ch, { type: 'select-item', itemId: 'GONE' });
-  send(ch, { type: 'select-item', itemId: 'E1' });
-  assert.deepEqual(announces(ch).slice(1), ['Selected: Details \u00b7 Build recorded', 'Selected: Epic'], 'an item with no stage is named alone');
-
-  // Other intents and a webview reload announce nothing.
-  const before = announces(ch).length;
-  for (const p of [{ type: 'close-details' }, { type: 'set-view', view: 'epics' }, { type: 'set-view', view: 'board' }, { type: 'set-search', search: 'x' },
-    { type: 'set-search', search: '' }, { type: 'set-scope', scope: { kind: 'standalone' } }, { type: 'set-attention', on: true },
-    { type: 'set-density', density: 'compact' }, { type: 'show-more', stage: 'scoped' }, { type: 'ready' }]) send(ch, p);
-  assert.equal(announces(ch).length, before);
-
-  // A superseded answer announces nothing; the applied one announces once. A failure announces its message.
-  send(ch, { type: 'refresh' });
-  send(ch, { type: 'refresh' });
-  s.snapshots[2]!.resolve({ ok: true, value: snap });
-  await flush();
-  s.snapshots[1]!.resolve({ ok: true, value: snap });
-  await flush();
-  assert.equal(announces(ch).length, before + 1);
-  send(ch, { type: 'refresh' });
-  s.snapshots[3]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'took too long' } });
-  await flush();
-  assert.match(announces(ch).at(-1)!, /^The refresh failed at .*: took too long Showing the board from/);
-  assert.equal(announces(ch).length, before + 2);
-
-  // A closed panel's answer announces nothing.
-  send(ch, { type: 'refresh' });
-  ch.close();
-  s.snapshots[4]!.resolve({ ok: true, value: snap });
-  await flush();
-  assert.equal(announces(ch).length, before + 2);
-
-  // An announcement that cannot be posted is only logged; the refresh still counts as rendered.
-  const s2 = detailsSetup();
-  s2.host.open();
-  const ch2 = s2.channels[0]!;
-  const post = ch2.postMessage;
-  ch2.postMessage = (m) => { if ((m as Envelope<BoardDownMessage>).payload.type === 'announce') throw new Error('gone'); post(m); };
-  s2.snapshots[0]!.resolve({ ok: true, value: snap });
-  await flush();
-  assert.ok(s2.logs.error.some(e => /result could not be announced: gone/.test(e)));
-  const status = payloads(ch2).filter(p => p.type === 'status').at(-1);
-  assert.equal(status?.type === 'status' ? status.status.state : null, 'ready', 'the board stays rendered');
-  assert.deepEqual(lastItems(ch2), ['S2', 'S1']);
 });
 
 /** A board, rollup and issue snapshot whose cards the keyboard tests walk. */
@@ -1027,115 +646,438 @@ async function liveBoard(snap: DeliverySnapshot) {
 
 const cardOf = (root: FakeEl, id: string) => cardsIn(root).find(c => c.attrs['data-item-id'] === id)!;
 
-test('every card is focusable and opens with Enter or Space, arrows move between cards, and closing the details returns focus to the card', async () => {
-  const b = await liveBoard(keyboardSnapshot());
-  const board = b.w.el['board']!;
-  // Every card in the two card views is focusable and keeps its accessible label (the epic rollup lists counts, not cards).
-  for (const view of ['board', 'issues'] as const) {
-    b.ch.send({ v: 1, payload: { type: 'set-view', view } });
-    b.pump();
-    const cards = cardsIn(board);
-    assert.ok(cards.length > 0, `${view} has cards`);
-    for (const c of cards) {
-      assert.equal(c.attrs['tabindex'], '0', `${view}: ${c.attrs['data-item-id']} is focusable`);
-      assert.ok((c.attrs['aria-label'] ?? '').length > 0, 'and keeps its accessible label');
-    }
-  }
-  b.ch.send({ v: 1, payload: { type: 'set-view', view: 'board' } });
+test('a filter change, Back and announcements: screen changes are announced once, a settled refresh once, and filters, density and reloads say nothing', async () => {
+  const s = detailsSetup();
+  const announces = (c: FakeChannel) => payloads(c).filter(p => p.type === 'announce').map(p => (p.type === 'announce' ? p.text : ''));
+  s.host.open();
+  const ch = s.channels[0]!;
+  assert.deepEqual(announces(ch), [], 'loading announces nothing');
+  const snap = fixtureSnapshot([
+    item({ id: 'S1', title: 'Details', stage: 'build-recorded', needsAttention: true, attentionReasons: ['rejected'] }),
+    item({ id: 'S2', title: 'Second', stage: 'scoped' }),
+    item({ id: 'E1', kind: 'epic', title: 'Epic' }),
+  ]);
+  s.snapshots[0]!.resolve({ ok: true, value: snap });
+  await flush();
+  assert.deepEqual(announces(ch), ['Board refreshed: 2 items, 1 needing attention'], 'counted over the placeable items of the whole snapshot');
+  assert.equal(payloads(ch).at(-1)!.type, 'announce', 'after the status and the screen');
+
+  send(ch, { type: 'open-item', itemId: 'S1' });
+  assert.deepEqual(payloads(ch).slice(-3).map(p => p.type), ['status', 'screen', 'announce']);
+  assert.equal(announces(ch).at(-1), 'Opened: Details · Build recorded');
+  send(ch, { type: 'open-item', itemId: 'S1' });
+  send(ch, { type: 'open-item', itemId: 'GONE' });
+  send(ch, { type: 'back' });
+  send(ch, { type: 'open-item', itemId: 'E1' });
+  assert.deepEqual(announces(ch).slice(1), ['Opened: Details · Build recorded', 'Back to All work', 'Epic: Epic'], 'an epic id opens the epic');
+
+  const before = announces(ch).length;
+  for (const p of [{ type: 'set-search', search: 'x' }, { type: 'set-search', search: '' }, { type: 'set-attention', on: true },
+    { type: 'set-density', density: 'compact' }, { type: 'show-more', stage: 'scoped' }, { type: 'ready' }, { type: 'clear-filters' }]) send(ch, p);
+  assert.equal(announces(ch).length, before, 'filters, density and a reload announce nothing');
+
+  // A superseded answer announces nothing; the applied one announces once. A failure announces its message.
+  send(ch, { type: 'refresh' });
+  send(ch, { type: 'refresh' });
+  s.snapshots[2]!.resolve({ ok: true, value: snap });
+  await flush();
+  s.snapshots[1]!.resolve({ ok: true, value: snap });
+  await flush();
+  assert.equal(announces(ch).length, before + 1);
+  send(ch, { type: 'refresh' });
+  s.snapshots[3]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'took too long' } });
+  await flush();
+  assert.match(announces(ch).at(-1)!, /^The refresh failed at .*: took too long Showing the board from/);
+
+  // A refresh that removes what the reader is viewing says so first.
+  send(ch, { type: 'set-view', view: 'all' });
+  send(ch, { type: 'open-item', itemId: 'S1' });
+  send(ch, { type: 'refresh' });
+  s.snapshots[4]!.resolve({ ok: true, value: fixtureSnapshot([item({ id: 'S2', title: 'Second' })]) });
+  await flush();
+  assert.equal(announces(ch).at(-1), 'What you were viewing is no longer on the board. Board refreshed: 1 item, 0 needing attention');
+  assert.equal(lastScreen(ch)!.body.kind, 'stages', 'and shows the board it was opened from');
+
+  // An announcement that cannot be posted is only logged; the refresh still counts as rendered.
+  const s2 = detailsSetup();
+  s2.host.open();
+  const ch2 = s2.channels[0]!;
+  const post = ch2.postMessage;
+  ch2.postMessage = (m) => { if ((m as Envelope<BoardDownMessage>).payload.type === 'announce') throw new Error('gone'); post(m); };
+  s2.snapshots[0]!.resolve({ ok: true, value: snap });
+  await flush();
+  assert.ok(s2.logs.error.some(e => /result could not be announced: gone/.test(e)));
+  assert.deepEqual(lastItems(ch2), ['S2', 'S1']);
+});
+
+test('clear-filters clears the screen\'s search and attention, keeps the screen, and resets paging', async () => {
+  const host = await openWith(fixtureSnapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
+    item({ id: 'E2', kind: 'epic', title: 'Other epic' }),
+    ...Array.from({ length: 60 }, (_, n) => item({ id: `E1:S${String(n).padStart(3, '0')}`, parentId: 'E1', title: `Story ${n}`, needsAttention: n % 2 === 0 })),
+    item({ id: 'E2:S001', parentId: 'E2', title: 'Elsewhere' }),
+  ]));
+  send(host.ch, { type: 'set-view', view: 'epics' });
+  send(host.ch, { type: 'open-epic', epicItemId: 'E1' });
+  send(host.ch, { type: 'set-search', search: 'story 1' });
+  send(host.ch, { type: 'set-attention', on: true });
+  assert.ok(itemsOn(lastBoard(host.ch))! < 60, 'the filters narrow the epic board');
+  send(host.ch, { type: 'set-search', search: '' });
+  send(host.ch, { type: 'set-attention', on: false });
+  send(host.ch, { type: 'show-more', stage: 'scoped' });
+  assert.equal(column(host.ch, 'scoped')!.cards.length, 60, 'show-more revealed the second page');
+  send(host.ch, { type: 'set-search', search: 'story' });
+  send(host.ch, { type: 'set-attention', on: true });
+
+  send(host.ch, { type: 'clear-filters' });
+  assert.equal(itemsOn(lastBoard(host.ch)), 60, 'search and attention are cleared; the epic\'s board is kept (E2\'s story stays out)');
+  assert.deepEqual([column(host.ch, 'scoped')!.cards.length, column(host.ch, 'scoped')!.hiddenCount], [50, 10], 'paging is back to the first page');
+  assert.deepEqual(lastScreen(host.ch)!.filters, { views: false, view: null, search: '', searchPlaceholder: 'Search this epic', needsAttentionOnly: false });
+  assert.equal(host.logs.warn.length, 0);
+
+  // Back to Epics: its own (empty) filters were kept apart from the epic board's.
+  send(host.ch, { type: 'back' });
+  assert.equal(lastScreen(host.ch)!.body.kind, 'epics');
+  send(host.ch, { type: 'set-search', search: 'nothing like this' });
+  send(host.ch, { type: 'clear-filters' });
+  const epics = lastScreen(host.ch)!.body;
+  assert.ok(epics.kind === 'epics' && epics.rows.length === 2);
+
+  // With no snapshot shown, clear-filters posts only the status.
+  const s = setup();
+  s.host.open();
+  const ch = s.channels[0]!;
+  send(ch, { type: 'set-search', search: 'zzz' });
+  const before = ch.posted.length;
+  send(ch, { type: 'clear-filters' });
+  assert.deepEqual(payloads(ch).slice(before).map(p => p.type), ['status'], 'no screen without a snapshot');
+  s.calls[0]!.resolve({ ok: true, value: fixtureSnapshot([item({ id: 'S1' }), item({ id: 'S2' })]) });
+  await flush();
+  assert.equal(itemsOn(lastBoard(ch)), 2, 'the cleared search applies when the snapshot arrives');
+});
+
+/** A workspace with two epics, standalone work and issues, for the screen tests. */
+function screensSnapshot(extra: ReturnType<typeof item>[] = []): DeliverySnapshot {
+  return fixtureSnapshot([
+    item({ id: 'E20261009aaaaaaaa', kind: 'epic', title: 'Board epic' }),
+    item({ id: 'E20261009aaaaaaaa:S001', parentId: 'E20261009aaaaaaaa', title: 'Columns', stage: 'scoped', needsAttention: true, attentionReasons: ['pending-decision'] }),
+    item({ id: 'E20261009aaaaaaaa:S002', parentId: 'E20261009aaaaaaaa', title: 'Cards', stage: 'complete' }),
+    item({ id: 'E20261009bbbbbbbb', kind: 'epic', title: 'Other epic' }),
+    item({ id: 'E20261009bbbbbbbb:S001', parentId: 'E20261009bbbbbbbb', title: 'Counts', stage: 'design-plan' }),
+    item({ id: 'H1234abcd5678ef00', kind: 'issue', title: 'Overflow', standalone: true, stage: 'design-plan', correctsRef: { resolvedItemId: 'E20261009aaaaaaaa:S001' } as never }),
+    item({ id: 'SA1', title: 'Loose', standalone: true, stage: 'scoped' }),
+    ...extra,
+  ]);
+}
+const EPIC_A = 'E20261009aaaaaaaa';
+const STORY_A = 'E20261009aaaaaaaa:S001';
+const screenOf = (w: ReturnType<typeof runScript>) => w.el['main']!.attrs['data-screen'];
+const buttonsIn = (root: FakeEl, cls: string) => findAll(root, e => e.tag === 'button' && (e.attrs['class'] ?? '').split(' ').includes(cls));
+const click = (e: FakeEl) => e.listeners['click']!();
+
+test('opening an epic and then a story replaces #main each time, and nothing from an earlier screen remains', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  assert.equal(screenOf(b.w), 'stages');
+  assert.deepEqual(cardsIn(main).map(c => c.attrs['data-item-id']).sort(), ['E20261009aaaaaaaa:S001', 'E20261009aaaaaaaa:S002', 'E20261009bbbbbbbb:S001', 'H1234abcd5678ef00', 'SA1']);
+
+  click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'epics')!);
+  b.relay();
+  assert.equal(screenOf(b.w), 'epics');
+  assert.equal(cardsIn(main).length, 0, 'no board card stays on the Epics screen');
+  click(findAll(main, e => e.attrs['data-epic'] === EPIC_A)[0]!);
+  b.relay();
+  assert.equal(screenOf(b.w), 'stages');
+  assert.deepEqual(cardsIn(main).map(c => c.attrs['data-item-id']).sort(), [STORY_A, 'E20261009aaaaaaaa:S002'], 'only this epic\'s stories');
+  assert.equal(findAll(main, e => e.attrs['data-epic'] !== undefined).length, 0, 'no Epics row stays');
+
+  click(cardOf(main, STORY_A));
+  b.relay();
+  assert.equal(screenOf(b.w), 'story');
+  assert.equal(cardsIn(main).length, 0, 'no card from the epic board stays under the story');
+  assert.equal(findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage').length, 0, 'and no stage section');
+  assert.ok(texts(main).includes('Columns'), 'the story\'s own screen');
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic', '/', 'S001']);
+
+  // Choosing another view leaves the story's screen.
+  click(buttonsIn(b.w.el['crumbs']!, 'crumb')[0]!);
+  b.relay();
+  click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'issues')!);
+  b.relay();
+  assert.equal(screenOf(b.w), 'issues');
+  assert.ok(!texts(main).includes('Columns'));
+  assert.deepEqual(b.s.logs, { warn: [], error: [] });
+});
+
+test('the filter bar has exactly the four views and Needs attention, and no epic is a chip', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  const bar = findAll(main, e => e.attrs['class'] === 'filters')[0]!;
+  const views = buttonsIn(bar, 'view');
+  assert.deepEqual(views.map(v => [v.textContent, v.attrs['aria-pressed']]), [['All work', 'true'], ['Epics', 'false'], ['Standalone', 'false'], ['Issues', 'false']]);
+  const att = buttonsIn(bar, 'attention');
+  assert.deepEqual(att.map(a => [a.textContent, a.attrs['aria-pressed']]), [['Needs attention', 'false']]);
+  assert.equal(findAll(bar, e => e.tag === 'button').length, 5, 'five filters, nothing else');
+  assert.ok(!texts(bar).some(t => /epic/i.test(t) && t !== 'Epics'), 'no epic is a chip');
+  const input = findAll(bar, e => e.tag === 'input')[0]!;
+  assert.deepEqual([input.attrs['type'], input.attrs['placeholder']], ['search', 'Search titles, ids, epics']);
+
+  // Needs attention narrows the view chosen and shows pressed with ×; Show all clears it.
+  click(att[0]!);
+  b.relay();
+  assert.deepEqual([att[0]!.textContent, att[0]!.attrs['aria-pressed']], ['Needs attention ×', 'true']);
+  assert.deepEqual(cardsIn(main).map(c => c.attrs['data-item-id']), [STORY_A]);
+  const totals = findAll(main, e => e.attrs['class'] === 'totals')[0]!;
+  assert.match(totals.textContent, /^1 of 5 items needs attention/);
+  click(buttonsIn(totals, 'show-all')[0]!);
+  b.relay();
+  assert.equal(att[0]!.attrs['aria-pressed'], 'false');
+  assert.equal(cardsIn(main).length, 5);
+
+  // Typing keeps the same search box: the screen's head survives a re-render.
+  input.value = 'loose';
+  input.listeners['input']!();
+  b.relay();
+  assert.equal(findAll(main, e => e.tag === 'input')[0], input, 'the search box is not rebuilt while typing');
+  assert.deepEqual(cardsIn(main).map(c => c.attrs['data-item-id']), ['SA1']);
+
+  // Each view posts set-view; the pressed one follows the screen.
+  click(views[2]!);
+  b.relay();
+  assert.equal(buttonsIn(main, 'view').find(v => v.attrs['aria-pressed'] === 'true')!.attrs['data-view'], 'standalone');
+  for (const m of b.w.posted) assert.notEqual(parseBoardUpMessage(m), null);
+});
+
+test('an Epics row opens that epic\'s board with its header, breadcrumb and ← Epics, and no view control', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'epics')!);
+  b.relay();
+  const rows = findAll(main, e => e.attrs['class'] === 'epic-row');
+  assert.deepEqual(rows.map(r => r.attrs['data-epic']), [EPIC_A, 'E20261009bbbbbbbb'], 'one row per epic');
+  assert.deepEqual(texts(rows[0]!).slice(0, 5), ['EPIC · AAAAAAAA', 'Board epic', '2 stories · 0 tasks', '1 of 2 stories complete', '1 needs attention']);
+  const meter = findAll(rows[0]!, e => e.attrs['role'] === 'meter')[0]!;
+  assert.deepEqual([meter.attrs['aria-valuenow'], meter.attrs['aria-valuemax'], meter.children[0]!.attrs['style']], ['1', '2', 'width:50%']);
+  assert.ok(texts(main).includes('Work outside any epic is under '));
+  assert.equal(findAll(main, e => e.attrs['class'] === 'totals')[0]!.textContent, '2 epics · completion counts stories at Complete');
+
+  b.w.posted.length = 0;
+  click(rows[0]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-epic', epicItemId: EPIC_A }], 'the whole row opens the epic');
+  b.relay();
+  const back = buttonsIn(main, 'back');
+  assert.deepEqual(back.map(x => x.textContent), ['← Epics']);
+  assert.equal(findAll(main, e => e.tag === 'h1')[0]!.textContent, 'Board epic');
+  assert.ok(texts(main).includes('EPIC · AAAAAAAA') && texts(main).includes('1 of 2 stories complete'), 'the epic\'s summary with the same numbers as its row');
+  assert.equal(buttonsIn(main, 'view').length, 0, 'no view control inside an epic');
+  assert.equal(buttonsIn(main, 'attention').length, 1);
+  assert.equal(findAll(main, e => e.tag === 'input')[0]!.attrs['placeholder'], 'Search this epic');
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic']);
+  const crumbButtons = buttonsIn(b.w.el['crumbs']!, 'crumb');
+  assert.deepEqual(crumbButtons.map(c => c.textContent), ['Delivery', 'Epics'], 'the earlier crumbs return to Epics; the current place is not a button');
+  b.w.posted.length = 0;
+  click(crumbButtons[0]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'go-to-crumb', index: 0 }]);
+  b.w.posted.length = 0;
+  click(back[0]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'back' }]);
+  b.relay();
+  assert.equal(screenOf(b.w), 'epics');
+
+  // The Standalone link and the Issues list.
+  click(findAll(main, e => e.attrs['class'] === 'link' && e.textContent === 'Standalone')[0]!);
+  b.relay();
+  assert.deepEqual(cardsIn(main).map(c => c.attrs['data-item-id']).sort(), ['H1234abcd5678ef00', 'SA1']);
+  assert.ok(!cardsIn(main).some(c => texts(c).includes('Standalone')), 'no Standalone line repeated on the Standalone screen');
+  click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'issues')!);
+  b.relay();
+  const issueRows = findAll(main, e => e.attrs['class'] === 'issue-row');
+  assert.deepEqual(texts(issueRows[0]!), ['ISSUE · 1234ABCD', 'Overflow', 'Corrects Columns · no fix story yet', 'Design & plan']);
+  b.w.posted.length = 0;
+  click(issueRows[0]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-item', itemId: 'H1234abcd5678ef00' }]);
+});
+
+test('stages render as six <details> sections in workflow order, and a toggled section stays as the reader left it across a refresh', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  const sections = () => findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage');
+  assert.deepEqual(sections().map(d => [d.attrs['data-stage'], d.attrs['open'] !== undefined]), [
+    ['scoped', true], ['design-plan', true], ['ready-design-approved', false], ['ready-plan-approved', false], ['build-recorded', false], ['complete', false],
+  ]);
+  const summaries = sections().map(d => texts(d.children[0]!));
+  assert.deepEqual(summaries[2], ['Ready · design approved', '0', 'nothing at this stage'], 'an empty stage says so and stays listed');
+  assert.deepEqual(summaries[5], ['Complete', '1'], 'Complete starts closed');
+  assert.equal(cardsIn(sections()[5]!).length, 1, 'its card is inside the closed section, not dropped');
+
+  // The reader opens Complete and closes Scoped; a refresh of the same screen keeps both.
+  const complete = sections()[5]!;
+  complete.setAttribute('open', '');
+  complete.listeners['toggle']!();
+  const scoped = sections()[0]!;
+  scoped.removeAttribute('open');
+  scoped.listeners['toggle']!();
+  b.ch.send({ v: 1, payload: { type: 'refresh' } });
+  b.s.snapshots[1]!.resolve({ ok: true, value: screensSnapshot() });
+  await flush();
   b.pump();
+  assert.deepEqual(sections().map(d => d.attrs['open'] !== undefined), [false, true, false, false, false, true]);
 
-  // Arrows move in document order, without wrapping, and prevent the pane scrolling.
-  const order = cardsIn(board).map(c => c.attrs['data-item-id']);
-  assert.deepEqual(order, ['I1', 'S1', 'S2', 'S3']);
-  const first = cardOf(board, 'I1');
-  first.focus();
-  const down = keyEvent('ArrowDown');
-  first.listeners['keydown']!(down);
-  assert.equal(down.prevented, true);
-  assert.equal(focusState.active?.attrs['data-item-id'], 'S1');
-  focusState.active!.listeners['keydown']!(keyEvent('ArrowUp'));
-  assert.equal(focusState.active?.attrs['data-item-id'], 'I1');
-  focusState.active!.listeners['keydown']!(keyEvent('ArrowUp'));
-  assert.equal(focusState.active?.attrs['data-item-id'], 'I1', 'no wrap at the first card');
-  const last = cardOf(board, 'S3');
-  last.focus();
-  last.listeners['keydown']!(keyEvent('ArrowDown'));
-  assert.equal(focusState.active?.attrs['data-item-id'], 'S3', 'no wrap at the last card');
+  // A new screen starts from the defaults again.
+  click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'standalone')!);
+  b.relay();
+  assert.deepEqual(sections().map(d => d.attrs['open'] !== undefined), [true, true, false, false, false, false]);
+});
 
-  // Enter and Space select, as a click does; opening the details focuses their heading.
+test('a narrow pane shortens the breadcrumb and folds empty stages into Other stages · 0 matching, and widening re-renders the wide form', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'epics')!);
+  b.relay();
+  click(findAll(main, e => e.attrs['data-epic'] === EPIC_A)[0]!);
+  b.relay();
+  const stages = () => findAll(main, e => e.tag === 'details' && (e.attrs['class'] ?? '').startsWith('stage')).map(d => d.attrs['data-stage'] ?? 'fold');
+  assert.deepEqual(stages(), ['scoped', 'design-plan', 'ready-design-approved', 'ready-plan-approved', 'build-recorded', 'complete']);
+
+  b.w.resize(360);
+  assert.deepEqual(stages(), ['scoped', 'complete', 'fold'], 'empty stages fold into one section');
+  const fold = findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage fold')[0]!;
+  assert.deepEqual(texts(fold), ['Other stages · 0 matching', 'Design & plan 0 · Ready · design approved 0 · Ready · plan approved 0 · Build recorded 0']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['← Epics', 'Board epic'], 'only the back step and the current place');
+
+  b.w.resize(900);
+  assert.equal(stages().length, 6, 'widening re-renders the wide form');
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic']);
+
+  // Under Needs attention the empty stages fold into one line at any width.
+  click(buttonsIn(main, 'attention')[0]!);
+  b.relay();
+  assert.deepEqual(stages(), ['scoped']);
+  assert.deepEqual(findAll(main, e => e.attrs['class'] === 'fold muted').map(e => e.textContent),
+    ['5 stages have nothing needing attention: Design & plan, Ready · design approved, Ready · plan approved, Build recorded, Complete.']);
+});
+
+test('Back restores the saved scroll and focuses the card that opened the story; Escape goes back', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  assert.equal(focusState.active, findAll(main, e => e.tag === 'h1')[0], 'a new screen focuses its heading');
+  b.w.scroll(420);
+  click(cardOf(main, 'SA1'));
+  b.relay();
+  assert.equal(b.w.view.scrollY, 0, 'a new screen starts at the top');
+  assert.equal(focusState.active, findAll(main, e => e.tag === 'h1')[0]);
+
+  main.listeners['keydown']!(keyEvent('Escape'));
+  b.relay();
+  assert.equal(screenOf(b.w), 'stages');
+  assert.equal(b.w.view.scrollY, 420, 'the board comes back where the reader left it');
+  assert.equal(focusState.active, cardOf(main, 'SA1'), 'focused on the card that opened the story');
+
+  // Escape on a root screen does nothing; arrows still walk the cards, Enter opens one.
+  b.w.posted.length = 0;
+  main.listeners['keydown']!(keyEvent('Escape'));
+  assert.deepEqual(b.w.posted, []);
+  const cards = cardsIn(main);
+  cards[0]!.focus();
+  cards[0]!.listeners['keydown']!(keyEvent('ArrowDown'));
+  assert.equal(focusState.active, cards[1]);
   const enter = keyEvent('Enter');
-  cardOf(board, 'S1').listeners['keydown']!(enter);
+  cards[1]!.listeners['keydown']!(enter);
   assert.equal(enter.prevented, true);
-  assert.deepEqual(b.w.posted.map(m => (m as { payload: unknown }).payload), [{ type: 'select-item', itemId: 'S1' }]);
-  b.relay();
-  const details = b.w.el['details']!;
-  const heading = findAll(details, c => c.tag === 'h2')[0]!;
-  assert.equal(heading.attrs['tabindex'], '-1');
-  assert.equal(focusState.active, heading, 'focus moves to the details heading');
-  cardOf(board, 'S2').listeners['keydown']!(keyEvent(' '));
-  assert.deepEqual(b.w.posted.map(m => (m as { payload: unknown }).payload), [{ type: 'select-item', itemId: 'S2' }]);
-  b.relay();
-  assert.equal(focusState.active, findAll(details, c => c.tag === 'h2')[0], 'a newly opened item focuses its own heading');
-
-  // Escape inside the details closes them, and focus returns to the card that opened them.
-  const esc = keyEvent('Escape');
-  details.listeners['keydown']!(esc);
-  assert.equal(esc.prevented, true);
-  assert.deepEqual(b.w.posted.map(m => (m as { payload: unknown }).payload), [{ type: 'close-details' }]);
-  b.relay();
-  assert.equal(focusState.active, cardOf(board, 'S2'), 'focus is back on the card');
-  assert.equal('hidden' in details.attrs, true);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-item', itemId: cards[1]!.attrs['data-item-id'] }]);
 });
 
-test('when the card that opened the details is gone, closing them focuses the shown view\'s tab', async () => {
-  const b = await liveBoard(keyboardSnapshot());
-  const board = b.w.el['board']!;
-  cardOf(board, 'S3').listeners['keydown']!(keyEvent('Enter'));
+test('empty replaces the screen, no matches replaces the list area with Clear filters, and a failed refresh over a story keeps the story under the banner', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+
+  // No matches: the totals and Clear filters replace the stages; the filters stay.
+  const input = findAll(main, e => e.tag === 'input')[0]!;
+  input.value = 'nothing like this';
+  input.listeners['input']!();
   b.relay();
-  // A search that S3 does not match removes its card; closing the details then has no card to return to.
-  b.ch.send({ v: 1, payload: { type: 'set-search', search: 'first' } });
-  b.pump();
-  assert.equal(cardsIn(board).some(c => c.attrs['data-item-id'] === 'S3'), false);
-  b.w.el['details']!.listeners['keydown']!(keyEvent('Escape'));
+  assert.equal(findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage').length, 0);
+  const panel = findAll(main, e => e.attrs['class'] === 'panel')[0]!;
+  assert.deepEqual([panel.attrs['data-kind'], texts(panel)[0]], ['no-matches', 'Nothing matches this view']);
+  b.w.posted.length = 0;
+  click(findAll(panel, e => e.tag === 'button' && e.textContent === 'Clear filters')[0]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'clear-filters' }]);
+  assert.equal(input.value, '');
   b.relay();
-  assert.equal(focusState.active, b.w.el['tab-board'], 'focus lands on the shown view\'s tab');
-  // And in another view, that view's tab.
-  b.ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
-  b.pump();
-  b.ch.send({ v: 1, payload: { type: 'set-search', search: '' } });
-  b.pump();
-  cardOf(board, 'I1').listeners['keydown']!(keyEvent('Enter'));
+  assert.equal(cardsIn(main).length, 5);
+
+  // A failed refresh over a story: the banner above, the story still there.
+  click(cardOf(main, 'SA1'));
   b.relay();
-  b.ch.send({ v: 1, payload: { type: 'set-search', search: 'nothing matches' } });
+  b.ch.send({ v: 1, payload: { type: 'refresh' } });
+  b.s.snapshots[1]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'took too long' } });
+  await flush();
   b.pump();
-  b.w.el['details']!.listeners['keydown']!(keyEvent('Escape'));
-  b.relay();
-  assert.equal(focusState.active, b.w.el['tab-issues']);
+  const banner = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel')[0]!;
+  assert.deepEqual([banner.attrs['data-kind'], texts(banner).includes('Stale')], ['refresh-failed', true]);
+  assert.equal(screenOf(b.w), 'story', 'the story stays under the banner');
+  b.w.posted.length = 0;
+  click(findAll(banner, e => e.tag === 'button' && e.textContent === 'Retry')[0]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'refresh' }]);
+
+  // Empty workspace: the panel replaces the screen.
+  b.ch.send({ v: 1, payload: { type: 'refresh' } });
+  b.s.snapshots[2]!.resolve({ ok: true, value: fixtureSnapshot([]) });
+  await flush();
+  b.pump();
+  assert.equal(screenOf(b.w), 'panel');
+  assert.deepEqual(texts(main).slice(0, 2), ['No work items yet', 'The workspace was read successfully. No epic, story or issue records were found.']);
+  assert.deepEqual(texts(b.w.el['banner']!), []);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery']);
+
+  // Partial evidence sits in the banner, with its records to inspect.
+  const notice = { code: 'store-incomplete', message: 'PLAN-x could not be parsed.', itemIds: [], artifactIds: ['PLAN-x'], fileNames: [] };
+  b.ch.send({ v: 1, payload: { type: 'refresh' } });
+  b.s.snapshots[3]!.resolve({ ok: true, value: screensSnapshot().items.length ? { ...screensSnapshot(), notices: [notice] as never } : screensSnapshot() });
+  await flush();
+  b.pump();
+  const partial = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel')[0]!;
+  assert.equal(partial.attrs['data-kind'], 'partial');
+  assert.ok(texts(partial).some(t => t === 'PLAN-x'));
+  assert.equal(screenOf(b.w), 'stages', 'the board is usable under it');
 });
 
-test('the announce region is the only live region and is set once per message', async () => {
+test('CSP string unchanged, exactly one aria-live region, and the script uses textContent only and posts only BoardUpMessage envelopes', async () => {
   const doc = renderBoardDocument('N0NCE');
-  assert.equal((doc.match(/aria-live=/g) ?? []).length, 1);
-  assert.match(doc, /id="announce"[^>]*aria-live="polite"/);
-  const b = await liveBoard(keyboardSnapshot());
-  const region = b.w.el['announce']!;
-  assert.equal(region.textContent, 'Board refreshed: 4 items, 0 needing attention', 'the first refresh is announced');
-  // Each message replaces the region's text with its own; the region is cleared first so a repeat is spoken again.
-  const writes: string[] = [];
-  Object.defineProperty(region, 'textContent', { get() { return writes.at(-1) ?? ''; }, set(v: string) { writes.push(v); }, configurable: true });
-  b.w.deliver({ v: 1, payload: { type: 'announce', text: 'Selected: First' } });
-  assert.deepEqual(writes, ['', 'Selected: First']);
-  b.w.deliver({ v: 1, payload: { type: 'announce', text: 'Selected: First' } });
-  assert.deepEqual(writes, ['', 'Selected: First', '', 'Selected: First']);
-  // A selection through the real host lands in the region once.
-  cardOf(b.w.el['board']!, 'S2').listeners['keydown']!(keyEvent('Enter'));
+  assert.match(doc, /content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-N0NCE';"/);
+  assert.deepEqual(doc.match(/aria-live="[^"]+"/g), ['aria-live="polite"'], 'the announcer is the only live region');
+  assert.match(doc, /<p id="status" role="status"><\/p>/, 'the status keeps its role without aria-live');
+  for (const part of ['<span class="wordmark">insrc</span>', '<nav id="crumbs" class="crumbs" aria-label="Breadcrumb"></nav>', '<span class="readonly">Read-only</span>',
+    '<div id="banner"></div>', '<main id="main"></main>']) assert.ok(doc.includes(part), part);
+  for (const gone of ['id="details"', 'id="board"', 'id="scope-chips"', 'role="tablist"', 'id="tab-']) assert.ok(!doc.includes(gone), `no ${gone}`);
+  assert.doesNotMatch(BOARD_WEBVIEW_SCRIPT, /innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(/);
+
+  // Hostile titles and notices are literal text on every screen, and every message posted is a board up-message.
+  const hostile = '<script>alert(1)</script><img src=x onerror=alert(2)>';
+  const b = await liveBoard(screensSnapshot([
+    item({ id: 'E20261009cccccccc', kind: 'epic', title: `Epic ${hostile}` }),
+    item({ id: 'E20261009cccccccc:S001', parentId: 'E20261009cccccccc', title: hostile, stage: 'complete',
+      conflict: { failedTaskItemIds: [], storyLevelFailed: true },
+      notices: [{ code: 'unknown-route', message: hostile, itemIds: [], artifactIds: [], fileNames: [], attention: true }] as never }),
+  ]));
+  const main = b.w.el['main']!;
+  const card = cardOf(main, 'E20261009cccccccc:S001');
+  assert.deepEqual(texts(card), ['STORY · CCCCCCCC / S001', hostile, `Epic ${hostile}`, 'Validation conflict', 'Unknown route']);
+  assert.deepEqual(findAll(card, x => x.attrs['class'] === 'badge').map(x => x.attrs['data-tone']), ['danger', 'warning']);
+  click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'epics')!);
   b.relay();
-  assert.deepEqual(writes.slice(4), ['', 'Selected: Second \u00b7 Scoped']);
-  // The status line shows status but is not a live region.
-  assert.equal(b.w.el['status']!.attrs['aria-live'], undefined);
+  assert.ok(texts(main).includes(`Epic ${hostile}`));
+  click(findAll(main, e => e.attrs['data-epic'] === 'E20261009cccccccc')[0]!);
+  b.relay();
+  assert.ok(texts(b.w.el['crumbs']!).includes(`Epic ${hostile}`));
+  assert.equal(findAll(main, e => e.tag === 'img' || e.tag === 'script').length, 0, 'markup never becomes elements');
+  for (const m of [...b.ch.posted.map(() => null)]) void m;
+  b.w.posted.length = 0;
+  for (const e of findAll(main, x => x.tag === 'button')) e.listeners['click']?.();
+  for (const m of b.w.posted) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
 });
 
-test('density is restored from the webview state, saved on change and mirrored to the host, and both densities render every badge, warning and label', async () => {
+test('density is restored from the webview state, saved on change and mirrored to the host, and both densities render every screen', async () => {
   // Restored from saved state.
   const restored = runScript({ state: { density: 'compact', other: 1 } });
   assert.equal(restored.el['body']!.attrs['data-density'], 'compact');
@@ -1169,7 +1111,7 @@ test('density is restored from the webview state, saved on change and mirrored t
     b.w.el[`density-${density}`]!.listeners['click']!();
     b.relay();
     assert.equal(b.w.el['body']!.attrs['data-density'], density);
-    const board = b.w.el['board']!;
+    const board = b.w.el['main']!;
     rendered.push({ texts: texts(board), labels: cardsIn(board).map(c => c.attrs['aria-label']!) });
   }
   assert.deepEqual(rendered[0], rendered[1], 'the same content at either density');
@@ -1195,66 +1137,6 @@ test('the refresh announcement text is unchanged after statusView takes now', as
   assert.match(last.text, /^The refresh failed at 2026-10-09T12:00:00.000Z: bad store Showing the board from 2026-10-09T10:00:00.000Z\.$/);
 });
 
-test('clear-filters resets search and attention, keeps scope and view, and resets paging', async () => {
-  const host = await openWith(fixtureSnapshot([
-    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
-    item({ id: 'E2', kind: 'epic', title: 'Other epic' }),
-    ...Array.from({ length: 60 }, (_, n) => item({ id: `E1:S${String(n).padStart(3, '0')}`, parentId: 'E1', title: `Story ${n}`, needsAttention: n % 2 === 0 })),
-    item({ id: 'E2:S001', parentId: 'E2', title: 'Elsewhere' }),
-  ]));
-  send(host.ch, { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'E1' } });
-  send(host.ch, { type: 'set-search', search: 'story 1' });
-  send(host.ch, { type: 'set-attention', on: true });
-  assert.ok(lastBoard(host.ch)!.totals.items < 60, 'the filters narrow the board');
-  send(host.ch, { type: 'set-search', search: '' });
-  send(host.ch, { type: 'set-attention', on: false });
-  send(host.ch, { type: 'show-more', stage: 'scoped' });
-  assert.equal(column(host.ch, 'scoped')!.cards.length, 60, 'show-more revealed the second page');
-  send(host.ch, { type: 'set-search', search: 'story' });
-  send(host.ch, { type: 'set-attention', on: true });
-  send(host.ch, { type: 'show-more', stage: 'scoped' });
-
-  send(host.ch, { type: 'clear-filters' });
-  const cleared = lastBoard(host.ch)!;
-  assert.equal(cleared.totals.items, 60, 'search and attention are cleared; the epic scope is kept (E2\'s story stays out)');
-  assert.deepEqual([column(host.ch, 'scoped')!.cards.length, column(host.ch, 'scoped')!.hiddenCount], [50, 10], 'paging is back to the first page');
-  assert.equal(host.logs.warn.length, 0);
-
-  send(host.ch, { type: 'set-view', view: 'epics' });
-  send(host.ch, { type: 'set-search', search: 'nothing like this' });
-  send(host.ch, { type: 'clear-filters' });
-  const types = payloads(host.ch).slice(-2).map(p => p.type);
-  assert.deepEqual(types, ['status', 'epics'], 'the view is kept');
-  assert.equal(lastOf(host.ch, 'epics')!.model.totals.items, 60);
-});
-
-test('clear-filters with no snapshot shown posts only the status message', async () => {
-  const s = setup();
-  s.host.open();
-  const ch = s.channels[0]!;
-  send(ch, { type: 'set-search', search: 'zzz' });
-  const before = ch.posted.length;
-  send(ch, { type: 'clear-filters' });
-  assert.deepEqual(payloads(ch).slice(before).map(p => p.type), ['status'], 'no view model without a snapshot');
-  s.calls[0]!.resolve({ ok: true, value: fixtureSnapshot([item({ id: 'S1' }), item({ id: 'S2' })]) });
-  await flush();
-  assert.equal(lastBoard(ch)!.totals.items, 2, 'the cleared search applies when the snapshot arrives');
-});
-
-test('CSP string unchanged, exactly one aria-live region, #details precedes #board', () => {
-  const doc = renderBoardDocument('N0NCE');
-  assert.match(doc, /content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-N0NCE';"/);
-  assert.deepEqual(doc.match(/aria-live="[^"]+"/g), ['aria-live="polite"'], 'the announcer is the only live region');
-  assert.match(doc, /<p id="status" role="status"><\/p>/, 'the status keeps its role without aria-live');
-  const details = doc.indexOf('<aside id="details"');
-  const board = doc.indexOf('<div id="board"');
-  assert.ok(details > 0 && board > details, 'the details pane comes before the board, so a narrow pane shows it first');
-  // The app bar carries the wordmark, breadcrumb, freshness line and read-only marker; the toolbar the chips.
-  for (const part of ['<span class="wordmark">insrc</span>', '<span class="crumb">Workspace / Delivery</span>', '<span class="readonly">Read-only</span>',
-    '<div id="scope-chips" class="chips" role="group" aria-label="Scope"></div>', '<button id="attention-chip" class="chip" type="button" aria-pressed="false">Needs attention</button>',
-    '<div id="panel"></div>']) assert.ok(doc.includes(part), part);
-});
-
 test('BOARD_STYLE has only var(--vscode-*) colours, no display:none/visibility:hidden/clip, six equal columns when wide, density rules and :focus-visible', () => {
   assert.doesNotMatch(BOARD_STYLE, /#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\(/, 'no literal colour');
   for (const v of BOARD_STYLE.match(/var\(--[a-zA-Z-]+/g) ?? []) assert.match(v, /^var\(--(vscode-|gap|pad|small)/, v);
@@ -1276,217 +1158,4 @@ test('BOARD_STYLE\'s 600 px block orders empty stage sections after non-empty on
   for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /overflow:\s*hidden/, /height:\s*0/]) {
     assert.doesNotMatch(narrow, hiding, `no ${hiding} rule in the narrow block`);
   }
-});
-
-test('a rendered card shows its kicker, title, epic line, task summary and tone pills (data-tone) in the six-column board', async () => {
-  const model = await boardModelFor(fixtureSnapshot([
-    item({ id: 'E20261009abcdef01', kind: 'epic', title: 'Board epic' }),
-    item({ id: 'E20261009abcdef01:S001', parentId: 'E20261009abcdef01', title: 'Columns', stage: 'build-recorded',
-      validation: { passed: 2, failed: 1, unrecorded: 0, unplanned: 0 }, needsAttention: true, attentionReasons: ['validation-failed'] }),
-  ]));
-  const { deliver, el } = runScript();
-  deliver({ v: 1, payload: { type: 'board', model } });
-  assert.equal(el['board']!.children.length, 6, 'six columns');
-  const card = cardsIn(el['board']!)[0]!;
-  assert.deepEqual(card.children.map(c => [c.attrs['class'], c.textContent]).slice(0, 4), [
-    ['kicker', 'STORY · ABCDEF01 / S001'], ['card-title', 'Columns'], ['card-epic', 'Epic: Board epic'], ['card-tasks', '2/3 tasks passed'],
-  ]);
-  const pills = findAll(card, x => x.attrs['class'] === 'badge');
-  assert.deepEqual(pills.map(b => [b.textContent, b.attrs['data-tone']]), [['Validation failed', 'danger']]);
-});
-
-test('every board column heading renders its label and a count chip holding the column total, for empty and non-empty stages alike', async () => {
-  const model = await boardModelFor(fixtureSnapshot([item({ id: 'S1', stage: 'scoped' }), item({ id: 'S2', stage: 'scoped' }), item({ id: 'S3', stage: 'complete' })]));
-  const { deliver, el } = runScript();
-  deliver({ v: 1, payload: { type: 'board', model } });
-  const sections = el['board']!.children;
-  assert.deepEqual(sections.map(sec => {
-    const h = sec.children.find(c => c.tag === 'h2')!;
-    const count = h.children.find(c => c.attrs['class'] === 'count')!;
-    return [h.children[0]!.textContent, count.textContent, count.attrs['aria-label'], sec.attrs['data-empty']];
-  }), [
-    ['Scoped', '2', '2 items', 'false'], ['Design & plan', '0', '0 items', 'true'], ['Ready · design approved', '0', '0 items', 'true'],
-    ['Ready · plan approved', '0', '0 items', 'true'], ['Build recorded', '0', '0 items', 'true'], ['Complete', '1', '1 item', 'false'],
-  ]);
-});
-
-test('clicking a rollup row title posts set-scope for that epic (standalone for \'Not in an epic\') and then set-view board, and the meter exposes completionLabel and aria-valuenow/max', async () => {
-  const host = await openWith(fixtureSnapshot([
-    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
-    item({ id: 'E1:S001', parentId: 'E1', stage: 'complete' }),
-    item({ id: 'E1:S002', parentId: 'E1', stage: 'scoped' }),
-    item({ id: 'E1:S003', parentId: 'E1', stage: 'scoped' }),
-    item({ id: 'SA1', standalone: true }),
-  ]));
-  host.ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
-  const { posted, deliver, el } = runScript();
-  deliver({ v: 1, payload: lastOf(host.ch, 'epics')! });
-  const rows = el['board']!.children;
-  const meter = findAll(rows[0]!, x => x.attrs['role'] === 'meter')[0]!;
-  assert.deepEqual([meter.attrs['aria-label'], meter.attrs['aria-valuenow'], meter.attrs['aria-valuemin'], meter.attrs['aria-valuemax']],
-    ['1 of 3 stories complete', '1', '0', '3']);
-  assert.equal(meter.children[0]!.attrs['style'], 'width:33%');
-  const titleOf = (row: FakeEl) => findAll(row, x => (x.attrs['class'] ?? '').split(' ').includes('row-title'))[0]!;
-  posted.length = 0;
-  titleOf(rows[0]!).listeners['click']!();
-  titleOf(rows[1]!).listeners['click']!();
-  for (const m of posted) assert.notEqual(parseBoardUpMessage(m), null);
-  assert.deepEqual(posted.map(m => (m as { payload: unknown }).payload), [
-    { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'E1' } }, { type: 'set-view', view: 'board' },
-    { type: 'set-scope', scope: { kind: 'standalone' } }, { type: 'set-view', view: 'board' },
-  ]);
-  assert.equal(el['scope-chips']!.children.find(c => c.attrs['data-scope'] === 'standalone')!.attrs['aria-pressed'], 'true', 'the scope chip follows');
-});
-
-test('scope and attention chips post set-scope / set-attention with aria-pressed; tabs are role=tab with aria-selected and arrow-key movement', async () => {
-  const model = await boardModelFor(fixtureSnapshot([item({ id: 'E1', kind: 'epic', title: 'Board epic' }), item({ id: 'E1:S001', parentId: 'E1' })]));
-  const { posted, deliver, el } = runScript();
-  deliver({ v: 1, payload: { type: 'board', model } });
-  const chips = el['scope-chips']!.children;
-  assert.deepEqual(chips.map(c => [c.textContent, c.attrs['data-scope'], c.attrs['aria-pressed']]), [
-    ['All work', 'all', 'true'], ['Standalone', 'standalone', 'false'], ['Board epic', 'epic:E1', 'false'],
-  ]);
-  posted.length = 0;
-  chips[2]!.listeners['click']!();
-  assert.deepEqual(chips.map(c => c.attrs['aria-pressed']), ['false', 'false', 'true']);
-  el['attention-chip']!.listeners['click']!();
-  assert.equal(el['attention-chip']!.attrs['aria-pressed'], 'true');
-  el['attention-chip']!.listeners['click']!();
-  assert.equal(el['attention-chip']!.attrs['aria-pressed'], 'false');
-  for (const m of posted) assert.notEqual(parseBoardUpMessage(m), null);
-  assert.deepEqual(posted.map(m => (m as { payload: unknown }).payload), [
-    { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'E1' } }, { type: 'set-attention', on: true }, { type: 'set-attention', on: false },
-  ]);
-
-  const doc = renderBoardDocument('N0NCE');
-  assert.match(doc, /<nav class="tabs" role="tablist" aria-label="Views">/);
-  for (const t of ['tab-board', 'tab-epics', 'tab-issues']) assert.match(doc, new RegExp(`<button id="${t}" type="button" role="tab" aria-selected="(true|false)"`));
-  assert.deepEqual(['tab-board', 'tab-epics', 'tab-issues'].map(t => [el[t]!.attrs['aria-selected'], el[t]!.attrs['tabindex']]), [['true', '0'], ['false', '-1'], ['false', '-1']]);
-  const right = keyEvent('ArrowRight');
-  el['tab-board']!.listeners['keydown']!(right);
-  assert.equal(right.prevented, true);
-  assert.equal(focusState.active, el['tab-epics']);
-  el['tab-epics']!.listeners['keydown']!(keyEvent('ArrowRight'));
-  assert.equal(focusState.active, el['tab-issues']);
-  el['tab-issues']!.listeners['keydown']!(keyEvent('ArrowRight'));
-  assert.equal(focusState.active, el['tab-board'], 'Right from the last tab wraps to the first');
-  el['tab-board']!.listeners['keydown']!(keyEvent('ArrowLeft'));
-  assert.equal(focusState.active, el['tab-issues'], 'Left from the first tab wraps to the last');
-});
-
-/** storySnapshot with a stage reason on S1 and, when asked, a validation conflict. */
-function reasonedStory(conflict = false): DeliverySnapshot {
-  const snap = storySnapshot();
-  return { ...snap, items: snap.items.map(i => (i.id === 'S1'
-    ? { ...i, stage: { ...i.stage!, reason: { text: 'A build is recorded.', artifactIds: ['BUILD-x'] } },
-        ...(conflict ? { conflict: { failedTaskItemIds: ['S1:T2'], storyLevelFailed: false } } : {}) }
-    : i)) };
-}
-
-/** Open S1's details through the real host and script, with its PLAN read answered. */
-async function openedDetails(conflict = false) {
-  const b = await liveBoard(reasonedStory(conflict));
-  cardOf(b.w.el['board']!, 'S1').listeners['click']!();
-  b.relay();
-  b.s.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
-  await flush();
-  b.pump();
-  return b;
-}
-
-test('opening a card shows #details before #board in DOM order with its heading focused, tasks as <details> rows with checks and dependency chips, and a \'Why this stage?\' highlight with the stage reason', async () => {
-  const doc = renderBoardDocument('N0NCE');
-  assert.ok(doc.indexOf('<aside id="details"') < doc.indexOf('<div id="board"'), '#details precedes #board');
-  const b = await openedDetails();
-  const details = b.w.el['details']!;
-  assert.equal('hidden' in details.attrs, false);
-  assert.equal(focusState.active, findAll(details, c => c.tag === 'h2')[0], 'the heading is focused');
-  assert.deepEqual(texts(findAll(details, c => c.attrs['class'] === 'details-head')[0]!), ['STORY · S1', 'Details']);
-  const why = findAll(details, c => c.attrs['class'] === 'why')[0]!;
-  assert.deepEqual(texts(why), ['Why this stage?', 'A build is recorded.', 'From BUILD-x']);
-  const rows = findAll(details, c => c.tag === 'details' && c.attrs['class'] === 'task');
-  assert.deepEqual(rows.map(r => r.attrs['data-item-id']), ['S1:T1', 'S1:T2']);
-  assert.deepEqual(rows.map(r => r.children[0]!.tag), ['summary', 'summary']);
-  assert.deepEqual(rows.map(r => findAll(r, c => c.attrs['class'] === 'pill').map(p => [p.textContent, p.attrs['data-tone']])), [
-    [['Passed', 'success'], ['No dependencies', 'neutral']],
-    [['Failed', 'danger'], ['Depends on Types', 'neutral']],
-  ]);
-  assert.deepEqual(rows.map(r => findAll(r, c => c.tag === 'li').map(l => l.textContent)), [['types compile'], ['rows built']]);
-  const chain = findAll(details, c => c.attrs['class'] === 'chain')[0]!;
-  assert.deepEqual(chain.children.map(li => [li.children[0]!.textContent, li.attrs['data-status']]), [
-    ['DEF', 'not-recorded'], ['HLD', 'not-recorded'], ['LLD', 'recorded'], ['PLAN', 'recorded'], ['BUILD', 'recorded'],
-  ], 'the fixture route (full-chain) expects DEF and HLD, which this standalone fixture does not record');
-  assert.ok(texts(chain).includes('Not recorded'));
-});
-
-test('the conflict box is the first element after the details chips, before the task list', async () => {
-  const b = await openedDetails(true);
-  const kids = b.w.el['details']!.children;
-  const chips = kids.findIndex(c => (c.attrs['class'] ?? '').includes('details-chips'));
-  const conflict = kids.findIndex(c => c.attrs['class'] === 'details-conflict');
-  const tasks = kids.findIndex(c => c.attrs['aria-label'] === 'Tasks');
-  assert.ok(chips >= 0 && conflict === chips + 1, 'the conflict box comes straight after the chips');
-  assert.ok(tasks > conflict, 'and before the task list');
-  assert.deepEqual(texts(kids[conflict]!), ['Two records disagree', 'The build is approved while 1 task result failed (Builder).']);
-  assert.equal(kids[conflict]!.attrs['role'], 'note');
-});
-
-test('a view with emptySelection renders \'Nothing matches this view\' with Clear filters posting clear-filters; Retry posts refresh; the partial panel\'s \'Inspect affected records\' lists artifact ids', async () => {
-  const host = await openWith(fixtureSnapshot([item({ id: 'S1', title: 'Only' })]));
-  send(host.ch, { type: 'set-search', search: 'nothing like this' });
-  const { posted, deliver, el } = runScript();
-  el['search']!.value = 'nothing like this';
-  el['attention-chip']!.listeners['click']!();
-  deliver({ v: 1, payload: { type: 'board', model: lastBoard(host.ch) } });
-  const panel = el['panel']!;
-  assert.deepEqual(texts(panel), ['Nothing matches this view', 'Work exists, but none matches the current search, scope and attention filter.', 'Clear filters']);
-  posted.length = 0;
-  findAll(panel, c => c.tag === 'button' && c.textContent === 'Clear filters')[0]!.listeners['click']!();
-  assert.deepEqual(posted.map(m => (m as { payload: unknown }).payload), [{ type: 'clear-filters' }]);
-  assert.equal(el['search']!.value, '', 'the search box is cleared');
-  assert.equal(el['attention-chip']!.attrs['aria-pressed'], 'false', 'the attention chip is released');
-
-  // A failed refresh: the status panel offers Retry, which posts refresh.
-  send(host.ch, { type: 'refresh' });
-  host.calls[1]!.resolve({ ok: false, failure: { kind: 'read-failed', message: 'bad store' } });
-  await flush();
-  const failedStatus = payloads(host.ch).filter(p => p.type === 'status').at(-1)!;
-  deliver({ v: 1, payload: failedStatus });
-  assert.deepEqual(texts(panel).slice(0, 3), ['Showing the last successful snapshot', 'The refresh failed: bad store. Your board and selection are preserved.', 'Stale']);
-  posted.length = 0;
-  findAll(panel, c => c.tag === 'button' && c.textContent === 'Retry')[0]!.listeners['click']!();
-  assert.deepEqual(posted.map(m => (m as { payload: unknown }).payload), [{ type: 'refresh' }]);
-
-  // A partial snapshot: the panel's disclosure lists each affected record.
-  const notice = { code: 'record-unreadable', message: 'PLAN-x could not be parsed.', itemIds: [], artifactIds: ['PLAN-x'], fileNames: [], attention: true };
-  const partial = await openWith(fixtureSnapshot([item({ id: 'S1' })], { unreadableCount: 1, notices: [notice] as never }));
-  deliver({ v: 1, payload: payloads(partial.ch).filter(p => p.type === 'status').at(-1)! });
-  const disclosure = findAll(panel, c => c.tag === 'details')[0]!;
-  assert.equal(disclosure.children[0]!.tag, 'summary');
-  assert.equal(disclosure.children[0]!.textContent, 'Inspect affected records');
-  assert.deepEqual(findAll(disclosure, c => c.tag === 'code').map(c => c.textContent), ['PLAN-x']);
-  assert.ok(texts(disclosure).includes('1 record could not be read.'));
-});
-
-test('the script uses textContent only and posts only BoardUpMessage envelopes; Escape closes details and focus returns to the card or the tab', async () => {
-  assert.doesNotMatch(BOARD_WEBVIEW_SCRIPT, /innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(/);
-  const b = await openedDetails(true);
-  const details = b.w.el['details']!;
-  // Every control in the details posts a board up-message.
-  for (const btn of findAll(details, c => c.tag === 'button')) btn.listeners['click']!();
-  for (const m of b.w.posted) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
-  b.w.posted.length = 0;
-  // Escape closes the details and focus returns to the card that opened them.
-  details.listeners['keydown']!(keyEvent('Escape'));
-  b.relay();
-  assert.equal('hidden' in details.attrs, true);
-  assert.equal(focusState.active?.attrs['data-item-id'], 'S1', 'focus returns to the card');
-  // When the card is no longer shown, focus goes to the shown view's tab.
-  cardOf(b.w.el['board']!, 'S1').listeners['click']!();
-  b.relay();
-  b.ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
-  b.pump();
-  details.listeners['keydown']!(keyEvent('Escape'));
-  b.relay();
-  assert.equal(focusState.active, b.w.el['tab-epics'], 'focus lands on the shown view\'s tab');
 });

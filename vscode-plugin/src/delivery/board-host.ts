@@ -66,189 +66,157 @@ export interface DeliveryBoardHost {
 }
 
 
+/** The labels the webview shows on its own controls, from the same table as every view (sc4). */
+const SCRIPT_LABELS = {
+  views: DISPLAY_LABELS.views,
+  itemTabs: DISPLAY_LABELS.itemTabs,
+  needsAttention: DISPLAY_LABELS.needsAttention,
+  otherStages: DISPLAY_LABELS.otherStages,
+};
+
 /**
- * The webview script. Everything shown is set with textContent, and the only
- * messages posted are board up-messages: ready, refresh, set-search,
- * set-scope, set-attention, show-more, set-view (the tabs), select-item (a
- * card in any view, a follow link or a linked item in the details),
- * close-details and open-evidence (the details pane, s4).
+ * The webview script (screens, ISSUE-348d4663). Each screen message replaces the screen: on a new trail entry #main
+ * is cleared and rebuilt; a re-render of the same entry (a refresh, a filter) rebuilds the screen's body and keeps
+ * its head, so the search box keeps focus while the reader types. Everything shown is set with textContent, and the
+ * only messages posted are board up-messages. The webview keeps presentation memory only: the scroll of each trail
+ * entry, the stage sections the reader opened or closed, and whether the pane is narrow (<= 480 px), which shortens
+ * the breadcrumb and folds the empty stages.
  */
 export const BOARD_WEBVIEW_SCRIPT = [
   `(function(){`,
   `const vs=acquireVsCodeApi();`,
   `const send=function(p){vs.postMessage({v:1,payload:p});};`,
+  `const L=${JSON.stringify(SCRIPT_LABELS)};`,
+  `const VIEWS=['all','epics','standalone','issues'];`,
   `const byId=function(id){return document.getElementById(id);};`,
-  `const status=byId('status'),totals=byId('totals'),board=byId('board'),details=byId('details'),panel=byId('panel');`,
-  `const search=byId('search'),scopeChips=byId('scope-chips'),attentionChip=byId('attention-chip');`,
+  `const crumbsEl=byId('crumbs'),status=byId('status'),banner=byId('banner'),main=byId('main'),announceEl=byId('announce');`,
   `const make=function(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.setAttribute('class',cls);return e;};`,
   `const clear=function(n){while(n.firstChild)n.removeChild(n.firstChild);};`,
-  `const button=function(text,onClick){const b=make('button',text);b.setAttribute('type','button');b.addEventListener('click',onClick);return b;};`,
+  `const button=function(text,onClick,cls){const b=make('button',text,cls);b.setAttribute('type','button');b.addEventListener('click',onClick);return b;};`,
   `const pill=function(text,tone,cls){const e=make('span',text,cls||'pill');e.setAttribute('data-tone',tone);return e;};`,
-  `const KIND={story:'Story',issue:'Issue',epic:'Epic',task:'Task'};`,
+  `const plural=function(n,one,many){return n+' '+(n===1?one:many);};`,
   `const KICKER={story:'STORY',issue:'ISSUE',epic:'EPIC',task:'TASK'};`,
   `byId('refresh').addEventListener('click',function(){send({type:'refresh'});});`,
-  `search.addEventListener('input',function(){send({type:'set-search',search:String(search.value)});});`,
-  // The Needs attention chip: posts set-attention and shows the choice with aria-pressed.
-  `const markAttention=function(on){attentionChip.setAttribute('aria-pressed',on?'true':'false');};`,
-  `attentionChip.addEventListener('click',function(){const on=attentionChip.getAttribute('aria-pressed')!=='true';markAttention(on);send({type:'set-attention',on:on});});`,
-  // A scope value: 'all', 'standalone' or 'epic:<id>'; the pressed scope chip shows the reader's current choice.
-  `let scopeValue='all';`,
-  `const scopeOf=function(v){return v==='all'?{kind:'all'}:v==='standalone'?{kind:'standalone'}:{kind:'epic',epicItemId:v.slice(5)};};`,
-  `const markScope=function(v){scopeValue=v;for(const c of scopeChips.children)c.setAttribute('aria-pressed',c.getAttribute('data-scope')===v?'true':'false');};`,
-  `const chooseScope=function(v){markScope(v);send({type:'set-scope',scope:scopeOf(v)});};`,
-  // The scope chips are rebuilt from each board; the reader's current choice is kept.
-  `function renderScope(options){const current=scopeValue;clear(scopeChips);`,
-  `const add=function(value,text){const c=make('button',text,'chip');c.setAttribute('type','button');c.setAttribute('data-scope',value);c.setAttribute('aria-pressed',value===current?'true':'false');`,
-  `c.addEventListener('click',function(){chooseScope(value);});scopeChips.appendChild(c);};`,
-  `add('all','All work');add('standalone','Standalone');`,
-  `for(const o of options)add('epic:'+o.epicItemId,o.title);`,
-  // An epic the reader scoped to that a refresh removed stays selectable, so the reader sees why nothing matches.
-  `if(current.indexOf('epic:')===0&&!options.some(function(o){return 'epic:'+o.epicItemId===current;}))add(current,'Epic no longer on the board');`,
-  `}`,
-  // Keyboard (s5): every card is focusable; Enter or Space selects it, the arrows move between the cards in document order.
-  `const cardsOnBoard=function(){return Array.prototype.slice.call(board.querySelectorAll('li.card'));};`,
-  `const moveFocus=function(from,step){const cards=cardsOnBoard();const next=cards[cards.indexOf(from)+step];if(next)next.focus();};`,
-  `const onCardKey=function(li,id){return function(e){`,
-  `if(e.key==='Enter'||e.key===' '){e.preventDefault();send({type:'select-item',itemId:id});}`,
-  `else if(e.key==='ArrowDown'){e.preventDefault();moveFocus(li,1);}else if(e.key==='ArrowUp'){e.preventDefault();moveFocus(li,-1);}};};`,
-  `function renderCard(c){const li=make('li',undefined,'card');li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);li.setAttribute('tabindex','0');`,
-  `li.appendChild(make('div',KICKER[c.kind]+' \u00b7 '+c.compactId,'kicker'));`,
-  `li.appendChild(make('div',c.title,'card-title'));`,
-  `const epicLine=c.standalone?'Standalone':c.epicTitle===null?'':'Epic: '+c.epicTitle;if(epicLine!=='')li.appendChild(make('div',epicLine,'card-epic'));`,
-  `if(c.taskSummary!==null)li.appendChild(make('div',c.taskSummary.label,'card-tasks'));`,
-  `const badges=make('ul',undefined,'badges');`,
-  `for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}`,
-  `li.appendChild(badges);li.addEventListener('click',function(){send({type:'select-item',itemId:c.itemId});});li.addEventListener('keydown',onCardKey(li,c.itemId));return li;}`,
-  // View tabs: each posts set-view; the shown view's tab is marked pressed.
-  `const TABS={board:byId('tab-board'),epics:byId('tab-epics'),issues:byId('tab-issues')};`,
-  // Tabs (role=tab): the shown view's tab is selected and in the tab order; Left and Right move between the tabs.
-  `const VIEWS=['board','epics','issues'];`,
-  `for(const v of VIEWS){TABS[v].addEventListener('click',function(){send({type:'set-view',view:v});});`,
-  `TABS[v].addEventListener('keydown',function(e){const step=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(step===0)return;e.preventDefault();`,
-  `TABS[VIEWS[(VIEWS.indexOf(v)+step+VIEWS.length)%VIEWS.length]].focus();});}`,
-  `let shownView='board';`,
-  `function markTab(view){shownView=view;board.setAttribute('data-view',view);for(const v of VIEWS){TABS[v].setAttribute('aria-selected',v===view?'true':'false');TABS[v].setAttribute('tabindex',v===view?'0':'-1');}}`,
-  // State panels (s5 mock F): #panel holds the status panel, then the current view's empty panel; both come from the host.
-  `const statusPanel=make('div');const matchPanel=make('div');panel.appendChild(statusPanel);panel.appendChild(matchPanel);`,
-  `function renderPanel(box,p){clear(box);if(p===null||p===undefined)return;const d=make('div',undefined,'panel');d.setAttribute('data-kind',p.kind);d.setAttribute('role','note');`,
+  // Presentation memory: scroll per trail entry, the reader's section toggles per entry and stage, the narrow flag.
+  `const scrollOf={},openOf={};`,
+  `let model=null,shownEntry=null,shownKind=null,narrow=false,head=null,bodyEl=null,search=null;`,
+  `const isNarrow=function(){const w=document.documentElement.clientWidth;return typeof w==='number'&&w>0&&w<=480;};`,
+  `window.addEventListener('scroll',function(){if(shownEntry!==null)scrollOf[shownEntry]=window.scrollY||0;});`,
+  `window.addEventListener('resize',function(){if(model!==null&&isNarrow()!==narrow)render(model);});`,
+  // Escape on an epic's board or an item's screen goes back, unless the reader is typing in the search box.
+  `main.addEventListener('keydown',function(e){if(e.key==='Escape'&&model!==null&&model.back!==null&&document.activeElement!==search){e.preventDefault();send({type:'back'});}});`,
+  // A re-render keeps focus on the element with the same data-key.
+  `const keyed=function(e,k){e.setAttribute('data-key',k);return e;};`,
+  `const focusedKey=function(){const a=document.activeElement;return a&&a.getAttribute?a.getAttribute('data-key'):null;};`,
+  `const findKey=function(root,k){if(root.getAttribute&&root.getAttribute('data-key')===k)return root;for(const c of root.children){const f=findKey(c,k);if(f)return f;}return null;};`,
+  // The breadcrumb: earlier crumbs are buttons back to their trail entry, the last is the current place. A narrow
+  // pane shows only the back step and the current place.
+  `function renderCrumbs(m){clear(crumbsEl);const last=m.crumbs[m.crumbs.length-1];`,
+  `const current=function(text){const s=make('span',text,'crumb current');s.setAttribute('aria-current','page');return s;};`,
+  `if(narrow){if(m.back!==null)crumbsEl.appendChild(keyed(button(m.back.label,function(){send({type:'back'});},'crumb'),'crumb-back'));crumbsEl.appendChild(current(last.label));return;}`,
+  `m.crumbs.forEach(function(c,i){if(i>0)crumbsEl.appendChild(make('span','/','sep'));`,
+  `if(i===m.crumbs.length-1)crumbsEl.appendChild(current(c.label));`,
+  `else if(c.index<last.index)crumbsEl.appendChild(keyed(button(c.label,function(){send({type:'go-to-crumb',index:c.index});},'crumb'),'crumb-'+i));`,
+  `else crumbsEl.appendChild(make('span',c.label,'crumb'));});}`,
+  // The filter bar: the four views (on one of the four views only), Needs attention, and the search box.
+  `function buildFilters(f){const bar=make('div',undefined,'filters');`,
+  `if(f.views){const g=make('div',undefined,'views');g.setAttribute('role','group');g.setAttribute('aria-label','View');`,
+  `for(const v of VIEWS){const b=keyed(button(L.views[v],function(){send({type:'set-view',view:v});},'view'),'view-'+v);b.setAttribute('data-view',v);g.appendChild(b);}bar.appendChild(g);}`,
+  `const att=keyed(button(L.needsAttention,function(){send({type:'set-attention',on:att.getAttribute('aria-pressed')!=='true'});},'chip attention'),'attention');bar.appendChild(att);`,
+  `search=keyed(make('input',undefined,'search'),'search');search.setAttribute('type','search');search.setAttribute('aria-label','Search');`,
+  `search.addEventListener('input',function(){send({type:'set-search',search:String(search.value)});});bar.appendChild(search);return bar;}`,
+  `function markFilters(f){if(f===null||head===null)return;`,
+  `for(const b of head.querySelectorAll('button.view'))b.setAttribute('aria-pressed',b.getAttribute('data-view')===f.view?'true':'false');`,
+  `const att=head.querySelectorAll('button.attention')[0];if(att){att.setAttribute('aria-pressed',f.needsAttentionOnly?'true':'false');att.textContent=f.needsAttentionOnly?L.needsAttention+' \\u00d7':L.needsAttention;}`,
+  `if(search!==null){search.setAttribute('placeholder',f.searchPlaceholder);if(document.activeElement!==search)search.value=f.search;}}`,
+  // State panels: the status panel goes to the banner or, with nothing to show behind it, replaces the screen; a
+  // view's no-matches panel replaces its list area.
+  `function renderPanel(box,p){const d=make('div',undefined,'panel');d.setAttribute('data-kind',p.kind);d.setAttribute('role','note');`,
   `d.appendChild(make('p',p.title,'panel-title'));if(p.text)d.appendChild(make('p',p.text));`,
-  `if(p.stale){const st=make('span','Stale','pill');st.setAttribute('data-tone','warning');d.appendChild(st);}`,
+  `if(p.stale)d.appendChild(pill('Stale','warning'));`,
   `if(p.affected&&p.affected.length>0){const dis=make('details');dis.appendChild(make('summary','Inspect affected records'));const ul=make('ul');`,
-  `for(const a of p.affected){const li=make('li');if(a.artifactIds.length>0)li.appendChild(make('code',a.artifactIds.join(', ')));li.appendChild(make('span',(a.artifactIds.length>0?' \u2014 ':'')+a.text));ul.appendChild(li);}dis.appendChild(ul);d.appendChild(dis);}`,
+  `for(const a of p.affected){const li=make('li');if(a.artifactIds.length>0)li.appendChild(make('code',a.artifactIds.join(', ')));li.appendChild(make('span',(a.artifactIds.length>0?' \\u2014 ':'')+a.text));ul.appendChild(li);}dis.appendChild(ul);d.appendChild(dis);}`,
   `const acts=make('div',undefined,'panel-actions');`,
   `if(p.action==='retry')acts.appendChild(button('Retry',function(){send({type:'refresh'});}));`,
-  `if(p.action==='clear-filters')acts.appendChild(button('Clear filters',function(){search.value='';markAttention(false);send({type:'clear-filters'});}));`,
+  `if(p.action==='clear-filters')acts.appendChild(button('Clear filters',function(){if(search!==null)search.value='';send({type:'clear-filters'});}));`,
   `if(acts.firstChild)d.appendChild(acts);box.appendChild(d);}`,
-  `const plural=function(n,one,many){return n+' '+(n===1?one:many);};`,
-  // A follow link: a button whose text names the item; clicking it posts select-item with the item's id.
-  `function linkButton(l){const b=make('button',KIND[l.kind]+' \u00b7 '+l.title+(l.stageLabel===null?'':' \u00b7 '+l.stageLabel),'link');`,
-  `b.setAttribute('type','button');b.setAttribute('data-item-id',l.itemId);b.addEventListener('click',function(){send({type:'select-item',itemId:l.itemId});});return b;}`,
-  // An epic rollup row (s3, mock A): kicker, title, counts; the completion meter; the attention chip. The title opens
-  // the epic's board (the 'Not in an epic' row opens the standalone scope).
-  `function renderRow(r){const sec=make('section',undefined,'epic-row');if(r.epicItemId!==null)sec.setAttribute('data-epic',r.epicItemId);`,
-  `const main=make('div',undefined,'row-main');`,
-  `if(r.compactId!==null)main.appendChild(make('div','EPIC \u00b7 '+r.compactId,'kicker'));`,
-  `const h=make('h2');const open=make('button',r.title,'row-title link');open.setAttribute('type','button');`,
-  `open.addEventListener('click',function(){chooseScope(r.epicItemId===null?'standalone':'epic:'+r.epicItemId);send({type:'set-view',view:'board'});});`,
-  `h.appendChild(open);main.appendChild(h);`,
-  `main.appendChild(make('p',[plural(r.storiesTotal,'story','stories'),plural(r.taskCount,'task','tasks')].concat(r.issueCount>0?[plural(r.issueCount,'issue','issues')]:[]).join(' \u00b7 '),'counts muted'));`,
-  `sec.appendChild(main);`,
-  `const prog=make('div',undefined,'row-progress');prog.appendChild(make('p',r.completionLabel,'completion muted'));`,
-  `const meter=make('div',undefined,'meter');meter.setAttribute('role','meter');meter.setAttribute('aria-label',r.completionLabel);`,
+  // Cards: kicker, title, epic line, task summary, badges; a card opens its item's screen.
+  `const cardsOnScreen=function(){return Array.prototype.slice.call(main.querySelectorAll('li.card'));};`,
+  `const moveFocus=function(from,step){const cards=cardsOnScreen();const next=cards[cards.indexOf(from)+step];if(next)next.focus();};`,
+  `function renderCard(c,showEpic){const li=keyed(make('li',undefined,'card'),'item-'+c.itemId);li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);li.setAttribute('tabindex','0');`,
+  `li.appendChild(make('div',KICKER[c.kind]+' \\u00b7 '+c.compactId,'kicker'));li.appendChild(make('div',c.title,'card-title'));`,
+  `const epicLine=!showEpic?'':c.standalone?'Standalone':c.epicTitle===null?'':c.epicTitle;if(epicLine!=='')li.appendChild(make('div',epicLine,'card-epic'));`,
+  `if(c.taskSummary!==null)li.appendChild(make('div',c.taskSummary.label,'card-tasks'));`,
+  `const badges=make('ul',undefined,'badges');for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}li.appendChild(badges);`,
+  `const open=function(){send({type:'open-item',itemId:c.itemId});};li.addEventListener('click',open);`,
+  `li.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}else if(e.key==='ArrowDown'){e.preventDefault();moveFocus(li,1);}else if(e.key==='ArrowUp'){e.preventDefault();moveFocus(li,-1);}});return li;}`,
+  // A stage section: a <details> whose summary always shows the label, the count and any attention hint.
+  `function renderSection(sec,showEpic){const d=make('details',undefined,'stage');d.setAttribute('data-stage',sec.stage);const k=model.entryId+':'+sec.stage;`,
+  `if(Object.prototype.hasOwnProperty.call(openOf,k)?openOf[k]:sec.defaultOpen)d.setAttribute('open','');`,
+  `d.addEventListener('toggle',function(){openOf[k]=d.getAttribute('open')!==null;});`,
+  `const s=keyed(make('summary'),'stage-'+sec.stage);s.appendChild(make('span',sec.label,'stage-label'));const n=make('span',String(sec.total),'count');n.setAttribute('aria-label',plural(sec.total,'item','items'));s.appendChild(n);`,
+  `if(sec.emptyText!==null)s.appendChild(make('span',sec.emptyText,'muted'));if(sec.hint!==null)s.appendChild(pill(sec.hint,'warning','pill hint'));d.appendChild(s);`,
+  `if(sec.cards.length>0){const ul=make('ul',undefined,'cards');ul.setAttribute('aria-label',sec.label);for(const c of sec.cards)ul.appendChild(renderCard(c,showEpic));d.appendChild(ul);}`,
+  `if(sec.hiddenCount>0)d.appendChild(button('Show '+sec.hiddenCount+' more',function(){send({type:'show-more',stage:sec.stage});},'more'));return d;}`,
+  `function renderEpicSummary(r){const box=make('div',undefined,'epic-summary');`,
+  `box.appendChild(make('p',[plural(r.storiesTotal,'story','stories'),plural(r.taskCount,'task','tasks')].concat(r.issueCount>0?[plural(r.issueCount,'issue','issues')]:[]).join(' \\u00b7 '),'counts muted'));`,
+  `box.appendChild(make('p',r.completionLabel,'completion muted'));const meter=make('span',undefined,'meter');meter.setAttribute('role','meter');meter.setAttribute('aria-label',r.completionLabel);`,
   `meter.setAttribute('aria-valuemin','0');meter.setAttribute('aria-valuemax',String(r.storiesTotal));meter.setAttribute('aria-valuenow',String(r.storiesComplete));`,
-  `const fill=make('span');fill.setAttribute('style','width:'+(r.storiesTotal===0?0:Math.round(100*r.storiesComplete/r.storiesTotal))+'%');meter.appendChild(fill);`,
-  `prog.appendChild(meter);sec.appendChild(prog);`,
-  `const att=make('span',r.attentionLabel,'pill attention');att.setAttribute('data-tone',r.attentionTone);sec.appendChild(att);`,
-  `return sec;}`,
-  `function renderEpics(m){markTab('epics');renderScope(m.scopeOptions);clear(board);`,
-  `totals.textContent=plural(m.totals.items,'item','items')+', '+m.totals.needsAttention+' needing attention';`,
-  `for(const r of m.epics)board.appendChild(renderRow(r));`,
-  `if(m.notInEpic.total>0)board.appendChild(renderRow(m.notInEpic));`,
-  `renderPanel(matchPanel,m.emptyPanel);}`,
-  `function renderIssue(e){const sec=make('section',undefined,'issue');sec.setAttribute('data-item-id',e.card.itemId);`,
-  `const cards=make('ul');cards.appendChild(renderCard(e.card));sec.appendChild(cards);`,
-  `sec.appendChild(make('p','Stage: '+e.stageLabel,'issue-stage'));`,
-  `if(e.parent!==null){const p=make('p','Corrects: ','parent');p.appendChild(linkButton(e.parent));sec.appendChild(p);}`,
-  `else if(e.parentNotice!==null)sec.appendChild(make('p',e.parentNotice,'parent-notice'));`,
-  `sec.appendChild(make('h3','Fix stories'));`,
-  `if(e.fixStories.length===0)sec.appendChild(make('p','No fix stories yet','no-fix'));`,
-  `else{const ul=make('ul');ul.setAttribute('aria-label','Fix stories');for(const f of e.fixStories){const li=make('li');li.appendChild(linkButton(f));ul.appendChild(li);}sec.appendChild(ul);}`,
-  `return sec;}`,
-  `function renderIssues(m){markTab('issues');renderScope(m.scopeOptions);clear(board);`,
-  `totals.textContent=plural(m.totals.issues,'issue','issues')+', '+m.totals.needsAttention+' needing attention';`,
-  `for(const e of m.issues)board.appendChild(renderIssue(e));`,
-  `renderPanel(matchPanel,m.emptyPanel);}`,
-  `function renderBoard(m){markTab('board');renderScope(m.scopeOptions);clear(board);`,
-  `totals.textContent=plural(m.totals.items,'item','items')+', '+m.totals.needsAttention+' needing attention';`,
-  // Every stage heading carries its label and a count chip; an empty stage is marked so a narrow pane wraps it last.
-  `for(const col of m.columns){const sec=make('section',undefined,'column');sec.setAttribute('data-stage',col.stage);sec.setAttribute('data-empty',col.total===0?'true':'false');`,
-  `const h=make('h2');h.appendChild(make('span',col.label,'stage-label'));const count=make('span',String(col.total),'count');count.setAttribute('aria-label',plural(col.total,'item','items'));h.appendChild(count);sec.appendChild(h);`,
-  `const ul=make('ul');ul.setAttribute('aria-label',col.label);for(const c of col.cards)ul.appendChild(renderCard(c));sec.appendChild(ul);`,
-  `if(col.hiddenCount>0){const more=make('button','Show '+col.hiddenCount+' more');more.setAttribute('type','button');`,
-  `more.addEventListener('click',function(){send({type:'show-more',stage:col.stage});});sec.appendChild(more);}`,
-  `board.appendChild(sec);}`,
-  `renderPanel(matchPanel,m.emptyPanel);}`,
-  // The details pane (s4): every field as text, the opened record in a <pre>; a null model clears it.
-  `const RELATION={parent:'Parent',child:'Child',corrects:'Corrects'};`,
-
-  // Focus (s5): opening an item's details focuses their heading; closing them returns focus to that item's card, or to
-  // the shown view's tab when the card is gone. Escape inside the details closes them.
-  `let detailsOf=null,lastHeading=null;`,
-  `details.addEventListener('keydown',function(e){if(e.key==='Escape'){e.preventDefault();send({type:'close-details'});}});`,
-  `const returnFocus=function(id){const card=cardsOnBoard().filter(function(c){return c.getAttribute('data-item-id')===id;})[0];if(card)card.focus();else TABS[shownView].focus();};`,
-  // Mock B: kicker, title and close; the chips; the conflict box first; 'Why this stage?'; tasks as disclosures; the
-  // artifact chain; then the records, notices, links and sources.
-  `function renderDetails(m){clear(details);if(m===null){details.setAttribute('hidden','');lastHeading=null;if(detailsOf!==null){const id=detailsOf;detailsOf=null;returnFocus(id);}return;}details.removeAttribute('hidden');`,
-  `details.setAttribute('data-item-id',m.itemId);`,
-  `const head=make('div',undefined,'details-head');head.appendChild(make('div',m.kicker,'kicker'));`,
-  `const heading=make('h2',m.title);heading.setAttribute('tabindex','-1');head.appendChild(heading);details.appendChild(head);`,
-  `details.appendChild(button('Close details',function(){send({type:'close-details'});}));`,
-  `if(m.chips.length>0){const chips=make('div',undefined,'chips details-chips');for(const c of m.chips){const e=pill(c.label,c.tone);e.setAttribute('data-kind',c.kind);chips.appendChild(e);}details.appendChild(chips);}`,
-  `if(m.conflict!==null){const box=make('div',undefined,'details-conflict');box.setAttribute('role','note');box.appendChild(make('strong',m.conflict.headline));box.appendChild(make('p',m.conflict.text));details.appendChild(box);}`,
-  `if(m.stageReason!==null){const why=make('div',undefined,'why');why.appendChild(make('strong','Why this stage?'));why.appendChild(make('p',m.stageReason.text));`,
-  `if(m.stageReason.artifactIds.length>0)why.appendChild(make('p','From '+m.stageReason.artifactIds.join(', '),'muted'));details.appendChild(why);}`,
-  `if(m.tasks.length>0||m.taskCounts!==null){details.appendChild(make('h3','Tasks'));`,
-  `if(m.taskCounts!==null){const k=m.taskCounts;details.appendChild(make('p',k.passed+' passed, '+k.failed+' failed, '+k.unrecorded+' unrecorded, '+k.unplanned+' unplanned','task-counts muted'));}`,
-  `const list=make('div');list.setAttribute('role','list');list.setAttribute('aria-label','Tasks');`,
-  `for(const t of m.tasks){const row=make('details',undefined,'task');row.setAttribute('role','listitem');row.setAttribute('data-item-id',t.taskItemId);`,
-  `row.appendChild(make('summary',t.title===null?t.taskItemId:t.title));`,
-  `const chips=make('div',undefined,'chips');chips.appendChild(pill(t.resultLabel,t.resultTone));`,
-  `if(t.dependsOn!==null)chips.appendChild(pill(t.dependsOn.length===0?'No dependencies':'Depends on '+t.dependsOn.join(', '),'neutral'));row.appendChild(chips);`,
-  `if(t.acceptanceChecks!==null&&t.acceptanceChecks.length>0){const cl=make('ul',undefined,'task-checks');cl.setAttribute('aria-label','Acceptance checks');for(const c of t.acceptanceChecks)cl.appendChild(make('li',c));row.appendChild(cl);}`,
-  `list.appendChild(row);}details.appendChild(list);}`,
-  `if(m.planNotice!==null)details.appendChild(make('p',m.planNotice,'plan-notice'));`,
-  `if(m.chain.length>0){details.appendChild(make('h3','Artifact chain'));const ul=make('ul',undefined,'chain');ul.setAttribute('aria-label','Artifact chain');`,
-  `for(const r of m.chain){const li=make('li');li.setAttribute('data-status',r.status);li.appendChild(make('strong',r.kind));const body=make('div');body.appendChild(pill(r.label,r.tone));`,
-  `if(r.artifactId!==null)body.appendChild(make('div',r.artifactId+(r.note===null?'':' \u00b7 '+r.note),'muted'));li.appendChild(body);ul.appendChild(li);}details.appendChild(ul);}`,
-  `if(m.evidence.length>0){details.appendChild(make('h3','Records'));const ul=make('ul');ul.setAttribute('aria-label','Records');`,
-  `for(const r of m.evidence){const li=make('li',undefined,'record');li.setAttribute('data-artifact-id',r.artifactId);`,
-  `li.appendChild(make('span',[r.kindLabel+' '+r.artifactId,r.approvalLabel].concat(r.reviewLabel===null?[]:[r.reviewLabel]).concat(r.overrideLabel===null?[]:[r.overrideLabel]).join(' \u00b7 ')));`,
-  `li.appendChild(button(r.opensIn==='review-pane'?'Open in review':'Open read-only',function(){send({type:'open-evidence',itemId:m.itemId,artifactId:r.artifactId});}));`,
-  `ul.appendChild(li);}details.appendChild(ul);}`,
-  `if(m.notices.length>0){details.appendChild(make('h3','Notices'));const ul=make('ul');for(const n of m.notices)ul.appendChild(make('li',n,'notice'));details.appendChild(ul);}`,
-  `if(m.linked.length>0){details.appendChild(make('h3','Linked'));const ul=make('ul');`,
-  `for(const l of m.linked){const li=make('li');li.appendChild(button(RELATION[l.relation]+': '+l.title,function(){send({type:'select-item',itemId:l.itemId});}));ul.appendChild(li);}details.appendChild(ul);}`,
-  `if(m.sourceIds.length>0)details.appendChild(make('p','Sources: '+m.sourceIds.join(', '),'source-ids muted'));`,
-  `if(m.openedRecord!==null){details.appendChild(make('h3','Record '+m.openedRecord.artifactId));details.appendChild(make('pre',m.openedRecord.text,'opened-record'));}`,
-  // A re-render of the same item (its plan or a record arrived) keeps focus on the heading if the old heading had it.
-  `const keep=m.itemId===detailsOf&&lastHeading!==null&&document.activeElement===lastHeading;lastHeading=heading;`,
-  `if(m.itemId!==detailsOf||keep){detailsOf=m.itemId;heading.focus();}}`,
+  `const fill=make('span');fill.setAttribute('style','width:'+(r.storiesTotal===0?0:Math.round(100*r.storiesComplete/r.storiesTotal))+'%');meter.appendChild(fill);box.appendChild(meter);`,
+  `box.appendChild(pill(r.attentionLabel,r.attentionTone,'pill attention-count'));return box;}`,
+  `function renderTotals(label,showAll){const p=make('p',label,'totals');if(showAll)p.appendChild(button('Show all',function(){send({type:'set-attention',on:false});},'link show-all'));bodyEl.appendChild(p);}`,
+  // A board screen: the epic's own summary on its board, the totals, then the six stages (or the no-matches panel).
+  `function renderStages(b){if(b.epic!==null){const k=make('div','EPIC \\u00b7 '+b.epic.compactId,'kicker');bodyEl.appendChild(k);bodyEl.appendChild(renderEpicSummary(b.epic));}`,
+  `renderTotals(b.totalsLabel,b.showAll);if(b.emptyPanel!==null){renderPanel(bodyEl,b.emptyPanel);return;}`,
+  `const showEpic=b.epic===null&&!(model.filters!==null&&model.filters.view==='standalone');const fold=b.fold.always||narrow;`,
+  `for(const sec of b.sections){if(fold&&sec.total===0)continue;bodyEl.appendChild(renderSection(sec,showEpic));}`,
+  `if(fold&&b.fold.text!==''){if(b.fold.always)bodyEl.appendChild(make('p',b.fold.text,'fold muted'));`,
+  `else{const d=make('details',undefined,'stage fold');const k=model.entryId+':fold';if(openOf[k])d.setAttribute('open','');d.addEventListener('toggle',function(){openOf[k]=d.getAttribute('open')!==null;});`,
+  `d.appendChild(keyed(make('summary',L.otherStages),'stage-fold'));d.appendChild(make('p',b.fold.text,'muted'));bodyEl.appendChild(d);}}}`,
+  // The Epics screen: each whole row opens that epic's board.
+  `function renderEpics(b){renderTotals(b.totalsLabel,false);if(b.emptyPanel!==null)renderPanel(bodyEl,b.emptyPanel);`,
+  `else{const ul=make('ul',undefined,'rows');ul.setAttribute('aria-label','Epics');for(const r of b.rows){const li=make('li');`,
+  `const row=keyed(button('',function(){send({type:'open-epic',epicItemId:r.epicItemId});},'epic-row'),'epic-'+r.epicItemId);row.setAttribute('data-epic',r.epicItemId);`,
+  `row.appendChild(make('span','EPIC \\u00b7 '+r.compactId,'kicker'));row.appendChild(make('span',r.title,'row-title'));row.appendChild(renderEpicSummary(r));li.appendChild(row);ul.appendChild(li);}bodyEl.appendChild(ul);}`,
+  `const p=make('p','Work outside any epic is under ','muted standalone-link');p.appendChild(button(L.views.standalone,function(){send({type:'set-view',view:'standalone'});},'link'));bodyEl.appendChild(p);}`,
+  // The Issues screen: a list in stage order; a row opens the issue's screen.
+  `function renderIssues(b){renderTotals(b.totalsLabel,false);if(b.emptyPanel!==null){renderPanel(bodyEl,b.emptyPanel);return;}`,
+  `const ul=make('ul',undefined,'rows');ul.setAttribute('aria-label','Issues');for(const e of b.issues){const li=make('li');`,
+  `const row=keyed(button('',function(){send({type:'open-item',itemId:e.card.itemId});},'issue-row'),'item-'+e.card.itemId);row.setAttribute('data-item-id',e.card.itemId);row.setAttribute('aria-label',e.card.accessibleLabel);`,
+  `row.appendChild(make('span','ISSUE \\u00b7 '+e.card.compactId,'kicker'));row.appendChild(make('span',e.card.title,'row-title'));`,
+  `const what=e.parent!==null?'Corrects '+e.parent.title:e.parentNotice!==null?e.parentNotice:e.card.standalone?'Standalone':'';`,
+  `const fix=e.fixStories.length===0?'no fix story yet':e.fixStories.map(function(f){return 'fix story '+f.title+(f.stageLabel===null?'':' \\u00b7 '+f.stageLabel);}).join('; ');`,
+  `row.appendChild(make('span',[what,fix].filter(function(t){return t!=='';}).join(' \\u00b7 '),'muted'));const pills=make('span',undefined,'badges');pills.appendChild(pill(e.stageLabel,'neutral'));`,
+  `for(const b of e.card.badges){const t=pill(b.label,b.tone,'badge');t.setAttribute('data-kind',b.kind);pills.appendChild(t);}row.appendChild(pills);li.appendChild(row);ul.appendChild(li);}bodyEl.appendChild(ul);}`,
+  // A story's or issue's screen (the full screens are t5's).
+  `function renderItem(b){bodyEl.appendChild(make('div',b.details.kicker,'kicker'));}`,
+  `function render(m){const fresh=m.entryId!==shownEntry||m.body.kind!==shownKind;model=m;narrow=isNarrow();renderCrumbs(m);`,
+  `const keep=fresh?null:focusedKey();`,
+  `if(fresh){clear(main);search=null;head=make('div',undefined,'screen-head');bodyEl=make('div',undefined,'screen-body');main.appendChild(head);main.appendChild(bodyEl);main.setAttribute('data-screen',m.body.kind);`,
+  `if(m.back!==null)head.appendChild(keyed(button(m.back.label,function(){send({type:'back'});},'back'),'back'));`,
+  `const h=keyed(make('h1',m.title,'screen-title'),'title');h.setAttribute('tabindex','-1');head.appendChild(h);if(m.filters!==null)head.appendChild(buildFilters(m.filters));}`,
+  `else head.querySelectorAll('h1.screen-title').forEach(function(h){h.textContent=m.title;});`,
+  `markFilters(m.filters);clear(bodyEl);`,
+  `switch(m.body.kind){case 'stages':renderStages(m.body);break;case 'epics':renderEpics(m.body);break;case 'issues':renderIssues(m.body);break;default:renderItem(m.body);}`,
+  `if(keep!==null){const f=findKey(main,keep)||findKey(crumbsEl,keep);if(f)f.focus();}`,
+  // A new screen starts at the top with its heading focused; a screen the reader returned to gets its scroll back and
+  // focuses what was opened from it.
+  `if(fresh){shownEntry=m.entryId;shownKind=m.body.kind;const h=head.querySelectorAll('h1.screen-title')[0];`,
+  `if(m.restored){window.scrollTo(0,scrollOf[m.entryId]||0);const o=m.focusItemId===null?null:findKey(bodyEl,'item-'+m.focusItemId)||findKey(bodyEl,'epic-'+m.focusItemId);(o||h).focus();}`,
+  `else{window.scrollTo(0,0);h.focus();}}}`,
   `window.addEventListener('message',function(e){`,
-  `const m=e.data;if(!m||m.v!==1||!m.payload)return;const p=m.payload;`,
-  // The app bar's freshness line; the status panel carries the explanation and its action.
+  `const msg=e.data;if(!msg||msg.v!==1||!msg.payload)return;const p=msg.payload;`,
   `if(p.type==='status'){const s=p.status;`,
-  `const line=s.state==='loading'?'Refreshing\u2026'+(s.freshnessLabel?' \u00b7 '+s.freshnessLabel:''):s.freshnessLabel||s.message||'';`,
-  `status.textContent=line+(s.stale?' (stale)':'');status.setAttribute('data-state',s.state);`,
-  `renderPanel(statusPanel,s.panel);return;}`,
-  `if(p.type==='board'){renderBoard(p.model);return;}`,
-  `if(p.type==='epics'){renderEpics(p.model);return;}`,
-  `if(p.type==='issues'){renderIssues(p.model);return;}`,
-  `if(p.type==='details'){renderDetails(p.model);return;}`,
+  `const line=s.state==='loading'?'Refreshing\\u2026'+(s.freshnessLabel?' \\u00b7 '+s.freshnessLabel:''):s.freshnessLabel||s.message||'';`,
+  `status.textContent=line+(s.stale?' (stale)':'');status.setAttribute('data-state',s.state);clear(banner);`,
+  // With nothing to show behind it the panel replaces the screen; otherwise it sits above the screen, which stays.
+  `const panel=s.panel||null;if(panel!==null&&panel.placement==='body'){clear(main);clear(crumbsEl);crumbsEl.appendChild(make('span','Delivery','crumb current'));model=null;shownEntry=null;shownKind=null;head=null;bodyEl=null;search=null;main.setAttribute('data-screen','panel');renderPanel(main,panel);}`,
+  `else if(panel!==null)renderPanel(banner,panel);return;}`,
+  `if(p.type==='screen'){render(p.model);return;}`,
   // The one live region (s5): cleared, then set, so a repeated text is announced again.
   `if(p.type==='announce'){announceEl.textContent='';announceEl.textContent=String(p.text);return;}`,
   `});`,
   // Density (s5) lives in the webview's own state, kept by VS Code across reloads, and is mirrored to the host.
-  `const announceEl=byId('announce');`,
   `const DENSITIES=['compact','comfortable'];`,
   `const savedState=function(){try{const st=vs.getState();return st&&typeof st==='object'?st:{};}catch(e){return {};}};`,
   `const applyDensity=function(d){document.body.setAttribute('data-density',d);for(const x of DENSITIES)byId('density-'+x).setAttribute('aria-pressed',x===d?'true':'false');};`,
@@ -358,8 +326,8 @@ export function renderBoardDocument(nonce: string): string {
     `<!DOCTYPE html><html><head><meta charset="utf-8">` +
     `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
     `<title>${BOARD_TITLE}</title><style>${BOARD_STYLE}</style></head><body>` +
-    // App bar (mock A): wordmark and breadcrumb; the freshness line, the read-only marker, refresh and density.
-    `<header class="appbar"><div class="brand"><span class="wordmark">insrc</span><span class="crumb">Workspace / Delivery</span></div>` +
+    // App bar: wordmark and breadcrumb; the freshness line, the read-only marker, refresh and density.
+    `<header class="appbar"><div class="brand"><span class="wordmark">insrc</span><nav id="crumbs" class="crumbs" aria-label="Breadcrumb"></nav></div>` +
     // The status line keeps role=status but is not a live region: #announce is the one announcer (s5).
     `<div class="appbar-tools"><p id="status" role="status"></p><span class="readonly">Read-only</span>` +
     `<button id="refresh" type="button">Refresh</button>` +
@@ -367,22 +335,11 @@ export function renderBoardDocument(nonce: string): string {
     `<button id="density-compact" type="button" aria-pressed="false">Compact</button>` +
     `<button id="density-comfortable" type="button" aria-pressed="true">Comfortable</button>` +
     `</div></div></header>` +
-    `<h1 class="page-title">${BOARD_TITLE}</h1>` +
     `<p id="announce" class="announce" aria-live="polite" aria-atomic="true"></p>` +
-    `<nav class="tabs" role="tablist" aria-label="Views">` +
-    `<button id="tab-board" type="button" role="tab" aria-selected="true" tabindex="0">Board</button>` +
-    `<button id="tab-epics" type="button" role="tab" aria-selected="false" tabindex="-1">Epics</button>` +
-    `<button id="tab-issues" type="button" role="tab" aria-selected="false" tabindex="-1">Issues</button>` +
-    `</nav>` +
-    // Chip toolbar (mock A): search, the scope chips and the Needs attention chip.
-    `<div class="toolbar">` +
-    `<input id="search" type="search" aria-label="Search work items" placeholder="Search">` +
-    `<div id="scope-chips" class="chips" role="group" aria-label="Scope"></div>` +
-    `<button id="attention-chip" class="chip" type="button" aria-pressed="false">Needs attention</button>` +
-    `</div>` +
-    `<p id="totals"></p>` +
-    `<div id="panel"></div>` +
-    `<div class="layout"><aside id="details" aria-label="Item details" hidden></aside><div id="board" class="board"></div></div>` +
+    // A failed refresh over a shown board and partial evidence sit here, above the screen, which stays usable.
+    `<div id="banner"></div>` +
+    // One screen at a time: each screen message replaces what is here.
+    `<main id="main"></main>` +
     `<script nonce="${attr(nonce)}">${BOARD_WEBVIEW_SCRIPT}</script></body></html>`
   );
 }

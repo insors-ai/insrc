@@ -930,4 +930,70 @@ test('a planner task whose child produced no report fails with the child\'s caus
 	} finally {
 		purgeAllTaskOutputs(runId2);
 	}
+
+	// The child's aggregate task finishes with no report; the only cause is another task's failure.
+	registerTemplateRuntime(stubRuntime('child.empty', { report: undefined }));
+	const noReport = mkNode(rootPlan, new Map([['t01', mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: 'child.broken', produces: ['items'] }),
+		mkTask({ taskId: 't02', template: 'child.empty',  produces: ['report'] }),
+	]))]]));
+	const runId3 = uniqueRunId('child-cause-no-report');
+	try {
+		const result = await runExecutor({ tree: noReport, intent: SAMPLE_INTENT, runId: runId3 });
+		assert.equal(
+			result.root.perTask.get('t01')?.error,
+			'child-plan-unavailable: child aggregator produced no report; '
+			+ 'other tasks of the child plan that did not complete: t01.t01: runtime-threw: BOOM',
+		);
+	} finally {
+		purgeAllTaskOutputs(runId3);
+	}
+});
+
+test('a plan two levels down keeps its own records and names its tasks by their full path', async () => {
+	_resetRuntimeRegistryForTests();
+	registerTemplateRuntime(stubRuntime('demo.discovery',       { items: ['x'] }));
+	registerTemplateRuntime(stubRuntime('demo.aggregator',      { report: 'r' }));
+	registerTemplateRuntime(throwingRuntime('deep.aggregator',  'Prompt is too long'));
+
+	// root t02 -> child t05 -> grandchild, whose aggregate task fails.
+	const grandchild = mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: 'demo.discovery',  produces: ['items'] }),
+		mkTask({ taskId: 't02', template: 'deep.aggregator', produces: ['report'], consumes: ['items'] }),
+	]));
+	const child = mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: 'demo.discovery', produces: ['items'] }),
+		plannerTask('t05'),
+		mkTask({ taskId: 't06', template: 'demo.aggregator', produces: ['report'], consumes: ['report'] }),
+	]), new Map([['t05', grandchild]]));
+	const rootNode = mkNode(mkPlan([
+		mkTask({ taskId: 't01', template: 'demo.discovery', produces: ['items'] }),
+		plannerTask('t02'),
+		mkTask({ taskId: 't03', template: 'demo.aggregator', produces: ['report'], consumes: ['items', 'report'] }),
+	]), new Map([['t02', child]]));
+
+	const runId = uniqueRunId('two-levels');
+	try {
+		const result = await runExecutor({ tree: rootNode, intent: SAMPLE_INTENT, runId });
+
+		// One t01 at each of the three levels, each with its own record.
+		assert.equal(readTaskOutput(runId, 't01')?.template, 'demo.discovery');
+		assert.equal(readTaskOutput(runId, 't01', 't02')?.status, 'ok');
+		assert.equal(readTaskOutput(runId, 't01', 't02.t05')?.status, 'ok');
+		assert.equal(readTaskOutput(runId, 't02', 't02.t05')?.error, 'runtime-threw: Prompt is too long');
+		assert.equal(readTaskOutput(runId, 't02')?.kind, 'planner');
+
+		// The cause travels up both levels, each task named by its full path.
+		const deep = 'child-plan-unavailable: child aggregator produced no report: '
+			+ 'its aggregate task t02.t05.t02 (deep.aggregator) failed: runtime-threw: Prompt is too long';
+		assert.equal(readTaskOutput(runId, 't05', 't02')?.error, deep);
+		assert.equal(
+			result.root.perTask.get('t02')?.error,
+			'child-plan-unavailable: child aggregator produced no report: '
+			+ 'its aggregate task t02.t06 (demo.aggregator) was skipped: dependency-unavailable: report; '
+			+ `other tasks of the child plan that did not complete: t02.t05: ${deep}`,
+		);
+	} finally {
+		purgeAllTaskOutputs(runId);
+	}
 });

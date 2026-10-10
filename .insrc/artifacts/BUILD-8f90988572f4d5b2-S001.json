@@ -7,11 +7,66 @@
     "storyId": "S001",
     "createdAt": "2026-10-10T06:06:33.828Z",
     "authoredBy": "controller",
-    "triageRationale": "bugfix, magnitude small: two local changes in the analyze executor (the task record path and the planner task's failure reason), no design decision open."
+    "triageRationale": "bugfix, magnitude small: two local changes in the analyze executor (the task record path and the planner task's failure reason), no design decision open.",
+    "updatedAt": "2026-10-10T06:08:59.072Z"
   },
   "body": {
     "focus": "Fix ISSUE-8f90988572f4d5b2: every task of every plan in a plan tree keeps its own record (a child plan's task records are stored apart from its parent's and its sibling plans'; root records stay where they are; removing a run still removes all of them), and a planner task whose child plan produced no report fails with the child's cause (which child task failed and its reason), keeping the code child-plan-unavailable.",
     "producesLld": false,
-    "commit": "9c24f01a"
+    "commit": "7fadde2d",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "A child plan's task record is now stored in its own plan's directory under its full task path (tasks/t02/tasks/t02.t01.json), so the plans of one tree no longer overwrite each other's records; the root plan's records stay at tasks/<taskId>.json and removing a run still removes all of them. A planner task whose child plan wrote no report now fails with the child's cause (the child's aggregate task and its reason, then every other task of the child that did not complete) and keeps the code child-plan-unavailable. Two tests in src/analyze/executor/__tests__/walker.test.ts cover it; three mutations of the fix each fail one of them.",
+    "testRecord": {
+      "md": "docs/standalone/bug-analyzer-s-plan-tree-child-E202610108f909885/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-8f90988572f4d5b2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:08:59.072Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:08:59.072Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/executor/__tests__/walker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:08:59.072Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/executor/cache.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:08:59.072Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/executor/walker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:08:59.072Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/paths.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:08:59.072Z"
+      }
+    ]
   }
 }

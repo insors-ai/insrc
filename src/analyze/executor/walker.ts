@@ -363,11 +363,13 @@ function childFailureCause(
 	const base = 'child aggregator produced no report';
 	const aggregate = childNode.plan.tasks[childNode.plan.tasks.length - 1];
 	const record = aggregate !== undefined ? childResult.root.perTask.get(aggregate.taskId) : undefined;
-	if (aggregate === undefined || record === undefined || record.status === 'ok') return base;
-
-	const cause = `${base}: its aggregate task ${appendTaskPath(childPath, aggregate.taskId)} (${aggregate.template}) `
-		+ `${record.status === 'failed' ? 'failed' : 'was skipped'}: ${record.error ?? record.status}`;
-	const others = childResult.root.tasksFailed.filter(f => f.taskId !== aggregate.taskId);
+	// The aggregate task's own reason, when it has one; a task that finished
+	// 'ok' with no report, or has no record, has none to give.
+	const cause = aggregate === undefined || record === undefined || record.status === 'ok'
+		? base
+		: `${base}: its aggregate task ${appendTaskPath(childPath, aggregate.taskId)} (${aggregate.template}) `
+			+ `${record.status === 'failed' ? 'failed' : 'was skipped'}: ${record.error ?? record.status}`;
+	const others = childResult.root.tasksFailed.filter(f => f.taskId !== aggregate?.taskId);
 	if (others.length === 0) return cause;
 	return `${cause}; other tasks of the child plan that did not complete: `
 		+ others.map(f => `${appendTaskPath(childPath, f.taskId)}: ${f.reason}`).join('; ');

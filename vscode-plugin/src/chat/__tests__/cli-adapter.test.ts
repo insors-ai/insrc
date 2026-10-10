@@ -14,7 +14,9 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
-import { waitFor } from './fixtures.js';
+import { tick, waitFor } from './fixtures.js';
+import { defaultProcessStartTime } from '../session-lock.js';
+import { appendFileSync } from 'node:fs';
 import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner } from '../cli-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
@@ -1201,4 +1203,91 @@ test('a beginTurn failure falls back to the pipe with one logged error', async (
   const plain = createProviderRegistry({ spawn, isInstalled: () => true, sessionOutput: broken }).get('claude');
   await collect(plain.run(REQ({ provider: 'claude' })));
   assert.equal(outputs.at(-1), undefined);
+});
+
+test('resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one', async () => {
+  const root = join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output');
+  const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+  const adapter = createProviderRegistry({ spawn: makeFakeSpawner({ lines: [] }).spawn, isInstalled: () => true, sessionOutput, livenessPollMs: 5 }).get('claude');
+
+  // A turn whose window reloaded after the first two lines were handled.
+  const seg = await sessionOutput.beginTurn('s1', 'turn-1');
+  appendFileSync(seg.outPath, `${CLAUDE_TEXT_TURN[0]}\n${CLAUDE_TEXT_TURN[1]}\n`);
+  let saved = seg.cursor;
+  let n = 0;
+  for await (const { cursor } of sessionOutput.tail(seg.cursor, { finished: () => true })) {
+    saved = cursor;
+    if (++n === 2) break;
+  }
+  // The CLI (still this live process) goes on writing while the new window follows.
+  const progress: number[] = [];
+  const events: TurnEvent[] = [];
+  const following = (async () => {
+    for await (const ev of adapter.resume({ cursor: saved, pid: process.pid, startedAt: defaultProcessStartTime(process.pid) ?? null }, { onProgress: (c) => progress.push(c.offset) })) events.push(ev);
+  })();
+  await tick(20);
+  appendFileSync(seg.outPath, `${CLAUDE_TEXT_TURN[2]}\n${CLAUDE_TEXT_TURN[3]}\n{"type":"after"}\n`);
+  await following;
+  assert.deepEqual(events.map((e) => e.kind), ['assistant-delta', 'done'], 'only the events after the saved cursor, ending at the terminal one');
+  assert.equal((events[0] as { text: string }).text, 'world');
+  assert.equal(events.every((e) => e.turnId === 'turn-1'), true);
+  assert.equal(progress.length, 1, 'a position after the non-terminal line');
+
+  // A turn whose process is gone without a terminal event.
+  const seg2 = await sessionOutput.beginTurn('s1', 'turn-2');
+  appendFileSync(seg2.outPath, `${CLAUDE_TEXT_TURN[0]}\n`);
+  const gone: TurnEvent[] = [];
+  for await (const ev of adapter.resume({ cursor: seg2.cursor, pid: 2 ** 22 + 77, startedAt: null })) gone.push(ev);
+  assert.deepEqual(gone.map((e) => e.kind), ['status', 'error']);
+  assert.match((gone[1] as { message: string }).message, /the turn ended without a result/);
+
+  // A cursor whose generation is gone ends with an error instead of hanging.
+  const lost: TurnEvent[] = [];
+  for await (const ev of adapter.resume({ cursor: { ...seg2.cursor, generation: 99 }, pid: process.pid, startedAt: null })) lost.push(ev);
+  assert.equal(lost.length, 1);
+  assert.match((lost[0] as { message: string }).message, /could not be read/);
+});
+
+test("resume()'s handed-over process stops the recorded pid's group only while its start time matches", async () => {
+  const root = join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output');
+  const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+  const table = new Map<number, number>([[700, 5]]); // pid -> start time
+  const signals: Array<[number, string]> = [];
+  const deps: AdapterDeps = {
+    spawn: makeFakeSpawner({ lines: [] }).spawn,
+    isInstalled: () => true,
+    sessionOutput,
+    livenessPollMs: 5,
+    stopGraceMs: 30,
+    isAlive: (pid) => table.has(pid),
+    processStartTime: (pid) => table.get(pid),
+    killGroup: (pid, s) => {
+      signals.push([pid, s]);
+      table.delete(pid); // dies on SIGTERM
+    },
+  };
+  const adapter = createProviderRegistry(deps).get('claude');
+  const seg = await sessionOutput.beginTurn('s1', 't');
+  const ctl = new AbortController();
+  let handle: TurnProcess | undefined;
+  const following = (async () => {
+    for await (const _ of adapter.resume({ cursor: seg.cursor, pid: 700, startedAt: 5 }, { signal: ctl.signal, onAttach: (p) => (handle = p) })) void _;
+  })();
+  await waitFor(() => handle !== undefined);
+  await handle!.stop();
+  assert.deepEqual(signals, [[700, 'SIGTERM']], 'the recorded group was stopped');
+  await following;
+
+  // The pid now belongs to an unrelated process (different start time): never signalled.
+  table.set(701, 9);
+  signals.length = 0;
+  let other: TurnProcess | undefined;
+  const second = (async () => {
+    for await (const _ of adapter.resume({ cursor: seg.cursor, pid: 701, startedAt: 5 }, { onAttach: (p) => (other = p) })) void _;
+  })();
+  await waitFor(() => other !== undefined);
+  other!.kill('SIGKILL');
+  await other!.stop();
+  await second;
+  assert.deepEqual(signals, [], 'a reused pid is never signalled');
 });

@@ -31,7 +31,7 @@ import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
-import { DEFAULT_GRACE_MS, signalGroup, stopProcess } from './session-lock.js';
+import { DEFAULT_GRACE_MS, defaultIsAlive, defaultKillGroup, defaultProcessStartTime, signalGroup, stopProcess } from './session-lock.js';
 import { parseMarker, type SegmentCursor, type SessionOutput } from './session-output.js';
 
 export type ProviderId = 'claude' | 'codex';
@@ -79,6 +79,22 @@ export interface TurnProcess {
 
 export type TurnCursor = SegmentCursor;
 
+export interface ResumeRequest {
+  readonly cursor: SegmentCursor;
+  /** The turn's CLI process, as recorded when it started. */
+  readonly pid: number | undefined;
+  /** That process's start time (processStartTime), so a reused pid is never mistaken for it. */
+  readonly startedAt: number | null;
+}
+
+export interface ResumeOptions {
+  readonly onProgress?: ((cursor: TurnCursor) => void) | undefined;
+  /** Aborting it stops following; the process is left running. */
+  readonly signal?: AbortSignal | undefined;
+  /** Hands over the followed turn's process, so Stop can end it. */
+  readonly onAttach?: ((proc: TurnProcess) => void) | undefined;
+}
+
 export interface RunOptions {
   /** Called once the CLI process has started. */
   readonly onSpawn?: ((proc: TurnProcess) => void) | undefined;
@@ -98,6 +114,12 @@ export interface StreamAdapter {
    * answer keeps running, and its live entry (for decide()) is dropped when it exits.
    */
   run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent>;
+  /**
+   * Follow an earlier turn's segment of the session file from a saved cursor (after a reload):
+   * the same events a live run would have yielded for the lines after it, ending at the terminal
+   * event, at the segment's end, or with an error once the recorded process is gone without one.
+   */
+  resume(req: ResumeRequest, opts?: ResumeOptions): AsyncIterable<TurnEvent>;
   /**
    * Stop an in-flight turn's process group by id (SIGTERM, then SIGKILL after a grace);
    * resolves once the exit is confirmed. No-op for unknown/exited turns.
@@ -180,6 +202,12 @@ export interface AdapterDeps {
   readonly stopGraceMs?: number;
   /** Keeps each turn's output in its session's file; without it every turn uses the pipe. */
   readonly sessionOutput?: SessionOutput | undefined;
+  /** Process seams for resume() (defaults: the real ones from session-lock.ts). */
+  readonly isAlive?: ((pid: number) => boolean) | undefined;
+  readonly killGroup?: ((pid: number, signal: 'SIGTERM' | 'SIGKILL') => void) | undefined;
+  readonly processStartTime?: ((pid: number) => number | undefined) | undefined;
+  /** How often resume() checks whether the followed process is still alive. Default 200 ms. */
+  readonly livenessPollMs?: number | undefined;
 }
 
 const NOOP_LOGGER: AdapterLogger = { warn: () => {}, error: () => {} };
@@ -930,7 +958,68 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     proc.write(mapper.formatDecision(requestId, decision));
   }
 
-  return { run, cancel, decide, capabilities: { resume: mapper.resume } };
+  async function* resume(req: ResumeRequest, opts?: ResumeOptions): AsyncIterable<TurnEvent> {
+    const turnId = req.cursor.turnId;
+    const sessionOutput = deps.sessionOutput;
+    if (sessionOutput === undefined) {
+      yield { kind: 'error', turnId, message: `${mapper.id} turn output is not kept, so it cannot be resumed` };
+      return;
+    }
+    const isAlive = deps.isAlive ?? defaultIsAlive;
+    const killGroup = deps.killGroup ?? defaultKillGroup;
+    const startTime = deps.processStartTime ?? defaultProcessStartTime;
+    const pid = req.pid;
+    // The recorded process, and only while it is still that process (never a reused pid).
+    const isTheProcess = (): boolean =>
+      pid !== undefined && isAlive(pid) && (req.startedAt === null || startTime(pid) === req.startedAt);
+    const exit = new Promise<{ code: number | null; signal: string | null }>((resolve) => {
+      const check = (): void => {
+        if (isTheProcess()) return;
+        clearInterval(timer);
+        resolve({ code: null, signal: null });
+      };
+      const timer = setInterval(check, deps.livenessPollMs ?? 200);
+      timer.unref?.();
+      check();
+    });
+    const handle: TurnProcess = {
+      pid,
+      exit,
+      cursor: req.cursor,
+      kill: (signal) => {
+        if (pid !== undefined && isTheProcess()) killGroup(pid, signal);
+      },
+      stop: () => stopProcess({ pid, exit, kill: (signal) => handle.kill(signal) }, stopGraceMs).then(() => {}),
+    };
+    opts?.onAttach?.(handle);
+
+    const state: TurnState = {};
+    const doneEvent = (ok: boolean): TurnEvent =>
+      state.sessionId !== undefined ? { kind: 'done', turnId, ok, sessionId: state.sessionId } : { kind: 'done', turnId, ok };
+    try {
+      for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished: () => !isTheProcess(), signal: opts?.signal })) {
+        let events: TurnEvent[];
+        try {
+          events = parseMarker(line) !== undefined ? [] : mapper.mapLine(line, turnId, state);
+        } catch {
+          log.warn(`[chat:${mapper.id}] skipped unparseable stream line`);
+          continue;
+        }
+        for (const ev of events) {
+          yield ev.kind === 'done' ? doneEvent(ev.ok) : ev;
+          if (ev.kind === 'done' || ev.kind === 'error') return;
+        }
+        opts?.onProgress?.(cursor);
+      }
+    } catch (err) {
+      yield { kind: 'error', turnId, message: `the output of this turn could not be read: ${err instanceof Error ? err.message : String(err)}` };
+      return;
+    }
+    if (opts?.signal?.aborted === true) return; // stopped following; the turn goes on
+    yield { kind: 'error', turnId, message: 'the turn ended without a result' };
+  }
+
+  return { run, resume, cancel, decide, capabilities: { resume: mapper.resume } };
 }
 
 function failureMessage(provider: ProviderId, reason: unknown): string {

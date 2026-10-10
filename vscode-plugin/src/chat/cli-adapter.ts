@@ -32,7 +32,7 @@ import { closeSync, openSync } from 'node:fs';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
 import { DEFAULT_GRACE_MS, signalGroup, stopProcess } from './session-lock.js';
-import { parseMarker, type SegmentCursor } from './session-output.js';
+import { parseMarker, type SegmentCursor, type SessionOutput } from './session-output.js';
 
 export type ProviderId = 'claude' | 'codex';
 
@@ -71,11 +71,24 @@ export interface TurnProcess {
   kill(signal: 'SIGTERM' | 'SIGKILL'): void;
   /** SIGTERM, then SIGKILL after a grace; resolves once the exit is confirmed (or the grace runs out). */
   stop(): Promise<void>;
+  /** With a session output: where the turn's segment starts (session, turn, generation, offset). */
+  readonly cursor?: SegmentCursor | undefined;
+  /** With a session output: the session file the process writes to. */
+  readonly outPath?: string | undefined;
 }
+
+export type TurnCursor = SegmentCursor;
 
 export interface RunOptions {
   /** Called once the CLI process has started. */
   readonly onSpawn?: ((proc: TurnProcess) => void) | undefined;
+  /** Called after the events of each output line have been yielded, with the position after that line. */
+  readonly onProgress?: ((cursor: TurnCursor) => void) | undefined;
+  /**
+   * The chat session the turn belongs to. With AdapterDeps.sessionOutput, the turn's output is
+   * kept in that session's file. Pass it only while holding the session's lease.
+   */
+  readonly sessionId?: string | undefined;
 }
 
 export interface StreamAdapter {
@@ -165,6 +178,8 @@ export interface AdapterDeps {
   readonly logger?: AdapterLogger;
   /** cancel()'s wait after SIGTERM, and again after SIGKILL. Default 5000 ms. */
   readonly stopGraceMs?: number;
+  /** Keeps each turn's output in its session's file; without it every turn uses the pipe. */
+  readonly sessionOutput?: SessionOutput | undefined;
 }
 
 const NOOP_LOGGER: AdapterLogger = { warn: () => {}, error: () => {} };
@@ -721,6 +736,7 @@ async function drain(it: AsyncIterator<string>): Promise<void> {
 function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAdapter {
   const log = deps.logger ?? NOOP_LOGGER;
   const stopGraceMs = deps.stopGraceMs ?? DEFAULT_GRACE_MS;
+  let outputFallbackLogged = false;
   const live = new Map<string, SpawnedProcess>();
   // S004: outstanding permission requests per live turn (the a2 pending-request registry).
   // register on an emitted approval-request; decide() consumes; auto-cleaned on cancel()/exit.
@@ -736,10 +752,35 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       const { resume: _drop, ...rest } = req;
       effectiveReq = rest;
     }
+    // Keep the turn's output in its session's file when we can; otherwise the pipe, as before.
+    const sessionOutput = deps.sessionOutput;
+    const sessionId = opts?.sessionId;
+    let segment: Awaited<ReturnType<SessionOutput['beginTurn']>> | undefined;
+    if (sessionOutput !== undefined && sessionId !== undefined) {
+      try {
+        segment = await sessionOutput.beginTurn(sessionId, turnId);
+      } catch (err) {
+        if (!outputFallbackLogged) log.error(`[chat:${mapper.id}] session output unavailable (${err instanceof Error ? err.message : String(err)}); reading this turn from the pipe`);
+        outputFallbackLogged = true;
+      }
+    }
+    const output: SpawnOutput | undefined =
+      segment !== undefined && sessionOutput !== undefined && sessionId !== undefined
+        ? {
+            outPath: segment.outPath,
+            errPath: segment.errPath,
+            cursor: segment.cursor,
+            tail: (cursor, finished) => sessionOutput.tail(cursor, { finished }),
+            errTail: () => sessionOutput.errTail(sessionId),
+          }
+        : undefined;
     let proc: SpawnedProcess;
     try {
-      proc = deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), { cwd: effectiveReq.cwd });
+      proc = deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), { cwd: effectiveReq.cwd, ...(output !== undefined ? { output } : {}) });
     } catch (err) {
+      if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
+        void sessionOutput.endTurn(sessionId, turnId, { code: null, signal: null }).catch(() => {});
+      }
       yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       return;
     }
@@ -751,6 +792,14 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       pendingByTurn.delete(turnId);
     };
     proc.exit.then(forget, forget);
+    if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
+      // Close the turn's segment after the process's real exit (not at its answer). If this host is
+      // gone by then, the next beginTurn closes it instead.
+      const close = (e: { code: number | null; signal: string | null }): void => {
+        void sessionOutput.endTurn(sessionId, turnId, e).catch((err: unknown) => log.warn(`[chat:${mapper.id}] could not close the output segment of ${turnId}: ${String(err)}`));
+      };
+      proc.exit.then(close, () => close({ code: null, signal: null }));
+    }
     const state: TurnState = {};
     let sawError = false;
     let sawDone = false;
@@ -775,6 +824,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         exit: proc.exit,
         kill: (signal) => proc.kill(signal),
         stop: () => stopTurnProcess(proc),
+        ...(segment !== undefined ? { cursor: segment.cursor, outPath: segment.outPath } : {}),
       });
       for (;;) {
         const next = await stdout.next();
@@ -809,6 +859,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           yield ev.kind === 'done' ? doneEvent(ev.ok) : ev;
           if (sawDone || sawError) return;
         }
+        // Every event of this line has been handed over: report the position after it.
+        const at = proc.cursor;
+        if (at !== undefined) opts?.onProgress?.(at);
       }
       // stdout closed without a terminal event: the process is ending; report how.
       const { code, signal } = await proc.exit;

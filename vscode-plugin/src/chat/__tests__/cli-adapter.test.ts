@@ -14,6 +14,7 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
+import { waitFor } from './fixtures.js';
 import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner } from '../cli-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
@@ -1133,4 +1134,71 @@ test('marker lines reaching a mapper produce no events', async () => {
   const { deps } = depsFor({ lines: [CLAUDE_TEXT_TURN[0]!, marker, ...CLAUDE_TEXT_TURN.slice(1)] });
   const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
   assert.deepEqual(events.map((e) => e.kind), ['status', 'assistant-delta', 'assistant-delta', 'done'], 'the marker produced nothing');
+});
+
+test('run() yields the same events from the output file as from a pipe, reports progress offsets, and writes the turn-end marker after the process exits', async (t) => {
+  if (process.platform === 'win32') return t.diagnostic('uses sh');
+  const lines = [...CLAUDE_TEXT_TURN];
+  // The CLI answers, then keeps running and writes once more before it exits.
+  const script = `${lines.map((l) => `printf '%s\\n' '${l.replace(/'/g, "'\\''")}'`).join('; ')}; sleep 0.3; echo '{"type":"late"}'`;
+  const shSpawn: SpawnFn = (_cmd, _args, opts) => nodeSpawner('sh', ['-c', script], opts);
+  const root = join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output');
+  const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+
+  const piped = await collect(createProviderRegistry({ spawn: shSpawn, isInstalled: () => true }).get('claude').run(REQ({ provider: 'claude', cwd: process.cwd() })));
+
+  const progress: number[] = [];
+  let spawned: TurnProcess | undefined;
+  const adapter = createProviderRegistry({ spawn: shSpawn, isInstalled: () => true, sessionOutput }).get('claude');
+  const filed = await collect(adapter.run(REQ({ provider: 'claude', cwd: process.cwd() }), { sessionId: 's1', onProgress: (c) => progress.push(c.offset), onSpawn: (p) => (spawned = p) }));
+
+  const strip = (evs: TurnEvent[]) => evs.map((e) => ({ ...e, turnId: '' }));
+  assert.deepEqual(strip(filed), strip(piped), 'the same events from the session file as from the pipe');
+  assert.equal(progress.length, 3, 'a position after each line before the terminal one');
+  assert.ok(progress[0]! < progress[1]! && progress[1]! < progress[2]!, 'positions advance');
+  assert.ok(spawned?.cursor !== undefined && spawned.cursor.sessionId === 's1', 'onSpawn hands over the segment start');
+  assert.equal(spawned?.outPath, join(root, 's1.ndjson'));
+
+  // The process outlives its answer; the turn-end marker follows its real exit.
+  const file = join(root, 's1.ndjson');
+  const turnId = filed[0]!.turnId;
+  assert.doesNotMatch(readFileSync(file, 'utf8'), /"turn-end"/, 'not closed at the answer');
+  await spawned!.exit;
+  await waitFor(() => /"turn-end"/.test(readFileSync(file, 'utf8')));
+  const all = readFileSync(file, 'utf8').trimEnd().split('\n');
+  assert.match(all.at(-2)!, /"late"/, 'the late line is kept in the segment');
+  assert.match(all.at(-1)!, new RegExp(`"insrc.marker":"turn-end","turnId":"${turnId}","code":0`), 'then the turn-end with the real exit code');
+});
+
+test('a beginTurn failure falls back to the pipe with one logged error', async () => {
+  const errors: string[] = [];
+  const outputs: unknown[] = [];
+  const spawner = makeFakeSpawner({ lines: CLAUDE_TEXT_TURN });
+  const spawn: SpawnFn = (cmd, args, opts) => {
+    outputs.push(opts.output);
+    return spawner.spawn(cmd, args, opts);
+  };
+  const broken = {
+    beginTurn: async () => {
+      throw new Error('disk full');
+    },
+    endTurn: async () => {},
+    tail: async function* () {},
+    errTail: () => '',
+    remove: async () => {},
+    sweep: async () => {},
+  };
+  const adapter = createProviderRegistry({ spawn, isInstalled: () => true, sessionOutput: broken, logger: { warn: () => {}, error: (m) => errors.push(m) } }).get('claude');
+  const first = await collect(adapter.run(REQ({ provider: 'claude' }), { sessionId: 's1' }));
+  const second = await collect(adapter.run(REQ({ provider: 'claude' }), { sessionId: 's1' }));
+  assert.equal(first.at(-1)?.kind, 'done', 'the turn still runs, over the pipe');
+  assert.equal(second.at(-1)?.kind, 'done');
+  assert.deepEqual(outputs, [undefined, undefined], 'no session output was passed to the spawner');
+  assert.equal(errors.length, 1, 'logged once');
+  assert.match(errors[0]!, /session output unavailable \(disk full\)/);
+
+  // Without a session id (title generation) or without a session output, the pipe is used silently.
+  const plain = createProviderRegistry({ spawn, isInstalled: () => true, sessionOutput: broken }).get('claude');
+  await collect(plain.run(REQ({ provider: 'claude' })));
+  assert.equal(outputs.at(-1), undefined);
 });

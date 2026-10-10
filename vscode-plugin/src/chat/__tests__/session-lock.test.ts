@@ -291,7 +291,7 @@ test("on timeout a cross-window holder's group is stopped only when its start ti
   await waitFor(() => a.state() === 'granted');
   assert.deepEqual(table.signals, [[700, 'SIGTERM'], [700, 'SIGKILL']]);
   assert.equal(readLock(dir, 's1')?.hostPid, 2, 'the lock file is now ours');
-  assert.match(l.warn.join('\n'), /pid 700 from another window still running after 20 ms; stopping it/);
+  assert.match(l.warn.join('\n'), /pid 700 still running after 20 ms; stopping it/);
 
   // The pid is reused during the grace: no SIGKILL to the unrelated process.
   table.signals.length = 0;
@@ -409,4 +409,102 @@ test('a take-over never deletes a lock file another window has re-created meanwh
   assert.equal(a.state(), 'pending', "the waiter now waits for window C's process");
   ctl.abort();
   await waitFor(() => a.state() === 'rejected');
+});
+
+test("the cross-window wait starts after the in-window grant, and this window's own starting lease is never taken over", async () => {
+  // (1) The file deadline is counted from the in-window grant. The in-window wait here "takes"
+  // 2 minutes on the injected clock, longer than the 60 s timeout, yet the cross-window holder
+  // is polled, not stopped at once.
+  const dir = lockDir();
+  const table = procTable();
+  table.set(960, 6); // window C's live CLI
+  let clock = 1_000_000;
+  const liveC = JSON.stringify({ sessionId: 's1', cliPid: 960, hostPid: 3, startedAt: 6 });
+  // Window C takes the session just before B's first exclusive create.
+  let armed = false;
+  const cTakesFirst: LockFs = {
+    mkdir: (path, opts) => fsp.mkdir(path, opts),
+    readFile: (path, enc) => fsp.readFile(path, enc),
+    rename: (from, to) => fsp.rename(from, to),
+    unlink: (path) => fsp.unlink(path),
+    writeFile: async (path, data, opts) => {
+      if (armed && opts?.flag === 'wx') {
+        // Window C's own exclusive create wins the race once A's file is gone.
+        armed = false;
+        for (;;) {
+          try {
+            await fsp.writeFile(path, liveC, { flag: 'wx' });
+            break;
+          } catch {
+            await tick(1);
+          }
+        }
+      }
+      return fsp.writeFile(path, data, opts);
+    },
+  };
+  const locks = createFileSessionLocks({ fs: cTakesFirst, lockDir: dir, hostPid: 2, pollMs: 5, now: () => clock, ...table.deps });
+  const a = await locks.acquire('s1', { timeoutMs: 60_000 });
+  const aProc = fakeLiveProc(959);
+  a.attach(aProc);
+  await waitFor(() => readLock(dir, 's1')?.cliPid === 959);
+  const ctl = new AbortController();
+  const b = track(locks.acquire('s1', { timeoutMs: 60_000, signal: ctl.signal }));
+  await tick();
+  clock += 120_000; // the in-window wait outlasts the timeout on the clock
+  armed = true;
+  aProc.exitNow();
+  await waitFor(() => readLock(dir, 's1')?.cliPid === 960);
+  await tick(40);
+  assert.equal(b.state(), 'pending', 'B polls window C');
+  assert.deepEqual(table.signals, [], 'not stopped at once: the deadline started at the in-window grant');
+  clock += 60_001; // B's own budget runs out
+  await waitFor(() => b.state() === 'granted');
+  assert.deepEqual(table.signals, [[960, 'SIGTERM']], 'then stopped');
+
+  // (2) Two acquires in one window: the first holds the file but has not started its process;
+  // the in-window lock gives up on it after 20 ms. The second must wait, not delete its file.
+  const dir2 = lockDir();
+  const table2 = procTable();
+  table2.set(2, 1); // this host
+  const locks2 = createFileSessionLocks({ fs: fsp, lockDir: dir2, hostPid: 2, pollMs: 5, graceMs: 20, ...table2.deps });
+  const first = await locks2.acquire('s1', { timeoutMs: 60_000 });
+  const ownFile = readFileSync(join(dir2, 's1.lock'), 'utf8');
+  const second = track(locks2.acquire('s1', { timeoutMs: 20 }));
+  await tick(80);
+  assert.equal(readFileSync(join(dir2, 's1.lock'), 'utf8'), ownFile, "this window's starting lease kept its file");
+  assert.equal(second.state(), 'pending', 'the second acquire waits for it');
+  // The first starts its process; the second, past its deadline, stops it and takes over.
+  table2.set(980, 8);
+  const proc = fakeLiveProc(980);
+  first.attach(proc);
+  await waitFor(() => second.state() === 'granted');
+  assert.deepEqual(table2.signals, [[980, 'SIGTERM']], 'the running process was stopped after the timeout');
+  assert.equal(readLock(dir2, 's1')?.cliPid, null, "the second acquire now owns the file");
+});
+
+test('a failed pid update removes its temp file', async () => {
+  const dir = lockDir();
+  const table = procTable();
+  table.set(990, 9);
+  const l = logs();
+  const failingRename: LockFs = {
+    mkdir: (path, opts) => fsp.mkdir(path, opts),
+    writeFile: (path, data, opts) => fsp.writeFile(path, data, opts),
+    readFile: (path, enc) => fsp.readFile(path, enc),
+    unlink: (path) => fsp.unlink(path),
+    rename: async () => {
+      throw Object.assign(new Error('EXDEV'), { code: 'EXDEV' });
+    },
+  };
+  const locks = createFileSessionLocks({ fs: failingRename, lockDir: dir, hostPid: 2, logger: l.logger, ...table.deps });
+  const lease = await locks.acquire('s1', { timeoutMs: 60_000 });
+  const proc = fakeLiveProc(990);
+  lease.attach(proc);
+  await waitFor(() => l.error.length === 1);
+  await tick(10);
+  assert.match(l.error[0] ?? '', /could not record pid 990 \(EXDEV\)/);
+  const { readdirSync } = await import('node:fs');
+  assert.deepEqual(readdirSync(dir).filter((f) => f.endsWith('.tmp')), [], 'no orphaned temp file');
+  proc.exitNow();
 });

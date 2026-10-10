@@ -30,7 +30,7 @@
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
-import { DEFAULT_GRACE_MS, stopProcess } from './session-lock.js';
+import { DEFAULT_GRACE_MS, signalGroup, stopProcess } from './session-lock.js';
 
 export type ProviderId = 'claude' | 'codex';
 
@@ -1025,14 +1025,8 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
     },
     kill: (signal = 'SIGTERM') => {
       const pid = child.pid;
-      if (ownGroup && pid !== undefined) {
-        try {
-          process.kill(-pid, signal);
-          return;
-        } catch {
-          /* group already gone: fall back to the child itself */
-        }
-      }
+      // The CLI leads its group (detached): signal the group; else, or once it is gone, the child.
+      if (ownGroup && pid !== undefined && signalGroup(pid, signal)) return;
       child.kill(signal);
     },
     write: (data: string) => {

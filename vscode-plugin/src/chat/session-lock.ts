@@ -110,10 +110,24 @@ function settlesWithin(p: Promise<unknown>, ms: number, timers: LockTimers): Pro
  * true once the exit is confirmed, false when it did not settle even after the SIGKILL grace.
  */
 export async function stopProcess(proc: LeaseProcess, graceMs: number, timers: LockTimers = REAL_TIMERS): Promise<boolean> {
-  proc.kill('SIGTERM');
-  if (await settlesWithin(proc.exit, graceMs, timers)) return true;
-  proc.kill('SIGKILL');
-  return settlesWithin(proc.exit, graceMs, timers);
+  return escalateStop({ kill: (s) => proc.kill(s), exitedWithin: (ms) => settlesWithin(proc.exit, ms, timers), graceMs });
+}
+
+/**
+ * The one stop sequence: SIGTERM, wait `graceMs` for the exit, then SIGKILL (only while
+ * `mayKill` still holds) and wait again. True once the exit is confirmed.
+ */
+async function escalateStop(opts: {
+  readonly kill: (signal: 'SIGTERM' | 'SIGKILL') => void;
+  readonly exitedWithin: (ms: number) => Promise<boolean>;
+  readonly graceMs: number;
+  readonly mayKill?: (() => boolean) | undefined;
+}): Promise<boolean> {
+  opts.kill('SIGTERM');
+  if (await opts.exitedWithin(opts.graceMs)) return true;
+  if (opts.mayKill !== undefined && !opts.mayKill()) return true;
+  opts.kill('SIGKILL');
+  return opts.exitedWithin(opts.graceMs);
 }
 
 /**
@@ -256,6 +270,8 @@ export interface FileSessionLocksDeps extends MemorySessionLocksDeps {
   readonly processStartTime?: ((pid: number) => number | undefined) | undefined;
   /** How often a waiter re-reads another window's lock file. Default 500 ms. */
   readonly pollMs?: number | undefined;
+  /** Clock for the cross-window deadline. Default Date.now. */
+  readonly now?: (() => number) | undefined;
 }
 
 export function defaultIsAlive(pid: number): boolean {
@@ -267,15 +283,23 @@ export function defaultIsAlive(pid: number): boolean {
   }
 }
 
-export function defaultKillGroup(pid: number, signal: 'SIGTERM' | 'SIGKILL'): void {
+/** Signals the process group `pid` leads; false when there is no such group (or no groups, on Windows). */
+export function signalGroup(pid: number, signal: 'SIGTERM' | 'SIGKILL'): boolean {
   try {
     process.kill(-pid, signal);
+    return true;
   } catch {
-    try {
-      process.kill(pid, signal);
-    } catch {
-      /* already gone */
-    }
+    return false;
+  }
+}
+
+/** Signals `pid`'s process group, falling back to the pid itself. */
+export function defaultKillGroup(pid: number, signal: 'SIGTERM' | 'SIGKILL'): void {
+  if (signalGroup(pid, signal)) return;
+  try {
+    process.kill(pid, signal);
+  } catch {
+    /* already gone */
   }
 }
 
@@ -327,6 +351,7 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
   const killGroup = deps.killGroup ?? defaultKillGroup;
   const startTime = deps.processStartTime ?? defaultProcessStartTime;
   const pollMs = deps.pollMs ?? 500;
+  const now = deps.now ?? Date.now;
   // Logged once per host; the fallback itself applies to one acquire, so the next one retries the file.
   let fallbackLogged = false;
 
@@ -378,20 +403,19 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
       return;
     }
     const pid = rec.cliPid;
-    log.warn(`[chat-lock] session ${sessionId}: pid ${pid} from another window still running after ${timeoutMs} ms; stopping it`);
-    killGroup(pid, 'SIGTERM');
-    if (await goneWithin(pid, graceMs)) return;
-    // Re-check identity before escalating: never SIGKILL a pid that has been reused.
-    if (!sameProcess(rec)) return;
-    killGroup(pid, 'SIGKILL');
-    if (!(await goneWithin(pid, graceMs))) {
-      log.error(`[chat-lock] session ${sessionId}: pid ${pid} did not exit after SIGKILL; taking the lock file anyway`);
-    }
+    log.warn(`[chat-lock] session ${sessionId}: pid ${pid} still running after ${timeoutMs} ms; stopping it`);
+    const exited = await escalateStop({
+      kill: (signal) => killGroup(pid, signal),
+      exitedWithin: (ms) => goneWithin(pid, ms),
+      graceMs,
+      // Re-check identity before escalating: never SIGKILL a pid that has been reused.
+      mayKill: () => sameProcess(rec),
+    });
+    if (!exited) log.error(`[chat-lock] session ${sessionId}: pid ${pid} did not exit after SIGKILL; taking the lock file anyway`);
   };
 
   return {
     async acquire(sessionId: string, opts: AcquireOptions): Promise<SessionLease> {
-      const deadline = Date.now() + opts.timeoutMs;
       let waitedOnce = false;
       const onWaiting = (): void => {
         if (waitedOnce) return;
@@ -399,6 +423,8 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
         opts.onWaiting?.();
       };
       const inner = await memory.acquire(sessionId, { ...opts, onWaiting });
+      // The cross-window wait has its own budget, counted from the in-window grant.
+      const deadline = now() + opts.timeoutMs;
       const file = `${deps.lockDir}/${lockFileName(sessionId)}`;
       const record = (cliPid: number | null, startedAt: number | null): string =>
         JSON.stringify({ sessionId, cliPid, hostPid: deps.hostPid, startedAt } satisfies LockFileRecord);
@@ -435,12 +461,15 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
             continue;
           }
           onWaiting();
-          if (Date.now() >= deadline) {
+          // This window's own lease that has not started its process yet (another acquire here
+          // that the in-window lock gave up on): wait for it, never take its file over.
+          const ownStarting = rec.hostPid === deps.hostPid && rec.cliPid === null;
+          if (!ownStarting && now() >= deadline) {
             await stopRemote(sessionId, rec, opts.timeoutMs);
             await unlinkIfUnchanged(file, text);
             continue;
           }
-          await sleep(Math.min(pollMs, Math.max(0, deadline - Date.now())), opts.signal);
+          await sleep(ownStarting ? pollMs : Math.min(pollMs, Math.max(0, deadline - now())), opts.signal);
         }
       } catch (e) {
         if (e instanceof LockWaitAborted) throw e;
@@ -472,7 +501,10 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
             .then(() => {
               attachedPid = pid;
             })
-            .catch((e: unknown) => log.error(`[chat-lock] session ${sessionId}: could not record pid ${pid} (${errCode(e) ?? String(e)})`))
+            .catch((e: unknown) => {
+              log.error(`[chat-lock] session ${sessionId}: could not record pid ${pid} (${errCode(e) ?? String(e)})`);
+              return deps.fs.unlink(tmp).catch(() => {});
+            })
             .finally(() => {
               proc.exit.then(removeFile, removeFile);
             });

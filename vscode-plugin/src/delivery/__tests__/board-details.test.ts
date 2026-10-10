@@ -11,18 +11,10 @@ import assert from 'node:assert/strict';
 import type { DeliveryEvidenceEntry } from '../delivery-contract.js';
 import { buildItemDetails, type PlanRead } from '../board-details.js';
 import { DISPLAY_LABELS } from '../labels.js';
-import { evidence as ev, item, snapshot } from './board-fixtures.js';
+import { evidence as ev, item, review, snapshot } from './board-fixtures.js';
 
 const NONE: PlanRead = { state: 'none' };
 
-type Review = NonNullable<DeliveryEvidenceEntry['review']>;
-
-function review(over: Partial<Review>): Review {
-  return {
-    verdict: 'pass', reviewedAt: '2026-10-09T08:00:00.000Z', reviewedBy: 'controller', counts: { high: 0, med: 0, low: 0 },
-    override: null, resolvedFindings: 0, effectiveVerdict: 'pass', blocking: false, ...over,
-  };
-}
 
 /** A story with three planned tasks (passed, failed, unrecorded) and one build-only task. */
 function taskedSnapshot() {
@@ -82,7 +74,7 @@ test('the details give the daemon\'s stage reason and the records it cites', () 
   assert.equal(d.stageLabel, 'Ready · plan approved');
   assert.deepEqual(d.stageReason, { text: 'The PLAN is approved; no build is recorded.', artifactIds: ['LLD-x', 'PLAN-x'] });
   assert.deepEqual(d.sourceIds, ['s2', 'LLD-x']);
-  assert.deepEqual(d.linked, [{ itemId: 'E1', title: 'Board epic', relation: 'parent' }]);
+  assert.deepEqual(d.linked, [{ itemId: 'E1', kind: 'epic', title: 'Board epic', relation: 'parent' }]);
   assert.deepEqual(d.tasks, []);
   assert.equal(d.taskCounts, null);
   assert.equal(d.conflict, null);
@@ -90,7 +82,7 @@ test('the details give the daemon\'s stage reason and the records it cites', () 
   const epic = buildItemDetails(snap, 'E1', NONE, null, DISPLAY_LABELS)!;
   assert.equal(epic.stageLabel, null);
   assert.equal(epic.stageReason, null);
-  assert.deepEqual(epic.linked, [{ itemId: 'E1:S002', title: 'Cards', relation: 'child' }]);
+  assert.deepEqual(epic.linked, [{ itemId: 'E1:S002', kind: 'story', title: 'Cards', relation: 'child' }]);
 });
 
 test('an approved build with failed tasks shows the approval, the failed rows and a sentence explaining the conflict', () => {
@@ -241,4 +233,41 @@ test('the tasks chip is danger when the story-level result failed, even with eve
   const d = buildItemDetails(snapshot([s1]), 'S1', NONE, null, DISPLAY_LABELS)!;
   assert.deepEqual(d.chips.find(c => c.kind === 'tasks'), { kind: 'tasks', label: '3/3 tasks passed', tone: 'danger' });
   assert.ok(d.chips.some(c => c.label === 'Validation failed' && c.tone === 'danger'), 'agreeing with the card badge');
+});
+
+test('correctedBy lists the issues correcting the item and approvedAt reads the approval time', () => {
+  const snap = snapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
+    item({ id: 'E1:S001', parentId: 'E1', title: 'Columns', stage: 'complete', evidence: [
+      ev('LLD-a', 'LLD', { approval: { state: 'approved', at: '2026-09-30T14:40:12.000Z' } }),
+      ev('PLAN-a', 'PLAN', { approval: { state: 'pending', at: null } }),
+      ev('CR-a', 'CR', { approval: { state: 'approved', at: 'sometime' } }),
+    ] }),
+    item({ id: 'I2', kind: 'issue', title: 'Overflow', stage: 'design-plan', correctsRef: { resolvedItemId: 'E1:S001' } as never }),
+    item({ id: 'I1', kind: 'issue', title: 'Wrapping', stage: 'scoped', standalone: true, correctsRef: { resolvedItemId: 'E1:S001' } as never }),
+    item({ id: 'I3', kind: 'issue', title: 'Elsewhere', correctsRef: { resolvedItemId: 'E1' } as never }),
+    item({ id: 'I4', kind: 'issue', title: 'Lost', correctsRef: { resolvedItemId: null } as never }),
+  ]);
+  const d = buildItemDetails(snap, 'E1:S001', NONE, null, DISPLAY_LABELS)!;
+  assert.deepEqual(d.correctedBy, [
+    { itemId: 'I1', kind: 'issue', title: 'Wrapping', stageLabel: 'Scoped' },
+    { itemId: 'I2', kind: 'issue', title: 'Overflow', stageLabel: 'Design & plan' },
+  ], 'the issues whose parent resolves to the story, in snapshot order');
+  assert.deepEqual(d.evidence.map(r => [r.artifactId, r.approvedAt]), [
+    ['LLD-a', '2026-09-30 14:40 UTC'], ['PLAN-a', null], ['CR-a', 'sometime'],
+  ], 'an unparseable time is shown as recorded');
+  assert.deepEqual(buildItemDetails(snap, 'E1', NONE, null, DISPLAY_LABELS)!.correctedBy.map(l => l.itemId), ['I3']);
+  assert.deepEqual(buildItemDetails(snap, 'I1', NONE, null, DISPLAY_LABELS)!.correctedBy, []);
+});
+
+test('a task row with no title shows its id, as the same task does among the dependencies', () => {
+  const snap = snapshot([
+    item({ id: 'S1', stage: 'build-recorded', childIds: ['S1:T1', 'S1:T2'],
+      tasks: [{ taskItemId: 'S1:T1', result: 'passed', planned: true }, { taskItemId: 'S1:T2', result: 'unrecorded', planned: true }] as never }),
+    item({ id: 'S1:T1', kind: 'task', parentId: 'S1', title: null, sourceIds: ['t1'] }),
+    item({ id: 'S1:T2', kind: 'task', parentId: 'S1', title: 'Second', sourceIds: ['t2'] }),
+  ]);
+  const plan: PlanRead = { state: 'ok', tasks: [{ id: 't1', dependsOn: [], acceptanceChecks: [] }, { id: 't2', dependsOn: ['t1'], acceptanceChecks: [] }] };
+  const d = buildItemDetails(snap, 'S1', plan, null, DISPLAY_LABELS)!;
+  assert.deepEqual(d.tasks.map(t => [t.title, t.dependsOn]), [['S1:T1', []], ['Second', ['S1:T1']]]);
 });

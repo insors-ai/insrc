@@ -16,9 +16,9 @@
 
 import type { DeliveryEvidenceView, DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
 import type { DisplayLabels } from './labels.js';
-import type { BadgeView, ChainRowView, EvidenceRowView, ItemDetailsViewModel, TaskRowView } from './board-protocol.js';
+import type { BadgeView, ChainRowView, EvidenceRowView, ItemDetailsViewModel, LinkView, TaskRowView } from './board-protocol.js';
 import { badgesOf, compactIdOf, indexItems, isCardKind, taskSummaryOf, titleOf, type ItemIndex } from './board-model.js';
-import { approvalTone, labelOf, taskResultTone } from './labels.js';
+import { approvalTone, labelOf, plural, readableTime, taskResultTone } from './labels.js';
 
 export interface PlanTaskView {
   readonly id: string;
@@ -47,7 +47,8 @@ function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, label
       : undefined;
     return {
       taskItemId: t.taskItemId,
-      title: taskItem?.title ?? null,
+      // titleOf, like the dependencies on the same row: a task with no title shows its id.
+      title: taskItem === undefined ? null : titleOf(taskItem),
       resultLabel: t.planned ? labelOf(labels.taskResult, t.result) : labels.unplanned,
       planned: t.planned,
       resultTone: t.planned ? taskResultTone(t.result) : 'neutral',
@@ -67,7 +68,7 @@ function conflictSentence(item: DeliveryItemView, byId: ItemIndex): string | nul
     return t === undefined ? id : titleOf(t);
   });
   const parts: string[] = [];
-  if (failed.length > 0) parts.push(`${failed.length} task result${failed.length === 1 ? '' : 's'} failed (${failed.join(', ')})`);
+  if (failed.length > 0) parts.push(`${plural(failed.length, 'task result', 'task results')} failed (${failed.join(', ')})`);
   if (item.conflict.storyLevelFailed) parts.push('the story-level result failed');
   if (parts.length === 0) return 'The build is approved while a validation result failed.';
   return `The build is approved while ${parts.join(' and ')}.`;
@@ -87,6 +88,7 @@ function evidenceRow(entry: DeliveryEvidenceView, labels: DisplayLabels): Eviden
     reviewLabel,
     overrideLabel: review?.override == null ? null : `Overridden: ${review.override.reason}`,
     opensIn: entry.openWith === 'review-view' && entry.mdPath !== null ? 'review-pane' : 'read-only',
+    approvedAt: entry.approval.at == null ? null : readableTime(entry.approval.at),
   };
 }
 
@@ -161,15 +163,22 @@ function chipsOf(item: DeliveryItemView, labels: DisplayLabels): BadgeView[] {
 const KICKER_KIND = { epic: 'EPIC', story: 'STORY', task: 'TASK', issue: 'ISSUE' } as const;
 
 function linkedItems(item: DeliveryItemView, byId: ItemIndex): ItemDetailsViewModel['linked'] {
-  const linked: { itemId: string; title: string; relation: 'parent' | 'child' | 'corrects' }[] = [];
+  const linked: { itemId: string; kind: DeliveryItemView['kind']; title: string; relation: 'parent' | 'child' | 'corrects' }[] = [];
   const add = (id: string | null, relation: 'parent' | 'child' | 'corrects'): void => {
     const other = id === null ? undefined : byId.get(id);
-    if (other !== undefined) linked.push({ itemId: other.id, title: titleOf(other), relation });
+    if (other !== undefined) linked.push({ itemId: other.id, kind: other.kind, title: titleOf(other), relation });
   };
   add(item.parentId, 'parent');
   for (const id of item.childIds) add(id, 'child');
   add(item.correctsRef?.resolvedItemId ?? null, 'corrects');
   return linked;
+}
+
+/** The issues whose recorded parent resolves to the item, in snapshot order, as followable links. */
+function correctedByOf(item: DeliveryItemView, snapshot: DeliverySnapshot, labels: DisplayLabels): LinkView[] {
+  return snapshot.items
+    .filter(i => i.kind === 'issue' && i.correctsRef?.resolvedItemId === item.id)
+    .map(i => ({ itemId: i.id, kind: i.kind, title: titleOf(i), stageLabel: i.stage === null ? null : labelOf(labels.stage, i.stage.stage) }));
 }
 
 /** The sc6 details for itemId, or null when the id is not in the snapshot. */
@@ -199,6 +208,7 @@ export function buildItemDetails(
     evidence: item.evidence.map(e => evidenceRow(e, labels)),
     notices: item.notices.map(n => `${labelOf(labels.notice, n.code)}: ${n.message}`),
     linked: linkedItems(item, byId),
+    correctedBy: correctedByOf(item, snapshot, labels),
     sourceIds: [...item.sourceIds],
     planNotice: plan.state === 'failed' ? `The plan could not be read: ${plan.message}` : null,
     openedRecord: opened !== null && item.evidence.some(e => e.artifactId === opened.artifactId) ? opened : null,

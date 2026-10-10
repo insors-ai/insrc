@@ -4,19 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * The delivery board's other two views (E2 s3): the epic rollup and the issue
- * view. Both build from the board's own match step (selectMatches), so the
- * same snapshot and selection give the same matches, in the same order, as the
- * board. Pure and vscode-free.
+ * The Epics and Issues screens (E2 s3; screens, ISSUE-348d4663), and an epic's
+ * row, which is also the summary on its board. Both build from the board's own
+ * match step (selectMatches), so the same snapshot and filter give the same
+ * matches, in the same order, as a board screen. Pure and vscode-free.
  */
 
-import { attentionCount, compactIdOf, indexItems, isPlaceable, placeableCount, scopeOptionsOf, selectionPanel, selectMatches, titleOf, type MatchedCard } from './board-model.js';
-import type { EpicRollupRowView, EpicRollupViewModel, IssueEntryView, IssueViewModel, LinkView } from './board-protocol.js';
-import type { BoardSelection } from './board-state.js';
+import { attentionCount, attentionLabel, compactIdOf, indexItems, isPlaceable, selectionPanel, selectMatches, titleOf, totalsLabel, type MatchedCard, type MatchFilter } from './board-model.js';
+import type { EpicRollupRowView, EpicsBody, IssueEntryView, IssuesBody, LinkView } from './board-protocol.js';
 import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
-import { labelOf, type DisplayLabels } from './labels.js';
-
-export const NOT_IN_EPIC_TITLE = 'Not in an epic';
+import { labelOf, STAGE_ORDER, type DisplayLabels } from './labels.js';
 
 /** Shown when an issue's recorded parent is not in the snapshot and the daemon gave no notice for it. */
 export const PARENT_NOT_ON_BOARD = 'Parent not on the board';
@@ -26,19 +23,15 @@ export function completionLabel(complete: number, total: number): string {
   return `${complete} of ${total} ${total === 1 ? 'story' : 'stories'} complete`;
 }
 
-/** 'No open gates' at 0, otherwise how many matches need attention. */
-export function attentionLabel(count: number): string {
-  if (count === 0) return 'No open gates';
-  return count === 1 ? '1 needs attention' : `${count} need attention`;
-}
+export { attentionLabel };
 
-function rowOf(epicItemId: string | null, title: string, matches: readonly MatchedCard[]): EpicRollupRowView {
+function rowOf(epicItemId: string, title: string, matches: readonly MatchedCard[]): EpicRollupRowView {
   const stories = matches.filter(m => m.item.kind === 'story');
   const storiesComplete = stories.filter(m => m.stage === 'complete').length;
   const needing = attentionCount(matches);
   return {
     epicItemId,
-    compactId: epicItemId === null ? null : compactIdOf(epicItemId),
+    compactId: compactIdOf(epicItemId),
     title,
     storiesTotal: stories.length,
     storiesComplete,
@@ -52,48 +45,42 @@ function rowOf(epicItemId: string | null, title: string, matches: readonly Match
   };
 }
 
-/** Nothing narrows the selection: every epic is listed, even one with no matching work. */
-function unnarrowed(selection: BoardSelection): boolean {
-  return selection.scope.kind === 'all' && selection.search.trim().length === 0 && !selection.needsAttentionOnly;
+/** Everything in scope, unfiltered: the rows and the epic header count an epic's whole scope. */
+const WHOLE = { search: '', needsAttentionOnly: false } as const;
+
+/** One epic's row, counted over the epic's whole scope; the epic board's header shows the same numbers. */
+export function epicRowOf(snapshot: DeliverySnapshot, epic: DeliveryItemView, labels: DisplayLabels): EpicRollupRowView {
+  return rowOf(epic.id, titleOf(epic), selectMatches(snapshot, { scope: { kind: 'epic', epicItemId: epic.id }, ...WHOLE }, labels));
 }
 
 /**
- * The epic rollup: one row per listed epic in snapshot order, then 'Not in
- * an epic'. A match flagged standalone always goes to 'Not in an epic', so
- * standalone work never counts towards an epic; any other match goes to its
- * epic's row, or to 'Not in an epic' when it has none. Every match is counted
- * in exactly one row, so the row totals sum to the board's for the same selection.
+ * The Epics screen: one row per epic in snapshot order, each counted over the epic's whole scope under the epic
+ * membership rule (standalone work counts towards no epic). The search keeps the epics whose title or id contains it;
+ * Needs attention keeps the epics with something needing attention. Work outside every epic is on Standalone, not a row.
  */
-export function buildEpicRollup(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): EpicRollupViewModel {
-  const matches = selectMatches(snapshot, selection, labels);
+export function buildEpicRollup(snapshot: DeliverySnapshot, filter: Pick<MatchFilter, 'search' | 'needsAttentionOnly'>, labels: DisplayLabels): EpicsBody {
+  const byId = indexItems(snapshot);
   const byEpic = new Map<string, MatchedCard[]>();
-  const notInEpic: MatchedCard[] = [];
-  for (const m of matches) {
-    if (m.item.standalone || m.epic === null) {
-      notInEpic.push(m);
-      continue;
-    }
+  for (const m of selectMatches(snapshot, { scope: { kind: 'all' }, ...WHOLE }, labels, byId)) {
+    if (m.item.standalone || m.epic === null) continue;
     const list = byEpic.get(m.epic.id);
     if (list === undefined) byEpic.set(m.epic.id, [m]);
     else list.push(m);
   }
-  const scopedEpic = selection.scope.kind === 'epic' ? selection.scope.epicItemId : null;
-  const listAll = unnarrowed(selection);
-  const epics: EpicRollupRowView[] = [];
-  for (const e of snapshot.items) {
-    if (e.kind !== 'epic') continue;
-    const own = byEpic.get(e.id) ?? [];
-    if (own.length === 0 && !listAll && e.id !== scopedEpic) continue;
-    epics.push(rowOf(e.id, titleOf(e), own));
+  const needle = filter.search.trim().toLowerCase();
+  const epics = snapshot.items.filter(i => i.kind === 'epic');
+  const rows: EpicRollupRowView[] = [];
+  for (const e of epics) {
+    if (needle.length > 0 && !titleOf(e).toLowerCase().includes(needle) && !e.id.toLowerCase().includes(needle)) continue;
+    const row = rowOf(e.id, titleOf(e), byEpic.get(e.id) ?? []);
+    if (filter.needsAttentionOnly && row.attentionCount === 0) continue;
+    rows.push(row);
   }
   return {
-    epics,
-    notInEpic: rowOf(null, NOT_IN_EPIC_TITLE, notInEpic),
-    totals: { items: matches.length, needsAttention: attentionCount(matches) },
-    scopeOptions: scopeOptionsOf(snapshot),
-    selectedItemId: selection.selectedItemId,
-    emptySelection: placeableCount(snapshot) > 0 && matches.length === 0,
-    emptyPanel: placeableCount(snapshot) > 0 && matches.length === 0 ? selectionPanel('no-matches', labels) : null,
+    kind: 'epics',
+    totalsLabel: `${rows.length} ${rows.length === 1 ? 'epic' : 'epics'} \u00b7 completion counts stories at Complete`,
+    rows,
+    emptyPanel: epics.length > 0 && rows.length === 0 ? selectionPanel('no-matches', labels) : null,
   };
 }
 
@@ -109,17 +96,19 @@ function linkOf(item: DeliveryItemView, labels: DisplayLabels): LinkView {
 }
 
 /**
- * The issue view: each matching issue in snapshot order with the story or
- * epic its correctsRef resolves to, or its unresolved-parent notice (a fixed
- * text when a recorded parent is not in the snapshot and the daemon gave no
- * notice), and every fix story among its children with its own stage, whether
- * or not the fix story itself matches the search.
+ * The Issues screen: each matching issue in stage order, then snapshot order, with the story or epic its correctsRef
+ * resolves to, or its unresolved-parent notice (a fixed text when a recorded parent is not in the snapshot and the
+ * daemon gave no notice), and every fix story among its children with its own stage, whether or not the fix story
+ * itself matches the search.
  */
-export function buildIssueView(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): IssueViewModel {
+export function buildIssueView(snapshot: DeliverySnapshot, filter: MatchFilter, labels: DisplayLabels): IssuesBody {
   const byId = indexItems(snapshot);
   const issues: IssueEntryView[] = [];
-  const issueMatches = selectMatches(snapshot, selection, labels, byId).filter(m => m.item.kind === 'issue');
-  for (const m of issueMatches) {
+  const stageRank = (m: MatchedCard): number => STAGE_ORDER.indexOf(m.stage);
+  const issueMatches = selectMatches(snapshot, filter, labels, byId).filter(m => m.item.kind === 'issue');
+  // A stable sort keeps snapshot order within a stage.
+  const ordered = [...issueMatches].sort((a, b) => stageRank(a) - stageRank(b));
+  for (const m of ordered) {
     const ref = m.item.correctsRef;
     const parentItem = ref === null || ref.resolvedItemId === null ? undefined : byId.get(ref.resolvedItemId);
     const notice = m.item.notices.find(n => n.code === 'unresolved-parent')?.message ?? null;
@@ -137,14 +126,15 @@ export function buildIssueView(snapshot: DeliverySnapshot, selection: BoardSelec
       fixStories,
     });
   }
+  const anyIssue = snapshot.items.some(i => i.kind === 'issue' && isPlaceable(i));
+  const unfiltered = filter.needsAttentionOnly
+    ? selectMatches(snapshot, { ...filter, needsAttentionOnly: false }, labels, byId).filter(m => m.item.kind === 'issue').length
+    : issues.length;
   return {
+    kind: 'issues',
+    totalsLabel: totalsLabel(issues.length, attentionCount(issueMatches), filter.needsAttentionOnly, unfiltered, ['issue', 'issues']),
     issues,
-    totals: { issues: issues.length, needsAttention: attentionCount(issueMatches) },
-    scopeOptions: scopeOptionsOf(snapshot),
-    selectedItemId: selection.selectedItemId,
-    // 'Nothing matches' only when there are issues to match: a board with no issues is not an empty selection.
-    emptySelection: issues.length === 0 && snapshot.items.some(i => i.kind === 'issue' && isPlaceable(i)),
-    emptyPanel: issues.length > 0 ? null
-      : snapshot.items.some(i => i.kind === 'issue' && isPlaceable(i)) ? selectionPanel('no-matches', labels) : selectionPanel('no-issues', labels),
+    // 'Nothing matches' only when there are issues to match: a board with no issues says so instead.
+    emptyPanel: issues.length > 0 ? null : anyIssue ? selectionPanel('no-matches', labels) : selectionPanel('no-issues', labels),
   };
 }

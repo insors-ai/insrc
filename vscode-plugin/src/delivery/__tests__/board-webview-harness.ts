@@ -68,21 +68,34 @@ export const findAll = (e: FakeEl, pred: (x: FakeEl) => boolean): FakeEl[] => [.
 /** The board's cards in document order: the li.card elements, the one rule every board test counts by. */
 export const cardsIn = (root: FakeEl): FakeEl[] => findAll(root, e => e.tag === 'li' && e.attrs['class'] === 'card');
 
-/** Run the webview script against the fake DOM; elements are created on first lookup by id. */
-/** state is the webview state VS Code hands back on boot; stateThrows makes getState throw. */
-export function runScript(opts: { state?: unknown; stateThrows?: boolean } = {}): {
+/** The fake window's scroll position and pane width, which the script reads and the tests set. */
+export interface FakeView { scrollY: number; width: number; scrolls: number[] }
+
+/**
+ * Run the webview script against the fake DOM; elements are created on first lookup by id. state is the webview
+ * state VS Code hands back on boot; stateThrows makes getState throw; width is the pane's width (0 reads as unknown,
+ * i.e. wide). resize(w) changes the width and fires the window's resize listener; scroll(y) scrolls the window.
+ */
+export function runScript(opts: { state?: unknown; stateThrows?: boolean; width?: number } = {}): {
   posted: unknown[]; deliver(msg: unknown): void; el: Record<string, FakeEl>; saved(): unknown;
+  view: FakeView; resize(width: number): void; scroll(y: number): void;
 } {
   const el: Record<string, FakeEl> = {};
   const posted: unknown[] = [];
   focusState.active = null;
-  let onMessage: ((e: { data: unknown }) => void) | undefined;
+  const view: FakeView = { scrollY: 0, width: opts.width ?? 0, scrolls: [] };
+  const windowListeners: Record<string, (e: { data: unknown }) => void> = {};
   const document = {
     getElementById: (id: string) => (el[id] ??= makeEl(id)), createElement: (tag: string) => makeEl(tag),
     body: (el['body'] = makeEl('body')),
+    documentElement: { get clientWidth() { return view.width; } },
     get activeElement() { return focusState.active; },
   };
-  const window = { addEventListener: (_k: string, f: (e: { data: unknown }) => void) => { onMessage = f; } };
+  const window = {
+    addEventListener: (k: string, f: (e: { data: unknown }) => void) => { windowListeners[k] = f; },
+    get scrollY() { return view.scrollY; },
+    scrollTo: (_x: number, y: number) => { view.scrollY = y; view.scrolls.push(y); },
+  };
   let state: unknown = opts.state;
   const acquireVsCodeApi = () => ({
     postMessage: (m: unknown) => posted.push(m),
@@ -91,5 +104,9 @@ export function runScript(opts: { state?: unknown; stateThrows?: boolean } = {})
   });
   new Function('document', 'window', 'acquireVsCodeApi', BOARD_WEBVIEW_SCRIPT)(document, window, acquireVsCodeApi);
   el['refresh']!.listeners['click']!();
-  return { posted, deliver: m => onMessage?.({ data: m }), el, saved: () => state };
+  return {
+    posted, deliver: m => windowListeners['message']?.({ data: m }), el, saved: () => state, view,
+    resize: (w) => { view.width = w; windowListeners['resize']?.({ data: null }); },
+    scroll: (y) => { view.scrollY = y; windowListeners['scroll']?.({ data: null }); },
+  };
 }

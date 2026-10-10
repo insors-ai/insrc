@@ -16,7 +16,7 @@ import type {
   ReviewVerdict,
   TaskResult,
 } from '../delivery-contract.js';
-import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
+import { DISPLAY_LABELS, msBetween, plural, readableTime, STAGE_ORDER } from '../labels.js';
 
 // Exhaustive member lists: each Record fails to compile if its union gains or loses a member.
 const STAGES: Record<DeliveryStage, true> = {
@@ -67,4 +67,31 @@ test('DISPLAY_LABELS carries chain.notRecorded, conflictHeadline and noMatchesTi
   assert.equal(DISPLAY_LABELS.conflictHeadline, 'Two records disagree');
   assert.equal(DISPLAY_LABELS.noMatchesTitle, 'Nothing matches this view');
   for (const k of ['noMatchesText', 'noIssuesTitle', 'noIssuesText'] as const) assert.ok(DISPLAY_LABELS[k].length > 0, k);
+});
+
+test('DISPLAY_LABELS carries the view, item-tab, attention and stage-section labels', () => {
+  assert.deepEqual(DISPLAY_LABELS.views, { all: 'All work', epics: 'Epics', standalone: 'Standalone', issues: 'Issues' });
+  assert.deepEqual(DISPLAY_LABELS.itemTabs, {
+    overview: { long: 'Overview & tasks', short: 'Overview' },
+    evidence: { long: 'Workflow evidence', short: 'Evidence' },
+    linked: { long: 'Linked work', short: 'Linked' },
+  });
+  assert.equal(DISPLAY_LABELS.needsAttention, 'Needs attention');
+  assert.equal(DISPLAY_LABELS.nothingAtStage, 'nothing at this stage');
+  assert.equal(DISPLAY_LABELS.otherStages, 'Other stages · 0 matching');
+});
+
+test('readableTime shows an ISO time as YYYY-MM-DD HH:MM UTC and anything else as recorded', () => {
+  assert.equal(readableTime('2026-09-30T14:40:12.000Z'), '2026-09-30 14:40 UTC');
+  assert.equal(readableTime('sometime'), 'sometime');
+});
+
+test('msBetween measures from one ISO time to a later one, counts a future time as now, and gives null for an unreadable one', () => {
+  assert.equal(msBetween('2026-10-09T10:00:00.000Z', '2026-10-09T10:01:30.000Z'), 90_000);
+  assert.equal(msBetween('2026-10-09T10:05:00.000Z', '2026-10-09T10:00:00.000Z'), 0);
+  assert.equal(msBetween('sometime', '2026-10-09T10:00:00.000Z'), null);
+});
+
+test('plural writes a count with the noun that fits it', () => {
+  assert.deepEqual([plural(0, 'item', 'items'), plural(1, 'item', 'items'), plural(2, 'story', 'stories')], ['0 items', '1 item', '2 stories']);
 });

@@ -15,34 +15,37 @@
  * disposed an outstanding answer is discarded without being dispatched, posted
  * or logged, and the next open() starts a new panel with a fresh state.
  *
- * The host also keeps the board's paging (E2 s2): show-more raises one
- * column's page, and a scope, search or attention change resets it. Every
- * derive keeps the new state only when it renders, and items whose stage is
- * not one of the six are logged once per applied refresh.
+ * Navigation (ISSUE-348d4663): every reader intent becomes a navigate event
+ * over the state's trail of screens, after the host has checked any id it
+ * names against the shown snapshot. Paging lives in each trail entry. Every
+ * derive keeps the new state only when it renders, each screen change is
+ * announced once, and items whose stage is not one of the six are logged once
+ * per applied refresh.
  *
  * The document is CSP-locked (default-src 'none') with one nonce'd script that
- * renders the status and the board's columns, cards and controls as text
- * (textContent only) and posts only BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
+ * renders the status and one screen at a time (its breadcrumb, filters, stage
+ * sections, rows and item tabs) as text (textContent only) and posts only
+ * BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
  *
- * The item details (E2 s4): while an item is selected, every derive also posts
- * its details after the view message, from the details memory
- * (details-memory.ts). The host tells the memory each state it keeps, routes
- * open-evidence to it, and starts a new memory with each panel.
+ * The item details (E2 s4): a story's or issue's screen is built from the
+ * details memory (details-memory.ts). The host tells the memory the item of
+ * each state it keeps (null on any other screen), routes open-evidence to it,
+ * and starts a new memory with each panel.
  */
 
 import { attr, type ChatPanelChannel, type ChatPanelLogger } from '../chat/chat-panel.js';
 import type { Envelope } from '../chat/protocol.js';
-import { isPlaceable, placeableCount, showMore, titleOf, unknownStages, type BoardPaging } from './board-model.js';
-import { parseBoardUpMessage, type BoardDownMessage, type BoardScope, type BoardUpMessage } from './board-protocol.js';
+import { isPlaceable, unknownStages } from './board-model.js';
+import { parseBoardUpMessage, type BoardUpMessage } from './board-protocol.js';
 import {
-  boardDownMessages, initialBoardState, reduceBoardState, shownSnapshot, statusView,
-  type BoardEvent, type BoardSelection, type BoardState,
+  boardDownMessages, currentEntry, currentItemId, initialBoardState, reduceBoardState, refreshAnnouncement, screenAnnouncement, shownSnapshot,
+  type BoardEvent, type BoardState, type NavIntent,
 } from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
 import { createDetailsMemory, type DetailsMemory } from './details-memory.js';
 import { errorText } from './guards.js';
-import { DISPLAY_LABELS, labelOf } from './labels.js';
+import { DISPLAY_LABELS, msBetween, plural } from './labels.js';
 
 export const BOARD_VIEW_TYPE = 'insrc.deliveryBoard';
 export const BOARD_TITLE = 'Delivery board';
@@ -64,189 +67,212 @@ export interface DeliveryBoardHost {
 }
 
 
+/** The labels the webview shows on its own controls, from the same table as every view (sc4). */
+const SCRIPT_LABELS = {
+  views: DISPLAY_LABELS.views,
+  itemTabs: DISPLAY_LABELS.itemTabs,
+  needsAttention: DISPLAY_LABELS.needsAttention,
+  otherStages: DISPLAY_LABELS.otherStages,
+};
+
 /**
- * The webview script. Everything shown is set with textContent, and the only
- * messages posted are board up-messages: ready, refresh, set-search,
- * set-scope, set-attention, show-more, set-view (the tabs), select-item (a
- * card in any view, a follow link or a linked item in the details),
- * close-details and open-evidence (the details pane, s4).
+ * The webview script (screens, ISSUE-348d4663). Each screen message replaces the screen: on a new trail entry #main
+ * is cleared and rebuilt; a re-render of the same entry (a refresh, a filter) rebuilds the screen's body and keeps
+ * its head, so the search box keeps focus while the reader types. Everything shown is set with textContent, and the
+ * only messages posted are board up-messages. The webview keeps presentation memory only: the scroll of each trail
+ * entry, the stage sections the reader opened or closed, and whether the pane is narrow (<= 480 px), which shortens
+ * the breadcrumb and folds the empty stages.
  */
 export const BOARD_WEBVIEW_SCRIPT = [
   `(function(){`,
   `const vs=acquireVsCodeApi();`,
   `const send=function(p){vs.postMessage({v:1,payload:p});};`,
+  `const L=${JSON.stringify(SCRIPT_LABELS)};`,
+  `const VIEWS=['all','epics','standalone','issues'];`,
   `const byId=function(id){return document.getElementById(id);};`,
-  `const status=byId('status'),totals=byId('totals'),board=byId('board'),details=byId('details'),panel=byId('panel');`,
-  `const search=byId('search'),scopeChips=byId('scope-chips'),attentionChip=byId('attention-chip');`,
+  `const crumbsEl=byId('crumbs'),status=byId('status'),banner=byId('banner'),main=byId('main'),announceEl=byId('announce');`,
   `const make=function(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.setAttribute('class',cls);return e;};`,
   `const clear=function(n){while(n.firstChild)n.removeChild(n.firstChild);};`,
-  `const button=function(text,onClick){const b=make('button',text);b.setAttribute('type','button');b.addEventListener('click',onClick);return b;};`,
+  `const button=function(text,onClick,cls){const b=make('button',text,cls);b.setAttribute('type','button');b.addEventListener('click',onClick);return b;};`,
   `const pill=function(text,tone,cls){const e=make('span',text,cls||'pill');e.setAttribute('data-tone',tone);return e;};`,
-  `const KIND={story:'Story',issue:'Issue',epic:'Epic',task:'Task'};`,
+  `const plural=function(n,one,many){return n+' '+(n===1?one:many);};`,
   `const KICKER={story:'STORY',issue:'ISSUE',epic:'EPIC',task:'TASK'};`,
   `byId('refresh').addEventListener('click',function(){send({type:'refresh'});});`,
-  `search.addEventListener('input',function(){send({type:'set-search',search:String(search.value)});});`,
-  // The Needs attention chip: posts set-attention and shows the choice with aria-pressed.
-  `const markAttention=function(on){attentionChip.setAttribute('aria-pressed',on?'true':'false');};`,
-  `attentionChip.addEventListener('click',function(){const on=attentionChip.getAttribute('aria-pressed')!=='true';markAttention(on);send({type:'set-attention',on:on});});`,
-  // A scope value: 'all', 'standalone' or 'epic:<id>'; the pressed scope chip shows the reader's current choice.
-  `let scopeValue='all';`,
-  `const scopeOf=function(v){return v==='all'?{kind:'all'}:v==='standalone'?{kind:'standalone'}:{kind:'epic',epicItemId:v.slice(5)};};`,
-  `const markScope=function(v){scopeValue=v;for(const c of scopeChips.children)c.setAttribute('aria-pressed',c.getAttribute('data-scope')===v?'true':'false');};`,
-  `const chooseScope=function(v){markScope(v);send({type:'set-scope',scope:scopeOf(v)});};`,
-  // The scope chips are rebuilt from each board; the reader's current choice is kept.
-  `function renderScope(options){const current=scopeValue;clear(scopeChips);`,
-  `const add=function(value,text){const c=make('button',text,'chip');c.setAttribute('type','button');c.setAttribute('data-scope',value);c.setAttribute('aria-pressed',value===current?'true':'false');`,
-  `c.addEventListener('click',function(){chooseScope(value);});scopeChips.appendChild(c);};`,
-  `add('all','All work');add('standalone','Standalone');`,
-  `for(const o of options)add('epic:'+o.epicItemId,o.title);`,
-  // An epic the reader scoped to that a refresh removed stays selectable, so the reader sees why nothing matches.
-  `if(current.indexOf('epic:')===0&&!options.some(function(o){return 'epic:'+o.epicItemId===current;}))add(current,'Epic no longer on the board');`,
-  `}`,
-  // Keyboard (s5): every card is focusable; Enter or Space selects it, the arrows move between the cards in document order.
-  `const cardsOnBoard=function(){return Array.prototype.slice.call(board.querySelectorAll('li.card'));};`,
-  `const moveFocus=function(from,step){const cards=cardsOnBoard();const next=cards[cards.indexOf(from)+step];if(next)next.focus();};`,
-  `const onCardKey=function(li,id){return function(e){`,
-  `if(e.key==='Enter'||e.key===' '){e.preventDefault();send({type:'select-item',itemId:id});}`,
-  `else if(e.key==='ArrowDown'){e.preventDefault();moveFocus(li,1);}else if(e.key==='ArrowUp'){e.preventDefault();moveFocus(li,-1);}};};`,
-  `function renderCard(c){const li=make('li',undefined,'card');li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);li.setAttribute('tabindex','0');`,
-  `li.appendChild(make('div',KICKER[c.kind]+' \u00b7 '+c.compactId,'kicker'));`,
-  `li.appendChild(make('div',c.title,'card-title'));`,
-  `const epicLine=c.standalone?'Standalone':c.epicTitle===null?'':'Epic: '+c.epicTitle;if(epicLine!=='')li.appendChild(make('div',epicLine,'card-epic'));`,
-  `if(c.taskSummary!==null)li.appendChild(make('div',c.taskSummary.label,'card-tasks'));`,
-  `const badges=make('ul',undefined,'badges');`,
-  `for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}`,
-  `li.appendChild(badges);li.addEventListener('click',function(){send({type:'select-item',itemId:c.itemId});});li.addEventListener('keydown',onCardKey(li,c.itemId));return li;}`,
-  // View tabs: each posts set-view; the shown view's tab is marked pressed.
-  `const TABS={board:byId('tab-board'),epics:byId('tab-epics'),issues:byId('tab-issues')};`,
-  // Tabs (role=tab): the shown view's tab is selected and in the tab order; Left and Right move between the tabs.
-  `const VIEWS=['board','epics','issues'];`,
-  `for(const v of VIEWS){TABS[v].addEventListener('click',function(){send({type:'set-view',view:v});});`,
-  `TABS[v].addEventListener('keydown',function(e){const step=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(step===0)return;e.preventDefault();`,
-  `TABS[VIEWS[(VIEWS.indexOf(v)+step+VIEWS.length)%VIEWS.length]].focus();});}`,
-  `let shownView='board';`,
-  `function markTab(view){shownView=view;board.setAttribute('data-view',view);for(const v of VIEWS){TABS[v].setAttribute('aria-selected',v===view?'true':'false');TABS[v].setAttribute('tabindex',v===view?'0':'-1');}}`,
-  // State panels (s5 mock F): #panel holds the status panel, then the current view's empty panel; both come from the host.
-  `const statusPanel=make('div');const matchPanel=make('div');panel.appendChild(statusPanel);panel.appendChild(matchPanel);`,
-  `function renderPanel(box,p){clear(box);if(p===null||p===undefined)return;const d=make('div',undefined,'panel');d.setAttribute('data-kind',p.kind);d.setAttribute('role','note');`,
+  // Presentation memory: scroll per trail entry, the reader's section toggles per entry and stage, the narrow flag.
+  `const scrollOf={},openOf={};`,
+  `let model=null,shownEntry=null,shownKind=null,narrow=false,head=null,bodyEl=null,search=null;`,
+  `const isNarrow=function(){const w=document.documentElement.clientWidth;return typeof w==='number'&&w>0&&w<=480;};`,
+  `window.addEventListener('scroll',function(){if(shownEntry!==null)scrollOf[shownEntry]=window.scrollY||0;});`,
+  `window.addEventListener('resize',function(){if(model!==null&&isNarrow()!==narrow)render(model);});`,
+  // Escape on an epic's board or an item's screen goes back, unless the reader is typing in the search box.
+  `main.addEventListener('keydown',function(e){if(e.key==='Escape'&&model!==null&&model.back!==null&&document.activeElement!==search){e.preventDefault();send({type:'back'});}});`,
+  // A re-render keeps focus on the element with the same data-key.
+  `const keyed=function(e,k){e.setAttribute('data-key',k);return e;};`,
+  `const focusedKey=function(){const a=document.activeElement;return a&&a.getAttribute?a.getAttribute('data-key'):null;};`,
+  `const findKey=function(root,k){if(root.getAttribute&&root.getAttribute('data-key')===k)return root;for(const c of root.children){const f=findKey(c,k);if(f)return f;}return null;};`,
+  // The breadcrumb: earlier crumbs are buttons back to their trail entry, the last is the current place. A narrow
+  // pane shows only the back step and the current place.
+  `function renderCrumbs(m){clear(crumbsEl);const last=m.crumbs[m.crumbs.length-1];`,
+  `const current=function(text){const s=make('span',text,'crumb current');s.setAttribute('aria-current','page');return s;};`,
+  `if(narrow){if(m.back!==null)crumbsEl.appendChild(keyed(button(m.back.label,function(){send({type:'back'});},'crumb'),'crumb-back'));crumbsEl.appendChild(current(last.label));return;}`,
+  `m.crumbs.forEach(function(c,i){if(i>0)crumbsEl.appendChild(make('span','/','sep'));`,
+  `if(i===m.crumbs.length-1)crumbsEl.appendChild(current(c.label));`,
+  `else if(c.index<last.index)crumbsEl.appendChild(keyed(button(c.label,function(){send({type:'go-to-crumb',index:c.index});},'crumb'),'crumb-'+i));`,
+  `else crumbsEl.appendChild(make('span',c.label,'crumb'));});}`,
+  // The filter bar: the four views (on one of the four views only), Needs attention, and the search box.
+  `function buildFilters(f){const bar=make('div',undefined,'filters');`,
+  `if(f.views){const g=make('div',undefined,'views');g.setAttribute('role','group');g.setAttribute('aria-label','View');`,
+  `for(const v of VIEWS){const b=keyed(button(L.views[v],function(){send({type:'set-view',view:v});},'view'),'view-'+v);b.setAttribute('data-view',v);g.appendChild(b);}bar.appendChild(g);}`,
+  `const att=keyed(button(L.needsAttention,function(){send({type:'set-attention',on:att.getAttribute('aria-pressed')!=='true'});},'chip attention'),'attention');bar.appendChild(att);`,
+  `search=keyed(make('input',undefined,'search'),'search');search.setAttribute('type','search');search.setAttribute('aria-label','Search');`,
+  `search.addEventListener('input',function(){send({type:'set-search',search:String(search.value)});});bar.appendChild(search);return bar;}`,
+  `function markFilters(f){if(f===null||head===null)return;`,
+  `for(const b of head.querySelectorAll('button.view'))b.setAttribute('aria-pressed',b.getAttribute('data-view')===f.view?'true':'false');`,
+  `const att=head.querySelectorAll('button.attention')[0];if(att){att.setAttribute('aria-pressed',f.needsAttentionOnly?'true':'false');att.textContent=f.needsAttentionOnly?L.needsAttention+' \\u00d7':L.needsAttention;}`,
+  `if(search!==null){search.setAttribute('placeholder',f.searchPlaceholder);if(document.activeElement!==search)search.value=f.search;}}`,
+  // State panels: the status panel goes to the banner or, with nothing to show behind it, replaces the screen; a
+  // view's no-matches panel replaces its list area.
+  `function renderPanel(box,p){const d=make('div',undefined,'panel');d.setAttribute('data-kind',p.kind);d.setAttribute('role','note');`,
   `d.appendChild(make('p',p.title,'panel-title'));if(p.text)d.appendChild(make('p',p.text));`,
-  `if(p.stale){const st=make('span','Stale','pill');st.setAttribute('data-tone','warning');d.appendChild(st);}`,
+  `if(p.stale)d.appendChild(pill('Stale','warning'));`,
   `if(p.affected&&p.affected.length>0){const dis=make('details');dis.appendChild(make('summary','Inspect affected records'));const ul=make('ul');`,
-  `for(const a of p.affected){const li=make('li');if(a.artifactIds.length>0)li.appendChild(make('code',a.artifactIds.join(', ')));li.appendChild(make('span',(a.artifactIds.length>0?' \u2014 ':'')+a.text));ul.appendChild(li);}dis.appendChild(ul);d.appendChild(dis);}`,
+  `for(const a of p.affected){const li=make('li');if(a.artifactIds.length>0)li.appendChild(make('code',a.artifactIds.join(', ')));li.appendChild(make('span',(a.artifactIds.length>0?' \\u2014 ':'')+a.text));ul.appendChild(li);}dis.appendChild(ul);d.appendChild(dis);}`,
   `const acts=make('div',undefined,'panel-actions');`,
   `if(p.action==='retry')acts.appendChild(button('Retry',function(){send({type:'refresh'});}));`,
-  `if(p.action==='clear-filters')acts.appendChild(button('Clear filters',function(){search.value='';markAttention(false);send({type:'clear-filters'});}));`,
+  `if(p.action==='clear-filters')acts.appendChild(button('Clear filters',function(){if(search!==null)search.value='';send({type:'clear-filters'});}));`,
   `if(acts.firstChild)d.appendChild(acts);box.appendChild(d);}`,
-  `const plural=function(n,one,many){return n+' '+(n===1?one:many);};`,
-  // A follow link: a button whose text names the item; clicking it posts select-item with the item's id.
-  `function linkButton(l){const b=make('button',KIND[l.kind]+' \u00b7 '+l.title+(l.stageLabel===null?'':' \u00b7 '+l.stageLabel),'link');`,
-  `b.setAttribute('type','button');b.setAttribute('data-item-id',l.itemId);b.addEventListener('click',function(){send({type:'select-item',itemId:l.itemId});});return b;}`,
-  // An epic rollup row (s3, mock A): kicker, title, counts; the completion meter; the attention chip. The title opens
-  // the epic's board (the 'Not in an epic' row opens the standalone scope).
-  `function renderRow(r){const sec=make('section',undefined,'epic-row');if(r.epicItemId!==null)sec.setAttribute('data-epic',r.epicItemId);`,
-  `const main=make('div',undefined,'row-main');`,
-  `if(r.compactId!==null)main.appendChild(make('div','EPIC \u00b7 '+r.compactId,'kicker'));`,
-  `const h=make('h2');const open=make('button',r.title,'row-title link');open.setAttribute('type','button');`,
-  `open.addEventListener('click',function(){chooseScope(r.epicItemId===null?'standalone':'epic:'+r.epicItemId);send({type:'set-view',view:'board'});});`,
-  `h.appendChild(open);main.appendChild(h);`,
-  `main.appendChild(make('p',[plural(r.storiesTotal,'story','stories'),plural(r.taskCount,'task','tasks')].concat(r.issueCount>0?[plural(r.issueCount,'issue','issues')]:[]).join(' \u00b7 '),'counts muted'));`,
-  `sec.appendChild(main);`,
-  `const prog=make('div',undefined,'row-progress');prog.appendChild(make('p',r.completionLabel,'completion muted'));`,
-  `const meter=make('div',undefined,'meter');meter.setAttribute('role','meter');meter.setAttribute('aria-label',r.completionLabel);`,
+  // Cards: kicker, title, epic line, task summary, badges; a card opens its item's screen.
+  `const cardsOnScreen=function(){return Array.prototype.slice.call(main.querySelectorAll('li.card'));};`,
+  `const moveFocus=function(from,step){const cards=cardsOnScreen();const next=cards[cards.indexOf(from)+step];if(next)next.focus();};`,
+  `function renderCard(c,showEpic){const li=keyed(make('li',undefined,'card'),'item-'+c.itemId);li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);li.setAttribute('tabindex','0');`,
+  `li.appendChild(make('div',KICKER[c.kind]+' \\u00b7 '+c.compactId,'kicker'));li.appendChild(make('div',c.title,'card-title'));`,
+  `const epicLine=!showEpic?'':c.standalone?'Standalone':c.epicTitle===null?'':c.epicTitle;if(epicLine!=='')li.appendChild(make('div',epicLine,'card-epic'));`,
+  `if(c.taskSummary!==null)li.appendChild(make('div',c.taskSummary.label,'card-tasks'));`,
+  `const badges=make('ul',undefined,'badges');for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}li.appendChild(badges);`,
+  `const open=function(){send({type:'open-item',itemId:c.itemId});};li.addEventListener('click',open);`,
+  `li.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}else if(e.key==='ArrowDown'){e.preventDefault();moveFocus(li,1);}else if(e.key==='ArrowUp'){e.preventDefault();moveFocus(li,-1);}});return li;}`,
+  // A stage section: a <details> whose summary always shows the label, the count and any attention hint.
+  `function renderSection(sec,showEpic){const d=make('details',undefined,'stage');d.setAttribute('data-stage',sec.stage);const k=model.entryId+':'+sec.stage;`,
+  `if(Object.prototype.hasOwnProperty.call(openOf,k)?openOf[k]:sec.defaultOpen)d.setAttribute('open','');`,
+  `d.addEventListener('toggle',function(){openOf[k]=d.getAttribute('open')!==null;});`,
+  `const s=keyed(make('summary'),'stage-'+sec.stage);s.appendChild(make('span',sec.label,'stage-label'));const n=make('span',String(sec.total),'count');n.setAttribute('aria-label',plural(sec.total,'item','items'));s.appendChild(n);`,
+  `if(sec.emptyText!==null)s.appendChild(make('span',sec.emptyText,'muted'));if(sec.hint!==null)s.appendChild(pill(sec.hint,'warning','pill hint'));d.appendChild(s);`,
+  `if(sec.cards.length>0){const ul=make('ul',undefined,'cards');ul.setAttribute('aria-label',sec.label);for(const c of sec.cards)ul.appendChild(renderCard(c,showEpic));d.appendChild(ul);}`,
+  `if(sec.hiddenCount>0)d.appendChild(button('Show '+sec.hiddenCount+' more',function(){send({type:'show-more',stage:sec.stage});},'more'));return d;}`,
+  `function renderEpicSummary(r){const box=make('div',undefined,'epic-summary');`,
+  `box.appendChild(make('p',[plural(r.storiesTotal,'story','stories'),plural(r.taskCount,'task','tasks')].concat(r.issueCount>0?[plural(r.issueCount,'issue','issues')]:[]).join(' \\u00b7 '),'counts muted'));`,
+  `box.appendChild(make('p',r.completionLabel,'completion muted'));const meter=make('span',undefined,'meter');meter.setAttribute('role','meter');meter.setAttribute('aria-label',r.completionLabel);`,
   `meter.setAttribute('aria-valuemin','0');meter.setAttribute('aria-valuemax',String(r.storiesTotal));meter.setAttribute('aria-valuenow',String(r.storiesComplete));`,
-  `const fill=make('span');fill.setAttribute('style','width:'+(r.storiesTotal===0?0:Math.round(100*r.storiesComplete/r.storiesTotal))+'%');meter.appendChild(fill);`,
-  `prog.appendChild(meter);sec.appendChild(prog);`,
-  `const att=make('span',r.attentionLabel,'pill attention');att.setAttribute('data-tone',r.attentionTone);sec.appendChild(att);`,
-  `return sec;}`,
-  `function renderEpics(m){markTab('epics');renderScope(m.scopeOptions);clear(board);`,
-  `totals.textContent=plural(m.totals.items,'item','items')+', '+m.totals.needsAttention+' needing attention';`,
-  `for(const r of m.epics)board.appendChild(renderRow(r));`,
-  `if(m.notInEpic.total>0)board.appendChild(renderRow(m.notInEpic));`,
-  `renderPanel(matchPanel,m.emptyPanel);}`,
-  `function renderIssue(e){const sec=make('section',undefined,'issue');sec.setAttribute('data-item-id',e.card.itemId);`,
-  `const cards=make('ul');cards.appendChild(renderCard(e.card));sec.appendChild(cards);`,
-  `sec.appendChild(make('p','Stage: '+e.stageLabel,'issue-stage'));`,
-  `if(e.parent!==null){const p=make('p','Corrects: ','parent');p.appendChild(linkButton(e.parent));sec.appendChild(p);}`,
-  `else if(e.parentNotice!==null)sec.appendChild(make('p',e.parentNotice,'parent-notice'));`,
-  `sec.appendChild(make('h3','Fix stories'));`,
-  `if(e.fixStories.length===0)sec.appendChild(make('p','No fix stories yet','no-fix'));`,
-  `else{const ul=make('ul');ul.setAttribute('aria-label','Fix stories');for(const f of e.fixStories){const li=make('li');li.appendChild(linkButton(f));ul.appendChild(li);}sec.appendChild(ul);}`,
-  `return sec;}`,
-  `function renderIssues(m){markTab('issues');renderScope(m.scopeOptions);clear(board);`,
-  `totals.textContent=plural(m.totals.issues,'issue','issues')+', '+m.totals.needsAttention+' needing attention';`,
-  `for(const e of m.issues)board.appendChild(renderIssue(e));`,
-  `renderPanel(matchPanel,m.emptyPanel);}`,
-  `function renderBoard(m){markTab('board');renderScope(m.scopeOptions);clear(board);`,
-  `totals.textContent=plural(m.totals.items,'item','items')+', '+m.totals.needsAttention+' needing attention';`,
-  // Every stage heading carries its label and a count chip; an empty stage is marked so a narrow pane wraps it last.
-  `for(const col of m.columns){const sec=make('section',undefined,'column');sec.setAttribute('data-stage',col.stage);sec.setAttribute('data-empty',col.total===0?'true':'false');`,
-  `const h=make('h2');h.appendChild(make('span',col.label,'stage-label'));const count=make('span',String(col.total),'count');count.setAttribute('aria-label',plural(col.total,'item','items'));h.appendChild(count);sec.appendChild(h);`,
-  `const ul=make('ul');ul.setAttribute('aria-label',col.label);for(const c of col.cards)ul.appendChild(renderCard(c));sec.appendChild(ul);`,
-  `if(col.hiddenCount>0){const more=make('button','Show '+col.hiddenCount+' more');more.setAttribute('type','button');`,
-  `more.addEventListener('click',function(){send({type:'show-more',stage:col.stage});});sec.appendChild(more);}`,
-  `board.appendChild(sec);}`,
-  `renderPanel(matchPanel,m.emptyPanel);}`,
-  // The details pane (s4): every field as text, the opened record in a <pre>; a null model clears it.
-  `const RELATION={parent:'Parent',child:'Child',corrects:'Corrects'};`,
-
-  // Focus (s5): opening an item's details focuses their heading; closing them returns focus to that item's card, or to
-  // the shown view's tab when the card is gone. Escape inside the details closes them.
-  `let detailsOf=null,lastHeading=null;`,
-  `details.addEventListener('keydown',function(e){if(e.key==='Escape'){e.preventDefault();send({type:'close-details'});}});`,
-  `const returnFocus=function(id){const card=cardsOnBoard().filter(function(c){return c.getAttribute('data-item-id')===id;})[0];if(card)card.focus();else TABS[shownView].focus();};`,
-  // Mock B: kicker, title and close; the chips; the conflict box first; 'Why this stage?'; tasks as disclosures; the
-  // artifact chain; then the records, notices, links and sources.
-  `function renderDetails(m){clear(details);if(m===null){details.setAttribute('hidden','');lastHeading=null;if(detailsOf!==null){const id=detailsOf;detailsOf=null;returnFocus(id);}return;}details.removeAttribute('hidden');`,
-  `details.setAttribute('data-item-id',m.itemId);`,
-  `const head=make('div',undefined,'details-head');head.appendChild(make('div',m.kicker,'kicker'));`,
-  `const heading=make('h2',m.title);heading.setAttribute('tabindex','-1');head.appendChild(heading);details.appendChild(head);`,
-  `details.appendChild(button('Close details',function(){send({type:'close-details'});}));`,
-  `if(m.chips.length>0){const chips=make('div',undefined,'chips details-chips');for(const c of m.chips){const e=pill(c.label,c.tone);e.setAttribute('data-kind',c.kind);chips.appendChild(e);}details.appendChild(chips);}`,
-  `if(m.conflict!==null){const box=make('div',undefined,'details-conflict');box.setAttribute('role','note');box.appendChild(make('strong',m.conflict.headline));box.appendChild(make('p',m.conflict.text));details.appendChild(box);}`,
-  `if(m.stageReason!==null){const why=make('div',undefined,'why');why.appendChild(make('strong','Why this stage?'));why.appendChild(make('p',m.stageReason.text));`,
-  `if(m.stageReason.artifactIds.length>0)why.appendChild(make('p','From '+m.stageReason.artifactIds.join(', '),'muted'));details.appendChild(why);}`,
-  `if(m.tasks.length>0||m.taskCounts!==null){details.appendChild(make('h3','Tasks'));`,
-  `if(m.taskCounts!==null){const k=m.taskCounts;details.appendChild(make('p',k.passed+' passed, '+k.failed+' failed, '+k.unrecorded+' unrecorded, '+k.unplanned+' unplanned','task-counts muted'));}`,
+  `const fill=make('span');fill.setAttribute('style','width:'+(r.storiesTotal===0?0:Math.round(100*r.storiesComplete/r.storiesTotal))+'%');meter.appendChild(fill);box.appendChild(meter);`,
+  `box.appendChild(pill(r.attentionLabel,r.attentionTone,'pill attention-count'));return box;}`,
+  `function renderTotals(label,showAll){const p=make('p',label,'totals');if(showAll)p.appendChild(button('Show all',function(){send({type:'set-attention',on:false});},'link show-all'));bodyEl.appendChild(p);}`,
+  // A board screen: the epic's own summary on its board, the totals, then the six stages (or the no-matches panel).
+  `function renderStages(b){if(b.epic!==null){const k=make('div','EPIC \\u00b7 '+b.epic.compactId,'kicker');bodyEl.appendChild(k);bodyEl.appendChild(renderEpicSummary(b.epic));}`,
+  `renderTotals(b.totalsLabel,b.showAll);if(b.emptyPanel!==null){renderPanel(bodyEl,b.emptyPanel);return;}`,
+  `const showEpic=b.epic===null&&!(model.filters!==null&&model.filters.view==='standalone');const fold=b.fold.always||narrow;`,
+  `for(const sec of b.sections){if(fold&&sec.total===0)continue;bodyEl.appendChild(renderSection(sec,showEpic));}`,
+  `if(fold&&b.fold.text!==''){if(b.fold.always)bodyEl.appendChild(make('p',b.fold.text,'fold muted'));`,
+  `else{const d=make('details',undefined,'stage fold');const k=model.entryId+':fold';if(openOf[k])d.setAttribute('open','');d.addEventListener('toggle',function(){openOf[k]=d.getAttribute('open')!==null;});`,
+  `d.appendChild(keyed(make('summary',L.otherStages),'stage-fold'));d.appendChild(make('p',b.fold.text,'muted'));bodyEl.appendChild(d);}}}`,
+  // The Epics screen: each whole row opens that epic's board.
+  `function renderEpics(b){renderTotals(b.totalsLabel,false);if(b.emptyPanel!==null)renderPanel(bodyEl,b.emptyPanel);`,
+  `else{const ul=make('ul',undefined,'rows');ul.setAttribute('aria-label','Epics');for(const r of b.rows){const li=make('li');`,
+  `const row=keyed(button('',function(){send({type:'open-epic',epicItemId:r.epicItemId});},'epic-row'),'epic-'+r.epicItemId);row.setAttribute('data-epic',r.epicItemId);`,
+  `row.appendChild(make('span','EPIC \\u00b7 '+r.compactId,'kicker'));row.appendChild(make('span',r.title,'row-title'));row.appendChild(renderEpicSummary(r));li.appendChild(row);ul.appendChild(li);}bodyEl.appendChild(ul);}`,
+  `const p=make('p','Work outside any epic is under ','muted standalone-link');p.appendChild(button(L.views.standalone,function(){send({type:'set-view',view:'standalone'});},'link'));bodyEl.appendChild(p);}`,
+  // The Issues screen: a list in stage order; a row opens the issue's screen.
+  `function renderIssues(b){renderTotals(b.totalsLabel,false);if(b.emptyPanel!==null){renderPanel(bodyEl,b.emptyPanel);return;}`,
+  `const ul=make('ul',undefined,'rows');ul.setAttribute('aria-label','Issues');for(const e of b.issues){const li=make('li');`,
+  `const row=keyed(button('',function(){send({type:'open-item',itemId:e.card.itemId});},'issue-row'),'item-'+e.card.itemId);row.setAttribute('data-item-id',e.card.itemId);row.setAttribute('aria-label',e.card.accessibleLabel);`,
+  `row.appendChild(make('span','ISSUE \\u00b7 '+e.card.compactId,'kicker'));row.appendChild(make('span',e.card.title,'row-title'));`,
+  `const what=e.parent!==null?'Corrects '+e.parent.title:e.parentNotice!==null?e.parentNotice:e.card.standalone?'Standalone':'';`,
+  `const fix=e.fixStories.length===0?'no fix story yet':e.fixStories.map(function(f){return 'fix story '+f.title+(f.stageLabel===null?'':' \\u00b7 '+f.stageLabel);}).join('; ');`,
+  `row.appendChild(make('span',[what,fix].filter(function(t){return t!=='';}).join(' \\u00b7 '),'muted'));const pills=make('span',undefined,'badges');pills.appendChild(pill(e.stageLabel,'neutral'));`,
+  `for(const b of e.card.badges){const t=pill(b.label,b.tone,'badge');t.setAttribute('data-kind',b.kind);pills.appendChild(t);}row.appendChild(pills);li.appendChild(row);ul.appendChild(li);}bodyEl.appendChild(ul);}`,
+  // A story's or issue's screen. First the kicker, the chips and any conflict, so the warning comes before any task.
+  `function itemTop(d){bodyEl.appendChild(make('div',d.kicker,'kicker'));`,
+  `if(d.chips.length>0){const chips=make('div',undefined,'chips item-chips');for(const c of d.chips){const e=pill(c.label,c.tone);e.setAttribute('data-kind',c.kind);chips.appendChild(e);}bodyEl.appendChild(chips);}`,
+  `if(d.conflict!==null){const box=make('div',undefined,'conflict');box.setAttribute('role','note');box.appendChild(make('strong',d.conflict.headline));box.appendChild(make('p',d.conflict.text));bodyEl.appendChild(box);}}`,
+  `const link=function(text,payload,key){const b=keyed(button(text,function(){send(payload);},'link'),key);return b;};`,
+  `const openLink=function(l){return l.kind==='epic'?{type:'open-epic',epicItemId:l.itemId}:{type:'open-item',itemId:l.itemId};};`,
+  `function whyBox(d){if(d.stageReason===null)return null;const why=make('div',undefined,'why');why.appendChild(make('strong','Why this stage?'));why.appendChild(make('p',d.stageReason.text));`,
+  `if(d.stageReason.artifactIds.length>0)why.appendChild(make('p','From '+d.stageReason.artifactIds.join(', '),'muted'));return why;}`,
+  `function chainList(d){const box=make('div');if(d.chain.length===0)return box;box.appendChild(make('h2','Artifact chain'));const ul=make('ul',undefined,'chain');ul.setAttribute('aria-label','Artifact chain');`,
+  `for(const r of d.chain){const li=make('li');li.setAttribute('data-status',r.status);li.appendChild(make('strong',r.kind));const body=make('div');body.appendChild(pill(r.label,r.tone));`,
+  `if(r.artifactId!==null)body.appendChild(make('div',r.artifactId+(r.note===null?'':' · '+r.note),'muted'));li.appendChild(body);ul.appendChild(li);}box.appendChild(ul);return box;}`,
+  `function taskList(d){const box=make('div');box.appendChild(make('h2','Planned tasks'));`,
+  `if(d.taskCounts!==null){const k=d.taskCounts;box.appendChild(make('p',k.passed+' passed, '+k.failed+' failed, '+k.unrecorded+' unrecorded, '+k.unplanned+' unplanned','task-counts muted'));}`,
+  `if(d.tasks.length===0)box.appendChild(make('p','No task plan recorded yet.','muted'));`,
   `const list=make('div');list.setAttribute('role','list');list.setAttribute('aria-label','Tasks');`,
-  `for(const t of m.tasks){const row=make('details',undefined,'task');row.setAttribute('role','listitem');row.setAttribute('data-item-id',t.taskItemId);`,
-  `row.appendChild(make('summary',t.title===null?t.taskItemId:t.title));`,
-  `const chips=make('div',undefined,'chips');chips.appendChild(pill(t.resultLabel,t.resultTone));`,
+  `for(const t of d.tasks){const row=make('details',undefined,'task');row.setAttribute('role','listitem');row.setAttribute('data-item-id',t.taskItemId);`,
+  `row.appendChild(make('summary',t.title===null?t.taskItemId:t.title));const chips=make('div',undefined,'chips');chips.appendChild(pill(t.resultLabel,t.resultTone));`,
   `if(t.dependsOn!==null)chips.appendChild(pill(t.dependsOn.length===0?'No dependencies':'Depends on '+t.dependsOn.join(', '),'neutral'));row.appendChild(chips);`,
   `if(t.acceptanceChecks!==null&&t.acceptanceChecks.length>0){const cl=make('ul',undefined,'task-checks');cl.setAttribute('aria-label','Acceptance checks');for(const c of t.acceptanceChecks)cl.appendChild(make('li',c));row.appendChild(cl);}`,
-  `list.appendChild(row);}details.appendChild(list);}`,
-  `if(m.planNotice!==null)details.appendChild(make('p',m.planNotice,'plan-notice'));`,
-  `if(m.chain.length>0){details.appendChild(make('h3','Artifact chain'));const ul=make('ul',undefined,'chain');ul.setAttribute('aria-label','Artifact chain');`,
-  `for(const r of m.chain){const li=make('li');li.setAttribute('data-status',r.status);li.appendChild(make('strong',r.kind));const body=make('div');body.appendChild(pill(r.label,r.tone));`,
-  `if(r.artifactId!==null)body.appendChild(make('div',r.artifactId+(r.note===null?'':' \u00b7 '+r.note),'muted'));li.appendChild(body);ul.appendChild(li);}details.appendChild(ul);}`,
-  `if(m.evidence.length>0){details.appendChild(make('h3','Records'));const ul=make('ul');ul.setAttribute('aria-label','Records');`,
-  `for(const r of m.evidence){const li=make('li',undefined,'record');li.setAttribute('data-artifact-id',r.artifactId);`,
-  `li.appendChild(make('span',[r.kindLabel+' '+r.artifactId,r.approvalLabel].concat(r.reviewLabel===null?[]:[r.reviewLabel]).concat(r.overrideLabel===null?[]:[r.overrideLabel]).join(' \u00b7 ')));`,
-  `li.appendChild(button(r.opensIn==='review-pane'?'Open in review':'Open read-only',function(){send({type:'open-evidence',itemId:m.itemId,artifactId:r.artifactId});}));`,
-  `ul.appendChild(li);}details.appendChild(ul);}`,
-  `if(m.notices.length>0){details.appendChild(make('h3','Notices'));const ul=make('ul');for(const n of m.notices)ul.appendChild(make('li',n,'notice'));details.appendChild(ul);}`,
-  `if(m.linked.length>0){details.appendChild(make('h3','Linked'));const ul=make('ul');`,
-  `for(const l of m.linked){const li=make('li');li.appendChild(button(RELATION[l.relation]+': '+l.title,function(){send({type:'select-item',itemId:l.itemId});}));ul.appendChild(li);}details.appendChild(ul);}`,
-  `if(m.sourceIds.length>0)details.appendChild(make('p','Sources: '+m.sourceIds.join(', '),'source-ids muted'));`,
-  `if(m.openedRecord!==null){details.appendChild(make('h3','Record '+m.openedRecord.artifactId));details.appendChild(make('pre',m.openedRecord.text,'opened-record'));}`,
-  // A re-render of the same item (its plan or a record arrived) keeps focus on the heading if the old heading had it.
-  `const keep=m.itemId===detailsOf&&lastHeading!==null&&document.activeElement===lastHeading;lastHeading=heading;`,
-  `if(m.itemId!==detailsOf||keep){detailsOf=m.itemId;heading.focus();}}`,
+  `list.appendChild(row);}box.appendChild(list);if(d.planNotice!==null)box.appendChild(make('p',d.planNotice,'plan-notice'));return box;}`,
+  // Every record behind the item, with approval, review and override in their own columns, and how it opens.
+  `function recordsTable(d){const box=make('div');box.appendChild(make('h2','Records'));if(d.evidence.length===0){box.appendChild(make('p','No records yet.','muted'));return box;}const wrap=make('div',undefined,'table-wrap');const t=make('table',undefined,'records');`,
+  `const hr=make('tr');for(const h of ['Record','Approval','Review','Override',''])hr.appendChild(make('th',h));const thead=make('thead');thead.appendChild(hr);t.appendChild(thead);const tb=make('tbody');`,
+  `for(const r of d.evidence){const tr=make('tr');tr.setAttribute('data-artifact-id',r.artifactId);tr.appendChild(make('td',r.kindLabel+' '+r.artifactId));`,
+  `tr.appendChild(make('td',r.approvalLabel+(r.approvedAt===null?'':' · '+r.approvedAt)));tr.appendChild(make('td',r.reviewLabel===null?'—':r.reviewLabel));tr.appendChild(make('td',r.overrideLabel===null?'—':r.overrideLabel));`,
+  `const cell=make('td');cell.appendChild(keyed(button(r.opensIn==='review-pane'?'Open in review':'Open read-only',function(){send({type:'open-evidence',itemId:d.itemId,artifactId:r.artifactId});}),'open-'+r.artifactId));tr.appendChild(cell);tb.appendChild(tr);}`,
+  `t.appendChild(tb);wrap.appendChild(t);box.appendChild(wrap);`,
+  `if(d.notices.length>0){box.appendChild(make('h2','Notices'));const ul=make('ul');for(const n of d.notices)ul.appendChild(make('li',n,'notice'));box.appendChild(ul);}`,
+  `if(d.sourceIds.length>0)box.appendChild(make('p','Sources: '+d.sourceIds.join(', '),'source-ids muted'));`,
+  `if(d.openedRecord!==null){box.appendChild(make('h3','Record '+d.openedRecord.artifactId));box.appendChild(make('pre',d.openedRecord.text,'opened-record'));}return box;}`,
+  // The story screen's tabs (role=tab, roving tabindex, Left/Right between them); a narrow pane uses the short labels.
+  `const TABS=['overview','evidence','linked'];`,
+  `function renderTabs(current){const bar=make('div',undefined,'item-tabs');bar.setAttribute('role','tablist');bar.setAttribute('aria-label','Story');const tabs=[];`,
+  `for(const t of TABS){const b=keyed(button(narrow?L.itemTabs[t].short:L.itemTabs[t].long,function(){send({type:'set-item-tab',tab:t});},'tab'),'tab-'+t);b.setAttribute('role','tab');b.setAttribute('data-tab',t);`,
+  `b.setAttribute('aria-selected',t===current?'true':'false');b.setAttribute('tabindex',t===current?'0':'-1');`,
+  `b.addEventListener('keydown',function(e){const step=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(step===0)return;e.preventDefault();tabs[(TABS.indexOf(t)+step+TABS.length)%TABS.length].focus();});tabs.push(b);bar.appendChild(b);}bodyEl.appendChild(bar);}`,
+  `function renderStory(b){const d=b.details;itemTop(d);renderTabs(b.tab);const panel=make('div',undefined,'tab-panel');panel.setAttribute('role','tabpanel');panel.setAttribute('data-tab',b.tab);bodyEl.appendChild(panel);`,
+  `if(b.tab==='overview'){const cols=make('div',undefined,'item-cols');const left=make('div',undefined,'item-main');left.appendChild(taskList(d));const side=make('div',undefined,'item-side');const why=whyBox(d);if(why!==null)side.appendChild(why);side.appendChild(chainList(d));cols.appendChild(left);cols.appendChild(side);panel.appendChild(cols);return;}`,
+  `if(b.tab==='evidence'){panel.appendChild(recordsTable(d));return;}`,
+  // Linked work: only recorded links, each opening its own screen.
+  `const section=function(title,rows,empty){panel.appendChild(make('h2',title));if(rows.length===0){panel.appendChild(make('p',empty,'muted'));return;}const ul=make('ul',undefined,'linked');for(const r of rows){const li=make('li');li.appendChild(r);ul.appendChild(li);}panel.appendChild(ul);};`,
+  `if(b.epic!==null){const e=b.epic;const row=link(e.title,{type:'open-epic',epicItemId:e.epicItemId},'epic-'+e.epicItemId);row.setAttribute('data-epic',e.epicItemId);const wrap=make('span');wrap.appendChild(row);wrap.appendChild(make('span',' · '+e.completionLabel,'muted'));section('Epic',[wrap],'');}`,
+  `else{const parent=d.linked.filter(function(l){return l.relation==='parent';});if(parent.length>0)section('Part of',parent.map(function(l){return link(l.title,{type:'open-item',itemId:l.itemId},'item-'+l.itemId);}),'');}`,
+  `const corrects=d.linked.filter(function(l){return l.relation==='corrects';});if(corrects.length>0)section('Corrects',corrects.map(function(l){return link(l.title,{type:'open-item',itemId:l.itemId},'item-'+l.itemId);}),'');`,
+  // Children: one with a screen of its own opens it; a task has none, so it is named here and expanded on Overview & tasks.
+  `const children=d.linked.filter(function(l){return l.relation==='child';});if(children.length>0)section('Children',children.map(function(l){`,
+  `if(l.kind==='task')return make('span','TASK \u00b7 '+l.title+' \u00b7 on '+L.itemTabs.overview.long,'muted');const r=link(KICKER[l.kind]+' \u00b7 '+l.title,openLink(l),'item-'+l.itemId);r.setAttribute('data-item-id',l.itemId);return r;}),'');`,
+  `section('Issues correcting this story',d.correctedBy.map(function(l){const r=link('ISSUE · '+l.title+(l.stageLabel===null?'':' · '+l.stageLabel),openLink(l),'item-'+l.itemId);r.setAttribute('data-item-id',l.itemId);return r;}),'No issue records this story as its parent.');}`,
+  // The issue screen: what it corrects, its fix stories, why it is at its stage, the chain and its records.
+  `function renderIssue(b){const d=b.details,e=b.entry;itemTop(d);const acts=make('div',undefined,'item-actions');`,
+  `if(e.parent!==null)acts.appendChild(link('Open what it corrects →',openLink(e.parent),'corrects'));else if(e.parentNotice!==null)acts.appendChild(pill('Unresolved parent','warning'));bodyEl.appendChild(acts);`,
+  `if(e.parent!==null)bodyEl.appendChild(make('p','Corrects '+e.parent.title+(e.parent.stageLabel===null?'':' · '+e.parent.stageLabel),'muted'));else if(e.parentNotice!==null)bodyEl.appendChild(make('p',e.parentNotice,'parent-notice'));`,
+  `const cols=make('div',undefined,'item-cols');const left=make('div',undefined,'item-main');left.appendChild(make('h2','Fix stories'));`,
+  `if(e.fixStories.length===0)left.appendChild(make('p','No fix story yet','no-fix muted'));`,
+  `else{const ul=make('ul',undefined,'linked');ul.setAttribute('aria-label','Fix stories');for(const f of e.fixStories){const li=make('li');const r=link('STORY · '+f.title,{type:'open-item',itemId:f.itemId},'item-'+f.itemId);r.setAttribute('data-item-id',f.itemId);li.appendChild(r);if(f.stageLabel!==null)li.appendChild(pill(f.stageLabel,'neutral'));ul.appendChild(li);}left.appendChild(ul);}`,
+  `left.appendChild(recordsTable(d));const side=make('div',undefined,'item-side');const why=whyBox(d);if(why!==null)side.appendChild(why);side.appendChild(chainList(d));cols.appendChild(left);cols.appendChild(side);bodyEl.appendChild(cols);}`,
+  `function renderItem(b){if(b.kind==='story')renderStory(b);else renderIssue(b);}`,
+  `function render(m){const fresh=m.entryId!==shownEntry||m.body.kind!==shownKind;model=m;narrow=isNarrow();renderCrumbs(m);`,
+  `const keep=fresh?null:focusedKey();`,
+  `if(fresh){clear(main);search=null;head=make('div',undefined,'screen-head');bodyEl=make('div',undefined,'screen-body');main.appendChild(head);main.appendChild(bodyEl);main.setAttribute('data-screen',m.body.kind);`,
+  `if(m.back!==null)head.appendChild(keyed(button(m.back.label,function(){send({type:'back'});},'back'),'back'));`,
+  `const h=keyed(make('h1',m.title,'screen-title'),'title');h.setAttribute('tabindex','-1');head.appendChild(h);if(m.filters!==null)head.appendChild(buildFilters(m.filters));}`,
+  `else head.querySelectorAll('h1.screen-title').forEach(function(h){h.textContent=m.title;});`,
+  `markFilters(m.filters);clear(bodyEl);`,
+  `switch(m.body.kind){case 'stages':renderStages(m.body);break;case 'epics':renderEpics(m.body);break;case 'issues':renderIssues(m.body);break;default:renderItem(m.body);}`,
+  `if(keep!==null){const f=findKey(main,keep)||findKey(crumbsEl,keep);if(f)f.focus();}`,
+  // A new screen starts at the top with its heading focused; a screen the reader returned to gets its scroll back and
+  // focuses what was opened from it.
+  `if(fresh){shownEntry=m.entryId;shownKind=m.body.kind;const h=head.querySelectorAll('h1.screen-title')[0];`,
+  `if(m.restored){window.scrollTo(0,scrollOf[m.entryId]||0);const o=m.focusItemId===null?null:findKey(bodyEl,'item-'+m.focusItemId)||findKey(bodyEl,'epic-'+m.focusItemId);(o||h).focus();}`,
+  `else{window.scrollTo(0,0);h.focus();}}}`,
   `window.addEventListener('message',function(e){`,
-  `const m=e.data;if(!m||m.v!==1||!m.payload)return;const p=m.payload;`,
-  // The app bar's freshness line; the status panel carries the explanation and its action.
+  `const msg=e.data;if(!msg||msg.v!==1||!msg.payload)return;const p=msg.payload;`,
   `if(p.type==='status'){const s=p.status;`,
-  `const line=s.state==='loading'?'Refreshing\u2026'+(s.freshnessLabel?' \u00b7 '+s.freshnessLabel:''):s.freshnessLabel||s.message||'';`,
-  `status.textContent=line+(s.stale?' (stale)':'');status.setAttribute('data-state',s.state);`,
-  `renderPanel(statusPanel,s.panel);return;}`,
-  `if(p.type==='board'){renderBoard(p.model);return;}`,
-  `if(p.type==='epics'){renderEpics(p.model);return;}`,
-  `if(p.type==='issues'){renderIssues(p.model);return;}`,
-  `if(p.type==='details'){renderDetails(p.model);return;}`,
+  `const line=s.state==='loading'?'Refreshing\\u2026'+(s.freshnessLabel?' \\u00b7 '+s.freshnessLabel:''):s.freshnessLabel||s.message||'';`,
+  `status.textContent=line+(s.stale?' (stale)':'');status.setAttribute('data-state',s.state);clear(banner);`,
+  // With nothing to show behind it the panel replaces the screen; otherwise it sits above the screen, which stays.
+  `const panel=s.panel||null;if(panel!==null&&panel.placement==='body'){clear(main);clear(crumbsEl);crumbsEl.appendChild(make('span','Delivery','crumb current'));model=null;shownEntry=null;shownKind=null;head=null;bodyEl=null;search=null;main.setAttribute('data-screen','panel');renderPanel(main,panel);}`,
+  `else if(panel!==null)renderPanel(banner,panel);return;}`,
+  `if(p.type==='screen'){render(p.model);return;}`,
   // The one live region (s5): cleared, then set, so a repeated text is announced again.
   `if(p.type==='announce'){announceEl.textContent='';announceEl.textContent=String(p.text);return;}`,
   `});`,
   // Density (s5) lives in the webview's own state, kept by VS Code across reloads, and is mirrored to the host.
-  `const announceEl=byId('announce');`,
   `const DENSITIES=['compact','comfortable'];`,
   `const savedState=function(){try{const st=vs.getState();return st&&typeof st==='object'?st:{};}catch(e){return {};}};`,
   `const applyDensity=function(d){document.body.setAttribute('data-density',d);for(const x of DENSITIES)byId('density-'+x).setAttribute('aria-pressed',x===d?'true':'false');};`,
@@ -260,94 +286,127 @@ export const BOARD_WEBVIEW_SCRIPT = [
 ].join('');
 
 /**
- * The board's one stylesheet (E2 s5, restyled to the PRD's mocks A-F by ISSUE-b2687832), under the existing style-src
- * 'unsafe-inline'. Theme colours come only from VS Code's --vscode-* variables: the PRD's tones map to the testing,
- * warning, error and description colours over the input-validation and widget backgrounds. Wide panes set the six
- * board columns side by side and, when an item is open, the details as a side column; below 600 px the same sections
- * stack into one list grouped by stage, empty stages wrapping onto one compact line after the others. No rule hides
- * content: the DOM is the same at every width and density, and only the [hidden] details pane is out of view while
- * nothing is selected. Density changes spacing and font size only.
+ * The board's one stylesheet (E2 s5; screens, ISSUE-348d4663), under the existing style-src 'unsafe-inline'. Theme
+ * colours come only from VS Code's --vscode-* variables: the PRD's tones map to the testing, warning, error and
+ * description colours over the input-validation and widget backgrounds. One layout at every width: stages are stacked
+ * collapsible sections whose cards wrap into a grid as wide as the screen allows, and every grid keeps a minimum
+ * width, so a narrow pane gets fewer columns rather than squeezed ones. #main is a size container: the story's two
+ * columns stack below 760 px (the stage explanation and chain first), and rows go to one column below 480 px. The body
+ * never shrinks below 320 px, and the records table scrolls sideways inside its wrapper rather than squeezing. No rule
+ * hides content; a closed stage section is a native <details> the reader opens, and its summary always shows the
+ * label, the count and any attention hint. Density changes spacing and font size only.
  */
 export const BOARD_STYLE = [
-  `body{font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);color:var(--vscode-foreground);background:var(--vscode-editor-background);margin:0;padding:0 16px 16px;line-height:1.45;}`,
+  `body{font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);color:var(--vscode-foreground);background:var(--vscode-editor-background);margin:0;padding:0 16px 16px;line-height:1.45;min-width:320px;}`,
   `button{font:inherit;color:var(--vscode-button-secondaryForeground);background:var(--vscode-button-secondaryBackground);border:1px solid var(--vscode-contrastBorder,transparent);border-radius:4px;padding:3px 10px;cursor:pointer;}`,
   `button:hover{background:var(--vscode-button-secondaryHoverBackground);}`,
   `button[aria-pressed="true"]{color:var(--vscode-button-foreground);background:var(--vscode-button-background);}`,
-  `input,select{font:inherit;color:var(--vscode-input-foreground);background:var(--vscode-input-background);border:1px solid var(--vscode-input-border,transparent);border-radius:4px;padding:3px 8px;}`,
+  `input{font:inherit;color:var(--vscode-input-foreground);background:var(--vscode-input-background);border:1px solid var(--vscode-input-border,transparent);border-radius:4px;padding:3px 8px;}`,
   `:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:2px;}`,
+  `h1,h2,h3{font-weight:600;}`,
+  `ul{margin:0;padding:0;list-style:none;}`,
   // App bar: wordmark and breadcrumb on the left, freshness, read-only marker, refresh and density on the right.
   `.appbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;margin:0 -16px;padding:8px 16px;background:var(--vscode-sideBar-background,var(--vscode-editorWidget-background));border-bottom:1px solid var(--vscode-panel-border);}`,
   `.brand,.appbar-tools,.density{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}`,
   `.wordmark{font-weight:700;color:var(--vscode-textLink-foreground);}`,
-  `.crumb,#status,.readonly,#totals,.muted{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
+  `.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;overflow-wrap:anywhere;}`,
+  `.crumb{background:none;border:0;padding:0;color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
+  `button.crumb{color:var(--vscode-textLink-foreground);}`,
+  `button.crumb:hover{background:none;text-decoration:underline;}`,
+  `.crumb.current{color:var(--vscode-foreground);font-weight:600;}`,
+  `.sep{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
+  `#status,.readonly,.muted,.totals{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
   `#status{margin:0;}`,
-  `.page-title{font-size:1.4em;font-weight:600;margin:14px 0 2px;}`,
   `.announce{color:var(--vscode-descriptionForeground);font-size:var(--small);margin:0;min-height:1em;}`,
-  // Underline tabs.
-  `.tabs{display:flex;gap:18px;border-bottom:1px solid var(--vscode-panel-border);margin:10px 0 0;}`,
-  `.tabs button{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:6px 0;color:var(--vscode-descriptionForeground);}`,
-  `.tabs button[aria-pressed="true"],.tabs button[aria-selected="true"]{background:none;color:var(--vscode-foreground);border-bottom-color:var(--vscode-focusBorder);font-weight:600;}`,
-  // Chip toolbar: search, scope chips and the attention chip.
-  `.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0;}`,
-  `.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}`,
+  // The screen: Back, the title, the filter bar, then the body.
+  `#main{container-type:inline-size;}`,
+  `.back{background:none;border:0;padding:0;margin:12px 0 0;color:var(--vscode-textLink-foreground);}`,
+  `.back:hover{background:none;text-decoration:underline;}`,
+  `.screen-title{font-size:1.4em;margin:8px 0 4px;overflow-wrap:anywhere;}`,
+  // The heading takes focus only so a screen reader starts there; it is not a control, so it draws no focus ring.
+  `.screen-title:focus{outline:none;}`,
+  // The filter bar: the four views as one segmented control, Needs attention, the search box.
+  `.filters{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0;}`,
+  `.views{display:inline-flex;flex-wrap:wrap;border:1px solid var(--vscode-panel-border);border-radius:4px;}`,
+  `.view{border:0;border-radius:0;background:none;color:var(--vscode-descriptionForeground);padding:4px 12px;}`,
+  `.view[aria-pressed="true"]{color:var(--vscode-button-foreground);background:var(--vscode-button-background);}`,
   `.chip{border-radius:999px;padding:2px 10px;font-size:var(--small);border:1px solid var(--vscode-panel-border);background:var(--vscode-editorWidget-background);color:var(--vscode-descriptionForeground);}`,
   `.chip[aria-pressed="true"]{border-color:var(--vscode-focusBorder);background:var(--vscode-list-activeSelectionBackground,var(--vscode-button-background));color:var(--vscode-list-activeSelectionForeground,var(--vscode-button-foreground));}`,
+  `.search{flex:1 1 12rem;min-width:10rem;max-width:24rem;}`,
+  `.totals{margin:8px 0;}`,
+  `.link{background:none;border:0;padding:0;color:var(--vscode-textLink-foreground);text-align:left;}`,
+  `.link:hover{background:none;text-decoration:underline;}`,
+  `.show-all{margin-left:8px;}`,
   // Tone pills: the label carries the meaning, the tone only tints it.
-  `.badges{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0;padding:0;list-style:none;}`,
-  `.badge,.pill,.count{display:inline-block;border-radius:999px;padding:0 8px;font-size:var(--small);border:1px solid var(--vscode-panel-border);background:var(--vscode-editorWidget-background);color:var(--vscode-descriptionForeground);}`,
+  `.badges{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0;}`,
+  `.badge,.pill,.count{display:inline-block;border-radius:999px;padding:0 8px;font-size:var(--small);font-weight:400;border:1px solid var(--vscode-panel-border);background:var(--vscode-editorWidget-background);color:var(--vscode-descriptionForeground);}`,
   `[data-tone="success"]{color:var(--vscode-testing-iconPassed);border-color:var(--vscode-testing-iconPassed);}`,
   `[data-tone="warning"]{color:var(--vscode-editorWarning-foreground);background:var(--vscode-inputValidation-warningBackground);border-color:var(--vscode-inputValidation-warningBorder);}`,
   `[data-tone="danger"]{color:var(--vscode-errorForeground);background:var(--vscode-inputValidation-errorBackground);border-color:var(--vscode-inputValidation-errorBorder);}`,
   `[data-tone="neutral"]{color:var(--vscode-descriptionForeground);}`,
-  // State panels.
+  // State panels: in the banner above a screen, or in place of it.
   `.panel{border:1px solid var(--vscode-panel-border);border-radius:6px;padding:12px 16px;margin:10px 0;background:var(--vscode-editorWidget-background);}`,
   `.panel[data-kind="unavailable"],.panel[data-kind="refresh-failed"],.panel[data-kind="partial"]{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);}`,
   `.panel-title{font-weight:600;margin:0 0 4px;}`,
-  `.panel-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}`,
-  `.link{background:none;border:0;padding:0;color:var(--vscode-textLink-foreground);text-align:left;}`,
-  `.link:hover{background:none;text-decoration:underline;}`,
-  `.row-title{font-weight:600;font-size:1em;}`,
-  `.details-head h2{font-size:1.15em;margin:2px 0 6px;}`,
-  `.details-chips{margin:8px 0;}`,
   `.panel p{margin:4px 0;}`,
-  // Layout: the details pane precedes the board in the DOM, so a narrow pane shows it first.
-  `.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start;}`,
-  `#details{border:1px solid var(--vscode-panel-border);border-radius:6px;padding:var(--pad) 14px;background:var(--vscode-editorWidget-background);overflow-wrap:anywhere;}`,
-  `#details pre{white-space:pre-wrap;overflow-wrap:anywhere;}`,
-  `.details-conflict{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);color:var(--vscode-foreground);border-radius:0 4px 4px 0;padding:8px 12px;margin:10px 0;}`,
-  `.why{background:var(--vscode-textBlockQuote-background);border-left:3px solid var(--vscode-textLink-foreground);border-radius:0 4px 4px 0;padding:8px 12px;margin:8px 0;}`,
-  `.chain{list-style:none;margin:6px 0;padding:0;}`,
+  `.panel-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}`,
+  // Stage sections: a summary with the label, the count and any hint; the cards wrap into a grid with a minimum width.
+  `.stage{border-top:1px solid var(--vscode-panel-border);padding:4px 0;}`,
+  `.stage>summary{cursor:pointer;font-weight:600;padding:6px 0;}`,
+  `.stage>summary>span{margin-left:8px;}`,
+  `.stage>summary>.stage-label{margin-left:4px;}`,
+  `.fold{margin:8px 0;}`,
+  `.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));gap:var(--gap);margin:6px 0 10px;}`,
+  `.card{border:1px solid var(--vscode-panel-border);border-radius:6px;background:var(--vscode-editorWidget-background);padding:var(--pad);overflow-wrap:anywhere;cursor:pointer;}`,
+  `.card:hover{border-color:var(--vscode-focusBorder);}`,
+  `.kicker{font-family:var(--vscode-editor-font-family);font-size:0.8em;letter-spacing:0.3px;color:var(--vscode-descriptionForeground);overflow-wrap:anywhere;}`,
+  `.card-title{font-weight:600;margin:2px 0;}`,
+  `.card-epic,.card-tasks{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
+  `.more{margin:0 0 10px;}`,
+  // Epic rows: the name in a column at least 220 px wide, the counts, meter and attention beside it.
+  `.rows>li{border-bottom:1px solid var(--vscode-panel-border);}`,
+  `.epic-row,.issue-row{display:grid;width:100%;text-align:left;background:none;border:0;border-radius:0;padding:12px 4px;color:var(--vscode-foreground);overflow-wrap:anywhere;}`,
+  `.epic-row:hover,.issue-row:hover{background:var(--vscode-list-hoverBackground);}`,
+  `.epic-row{grid-template-columns:minmax(220px,1fr) minmax(11rem,16rem);column-gap:18px;align-items:center;}`,
+  `.epic-row>.kicker,.epic-row>.row-title{grid-column:1;}`,
+  `.epic-row>.epic-summary{grid-column:2;grid-row:1/span 2;}`,
+  `.issue-row{gap:2px;}`,
+  `.row-title{font-weight:600;}`,
+  `.epic-summary p{margin:0;}`,
+  `.meter{display:block;height:5px;border-radius:3px;background:var(--vscode-panel-border);margin:6px 0;}`,
+  `.meter>span{display:block;height:5px;border-radius:3px;background:var(--vscode-testing-iconPassed);}`,
+  `.standalone-link{margin:12px 0;}`,
+  // A story's or issue's screen: chips, the conflict warning, tabs, and two columns with minimum widths.
+  `.item-chips{margin:8px 0;}`,
+  `.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}`,
+  `.conflict{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);color:var(--vscode-foreground);border-radius:0 4px 4px 0;padding:8px 12px;margin:10px 0;}`,
+  `.conflict p{margin:4px 0 0;}`,
+  `.item-tabs{display:flex;flex-wrap:wrap;gap:4px 18px;border-bottom:1px solid var(--vscode-panel-border);margin:12px 0;}`,
+  `.tab{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:6px 0;color:var(--vscode-descriptionForeground);}`,
+  `.tab[aria-selected="true"]{color:var(--vscode-foreground);border-bottom-color:var(--vscode-focusBorder);font-weight:600;}`,
+  `.item-cols{display:grid;grid-template-columns:minmax(340px,1.4fr) minmax(280px,1fr);gap:24px;align-items:start;}`,
+  `.item-cols h2,.tab-panel h2{font-size:1em;margin:12px 0 6px;}`,
+  `.item-actions{margin:8px 0;}`,
+  `.why{background:var(--vscode-textBlockQuote-background);border-left:3px solid var(--vscode-textLink-foreground);border-radius:0 4px 4px 0;padding:8px 12px;margin:12px 0;}`,
+  `.why p{margin:4px 0;}`,
   `.chain li{display:grid;grid-template-columns:4.5em minmax(0,1fr);gap:8px;padding:6px 0;border-bottom:1px solid var(--vscode-panel-border);}`,
   `.task{border-top:1px solid var(--vscode-panel-border);padding:6px 0;}`,
   `.task summary{cursor:pointer;font-weight:600;}`,
-  `.task-checks{list-style:none;padding:0;margin:6px 0;}`,
+  `.task-checks{margin:6px 0;}`,
   `.task-checks li::before{content:"\\2610  ";color:var(--vscode-descriptionForeground);}`,
-  // Board: six equal columns; each column heading carries a count chip.
-  `.board{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--gap);align-items:start;}`,
-  `.board ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--gap);}`,
-  `.board ul.badges{flex-direction:row;flex-wrap:wrap;gap:4px;}`,
-  // The epics and issues views list rows, not columns.
-  `.board[data-view="epics"],.board[data-view="issues"]{display:block;}`,
-  `.issue{border-bottom:1px solid var(--vscode-panel-border);padding:10px 0;}`,
-  `.board h2{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:var(--small);font-weight:600;margin:0 0 8px;}`,
-  `.card{border:1px solid var(--vscode-panel-border);border-radius:6px;background:var(--vscode-editorWidget-background);padding:var(--pad);overflow-wrap:anywhere;cursor:pointer;}`,
-  `.card:hover{border-color:var(--vscode-focusBorder);}`,
-  `.kicker{font-family:var(--vscode-editor-font-family);font-size:0.8em;letter-spacing:0.3px;color:var(--vscode-descriptionForeground);}`,
-  `.card-title{font-weight:600;margin:2px 0;}`,
-  `.card-epic,.card-tasks{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
-  // Epic rollup rows: name and counts, the completion meter, the attention chip.
-  `.epic-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(7rem,9rem) auto;gap:8px 18px;align-items:center;padding:12px 0;border-bottom:1px solid var(--vscode-panel-border);}`,
-  `.epic-row h2{font-size:1em;margin:2px 0;}`,
-  `.epic-row p{margin:0;}`,
-  `.meter{height:5px;border-radius:3px;background:var(--vscode-panel-border);margin-top:6px;}`,
-  `.meter>span{display:block;height:5px;border-radius:3px;background:var(--vscode-testing-iconPassed);}`,
+  `.linked li{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:4px 0;}`,
+  `.table-wrap{overflow-x:auto;margin:6px 0;}`,
+  `table.records{min-width:620px;width:100%;border-collapse:collapse;}`,
+  `table.records th,table.records td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--vscode-panel-border);vertical-align:top;}`,
+  `table.records th{color:var(--vscode-descriptionForeground);font-weight:600;font-size:var(--small);}`,
+  `pre{white-space:pre-wrap;overflow-wrap:anywhere;}`,
   `body[data-density="comfortable"]{--gap:10px;--pad:8px;--small:0.9em;}`,
   `body[data-density="compact"]{--gap:4px;--pad:3px;--small:0.85em;font-size:0.92em;}`,
   `body:not([data-density]){--gap:10px;--pad:8px;--small:0.9em;}`,
-  // Wide: an open item sits in a side column beside the board.
-  `@media (min-width:1000px){.layout:has(> #details:not([hidden])){grid-template-columns:minmax(0,1fr) minmax(18rem,26rem);}#details{grid-column:2;grid-row:1;position:sticky;top:8px;}.board{grid-column:1;grid-row:1;}}`,
-  // Narrow: one list grouped by stage; empty stages wrap onto one compact line after the others.
-  `@media (max-width:600px){.board{display:flex;flex-wrap:wrap;gap:12px 8px;}.board>section{flex:1 0 100%;}.board>section[data-empty="true"]{order:1;flex:0 0 auto;}.board>section[data-empty="true"] h2{margin:0;}.board h2{font-size:1em;margin:8px 0 4px;}.epic-row{grid-template-columns:minmax(0,1fr) minmax(6rem,8rem);}.epic-row>:last-child{grid-column:1/-1;}}`,
+  // Below 760 px the story's columns stack, the stage explanation and the chain first.
+  `@container (max-width:760px){.item-cols{grid-template-columns:minmax(0,1fr);}.item-side{order:-1;}}`,
+  // Below 480 px a row's name and its counts stack too.
+  `@container (max-width:480px){.epic-row{grid-template-columns:minmax(0,1fr);}.epic-row>.epic-summary{grid-column:1;grid-row:auto;}}`,
 ].join('');
 
 export function renderBoardDocument(nonce: string): string {
@@ -356,8 +415,8 @@ export function renderBoardDocument(nonce: string): string {
     `<!DOCTYPE html><html><head><meta charset="utf-8">` +
     `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
     `<title>${BOARD_TITLE}</title><style>${BOARD_STYLE}</style></head><body>` +
-    // App bar (mock A): wordmark and breadcrumb; the freshness line, the read-only marker, refresh and density.
-    `<header class="appbar"><div class="brand"><span class="wordmark">insrc</span><span class="crumb">Workspace / Delivery</span></div>` +
+    // App bar: wordmark and breadcrumb; the freshness line, the read-only marker, refresh and density.
+    `<header class="appbar"><div class="brand"><span class="wordmark">insrc</span><nav id="crumbs" class="crumbs" aria-label="Breadcrumb"></nav></div>` +
     // The status line keeps role=status but is not a live region: #announce is the one announcer (s5).
     `<div class="appbar-tools"><p id="status" role="status"></p><span class="readonly">Read-only</span>` +
     `<button id="refresh" type="button">Refresh</button>` +
@@ -365,22 +424,11 @@ export function renderBoardDocument(nonce: string): string {
     `<button id="density-compact" type="button" aria-pressed="false">Compact</button>` +
     `<button id="density-comfortable" type="button" aria-pressed="true">Comfortable</button>` +
     `</div></div></header>` +
-    `<h1 class="page-title">${BOARD_TITLE}</h1>` +
     `<p id="announce" class="announce" aria-live="polite" aria-atomic="true"></p>` +
-    `<nav class="tabs" role="tablist" aria-label="Views">` +
-    `<button id="tab-board" type="button" role="tab" aria-selected="true" tabindex="0">Board</button>` +
-    `<button id="tab-epics" type="button" role="tab" aria-selected="false" tabindex="-1">Epics</button>` +
-    `<button id="tab-issues" type="button" role="tab" aria-selected="false" tabindex="-1">Issues</button>` +
-    `</nav>` +
-    // Chip toolbar (mock A): search, the scope chips and the Needs attention chip.
-    `<div class="toolbar">` +
-    `<input id="search" type="search" aria-label="Search work items" placeholder="Search">` +
-    `<div id="scope-chips" class="chips" role="group" aria-label="Scope"></div>` +
-    `<button id="attention-chip" class="chip" type="button" aria-pressed="false">Needs attention</button>` +
-    `</div>` +
-    `<p id="totals"></p>` +
-    `<div id="panel"></div>` +
-    `<div class="layout"><aside id="details" aria-label="Item details" hidden></aside><div id="board" class="board"></div></div>` +
+    // A failed refresh over a shown board and partial evidence sit here, above the screen, which stays usable.
+    `<div id="banner"></div>` +
+    // One screen at a time: each screen message replaces what is here.
+    `<main id="main"></main>` +
     `<script nonce="${attr(nonce)}">${BOARD_WEBVIEW_SCRIPT}</script></body></html>`
   );
 }
@@ -393,8 +441,6 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   };
   let channel: ChatPanelChannel | undefined;
   let state: BoardState = initialBoardState();
-  /** The visible card limit per column; reset by a scope, search or attention change, kept across refreshes. */
-  let paging: BoardPaging = {};
   let nextSeq = 0;
   /** Bumped on every dispose; an answer from an earlier panel generation is discarded. */
   let generation = 0;
@@ -404,48 +450,39 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   });
   let memory = newMemory();
 
-  /** The details message for a state: posted while an item is selected and a snapshot is shown. */
-  function detailsMessage(s: BoardState): Envelope<BoardDownMessage> | null {
-    const shown = shownSnapshot(s.status);
-    const id = s.selection.selectedItemId;
-    if (shown === null || id === null) return null;
-    return { v: 1, payload: { type: 'details', model: memory.model(shown.snapshot, id) } };
-  }
-
   /** A re-derive after an answer arrives; a throw is logged, and apply() leaves the board as it was. */
   function applyAfterRead(what: string): void {
     try {
-      apply(state, paging);
+      apply(state);
     } catch (err) {
       log.error(`delivery board: ${what} could not be shown: ${errorText(err)}`);
     }
   }
 
   /**
-   * Derive the messages first; the new state and paging are kept only when their messages can be built, so a bad
-   * snapshot or selection never becomes the board's, and a throw while deriving leaves both as they were and posts
-   * nothing. Posting itself is fire-and-forget (ChatPanelChannel.postMessage never rejects inward).
+   * Derive the messages first; the new state is kept only when its messages can be built, so a bad snapshot or
+   * navigation never becomes the board's, and a throw while deriving leaves it as it was and posts nothing. Posting
+   * itself is fire-and-forget (ChatPanelChannel.postMessage never rejects inward).
    */
-  function apply(next: BoardState, nextPaging: BoardPaging): void {
-    const details = detailsMessage(next);
-    const now = deps.now();
-    const messages = details === null
-      ? boardDownMessages(next, DISPLAY_LABELS, nextPaging, now)
-      : [...boardDownMessages(next, DISPLAY_LABELS, nextPaging, now), details];
-    // Told before anything is kept, so a throw here leaves state and paging as they were and posts nothing.
-    memory.kept(shownSnapshot(next.status)?.snapshot ?? null, next.selection.selectedItemId);
+  function apply(next: BoardState): void {
+    const shown = shownSnapshot(next.status)?.snapshot ?? null;
+    const messages = boardDownMessages(next, DISPLAY_LABELS, deps.now(), id => (shown === null ? null : memory.model(shown, id)));
+    // Told before anything is kept, so a throw here leaves state as it was and posts nothing.
+    memory.kept(shown, currentItemId(next.selection));
     state = next;
-    paging = nextPaging;
     for (const m of messages) channel?.postMessage(m);
   }
 
-  function dispatch(event: BoardEvent, nextPaging: BoardPaging = paging): void {
-    apply(reduceBoardState(state, event), nextPaging);
+  /** Reduce and apply; an event the reducer treats as a no-op (the same state back) posts nothing. */
+  function dispatch(event: BoardEvent): void {
+    const next = reduceBoardState(state, event);
+    if (next !== state) apply(next);
   }
 
-  function elapsedMs(since: string): number {
-    const ms = Date.parse(deps.now()) - Date.parse(since);
-    return Number.isFinite(ms) ? Math.max(0, ms) : 0;
+  /** How long since a refresh started, for the log: 'N ms', or says so when a clock reading cannot be parsed. */
+  function elapsed(since: string): string {
+    const ms = msBetween(since, deps.now());
+    return ms === null ? 'an unmeasurable time (unreadable clock)' : `${ms} ms`;
   }
 
   async function refresh(): Promise<void> {
@@ -470,12 +507,12 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const at = deps.now();
     if (seq !== state.latestSeq) {
       const n = result.ok ? result.value.items.length : 0;
-      const answer = result.ok ? `${n} item${n === 1 ? '' : 's'}` : result.failure.kind;
-      log.warn(`delivery board: dropped the answer to refresh ${seq} (${answer}); refresh ${state.latestSeq} is newer (${elapsedMs(started)} ms)`);
+      const answer = result.ok ? plural(n, 'item', 'items') : result.failure.kind;
+      log.warn(`delivery board: dropped the answer to refresh ${seq} (${answer}); refresh ${state.latestSeq} is newer (${elapsed(started)})`);
       return;
     }
     if (!result.ok) {
-      log.error(`delivery board: refresh ${seq} ${result.failure.kind} after ${elapsedMs(started)} ms: ${result.failure.message}`);
+      log.error(`delivery board: refresh ${seq} ${result.failure.kind} after ${elapsed(started)}: ${result.failure.message}`);
     }
     let applied = false;
     try {
@@ -514,18 +551,14 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     refresh().catch((err: unknown) => log.error(`delivery board: refresh failed unexpectedly: ${errorText(err)}`));
   }
 
-  /** One announcement per settled refresh (s5): the snapshot-wide counts when ready, else the status message. */
+  /**
+   * One announcement per settled refresh (s5): the snapshot-wide counts when ready, else the status message; led by
+   * the notice when the refresh removed what the reader was viewing.
+   */
   function announceRefresh(seq: number): void {
-    if (seq !== state.latestSeq || state.status.state === 'loading') return;
-    const shown = shownSnapshot(state.status);
-    if (state.status.state === 'ready' && shown !== null) {
-      const n = placeableCount(shown.snapshot);
-      const attention = shown.snapshot.items.filter(i => isPlaceable(i) && i.needsAttention).length;
-      announce(`Board refreshed: ${n} item${n === 1 ? '' : 's'}, ${attention} needing attention`);
-      return;
-    }
-    const message = statusView(state.status, deps.now()).message;
-    if (message !== null) announce(message);
+    if (seq !== state.latestSeq) return;
+    const text = refreshAnnouncement(state, deps.now());
+    if (text !== null) announce(text);
   }
 
   /** The sc3 'announce' message, written by the webview into its one live region. */
@@ -541,61 +574,49 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     log.warn(`delivery board: refresh ${seq} left items with unknown stages off the board: ${named}`);
   }
 
-  /** An epic scope must name an epic in the shown snapshot. */
-  function knownScope(scope: BoardScope): boolean {
-    if (scope.kind !== 'epic') return true;
+  /** The shown snapshot's item with this id, if any. */
+  function itemOnBoard(id: string) {
+    return shownSnapshot(state.status)?.snapshot.items.find(i => i.id === id);
+  }
+
+  /**
+   * Navigate, then announce once when the screen changed: 'Opened: …', 'Epic: …' or 'Showing …' for a new screen,
+   * 'Back to …' for a return. Posted after the state is kept, so a failure here is only logged by the message handler.
+   */
+  function go(intent: NavIntent): void {
+    const before = currentEntry(state.selection).id;
+    dispatch({ type: 'navigate', intent });
+    if (currentEntry(state.selection).id === before) return;
     const shown = shownSnapshot(state.status);
-    return shown !== null && shown.snapshot.items.some(i => i.kind === 'epic' && i.id === scope.epicItemId);
+    const text = shown === null ? null
+      : screenAnnouncement(state, shown.snapshot, DISPLAY_LABELS, intent.type === 'back' || intent.type === 'go-to-crumb' ? 'back' : 'opened');
+    if (text !== null) announce(text);
   }
 
-  /** A followed link must name an item in the shown snapshot. */
-  function onBoard(itemId: string): boolean {
-    const shown = shownSnapshot(state.status);
-    return shown !== null && shown.snapshot.items.some(i => i.id === itemId);
-  }
-
-  /** Posted after the state is kept, so a failure here is only logged by the message handler (s5). */
-  function announceSelection(itemId: string): void {
-    const item = shownSnapshot(state.status)?.snapshot.items.find(i => i.id === itemId);
-    if (item === undefined) return;
-    announce(`Selected: ${titleOf(item)}${item.stage === null ? '' : ` \u00b7 ${labelOf(DISPLAY_LABELS.stage, item.stage.stage)}`}`);
-  }
-
-  function select(selection: BoardSelection, nextPaging: BoardPaging = paging): void {
-    dispatch({ type: 'selection-changed', selection }, nextPaging);
+  /** open-epic must name an epic on the board; open-item a story or issue on it, and an epic id opens the epic. */
+  function open(id: string, asEpic: boolean): void {
+    const item = itemOnBoard(id);
+    if (item !== undefined && item.kind === 'epic') { go({ type: 'open-epic', epicItemId: id }); return; }
+    if (!asEpic && item !== undefined && isPlaceable(item)) { go({ type: 'open-item', itemId: id }); return; }
+    log.warn('delivery board: ignored a link to an item that is not on the board');
   }
 
   function handle(msg: BoardUpMessage): void {
-    const sel = state.selection;
     switch (msg.type) {
-      case 'ready': apply(state, paging); return;
+      case 'ready': apply(state); return;
       case 'refresh': startRefresh(); return;
-      case 'set-view': select({ ...sel, view: msg.view }); return;
-      case 'set-scope':
-        if (!knownScope(msg.scope)) {
-          log.warn('delivery board: ignored a scope naming an epic that is not on the board');
-          return;
-        }
-        select({ ...sel, scope: msg.scope }, {});
-        return;
-      case 'set-search': select({ ...sel, search: msg.search }, {}); return;
-      case 'set-attention': select({ ...sel, needsAttentionOnly: msg.on }, {}); return;
-      // Clears the search and the attention filter, keeps the scope and the view; paging resets like any filter change.
-      case 'clear-filters': select({ ...sel, search: '', needsAttentionOnly: false }, {}); return;
-      case 'select-item':
-        if (!onBoard(msg.itemId)) {
-          log.warn('delivery board: ignored a link to an item that is not on the board');
-          return;
-        }
-        select({ ...sel, selectedItemId: msg.itemId });
-        if (msg.itemId !== sel.selectedItemId) announceSelection(msg.itemId);
-        return;
-      case 'close-details':
-        select({ ...sel, selectedItemId: null });
-        channel?.postMessage({ v: 1, payload: { type: 'details', model: null } });
-        return;
-      case 'set-density': select({ ...sel, density: msg.density }); return;
-      case 'show-more': apply(state, showMore(paging, msg.stage)); return;
+      case 'set-view': go({ type: 'set-view', view: msg.view }); return;
+      case 'open-epic': open(msg.epicItemId, true); return;
+      case 'open-item': open(msg.itemId, false); return;
+      case 'set-item-tab': go({ type: 'set-item-tab', tab: msg.tab }); return;
+      case 'back': go({ type: 'back' }); return;
+      case 'go-to-crumb': go({ type: 'go-to-crumb', index: msg.index }); return;
+      case 'set-search': dispatch({ type: 'navigate', intent: { type: 'set-search', search: msg.search } }); return;
+      case 'set-attention': dispatch({ type: 'navigate', intent: { type: 'set-attention', on: msg.on } }); return;
+      // Clears the search and the attention filter of the screen shown; its paging resets like any filter change.
+      case 'clear-filters': dispatch({ type: 'navigate', intent: { type: 'clear-filters' } }); return;
+      case 'show-more': dispatch({ type: 'navigate', intent: { type: 'show-more', stage: msg.stage } }); return;
+      case 'set-density': dispatch({ type: 'set-density', density: msg.density }); return;
       case 'open-evidence': memory.openEvidence(msg.itemId, msg.artifactId); return;
     }
   }
@@ -604,7 +625,6 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     generation++;
     channel = undefined;
     state = initialBoardState();
-    paging = {};
     nextSeq = 0;
     memory.dispose();
     memory = newMemory();

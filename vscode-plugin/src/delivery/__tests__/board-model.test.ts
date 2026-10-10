@@ -3,31 +3,35 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-/** E2 s2 / sc5 — the board view model: columns, placement, scope, search, attention, counts, paging and determinism. */
+/** E2 s2 / sc5, ISSUE-348d4663 — a board screen's body: stage sections, placement, scope, search, attention, counts, paging and determinism. */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, placeableCount, selectMatches, showMore, unknownStages, type BoardPaging } from '../board-model.js';
-import type { BoardViewModel } from '../board-protocol.js';
-import { INITIAL_SELECTION, type BoardSelection } from '../board-state.js';
+import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, idParts, placeableCount, selectMatches, showMore, unknownStages, type BoardPaging, type MatchFilter } from '../board-model.js';
+import type { StagesBody } from '../board-protocol.js';
 import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
-import { evidence as fixtureEvidence, item, snapshot } from './board-fixtures.js';
+import { evidence as fixtureEvidence, item, review, snapshot } from './board-fixtures.js';
 
-const build = (snap: ReturnType<typeof snapshot>, selection: Partial<BoardSelection> = {}, paging: BoardPaging = {}): BoardViewModel =>
-  buildBoardViewModel(snap, { ...INITIAL_SELECTION, ...selection }, paging, DISPLAY_LABELS);
+/** Every screen's filter before the reader narrows it: everything in scope, no search, no attention filter. */
+const ALL: MatchFilter = { scope: { kind: 'all' }, search: '', needsAttentionOnly: false };
+const build = (snap: ReturnType<typeof snapshot>, filter: Partial<MatchFilter> = {}, paging: BoardPaging = {}): StagesBody =>
+  buildBoardViewModel(snap, { ...ALL, ...filter }, paging, DISPLAY_LABELS);
 
-const cardIds = (m: BoardViewModel): string[][] => m.columns.map(c => c.cards.map(k => k.itemId));
+const cardIds = (m: StagesBody): string[][] => m.sections.map(c => c.cards.map(k => k.itemId));
+/** Matches on the screen, and how many of them need attention, summed over the sections. */
+const matchCount = (m: StagesBody): number => m.sections.reduce((n, c) => n + c.total, 0);
+const attentionOf = (m: StagesBody): number => m.sections.reduce((n, c) => n + c.attentionCount, 0);
 
-/** Every column's counts agree with its cards, and the totals agree with the columns. */
-function assertCountsAgree(m: BoardViewModel): void {
-  for (const c of m.columns) {
+/** Every section's counts agree with its cards, and the totals line names the sections' sum. */
+function assertCountsAgree(m: StagesBody): void {
+  for (const c of m.sections) {
     assert.equal(c.total, c.cards.length + c.hiddenCount, `${c.stage}: total = shown + hidden`);
   }
-  assert.equal(m.totals.items, m.columns.reduce((n, c) => n + c.total, 0), 'totals.items sums the columns');
+  if (!m.showAll) assert.ok(m.totalsLabel.startsWith(`${matchCount(m)} item`), `the totals line counts ${matchCount(m)}: ${m.totalsLabel}`);
 }
 
-test('six columns in workflow order hold every story and issue exactly once, in the column the snapshot assigns', () => {
+test('six stage sections in workflow order hold every story and issue exactly once, in the column the snapshot assigns', () => {
   const items = [
     item({ id: 'E1', kind: 'epic', title: 'Epic one' }),
     ...STAGE_ORDER.flatMap((stage, i) => [
@@ -38,15 +42,14 @@ test('six columns in workflow order hold every story and issue exactly once, in 
     item({ id: 'S-nostage', kind: 'story', stage: null }),
   ];
   const m = build(snapshot(items));
-  assert.deepEqual(m.columns.map(c => c.label), ['Scoped', 'Design & plan', 'Ready · design approved', 'Ready · plan approved', 'Build recorded', 'Complete']);
-  assert.deepEqual(m.columns.map(c => c.stage), [...STAGE_ORDER]);
+  assert.deepEqual(m.sections.map(c => c.label), ['Scoped', 'Design & plan', 'Ready · design approved', 'Ready · plan approved', 'Build recorded', 'Complete']);
+  assert.deepEqual(m.sections.map(c => c.stage), [...STAGE_ORDER]);
   STAGE_ORDER.forEach((stage, i) => assert.deepEqual(cardIds(m)[i], [`E1:S00${i}`, `I00${i}`].sort(), stage));
   const all = cardIds(m).flat();
   assert.equal(new Set(all).size, all.length, 'no card appears twice');
   assert.equal(all.length, 12, 'epics, tasks and stage-less items are not cards');
   assertCountsAgree(m);
-  assert.deepEqual(m.scopeOptions, [{ epicItemId: 'E1', title: 'Epic one' }]);
-  assert.equal(m.emptySelection, false);
+  assert.equal(m.emptyPanel, null);
 });
 
 test('with an epic scope and a search, cards, hidden counts, column totals and totals agree, and clearing both restores the full set', () => {
@@ -66,15 +69,15 @@ test('with an epic scope and a search, cards, hidden counts, column totals and t
   const snap = snapshot(items);
   const full = build(snap);
   assertCountsAgree(full);
-  assert.equal(full.totals.items, 64);
-  const br = full.columns.find(c => c.stage === 'build-recorded')!;
+  assert.equal(matchCount(full), 64);
+  const br = full.sections.find(c => c.stage === 'build-recorded')!;
   assert.deepEqual([br.total, br.cards.length, br.hiddenCount], [60, BOARD_PAGE_SIZE, 10], 'counts include cards behind show-more');
 
   const scoped = build(snap, { scope: { kind: 'epic', epicItemId: 'EA' }, search: '  BOARD ' });
   assertCountsAgree(scoped);
-  assert.equal(scoped.totals.items, 20, 'the trimmed, case-insensitive search matches only the 20 "Board" stories under EA');
+  assert.equal(matchCount(scoped), 20, 'the trimmed, case-insensitive search matches only the 20 "Board" stories under EA');
   assert.ok(cardIds(scoped).flat().every(id => id.startsWith('EA:')));
-  assert.equal(scoped.totals.needsAttention, scoped.columns.flatMap(c => c.cards).filter(c => c.needsAttention).length);
+  assert.equal(attentionOf(scoped), scoped.sections.flatMap(c => c.cards).filter(c => c.needsAttention).length);
 
   // The issue joins its epic through the story it corrects; the epic title is searchable.
   assert.deepEqual(cardIds(build(snap, { scope: { kind: 'epic', epicItemId: 'EA' }, search: 'alpha' }))[1], ['ISS1']);
@@ -83,17 +86,16 @@ test('with an epic scope and a search, cards, hidden counts, column totals and t
   assert.deepEqual(cardIds(build(snap, { search: 's7' })).flat(), ['SA1'], 'source ids are searched');
   assert.deepEqual(cardIds(build(snap, { search: '(<b>' })).flat(), [], 'markup and regex characters are plain text');
   const attention = build(snap, { needsAttentionOnly: true });
-  assert.equal(attention.totals.items, 30);
-  assert.equal(attention.totals.needsAttention, 30);
+  assert.equal(matchCount(attention), 30);
+  assert.equal(attentionOf(attention), 30);
 
-  assert.equal(build(snap, { scope: { kind: 'epic', epicItemId: 'gone' } }).emptySelection, true, 'a missing epic matches nothing');
-  assert.deepEqual(full.scopeOptions, [{ epicItemId: 'EA', title: 'Alpha epic' }, { epicItemId: 'EB', title: 'EB' }]);
+  assert.notEqual(build(snap, { scope: { kind: 'epic', epicItemId: 'gone' } }).emptyPanel, null, 'a missing epic matches nothing');
 
   const cleared = build(snap, { scope: { kind: 'all' }, search: '' });
   assert.deepEqual(cleared, full, 'clearing scope and search restores the full set');
 
   const more = build(snap, {}, showMore({}, 'build-recorded'));
-  const br2 = more.columns.find(c => c.stage === 'build-recorded')!;
+  const br2 = more.sections.find(c => c.stage === 'build-recorded')!;
   assert.deepEqual([br2.cards.length, br2.hiddenCount], [60, 0]);
   assert.deepEqual(showMore(showMore({}, 'complete'), 'complete'), { complete: 3 * BOARD_PAGE_SIZE });
 });
@@ -120,17 +122,17 @@ test('unknownStages counts every stage id outside the six, and those items are i
   assert.deepEqual([...unknownStages(snap)], [['archived', 1], ['shipped', 2]]);
   const m = build(snap);
   assert.deepEqual(cardIds(m).flat(), ['D']);
-  assert.equal(m.totals.items, 1);
+  assert.equal(matchCount(m), 1);
   assertCountsAgree(m);
   assert.equal(unknownStages(snapshot([item({ id: 'X', stage: 'scoped' })])).size, 0);
 });
 
-const ev = (artifactId: string, state: 'approved' | 'rejected' | 'pending', review: unknown = null) =>
-  fixtureEvidence(artifactId, 'LLD', { openWith: 'review-view', approval: { state, at: null }, review: review as never });
-const review = (effectiveVerdict: 'pass' | 'warn' | 'block', blocking: boolean) =>
-  ({ verdict: effectiveVerdict, reviewedAt: '', reviewedBy: 'daemon', counts: { high: 0, med: 0, low: 0 }, override: null, resolvedFindings: 0, effectiveVerdict, blocking });
-const cardOfId = (m: BoardViewModel, id: string) => m.columns.flatMap(c => c.cards).find(c => c.itemId === id);
-const columnOf = (m: BoardViewModel, id: string) => m.columns.find(c => c.cards.some(k => k.itemId === id))?.stage;
+/** An LLD evidence entry with this approval state (a known one, or a code this build does not know) and review. */
+const ev = (artifactId: string, state: string, review: unknown = null) =>
+  fixtureEvidence(artifactId, 'LLD', { openWith: 'review-view', approval: { state: state as never, at: null }, review: review as never });
+const verdictOf = (effectiveVerdict: 'pass' | 'warn' | 'block', blocking: boolean) => review({ verdict: effectiveVerdict, effectiveVerdict, blocking });
+const cardOfId = (m: StagesBody, id: string) => m.sections.flatMap(c => c.cards).find(c => c.itemId === id);
+const columnOf = (m: StagesBody, id: string) => m.sections.find(c => c.cards.some(k => k.itemId === id))?.stage;
 
 test('an approved build with failed tasks stays in Complete and carries a text-labelled validation-conflict badge', () => {
   const s = item({ id: 'S1', validation: { passed: 3, failed: 2, unrecorded: 0, unplanned: 0 },
@@ -147,12 +149,12 @@ test('an approved build with failed tasks stays in Complete and carries a text-l
 
 test('a review-blocked design shows a Review blocked badge, matches Needs attention and keeps its column', () => {
   const blocked = item({ id: 'S1', needsAttention: true, attentionReasons: ['pending-decision', 'review-blocked'],
-    evidence: [ev('LLD-x', 'pending', review('block', true))] as never, stage: 'design-plan', reasonIds: ['LLD-x'] });
-  const overridden = item({ id: 'S2', evidence: [ev('LLD-y', 'approved', review('block', false))] as never, stage: 'ready-design-approved', reasonIds: ['LLD-y'] });
+    evidence: [ev('LLD-x', 'pending', verdictOf('block', true))] as never, stage: 'design-plan', reasonIds: ['LLD-x'] });
+  const overridden = item({ id: 'S2', evidence: [ev('LLD-y', 'approved', verdictOf('block', false))] as never, stage: 'ready-design-approved', reasonIds: ['LLD-y'] });
   const snap = snapshot([blocked, overridden]);
 
   const on = build(snap, { needsAttentionOnly: true });
-  assert.deepEqual(on.columns.flatMap(c => c.cards).map(c => c.itemId), ['S1']);
+  assert.deepEqual(on.sections.flatMap(c => c.cards).map(c => c.itemId), ['S1']);
   assert.equal(columnOf(on, 'S1'), 'design-plan', 'the filter does not move the card');
   const card = cardOfId(on, 'S1')!;
   assert.deepEqual(card.badges, [
@@ -201,14 +203,14 @@ test('selectMatches returns the board\'s matches in snapshot order, each with it
     item({ id: 'S9', standalone: true, stage: 'shipped' }),
     item({ id: 'T1', kind: 'task' }),
   ]);
-  const all = selectMatches(snap, INITIAL_SELECTION, DISPLAY_LABELS);
+  const all = selectMatches(snap, ALL, DISPLAY_LABELS);
   assert.deepEqual(all.map(m => [m.item.id, m.stage, m.epic?.id ?? null, m.card.itemId]),
     [['E1:S001', 'scoped', 'E1', 'E1:S001'], ['E1:S002', 'complete', 'E1', 'E1:S002'], ['I1', 'design-plan', 'E1', 'I1']],
     'snapshot order; epics, tasks and unknown stages are not matches');
   assert.equal(placeableCount(snap), 3);
-  assert.equal(build(snap).totals.items, all.length, 'the board counts exactly these matches');
+  assert.equal(matchCount(build(snap)), all.length, 'the board counts exactly these matches');
 
-  const searched = selectMatches(snap, { ...INITIAL_SELECTION, search: 'board' }, DISPLAY_LABELS);
+  const searched = selectMatches(snap, { ...ALL, search: 'board' }, DISPLAY_LABELS);
   assert.deepEqual(searched.map(m => m.item.id), ['E1:S001']);
   assert.deepEqual(cardIds(build(snap, { search: 'board' })).flat(), ['E1:S001']);
 });
@@ -225,7 +227,7 @@ test('compactId is \'ABCDEF01 / S001\' for \'E20261009abcdef01:S001\', \'ABCDEF0
     item({ id: 'E20261009abcdef01:S001', parentId: 'E20261009abcdef01' }),
     item({ id: 'Habcdef0123456789:S002', kind: 'issue' }),
   ]);
-  const cards = build(snap).columns.flatMap(c => c.cards);
+  const cards = build(snap).sections.flatMap(c => c.cards);
   assert.deepEqual(cards.map(c => [c.itemId, c.compactId]), [
     ['E20261009abcdef01:S001', 'ABCDEF01 / S001'],
     ['Habcdef0123456789:S002', 'ABCDEF01 / S002'],
@@ -252,16 +254,65 @@ test('accessibleLabel carries the compactId and task summary, and badges are unc
 });
 
 test('an approval state or review verdict this build does not know shows its code, ranks worst and is neutral, with no undefined label', () => {
-  const evOf = (artifactId: string, state: string, verdict: string | null) => fixtureEvidence(artifactId, 'LLD', {
-    approval: { state: state as never, at: null },
-    review: verdict === null ? null : { ...review('pass', false), verdict: verdict as never, effectiveVerdict: verdict as never },
-  });
+  const unknownVerdict = review({ verdict: 'escalated' as never, effectiveVerdict: 'escalated' as never });
   const s1 = item({ id: 'S1', stage: 'design-plan', reasonIds: ['A', 'B'],
-    evidence: [evOf('A', 'approved', 'pass'), evOf('B', 'superseded', 'escalated')] as never });
+    evidence: [ev('A', 'approved', verdictOf('pass', false)), ev('B', 'superseded', unknownVerdict)] as never });
   const card = cardOfId(build(snapshot([s1])), 'S1')!;
   assert.deepEqual(card.badges.slice(0, 2), [
     { kind: 'approval', label: 'superseded', tone: 'neutral' },
     { kind: 'review', label: 'escalated', tone: 'neutral' },
   ], 'the unknown code is the worst, so it is the one shown, as its own text');
   assert.doesNotMatch(card.accessibleLabel, /undefined/);
+});
+
+test('stage sections start open when they hold matches, closed when empty, and Complete closed with its attention hint unless Needs attention is on', () => {
+  const snap = snapshot([
+    item({ id: 'S1', stage: 'scoped' }),
+    item({ id: 'S2', stage: 'design-plan', needsAttention: true }),
+    item({ id: 'S3', stage: 'complete', needsAttention: true }),
+    item({ id: 'S4', stage: 'complete' }),
+    item({ id: 'S5', stage: 'complete', needsAttention: true }),
+  ]);
+  const at = (m: StagesBody, stage: string) => m.sections.find(sec => sec.stage === stage)!;
+  const m = build(snap);
+  assert.deepEqual(m.sections.map(sec => [sec.stage, sec.defaultOpen]), [
+    ['scoped', true], ['design-plan', true], ['ready-design-approved', false], ['ready-plan-approved', false], ['build-recorded', false], ['complete', false],
+  ]);
+  assert.deepEqual([at(m, 'complete').total, at(m, 'complete').attentionCount, at(m, 'complete').hint], [3, 2, '2 need attention'], 'Complete starts closed and says how many need attention');
+  assert.equal(at(m, 'design-plan').hint, null, 'an open section needs no hint');
+  assert.deepEqual([at(m, 'build-recorded').emptyText, at(m, 'build-recorded').hint], ['nothing at this stage', null]);
+  assert.equal(at(m, 'scoped').emptyText, null);
+
+  const quiet = build(snapshot([item({ id: 'S4', stage: 'complete' })]));
+  assert.deepEqual([at(quiet, 'complete').defaultOpen, at(quiet, 'complete').hint], [false, null], 'no hint when nothing needs attention');
+
+  const attention = build(snap, { needsAttentionOnly: true });
+  assert.deepEqual([at(attention, 'complete').defaultOpen, at(attention, 'complete').hint], [true, null], 'Complete opens under Needs attention');
+  assert.deepEqual([at(attention, 'scoped').defaultOpen, at(attention, 'scoped').emptyText], [false, 'nothing at this stage']);
+});
+
+test('totals read N items · M need attention, or M of N with Show all under Needs attention, and empty stages fold under Needs attention', () => {
+  const snap = snapshot([
+    item({ id: 'S1', stage: 'scoped', needsAttention: true }),
+    item({ id: 'S2', stage: 'design-plan' }),
+    item({ id: 'S3', stage: 'complete' }),
+  ]);
+  const plain = build(snap);
+  assert.deepEqual([plain.totalsLabel, plain.showAll, plain.fold.always], ['3 items · 1 needs attention', false, false]);
+  assert.equal(plain.fold.text, 'Ready · design approved 0 · Ready · plan approved 0 · Build recorded 0', 'a narrow pane folds the empty stages by name');
+  assert.equal(build(snapshot([item({ id: 'S1', stage: 'scoped', needsAttention: true }), item({ id: 'S2', stage: 'scoped', needsAttention: true })])).totalsLabel,
+    '2 items · 2 need attention');
+
+  const attention = build(snap, { needsAttentionOnly: true });
+  assert.deepEqual([attention.totalsLabel, attention.showAll, attention.fold.always], ['1 of 3 items needs attention', true, true]);
+  assert.equal(attention.fold.text,
+    '5 stages have nothing needing attention: Design & plan, Ready · design approved, Ready · plan approved, Build recorded, Complete.');
+  assert.equal(build(snapshot(STAGE_ORDER.map((stage, i) => item({ id: `S${i}`, stage })))).fold.text, '', 'nothing to fold when every stage has work');
+});
+
+test('idParts reads the hash and story number of a published id, and nothing from any other id', () => {
+  assert.deepEqual(idParts('E20261009abcdef01:S001'), { hash: 'ABCDEF01', story: 'S001' });
+  assert.deepEqual(idParts('Habcdef0123456789'), { hash: 'ABCDEF01', story: null });
+  assert.equal(idParts('E20261009abcdef01:S001:T1'), null);
+  assert.equal(idParts('slug:R(raw)'), null);
 });

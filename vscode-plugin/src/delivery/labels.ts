@@ -19,6 +19,7 @@ import type {
   ReviewVerdict,
   TaskResult,
 } from './delivery-contract.js';
+import type { ItemTab, ListView } from './board-protocol.js';
 
 export interface DisplayLabels {
   readonly stage: Readonly<Record<DeliveryStage, string>>;
@@ -38,11 +39,40 @@ export interface DisplayLabels {
   /** The panel of an issue view over a board that has no issues at all (nothing is filtered out). */
   readonly noIssuesTitle: string;
   readonly noIssuesText: string;
+  /** The four views, as the view control and the breadcrumb name them. */
+  readonly views: Readonly<Record<ListView, string>>;
+  /** The story screen's tabs: the long label, and the short one a narrow pane uses. */
+  readonly itemTabs: Readonly<Record<ItemTab, { readonly long: string; readonly short: string }>>;
+  readonly needsAttention: string;
+  /** An empty stage section's summary text. */
+  readonly nothingAtStage: string;
+  /** The one section the empty stages fold into in a narrow pane. */
+  readonly otherStages: string;
 }
 
 /** A label from the table, or the code itself when the daemon publishes one this build does not know. */
 export function labelOf<K extends string>(table: Readonly<Record<K, string>>, code: K): string {
   return Object.hasOwn(table, code) ? table[code] : String(code);
+}
+
+/** A count with its noun: '1 item', '3 items'. Every count the board writes in words goes through this. */
+export function plural(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/** An ISO time as 'YYYY-MM-DD HH:MM UTC', or the string itself when it is not one; every timestamp the board shows. */
+export function readableTime(iso: string): string {
+  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(iso);
+  return m === null ? iso : `${m[1]} ${m[2]} UTC`;
+}
+
+/**
+ * The milliseconds from one ISO time to a later one, never negative (a time in the future counts as now); null when
+ * either cannot be read. The freshness line and the host's refresh timings both measure with it.
+ */
+export function msBetween(from: string, to: string): number | null {
+  const ms = Date.parse(to) - Date.parse(from);
+  return Number.isFinite(ms) ? Math.max(0, ms) : null;
 }
 
 /** The tone of each approval state; a state this build does not know is neutral. */
@@ -61,7 +91,7 @@ export function verdictTone(verdict: ReviewVerdict): 'success' | 'warning' | 'ne
   return verdict === 'pass' ? 'success' : verdict === 'warn' ? 'warning' : 'neutral';
 }
 
-/** The six stages in workflow order, the order the board shows its columns. */
+/** The six stages in workflow order, the order the board shows its stage sections. */
 export const STAGE_ORDER: readonly DeliveryStage[] = [
   'scoped',
   'design-plan',
@@ -123,4 +153,13 @@ export const DISPLAY_LABELS: DisplayLabels = {
   noMatchesText: 'Work exists, but none matches the current search, scope and attention filter.',
   noIssuesTitle: 'No issues on the board',
   noIssuesText: 'There are no issues on the board.',
+  views: { all: 'All work', epics: 'Epics', standalone: 'Standalone', issues: 'Issues' },
+  itemTabs: {
+    overview: { long: 'Overview & tasks', short: 'Overview' },
+    evidence: { long: 'Workflow evidence', short: 'Evidence' },
+    linked: { long: 'Linked work', short: 'Linked' },
+  },
+  needsAttention: 'Needs attention',
+  nothingAtStage: 'nothing at this stage',
+  otherStages: 'Other stages · 0 matching',
 };

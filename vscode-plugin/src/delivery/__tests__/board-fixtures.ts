@@ -5,6 +5,7 @@
 
 /** Snapshot builders for the board tests: items carry every field the board reads, overridable per item. */
 
+import type { BoardDownMessage, ScreenModel } from '../board-protocol.js';
 import type { DeliveryEvidenceEntry, DeliveryItem, DeliverySnapshot } from '../delivery-contract.js';
 
 /** stage is the stage id (null for none); reasonIds are the records its reason names. */
@@ -27,6 +28,14 @@ export function snapshot(items: readonly DeliveryItem[], extra: Partial<Delivery
     schemaVersion: 1, repo: '/ws', takenAt: '2026-10-09T10:00:00.000Z', recordCount: sorted.length, unreadableCount: 0,
     items: sorted, rootIds: [], notices: [], counts: {}, attentionRule: '', ...extra,
   } as unknown as DeliverySnapshot;
+}
+
+/** A review record on an evidence entry: a passing controller review unless overridden. */
+export function review(over: Partial<NonNullable<DeliveryEvidenceEntry['review']>> = {}): NonNullable<DeliveryEvidenceEntry['review']> {
+  return {
+    verdict: 'pass', reviewedAt: '2026-10-09T08:00:00.000Z', reviewedBy: 'controller', counts: { high: 0, med: 0, low: 0 },
+    override: null, resolvedFindings: 0, effectiveVerdict: 'pass', blocking: false, ...over,
+  };
 }
 
 /** An evidence entry: approved, no review, read through evidence-read unless overridden. */
@@ -70,3 +79,8 @@ export function largeSnapshot(): DeliverySnapshot {
   }
   return snapshot(items, { recordCount: 1000 });
 }
+
+/** The screen models among posted down-message payloads, in order. */
+export const screensIn = (payloads: readonly BoardDownMessage[]): ScreenModel[] => payloads.flatMap(p => (p.type === 'screen' ? [p.model] : []));
+/** The announcement texts among posted down-message payloads, in order. */
+export const announcementsIn = (payloads: readonly BoardDownMessage[]): string[] => payloads.flatMap(p => (p.type === 'announce' ? [p.text] : []));

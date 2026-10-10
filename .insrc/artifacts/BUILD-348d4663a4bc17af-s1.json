@@ -1,0 +1,272 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "348d4663a4bc17af",
+    "storyId": "s1",
+    "createdAt": "2026-10-10T05:47:27.819Z",
+    "updatedAt": "2026-10-10T06:56:51.784Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "approvedAt": "2026-10-10T06:56:52.711Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      }
+    ],
+    "summary": "The perf test now times the first screen, filter changes and drill-downs (epic board, story screen) on 500 items / 1,000 records and meets the exact targets; full plugin suite at baseline (941 tests, 1 known failure, 4 skips) and typecheck clean. Evidence: S001/evidence/t8.",
+    "testRecord": {
+      "md": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/code-review/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/code-review/coverage.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/code-review/full-plugin-suite.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/t6/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/t6/full-plugin-suite.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/t6/screens-1200.jpg"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/t6/screens-360.jpg"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/t6/screens-600.jpg"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/t8/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/t8/full-plugin-suite.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/t8/perf-exact-targets.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/evidence/t8/typecheck.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-model.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-perf.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-webview-harness.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/details-memory.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/labels.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-details.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-model.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-views.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/labels.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T06:56:51.784Z"
+      }
+    ],
+    "commit": "af68be3e"
+  }
+}

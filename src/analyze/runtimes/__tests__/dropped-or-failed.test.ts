@@ -84,6 +84,15 @@ const CLAUSES: Record<string, readonly { after: string; cls: ClauseClass }[]> = 
 	],
 	'shared/adherence.ts': [
 		{ after: 'the model call that judges adherence failed', cls: 'rethrow' },
+		// ISSUE-0f17539c: the check enumerates its constraints on a topic; a failed enumeration fails the check with its own reason.
+		{ after: 'could not be enumerated from the documents of', cls: 'rethrow' },
+	],
+	// ISSUE-0f17539c: the record of one enumeration per run, repository and topic.
+	'shared/adherence-topic-constraints.ts': [
+		{ after: "the enumeration's record could not be written", cls: "expected: the enumeration's record cannot be written; the enumeration in hand is returned with no record path, and the next check on the topic enumerates again" },
+		{ after: 'purgeConstraintRecords: could not remove', cls: "expected: a run's records cannot be removed in a teardown; nothing is read from the result" },
+		{ after: "the enumeration's record could not be read", cls: 'expected: a record cannot be read; it is treated as absent and the enumeration is made again' },
+		{ after: "the enumeration's record is not JSON", cls: 'expected: a record does not parse; it is treated as absent and the enumeration is made again' },
 	],
 	'shared/aggregator.ts': [
 		{ after: 'throw classifyError(err);', cls: 'rethrow' },
@@ -119,8 +128,10 @@ test('the count of catch clauses in the runtime files equals the number of class
 
 	// The count the design left unsettled (fifteen by one count, eighteen by another): fifteen, in eleven files.
 	// Story s7 added one, a rethrow, in a twelfth file (shared/task-scope.ts).
-	assert.equal(Object.values(classified).reduce((a, b) => a + b, 0), 16);
-	assert.equal(Object.keys(classified).length, 12);
+	// ISSUE-0f17539c added five: one rethrow in shared/adherence.ts, and four expected ones in a
+	// thirteenth file (shared/adherence-topic-constraints.ts).
+	assert.equal(Object.values(classified).reduce((a, b) => a + b, 0), 21);
+	assert.equal(Object.keys(classified).length, 13);
 
 	// Each row is tied to the clause it classifies, in order.
 	for (const [f, rows] of Object.entries(CLAUSES)) {

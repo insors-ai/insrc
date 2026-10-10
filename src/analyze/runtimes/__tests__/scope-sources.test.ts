@@ -83,12 +83,19 @@ test("the code family's scope function and its test hook are gone and no code ru
 		// One read of the repo's entities in each; its form is asserted per runtime below.
 		assert.equal(text.match(/listEntitiesForRepo\(/g)!.length, 1, file);
 	}
-	// The adherence check, shared by three families: both of its readers take the
-	// repo from the one function, with the family of the template that runs.
+	// The adherence check, shared by three families: it takes the repo once from
+	// the one function, with the family of the template that runs, before it
+	// resolves its constraints, and hands it to every reader (the excerpts, the
+	// stored-document ids, the enumeration of a topic).
 	const adherence = shared.get('shared/adherence.ts')!;
 	assert.match(adherence, /graphRepoOf\(await resolveTaskScope\(args\.intent\.scopeRef, familyOfTemplate\(templateId\), templateId\)\)/);
-	assert.equal(adherence.match(/const repoPath = await adherenceRepoPath\(/g)!.length, 2);
-	assert.equal(adherence.match(/\brepoPath\s*=/g)!.length, 2, 'no other source of a repo path in the adherence check');
+	assert.equal(adherence.match(/await adherenceRepoPath\(/g)!.length, 1);
+	assert.equal(adherence.match(/const repoPath = await adherenceRepoPath\(/g)!.length, 1);
+	assert.equal(adherence.match(/\brepoPath\s*=/g)!.length, 1, 'no other source of a repo path in the adherence check');
+	// It reads neither the removed parameter nor the task's upstream outputs.
+	const adherenceCode = adherence.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
+	assert.ok(!adherenceCode.includes('constraintsSource'), 'the check does not read constraintsSource');
+	assert.ok(!adherenceCode.includes('upstreamOutputs'), 'the check does not read upstreamOutputs');
 });
 
 /**

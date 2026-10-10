@@ -4,7 +4,7 @@
     "epicHash": "0f17539c98aa78ee",
     "storyId": "S001",
     "createdAt": "2026-10-10T07:36:48.435Z",
-    "updatedAt": "2026-10-10T07:36:48.435Z",
+    "updatedAt": "2026-10-10T07:45:20.509Z",
     "standalone": true
   },
   "body": {
@@ -64,6 +64,413 @@
               },
               {
                 "title": "the seam replaces the enumeration, and is handed the topic, the repository, the limit and no area",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "af4c2bbc",
+        "ranAt": "2026-10-10T07:45:20.509Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+                "title": "a table test over every registered plan-task runtime finds a completeness record on each result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+                "title": "an inline list wins over ids; an empty inline list counts as not given and the ids are used",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+                "title": "an adherence check whose model call fails is recorded by the walk as a failed task",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+                "title": "the count of catch clauses in the runtime files equals the number of classified entries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an override that yields no constraint fails naming the override and does not fall back to the topic",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "an override that yields no constraint fails naming the override and does not fall back to the topic",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the existing tests of constraintIds and inline constraints keep their assertions, read through the new result shape of the seam; the two tests of constraintsSource are replaced, and the test that no source returns an empty list is replaced by one that asserts the throw naming constraintTopic, constraints and constraintIds",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+                "title": "inline params.constraints pass through untouched",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+                "title": "constraintIds hydrate keyConstraints from summarised docs",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+                "title": "constraintIds skip ids that do not resolve to summarised docs",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+                "title": "a constraintsSource in the params is not read: beside usable ids the ids are used, and the upstream outputs are never looked at",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+                "title": "with no source of constraints the check throws, naming constraintTopic, constraints and constraintIds",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+                "title": "the project-context assembler reports a limit it reached and the documents behind its decisions and constraints, and the adherence check puts them in the record",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+                "title": "each adherence check reports a body it cut with the kept and full lengths",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+                "title": "each of the five aggregate-report runtimes hands absentInputs to the aggregator",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the adherence check resolves its repository once and reads neither constraintsSource nor upstreamOutputs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+                "title": "the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+                "title": "a constraintsSource in the params is not read: beside usable ids the ids are used, and the upstream outputs are never looked at",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 605,
+            "titles": [
+              {
+                "title": "each of the five aggregate-report runtimes hands absentInputs to the aggregator",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1733,
+            "titles": [
+              {
+                "title": "a table test over every registered plan-task runtime finds a completeness record on each result",
+                "result": "pass"
+              },
+              {
+                "title": "a table test over every registered plan-task runtime still finds a completeness record on each result, with the functional-surface task given a directory path",
+                "result": "pass"
+              },
+              {
+                "title": "the fixture gives the inventories and listings something to return",
+                "result": "pass"
+              },
+              {
+                "title": "no output of the five infra inventories has a `truncated` field; a walk that stops at its cap is a limit in the record",
+                "result": "pass"
+              },
+              {
+                "title": "discovery-families reports its per-family sample as a per-group limit and is not rejected by the builder",
+                "result": "pass"
+              },
+              {
+                "title": "the object-listing plan task reads the data driver's cut flag into a limit",
+                "result": "pass"
+              },
+              {
+                "title": "an aggregate-report runtime's record says its completeness is that of the tasks it summarises",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 875,
+            "titles": [
+              {
+                "title": "the count of catch clauses in the runtime files equals the number of classified entries",
+                "result": "pass"
+              },
+              {
+                "title": "an inventory over a tree with an unreadable directory and a file that does not parse lists both under skipped and is not complete (mutation: restore the silent skip)",
+                "result": "pass"
+              },
+              {
+                "title": "an adherence check whose model call fails is recorded by the walk as a failed task",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 943,
+            "titles": [
+              {
+                "title": "each adherence check reports a body it cut with the kept and full lengths",
+                "result": "pass"
+              },
+              {
+                "title": "the project-context assembler reports a limit it reached and the documents behind its decisions and constraints, and the adherence check puts them in the record",
+                "result": "pass"
+              },
+              {
+                "title": "the docs plan tasks report a document longer than the summariser's cut under partlyRead, and a missing summary and a failure placeholder under skipped (mutation: drop the partlyRead entry)",
+                "result": "pass"
+              },
+              {
+                "title": "the docs tool exposed to agents returns what it returned before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 346,
+            "titles": [
+              {
+                "title": "the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time)",
+                "result": "pass"
+              },
+              {
+                "title": "the source scan asserts the new form for structure-module-tree.ts",
+                "result": "pass"
+              },
+              {
+                "title": "the source scan asserts that surface-functional.ts resolves the run's scope through the one scope function for a directory path",
+                "result": "pass"
+              },
+              {
+                "title": "no docs runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the unrelated resolveRepoPath under src/mcp is untouched",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1096,
+            "titles": [
+              {
+                "title": "inline params.constraints pass through untouched",
+                "result": "pass"
+              },
+              {
+                "title": "constraintIds hydrate keyConstraints from summarised docs",
+                "result": "pass"
+              },
+              {
+                "title": "constraintIds skip ids that do not resolve to summarised docs",
+                "result": "pass"
+              },
+              {
+                "title": "a constraintsSource in the params is not read: beside usable ids the ids are used, and the upstream outputs are never looked at",
+                "result": "pass"
+              },
+              {
+                "title": "an inline list wins over ids; an empty inline list counts as not given and the ids are used",
+                "result": "pass"
+              },
+              {
+                "title": "with no source of constraints the check throws, naming constraintTopic, constraints and constraintIds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1349,
+            "titles": [
+              {
+                "title": "a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path",
+                "result": "pass"
+              },
+              {
+                "title": "four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not",
+                "result": "pass"
+              },
+              {
+                "title": "the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record",
+                "result": "pass"
+              },
+              {
+                "title": "an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic",
+                "result": "pass"
+              },
+              {
+                "title": "a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents",
+                "result": "pass"
+              },
+              {
+                "title": "when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration",
+                "result": "pass"
+              },
+              {
+                "title": "when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays",
+                "result": "pass"
+              },
+              {
+                "title": "an override that yields no constraint fails naming the override and does not fall back to the topic",
                 "result": "pass"
               }
             ],

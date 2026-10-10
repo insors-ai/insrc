@@ -19,7 +19,7 @@ import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, CHAT_MARKDOWN_TOKENS } from './markdown-style.js';
 import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
 import type { ProviderRegistry, ProviderId, TurnProcess } from './cli-adapter.js';
-import { createMemorySessionLocks, LockWaitAborted, LockWaitSuperseded, type SessionLease, type SessionLocks } from './session-lock.js';
+import { createMemorySessionLocks, LockWaitAborted, LockWaitSuperseded, runLeased, type SessionLease, type SessionLocks } from './session-lock.js';
 // S001 (bugfix): a value import — the pure classifier that tells a tool-permission gate apart from
 // a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial } from './cli-adapter.js';
@@ -693,98 +693,97 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
     const lease = await acquireSessionLease(s, myGen);
     if (lease === undefined) return;
-    let attached = false;
-
-    // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn),
-    // so the diff + revert are computed against the true pre-turn content (k8 observer).
-    // S001 (bugfix): the merged chat mode now governs edits (via claude's permission flags), so the
-    // governor runs visualize-only — it renders diffs but no longer gates with accept/reject (the
-    // separate edit-review gate is retired, Claude-Code style).
-    if (governor !== undefined) await governor.beginTurn({ mode: 'auto', cwd: deps.cwd() });
-
-    // Hold the iterator explicitly so cancelActive() can .return() it even while it
-    // is parked awaiting its first event. The lease follows the started process: it is
-    // released when that process exits, not when its answer ends.
-    const onSpawn = (proc: TurnProcess): void => {
-      attached = true;
-      lease.attach(proc);
-      if (myGen === generation) liveProc = proc;
-      const forget = (): void => {
-        if (liveProc === proc) liveProc = undefined;
+    // runLeased releases the lease on every path unless a process was attached to it (then the
+    // process's exit releases it): a failed spawn, an adapter without onSpawn, or a throw.
+    await runLeased(lease, async (attachLease) => {
+      // The lease follows the started process: it is released when that process exits, not
+      // when its answer ends.
+      const onSpawn = (proc: TurnProcess): void => {
+        attachLease(proc);
+        if (myGen === generation) liveProc = proc;
+        const forget = (): void => {
+          if (liveProc === proc) liveProc = undefined;
+        };
+        proc.exit.then(forget, forget);
       };
-      proc.exit.then(forget, forget);
-    };
-    const iterator = adapter.run(req, { onSpawn })[Symbol.asyncIterator]();
-    activeIterator = iterator;
-    activeProvider = s.provider;
-    try {
-      for (;;) {
-        const next = await iterator.next();
-        if (next.done === true) break;
-        // Superseded/disposed: post nothing more, but keep reading so the superseded turn's CLI
-        // never stalls on a full pipe; its process (and the lease) end when it exits.
-        if (disposed || myGen !== generation) {
-          if (next.value.kind === 'done' || next.value.kind === 'error') break;
-          continue;
+      try {
+        // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn),
+        // so the diff + revert are computed against the true pre-turn content (k8 observer).
+        // S001 (bugfix): the merged chat mode now governs edits (via claude's permission flags), so the
+        // governor runs visualize-only — it renders diffs but no longer gates with accept/reject (the
+        // separate edit-review gate is retired, Claude-Code style). Inside the try, so a failed
+        // baseline capture or adapter start is a turn error and the lease is still released.
+        if (governor !== undefined) await governor.beginTurn({ mode: 'auto', cwd: deps.cwd() });
+        // Hold the iterator explicitly so cancelActive() can .return() it even while it
+        // is parked awaiting its first event.
+        const iterator = adapter.run(req, { onSpawn })[Symbol.asyncIterator]();
+        activeIterator = iterator;
+        activeProvider = s.provider;
+        for (;;) {
+          const next = await iterator.next();
+          if (next.done === true) break;
+          // Superseded/disposed: post nothing more, but keep reading so the superseded turn's CLI
+          // never stalls on a full pipe; its process (and the lease) end when it exits.
+          if (disposed || myGen !== generation) {
+            if (next.value.kind === 'done' || next.value.kind === 'error') break;
+            continue;
+          }
+          const ev = next.value;
+          activeTurnId = ev.turnId;
+          post({ type: 'turn-event', event: ev });
+          appendEvent(s, ev);
+          // S001 (bugfix): remember what an approval card is asking about, so Approve can re-run the
+          // blocked action concretely (the exact command / tool pre-allowed) — and so a working-dir
+          // block is branched away from the tool-grant path (classifyPermissionDenial).
+          if (ev.kind === 'approval-request' && typeof ev.toolName === 'string' && ev.toolName !== '') {
+            pendingPerms.set(ev.requestId, {
+              toolName: ev.toolName,
+              ...(ev.command !== undefined && ev.command !== '' ? { command: ev.command } : {}),
+              blockKind: classifyPermissionDenial(ev.detail),
+            });
+          }
+          // S004 (dev-chat ux polish): remember a surfaced selection request's options (keyed by
+          // requestId) so a later selection-decision can map the chosen ids back to labels.
+          if (ev.kind === 'selection-request') {
+            pendingSelections.set(ev.requestId, { options: ev.options });
+          }
+          // S006: an observed file-edit -> the governor computes + renders its own diff
+          // (auto: visualize-only; review: track for accept/reject). Fire-and-forget so
+          // the incremental turn loop never blocks on git/fs IO.
+          if (governor !== undefined && ev.kind === 'file-edit') void governor.observe(ev.path);
+          if (ev.kind === 'done') {
+            if (ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
+            deps.store.save(s);
+            if (governor !== undefined) void governor.resolveTurn();
+            postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
+            void iterator.return?.(undefined); // finish the generator; the process is left to exit
+            break;
+          }
+          if (ev.kind === 'error') {
+            deps.store.save(s); // persist the errored turn's transcript rows too
+            if (governor !== undefined) void governor.resolveTurn();
+            postHistory(); // S005: a first-turn error still set the title -> refresh the dropdown label
+            void iterator.return?.(undefined);
+            break;
+          }
         }
-        const ev = next.value;
-        activeTurnId = ev.turnId;
-        post({ type: 'turn-event', event: ev });
-        appendEvent(s, ev);
-        // S001 (bugfix): remember what an approval card is asking about, so Approve can re-run the
-        // blocked action concretely (the exact command / tool pre-allowed) — and so a working-dir
-        // block is branched away from the tool-grant path (classifyPermissionDenial).
-        if (ev.kind === 'approval-request' && typeof ev.toolName === 'string' && ev.toolName !== '') {
-          pendingPerms.set(ev.requestId, {
-            toolName: ev.toolName,
-            ...(ev.command !== undefined && ev.command !== '' ? { command: ev.command } : {}),
-            blockKind: classifyPermissionDenial(ev.detail),
-          });
+      } catch (err) {
+        if (!disposed && myGen === generation) {
+          post({ type: 'turn-event', event: { kind: 'error', turnId: activeTurnId ?? 'none', message: err instanceof Error ? err.message : String(err) } });
+          try {
+            deps.store.save(s);
+          } catch {
+            /* persistence failure must not surface */
+          }
         }
-        // S004 (dev-chat ux polish): remember a surfaced selection request's options (keyed by
-        // requestId) so a later selection-decision can map the chosen ids back to labels.
-        if (ev.kind === 'selection-request') {
-          pendingSelections.set(ev.requestId, { options: ev.options });
-        }
-        // S006: an observed file-edit -> the governor computes + renders its own diff
-        // (auto: visualize-only; review: track for accept/reject). Fire-and-forget so
-        // the incremental turn loop never blocks on git/fs IO.
-        if (governor !== undefined && ev.kind === 'file-edit') void governor.observe(ev.path);
-        if (ev.kind === 'done') {
-          if (ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
-          deps.store.save(s);
-          if (governor !== undefined) void governor.resolveTurn();
-          postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
-          void iterator.return?.(undefined); // finish the generator; the process is left to exit
-          break;
-        }
-        if (ev.kind === 'error') {
-          deps.store.save(s); // persist the errored turn's transcript rows too
-          if (governor !== undefined) void governor.resolveTurn();
-          postHistory(); // S005: a first-turn error still set the title -> refresh the dropdown label
-          void iterator.return?.(undefined);
-          break;
+      } finally {
+        if (myGen === generation) {
+          activeIterator = undefined;
+          activeProvider = undefined;
+          activeTurnId = undefined;
         }
       }
-    } catch (err) {
-      if (!disposed && myGen === generation) {
-        post({ type: 'turn-event', event: { kind: 'error', turnId: activeTurnId ?? 'none', message: err instanceof Error ? err.message : String(err) } });
-        try {
-          deps.store.save(s);
-        } catch {
-          /* persistence failure must not surface */
-        }
-      }
-    } finally {
-      if (myGen === generation) {
-        activeIterator = undefined;
-        activeProvider = undefined;
-        activeTurnId = undefined;
-      }
-      // No process was handed over (spawn failed, or an adapter without onSpawn): the turn's
-      // loop is all the lease guarded, so it ends here.
-      if (!attached) lease.release();
-    }
+    });
   }
 
   function appendEvent(s: ChatSession, ev: TurnEvent): void {

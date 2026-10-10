@@ -2383,3 +2383,30 @@ test('a lock failure other than a dropped wait is logged and shown, never a sile
   assert.match(errors.join('\n'), /could not lock chat session: lock store broke/);
   assert.equal(runs(), 0, 'no CLI was started');
 });
+
+test('a turn whose adapter fails to start releases the session lease (the next turn does not wait)', async () => {
+  const fc = fakeChannel();
+  let calls = 0;
+  const { adapter: ok } = procAdapter();
+  const adapter: StreamAdapter = {
+    ...ok,
+    run: (req, opts) => {
+      if (++calls === 1) throw new Error('spawn failed');
+      return ok.run(req, opts);
+    },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    turnLockTimeoutMs: () => 60_000,
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'first' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'error'));
+  assert.match((turnEvents(fc).find((e) => e.kind === 'error') as { message: string }).message, /spawn failed/);
+  fc.send(env('submit-turn', { text: 'second' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'), 500);
+  assert.ok(!waitingPosted(fc), 'the second turn never waited: the failed turn released its lease');
+});

@@ -21,7 +21,9 @@ import {
   type LockFileRecord,
   LockWaitAborted,
   LockWaitSuperseded,
+  runLeased,
   stopProcess,
+  type LockFs,
   type SessionLease,
 } from '../session-lock.js';
 import { fakeLiveProc, tick, waitFor } from './fixtures.js';
@@ -348,4 +350,63 @@ test('the file-backed lock works with the real default seams (pid liveness, star
   assert.equal(readLock(join(dir, 'chat-locks'), 's1')?.startedAt, start, 'records the real start time');
   proc.exitNow();
   await waitFor(() => readLock(join(dir, 'chat-locks'), 's1') === undefined);
+});
+
+test('runLeased releases the lease on every path unless a process was attached', async () => {
+  const locks = createMemorySessionLocks();
+  // A throw before any process starts: released.
+  const a = await locks.acquire('s1', { timeoutMs: 60_000 });
+  await assert.rejects(runLeased(a, async () => { throw new Error('spawn blew up'); }), /spawn blew up/);
+  const b = track(locks.acquire('s1', { timeoutMs: 60_000 }));
+  await tick();
+  assert.equal(b.state(), 'granted', 'the throwing turn did not keep the lease');
+
+  // Finishing without a process: released.
+  await runLeased(b.value() as SessionLease, async () => 'no process');
+  const c = track(locks.acquire('s1', { timeoutMs: 60_000 }));
+  await tick();
+  assert.equal(c.state(), 'granted');
+
+  // A process attached: kept after the body ends, released by the exit.
+  const proc = fakeLiveProc(901);
+  await runLeased(c.value() as SessionLease, async (attach) => attach(proc));
+  const d = track(locks.acquire('s1', { timeoutMs: 60_000 }));
+  await tick();
+  assert.equal(d.state(), 'pending', 'held while the process runs');
+  proc.exitNow();
+  await waitFor(() => d.state() === 'granted');
+});
+
+test('a take-over never deletes a lock file another window has re-created meanwhile', async () => {
+  const dir = lockDir();
+  const table = procTable();
+  table.set(950, 4); // window C's live CLI
+  const file = join(dir, 's1.lock');
+  writeFileSync(file, JSON.stringify({ sessionId: 's1', cliPid: 940, hostPid: 9, startedAt: 1 })); // pid 940 is dead: stale
+  const liveC = JSON.stringify({ sessionId: 's1', cliPid: 950, hostPid: 3, startedAt: 4 });
+  // Window C replaces the stale file right after this waiter has read it.
+  let raced = false;
+  const racingFs: LockFs = {
+    ...fsp,
+    mkdir: (path, opts) => fsp.mkdir(path, opts),
+    writeFile: (path, data, opts) => fsp.writeFile(path, data, opts),
+    rename: (from, to) => fsp.rename(from, to),
+    unlink: (path) => fsp.unlink(path),
+    readFile: async (path, enc) => {
+      const text = await fsp.readFile(path, enc);
+      if (!raced && path === file) {
+        raced = true;
+        await fsp.writeFile(file, liveC);
+      }
+      return text;
+    },
+  };
+  const locks = createFileSessionLocks({ fs: racingFs, lockDir: dir, hostPid: 2, pollMs: 5, ...table.deps });
+  const ctl = new AbortController();
+  const a = track(locks.acquire('s1', { timeoutMs: 60_000, signal: ctl.signal }));
+  await tick(40);
+  assert.equal(readFileSync(file, 'utf8'), liveC, "window C's live lock file was not deleted");
+  assert.equal(a.state(), 'pending', "the waiter now waits for window C's process");
+  ctl.abort();
+  await waitFor(() => a.state() === 'rejected');
 });

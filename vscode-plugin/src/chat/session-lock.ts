@@ -116,6 +116,23 @@ export async function stopProcess(proc: LeaseProcess, graceMs: number, timers: L
   return settlesWithin(proc.exit, graceMs, timers);
 }
 
+/**
+ * Runs a turn under a granted lease and releases it on every path, unless the turn attached a
+ * process to it (the process's exit then releases it). `attach` is what the turn hands to the
+ * adapter's onSpawn. The single place that guarantees a lease never outlives its turn by accident.
+ */
+export async function runLeased<T>(lease: SessionLease, body: (attach: (proc: LeaseProcess) => void) => Promise<T>): Promise<T> {
+  let attached = false;
+  try {
+    return await body((proc) => {
+      attached = true;
+      lease.attach(proc);
+    });
+  } finally {
+    if (!attached) lease.release();
+  }
+}
+
 interface Holder {
   readonly lease: SessionLease;
   proc: LeaseProcess | undefined;
@@ -315,6 +332,7 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
 
   const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> =>
     new Promise((resolve) => {
+      if (signal?.aborted === true) return resolve();
       const handle = timers.setTimeout(done, ms);
       function done(): void {
         timers.clearTimeout(handle);
@@ -337,6 +355,19 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
       if (!isAlive(pid)) return true;
       if (waited >= ms) return false;
       await sleep(Math.min(pollMs, ms - waited), undefined);
+    }
+  };
+
+  /**
+   * Removes the lock file only if it still holds exactly the record this waiter judged stale or
+   * stopped. A file another window has since re-created is left alone; the loop then sees it as
+   * a live holder and waits for it.
+   */
+  const unlinkIfUnchanged = async (file: string, judged: string): Promise<void> => {
+    try {
+      if ((await deps.fs.readFile(file, 'utf8')) === judged) await deps.fs.unlink(file);
+    } catch {
+      /* already gone */
     }
   };
 
@@ -400,13 +431,13 @@ export function createFileSessionLocks(deps: FileSessionLocksDeps): SessionLocks
           const rec = parseRecord(text);
           if (rec === undefined || !holderAlive(rec)) {
             log.warn(`[chat-lock] session ${sessionId}: replacing a stale lock file`);
-            await deps.fs.unlink(file).catch(() => {});
+            await unlinkIfUnchanged(file, text);
             continue;
           }
           onWaiting();
           if (Date.now() >= deadline) {
             await stopRemote(sessionId, rec, opts.timeoutMs);
-            await deps.fs.unlink(file).catch(() => {});
+            await unlinkIfUnchanged(file, text);
             continue;
           }
           await sleep(Math.min(pollMs, Math.max(0, deadline - Date.now())), opts.signal);

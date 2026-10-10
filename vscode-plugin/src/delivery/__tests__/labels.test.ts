@@ -16,7 +16,7 @@ import type {
   ReviewVerdict,
   TaskResult,
 } from '../delivery-contract.js';
-import { DISPLAY_LABELS, readableTime, STAGE_ORDER } from '../labels.js';
+import { DISPLAY_LABELS, msBetween, readableTime, STAGE_ORDER } from '../labels.js';
 
 // Exhaustive member lists: each Record fails to compile if its union gains or loses a member.
 const STAGES: Record<DeliveryStage, true> = {
@@ -84,4 +84,10 @@ test('DISPLAY_LABELS carries the view, item-tab, attention and stage-section lab
 test('readableTime shows an ISO time as YYYY-MM-DD HH:MM UTC and anything else as recorded', () => {
   assert.equal(readableTime('2026-09-30T14:40:12.000Z'), '2026-09-30 14:40 UTC');
   assert.equal(readableTime('sometime'), 'sometime');
+});
+
+test('msBetween measures from one ISO time to a later one, counts a future time as now, and gives null for an unreadable one', () => {
+  assert.equal(msBetween('2026-10-09T10:00:00.000Z', '2026-10-09T10:01:30.000Z'), 90_000);
+  assert.equal(msBetween('2026-10-09T10:05:00.000Z', '2026-10-09T10:00:00.000Z'), 0);
+  assert.equal(msBetween('sometime', '2026-10-09T10:00:00.000Z'), null);
 });

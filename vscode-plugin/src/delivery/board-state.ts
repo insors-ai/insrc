@@ -27,7 +27,7 @@ import type {
   BoardDownMessage, BoardScreen, CrumbView, Density, Envelope, ItemDetailsViewModel, ItemTab, ListView, ScreenBody, ScreenModel,
   StatePanelView, StatusView,
 } from './board-protocol.js';
-import { readableTime, type DisplayLabels } from './labels.js';
+import { msBetween, readableTime, type DisplayLabels } from './labels.js';
 
 export interface AppliedSnapshot {
   readonly snapshot: DeliverySnapshot;
@@ -253,8 +253,8 @@ function partialNotice(s: DeliverySnapshot): string | null {
 /** How long ago the shown snapshot was taken, phrased for the app bar; an unparseable time is shown as recorded. */
 function freshnessLabel(takenAt: string | null, now: string): string | null {
   if (takenAt === null) return null;
-  const ms = Date.parse(now) - Date.parse(takenAt);
-  if (!Number.isFinite(ms)) return `Updated ${takenAt}`;
+  const ms = msBetween(takenAt, now);
+  if (ms === null) return `Updated ${takenAt}`;
   if (ms < 60_000) return 'Updated just now';
   if (ms < 3_600_000) {
     const minutes = Math.floor(ms / 60_000);

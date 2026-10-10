@@ -45,7 +45,7 @@ import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
 import { createDetailsMemory, type DetailsMemory } from './details-memory.js';
 import { errorText } from './guards.js';
-import { DISPLAY_LABELS, labelOf } from './labels.js';
+import { DISPLAY_LABELS, labelOf, msBetween } from './labels.js';
 
 export const BOARD_VIEW_TYPE = 'insrc.deliveryBoard';
 export const BOARD_TITLE = 'Delivery board';
@@ -478,8 +478,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   }
 
   function elapsedMs(since: string): number {
-    const ms = Date.parse(deps.now()) - Date.parse(since);
-    return Number.isFinite(ms) ? Math.max(0, ms) : 0;
+    return msBetween(since, deps.now()) ?? 0;
   }
 
   async function refresh(): Promise<void> {

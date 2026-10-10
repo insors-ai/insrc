@@ -39,7 +39,7 @@ function statusOf(state: BoardState): StatusView {
 }
 
 /** The screen message's model, or null when none is posted. */
-function screenOf(state: BoardState, detailsOf: Parameters<typeof boardDownMessages>[3] = noDetails): ScreenModel | null {
+function screenModelOf(state: BoardState, detailsOf: Parameters<typeof boardDownMessages>[3] = noDetails): ScreenModel | null {
   const msgs = boardDownMessages(state, DISPLAY_LABELS, NOW, detailsOf).map(e => e.payload);
   const screens = msgs.filter(p => p.type === 'screen');
   assert.ok(screens.length <= 1, 'at most one screen message');
@@ -49,12 +49,12 @@ function screenOf(state: BoardState, detailsOf: Parameters<typeof boardDownMessa
 
 /** The board screen's body, or null when no board screen is posted. */
 function boardOf(state: BoardState): StagesBody | null {
-  const body = screenOf(state)?.body;
+  const body = screenModelOf(state)?.body;
   return body === undefined || body.kind !== 'stages' ? null : body;
 }
 
 /** Every card on the board screen, section by section. */
-function itemsOf(state: BoardState): readonly string[] | null {
+function boardCardIds(state: BoardState): readonly string[] | null {
   const model = boardOf(state);
   return model === null ? null : model.sections.flatMap(c => c.cards.map(k => k.itemId));
 }
@@ -75,14 +75,14 @@ test('an answer to a superseded refresh is dropped and nothing from it is applie
 
   const done = reduceBoardState(s, arrived(2, fresh));
   assert.equal(done.status.state, 'ready');
-  assert.deepEqual(itemsOf(done), ['b']);
+  assert.deepEqual(boardCardIds(done), ['b']);
   assert.equal(reduceBoardState(done, arrived(1, old)), done, 'a late answer after the newest one is dropped too');
 });
 
 test('empty, unavailable, failed and partial snapshots each give their own status, a partial snapshot still lists every item, and a snapshot with no items but unreadable records is partial, not empty', () => {
   const empty = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([]))]);
   assert.equal(statusOf(empty).state, 'empty');
-  assert.equal(itemsOf(empty), null, 'an empty workspace posts no screen; its panel replaces it');
+  assert.equal(boardCardIds(empty), null, 'an empty workspace posts no screen; its panel replaces it');
 
   assert.equal(statusOf(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'daemon-unavailable', 'daemon is not running')])).state, 'unavailable');
   assert.equal(statusOf(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'no-workspace', 'no folder')])).state, 'unavailable');
@@ -95,7 +95,7 @@ test('empty, unavailable, failed and partial snapshots each give their own statu
   assert.equal(pv.state, 'ready');
   assert.match(pv.partialNotice ?? '', /2 records could not be read/);
   assert.match(pv.partialNotice ?? '', /The plans folder is missing\./);
-  assert.deepEqual(itemsOf(partial), ['a', 'b'], 'every readable item is on the board');
+  assert.deepEqual(boardCardIds(partial), ['a', 'b'], 'every readable item is on the board');
   const sections = boardOf(partial)?.sections ?? [];
   assert.deepEqual(sections.filter(c => c.total > 0).map(c => c.label), [DISPLAY_LABELS.stage.scoped, DISPLAY_LABELS.stage.complete]);
   // s1's assertion that an unlabelled stage shows its raw id is retired: s2 leaves such an item off the board
@@ -110,7 +110,7 @@ test('a failed refresh keeps the last snapshot as stale with the failure and its
   const good = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A')]))]);
   const loading = reduceBoardState(good, { type: 'refresh-requested', seq: 2 });
   assert.equal(statusOf(loading).state, 'loading');
-  assert.deepEqual(itemsOf(loading), ['a'], 'the last board stays visible while loading');
+  assert.deepEqual(boardCardIds(loading), ['a'], 'the last board stays visible while loading');
 
   const down = reduceBoardState(loading, failed(2, 'timed-out', 'the delivery read took longer than 30 s', '2026-10-09T11:22:33.000Z'));
   const v = statusOf(down);
@@ -119,7 +119,7 @@ test('a failed refresh keeps the last snapshot as stale with the failure and its
   assert.equal(v.takenAt, '2026-10-09T10:00:00.000Z', 'the shown board is the last good one');
   assert.match(v.message ?? '', /2026-10-09T11:22:33\.000Z/);
   assert.match(v.message ?? '', /took longer than 30 s/);
-  assert.deepEqual(itemsOf(down), ['a']);
+  assert.deepEqual(boardCardIds(down), ['a']);
 
   const neverLoaded = statusOf(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'read-failed', 'bad')]));
   assert.equal(neverLoaded.stale, false, 'nothing to be stale without a last snapshot');
@@ -246,11 +246,11 @@ test('filter intents are ignored on an item screen, and a refresh that removes t
 });
 
 test('every screen message carries a breadcrumb that follows the trail and a back label naming where Back goes', () => {
-  const crumbs = (s: BoardState) => screenOf(s, id => ({ itemId: id }) as never)!.crumbs.map(c => [c.label, c.index]);
-  const back = (s: BoardState) => screenOf(s, id => ({ itemId: id }) as never)!.back?.label ?? null;
+  const crumbs = (s: BoardState) => screenModelOf(s, id => ({ itemId: id }) as never)!.crumbs.map(c => [c.label, c.index]);
+  const back = (s: BoardState) => screenModelOf(s, id => ({ itemId: id }) as never)!.back?.label ?? null;
 
   const home = loadedBoard();
-  const homeScreen = screenOf(home)!;
+  const homeScreen = screenModelOf(home)!;
   assert.deepEqual(crumbs(home), [['Delivery', 0]]);
   assert.deepEqual([homeScreen.back, homeScreen.title, homeScreen.filters?.views, homeScreen.filters?.view, homeScreen.filters?.searchPlaceholder],
     [null, 'All work', true, 'all', 'Search titles, ids, epics']);
@@ -258,15 +258,15 @@ test('every screen message carries a breadcrumb that follows the trail and a bac
 
   const epics = run([nav({ type: 'set-view', view: 'epics' })], home);
   assert.deepEqual(crumbs(epics), [['Delivery', 0], ['Epics', 0]]);
-  assert.equal(screenOf(epics)!.body.kind, 'epics');
+  assert.equal(screenModelOf(epics)!.body.kind, 'epics');
   const epic = run([nav({ type: 'open-epic', epicItemId: EPIC })], epics);
-  const epicScreen = screenOf(epic)!;
+  const epicScreen = screenModelOf(epic)!;
   assert.deepEqual(crumbs(epic), [['Delivery', 0], ['Epics', 0], ['Board epic', 1]]);
   assert.deepEqual([epicScreen.back?.label, epicScreen.title, epicScreen.filters?.views, epicScreen.filters?.searchPlaceholder], ['← Epics', 'Board epic', false, 'Search this epic']);
   assert.ok(epicScreen.body.kind === 'stages' && epicScreen.body.epic?.epicItemId === EPIC, 'the epic board carries the epic\'s own row');
 
   const story = run([nav({ type: 'open-item', itemId: STORY })], epic);
-  const storyScreen = screenOf(story, id => ({ itemId: id }) as never)!;
+  const storyScreen = screenModelOf(story, id => ({ itemId: id }) as never)!;
   assert.deepEqual(crumbs(story), [['Delivery', 0], ['Epics', 0], ['Board epic', 1], ['S001', 2]]);
   assert.deepEqual([storyScreen.back?.label, storyScreen.title, storyScreen.filters, storyScreen.focusItemId], ['← Back to epic', 'Columns', null, null]);
   assert.ok(storyScreen.body.kind === 'story' && storyScreen.body.tab === 'overview' && storyScreen.body.epic?.epicItemId === EPIC);
@@ -274,11 +274,11 @@ test('every screen message carries a breadcrumb that follows the trail and a bac
   const issue = run([nav({ type: 'open-item', itemId: ISSUE })], story);
   assert.deepEqual(crumbs(issue).at(-1), ['1234ABCD', 3]);
   assert.equal(back(issue), '← Back to S001');
-  const issueBody = screenOf(issue, id => ({ itemId: id }) as never)!.body;
+  const issueBody = screenModelOf(issue, id => ({ itemId: id }) as never)!.body;
   assert.ok(issueBody.kind === 'issue' && issueBody.entry.parent?.itemId === STORY);
 
   const returned = run([nav({ type: 'back' }), nav({ type: 'back' })], issue);
-  const returnedScreen = screenOf(returned)!;
+  const returnedScreen = screenModelOf(returned)!;
   assert.deepEqual([returnedScreen.restored, returnedScreen.focusItemId], [true, STORY], 'Back focuses the card that opened the story');
 
   const fromIssues = run([nav({ type: 'set-view', view: 'issues' }), nav({ type: 'set-attention', on: true }), nav({ type: 'open-item', itemId: ISSUE })], home);
@@ -286,7 +286,7 @@ test('every screen message carries a breadcrumb that follows the trail and a bac
   assert.equal(back(fromIssues), '← Issues');
   const standaloneStory = run([nav({ type: 'set-view', view: 'standalone' }), nav({ type: 'open-item', itemId: 'SA1' })], home);
   assert.equal(back(standaloneStory), '← Standalone');
-  const loose = screenOf(standaloneStory, id => ({ itemId: id }) as never)!.body;
+  const loose = screenModelOf(standaloneStory, id => ({ itemId: id }) as never)!.body;
   assert.ok(loose.kind === 'story' && loose.epic === null, 'a standalone story has no epic');
 
   // Status first, then exactly one screen; status alone with no snapshot or an empty workspace.

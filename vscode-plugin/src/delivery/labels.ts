@@ -61,6 +61,15 @@ export function readableTime(iso: string): string {
   return m === null ? iso : `${m[1]} ${m[2]} UTC`;
 }
 
+/**
+ * The milliseconds from one ISO time to a later one, never negative (a time in the future counts as now); null when
+ * either cannot be read. The freshness line and the host's refresh timings both measure with it.
+ */
+export function msBetween(from: string, to: string): number | null {
+  const ms = Date.parse(to) - Date.parse(from);
+  return Number.isFinite(ms) ? Math.max(0, ms) : null;
+}
+
 /** The tone of each approval state; a state this build does not know is neutral. */
 const APPROVAL_TONES: Readonly<Record<ApprovalState, 'success' | 'warning' | 'danger'>> = { approved: 'success', pending: 'warning', rejected: 'danger' };
 export function approvalTone(state: ApprovalState): 'success' | 'warning' | 'danger' | 'neutral' {

@@ -47,7 +47,8 @@ function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, label
       : undefined;
     return {
       taskItemId: t.taskItemId,
-      title: taskItem?.title ?? null,
+      // titleOf, like the dependencies on the same row: a task with no title shows its id.
+      title: taskItem === undefined ? null : titleOf(taskItem),
       resultLabel: t.planned ? labelOf(labels.taskResult, t.result) : labels.unplanned,
       planned: t.planned,
       resultTone: t.planned ? taskResultTone(t.result) : 'neutral',

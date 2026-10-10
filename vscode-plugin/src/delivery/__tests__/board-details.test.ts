@@ -11,18 +11,10 @@ import assert from 'node:assert/strict';
 import type { DeliveryEvidenceEntry } from '../delivery-contract.js';
 import { buildItemDetails, type PlanRead } from '../board-details.js';
 import { DISPLAY_LABELS } from '../labels.js';
-import { evidence as ev, item, snapshot } from './board-fixtures.js';
+import { evidence as ev, item, review, snapshot } from './board-fixtures.js';
 
 const NONE: PlanRead = { state: 'none' };
 
-type Review = NonNullable<DeliveryEvidenceEntry['review']>;
-
-function review(over: Partial<Review>): Review {
-  return {
-    verdict: 'pass', reviewedAt: '2026-10-09T08:00:00.000Z', reviewedBy: 'controller', counts: { high: 0, med: 0, low: 0 },
-    override: null, resolvedFindings: 0, effectiveVerdict: 'pass', blocking: false, ...over,
-  };
-}
 
 /** A story with three planned tasks (passed, failed, unrecorded) and one build-only task. */
 function taskedSnapshot() {
@@ -266,4 +258,16 @@ test('correctedBy lists the issues correcting the item and approvedAt reads the 
   ], 'an unparseable time is shown as recorded');
   assert.deepEqual(buildItemDetails(snap, 'E1', NONE, null, DISPLAY_LABELS)!.correctedBy.map(l => l.itemId), ['I3']);
   assert.deepEqual(buildItemDetails(snap, 'I1', NONE, null, DISPLAY_LABELS)!.correctedBy, []);
+});
+
+test('a task row with no title shows its id, as the same task does among the dependencies', () => {
+  const snap = snapshot([
+    item({ id: 'S1', stage: 'build-recorded', childIds: ['S1:T1', 'S1:T2'],
+      tasks: [{ taskItemId: 'S1:T1', result: 'passed', planned: true }, { taskItemId: 'S1:T2', result: 'unrecorded', planned: true }] as never }),
+    item({ id: 'S1:T1', kind: 'task', parentId: 'S1', title: null, sourceIds: ['t1'] }),
+    item({ id: 'S1:T2', kind: 'task', parentId: 'S1', title: 'Second', sourceIds: ['t2'] }),
+  ]);
+  const plan: PlanRead = { state: 'ok', tasks: [{ id: 't1', dependsOn: [], acceptanceChecks: [] }, { id: 't2', dependsOn: ['t1'], acceptanceChecks: [] }] };
+  const d = buildItemDetails(snap, 'S1', plan, null, DISPLAY_LABELS)!;
+  assert.deepEqual(d.tasks.map(t => [t.title, t.dependsOn]), [['S1:T1', []], ['Second', ['S1:T1']]]);
 });

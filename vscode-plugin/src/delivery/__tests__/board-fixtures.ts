@@ -29,6 +29,14 @@ export function snapshot(items: readonly DeliveryItem[], extra: Partial<Delivery
   } as unknown as DeliverySnapshot;
 }
 
+/** A review record on an evidence entry: a passing controller review unless overridden. */
+export function review(over: Partial<NonNullable<DeliveryEvidenceEntry['review']>> = {}): NonNullable<DeliveryEvidenceEntry['review']> {
+  return {
+    verdict: 'pass', reviewedAt: '2026-10-09T08:00:00.000Z', reviewedBy: 'controller', counts: { high: 0, med: 0, low: 0 },
+    override: null, resolvedFindings: 0, effectiveVerdict: 'pass', blocking: false, ...over,
+  };
+}
+
 /** An evidence entry: approved, no review, read through evidence-read unless overridden. */
 export function evidence(artifactId: string, kind: DeliveryEvidenceEntry['kind'], over: Partial<DeliveryEvidenceEntry> = {}): DeliveryEvidenceEntry {
   return {

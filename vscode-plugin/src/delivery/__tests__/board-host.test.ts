@@ -778,29 +778,29 @@ function screensSnapshot(extra: ReturnType<typeof item>[] = []): DeliverySnapsho
 }
 const EPIC_A = 'E20261009aaaaaaaa';
 const STORY_A = 'E20261009aaaaaaaa:S001';
-const screenOf = (w: ReturnType<typeof runScript>) => w.el['main']!.attrs['data-screen'];
+const shownScreen = (w: ReturnType<typeof runScript>) => w.el['main']!.attrs['data-screen'];
 const buttonsIn = (root: FakeEl, cls: string) => findAll(root, e => e.tag === 'button' && (e.attrs['class'] ?? '').split(' ').includes(cls));
 const click = (e: FakeEl) => e.listeners['click']!();
 
 test('opening an epic and then a story replaces #main each time, and nothing from an earlier screen remains', async () => {
   const b = await liveBoard(screensSnapshot());
   const main = b.w.el['main']!;
-  assert.equal(screenOf(b.w), 'stages');
+  assert.equal(shownScreen(b.w), 'stages');
   assert.deepEqual(cardsIn(main).map(c => c.attrs['data-item-id']).sort(), ['E20261009aaaaaaaa:S001', 'E20261009aaaaaaaa:S002', 'E20261009bbbbbbbb:S001', 'H1234abcd5678ef00', 'SA1']);
 
   click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'epics')!);
   b.relay();
-  assert.equal(screenOf(b.w), 'epics');
+  assert.equal(shownScreen(b.w), 'epics');
   assert.equal(cardsIn(main).length, 0, 'no board card stays on the Epics screen');
   click(findAll(main, e => e.attrs['data-epic'] === EPIC_A)[0]!);
   b.relay();
-  assert.equal(screenOf(b.w), 'stages');
+  assert.equal(shownScreen(b.w), 'stages');
   assert.deepEqual(cardsIn(main).map(c => c.attrs['data-item-id']).sort(), [STORY_A, 'E20261009aaaaaaaa:S002'], 'only this epic\'s stories');
   assert.equal(findAll(main, e => e.attrs['data-epic'] !== undefined).length, 0, 'no Epics row stays');
 
   click(cardOf(main, STORY_A));
   b.relay();
-  assert.equal(screenOf(b.w), 'story');
+  assert.equal(shownScreen(b.w), 'story');
   assert.equal(cardsIn(main).length, 0, 'no card from the epic board stays under the story');
   assert.equal(findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage').length, 0, 'and no stage section');
   assert.ok(texts(main).includes('Columns'), 'the story\'s own screen');
@@ -811,7 +811,7 @@ test('opening an epic and then a story replaces #main each time, and nothing fro
   b.relay();
   click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'issues')!);
   b.relay();
-  assert.equal(screenOf(b.w), 'issues');
+  assert.equal(shownScreen(b.w), 'issues');
   assert.ok(!texts(main).includes('Columns'));
   assert.deepEqual(b.s.logs, { warn: [], error: [] });
 });
@@ -889,7 +889,7 @@ test('an Epics row opens that epic\'s board with its header, breadcrumb and ← 
   click(back[0]!);
   assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'back' }]);
   b.relay();
-  assert.equal(screenOf(b.w), 'epics');
+  assert.equal(shownScreen(b.w), 'epics');
 
   // The Standalone link and the Issues list.
   click(findAll(main, e => e.attrs['class'] === 'link' && e.textContent === 'Standalone')[0]!);
@@ -976,7 +976,7 @@ test('Back restores the saved scroll and focuses the card that opened the story;
 
   main.listeners['keydown']!(keyEvent('Escape'));
   b.relay();
-  assert.equal(screenOf(b.w), 'stages');
+  assert.equal(shownScreen(b.w), 'stages');
   assert.equal(b.w.view.scrollY, 420, 'the board comes back where the reader left it');
   assert.equal(focusState.active, cardOf(main, 'SA1'), 'focused on the card that opened the story');
 
@@ -1022,7 +1022,7 @@ test('empty replaces the screen, no matches replaces the list area with Clear fi
   b.pump();
   const banner = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel')[0]!;
   assert.deepEqual([banner.attrs['data-kind'], texts(banner).includes('Stale')], ['refresh-failed', true]);
-  assert.equal(screenOf(b.w), 'story', 'the story stays under the banner');
+  assert.equal(shownScreen(b.w), 'story', 'the story stays under the banner');
   b.w.posted.length = 0;
   click(findAll(banner, e => e.tag === 'button' && e.textContent === 'Retry')[0]!);
   assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'refresh' }]);
@@ -1032,7 +1032,7 @@ test('empty replaces the screen, no matches replaces the list area with Clear fi
   b.s.snapshots[2]!.resolve({ ok: true, value: fixtureSnapshot([]) });
   await flush();
   b.pump();
-  assert.equal(screenOf(b.w), 'panel');
+  assert.equal(shownScreen(b.w), 'panel');
   assert.deepEqual(texts(main).slice(0, 2), ['No work items yet', 'The workspace was read successfully. No epic, story or issue records were found.']);
   assert.deepEqual(texts(b.w.el['banner']!), []);
   assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery']);
@@ -1046,7 +1046,7 @@ test('empty replaces the screen, no matches replaces the list area with Clear fi
   const partial = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel')[0]!;
   assert.equal(partial.attrs['data-kind'], 'partial');
   assert.ok(texts(partial).some(t => t === 'PLAN-x'));
-  assert.equal(screenOf(b.w), 'stages', 'the board is usable under it');
+  assert.equal(shownScreen(b.w), 'stages', 'the board is usable under it');
 });
 
 test('CSP string unchanged, exactly one aria-live region, and the script uses textContent only and posts only BoardUpMessage envelopes', async () => {
@@ -1128,7 +1128,7 @@ async function onStory(id: string) {
 
 test('opening a story replaces the screen: #main holds only the story screen, with its breadcrumb and Back, and no card from the list it came from', async () => {
   const b = await onStory(STORY_C);
-  assert.equal(screenOf(b.w), 'story');
+  assert.equal(shownScreen(b.w), 'story');
   assert.equal(cardsIn(b.main).length, 0, 'no card of the epic board stays');
   assert.equal(findAll(b.main, e => e.attrs['class'] === 'filters').length, 0, 'a story screen has no filters');
   assert.deepEqual(buttonsIn(b.main, 'back').map(x => x.textContent), ['← Back to epic']);
@@ -1212,7 +1212,7 @@ test('linked work lists the epic, children and correcting issues, each opening i
   b.w.posted.length = 0;
   click(links[1]!);
   b.relay();
-  assert.equal(screenOf(b.w), 'issue');
+  assert.equal(shownScreen(b.w), 'issue');
   assert.deepEqual(texts(b.w.el['crumbs']!).at(-1), '9999AAAA');
   assert.deepEqual(buttonsIn(b.main, 'back').map(x => x.textContent), ['← Back to S003']);
 
@@ -1235,7 +1235,7 @@ test('the issue screen opens what it corrects, or shows the parent notice, and l
   b.relay();
   click(findAll(main, e => e.attrs['class'] === 'issue-row' && e.attrs['data-item-id'] === 'H9999aaaa0000bbbb')[0]!);
   b.relay();
-  assert.equal(screenOf(b.w), 'issue');
+  assert.equal(shownScreen(b.w), 'issue');
   assert.deepEqual(buttonsIn(main, 'back').map(x => x.textContent), ['← Issues']);
   assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Issues', '/', '9999AAAA']);
   const open = findAll(main, e => e.tag === 'button' && e.textContent === 'Open what it corrects →')[0]!;

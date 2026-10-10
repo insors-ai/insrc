@@ -21,7 +21,11 @@
     "epicSlug": "bug-data-plan-task-names-connection",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-10T06:13:59.227Z",
+    "parentRef": {
+      "slug": "bug-data-plan-task-names-connection"
+    }
   },
   "body": {
     "title": "Give the refusal of a connection outside the scope an error code",

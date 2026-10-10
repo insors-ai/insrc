@@ -805,6 +805,42 @@ test("a runtime that throws each typed scope error is a failed task with that co
 	}
 });
 
+test('a task refused for naming a connection outside the scope is a failed task with a code and its own message', async () => {
+	const { connectionWithinScope } = await import('../../runtimes/data/_shared.js');
+	_resetRuntimeRegistryForTests();
+	// The refusal as the data tasks raise it, and a plain error with the same words.
+	const refuse = (): never => { connectionWithinScope({ poolPath: '/r', connectionId: 'ledger-db' }, 'audit-db', 'data.discovery.objects'); throw new Error('not refused'); };
+	let message = '';
+	try { refuse(); } catch (err) { message = (err as Error).message; }
+	registerTemplateRuntime({ templateId: 'demo.refused', execute: async () => refuse() });
+	registerTemplateRuntime(throwingRuntime('demo.same-words', message));
+	registerTemplateRuntime(stubRuntime('demo.aggregator', { report: 'r' }));
+
+	const runId = uniqueRunId('connection-code');
+	const plan = mkPlan([
+		mkTask({ taskId: 't01', template: 'demo.refused',    produces: ['a'] }),
+		mkTask({ taskId: 't02', template: 'demo.same-words', produces: ['b'] }),
+		mkTask({ taskId: 't03', template: 'demo.aggregator', produces: ['report'], consumes: ['a', 'b'] }),
+	]);
+	try {
+		const result = await runExecutor({ tree: mkNode(plan), intent: SAMPLE_INTENT, runId });
+		assert.equal(
+			message,
+			"data.discovery.objects: the request's scope is the connection 'ledger-db', and this task names the connection 'audit-db'. "
+			+ 'A task under a connection scope works on that connection only.',
+		);
+		assert.deepEqual(result.root.tasksFailed.slice(0, 2), [
+			{ taskId: 't01', reason: message, code: 'connection-outside-scope' },
+			{ taskId: 't02', reason: `runtime-threw: ${message}` },
+		]);
+		const stored = readTaskOutput(runId, 't01');
+		assert.deepEqual([stored?.status, stored?.code, stored?.error], ['failed', 'connection-outside-scope', message]);
+		assert.ok(!('code' in readTaskOutput(runId, 't02')!));
+	} finally {
+		purgeAllTaskOutputs(runId);
+	}
+});
+
 test('the plan walk imports nothing from the run driver', async () => {
 	const { readFileSync } = await import('node:fs');
 	const { fileURLToPath } = await import('node:url');

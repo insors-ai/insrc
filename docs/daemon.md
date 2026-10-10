@@ -916,11 +916,17 @@ carry an optional `code`:
 ]
 ```
 
-`code` is one of `scope-ref-kind-target-mismatch`, `scope-ref-unresolved` and
-`scope-not-indexed`, and is present only for those three. Such a task's
-`reason` is the error's message with no `runtime-threw:` in front. Every other
-failure has no `code`, and an entry without one has no `code` key at all. A
-record written before the change has none, and nothing requires one.
+`code` is one of `scope-ref-kind-target-mismatch`, `scope-ref-unresolved`,
+`scope-not-indexed` and `connection-outside-scope`, and is present only for
+those four. Such a task's `reason` is the error's message with no
+`runtime-threw:` in front. Every other failure has no `code`, and an entry
+without one has no `code` key at all. A record written before the change has
+none, and nothing requires one.
+
+`connection-outside-scope` is a task's code only: under a `connection` scope, a
+task that names another connection is refused before the pool hands that
+connection over. No request fails with it, so it is not in the table of a
+request's error codes.
 
 A task whose record cannot be written fails with
 `task-record-unwritable: <the error>`; the tasks after it still run.

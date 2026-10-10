@@ -55,7 +55,7 @@ import {
 } from '../_shared.js';
 import { _setTaskScopeDepsForTest } from '../../shared/task-scope.js';
 import { buildCompleteness } from '../../../completeness.js';
-import { scopeErrorMapping, ScopeRefUnresolvedError } from '../../../context/invariants.js';
+import { ConnectionOutsideScopeError, scopeErrorMapping, ScopeRefUnresolvedError, taskRefusalMapping } from '../../../context/invariants.js';
 import type { ScopeDeps } from '../../../context/scope.js';
 import type { RegisteredRepo } from '../../../../shared/types.js';
 
@@ -158,8 +158,19 @@ test('a data task with a connection scope works on that connection only', async 
 			[dataDiscoveryObjectsRuntime, mkTask('data.discovery.objects', { connectionId: 'audit-db' }, ['objects'])],
 			[dataSchemaTableRuntime, mkTask('data.schema.table', { connectionId: 'audit-db', table: 'x' }, ['schema'])],
 		] as const) {
-			await assert.rejects(() => runtime.execute(mkArgs(intent, task, 'conn-4')),
-				/the request's scope is the connection 'ledger-db', and this task names the connection 'audit-db'/);
+			await assert.rejects(() => runtime.execute(mkArgs(intent, task, 'conn-4')), (err: unknown) => {
+				// The refusal is a typed error with a code a task's failure carries ...
+				assert.ok(err instanceof ConnectionOutsideScopeError);
+				assert.equal(
+					err.message,
+					`${task.template}: the request's scope is the connection 'ledger-db', and this task names the connection 'audit-db'. `
+					+ 'A task under a connection scope works on that connection only.',
+				);
+				assert.deepEqual(taskRefusalMapping(err), { code: 'connection-outside-scope', message: err.message });
+				// ... and is not one of the three a request fails with.
+				assert.equal(scopeErrorMapping(err), undefined);
+				return true;
+			});
 		}
 		assert.deepEqual(p.acquired, ['ledger-db', 'ledger-db'], 'the other connection was never acquired');
 

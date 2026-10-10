@@ -44,7 +44,7 @@
  */
 
 import { isCompletenessRecord } from '../completeness.js';
-import { scopeErrorMapping, type ScopeErrorCode } from '../context/invariants.js';
+import { taskRefusalMapping, type TaskRefusalCode } from '../context/invariants.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { writeTaskOutput } from './cache.js';
@@ -255,7 +255,8 @@ async function executeLeafTask(
 		const msg = err instanceof Error ? err.message : String(err);
 		// A refused scope is a failure the caller can act on: it keeps the scope
 		// error's code and its own message, with no 'runtime-threw:' in front.
-		const scoped = scopeErrorMapping(err);
+		// So does a task that names a connection outside the request's scope.
+		const scoped = taskRefusalMapping(err);
 		if (scoped !== undefined) {
 			log.warn({ runId, taskId: task.taskId, code: scoped.code, err: msg }, 'leaf task refused its scope');
 			return failedRecord(task, scoped.message, scoped.code);
@@ -524,7 +525,7 @@ function persistTaskRecord(
 	}
 }
 
-function failedRecord(task: PlannedTask, error: string, code?: ScopeErrorCode): TaskExecutionRecord {
+function failedRecord(task: PlannedTask, error: string, code?: TaskRefusalCode): TaskExecutionRecord {
 	return {
 		taskId:      task.taskId,
 		template:    task.template,

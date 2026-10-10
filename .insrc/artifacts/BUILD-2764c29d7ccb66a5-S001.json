@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2764c29d7ccb66a5",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T15:41:06.406Z",
+    "updatedAt": "2026-10-10T16:38:39.311Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "approvedAt": "2026-10-10T16:38:39.527Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "summary": "The guide (docs/daemon.md, \"The index is cleaned of files that are gone or ignored\") describes the clean-up, when it runs, what it removes and keeps, and its limit. After the push the installed daemon was updated from da1fae76 to 48c98646; its first start removed 33 absent and 2026 ignored files from this repository's index (4680 files to 2647, JavaScript 503 to 12) and cleaned three other registered repositories. Two code reviews by the daemon led to fixes after task 4: the pass decides for the whole repository before writing and removes nothing when none of the stored files is on disk, and a failure part-way still drops the cached results and runs the resolver.",
+    "testRecord": {
+      "md": "docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-2764c29d7ccb66a5-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-2764c29d7ccb66a5-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/smoke-installed-daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/queue-depth-for-repo.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/queue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/entity-files-for-repo.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": "src/db/entities.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": "src/db/relations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/reconcile.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T16:38:39.311Z"
+      }
+    ],
+    "commit": "ad23a568"
+  }
+}

@@ -257,6 +257,8 @@ For each task in the current Plan's `tasks`, in order:
 
 The aggregator rolls up bottom-up: each Plan's terminal aggregator produces this Plan's report; the parent task that spawned this Plan consumes that report as its output value; the parent Plan's aggregator stitches those values into the parent report. The Run's final report is the root Plan's aggregator output.
 
+**Several producers of one output name.** Output names are fixed per template, so two tasks of one template in a Plan (one per directory, one planner task per child Plan) produce the same name. The executor keeps, per name, the list of outputs of the tasks that finished, in Plan order, each with its producing task (`taskId`, `template`, `params`, `value`), and hands a consuming task the whole list for each name it consumes: `upstreamOutputs` is a map from output name to that list, never to one value. A parent Plan's aggregator therefore receives every child Plan's report, and a Plan's aggregator every directory's or file's output. A producer that failed or was skipped is named to the aggregator as an absent input also when a sibling produced the same name; the aggregator is then told that this task's output is absent and the others under the name are available. A consumer that is not the aggregator runs when a consumed name has at least one output and is not told which producers failed. Consequence: the aggregator's prompt grows with the number of producers, and a large Plan can exceed what the model accepts in one pass; bounding that is owned by Story s3 of the analyzer Epic (`b9d5c5c4`), not by the executor.
+
 ### 7. Aggregate
 
 The aggregator reads all task outputs in dependency order and stitches the target-specific report shape (see per-target docs). It:

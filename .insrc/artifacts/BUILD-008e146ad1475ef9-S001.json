@@ -1,0 +1,214 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "008e146ad1475ef9",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T14:08:41.695Z",
+    "updatedAt": "2026-10-10T14:34:18.162Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "approvedAt": "2026-10-10T14:34:18.474Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "docs/daemon.md has three new parts under 'How a request's size is measured': the time limit on a live data source (its setting analyzer.dataSourceListingTimeoutMs, the default of 120 seconds, that it is per source, the two new reasons, and that an abandoned listing goes on in the background), that a run measures the area it names once, and what is read for a symbol or a file (with what is not saved yet, filed as ISSUE-61045de91faef1a0). The analyze and config suites were run at 0dadf958 (before the Story) and at d7380e11 (this task) and compared by test name: 1295 and 1310 tests, no failure in either, no result changed, one name gone by a rename, thirteen names new. The comparison and both raw outputs are in the Story's measurements folder.",
+    "testRecord": {
+      "md": "docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-008e146ad1475ef9-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-008e146ad1475ef9-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-after-d7380e11.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-before-0dadf958.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-comparison-t4.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/__tests__/measure-pass.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/lookup-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/measure.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/run-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/__tests__/recursive.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/recursive.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/config-catalog-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/data-source-listing-timeout.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/config/analyze.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/config/config-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/analyze-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T14:34:18.162Z"
+      }
+    ],
+    "commit": "1daf3d8b"
+  }
+}

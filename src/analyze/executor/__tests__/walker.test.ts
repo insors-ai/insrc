@@ -49,6 +49,7 @@ import type {
 	PlanTask,
 	PlannedTask,
 	TemplateRuntime,
+	UpstreamOutput,
 } from '../types.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { PlanTreeNode } from '../../planner/recursive.js';
@@ -57,6 +58,11 @@ import { collectPlanSources } from '../plan-sources.js';
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** The walk's map of outputs, each name with the one output of the task named. */
+function produced(entries: ReadonlyArray<readonly [name: string, taskId: string, value: unknown]>): Map<string, UpstreamOutput[]> {
+	return new Map(entries.map(([name, taskId, value]) => [name, [{ taskId, template: 'demo.ok', params: {}, value }]]));
+}
 
 function uniqueRunId(label: string): string {
 	const suffix = Math.floor(Math.random() * 1e9).toString(16);
@@ -129,22 +135,22 @@ test('unmetDependencies: no consumes -> null', () => {
 
 test('unmetDependencies: every consume present -> null', () => {
 	const task = mkTask({ taskId: 't02', consumes: ['x', 'y'] });
-	const outputs = new Map<string, unknown>([['x', 1], ['y', 2]]);
+	const outputs = produced([['x', 't00', 1], ['y', 't01', 2]]);
 	assert.equal(_unmetDependenciesForTest(task, outputs, new Set()), null);
 });
 
 test('unmetDependencies: first missing name reported', () => {
 	const task = mkTask({ taskId: 't02', consumes: ['x', 'y', 'z'] });
-	const outputs = new Map<string, unknown>([['x', 1]]);
+	const outputs = produced([['x', 't00', 1]]);
 	// First missing is 'y'.
 	assert.equal(_unmetDependenciesForTest(task, outputs, new Set()), 'y');
 });
 
 test('projectUpstream: limits to consumed names only', () => {
 	const task = mkTask({ taskId: 't02', consumes: ['x'] });
-	const outputs = new Map<string, unknown>([['x', 1], ['y', 2], ['z', 3]]);
+	const outputs = produced([['x', 't00', 1], ['y', 't01', 2], ['z', 't03', 3]]);
 	const proj = _projectUpstreamForTest(task, outputs);
-	assert.deepEqual(Array.from(proj.entries()), [['x', 1]]);
+	assert.deepEqual(Array.from(proj.entries()), [['x', [{ taskId: 't00', template: 'demo.ok', params: {}, value: 1 }]]]);
 });
 
 test('checkOutputShape: exact match -> null', () => {

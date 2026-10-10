@@ -1,0 +1,494 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "2764c29d7ccb66a5",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T15:41:06.406Z",
+    "updatedAt": "2026-10-10T16:30:39.608Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "0d26867b",
+        "ranAt": "2026-10-10T15:41:06.406Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the read of a repository's stored files returns each file once, only that repository's files, and no empty path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-files-for-repo.test.ts",
+                "title": "the read of a repository's stored files returns each file once, only that repository's files, and no empty path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the removal of one repository's unresolved relations of a file leaves another repository's unresolved relations of the same path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-files-for-repo.test.ts",
+                "title": "the removal of one repository's unresolved relations of a file leaves another repository's unresolved relations of the same path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an unregistered repository has no stored files and its removal of unresolved relations does nothing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-files-for-repo.test.ts",
+                "title": "an unregistered repository has no stored files and its removal of unresolved relations does nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/entity-files-for-repo.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1418,
+            "titles": [
+              {
+                "title": "the read of a repository's stored files returns each file once, only that repository's files, and no empty path",
+                "result": "pass"
+              },
+              {
+                "title": "the removal of one repository's unresolved relations of a file leaves another repository's unresolved relations of the same path",
+                "result": "pass"
+              },
+              {
+                "title": "an unregistered repository has no stored files and its removal of unresolved relations does nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "c8667e0b",
+        "ranAt": "2026-10-10T15:43:41.783Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-depth-for-repo.test.ts",
+                "title": "a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a clean-up job for a registered repository with nothing stored is processed without error",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a clean-up job for a registered repository with nothing stored is processed without error",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/queue-depth-for-repo.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 538,
+            "titles": [
+              {
+                "title": "depthForRepo counts repoPath-named jobs (full/reembed/doc-summarise-repo) for that repo",
+                "result": "pass"
+              },
+              {
+                "title": "depthForRepo counts file/config-file jobs whose filePath is under the repo (repoPath+sep)",
+                "result": "pass"
+              },
+              {
+                "title": "repo-agnostic jobs (config-full/config-reindex/doc-summarise-entity) and other-repo jobs do NOT count",
+                "result": "pass"
+              },
+              {
+                "title": "depthForRepo returns 0 for a repo with no queued jobs; get depth() is the global total",
+                "result": "pass"
+              },
+              {
+                "title": "a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/reconcile.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 792,
+            "titles": [
+              {
+                "title": "a clean-up job for a registered repository with nothing stored is processed without error",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "f9041216",
+        "ranAt": "2026-10-10T15:48:18.037Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a file whose parent directory became a file is removed as absent",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a file whose parent directory became a file is removed as absent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the vector rows of a removed file are gone after the clean-up and those of a kept file remain",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "the vector rows of a removed file are gone after the clean-up and those of a kept file remain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a kept file's link into a removed entity is removed with it, and the kept file's other links and entities stay",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a kept file's link into a removed entity is removed with it, and the kept file's other links and entities stay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the clean-up method called directly removes the stale files, runs no resolver and removes no cached result",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "the clean-up method called directly removes the stale files, runs no resolver and removes no cached result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/reconcile.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2002,
+            "titles": [
+              {
+                "title": "a clean-up job for a registered repository with nothing stored is processed without error",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept",
+                "result": "pass"
+              },
+              {
+                "title": "running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose parent directory became a file is removed as absent",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it",
+                "result": "pass"
+              },
+              {
+                "title": "the vector rows of a removed file are gone after the clean-up and those of a kept file remain",
+                "result": "pass"
+              },
+              {
+                "title": "a kept file's link into a removed entity is removed with it, and the kept file's other links and entities stay",
+                "result": "pass"
+              },
+              {
+                "title": "a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up method called directly removes the stale files, runs no resolver and removes no cached result",
+                "result": "pass"
+              },
+              {
+                "title": "a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "4268017d",
+        "ranAt": "2026-10-10T15:50:33.460Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a repository left indexing with a last-indexed time gets a clean-up job at daemon start",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a repository left indexing with a last-indexed time gets a clean-up job at daemon start",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/reconcile.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2272,
+            "titles": [
+              {
+                "title": "a clean-up job for a registered repository with nothing stored is processed without error",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept",
+                "result": "pass"
+              },
+              {
+                "title": "running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose parent directory became a file is removed as absent",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it",
+                "result": "pass"
+              },
+              {
+                "title": "the vector rows of a removed file are gone after the clean-up and those of a kept file remain",
+                "result": "pass"
+              },
+              {
+                "title": "a kept file's link into a removed entity is removed with it, and the kept file's other links and entities stay",
+                "result": "pass"
+              },
+              {
+                "title": "a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up method called directly removes the stale files, runs no resolver and removes no cached result",
+                "result": "pass"
+              },
+              {
+                "title": "a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed",
+                "result": "pass"
+              },
+              {
+                "title": "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready",
+                "result": "pass"
+              },
+              {
+                "title": "a repository left indexing with a last-indexed time gets a clean-up job at daemon start",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "53a6fc92",
+        "ranAt": "2026-10-10T16:30:39.608Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "on the installed daemon after the update, the files under this repository's build output and the deleted test file have no entities, a source file still has its entities, and the repository's count of JavaScript files has fallen",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/smoke-installed-daemon.md (before and after readings from search.by_file and repo.stats, and the daemon's log line)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

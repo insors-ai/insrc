@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791643837124-vmxxo9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-10T14:50:57.854Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 20729,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "73fd1846a6238e1c",
+    "epicSlug": "vscode-plugin-package-lock-json-states",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "The extension's lock file states a version its manifest left behind",
+    "reproduction": "Read the two files of the VS Code extension. Observed on 2026-10-10: `vscode-plugin/package.json` states version 0.5.13, the version published to the Marketplace; `vscode-plugin/package-lock.json` states 0.4.8 in both of its own version fields (at the top and in the root package entry). Expected: the lock file states the version of the manifest it locks.",
+    "rootCause": "The extension's version was raised release after release in the manifest alone, and the lock file was not regenerated or edited with it. Which step of the release leaves it out was not looked into: the release is made by hand with a package command and a publish command, and neither rewrites the lock file's own version.",
+    "fixIntent": "The lock file states the manifest's version, and a release that raises the version leaves the two in step. Nothing about the dependencies the lock file pins changes."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/package.json",
+      "quotedText": "\"version\": \"0.5.13\","
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/package-lock.json",
+      "quotedText": "\"version\": \"0.4.8\","
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/plans/handover-2026-10-10.md",
+      "quotedText": "`vscode-plugin/package-lock.json` has a stale `version` field (0.4.8)."
+    }
+  ]
+}

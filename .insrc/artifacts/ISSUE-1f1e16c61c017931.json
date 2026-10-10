@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791643745850-0vefi7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-10T14:49:33.522Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 27671,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "1f1e16c61c017931",
+    "epicSlug": "src-shared-classify-ts-carries-second",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "src/shared holds a second size scale and two class lists that nothing uses",
+    "reproduction": "Search the sources for each name `src/shared/classify.ts` exports and for importers of its two sibling files. Observed on 2026-10-10: `ScopeSize` (seven steps, S to XXXXL), `SCOPE_META`, `SCOPE_ORDER`, `scopeLabel`, this file's `scopeDescription`, `ClassifyInput` and `ClassifyResult` are used nowhere outside the file; `src/shared/scope-classes.ts` and `src/shared/intent-classes.ts` are imported by nothing. One export of the file is in use: the type `ClassChoice`, imported by `src/shared/brainstorm-classes.ts` for the brainstorm workflow. The file's comment says that a size a model does not return in a recognisable form becomes M. Expected: the sources hold one size scale, the analyzer's five steps counted by code with no default, and no description of another.",
+    "rootCause": "The file is left from an earlier classifier that sized every kind of request on its own seven-step scale and fell back to M. The analyzer replaced it with a size counted by code, and the callers of the old classifier were removed, but the file, its scale and its two class lists were not. An earlier note said nothing imports the file; that was wrong for one type, `ClassChoice`.",
+    "fixIntent": "The sources no longer hold the unused size scale, its helper functions, the two unused types, or the two class lists nothing imports. The `ClassChoice` type the brainstorm workflow uses stays available to it. No behaviour changes: the build and every suite pass as before."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/shared/classify.ts",
+      "quotedText": "export type ScopeSize = 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL' | 'XXXXL';"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/shared/brainstorm-classes.ts",
+      "quotedText": "import type { ClassChoice } from './classify.js';"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/shared/scope-classes.ts",
+      "quotedText": "import type { ClassChoice } from './classify.js';"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/plans/handover-2026-10-10.md",
+      "quotedText": "`src/shared/classify.ts` is an unused classifier type with its own size"
+    }
+  ]
+}

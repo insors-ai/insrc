@@ -18,10 +18,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
 	_buildMessagesForTest,
 	_classifyErrorForTest,
+	_renderAbsentSectionForTest,
 	_renderUpstreamSectionForTest,
 	_stableStringifyForTest,
 	runAggregator,
@@ -29,8 +33,14 @@ import {
 import { AGGREGATE_LLM_SCHEMA } from '../aggregate-types.js';
 import type { AggregateLLMOutput } from '../aggregate-types.js';
 import type { LLMProvider } from '../../../../shared/types.js';
+import type { UpstreamOutput } from '../../../executor/types.js';
 
 const PROMPT_REL = 'prompts/analyze/code.aggregate.system.md';
+
+/** A map in which each name has the one output of the task it is named after. */
+function single(entries: ReadonlyArray<readonly [string, unknown]>): Map<string, UpstreamOutput[]> {
+	return new Map(entries.map(([name, value]) => [name, [{ taskId: name, template: 'demo.ok', params: {}, value }]]));
+}
 
 function stubProvider(structuredReply: AggregateLLMOutput, capture?: {
 	messages?: import('../../../../shared/types.js').LLMMessage[];
@@ -102,7 +112,7 @@ test('renderUpstreamSection: empty map -> "No upstream outputs" sentinel', () =>
 });
 
 test('renderUpstreamSection: tasks emitted in sorted taskId order', () => {
-	const map = new Map<string, unknown>([
+	const map = single([
 		['t05', { x: 1 }],
 		['t01', { y: 2 }],
 		['t03', { z: 3 }],
@@ -116,13 +126,13 @@ test('renderUpstreamSection: tasks emitted in sorted taskId order', () => {
 });
 
 test('renderUpstreamSection: null upstream rendered as unavailable note', () => {
-	const map = new Map<string, unknown>([['t01', null]]);
+	const map = single([['t01', null]]);
 	const out = _renderUpstreamSectionForTest(map);
 	assert.match(out, /unavailable.*upstream task t01/);
 });
 
 test('renderUpstreamSection: JSON output rendered in fenced block', () => {
-	const map = new Map<string, unknown>([['t02', { modules: ['a', 'b'] }]]);
+	const map = single([['t02', { modules: ['a', 'b'] }]]);
 	const out = _renderUpstreamSectionForTest(map);
 	assert.match(out, /### t02/);
 	assert.match(out, /```json/);
@@ -139,7 +149,7 @@ test('buildMessages: system has prompt content, user has Target/Scope/upstream',
 		promptContent:   'PROMPT BODY',
 		target:          'code',
 		scope:           'M',
-		upstreamOutputs: new Map([['t01', { items: ['a'] }]]),
+		upstreamOutputs: single([['t01', { items: ['a'] }]]),
 	});
 	assert.equal(msgs.length, 2);
 	assert.equal(msgs[0]!.role, 'system');
@@ -216,7 +226,7 @@ test('runAggregator: stub provider -> report carries LLM output + runtime metada
 		target:          'code',
 		scope:           'M',
 		runId:           'rt-agg-1',
-		upstreamOutputs: new Map<string, unknown>([
+		upstreamOutputs: single([
 			['t01', { ok: 1 }],
 			['t02', { ok: 2 }],
 			['t03', { ok: 3 }],
@@ -246,7 +256,7 @@ test('runAggregator: focus passed through to the user message', async () => {
 		target:          'code',
 		scope:           'XS',
 		runId:           'rt-agg-2',
-		upstreamOutputs: new Map([['t01', { ok: 1 }]]),
+		upstreamOutputs: single([['t01', { ok: 1 }]]),
 		focus:           'the central User entity',
 		provider:        stubProvider(reply, capture),
 	});
@@ -315,7 +325,7 @@ test('AGGREGATE_LLM_SCHEMA: requires summary + findings, additionalProperties fa
 // ---------------------------------------------------------------------------
 
 test("the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent", async () => {
-	const upstream = new Map<string, unknown>([['t01', { modules: ['pay'] }], ['t03', { entrypoints: ['settle'] }]]);
+	const upstream = single([['t01', { modules: ['pay'] }], ['t03', { entrypoints: ['settle'] }]]);
 	const reply: AggregateLLMOutput = { summary: 's', findings: [] };
 	const ask = async (absentInputs?: Parameters<typeof runAggregator>[0]['absentInputs'], omit = false) => {
 		const capture: { messages?: import('../../../../shared/types.js').LLMMessage[] } = {};
@@ -372,4 +382,123 @@ test("the aggregator's prompt lists each absent input with its producer and reas
 		absentInputs: [{ name: 'modules', producedBy: 't01', reason: 'scope-not-indexed' }],
 	});
 	assert.match(String(empty[1]!.content), /No upstream outputs were available[^\n]*\n\nAbsent inputs \(NOT available to you\):\n- modules: task t01 should have produced it\. Reason: scope-not-indexed\n/);
+});
+
+// ---------------------------------------------------------------------------
+// Several outputs under one name (ISSUE-8ab2cc2e)
+// ---------------------------------------------------------------------------
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const UNAVAILABLE = (producer: string): string =>
+	`[unavailable: upstream task ${producer} produced no output; reflect this gap in the report rather than fabricating.]`;
+
+test('a map in which every name has one output renders a user message byte-identical to the one rendered before the change', () => {
+	// The messages the code rendered at the commit before the change, for the
+	// same values, one per name: without and with absent inputs.
+	const before = JSON.parse(readFileSync(join(HERE, 'aggregate-message-before-8ab2cc2e.json'), 'utf8')) as { plain: string; withAbsent: string };
+	// The producing tasks are not named after their outputs, and carry params:
+	// none of it may show where a name has one output.
+	const upstream = new Map<string, UpstreamOutput[]>([
+		['surface',   [{ taskId: 't01', template: 'code.surface.functional', params: { module: 'src/pay' }, value: { b: 1, a: [1, 2] } }]],
+		['inventory', [{ taskId: 't02', template: 'docs.inventory.list',     params: {},                  value: null }]],
+		['report',    [{ taskId: 't03', template: 'code.subrun.deep-dive',   params: { area: 'pay' },     value: { summary: 's' } }]],
+	]);
+	const absent = [
+		{ name: 'x', producedBy: 't03', reason: 'runtime-threw: boom' },
+		{ name: 'y', producedBy: null, reason: 'no task of the plan produces this name' },
+	];
+	const base = { promptContent: 'P', target: 'code', scope: 'M', focus: 'refunds', upstreamOutputs: upstream } as const;
+	assert.equal(_buildMessagesForTest(base)[1]!.content, before.plain);
+	// No absent name has an output: the absent section is the old one too.
+	assert.equal(_buildMessagesForTest({ ...base, absentInputs: absent })[1]!.content, before.withAbsent);
+	// The kept strings are the real thing and not empty stand-ins.
+	assert.ok(before.plain.includes('### inventory\n[unavailable: upstream task inventory produced no output;'));
+	assert.ok(before.withAbsent.includes('- x: task t03 should have produced it. Reason: runtime-threw: boom\n'));
+});
+
+test('a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section', () => {
+	const map = new Map<string, UpstreamOutput[]>([
+		// Given in plan order, which is not the sorted order of the task ids.
+		['functional-surface', [
+			{ taskId: 't02', template: 'code.surface.functional', params: { module: 'src/pay' },          value: { symbols: ['settle'] } },
+			{ taskId: 't03', template: 'code.surface.functional', params: { module: 'src/refund' },       value: null },
+			{ taskId: 't01', template: 'code.surface.other',      params: { z: 1, module: 'src/ledger' }, value: ['post'] },
+		]],
+		['modules', [{ taskId: 't00', template: 'code.discovery.modules', params: { depth: 2 }, value: ['pay'] }]],
+	]);
+	assert.equal(_renderUpstreamSectionForTest(map), [
+		'Upstream task outputs:',
+		'### functional-surface (3 outputs, one per task)',
+		'#### functional-surface from task t02 (code.surface.functional)\nparams: {"module":"src/pay"}\n```json\n{\n  "symbols": [\n    "settle"\n  ]\n}\n```',
+		`#### functional-surface from task t03 (code.surface.functional)\nparams: {"module":"src/refund"}\n${UNAVAILABLE('t03')}`,
+		// The params are written with their keys sorted, on one line.
+		'#### functional-surface from task t01 (code.surface.other)\nparams: {"module":"src/ledger","z":1}\n```json\n[\n  "post"\n]\n```',
+		// A name with one output beside it keeps the plain block, with no task and no params.
+		'### modules\n```json\n[\n  "pay"\n]\n```',
+	].join('\n\n'));
+
+	// Two producers with the same params are both rendered; their task ids tell them apart.
+	const twins = _renderUpstreamSectionForTest(new Map([['report', [
+		{ taskId: 't01', template: 'code.subrun.deep-dive', params: {}, value: 'a' },
+		{ taskId: 't02', template: 'code.subrun.deep-dive', params: {}, value: 'b' },
+	]]]));
+	assert.equal(twins, [
+		'Upstream task outputs:',
+		'### report (2 outputs, one per task)',
+		'#### report from task t01 (code.subrun.deep-dive)\nparams: {}\n```json\n"a"\n```',
+		'#### report from task t02 (code.subrun.deep-dive)\nparams: {}\n```json\n"b"\n```',
+	].join('\n\n'));
+
+	// One output left of several (a sibling producer of the name is absent): the
+	// per-task form, so the output is attributable. An absent name nothing
+	// produced, or an absent entry with no producer, changes nothing.
+	const survivor = new Map([['modules', [{ taskId: 't04', template: 'code.discovery.modules', params: { dir: 'src/pay' }, value: ['pay'] }]]]);
+	const attributed = [
+		'Upstream task outputs:',
+		'### modules (1 output, one per task)',
+		'#### modules from task t04 (code.discovery.modules)\nparams: {"dir":"src/pay"}\n```json\n[\n  "pay"\n]\n```',
+	].join('\n\n');
+	const plain = 'Upstream task outputs:\n\n### modules\n```json\n[\n  "pay"\n]\n```';
+	assert.equal(_renderUpstreamSectionForTest(survivor, [{ name: 'modules', producedBy: 't02', reason: 'r' }]), attributed);
+	assert.equal(_renderUpstreamSectionForTest(survivor, [{ name: 'module-tree', producedBy: 't02', reason: 'r' }]), plain);
+	assert.equal(_renderUpstreamSectionForTest(survivor, [{ name: 'modules', producedBy: null, reason: 'r' }]), plain);
+	assert.equal(_renderUpstreamSectionForTest(survivor, []), plain);
+	assert.equal(_renderUpstreamSectionForTest(survivor), plain);
+
+	// A name with no output is read as not there.
+	assert.match(_renderUpstreamSectionForTest(new Map([['modules', []]])), /^No upstream outputs were available/);
+});
+
+test('an absent output of one of several producers is worded by its task and the others are said to be available; a name with no output keeps the old wording', () => {
+	const upstream = new Map<string, UpstreamOutput[]>([['functional-surface', [
+		{ taskId: 't01', template: 'code.surface.functional', params: { module: 'src/pay' }, value: 1 },
+		{ taskId: 't03', template: 'code.surface.functional', params: { module: 'src/ledger' }, value: 3 },
+	]]]);
+	const absent = [
+		{ name: 'functional-surface', producedBy: 't02', reason: 'runtime-threw: the graph store is closed' },
+		{ name: 'module-tree', producedBy: 't04', reason: 'scope-not-indexed' },
+		{ name: 'adherence-report', producedBy: null, reason: 'no task of the plan produces this name' },
+	];
+	assert.equal(_renderAbsentSectionForTest(absent, upstream),
+		'\n\nAbsent inputs (NOT available to you):\n' +
+		'- functional-surface: the output of task t02 under this name is absent; the other outputs under functional-surface are available. Reason: runtime-threw: the graph store is closed\n' +
+		'- module-tree: task t04 should have produced it. Reason: scope-not-indexed\n' +
+		'- adherence-report: no task of the plan produces it. Reason: no task of the plan produces this name\n\n' +
+		'These outputs were not produced, so you have nothing about them. Where a line above says that the output of one task under a name is absent, ' +
+		"only that task's output is missing: the other outputs given to you under the same name are available and the report covers them. In the summary " +
+		'and in the findings, state nothing about an absent output except that it is absent, with the task that should have produced it and the reason ' +
+		'given above. Do not infer, estimate or describe what it would have held, and do not present the report as covering it.');
+
+	// The same list where no absent name has an output: the section as it always was.
+	const old =
+		'\n\nAbsent inputs (NOT available to you):\n' +
+		'- functional-surface: task t02 should have produced it. Reason: runtime-threw: the graph store is closed\n' +
+		'- module-tree: task t04 should have produced it. Reason: scope-not-indexed\n' +
+		'- adherence-report: no task of the plan produces it. Reason: no task of the plan produces this name\n\n' +
+		'These inputs were not produced, so you have nothing about them. In the summary and in the findings, state nothing about an absent input ' +
+		'except that it is absent, with the task that should have produced it and the reason given above. Do not infer, estimate or describe what ' +
+		'it would have held, and do not present the report as covering it.';
+	assert.equal(_renderAbsentSectionForTest(absent, new Map()), old);
+	assert.equal(_renderAbsentSectionForTest(absent), old);
+	assert.equal(_renderAbsentSectionForTest(absent, new Map([['modules', upstream.get('functional-surface')!]])), old);
 });

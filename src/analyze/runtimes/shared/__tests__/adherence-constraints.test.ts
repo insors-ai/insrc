@@ -26,7 +26,7 @@ import type {
 	DocSummary,
 	PlannedTask,
 } from '../../../../shared/analyze-types.js';
-import type { TemplateExecuteArgs } from '../../../executor/types.js';
+import type { TemplateExecuteArgs, UpstreamOutput } from '../../../executor/types.js';
 
 import { _resolveConstraintsForTest } from '../adherence.js';
 
@@ -98,7 +98,7 @@ function makeExecuteArgs(params: Record<string, unknown>): TemplateExecuteArgs {
 		runId:            'test-run',
 		intent,
 		task,
-		upstreamOutputs:  new Map<string, unknown>(),
+		upstreamOutputs:  new Map<string, UpstreamOutput[]>(),
 	} as unknown as TemplateExecuteArgs;
 }
 
@@ -191,11 +191,12 @@ test('a constraintsSource in the params is not read: beside usable ids the ids a
 		constraintsSource: 't-upstream',
 		constraintIds:     [d.id],
 	});
-	(args.upstreamOutputs as Map<string, unknown>).set('t-upstream', {
-		constraints: [{ constraint: 'from-upstream', sourceEntityId: 'up-eid', file: '/u.md', heading: 'U' }],
-	});
+	(args.upstreamOutputs as Map<string, UpstreamOutput[]>).set('t-upstream', [{
+		taskId: 't-upstream', template: 'docs.constraint.enumerate', params: {},
+		value: { constraints: [{ constraint: 'from-upstream', sourceEntityId: 'up-eid', file: '/u.md', heading: 'U' }] },
+	}]);
 	// A map that fails the test if the check so much as asks it for a value.
-	const guarded = new Proxy(args.upstreamOutputs as Map<string, unknown>, {
+	const guarded = new Proxy(args.upstreamOutputs as Map<string, UpstreamOutput[]>, {
 		get: (_t, prop) => { throw new Error(`the check read upstreamOutputs.${String(prop)}`); },
 	});
 	const { constraints: resolved, source } = await _resolveConstraintsForTest(

@@ -34,7 +34,7 @@ import assert from 'node:assert/strict';
 import { _resetAnalyzeConfigCacheForTests } from '../../../../config/analyze.js';
 import { codeAggregateReportRuntime } from '../aggregate-report.js';
 import type { ClassifiedIntent } from '../../../../shared/analyze-types.js';
-import type { PlannedTask } from '../../../executor/types.js';
+import type { PlannedTask, UpstreamOutput } from '../../../executor/types.js';
 
 const GATE = process.env['INSRC_LIVE_TESTS'] === '1';
 if (!GATE) {
@@ -100,7 +100,7 @@ test('code.aggregate.report.live: real Ollama -> validator-passing AggregateRepo
 	const result = await codeAggregateReportRuntime.execute({
 		task:            AGGREGATOR_TASK,
 		intent:          INTENT,
-		upstreamOutputs: SYNTHETIC_UPSTREAM,
+		upstreamOutputs: asUpstream(SYNTHETIC_UPSTREAM),
 		runId:           `agg-live-${Math.floor(Math.random() * 1e9).toString(16)}`,
 	});
 
@@ -140,3 +140,10 @@ test('code.aggregate.report.live: real Ollama -> validator-passing AggregateRepo
 	assert.equal(report.metadata.tasksAnalyzed, SYNTHETIC_UPSTREAM.size);
 	assert.match(report.metadata.runId, /^agg-live-/);
 });
+
+/** Each synthetic value as the one output of the task it is keyed by. */
+function asUpstream(values: ReadonlyMap<string, unknown>): Map<string, UpstreamOutput[]> {
+	const map = new Map<string, UpstreamOutput[]>();
+	for (const [taskId, value] of values) map.set(taskId, [{ taskId, template: 'demo.synthetic', params: {}, value }]);
+	return map;
+}

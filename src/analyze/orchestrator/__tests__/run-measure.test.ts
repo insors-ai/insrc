@@ -19,15 +19,17 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { upsertEntities } from '../../../db/entities.js';
+import { loadConnections } from '../../../daemon/db/config.js';
+import { findEntitiesByFile, listEntitiesForRepo, upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
-import { addRepo } from '../../../db/repos.js';
+import { addRepo, listRepos } from '../../../db/repos.js';
 import { makeEntityId } from '../../../indexer/parser/base.js';
 import type { AnalyzeScope, AnalyzeScopeRef, ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
 import { renderCompletenessLine, renderMeasureLine } from '../../completeness.js';
 import { runWithRoutingContext } from '../../context/shaper-provider.js';
 import type { RoutingSeamContext } from '../../context/shaper-provider.js';
+import { CANCELLED_BEFORE_MEASURE, _setMeasureDepsForTest } from '../../measure.js';
 import type { RequestMeasure } from '../../measure.js';
 import { registerBuiltinTemplates } from '../../planner/templates/bootstrap.js';
 import { registerBuiltinRuntimes } from '../../runtimes/bootstrap.js';
@@ -77,6 +79,7 @@ test.beforeEach(async () => {
 
 test.afterEach(async () => {
 	_setClassifyForTest(undefined);
+	_setMeasureDepsForTest(undefined);
 	await closeGraphStore();
 	rmSync(sandbox, { recursive: true, force: true });
 });
@@ -122,20 +125,20 @@ interface Run {
 	readonly record: RunRecord | null;
 }
 
-async function run(tag: string, args: Omit<RunAnalyzeArgs, 'runId'>, answers: { plan?: unknown } = {}): Promise<Run> {
+async function run(tag: string, args: Omit<RunAnalyzeArgs, 'runId'>, answers: { plan?: unknown; onPlan?: (() => void) | undefined } = {}, signal?: AbortSignal): Promise<Run> {
 	const runId = `run-measure-${tag}-${Math.floor(Math.random() * 1e9).toString(16)}`;
 	const roles: string[] = [];
 	const routing = { router: { resolveProviderForRole: (role: string) => {
 		roles.push(role);
 		const completeStructured = async (_m: unknown, schema: unknown): Promise<unknown> => {
-			if (role === 'analyze.plan' && answers.plan !== undefined) return answers.plan;
+			if (role === 'analyze.plan' && answers.plan !== undefined) { answers.onPlan?.(); return answers.plan; }
 			return smallest(schema);
 		};
 		return { provider: { completeStructured } as unknown as LLMProvider };
 	} } } as unknown as RoutingSeamContext;
 	const events: AnalyzeRunEvent[] = [];
 	try {
-		const result = await runWithRoutingContext(routing, () => runAnalyze({ runId, ...args }, { onEvent: e => { events.push(e); } }));
+		const result = await runWithRoutingContext(routing, () => runAnalyze({ runId, ...args }, { onEvent: e => { events.push(e); }, ...(signal !== undefined ? { signal } : {}) }));
 		return { result, events, roles, record: readRunRecord(runId) };
 	} finally {
 		purgeRunForTests(runId);
@@ -238,4 +241,86 @@ test('runAnalyze sets the intent\'s size from the measure on both classification
 	assert.equal(outcome(pairing), 'classify/scope-ref-kind-target-mismatch');
 	assert.deepEqual(substeps(pairing), []);
 	assert.equal(pairing.record?.measure, undefined);
+});
+
+// ---------------------------------------------------------------------------
+// One measure per run, under the run's signal (ISSUE-008e146a)
+// ---------------------------------------------------------------------------
+
+test("a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way", async () => {
+	// The measure's own read of the repo, counted: nothing else in a run reads through it.
+	let measured = 0;
+	_setMeasureDepsForTest({ listEntities: async path => { measured += 1; return listEntitiesForRepo(null, path); } });
+	const whole = await run('one-measure', { userPrompt: 'what is here', scopeRef: repo(small), targetHint: 'code', scopeHint: 'L' }, { plan: fourTaskPlan(small, 'L') });
+	assert.equal(outcome(whole), 'ok');
+	// The run went through its context build, its plan and its tasks ...
+	assert.deepEqual(whole.roles, ['analyze.decompose', 'analyze.synthesize', 'analyze.plan', 'analyze.aggregate']);
+	// ... and the area it names was measured once: the context builder took no measure of its own.
+	assert.equal(measured, 1);
+	assert.deepEqual(classifiedOf(whole).measure, { source: 'named-area', items: 2, files: 1, characters: null, size: 'XS', determined: true, sizeHint: 'L' });
+	assert.equal(whole.result.intent?.scope, 'XS');
+
+	// A run whose plan is refused has measured once too.
+	measured = 0;
+	const refused = await run('one-measure-mid', { userPrompt: 'what is here', scopeRef: repo(mid), targetHint: 'code' }, { plan: fourTaskPlan(mid, 'XS') });
+	assert.equal(outcome(refused), 'plan/plan-invariant-failed');
+	assert.equal(measured, 1);
+});
+
+test("the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan", async () => {
+	// The request is cancelled while it is being classified. The measure that follows is handed the run's signal:
+	// it reads nothing and says so, and the run then ends as cancelled, at the stage it had not started.
+	let measured = 0;
+	_setMeasureDepsForTest({ listEntities: async path => { measured += 1; return listEntitiesForRepo(null, path); } });
+	const cancel = new AbortController();
+	const answer: ClassifiedIntent = { target: 'code', scope: 'XS', focused: false, scopeRef: repo(small), reasoning: 'the request names a repository of code' };
+	_setClassifyForTest(async () => { cancel.abort(); return answer; });
+	const cancelled = await run('cancelled', { userPrompt: 'what is here', scopeRef: repo(small) }, { plan: fourTaskPlan(small, 'XS') }, cancel.signal);
+	assert.equal(outcome(cancelled), 'plan/aborted');
+	const measure = classifiedOf(cancelled).measure!;
+	assert.deepEqual([measure.determined, measure.size, measure.note], [false, 'XL', CANCELLED_BEFORE_MEASURE]);
+	assert.equal(measured, 0, 'nothing was read for the measure');
+	assert.deepEqual(cancelled.roles, [], 'no model was asked for anything after the cancellation');
+
+	// The same request with a signal that does not fire is measured.
+	_setClassifyForTest(async () => answer);
+	const live = await run('not-cancelled', { userPrompt: 'what is here', scopeRef: repo(small) }, { plan: fourTaskPlan(small, 'XS') }, new AbortController().signal);
+	assert.equal(outcome(live), 'ok');
+	assert.equal(classifiedOf(live).measure?.determined, true);
+	assert.equal(measured, 1);
+
+	// --- The run hands the same signal to the recursive planner, which hands it to the measure of each child plan. ---
+	// A run whose plan holds a planner task: the child plan it spawns is measured from the area it names. The
+	// measure reads the registry through its own readers, which are counted here; nothing else in a run uses them.
+	let scopeReads = 0;
+	const real = { listRepos: () => listRepos(null), findEntitiesByFile: (file: string) => findEntitiesByFile(null, file), listEntitiesForRepo: (path: string) => listEntitiesForRepo(null, path), loadConnections };
+	const counted = new Proxy(real, { get: (t, prop) => { scopeReads += 1; return Reflect.get(t, prop); } });
+	_setMeasureDepsForTest({ scope: counted });
+	const childIntent: ClassifiedIntent = { target: 'code', scope: 'XS', focused: false, scopeRef: repo(small), reasoning: 'a closer look at the one module of the repository' };
+	const withChild = {
+		planId: 'p-child', goal: 'say what the repo holds', target: 'code', scope: 'XS',
+		reasoning: 'a plan of four tasks, one of which spawns a child plan, with one aggregate task at its end',
+		tasks: [
+			{ taskId: 't01', template: 'code.discovery.modules', kind: 'leaf', params: { scopeRef: repo(small) }, produces: ['modules'], rationale: 'discover the modules of the repo for the report' },
+			{ taskId: 't02', template: 'code.subrun.deep-dive', kind: 'planner', params: { childIntent }, produces: ['report'], rationale: 'plan a closer look at the one module of the repo' },
+			{ taskId: 't03', template: 'code.surface.functional', kind: 'leaf', params: { module: 'src' }, produces: ['functional-surface'], rationale: 'surface scan of the one module of the repo' },
+			{ taskId: 't04', template: 'code.aggregate.report', kind: 'leaf', params: {}, produces: ['report'], rationale: 'aggregate the task outputs into the final report' },
+		],
+	};
+	const request = { userPrompt: 'what is here', scopeRef: repo(small), targetHint: 'code' } as const;
+	// With a signal that does not fire, the child plan is measured: the measure's readers are used again after the
+	// planner model first answered.
+	let readsAtFirstPlan: number | undefined;
+	await run('child-measured', request, { plan: withChild, onPlan: () => { readsAtFirstPlan ??= scopeReads; } }, new AbortController().signal);
+	assert.ok(readsAtFirstPlan !== undefined && readsAtFirstPlan > 0, 'the run measured its request and reached the planner');
+	assert.ok(scopeReads > readsAtFirstPlan, `the child plan was measured (${readsAtFirstPlan} readings before the plan, ${scopeReads} after)`);
+	// Cancelled while the planner model answers for the root plan: the child's measure is handed the run's signal
+	// and reads nothing.
+	scopeReads = 0;
+	readsAtFirstPlan = undefined;
+	const stop = new AbortController();
+	const stopped = await run('child-not-measured', request, { plan: withChild, onPlan: () => { readsAtFirstPlan ??= scopeReads; stop.abort(); } }, stop.signal);
+	assert.ok(readsAtFirstPlan !== undefined && readsAtFirstPlan > 0);
+	assert.equal(scopeReads, readsAtFirstPlan, 'no reading was made for a child measure after the cancellation');
+	assert.equal(stopped.result.ok, false);
 });

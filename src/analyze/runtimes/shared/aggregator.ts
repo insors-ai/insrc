@@ -36,7 +36,7 @@ import type {
 	AnalyzeTarget,
 } from '../../../shared/analyze-types.js';
 import type { LLMMessage, LLMProvider } from '../../../shared/types.js';
-import type { AbsentInput } from '../../executor/types.js';
+import type { AbsentInput, UpstreamOutput } from '../../executor/types.js';
 
 import {
 	AGGREGATE_LLM_SCHEMA,
@@ -56,8 +56,11 @@ export interface RunAggregatorArgs {
 	readonly target:        AnalyzeTarget;
 	readonly scope:         AnalyzeScope;
 	readonly runId:         string;
-	/** Upstream output map (from the executor's TemplateExecuteArgs.upstreamOutputs). */
-	readonly upstreamOutputs: ReadonlyMap<string, unknown>;
+	/**
+	 * Upstream output map (from the executor's TemplateExecuteArgs.upstreamOutputs):
+	 * every output produced under each consumed name, in plan order.
+	 */
+	readonly upstreamOutputs: ReadonlyMap<string, readonly UpstreamOutput[]>;
 	/**
 	 * Optional human-readable goal / focus to prepend to the user
 	 * message (e.g., intent.focus for focused intents). Aggregators
@@ -133,7 +136,7 @@ export async function runAggregator(args: RunAggregatorArgs): Promise<AggregateR
 			target:        args.target,
 			scope:         args.scope,
 			findingCount:  llmOutput.findings.length,
-			upstreamTasks: args.upstreamOutputs.size,
+			upstreamTasks: countOutputs(args.upstreamOutputs),
 		},
 		'aggregator: LLM call ok',
 	);
@@ -145,7 +148,7 @@ export async function runAggregator(args: RunAggregatorArgs): Promise<AggregateR
 			target:        args.target,
 			scope:         args.scope,
 			runId:         args.runId,
-			tasksAnalyzed: args.upstreamOutputs.size,
+			tasksAnalyzed: countOutputs(args.upstreamOutputs),
 		},
 	};
 }
@@ -159,12 +162,19 @@ interface BuildMessagesArgs {
 	readonly target:          AnalyzeTarget;
 	readonly scope:           AnalyzeScope;
 	readonly focus?:          string | undefined;
-	readonly upstreamOutputs: ReadonlyMap<string, unknown>;
+	readonly upstreamOutputs: ReadonlyMap<string, readonly UpstreamOutput[]>;
 	readonly absentInputs?:   readonly AbsentInput[] | undefined;
 }
 
+/** The number of outputs handed to the report task, summed over the names. */
+function countOutputs(map: ReadonlyMap<string, readonly UpstreamOutput[]>): number {
+	let n = 0;
+	for (const list of map.values()) n += list.length;
+	return n;
+}
+
 function buildMessages(args: BuildMessagesArgs): LLMMessage[] {
-	const upstreamSection = renderUpstreamSection(args.upstreamOutputs);
+	const upstreamSection = renderUpstreamSection(args.upstreamOutputs, args.absentInputs);
 	const focusSection = args.focus !== undefined && args.focus.length > 0
 		? `\nFocus: ${args.focus}\n`
 		: '';
@@ -175,7 +185,7 @@ function buildMessages(args: BuildMessagesArgs): LLMMessage[] {
 		focusSection +
 		`\n` +
 		upstreamSection +
-		renderAbsentSection(args.absentInputs) +
+		renderAbsentSection(args.absentInputs, args.upstreamOutputs) +
 		`\n\n` +
 		`Compose the aggregate report. Respond with ONLY the JSON object ` +
 		`matching the schema -- no markdown fences, no prose outside the JSON body.`;
@@ -186,40 +196,99 @@ function buildMessages(args: BuildMessagesArgs): LLMMessage[] {
 	];
 }
 
-function renderUpstreamSection(map: ReadonlyMap<string, unknown>): string {
-	if (map.size === 0) {
+/**
+ * The outputs the report is written from. A name one task produced is one
+ * block, `### <name>` and the value. A name several tasks produced is a
+ * heading and one sub-block per task, in plan order, each titled with its
+ * task id and template and carrying the task's params, so that the model can
+ * tell the outputs apart. Names are in sorted order.
+ *
+ * A name whose one output is all that is left of several (a sibling producer
+ * of the name is in `absent`) is rendered in the per-task form too: the model
+ * is told that another task's output under the name is absent, and must be
+ * able to say which task the output it has came from.
+ */
+function renderUpstreamSection(
+	map:     ReadonlyMap<string, readonly UpstreamOutput[]>,
+	absent?: readonly AbsentInput[] | undefined,
+): string {
+	const partlyAbsent = new Set((absent ?? []).filter(a => a.producedBy !== null).map(a => a.name));
+	// A name with no output is not in the map; an empty list is read the same way.
+	const names = Array.from(map.keys()).filter(name => (map.get(name) ?? []).length > 0).sort();
+	if (names.length === 0) {
 		return 'No upstream outputs were available -- the aggregator must reflect this in its summary.';
 	}
-	const ids = Array.from(map.keys()).sort();
 	const blocks: string[] = ['Upstream task outputs:'];
-	for (const id of ids) {
-		const out = map.get(id);
-		if (out === null || out === undefined) {
+	for (const name of names) {
+		const list = map.get(name)!;
+		if (list.length === 1 && !partlyAbsent.has(name)) {
+			blocks.push(`### ${name}\n` + renderValue(list[0]!.value, name));
+			continue;
+		}
+		blocks.push(`### ${name} (${list.length} ${list.length === 1 ? 'output' : 'outputs'}, one per task)`);
+		for (const out of list) {
 			blocks.push(
-				`### ${id}\n` +
-					`[unavailable: upstream task ${id} produced no output; ` +
-					`reflect this gap in the report rather than fabricating.]`,
+				`#### ${name} from task ${out.taskId} (${out.template})\n` +
+					`params: ${stableStringify(out.params, 0)}\n` +
+					renderValue(out.value, out.taskId),
 			);
-		} else {
-			blocks.push(`### ${id}\n` + '```json\n' + stableStringify(out) + '\n```');
 		}
 	}
 	return blocks.join('\n\n');
+}
+
+/** One output's value as stable JSON, or the line that says it is unavailable. */
+function renderValue(value: unknown, producer: string): string {
+	if (value === null || value === undefined) {
+		return (
+			`[unavailable: upstream task ${producer} produced no output; ` +
+			`reflect this gap in the report rather than fabricating.]`
+		);
+	}
+	return '```json\n' + stableStringify(value) + '\n```';
 }
 
 /**
  * The inputs the plan did not produce, as their own section after the outputs
  * that exist. Empty when nothing is absent, so the prompt is then unchanged.
  * Each line carries the whole reason: nothing is shortened.
+ *
+ * A name may be absent for one task and present for its siblings (one of
+ * several producers failed). Such a line speaks of that task's output, not of
+ * the name, and says the other outputs under the name are available: the
+ * model was just given them. When no absent name has an output the section
+ * is worded by name, as it always was.
  */
-function renderAbsentSection(absent: readonly AbsentInput[] | undefined): string {
+function renderAbsentSection(
+	absent:   readonly AbsentInput[] | undefined,
+	upstream?: ReadonlyMap<string, readonly UpstreamOutput[]> | undefined,
+): string {
 	if (absent === undefined || absent.length === 0) return '';
+	const partly = (a: AbsentInput): boolean =>
+		a.producedBy !== null && (upstream?.get(a.name) ?? []).length > 0;
 	const lines = absent.map(a => {
+		if (partly(a)) {
+			return `- ${a.name}: the output of task ${a.producedBy} under this name is absent; ` +
+				`the other outputs under ${a.name} are available. Reason: ${a.reason}`;
+		}
 		const producer = a.producedBy === null
 			? 'no task of the plan produces it'
 			: `task ${a.producedBy} should have produced it`;
 		return `- ${a.name}: ${producer}. Reason: ${a.reason}`;
 	});
+	if (absent.some(partly)) {
+		return (
+			`\n\nAbsent inputs (NOT available to you):\n` +
+			lines.join('\n') +
+			`\n\n` +
+			`These outputs were not produced, so you have nothing about them. Where a line above says ` +
+			`that the output of one task under a name is absent, only that task's output is missing: the ` +
+			`other outputs given to you under the same name are available and the report covers them. In ` +
+			`the summary and in the findings, state nothing about an absent output except that it is ` +
+			`absent, with the task that should have produced it and the reason given above. Do not infer, ` +
+			`estimate or describe what it would have held, and do not present the report as covering it.`
+		);
+	}
 	return (
 		`\n\nAbsent inputs (NOT available to you):\n` +
 		lines.join('\n') +
@@ -235,7 +304,7 @@ function renderAbsentSection(absent: readonly AbsentInput[] | undefined): string
  * Sort object keys + Map entries deterministically so prompt content
  * is stable across runs (helps cache + debug diffing).
  */
-function stableStringify(value: unknown): string {
+function stableStringify(value: unknown, indent = 2): string {
 	return JSON.stringify(value, (_k, v) => {
 		if (v instanceof Map) {
 			const obj: Record<string, unknown> = {};
@@ -252,7 +321,7 @@ function stableStringify(value: unknown): string {
 			return sorted;
 		}
 		return v;
-	}, 2);
+	}, indent);
 }
 
 // ---------------------------------------------------------------------------

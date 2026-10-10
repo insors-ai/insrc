@@ -73,17 +73,35 @@ function signalFailingAt(n: number): AbortSignal {
 	return { get aborted(): boolean { reads += 1; if (reads === n) throw new Error(`the signal could not be read (reading ${n})`); return false; } } as unknown as AbortSignal;
 }
 
+/**
+ * A signal whose `aborted` cannot be read, once, at its first reading after
+ * `arm()`: armed when the request is classified, that reading is the plan
+ * stage's own. (The measure reads the signal too, before that event, and does
+ * not let a failed reading out.)
+ */
+function signalFailingOnceArmed(): { signal: AbortSignal; arm: () => void } {
+	let armed = false;
+	let thrown = false;
+	const signal = { get aborted(): boolean {
+		if (armed && !thrown) { thrown = true; throw new Error('the signal could not be read (after the request was classified)'); }
+		return false;
+	} } as unknown as AbortSignal;
+	return { signal, arm: () => { armed = true; } };
+}
+
 test("an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)", async () => {
-	// --- inside the plan stage: the second reading of the signal is the plan stage's ---
+	// --- inside the plan stage: the first reading of the signal after the request is classified is the plan stage's ---
 	const id = uniqueId('uncaught-plan');
 	try {
 		const events: AnalyzeRunEvent[] = [];
 		const liveAtDone: boolean[] = [];
 		let createdAtFirst: string | undefined;
+		const failing = signalFailingOnceArmed();
 		const result = await runAnalyze(hinted(id), {
-			signal: signalFailingAt(2),
+			signal: failing.signal,
 			onEvent: e => {
 				events.push(e);
+				if (e.type === 'classified') failing.arm();
 				if (createdAtFirst === undefined) createdAtFirst = readRunRecord(id)?.createdAt;
 				if (e.type === 'done') liveAtDone.push(isRunLive(id));
 			},
@@ -91,11 +109,11 @@ test("an uncaught error gives a failed record at the stage reached and a returne
 		// Returned, not thrown: 'internal-error' at the stage that was running, with the error's message.
 		assert.equal(result.ok, false);
 		if (result.ok) return;
-		assert.deepEqual([result.stage, result.error.code, result.error.message], ['plan', 'internal-error', 'the signal could not be read (reading 2)']);
+		assert.deepEqual([result.stage, result.error.code, result.error.message], ['plan', 'internal-error', 'the signal could not be read (after the request was classified)']);
 		assert.equal(result.intent?.target, 'code', 'the intent the run had reached goes with the failure');
 		// The record on disk says the same; it is not left in progress.
 		const record = readRunRecord(id);
-		assert.deepEqual([record?.status, record?.stage, record?.error?.code, record?.error?.message], ['failed', 'plan', 'internal-error', 'the signal could not be read (reading 2)']);
+		assert.deepEqual([record?.status, record?.stage, record?.error?.code, record?.error?.message], ['failed', 'plan', 'internal-error', 'the signal could not be read (after the request was classified)']);
 		assert.equal(record?.intent?.target, 'code');
 		// It is the run's own record, marked failed: the one it had last written, not a new one.
 		assert.ok(createdAtFirst !== undefined);
@@ -234,7 +252,9 @@ test('a run is live from its first read of a record until it returns, and with t
 	// A run that THROWS inside is not live afterwards either.
 	const thrown = uniqueId('thrown');
 	try {
-		await runAnalyze(hinted(thrown), { signal: signalFailingAt(2) });
+		const failing = signalFailingOnceArmed();
+		const result = await runAnalyze(hinted(thrown), { signal: failing.signal, onEvent: e => { if (e.type === 'classified') failing.arm(); } });
+		assert.deepEqual([result.ok, result.ok ? '' : result.error.code], [false, 'internal-error'], 'the run did throw inside');
 		assert.equal(isRunLive(thrown), false);
 	} finally {
 		purgeRunForTests(thrown);

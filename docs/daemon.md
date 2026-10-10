@@ -293,6 +293,76 @@ npx --no-install tsx cli/index.ts repo add    /path/to/my/repo
   Scala. Everything else is captured as a `file` entity without
   structural sub-entities.
 
+### The index is cleaned of files that are gone or ignored
+
+Indexing adds and updates. A separate clean-up pass removes what
+should no longer be in the index, so that a repo's index holds only
+files that exist on disk and that the repo's ignore list
+(`<repo>/.insrc/config.json`, key `ignore`) does not exclude.
+
+**When it runs.**
+
+- At daemon start, for every repo that is already indexed. It is
+  queued like any other index job, so start-up does not wait for it.
+- Inside every full index (a first index, or a re-index), after the
+  files are indexed and before relations between files are resolved.
+
+It does not run when the ignore list is edited while the daemon is
+running; a directory added to the list is cleaned out at the next
+daemon start or the next full index. You do not need to remove and
+re-add a repo to get rid of stale files.
+
+**What it removes.** For each file the index holds for the repo:
+
+- a file that is no longer on disk (also one whose parent directory
+  has been replaced by a file), and
+- a file with a path segment, relative to the repo, that is in the
+  ignore list (for example everything under `out/` once `out` is
+  ignored), whether or not the file still exists.
+
+The file's entities go with their relations, their unresolved
+relations and their vectors. Only the cleaned repo's entities are
+removed: where one registered repo lies under a directory that its
+registered parent ignores, the parent's clean-up leaves the child's
+entities for the same files. After a clean-up at daemon start that
+removed something, the repo's cached exploration results are dropped
+and relations are resolved once for the repo, so an analysis is not
+answered from a result computed before the clean-up. If the store
+fails part-way, both are still done for what was already removed,
+and the job then fails; the next daemon start finishes the clean-up.
+
+**What it keeps.**
+
+- A file that exists and is not ignored, even if the file listing
+  would not index it today (a minified file, a file git leaves out).
+- A file whose presence cannot be determined (a permission or I/O
+  error). The log line of the pass counts these as `notChecked`.
+- Entities that belong to no file (external endpoints).
+- Everything, when the repo looks to be away: its own directory is
+  missing, or the directory is there but files look deleted and not
+  one of the files the index holds for the repo is on disk (an
+  unmounted volume often leaves an empty mount point behind). The
+  pass removes nothing and logs a warning. The price of this caution:
+  a repo whose every indexed file really was deleted is not cleaned
+  by the pass; remove the repo, or index a file in it, to clear it.
+
+The pass logs `index clean-up complete` with four counts:
+`compared`, `removedAbsent`, `removedIgnored` and `notChecked`.
+
+**An ignored file is not indexed by a file event.** A create or
+update event for a file under an ignored directory indexes nothing,
+whether it comes from the watcher or from an `index.file` request. A
+delete event still removes what the index holds for the file.
+
+**One limit.** When a kept file had a resolved relation to an entity
+of a removed file, that relation goes with the removed entity and is
+not tried again until the kept file is next indexed. A file deleted
+while the daemon is watching behaves the same way.
+
+Counts that come from the index fall when stale files are removed: a
+repo's statistics, the size a request is measured as, and the files
+an analysis or a search can return.
+
 ---
 
 ## Configuration
@@ -745,6 +815,8 @@ case for:
   list of what exists;
 - a data request over several connections when any one of them could not be
   counted;
+- a live data source that does not answer within its time limit (see below);
+- a request that was cancelled while it was being measured;
 - an answer whose lookups all failed or are not supported.
 
 An empty directory inside an indexed repo is different: it is a count of zero,
@@ -753,6 +825,65 @@ so it is `XS` and determined.
 Measuring does not refuse a request. A request that was refused for its scope
 is still refused where it was, with the same code (see
 [the scope is checked once before planning](#the-scope-is-checked-once-before-planning)).
+
+### A live data source is given a time limit
+
+Measuring a data request asks each live source for the complete list of its
+tables, its namespaces or its files. That used to wait for as long as the
+source took, with no way to stop it. Now:
+
+- each source is given a time limit to be reached and listed, **120 seconds**
+  by default. The setting is `analyzer.dataSourceListingTimeoutMs` in
+  `~/.insrc/config.json`, in milliseconds; it is read each time a source is
+  measured, so a change needs no restart. A value that is not a number greater
+  than 0 is ignored and the default is used; a value above 2147483647 (about
+  24.8 days, the longest a timer waits) is taken as that;
+- a source that does not answer in time is not counted: the size is `XL`, not
+  determined, with the note `the listing of '<id>' timed out: the source did
+  not answer within <n> seconds`. The request goes on. Raise the setting for a
+  source whose full listing is known to take longer;
+- the limit is **per source**. A data request on a repository with several
+  connections gives each its own, one after another: two connections that do
+  not answer cost twice the limit. The other connections are still counted,
+  and the note names the ones that timed out;
+- a request that is cancelled stops measuring at once. Its measure is not
+  determined, with a note that says the request was cancelled, and the
+  connections not yet asked are not asked;
+- the wait is given up, not the source's own call. The data drivers cannot be
+  cancelled, so a listing that timed out may go on in the background until the
+  source answers or fails. The connection may stay busy until then;
+- a source whose listing is still out is not asked again. A later measure of
+  it (a child plan, another request) waits for the same call under its own
+  time limit, and is given the count if it arrives in time. So a source that
+  does not answer has one call out, not one per request. Once the call ends
+  the source is asked afresh.
+
+A child plan that names a source its parent also named measures it again,
+within its own limit: it asks the source afresh when the parent's call has
+ended, and waits on the parent's call when it is still out.
+
+### A run measures the area it names once
+
+A run measures its request and then builds its context. The context builder
+used to measure the same area a second time for its own planning call, at a
+later moment, so the two sizes could differ and a slow data source was waited
+on twice. The run now hands its measure to the builder, which uses it and
+takes none of its own; the plan request (`analyze.plan`) does the same. A
+caller that hands none, such as the one-shot `insrc_analyze` tool, is measured
+by the builder as before.
+
+### What is read for a symbol or a file
+
+For a request scoped to one symbol the measure reads that one entity, and for
+one scoped to a file the entities of that file; it no longer builds every
+stored entity of the repository to pick them out. The counts are the same.
+
+Two things are not saved yet, and are filed as `ISSUE-61045de91faef1a0`. The
+store has no index by file, so reading one file's entities still passes over
+the rows of the whole entity table. And the check that a code or docs scope
+lies in an indexed repository still reads every entity of that repository,
+once when the request is measured and again when the run builds its context
+and checks its scope before planning.
 
 ### The measure in the report, and the measure line
 
@@ -1033,6 +1164,43 @@ So a report can now be written although a task failed. Read its first line:
 the completeness line (see above) names every failed and skipped task, by its
 path for a task of a child plan, and it is written by code, not by the model.
 A child plan with a failed task still returns its report to its parent.
+
+#### Several tasks may produce the same output
+
+A plan often has several tasks that produce an output under one name: one
+`functional-surface` per directory, one `inventory` per file, one `report` per
+child plan. A task that consumes the name is handed **every** output produced
+under it by the tasks that finished, in plan order, each with the task that
+produced it (its id, its template and its parameters). It used to be handed
+the last one only, so a report was written from one directory of eight and a
+root report from one child plan of four, and neither said so.
+
+- In the report task's input, a name one task produced is one section,
+  `### <name>`, as before. A name several tasks produced is a section
+  `### <name> (<n> outputs, one per task)` holding one sub-section per task,
+  `#### <name> from task <taskId> (<template>)`, with a `params:` line that
+  tells the tasks apart (it holds the directory, the file or the area).
+- When one of several producers of a name failed or was skipped, the report
+  task runs on the others and is told that this task's output under the name
+  is absent, with the task's id and its reason, and that the other outputs
+  under the name are available. It used not to be told: the name counted as
+  present. When only one output of the name is left, it is still shown in the
+  per-task form (`### <name> (1 output, one per task)`), so the report can say
+  which task it came from.
+- A task that is not the report task runs when a name it consumes has at least
+  one output, and receives all that exist. It is not told which producers
+  failed; that list goes to the report task only.
+- `metadata.tasksAnalyzed` of a report is the number of outputs it was written
+  from, summed over the names.
+- A plan in which every name has one producer gives its report task the same
+  input as before, byte for byte.
+
+The report task's input now grows with the number of producers. A plan large
+enough can therefore fail at its report task with the model's own reason
+(`Prompt is too long`) where it used to return a report written from one
+output of many. That report was wrong. An input too large for one pass is the
+subject of Story s3 of the analyzer Epic (`b9d5c5c4`), which is to bound it;
+nothing here shortens or splits the input.
 
 ### A run that stops says so
 

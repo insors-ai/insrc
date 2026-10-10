@@ -7,7 +7,7 @@ Docs aggregation demands stricter faithfulness than code / data / infra aggregat
 ## Inputs you receive
 
 - `Target`, `Scope`, optional `Focus` -- the framing of the run. Target is always `docs` here.
-- A block titled `Upstream task outputs:` with one `### <taskId>` section per prior task. Each section's body is the task's output JSON in a fenced block, or the literal text `[unavailable: ...]` when the task failed.
+- A block titled `Upstream task outputs:` with one `### <output name>` section per output name. When one task produced the name, the section's body is that task's output JSON in a fenced block, or the literal text `[unavailable: ...]` when it produced nothing. When several tasks produced the name, the heading reads `### <output name> (<n> outputs, one per task)` and the section holds one `#### <output name> from task <taskId> (<template>)` sub-section per task, each with a `params:` line (that task's parameters as JSON) followed by that task's output JSON in a fenced block or `[unavailable: ...]`. The report must cover every sub-section; tell the sub-sections apart by the task's parameters.
 
 Upstream tasks come from the docs template catalog:
 - `docs.discovery.inventory` -- corpus inventory (files, families, titles)

@@ -72,6 +72,12 @@ export interface PlanBuilderOpts {
 	 * an italic subline under the parent row.
 	 */
 	readonly onLlmToken?: (preview: string) => void;
+	/**
+	 * The run's cancellation signal. The recursive planner hands it to the
+	 * measure of each child plan, so that a cancelled run does not wait on a
+	 * live data source a child names. It is used for nothing else.
+	 */
+	readonly signal?: AbortSignal | undefined;
 }
 
 /**

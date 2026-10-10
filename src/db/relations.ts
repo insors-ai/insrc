@@ -335,6 +335,33 @@ export async function deleteUnresolvedForFile(_db: DbClient, file: string): Prom
 	});
 }
 
+/**
+ * Repo-scoped variant of `deleteUnresolvedForFile`: removes only the
+ * unresolved rows `repo` holds for `file`. Another registered repo's
+ * rows for the same path (nested repos) are left alone. An
+ * unregistered repo is a no-op.
+ */
+export async function deleteUnresolvedForRepoFile(
+	_db: DbClient,
+	repo: string,
+	file: string,
+): Promise<void> {
+	const store = await getGraphStore();
+	const repoId = repoIdByPathInTxn(store, repo);
+	if (repoId === undefined) return;
+	const idsToDelete: string[] = [];
+	const idxKey = encodeUnresolvedByFileKey(repoId, file);
+	for (const value of store.unresolvedByFile.getValues(idxKey)) {
+		idsToDelete.push((value as Buffer).toString('utf8'));
+	}
+	if (idsToDelete.length === 0) return;
+	await withWriteTxn(s => {
+		for (const id of idsToDelete) {
+			deleteUnresolvedRowInTxn(s, id);
+		}
+	});
+}
+
 export async function deleteUnresolvedForRepo(_db: DbClient, repo: string): Promise<void> {
 	const store = await getGraphStore();
 	const repoId = repoIdByPathInTxn(store, repo);

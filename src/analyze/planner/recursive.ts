@@ -137,7 +137,7 @@ async function walk(
 		// was. The figure the planner model wrote is the measure's hint: it
 		// is never the size, and never the fallback when the count cannot
 		// be taken (the size is then the largest).
-		const childMeasure = await measureRequestScope(childIntent.scopeRef, childIntent.target, childIntent.scope);
+		const childMeasure = await measureRequestScope(childIntent.scopeRef, childIntent.target, childIntent.scope, { signal: opts.signal });
 		const measuredChild: ClassifiedIntent = { ...childIntent, scope: childMeasure.size };
 		log.info(
 			{ runId: opts.runId, taskId: task.taskId, size: childMeasure.size, determined: childMeasure.determined, sizeHint: childMeasure.sizeHint, note: childMeasure.note },

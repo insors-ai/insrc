@@ -27,7 +27,7 @@ import {
 	taskOutputPathFor,
 	_resetRuntimeRegistryForTests,
 } from '../index.js';
-import type { AbsentInput, PlanTask, PlannedTask, TaskExecutionEvent, TemplateExecuteArgs } from '../types.js';
+import type { AbsentInput, PlanTask, PlannedTask, TaskExecutionEvent, TemplateExecuteArgs, UpstreamOutput } from '../types.js';
 
 const INTENT: ClassifiedIntent = {
 	target: 'code', scope: 'XS', focused: false, scopeRef: { kind: 'repo', value: '/r' }, reasoning: 'walk failure fixture',
@@ -48,7 +48,7 @@ function node(p: PlanTask, children = new Map<string, PlanTreeNode>()): PlanTree
 
 let ran: string[] = [];
 let absentSeen: readonly AbsentInput[] | undefined;
-let upstreamSeen: Record<string, unknown> = {};
+let upstreamSeen: Record<string, readonly UpstreamOutput[]> = {};
 
 function register(): void {
 	_resetRuntimeRegistryForTests();
@@ -121,7 +121,10 @@ test('a writing failure while the walk handles one task fails that task and the 
 		assert.equal(readTaskOutput(runId, 't03')?.status, 'skipped-dependency-unavailable');
 		// The aggregate task runs on what exists and is told of the failed task.
 		assert.deepEqual(executed.root.finalReport, REPORT);
-		assert.deepEqual(upstreamSeen, { modules: 'modules from t01', entrypoints: 'entrypoints from t04' });
+		assert.deepEqual(upstreamSeen, {
+			modules:     [{ taskId: 't01', template: 'demo.ok', params: {}, value: 'modules from t01' }],
+			entrypoints: [{ taskId: 't04', template: 'demo.ok', params: {}, value: 'entrypoints from t04' }],
+		});
 		assert.deepEqual(absentSeen, [
 			{ name: 'module-tree', producedBy: 't02', reason: t02.error },
 			{ name: 'derived', producedBy: 't03', reason: 'dependency-unavailable: module-tree' },

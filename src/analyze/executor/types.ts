@@ -38,20 +38,6 @@ import type { PlanTreeNode } from '../planner/recursive.js';
 // ---------------------------------------------------------------------------
 
 /**
- * Arguments handed to a template runtime's execute() call.
- *
- * `upstreamOutputs` is a Map from produces-name to materialized
- * value. Names come from the task's declared `consumes` array; the
- * executor injects only the names this specific task consumes (NOT
- * the full upstream output set).
- *
- * For aggregator tasks (which typically consume every prior task's
- * produces), the executor passes the union of every preceding
- * task's outputs since the aggregator's `consumes` is by convention
- * "*" or the explicit per-task names. Aggregators decide how to
- * stitch.
- */
-/**
  * A name the plan did not produce, for the aggregate-report task: the output
  * a failed or skipped task would have produced, with that task's id and its
  * recorded reason; or a name the aggregate task consumes that no task of the
@@ -63,10 +49,33 @@ export interface AbsentInput {
 	readonly reason:     string;
 }
 
+/**
+ * One output of one task that finished ok, with what is needed to tell it
+ * from the outputs its sibling tasks produced under the same name.
+ */
+export interface UpstreamOutput {
+	readonly taskId:   string;
+	readonly template: string;
+	readonly params:   Readonly<Record<string, unknown>>;
+	readonly value:    unknown;
+}
+
+/**
+ * Arguments handed to a template runtime's execute() call.
+ *
+ * `upstreamOutputs` is a Map from produces-name to EVERY output the
+ * tasks of the plan produced under that name, in plan order, each
+ * with the task that produced it. Several tasks of a plan may produce
+ * the same name (one task per directory, one planner task per child
+ * plan): a consumer is handed all of them, never one of several.
+ * Names come from the task's declared `consumes` array; the executor
+ * injects only the names this specific task consumes (NOT the full
+ * upstream output set). A name with no output is not in the map.
+ */
 export interface TemplateExecuteArgs {
 	readonly task:            PlannedTask;
 	readonly intent:          ClassifiedIntent;
-	readonly upstreamOutputs: ReadonlyMap<string, unknown>;
+	readonly upstreamOutputs: ReadonlyMap<string, readonly UpstreamOutput[]>;
 	readonly runId:           string;
 	/** For the aggregate-report task only, and only when some of its inputs
 	 *  are missing: what the plan did not produce. */

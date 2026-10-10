@@ -27,11 +27,13 @@
  * that is not determined.
  */
 
+import { dataSourceListingTimeoutMs } from '../config/analyze.js';
 import { listFilesForConnection } from '../daemon/db/list-files.js';
-import { listEntitiesForRepo } from '../db/entities.js';
+import { findEntitiesByFile, getEntity, listEntitiesForRepo } from '../db/entities.js';
 import { listRepos } from '../db/repos.js';
 import type { AnalyzeScope, AnalyzeScopeRef, AnalyzeTarget, ClassifiedIntent } from '../shared/analyze-types.js';
 import type { KvDriver, RdbmsDriver } from '../shared/db-driver.js';
+import { getLogger } from '../shared/logger.js';
 import type { Entity, RegisteredRepo } from '../shared/types.js';
 import { scopeErrorMapping } from './context/invariants.js';
 import { resolveScopeForTarget } from './context/scope.js';
@@ -44,6 +46,8 @@ import type { DataScope } from './runtimes/data/_shared.js';
 import { walkFiles } from './runtimes/infra/_shared.js';
 import { liesUnder } from './runtimes/shared/source-modules.js';
 import { inAreaOf, resolveTaskScope } from './runtimes/shared/task-scope.js';
+
+const log = getLogger('analyze:measure');
 
 // The measure's one line is written beside the completeness line, in a module
 // that imports nothing; it is offered from here too.
@@ -245,11 +249,47 @@ export interface MeasureDeps {
 	readonly scope?:        ScopeDeps | undefined;
 	/** All stored entities of a repo. */
 	readonly listEntities?: ((repoPath: string) => Promise<readonly Entity[]>) | undefined;
+	/** One stored entity, by its id: the read of a symbol scope. */
+	readonly getEntity?:    ((id: string) => Promise<Entity | null>) | undefined;
+	/** The stored entities of one file: the read of a file scope. */
+	readonly listEntitiesOfFile?: ((file: string) => Promise<readonly Entity[]>) | undefined;
 	/** The registered repos. */
 	readonly listRepos?:    (() => Promise<readonly RegisteredRepo[]>) | undefined;
 	/** The infra tasks' file walk. */
 	readonly walk?:         typeof walkFiles | undefined;
+	/** The configured time limit for one live data source, in place of the setting's reader. */
+	readonly sourceTimeoutMs?: (() => number) | undefined;
 }
+
+/** What a caller may pass to the measuring pass. */
+export interface MeasureOptions {
+	/** The request's cancellation signal: once it fires, the pass stops and the measure is not determined. */
+	readonly signal?:          AbortSignal | undefined;
+	/**
+	 * The time one live data source is given to be reached and listed, in
+	 * milliseconds, in place of the configured value. A value that is not a
+	 * finite number greater than 0 is treated as left out.
+	 */
+	readonly sourceTimeoutMs?: number | undefined;
+}
+
+/**
+ * Whether the request's signal has fired. A signal that cannot be read is
+ * taken as one that has not: the pass never throws, and the run that owns the
+ * signal reads it again at its next stage.
+ */
+function isCancelled(options: MeasureOptions | undefined): boolean {
+	try {
+		return options?.signal?.aborted === true;
+	} catch {
+		return false;
+	}
+}
+
+/** Said when the request was cancelled before anything was read. */
+export const CANCELLED_BEFORE_MEASURE = 'the request was cancelled before it was measured';
+/** Said when the request was cancelled between the connections of a repo, workspace or manifest directory. */
+export const CANCELLED_AMONG_SOURCES = 'the request was cancelled while its data sources were being measured';
 
 let depsForTest: MeasureDeps | undefined;
 /** Test seam: pass undefined to go back to the real stores and the real disk. */
@@ -259,6 +299,10 @@ export function _setMeasureDepsForTest(deps: MeasureDeps | undefined): void {
 
 const readEntities = (repoPath: string): Promise<readonly Entity[]> =>
 	depsForTest?.listEntities !== undefined ? depsForTest.listEntities(repoPath) : listEntitiesForRepo(null, repoPath);
+const readEntity = (id: string): Promise<Entity | null> =>
+	depsForTest?.getEntity !== undefined ? depsForTest.getEntity(id) : getEntity(null, id);
+const readEntitiesOfFile = (file: string): Promise<readonly Entity[]> =>
+	depsForTest?.listEntitiesOfFile !== undefined ? depsForTest.listEntitiesOfFile(file) : findEntitiesByFile(null, file);
 const readRepos = (): Promise<readonly RegisteredRepo[]> =>
 	depsForTest?.listRepos !== undefined ? depsForTest.listRepos() : listRepos(null);
 
@@ -286,7 +330,11 @@ export async function measureRequestScope(
 	scopeRef:  AnalyzeScopeRef,
 	target:    AnalyzeTarget,
 	sizeHint?: AnalyzeScope,
+	options?:  MeasureOptions,
 ): Promise<RequestMeasure> {
+	if (isCancelled(options)) {
+		return notDetermined(sourceFor(scopeRef.kind, target), CANCELLED_BEFORE_MEASURE, sizeHint);
+	}
 	let scope: ResolvedScope;
 	try {
 		scope = target === 'generic'
@@ -299,7 +347,7 @@ export async function measureRequestScope(
 			: `the scope could not be resolved, because a read of the registry or the store failed (${reasonOf(err)})`;
 		return notDetermined(sourceFor(scopeRef.kind, target), note, sizeHint);
 	}
-	return measureResolvedScope(scope, target, sizeHint);
+	return measureResolvedScope(scope, target, sizeHint, options);
 }
 
 /**
@@ -317,10 +365,14 @@ export async function measureResolvedScope(
 	scope:     ResolvedScope,
 	target:    AnalyzeTarget,
 	sizeHint?: AnalyzeScope,
+	options?:  MeasureOptions,
 ): Promise<RequestMeasure> {
+	if (isCancelled(options)) {
+		return notDetermined(sourceFor(scope.kind, target), CANCELLED_BEFORE_MEASURE, sizeHint);
+	}
 	try {
-		if (scope.kind === 'connection') return await measureDataSource(dataScopeOf(scope), sizeHint);
-		if (target === 'data') return await measureDataPool(dataScopeOf(scope).poolPath, sizeHint);
+		if (scope.kind === 'connection') return await measureDataSource(dataScopeOf(scope), sizeHint, options);
+		if (target === 'data') return await measureDataPool(dataScopeOf(scope).poolPath, sizeHint, options);
 		if (target === 'infra') return await measureInfraDirectory(scope.lookupPath, sizeHint);
 		return await measureStoredArea(scope, sizeHint);
 	} catch (err) {
@@ -341,12 +393,39 @@ async function measureStoredArea(scope: ResolvedScope, sizeHint: AnalyzeScope | 
 		return notDetermined('named-area',
 			`the index holds nothing for the path ${scope.lookupPath}: no registered repository contains it`, sizeHint);
 	}
+	// A symbol or a file is read on its own, not out of every entity of its repo.
+	const own = await readOwnArea(scope, scope.repoPath);
+	if (own !== null) return measureNamedArea(scope, own, sizeHint);
 	const entities = await readEntities(scope.repoPath);
 	if (entities.length === 0) {
 		return notDetermined('named-area',
 			`the index holds nothing for the path ${scope.lookupPath}: the repository ${scope.repoPath} holds no stored entity`, sizeHint);
 	}
 	return measureNamedArea(scope, entities, sizeHint);
+}
+
+/**
+ * The stored entities of a symbol or file scope, read without asking for
+ * every entity of the repo: the one entity by its id, or the entities of the
+ * one file. Only entities of the scope's repo count. Null when the scope is
+ * of another kind, or the read finds none: the caller then reads the whole
+ * repo, which alone can tell a file with nothing in it from a repo that is
+ * not indexed.
+ *
+ * The read of one file's entities still passes over the rows of the entity
+ * table (the store has no index by file, ISSUE-61045de91faef1a0): what it
+ * saves is building every entity of the repo.
+ */
+async function readOwnArea(scope: ResolvedScope, repoPath: string): Promise<readonly Entity[] | null> {
+	if (scope.kind === 'symbol' && scope.entityId !== undefined) {
+		const entity = await readEntity(scope.entityId);
+		return entity !== null && entity.repo === repoPath ? [entity] : null;
+	}
+	if (scope.kind === 'file' && scope.filePath !== undefined) {
+		const inRepo = (await readEntitiesOfFile(scope.filePath)).filter(e => e.repo === repoPath);
+		return inRepo.length > 0 ? inRepo : null;
+	}
+	return null;
 }
 
 /** A workspace that no registered repo contains: every registered repo under it, each read once. */
@@ -424,10 +503,15 @@ const SAMPLED_KINDS: ReadonlySet<string> = new Set(['redis', 'valkey', 'keydb', 
  * supported; the listing fails or reports that it was cut; or the source is
  * one whose listing is a sample of keys. It never starts a scan of a live
  * store's keys.
+ *
+ * Reaching the source and listing it are given one bounded wait (see
+ * `measureConnection`). Loading the pool is not inside it: that reads the
+ * connections file and closes the drivers of connections removed from it.
  */
-export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScope): Promise<RequestMeasure> {
+export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScope, options?: MeasureOptions): Promise<RequestMeasure> {
 	const id = scope.connectionId;
 	if (id === undefined) return notDetermined('data-source', 'no connection is named: a data source is measured one connection at a time', sizeHint);
+	if (isCancelled(options)) return notDetermined('data-source', CANCELLED_BEFORE_MEASURE, sizeHint);
 	let pool: DataPool;
 	try {
 		pool = await acquireDataPool(scope.poolPath);
@@ -435,13 +519,106 @@ export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScop
 	} catch (err) {
 		return notDetermined('data-source', `the source '${id}' cannot be reached (${reasonOf(err)})`, sizeHint);
 	}
-	return measureConnection(pool, id, sizeHint);
+	return measureConnection(pool, id, sizeHint, options);
 }
 
 type DataPool = Awaited<ReturnType<typeof acquireDataPool>>;
 
-/** The measure of one connection of a pool that is already loaded. */
-async function measureConnection(pool: DataPool, id: string, sizeHint: AnalyzeScope | undefined): Promise<RequestMeasure> {
+/** How a bounded wait ended. */
+type WaitOutcome<T> =
+	| { readonly kind: 'done'; readonly value: T }
+	| { readonly kind: 'timed-out' }
+	| { readonly kind: 'cancelled' };
+
+/**
+ * Wait for `work` for at most `limitMs`, or until `signal` fires. The work
+ * itself is not stopped when the wait ends first: the data drivers have no
+ * cancellation. A rejection of the work while the wait is on rejects the
+ * wait; one that comes after the wait has ended is handed to `onLate`, so it
+ * is never left unhandled.
+ */
+function withinLimit<T>(
+	work:    Promise<T>,
+	limitMs: number,
+	signal:  AbortSignal | undefined,
+	onLate:  (err: unknown) => void,
+): Promise<WaitOutcome<T>> {
+	return new Promise<WaitOutcome<T>>((resolve, reject) => {
+		let over = false;
+		const end = (outcome: WaitOutcome<T>): void => {
+			if (over) return;
+			over = true;
+			clearTimeout(timer);
+			try { signal?.removeEventListener('abort', onAbort); } catch { /* nothing to remove */ }
+			resolve(outcome);
+		};
+		const onAbort = (): void => end({ kind: 'cancelled' });
+		const timer = setTimeout(() => end({ kind: 'timed-out' }), limitMs);
+		if (signal !== undefined) {
+			// A signal that cannot be read or listened to is taken as one that has not fired.
+			try {
+				if (signal.aborted) end({ kind: 'cancelled' });
+				else signal.addEventListener('abort', onAbort, { once: true });
+			} catch { /* the wait goes on under its time limit */ }
+		}
+		work.then(
+			value => end({ kind: 'done', value }),
+			err => {
+				if (over) { onLate(err); return; }
+				over = true;
+				clearTimeout(timer);
+				try { signal?.removeEventListener('abort', onAbort); } catch { /* nothing to remove */ }
+				reject(err);
+			},
+		);
+	});
+}
+
+/** The longest delay a timer takes (about 24.8 days): given a longer one, the runtime fires the timer at once. */
+export const MAX_SOURCE_TIMEOUT_MS = 2_147_483_647;
+
+/**
+ * The time one live source is given: the caller's, when it is a usable limit,
+ * else the configured one; never more than a timer can wait, so that a very
+ * large value is a very long limit and not one that ends at once.
+ */
+function sourceLimitMs(options: MeasureOptions | undefined): number {
+	const given = options?.sourceTimeoutMs;
+	const limit = typeof given === 'number' && Number.isFinite(given) && given > 0
+		? given
+		: depsForTest?.sourceTimeoutMs !== undefined ? depsForTest.sourceTimeoutMs() : dataSourceListingTimeoutMs();
+	return Math.min(limit, MAX_SOURCE_TIMEOUT_MS);
+}
+
+/** A reach-and-list call that is still out, and whether a caller has given up waiting for it. */
+interface PendingListing { work: Promise<RequestMeasure>; abandoned: boolean }
+
+/**
+ * The reach-and-list calls still out, per pool and connection. A source that
+ * has not answered yet is not asked again while its call is out: a later
+ * measure of it (another child plan, another request) waits for the same
+ * call under its own time limit, so the calls on one stalled connection do
+ * not pile up. An entry is removed when its call ends, whatever its result.
+ */
+const pendingListings = new WeakMap<object, Map<string, PendingListing>>();
+
+/**
+ * The measure of one connection of a pool that is already loaded.
+ *
+ * Reaching the connection (`pool.acquire`) and listing it are given ONE
+ * bounded wait: the caller's limit, else the configured one. When the wait
+ * ends first, or the request's signal fires, the measure is not determined
+ * with its reason, and the driver's call is left to end in the background:
+ * its late result is dropped.
+ */
+async function measureConnection(
+	pool:     DataPool,
+	id:       string,
+	sizeHint: AnalyzeScope | undefined,
+	options?: MeasureOptions,
+): Promise<RequestMeasure> {
+	/** A measure of this call: the caller's stated size is its own, also on a result shared with another caller. */
+	const hinted = (m: RequestMeasure): RequestMeasure => (sizeHint !== undefined ? { ...m, sizeHint } : m);
 	const nd = (note: string): RequestMeasure => notDetermined('data-source', note, sizeHint);
 
 	// A source whose listing is a sample of keys is known by its kind, which the
@@ -451,45 +628,80 @@ async function measureConnection(pool: DataPool, id: string, sizeHint: AnalyzeSc
 		return nd(`the source '${id}' (${declaredKind}) has no namespaces to count; its listing is a sample of keys`);
 	}
 
-	let driver: Awaited<ReturnType<DataPool['acquire']>>;
-	try {
-		driver = await pool.acquire(id);
-	} catch (err) {
-		return nd(`the source '${id}' cannot be reached (${reasonOf(err)})`);
+	const limitMs = sourceLimitMs(options);
+	const late = (what: string, err: unknown): void => {
+		log.debug({ connectionId: id, err: reasonOf(err) }, `the measure of a data source was abandoned; its ${what} failed afterwards`);
+	};
+	// The call that is already out for this connection, or a new one.
+	let out = pendingListings.get(pool);
+	if (out === undefined) { out = new Map(); pendingListings.set(pool, out); }
+	let pending = out.get(id);
+	if (pending === undefined) {
+		// The call reads the entry's own flag, so the entry exists before the call starts.
+		const entry = { abandoned: false } as PendingListing;
+		entry.work = reachAndList(entry);
+		const calls = out;
+		void entry.work.finally(() => { if (calls.get(id) === entry) calls.delete(id); });
+		out.set(id, entry);
+		pending = entry;
 	}
+	const outcome = await withinLimit(pending.work, limitMs, options?.signal, err => late('call', err));
+	if (outcome.kind === 'done') return hinted(outcome.value);
+	// What the call does after this is late.
+	pending.abandoned = true;
+	if (outcome.kind === 'cancelled') return nd(`the request was cancelled while the source '${id}' was being measured`);
+	return nd(`the listing of '${id}' timed out: the source did not answer within ${limitMs / 1000} seconds`);
 
-	try {
-		switch (driver.family) {
-			case 'rdbms': {
-				const r = driver as RdbmsDriver;
-				if (typeof r.listTables !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no table listing`);
-				const listing = await r.listTables({ complete: true });
-				if (listing.truncated) return nd(`the table listing of '${id}' was cut at ${listing.tables.length} tables`);
-				return dataMeasure(listing.tables.length, 0, sizeHint);
-			}
-			case 'kv': {
-				if (SAMPLED_KINDS.has(driver.kind)) {
-					return nd(`the source '${id}' (${driver.kind}) has no namespaces to count; its listing is a sample of keys`);
-				}
-				const k = driver as KvDriver;
-				if (typeof k.listNamespaces !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no namespace listing`);
-				const listing = await k.listNamespaces({ complete: true });
-				if (!listing.supported) return nd(`the source '${id}' (${driver.kind}) answers that listing its namespaces is not supported`);
-				if (listing.truncated) return nd(`the namespace listing of '${id}' was cut at ${listing.namespaces.length} namespaces`);
-				return dataMeasure(listing.namespaces.length, 0, sizeHint);
-			}
-			case 'file': {
-				const config = pool.list().find(c => c.id === id);
-				if (config === undefined || typeof config.path !== 'string') return nd(`the file connection '${id}' has no path`);
-				const listing = await listFilesForConnection(config.path, { recursive: config.recursive === true });
-				if (listing.truncated) return nd(`the file listing of '${id}' was cut at ${listing.files.length} files`);
-				return dataMeasure(listing.files.length, listing.files.length, sizeHint);
-			}
-			default:
-				return nd(`the source '${id}' is of a family that has no listing (${String((driver as { family?: unknown }).family)})`);
+	/**
+	 * Reach the connection and list it. Never rejects: each failure is a
+	 * measure that is not determined. Its result carries no stated size: it
+	 * may be shared by callers that stated different ones.
+	 */
+	async function reachAndList(state: { readonly abandoned: boolean }): Promise<RequestMeasure> {
+		const nd = (note: string): RequestMeasure => notDetermined('data-source', note);
+		const sizeHint = undefined;
+		let driver: Awaited<ReturnType<DataPool['acquire']>>;
+		try {
+			driver = await pool.acquire(id);
+		} catch (err) {
+			if (state.abandoned) late('connection', err);
+			return nd(`the source '${id}' cannot be reached (${reasonOf(err)})`);
 		}
-	} catch (err) {
-		return nd(`the listing of '${id}' failed (${reasonOf(err)})`);
+
+		try {
+			switch (driver.family) {
+				case 'rdbms': {
+					const r = driver as RdbmsDriver;
+					if (typeof r.listTables !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no table listing`);
+					const listing = await r.listTables({ complete: true });
+					if (listing.truncated) return nd(`the table listing of '${id}' was cut at ${listing.tables.length} tables`);
+					return dataMeasure(listing.tables.length, 0, sizeHint);
+				}
+				case 'kv': {
+					if (SAMPLED_KINDS.has(driver.kind)) {
+						return nd(`the source '${id}' (${driver.kind}) has no namespaces to count; its listing is a sample of keys`);
+					}
+					const k = driver as KvDriver;
+					if (typeof k.listNamespaces !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no namespace listing`);
+					const listing = await k.listNamespaces({ complete: true });
+					if (!listing.supported) return nd(`the source '${id}' (${driver.kind}) answers that listing its namespaces is not supported`);
+					if (listing.truncated) return nd(`the namespace listing of '${id}' was cut at ${listing.namespaces.length} namespaces`);
+					return dataMeasure(listing.namespaces.length, 0, sizeHint);
+				}
+				case 'file': {
+					const config = pool.list().find(c => c.id === id);
+					if (config === undefined || typeof config.path !== 'string') return nd(`the file connection '${id}' has no path`);
+					const listing = await listFilesForConnection(config.path, { recursive: config.recursive === true });
+					if (listing.truncated) return nd(`the file listing of '${id}' was cut at ${listing.files.length} files`);
+					return dataMeasure(listing.files.length, listing.files.length, sizeHint);
+				}
+				default:
+					return nd(`the source '${id}' is of a family that has no listing (${String((driver as { family?: unknown }).family)})`);
+			}
+		} catch (err) {
+			if (state.abandoned) late('listing', err);
+			return nd(`the listing of '${id}' failed (${reasonOf(err)})`);
+		}
 	}
 }
 
@@ -498,8 +710,11 @@ async function measureConnection(pool: DataPool, id: string, sizeHint: AnalyzeSc
  * the connections registered at that path, one call of `measureDataSource`
  * per connection id, one after another. A sum that includes a source that
  * could not be counted is not a count.
+ *
+ * Each connection has its own time limit. The request's signal is checked
+ * before each one: once it has fired the rest are not asked.
  */
-async function measureDataPool(poolPath: string, sizeHint: AnalyzeScope | undefined): Promise<RequestMeasure> {
+async function measureDataPool(poolPath: string, sizeHint: AnalyzeScope | undefined, options?: MeasureOptions): Promise<RequestMeasure> {
 	const pool = await acquireDataPool(poolPath);
 	await pool.reload();
 	const ids = pool.list().map(c => c.id);
@@ -507,13 +722,16 @@ async function measureDataPool(poolPath: string, sizeHint: AnalyzeScope | undefi
 	let objects = 0;
 	let files = 0;
 	const uncounted: string[] = [];
+	const cancelled = (): boolean => isCancelled(options);
 	for (const id of ids) {
+		if (cancelled()) return notDetermined('data-source', CANCELLED_AMONG_SOURCES, sizeHint);
 		// The pool was loaded once, above: it is not reloaded for each connection.
-		const one = await measureConnection(pool, id, undefined);
+		const one = await measureConnection(pool, id, undefined, options);
 		if (!one.determined) { uncounted.push(one.note ?? `the source '${id}' could not be counted`); continue; }
 		objects += one.items;
 		files += one.files;
 	}
+	if (cancelled()) return notDetermined('data-source', CANCELLED_AMONG_SOURCES, sizeHint);
 	if (uncounted.length > 0) {
 		return notDetermined('data-source',
 			`${uncounted.length} of the ${ids.length} connections registered at ${poolPath} could not be counted: ${uncounted.join('; ')}; ` +

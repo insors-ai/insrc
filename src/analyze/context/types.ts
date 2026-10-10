@@ -11,7 +11,7 @@
  */
 
 import type { AnswerReport } from '../completeness.js';
-import type { UnsizedIntent } from '../measure.js';
+import type { RequestMeasure, UnsizedIntent } from '../measure.js';
 import type {
 	AnalyzeScope,
 	AnalyzeTarget,
@@ -177,10 +177,19 @@ export interface ClassificationShapeInput {
  * is not read (a caller may hand over a sized intent as it stands); a size a
  * caller STATED goes in `sizeHint`, which is recorded on the measure and
  * never becomes the size. Neither is part of the cache key.
+ *
+ * `measure` is the measure the caller has ALREADY taken of the area this
+ * intent's scope names (the run driver and the plan RPC measure their request
+ * before they build its context). Given one whose source is 'named-area' or
+ * 'data-source', the builder uses it for its planning call and takes none of
+ * its own, so one run measures once; given none, or one of lookup results, it
+ * measures as before. The caller is trusted to hand a measure of this intent's
+ * own scope reference and target. It is not part of the cache key either.
  */
 export interface RunShapeInput {
 	readonly intent:    UnsizedIntent & { readonly scope?: AnalyzeScope | undefined };
 	readonly sizeHint?: AnalyzeScope | undefined;
+	readonly measure?:  RequestMeasure | undefined;
 }
 
 /**

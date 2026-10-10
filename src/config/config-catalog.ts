@@ -85,6 +85,7 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	{ path: 'permissions.mode',      type: 'enum',    default: 'validate',      desc: "tool permission mode: 'validate' | 'auto-accept'", enumValues: ['validate', 'auto-accept'], group: 'Workflow & review' },
 	{ path: 'routing.mode',          type: 'string',  default: 'static',        desc: 'agent routing mode', group: 'Workflow & review' },
 	{ path: 'analyzer.useLocal',     type: 'boolean', default: false,           desc: 'force code/data analyzers to local Ollama instead of cloud', group: 'Analysis & memory' },
+	{ path: 'analyzer.dataSourceListingTimeoutMs', type: 'number', default: 120000, desc: 'max ms one live data source is given to be reached and listed when a request is measured; a source that does not answer is reported as a size that could not be determined', group: 'Analysis & memory' },
 	{ path: 'classifier.confirmIntent', type: 'boolean', default: false,        desc: 'prompt to confirm the classified intent each turn', group: 'Workflow & review' },
 	{ path: 'memory.implicitCapture.enabled', type: 'boolean', default: false,  desc: 'implicit memory capture during retrieval (backstop)', group: 'Analysis & memory' },
 	{ path: 'codeReview.enforce',    type: 'boolean', default: false,           desc: 'enforce a blocking code-review verdict at Story completion (off ⇒ advisory)', group: 'Workflow & review' },

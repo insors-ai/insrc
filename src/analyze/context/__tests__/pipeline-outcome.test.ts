@@ -632,3 +632,58 @@ test('a missing answer prompt found after the lookups ran carries the results an
 	const forced = errorForPipelineCause('planner-prompt-missing', 'm', { promptPath: '/x/plan.md', found: FOUND_NOTHING_LEFT_OUT });
 	assert.equal((forced as ShaperPromptMissingError).found, undefined);
 });
+
+// ---------------------------------------------------------------------------
+// A measure the caller has already taken (ISSUE-008e146a)
+// ---------------------------------------------------------------------------
+
+/** Run the pipeline on INTENT (which states M) with a measuring step that counts its calls. */
+async function runCounting(inputs: Record<string, unknown>): Promise<{ measured: number; planned: ClassifiedIntent; outcome: PipelineOutcome }> {
+	const { steps: s, calls } = steps();
+	let measured = 0;
+	const counting: PipelineSteps = { ...s, measureArea: async (scope, target, sizeHint) => { measured += 1; return s.measureArea!(scope, target, sizeHint); } };
+	const outcome = await runPipeline(
+		{ invocationMode: 'run', shaperId: 'code', inputs: inputs as never, runId: 'r1', scope: dirScope(INTENT) },
+		counting,
+	);
+	assert.equal(calls.decompose.length, 1, 'the planning call was made once');
+	return { measured, planned: (calls.decompose[0] as { intent: ClassifiedIntent }).intent, outcome };
+}
+
+test("a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way", async () => {
+	// The caller measured the area as XS; the intent it hands over still says M, and the builder's own step would say M.
+	const handed: RequestMeasure = { source: 'named-area', items: 3, files: 1, characters: null, size: 'XS', determined: true, sizeHint: 'L' };
+	const used = await runCounting({ intent: INTENT, measure: handed });
+	assert.equal(used.measured, 0, 'the builder did not measure');
+	assert.equal(used.planned.scope, 'XS', "the planning call is given the handed measure's size");
+	assert.equal(used.outcome.kind, 'bundle');
+	// A measure of a live data source is a measure of the named area too.
+	const source = await runCounting({ intent: INTENT, measure: { source: 'data-source', items: 900, files: 0, characters: null, size: 'L', determined: true } });
+	assert.deepEqual([source.measured, source.planned.scope], [0, 'L']);
+	// One that is not determined is used as it is: the largest size, and nothing is measured again.
+	const undetermined: RequestMeasure = {
+		source: 'data-source', items: 0, files: 0, characters: null, size: 'XL', determined: false,
+		note: "the listing of 'ledger-db' timed out: the source did not answer within 120 seconds",
+	};
+	const waited = await runCounting({ intent: INTENT, measure: undetermined });
+	assert.deepEqual([waited.measured, waited.planned.scope], [0, 'XL']);
+	// The rest of the intent is the caller's, untouched.
+	const { scope: _size, ...rest } = used.planned;
+	const { scope: _stated, ...given } = INTENT;
+	assert.deepEqual(rest, given);
+});
+
+test("a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before", async () => {
+	// No measure: the builder's step runs, once, and its size (M) is the planning call's.
+	const none = await runCounting({ intent: { ...INTENT, scope: 'XS' } });
+	assert.deepEqual([none.measured, none.planned.scope], [1, AREA.size]);
+	const absent = await runCounting({ intent: INTENT, measure: undefined });
+	assert.deepEqual([absent.measured, absent.planned.scope], [1, AREA.size]);
+	// A measure of lookup results is not a measure of a named area: it is not used.
+	const ofLookups: RequestMeasure = { source: 'lookup-results', items: 4, files: 2, characters: 900, size: 'XS', determined: true };
+	const ignored = await runCounting({ intent: INTENT, measure: ofLookups });
+	assert.deepEqual([ignored.measured, ignored.planned.scope], [1, AREA.size]);
+	// A stated size still reaches the builder's step as the hint.
+	const hinted = await runCounting({ intent: INTENT, sizeHint: 'S' });
+	assert.deepEqual([hinted.measured, hinted.planned.scope], [1, AREA.size]);
+});

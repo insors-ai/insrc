@@ -705,6 +705,13 @@ export type IndexJob =
   | { kind: 'full';    repoPath: string }
   | { kind: 'file';    filePath: string; event: 'create' | 'update' | 'delete' }
   | { kind: 'reembed'; repoPath: string }
+  /**
+   * Index clean-up for one repo: removes the stored files that are no
+   * longer on disk or that the repo's ignore list excludes. Enqueued at
+   * daemon start for an already-indexed repo; a full index runs the
+   * same pass itself.
+   */
+  | { kind: 'reconcile'; repoPath: string }
   | { kind: 'config-full';    scope: ConfigScope }
   | { kind: 'config-file';    filePath: string; scope: ConfigScope; event: 'create' | 'update' | 'delete' }
   | { kind: 'config-reindex'; scope: ConfigScope }

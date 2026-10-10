@@ -13,6 +13,10 @@
 
 import type { AnalyzeTaskTemplate } from '../../types.js';
 import {
+	ADHERENCE_CONSTRAINTS_DESCRIPTION,
+	ADHERENCE_CONSTRAINT_ANY_OF,
+	ADHERENCE_CONSTRAINT_PARAMS,
+	ADHERENCE_REPORT_SOURCE_PROPERTIES,
 	AGGREGATOR_INPUT_SCHEMA,
 	AGGREGATOR_OUTPUT_SCHEMA,
 	scopeRefSchemaFor,
@@ -149,34 +153,17 @@ export const infraAdherenceCheck: AnalyzeTaskTemplate = {
 	target:      'infra',
 	family:      'adherence',
 	kind:        'leaf',
-	revision:    'r1',
-	description: 'Check infra manifest adherence against a set of doc-derived constraints. `infraSubject` names a manifest / family / environment; constraints come from an upstream docs.constraint.enumerate task OR params.constraints inline. Preserves BOTH doc and infra positions on contradictions -- reader decides.',
+	revision:    'r2',
+	description: 'Check infra manifest adherence against the constraints the documents state. `infraSubject` names a manifest / family / environment. Preserves BOTH doc and infra positions on contradictions -- reader decides. ' + ADHERENCE_CONSTRAINTS_DESCRIPTION,
 	inputSchema: {
 		type:                 'object',
 		additionalProperties: false,
 		required:             ['infraSubject'],
+		// One of the three ways to give constraints; plan validation requires that it is not empty.
+		anyOf:                ADHERENCE_CONSTRAINT_ANY_OF,
 		properties: {
 			infraSubject:      { type: 'string', minLength: 1 },
-			constraintsSource: { type: 'string' },
-			constraints:       {
-				type:  'array',
-				items: {
-					type:                 'object',
-					additionalProperties: true,
-					required:             ['constraint'],
-					properties: {
-						constraint:     { type: 'string' },
-						sourceEntityId: { type: 'string' },
-						file:           { type: 'string' },
-						heading:        { type: 'string' },
-					},
-				},
-			},
-			constraintIds:     {
-				type:  'array',
-				items: { type: 'string' },
-				description: 'Doc-summary entity ids whose keyConstraints hydrate as the constraint set (docs/plans/docs-module.md Phase 7).',
-			},
+			...ADHERENCE_CONSTRAINT_PARAMS,
 			maxSourceExcerpts: { type: 'integer', minimum: 1, maximum: 30 },
 		},
 	},
@@ -191,6 +178,7 @@ export const infraAdherenceCheck: AnalyzeTaskTemplate = {
 			drifts:         { type: 'array' },
 			missingImpl:    { type: 'array' },
 			contradictions: { type: 'array' },
+			...ADHERENCE_REPORT_SOURCE_PROPERTIES,
 		},
 	},
 };

@@ -85,6 +85,7 @@ const FIX_HINTS: Readonly<Record<PlanInvariantId, InvariantFixHint>> = {
 			'Read the schema error message and fix ONLY the offending property. Do not touch other tasks.',
 			'Common causes: wrong field type (string vs object), missing required field, additional unexpected field. Match the schema exactly.',
 			'For `planner`-kind templates, the `params.childIntent` field is a full `ClassifiedIntent` object with `target`, `scope`, `focused`, `scopeRef`, and `reasoning` -- not just a scope string.',
+			'For an adherence-check task that gives no constraints (or still carries `constraintsSource`): give it `constraintTopic` (the subject to look up in the repository\'s documents; the check finds the constraints itself), or a non-empty `constraints` list, or non-empty `constraintIds`. If the request does not call for the check, REMOVE the task instead and renumber the task ids that follow so they stay in order (t01, t02, ...); this is the one case where fixing a `params` failure may touch other tasks.',
 		],
 	},
 

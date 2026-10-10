@@ -113,6 +113,52 @@ function refusedScopeKind(
 	return null;
 }
 
+/** The three ways an adherence check is given its constraints, as the planner is told them. */
+const CONSTRAINT_WAYS =
+	'`constraintTopic` (the subject to look up in the repository\'s documents; the check finds the constraints itself), ' +
+	'`constraints` (a non-empty inline list), or `constraintIds` (a non-empty list of ids of summarised documents)';
+
+/**
+ * An adherence-check task that cannot be run as planned, or null. Applies to a
+ * template that declares a `constraintTopic` parameter (the adherence checks):
+ *   - the task carries `constraintsSource`, which is no longer read: a check
+ *     does not take its constraints from another task's output;
+ *   - the task gives no source of constraints that is not empty. The schema's
+ *     `anyOf` accepts an empty list; this check is what requires content.
+ * The check itself reads an inline list, then ids, then the topic
+ * (runtimes/shared/adherence.ts), and throws when it has none; a plan that
+ * passes here does not reach that throw.
+ */
+function missingConstraintSource(
+	task: PlannedTask,
+	tmpl: AnalyzeTaskTemplate,
+): { readonly problem: 'constraints-source-removed' | 'no-constraint-source'; readonly message: string } | null {
+	const declared = tmpl.inputSchema?.['properties'] as Record<string, unknown> | undefined;
+	if (declared?.['constraintTopic'] === undefined) return null;
+	const params = (task.params ?? {}) as Record<string, unknown>;
+
+	if (params['constraintsSource'] !== undefined) {
+		return {
+			problem: 'constraints-source-removed',
+			message:
+				`task ${task.taskId} (${task.template}): \`constraintsSource\` is no longer accepted: an adherence check does not take ` +
+				`its constraints from another task's output. Remove it and give ${CONSTRAINT_WAYS}.`,
+		};
+	}
+
+	const topic = params['constraintTopic'];
+	const hasTopic  = typeof topic === 'string' && topic.trim().length > 0;
+	const hasInline = Array.isArray(params['constraints']) && params['constraints'].length > 0;
+	const hasIds    = Array.isArray(params['constraintIds']) && params['constraintIds'].length > 0;
+	if (hasTopic || hasInline || hasIds) return null;
+	return {
+		problem: 'no-constraint-source',
+		message:
+			`task ${task.taskId} (${task.template}): an adherence check needs constraints to check against, and this task gives none. ` +
+			`Give ${CONSTRAINT_WAYS}; or leave the task out of the plan.`,
+	};
+}
+
 /** Reduce the lower bound for focused intents (INV-13 note). */
 function focusedLowerBound(scope: AnalyzeScope): number {
 	return Math.floor(SCOPE_BAND[scope].lo / 2);
@@ -217,6 +263,16 @@ export function validatePlan(
 				invariantId: 'INV-5',
 				message:     refusedKind.message,
 				target:      { index: i, taskId: t.taskId, template: t.template, kind: refusedKind.kind, accepted: refusedKind.accepted },
+			};
+		}
+		// An adherence check with nothing to check against, or with the removed
+		// upstream-task parameter: also said in words, before the schema's error.
+		const noSource = missingConstraintSource(t, tmpl);
+		if (noSource !== null) {
+			return {
+				invariantId: 'INV-5',
+				message:     noSource.message,
+				target:      { index: i, taskId: t.taskId, template: t.template, problem: noSource.problem },
 			};
 		}
 		const v = paramAjv.compile(tmpl.inputSchema);

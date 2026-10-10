@@ -16,6 +16,10 @@
 
 import type { AnalyzeTaskTemplate } from '../../types.js';
 import {
+	ADHERENCE_CONSTRAINTS_DESCRIPTION,
+	ADHERENCE_CONSTRAINT_ANY_OF,
+	ADHERENCE_CONSTRAINT_PARAMS,
+	ADHERENCE_REPORT_SOURCE_PROPERTIES,
 	AGGREGATOR_INPUT_SCHEMA,
 	AGGREGATOR_OUTPUT_SCHEMA,
 	scopeRefSchemaFor,
@@ -183,46 +187,21 @@ export const codeAdherenceCheck: AnalyzeTaskTemplate = {
 	target:      'code',
 	family:      'adherence',
 	kind:        'leaf',
-	revision:    'r1',
-	description: 'Check code adherence against a set of doc-derived constraints. Consumes constraints (from an upstream docs.constraint.enumerate task OR passed inline via params.constraints) + a code subject. Emits matches / drifts / missing-impl / contradictions. On contradictions, preserves BOTH doc position and code position verbatim -- no auto-adjudication.',
+	revision:    'r2',
+	description: 'Check code adherence against the constraints the documents state. `codeSubject` names the code area. Emits matches / drifts / missing-impl / contradictions, with the constraints it judged against. On contradictions, preserves BOTH doc position and code position verbatim -- no auto-adjudication. ' + ADHERENCE_CONSTRAINTS_DESCRIPTION,
 	inputSchema: {
 		type:                 'object',
 		additionalProperties: false,
 		required:             ['codeSubject'],
+		// One of the three ways to give constraints; plan validation requires that it is not empty.
+		anyOf:                ADHERENCE_CONSTRAINT_ANY_OF,
 		properties: {
 			codeSubject: {
 				type:        'string',
 				minLength:   1,
 				description: 'The code area to check (a file path, symbol name, or free-form subject like "the analyze framework classifier").',
 			},
-			constraintsSource: {
-				// Which upstream task provides the constraints. Optional
-				// -- planner may pass `constraints` inline via
-				// `params.constraints` if a suitable upstream task
-				// isn't in the plan.
-				type: 'string',
-				description: 'taskId of the upstream docs.constraint.enumerate task whose output feeds constraints.',
-			},
-			constraints: {
-				type:  'array',
-				items: {
-					type:                 'object',
-					additionalProperties: true,
-					required:             ['constraint'],
-					properties: {
-						constraint:     { type: 'string' },
-						sourceEntityId: { type: 'string' },
-						file:           { type: 'string' },
-						heading:        { type: 'string' },
-					},
-				},
-				description: 'Inline constraint list, used when the plan does not have an upstream docs.constraint.enumerate task.',
-			},
-			constraintIds: {
-				type:  'array',
-				items: { type: 'string' },
-				description: 'Doc-summary entity ids whose keyConstraints hydrate as the constraint set. Cheaper than a docs.constraint.enumerate subtask when the constraints are already summarised by the post-indexing summariser (docs/plans/docs-module.md Phase 7). Priority-3 sourcing: used when constraintsSource + constraints are both absent.',
-			},
+			...ADHERENCE_CONSTRAINT_PARAMS,
 			maxSourceExcerpts: {
 				type:    'integer',
 				minimum: 1,
@@ -241,6 +220,7 @@ export const codeAdherenceCheck: AnalyzeTaskTemplate = {
 			drifts:         { type: 'array' },
 			missingImpl:    { type: 'array' },
 			contradictions: { type: 'array' },
+			...ADHERENCE_REPORT_SOURCE_PROPERTIES,
 		},
 	},
 };

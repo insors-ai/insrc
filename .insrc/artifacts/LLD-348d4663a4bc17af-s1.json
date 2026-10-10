@@ -158,6 +158,13 @@
         "choice": "Keep stage-sorted list (accept LLD reading)",
         "rationale": "The user approved the LLD with this choice stated explicitly, and it matches mocks screen 5.",
         "resolvedAt": "2026-10-10T05:33:00.025Z"
+      },
+      "q054cbd29": {
+        "question": "Closing a stage section hides its cards inside a native <details>, which relaxes E2 S005's no-hidden-content rule for collapsed sections only, as the reader requested accordions; summaries always carry the label, count and attention hint.",
+        "status": "resolved",
+        "choice": "Accept the scoped relaxation as designed",
+        "rationale": "The user asked for accordions and approved the LLD with this exception stated; the summaries always carry the label, count and attention hint.",
+        "resolvedAt": "2026-10-10T05:33:12.675Z"
       }
     }
   },

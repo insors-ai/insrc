@@ -516,6 +516,8 @@ Add a history stack to the host state as in a1, but keep separate down-messages 
   - **resolved**: Accept as-is with a reviewer note — The invariants live in the LLD's own error-paths section (c1, c3, c7) and the build tests them; there is no separate s5 story to depend on. The approved LLD stands. _(2026-10-10T05:32:35.501Z)_
 - `q1099e950` — The Issues view is a list sorted by stage, not a stage-grouped issue board (mocks screen 5 'open choice'); the PRD's 'defect cards using the same evidence-based stages' is read as satisfied by stage pills and stage ordering.
   - **resolved**: Keep stage-sorted list (accept LLD reading) — The user approved the LLD with this choice stated explicitly, and it matches mocks screen 5. _(2026-10-10T05:33:00.025Z)_
+- `q054cbd29` — Closing a stage section hides its cards inside a native <details>, which relaxes E2 S005's no-hidden-content rule for collapsed sections only, as the reader requested accordions; summaries always carry the label, count and attention hint.
+  - **resolved**: Accept the scoped relaxation as designed — The user asked for accordions and approved the LLD with this exception stated; the summaries always carry the label, count and attention hint. _(2026-10-10T05:33:12.675Z)_
 
 ## Citations
 

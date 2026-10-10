@@ -18,11 +18,21 @@ export interface FakeProcScript {
   readonly hangUntilKilled?: boolean;
   /** If set, lines() throws (models the stdout Readable erroring mid-stream) after emitting this many lines. */
   readonly throwAfter?: number;
+  /** The fake process's pid. */
+  readonly pid?: number;
+  /** If set, SIGTERM is recorded but ignored; only SIGKILL ends the process. */
+  readonly ignoreSigterm?: boolean;
 }
 
 /** Observable handle over a spawned fake process (for asserting kill / cleanup / write relay). */
 export interface FakeProcHandle {
   wasKilled(): boolean;
+  /** Every signal sent via kill(), in order. */
+  signals(): readonly string[];
+  /** Whether the process has exited. */
+  exited(): boolean;
+  /** Ends the process on its own (exit code 0), as a CLI finishing its background work does. */
+  exitNow(): void;
   /** S004: every string written to the fake process stdin via write(), in call order. */
   writes(): readonly string[];
 }
@@ -73,10 +83,16 @@ function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakePr
     s.spawnErrorCode !== undefined ? Object.assign(new Error(s.spawnErrorCode), { code: s.spawnErrorCode }) : undefined,
   );
 
-  let resolveExit!: (v: { code: number | null; signal: string | null }) => void;
+  let exited = false;
+  const signals: string[] = [];
+  let settleExit!: (v: { code: number | null; signal: string | null }) => void;
   const exit = new Promise<{ code: number | null; signal: string | null }>((r) => {
-    resolveExit = r;
+    settleExit = r;
   });
+  const resolveExit = (v: { code: number | null; signal: string | null }): void => {
+    exited = true;
+    settleExit(v);
+  };
   if (!s.hangUntilKilled) resolveExit(s.exit ?? { code: 0, signal: null });
 
   async function* lines(): AsyncIterable<string> {
@@ -103,16 +119,31 @@ function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakePr
     stderr: () => stderr,
     exit,
     spawnError,
-    kill: () => {
+    ...(s.pid !== undefined ? { pid: s.pid } : {}),
+    kill: (signal = 'SIGTERM') => {
+      signals.push(signal);
+      if (signal === 'SIGTERM' && s.ignoreSigterm === true) return;
       killed = true;
       releaseHang();
-      resolveExit({ code: null, signal: 'SIGTERM' });
+      resolveExit({ code: null, signal });
     },
     write: (data: string) => {
       writes.push(data);
     },
   };
-  return { proc, handle: { wasKilled: () => killed, writes: () => writes } };
+  return {
+    proc,
+    handle: {
+      wasKilled: () => killed,
+      writes: () => writes,
+      signals: () => signals,
+      exited: () => exited,
+      exitNow: () => {
+        releaseHang();
+        resolveExit({ code: 0, signal: null });
+      },
+    },
+  };
 }
 
 // ---- claude fixtures --------------------------------------------------------

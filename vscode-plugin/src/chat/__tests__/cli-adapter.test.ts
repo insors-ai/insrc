@@ -10,8 +10,9 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createProviderRegistry, classifyPermissionDenial } from '../cli-adapter.js';
-import type { AdapterDeps, ProviderId, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
+import { readFileSync } from 'node:fs';
+import { createProviderRegistry, classifyPermissionDenial, nodeSpawner } from '../cli-adapter.js';
+import type { AdapterDeps, ProviderId, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
   makeFakeSpawner,
@@ -234,6 +235,108 @@ test('cancel(): kills the in-flight subprocess and yields a terminal done(ok:fal
   await pump;
   assert.equal(events.at(-1)!.kind, 'done');
   assert.equal((events.at(-1) as { ok: boolean }).ok, false, 'killed turn resolves not-ok');
+});
+
+// ---- S001 (E20261010d6a4bc79): the process outlives its stream ---------------
+
+const tick = (ms = 0): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/** Settles with the stream's events, or rejects if it has not completed within `ms`. */
+function collectWithin(stream: AsyncIterable<TurnEvent>, ms: number): Promise<TurnEvent[]> {
+  return Promise.race([
+    collect(stream),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`run() did not complete within ${ms} ms`)), ms)),
+  ]);
+}
+
+test('run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop', async () => {
+  // A CLI that answers, then keeps running with stdout open (a pending background task).
+  const { deps, spawner } = depsFor({ lines: CLAUDE_TEXT_TURN, hangUntilKilled: true, pid: 4242 });
+  const adapter = createProviderRegistry(deps).get('claude');
+  let handed: TurnProcess | undefined;
+  const events = await collectWithin(adapter.run(REQ({ provider: 'claude' }), { onSpawn: (p) => (handed = p) }), 1000);
+
+  assert.equal(events.at(-1)!.kind, 'done', 'the stream completed at done');
+  assert.deepEqual(events.map((e) => e.kind), ['status', 'assistant-delta', 'assistant-delta', 'done'], 'the same events as before');
+  const proc = spawner.procs[0]!;
+  assert.deepEqual(proc.signals(), [], 'no kill after done');
+  assert.equal(proc.exited(), false, 'the process is still running');
+
+  assert.ok(handed, 'onSpawn was called');
+  assert.equal(handed!.pid, 4242);
+  assert.equal(typeof handed!.stop, 'function');
+  let exitSettled = false;
+  void handed!.exit.then(() => (exitSettled = true));
+  await tick();
+  assert.equal(exitSettled, false, 'exit is the live process exit');
+  await handed!.stop();
+  assert.deepEqual(proc.signals(), ['SIGTERM'], 'stop() signals the process');
+  assert.equal(exitSettled, true, 'stop() resolves after the exit');
+});
+
+test('cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group', async (t) => {
+  // Fake: SIGTERM is ignored, so cancel() escalates to SIGKILL after the grace.
+  const spawner = makeFakeSpawner({ lines: [JSON.stringify({ type: 'system', subtype: 'init', session_id: 's' })], hangUntilKilled: true, ignoreSigterm: true });
+  const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true, stopGraceMs: 30 }).get('claude');
+  const it = adapter.run(REQ({ provider: 'claude' }))[Symbol.asyncIterator]();
+  const first = await it.next();
+  const turnId = (first.value as TurnEvent).turnId;
+  let resolved = false;
+  const cancelling = adapter.cancel(turnId).then(() => (resolved = true));
+  await tick(10);
+  assert.deepEqual(spawner.procs[0]!.signals(), ['SIGTERM'], 'SIGTERM first');
+  assert.equal(resolved, false, 'cancel() waits while the process is alive');
+  await cancelling;
+  assert.deepEqual(spawner.procs[0]!.signals(), ['SIGTERM', 'SIGKILL'], 'SIGKILL after the grace');
+  assert.equal(spawner.procs[0]!.exited(), true, 'resolved after the exit');
+  await it.return?.(undefined);
+
+  // Real spawner: the CLI leads its own process group, and kill() reaches the whole group.
+  if (process.platform === 'win32') return t.diagnostic('process groups are POSIX-only');
+  const proc = nodeSpawner('sh', ['-c', 'sleep 30 & wait'], { cwd: process.cwd() });
+  assert.equal(await proc.spawnError, undefined);
+  const pid = proc.pid!;
+  assert.ok(typeof pid === 'number', 'exposes the pid');
+  const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
+  const pgrp = Number(stat.slice(stat.lastIndexOf(')') + 2).split(' ')[2]);
+  assert.equal(pgrp, pid, 'detached: the CLI is its own process group leader');
+  proc.kill('SIGTERM');
+  const result = await proc.exit;
+  assert.equal(result.signal, 'SIGTERM');
+  const groupAlive = (): boolean => {
+    try {
+      process.kill(-pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  for (let i = 0; i < 100 && groupAlive(); i++) await tick(10);
+  assert.equal(groupAlive(), false, 'the background child in the group was stopped too');
+});
+
+test('after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles', async () => {
+  // The permission turn ends with a result (done) while the process stays alive.
+  const { deps, spawner } = depsFor({ lines: CLAUDE_PERMISSION_TURN, hangUntilKilled: true });
+  const adapter = createProviderRegistry(deps).get('claude');
+  const events = await collectWithin(adapter.run(REQ({ provider: 'claude', permissionMode: 'manual' })), 1000);
+  const appr = events.find((e) => e.kind === 'approval-request') as Extract<TurnEvent, { kind: 'approval-request' }> | undefined;
+  assert.ok(appr, 'surfaced an approval-request');
+  assert.equal(events.at(-1)!.kind, 'done');
+  adapter.decide(appr!.turnId, appr!.requestId, 'approve');
+  assert.equal(spawner.procs[0]!.writes().length, 1, 'the decision reached the live process after run() returned');
+
+  // Same again, but the process exits before the decision: the entry is gone.
+  const { deps: deps2, spawner: spawner2 } = depsFor({ lines: CLAUDE_PERMISSION_TURN, hangUntilKilled: true });
+  const adapter2 = createProviderRegistry(deps2).get('claude');
+  const events2 = await collectWithin(adapter2.run(REQ({ provider: 'claude', permissionMode: 'manual' })), 1000);
+  const appr2 = events2.find((e) => e.kind === 'approval-request') as Extract<TurnEvent, { kind: 'approval-request' }>;
+  spawner2.procs[0]!.exitNow();
+  await tick();
+  adapter2.decide(appr2.turnId, appr2.requestId, 'approve');
+  assert.equal(spawner2.procs[0]!.writes().length, 0, 'no write once the process has exited');
+  await adapter2.cancel(appr2.turnId);
+  assert.deepEqual(spawner2.procs[0]!.signals(), [], 'cancel() after the exit finds no live entry and signals nothing');
 });
 
 test('cancel(): unknown/finished turnId is a no-op (idempotent, no throw)', async () => {

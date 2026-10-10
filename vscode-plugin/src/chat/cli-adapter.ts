@@ -30,6 +30,7 @@
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
+import { DEFAULT_GRACE_MS, stopProcess } from './session-lock.js';
 
 export type ProviderId = 'claude' | 'codex';
 
@@ -59,11 +60,34 @@ export interface TurnRequest {
   readonly allowedTools?: readonly string[];
 }
 
+/** The started CLI process of a turn, handed to the caller so it can tie a session lease to it. */
+export interface TurnProcess {
+  readonly pid: number | undefined;
+  /** Settles when the process has exited. */
+  readonly exit: Promise<{ code: number | null; signal: string | null }>;
+  /** Signals the process group. */
+  kill(signal: 'SIGTERM' | 'SIGKILL'): void;
+  /** SIGTERM, then SIGKILL after a grace; resolves once the exit is confirmed (or the grace runs out). */
+  stop(): Promise<void>;
+}
+
+export interface RunOptions {
+  /** Called once the CLI process has started. */
+  readonly onSpawn?: ((proc: TurnProcess) => void) | undefined;
+}
+
 export interface StreamAdapter {
-  /** Spawn + stream one turn, yielding normalized sc2 events. Completes after a terminal done/error event. */
-  run(req: TurnRequest): AsyncIterable<TurnEvent>;
-  /** Abort an in-flight turn by id (idempotent; no-op for unknown/finished). */
-  cancel(turnId: string): void;
+  /**
+   * Spawn + stream one turn, yielding normalized sc2 events. Completes right after the first
+   * terminal done/error event WITHOUT stopping the process: a CLI that keeps running after its
+   * answer keeps running, and its live entry (for decide()) is dropped when it exits.
+   */
+  run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent>;
+  /**
+   * Stop an in-flight turn's process group by id (SIGTERM, then SIGKILL after a grace);
+   * resolves once the exit is confirmed. No-op for unknown/exited turns.
+   */
+  cancel(turnId: string): Promise<void>;
   /**
    * S004: relay a review-mode permission decision back to the live turn's CLI.
    * Looks up the pending request registered for (turnId, requestId); if live, writes
@@ -93,8 +117,10 @@ export interface SpawnedProcess {
   readonly exit: Promise<{ code: number | null; signal: string | null }>;
   /** Reject reason if the process could not be spawned (e.g. ENOENT); undefined once spawned. */
   readonly spawnError: Promise<NodeJS.ErrnoException | undefined>;
-  /** Terminate the process (SIGTERM). Idempotent. */
-  kill(): void;
+  /** The OS pid, when known (the real spawner); fakes may omit it. */
+  readonly pid?: number | undefined;
+  /** Signal the process (its whole group, for the real spawner). Default SIGTERM. Idempotent. */
+  kill(signal?: 'SIGTERM' | 'SIGKILL'): void;
   /**
    * S004 (additive-optional): write a native control line to the process stdin —
    * the review-mode permission-decision relay (host answers the CLI's prompt).
@@ -120,6 +146,8 @@ export interface AdapterDeps {
   readonly spawn: SpawnFn;
   readonly isInstalled: BinaryProbe;
   readonly logger?: AdapterLogger;
+  /** cancel()'s wait after SIGTERM, and again after SIGKILL. Default 5000 ms. */
+  readonly stopGraceMs?: number;
 }
 
 const NOOP_LOGGER: AdapterLogger = { warn: () => {}, error: () => {} };
@@ -664,15 +692,25 @@ function looksLikeAuthError(text: string): boolean {
 
 const BINARY: Record<ProviderId, string> = { claude: 'claude', codex: 'codex' };
 
+/** Reads and discards the rest of a stream (stdout after the terminal event). Never throws. */
+async function drain(it: AsyncIterator<string>): Promise<void> {
+  try {
+    for (;;) if ((await it.next()).done === true) return;
+  } catch {
+    /* stdout closed or errored: nothing left to discard */
+  }
+}
+
 function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAdapter {
   const log = deps.logger ?? NOOP_LOGGER;
+  const stopGraceMs = deps.stopGraceMs ?? DEFAULT_GRACE_MS;
   const live = new Map<string, SpawnedProcess>();
   // S004: outstanding permission requests per live turn (the a2 pending-request registry).
   // register on an emitted approval-request; decide() consumes; auto-cleaned on cancel()/exit.
   const pendingByTurn = new Map<string, Set<string>>();
   let turnSeq = 0;
 
-  async function* run(req: TurnRequest): AsyncIterable<TurnEvent> {
+  async function* run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
     const turnId = `${mapper.id}-${Date.now()}-${turnSeq++}`;
     // Honor the capability: if this provider can't resume, drop the handle and
     // start a fresh session rather than passing an unsupported flag (never throw).
@@ -689,24 +727,44 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       return;
     }
     live.set(turnId, proc);
+    // The live entry (decide()'s route to stdin) and the turn's pending permission requests
+    // last as long as the process, not the stream: a CLI may keep running after its answer.
+    const forget = (): void => {
+      if (live.get(turnId) === proc) live.delete(turnId);
+      pendingByTurn.delete(turnId);
+    };
+    proc.exit.then(forget, forget);
     const state: TurnState = {};
     let sawError = false;
     let sawDone = false;
+    // Set BEFORE a terminal event is yielded, so a consumer that returns at it (the panel)
+    // does not stop the process in the finally below.
+    let terminal = false;
     // Stamp the captured native session id onto a terminal `done` so the caller
     // (S005) can persist the resume handle; a dead capture would strand resume.
     const doneEvent = (ok: boolean): TurnEvent =>
       state.sessionId !== undefined ? { kind: 'done', turnId, ok, sessionId: state.sessionId } : { kind: 'done', turnId, ok };
+    const stdout = proc.lines()[Symbol.asyncIterator]();
     try {
       const spawnErr = await proc.spawnError;
       if (spawnErr !== undefined) {
+        forget();
+        terminal = true;
         yield { kind: 'error', turnId, message: spawnErr.code === 'ENOENT' ? `${BINARY[mapper.id]} CLI not found — install it or check your PATH` : failureMessage(mapper.id, spawnErr) };
         return;
       }
-      for await (const line of proc.lines()) {
-        if (sawDone || sawError) break; // ignore anything after ANY terminal event
+      opts?.onSpawn?.({
+        pid: proc.pid,
+        exit: proc.exit,
+        kill: (signal) => proc.kill(signal),
+        stop: () => stopTurnProcess(proc),
+      });
+      for (;;) {
+        const next = await stdout.next();
+        if (next.done === true) break;
         let events: TurnEvent[];
         try {
-          events = mapper.mapLine(line, turnId, state);
+          events = mapper.mapLine(next.value, turnId, state);
         } catch {
           log.warn(`[chat:${mapper.id}] skipped unparseable stream line`);
           continue; // non-fatal: skip malformed line, never yield a malformed event
@@ -721,15 +779,22 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             }
             set.add(ev.requestId);
           }
-          // Enrich a mapper-produced done with the session id captured so far.
-          yield ev.kind === 'done' ? doneEvent(ev.ok) : ev;
           if (ev.kind === 'done') sawDone = true;
           if (ev.kind === 'error') sawError = true;
-          if (sawDone || sawError) break;
+          if (sawDone || sawError) {
+            terminal = true;
+            // Keep reading (and discarding) stdout so a CLI that outlives its answer never
+            // blocks on a full pipe; nothing after the terminal event is yielded.
+            void drain(stdout);
+          }
+          // Enrich a mapper-produced done with the session id captured so far.
+          yield ev.kind === 'done' ? doneEvent(ev.ok) : ev;
+          if (sawDone || sawError) return;
         }
       }
+      // stdout closed without a terminal event: the process is ending; report how.
       const { code, signal } = await proc.exit;
-      if (sawDone || sawError) return;
+      terminal = true;
       if (signal !== null) {
         // Killed (e.g. via cancel()) without a terminal event from the stream.
         yield doneEvent(false);
@@ -747,29 +812,34 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     } catch (err) {
       // Any I/O failure (e.g. the stdout stream erroring) surfaces as a terminal
       // error event, never a thrown/rejected generator — unless a terminal event
-      // already went out.
-      if (!sawDone && !sawError) {
+      // already went out. The stream is unusable, so the process is stopped.
+      if (!terminal) {
+        terminal = true;
+        proc.kill('SIGTERM');
         yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       }
     } finally {
-      // Kill on the way out so an early-break/abandoned consumer never orphans the
-      // child (kill is idempotent + safe on an already-exited process).
-      proc.kill();
-      live.delete(turnId);
-      // S004: drop any outstanding permission requests for this turn — the process is
-      // gone, so a later decide() must find nothing (no dangling/unanswerable card).
-      pendingByTurn.delete(turnId);
+      // A consumer that abandons the stream before any terminal event must never orphan
+      // the child: stop it (kill is idempotent + safe on an already-exited process).
+      // After a terminal event the process is left to finish; its exit cleans up.
+      if (!terminal) {
+        proc.kill('SIGTERM');
+        pendingByTurn.delete(turnId);
+      }
     }
   }
 
-  function cancel(turnId: string): void {
-    // Clear outstanding permission requests first: cancel() kills the child, which ends
-    // the stream and runs run()'s finally, but dropping here makes a decide() racing the
-    // teardown a guaranteed no-op.
+  function stopTurnProcess(proc: SpawnedProcess): Promise<void> {
+    return stopProcess({ pid: proc.pid, exit: proc.exit, kill: (signal) => proc.kill(signal) }, stopGraceMs).then(() => {});
+  }
+
+  async function cancel(turnId: string): Promise<void> {
+    // Clear outstanding permission requests first so a decide() racing the teardown is a
+    // guaranteed no-op.
     pendingByTurn.delete(turnId);
     const proc = live.get(turnId);
-    if (proc === undefined) return; // unknown / already finished — no-op
-    proc.kill();
+    if (proc === undefined) return; // unknown / already exited — no-op
+    await stopTurnProcess(proc);
   }
 
   function decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): void {
@@ -854,7 +924,7 @@ export async function deriveChatTitle(
   const stop = (val: string | undefined): string | undefined => {
     if (turnId !== undefined) {
       try {
-        adapter.cancel(turnId);
+        void adapter.cancel(turnId);
       } catch {
         /* already finished */
       }
@@ -899,7 +969,10 @@ export async function deriveChatTitle(
 export const nodeSpawner: SpawnFn = (command, args, opts) => {
   // stdin is a pipe (not 'ignore') so the review-mode permission-decision relay can
   // write a control line back to the CLI (S004 write() seam); stdout/stderr piped as before.
-  const child = nodeChildSpawn(command, [...args], { cwd: opts.cwd, stdio: ['pipe', 'pipe', 'pipe'] });
+  // Off Windows the CLI leads its own process group (detached), so a stop reaches every
+  // process it started, not just the direct child.
+  const ownGroup = process.platform !== 'win32';
+  const child = nodeChildSpawn(command, [...args], { cwd: opts.cwd, stdio: ['pipe', 'pipe', 'pipe'], detached: ownGroup });
   let stderrBuf = '';
   child.stderr?.on('data', (d: Buffer) => {
     stderrBuf += d.toString('utf8');
@@ -947,8 +1020,20 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
     stderr: () => stderrBuf,
     exit,
     spawnError,
-    kill: () => {
-      child.kill('SIGTERM');
+    get pid() {
+      return child.pid;
+    },
+    kill: (signal = 'SIGTERM') => {
+      const pid = child.pid;
+      if (ownGroup && pid !== undefined) {
+        try {
+          process.kill(-pid, signal);
+          return;
+        } catch {
+          /* group already gone: fall back to the child itself */
+        }
+      }
+      child.kill(signal);
     },
     write: (data: string) => {
       // Best-effort: a closed/absent stdin must never crash the stream loop — the

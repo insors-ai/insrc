@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -92,3 +92,13 @@ Run at 2026-10-10T12:11:05.590Z on commit `b79348f8`. Tests check: **passed**. 2
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/context/__tests__/boot-validator.test.ts` | 0 | 12 | 0.9 s |  |
 | `src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts` | 0 | 3 | 0.6 s |  |
+
+## t3
+
+Run at 2026-10-10T12:18:03.796Z on commit `50e3b1ea`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: the whole analyze suite at the commit before the Story and at this task's commit, compared by test name: no test that passed before fails after**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/S001/measurements/analyze-suite-comparison-t3.md, with the raw outputs analyze-suite-before-bc072f79.tap and analyze-suite-after-f50af845.tap beside it

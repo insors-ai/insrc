@@ -4,7 +4,7 @@
     "epicHash": "8ab2cc2edb3743df",
     "storyId": "S001",
     "createdAt": "2026-10-10T12:08:41.130Z",
-    "updatedAt": "2026-10-10T12:11:05.590Z",
+    "updatedAt": "2026-10-10T12:18:03.796Z",
     "standalone": true
   },
   "body": {
@@ -556,6 +556,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "50e3b1ea",
+        "ranAt": "2026-10-10T12:18:03.796Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the whole analyze suite at the commit before the Story and at this task's commit, compared by test name: no test that passed before fails after",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/S001/measurements/analyze-suite-comparison-t3.md, with the raw outputs analyze-suite-before-bc072f79.tap and analyze-suite-after-f50af845.tap beside it"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

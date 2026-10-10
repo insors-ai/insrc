@@ -4,7 +4,7 @@
     "epicHash": "0f17539c98aa78ee",
     "storyId": "S001",
     "createdAt": "2026-10-10T07:36:48.435Z",
-    "updatedAt": "2026-10-10T07:49:03.725Z",
+    "updatedAt": "2026-10-10T07:52:01.773Z",
     "standalone": true
   },
   "body": {
@@ -646,6 +646,133 @@
               },
               {
                 "title": "the catalog shown to the planner for each adherence template names constraintTopic and does not name constraintsSource or docs.constraint.enumerate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "cf0bdc19",
+        "ranAt": "2026-10-10T07:52:01.773Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+                "title": "no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+                "title": "the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 341,
+            "titles": [
+              {
+                "title": "the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time)",
+                "result": "pass"
+              },
+              {
+                "title": "the source scan asserts the new form for structure-module-tree.ts",
+                "result": "pass"
+              },
+              {
+                "title": "the source scan asserts that surface-functional.ts resolves the run's scope through the one scope function for a directory path",
+                "result": "pass"
+              },
+              {
+                "title": "no docs runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the unrelated resolveRepoPath under src/mcp is untouched",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1547,
+            "titles": [
+              {
+                "title": "a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path",
+                "result": "pass"
+              },
+              {
+                "title": "four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not",
+                "result": "pass"
+              },
+              {
+                "title": "the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record",
+                "result": "pass"
+              },
+              {
+                "title": "an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic",
+                "result": "pass"
+              },
+              {
+                "title": "a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents",
+                "result": "pass"
+              },
+              {
+                "title": "when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration",
+                "result": "pass"
+              },
+              {
+                "title": "when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays",
+                "result": "pass"
+              },
+              {
+                "title": "an override that yields no constraint fails naming the override and does not fall back to the topic",
+                "result": "pass"
+              },
+              {
+                "title": "run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks",
+                "result": "pass"
+              },
+              {
+                "title": "no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs",
                 "result": "pass"
               }
             ],

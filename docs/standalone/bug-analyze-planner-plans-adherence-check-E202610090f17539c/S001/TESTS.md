@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -145,3 +145,27 @@ Run at 2026-10-10T07:49:03.725Z on commit `106fc6b0`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/planner/__tests__/templates.test.ts` | 0 | 28 | 0.7 s |  |
+
+## t4
+
+Run at 2026-10-10T07:52:01.773Z on commit `cf0bdc19`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks | `src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts` |
+
+**unit: no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs | `src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts` |
+| pass | the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path | `src/analyze/runtimes/__tests__/scope-sources.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 7 | 0.3 s |  |
+| `src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts` | 0 | 10 | 1.5 s |  |

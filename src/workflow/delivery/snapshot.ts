@@ -13,9 +13,11 @@
  * holds a BUILD but no PLAN gets an incomplete-evidence notice; no other route
  * does. An item needs attention when it has a gate attention reason or a notice
  * whose code is marked for attention; each reason is listed once. Notices that
- * name no item are the snapshot's own. Pure and deterministic; plain JSON out.
+ * name no item are the snapshot's own. Each item also carries its description, read
+ * from its own records (describe.ts). Pure and deterministic; plain JSON out.
  */
 
+import { describeItem } from './describe.js';
 import { makeNotice, sortNotices } from './notice.js';
 import type {
 	ArtifactRecord,
@@ -144,6 +146,7 @@ export function assembleSnapshot(
 			notices,
 			needsAttention:   reasons.length > 0,
 			attentionReasons: reasons,
+			description:      describeItem(node, graph, byId),
 		};
 	};
 

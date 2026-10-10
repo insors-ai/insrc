@@ -20,6 +20,7 @@ import {
 	buildRecord,
 	crRecord,
 	defRecord,
+	extRecord,
 	hldRecord,
 	issueRecord,
 	lldRecord,
@@ -180,4 +181,65 @@ test('a full-chain, feature or sized-bugfix story with a build and no plan gets 
 		assert.ok(story, `a ${route} story`);
 		assert.equal(flagged(story), false, `${route} is never flagged`);
 	}
+});
+
+const DESC = 'dddddddddddddddd';
+const FIX  = 'eeeeeeeeeeeeeeee';
+const byKindAndSource = (s: DeliverySnapshot, kind: DeliveryItem['kind'], hashPrefix: string, sourceId?: string): DeliveryItem =>
+	item(s, i => i.kind === kind && i.id.toLowerCase().includes(hashPrefix) && (sourceId === undefined || i.sourceIds.includes(sourceId)), `${kind} ${hashPrefix} ${sourceId ?? ''}`);
+
+test('an epic\'s problem and summary, a story\'s purpose and size, and an issue\'s reproduction, root cause and fix intent are published from their records', () => {
+	const def = defRecord(DESC, [{ id: 's1', userValue: 'Readers find the right section quickly', sizeEstimate: 'M' }, 's2'], APPROVED,
+		{ problem: 'Generated documents are hard to navigate.\n', summary: { prose: 'Make documents navigable.', audience: 'product' } });
+	const issue = issueRecord(FIX, { slug: 'nothing' }, {}, { reproduction: 'Open the board; no purpose shows.', rootCause: 'The snapshot drops it.', fixIntent: 'Publish it.' });
+	const s = snapshotOf([def, lldRecord(DESC, 's1'), lldRecord(DESC, 's2'), issue]);
+	const epic = byKindAndSource(s, 'epic', 'dddddddd');
+	assert.deepEqual(epic.description, {
+		kind: 'epic',
+		problem: { state: 'recorded', value: 'Generated documents are hard to navigate.\n', artifactId: def.artifactId },
+		summary: { state: 'recorded', value: 'Make documents navigable.', artifactId: def.artifactId },
+	}, 'values exactly as stored, with the record they came from');
+	assert.deepEqual(byKindAndSource(s, 'story', 'dddddddd', 's1').description, {
+		kind: 'story',
+		purpose: { state: 'recorded', value: 'Readers find the right section quickly', artifactId: def.artifactId },
+		size: { state: 'recorded', value: 'M', artifactId: def.artifactId },
+	});
+	assert.deepEqual(byKindAndSource(s, 'issue', 'eeeeeeee').description, {
+		kind: 'issue',
+		reproduction: { state: 'recorded', value: 'Open the board; no purpose shows.', artifactId: issue.artifactId },
+		rootCause: { state: 'recorded', value: 'The snapshot drops it.', artifactId: issue.artifactId },
+		fixIntent: { state: 'recorded', value: 'Publish it.', artifactId: issue.artifactId },
+	});
+	for (const i of s.items) assert.equal(i.description.kind, i.kind, `${i.id}: the description matches the item's kind`);
+	assertPlainJson(s);
+});
+
+test('missing, blank or wrongly typed values read not recorded, and a value that does not apply to a kind is absent', () => {
+	const def = defRecord(DESC, [{ id: 's1', userValue: '   ', sizeEstimate: 'XXL' }, { id: 's2', userValue: 42 }, 's3'], APPROVED,
+		{ problem: '', summary: { prose: 7 } });
+	const issue = issueRecord(FIX, { slug: 'nothing' }, {}, { reproduction: ['not', 'text'], rootCause: '\t' });
+	const s = snapshotOf([def, lldRecord(DESC, 's1'), lldRecord(DESC, 's2'), lldRecord(DESC, 's3'), planRecord(DESC, 's1', ['t1']), issue]);
+	const none = { state: 'not-recorded' };
+	assert.deepEqual(byKindAndSource(s, 'epic', 'dddddddd').description, { kind: 'epic', problem: none, summary: none });
+	for (const sid of ['s1', 's2', 's3']) assert.deepEqual(byKindAndSource(s, 'story', 'dddddddd', sid).description, { kind: 'story', purpose: none, size: none }, sid);
+	assert.deepEqual(byKindAndSource(s, 'issue', 'eeeeeeee').description, { kind: 'issue', reproduction: none, rootCause: none, fixIntent: none });
+	const task = item(s, i => i.kind === 'task', 'a task');
+	assert.deepEqual(task.description, { kind: 'task' }, 'a task carries no descriptive fields');
+	assert.ok(!('fixIntent' in byKindAndSource(s, 'story', 'dddddddd', 's1').description), 'a story has no fix intent field');
+	// The same store gives the same descriptions.
+	assert.deepEqual(snapshotOf([def, lldRecord(DESC, 's1'), lldRecord(DESC, 's2'), lldRecord(DESC, 's3'), planRecord(DESC, 's1', ['t1']), issue]).items.map(i => i.description),
+		s.items.map(i => i.description));
+});
+
+test('a story added by an extension takes its purpose from the EXT, and a standalone story reads not recorded', () => {
+	const def = defRecord(DESC, ['s1'], APPROVED, { problem: 'P' });
+	const ext = extRecord(DESC, 's2', { approvedAt: CREATED }, { userValue: 'Added later for operators' });
+	const solo = lldRecord(SOLO, 's1', { standalone: true });
+	const fix = lldRecord(FIX, 's1');
+	const s = snapshotOf([def, lldRecord(DESC, 's1'), ext, solo, issueRecord(FIX, { slug: 'nothing' }), fix]);
+	assert.deepEqual(byKindAndSource(s, 'story', 'dddddddd', 's2').description,
+		{ kind: 'story', purpose: { state: 'recorded', value: 'Added later for operators', artifactId: ext.artifactId }, size: { state: 'not-recorded' } });
+	const none = { state: 'not-recorded' };
+	assert.deepEqual(byKindAndSource(s, 'story', 'cccccccc').description, { kind: 'story', purpose: none, size: none }, 'a standalone story');
+	assert.deepEqual(byKindAndSource(s, 'story', 'eeeeeeee').description, { kind: 'story', purpose: none, size: none }, 'an issue\'s fix story');
 });

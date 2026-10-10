@@ -88,7 +88,16 @@
       "needsAttention": true,
       "attentionReasons": [
         "pending-decision"
-      ]
+      ],
+      "description": {
+        "kind": "epic",
+        "problem": {
+          "state": "not-recorded"
+        },
+        "summary": {
+          "state": "not-recorded"
+        }
+      }
     },
     {
       "id": "E20261007aaaaaaaa:S001",
@@ -207,7 +216,16 @@
         }
       ],
       "needsAttention": false,
-      "attentionReasons": []
+      "attentionReasons": [],
+      "description": {
+        "kind": "story",
+        "purpose": {
+          "state": "not-recorded"
+        },
+        "size": {
+          "state": "not-recorded"
+        }
+      }
     },
     {
       "id": "E20261007aaaaaaaa:S001:T001",
@@ -254,7 +272,10 @@
       "amendments": [],
       "notices": [],
       "needsAttention": false,
-      "attentionReasons": []
+      "attentionReasons": [],
+      "description": {
+        "kind": "task"
+      }
     },
     {
       "id": "E20261007aaaaaaaa:S002",
@@ -305,7 +326,16 @@
       "needsAttention": true,
       "attentionReasons": [
         "pending-decision"
-      ]
+      ],
+      "description": {
+        "kind": "story",
+        "purpose": {
+          "state": "not-recorded"
+        },
+        "size": {
+          "state": "not-recorded"
+        }
+      }
     },
     {
       "id": "E20261007bbbbbbbb",
@@ -364,7 +394,19 @@
       "attentionReasons": [
         "pending-decision",
         "unresolved-parent"
-      ]
+      ],
+      "description": {
+        "kind": "issue",
+        "reproduction": {
+          "state": "not-recorded"
+        },
+        "rootCause": {
+          "state": "not-recorded"
+        },
+        "fixIntent": {
+          "state": "not-recorded"
+        }
+      }
     }
   ],
   "rootIds": [

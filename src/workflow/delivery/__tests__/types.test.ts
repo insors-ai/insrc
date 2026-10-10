@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { DeliveryStoreUnreadableError } from '../types.js';
 import type {
 	ArtifactCurrency, ArtifactGate, AttentionReason, CurrencyPassResult, DeliveryDeps, DeliveryError, DeliveryEvidenceEntry,
-	DeliveryEvidenceRecord, DeliveryEvidenceRequest, DeliveryEvidenceResponse, DeliveryItem, DeliveryMarkdownPort,
+	DeliveryEvidenceRecord, DeliveryEvidenceRequest, DeliveryEvidenceResponse, DeliveryItem, DeliveryItemDescription, DeliveryMarkdownPort, DeliveryRecorded, DeliverySize,
 	DeliveryRoute, DeliverySnapshot, DeliverySnapshotRequest, DeliverySnapshotResponse, DeliveryStage, EffectiveAmendment,
 	GatePassResult, ItemGates, ReviewCurrency, ReviewVerdict, StageAnnotation, StagePassResult, TaskResult,
 } from '../types.js';
@@ -129,6 +129,7 @@ test('the delivery IPC types list exactly the sketched members', () => {
 		evidence: [entry], tasks: [], validation: { passed: 0, failed: 0, unrecorded: 0, unplanned: 0 },
 		storyLevelResult: null, conflict: null, correctsRef: null, amendments: [], notices: [],
 		needsAttention: false, attentionReasons: [],
+		description: { kind: 'story', purpose: { state: 'recorded', value: 'Readers find it', artifactId: 'DEF-h' }, size: { state: 'not-recorded' } },
 	};
 	const snapshot: DeliverySnapshot = {
 		schemaVersion: 1, repo: '/repo', takenAt: '2026-10-08T00:00:00.000Z', recordCount: 1, unreadableCount: 0,
@@ -152,6 +153,17 @@ test('the delivery IPC types list exactly the sketched members', () => {
 	assert.equal(evidenceRequest.artifactId, 'BUILD-h-s1');
 	assert.equal(deps.markdown?.markdownOf(recordStub()), null);
 	assert.equal(JSON.parse(JSON.stringify(snapshot)).items[0].evidence[0].openWith, 'evidence-read', 'plain JSON');
+	// The description is keyed by kind; each kind carries only its own values.
+	const descriptions: DeliveryItemDescription[] = [
+		{ kind: 'epic', problem: { state: 'not-recorded' }, summary: { state: 'not-recorded' } },
+		item.description,
+		{ kind: 'issue', reproduction: { state: 'not-recorded' }, rootCause: { state: 'not-recorded' }, fixIntent: { state: 'not-recorded' } },
+		{ kind: 'task' },
+	];
+	assert.deepEqual(descriptions.map(d => Object.keys(d)), [['kind', 'problem', 'summary'], ['kind', 'purpose', 'size'], ['kind', 'reproduction', 'rootCause', 'fixIntent'], ['kind']]);
+	const sizes: DeliverySize[] = ['S', 'M', 'L', 'XL'];
+	const recorded: DeliveryRecorded<DeliverySize> = { state: 'recorded', value: sizes[3]!, artifactId: 'DEF-h' };
+	assert.deepEqual(Object.keys(recorded), ['state', 'value', 'artifactId']);
 });
 
 function recordStub(): Parameters<DeliveryMarkdownPort['markdownOf']>[0] {

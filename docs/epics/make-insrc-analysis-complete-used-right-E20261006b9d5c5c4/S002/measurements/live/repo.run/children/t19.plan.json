@@ -1,0 +1,248 @@
+{
+	"planId": "jetbrains-plugin-package-map",
+	"goal": "Explain what the JetBrains plugin does and how its eight Kotlin packages connect to each other and to the insrc daemon.",
+	"target": "code",
+	"scope": "L",
+	"tasks": [
+		{
+			"taskId": "t01",
+			"template": "code.discovery.modules",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin"
+				}
+			},
+			"produces": [
+				"modules"
+			],
+			"rationale": "Enumerate every source-holding directory under jetbrains-plugin so the eight known packages are confirmed and any unlisted ones (tests, resources) surface."
+		},
+		{
+			"taskId": "t02",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "Find the plugin's functional entrypoints (actions, startup/lifecycle hooks, registrations) since the bundle recognised none at the repo root."
+		},
+		{
+			"taskId": "t03",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains"
+				},
+				"maxDepth": 6
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "Walk the dependency graph rooted at the plugin's Kotlin source root to establish inter-package edges, which the repo-root import graph left empty."
+		},
+		{
+			"taskId": "t04",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Shallow surface of the whole plugin source root to capture any top-level files and cross-package seams such as ProjectContext named in the HLD."
+		},
+		{
+			"taskId": "t05",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Deep surface of the daemon package (DaemonGateway.kt): this is the seam to the insrc daemon and the core of the focus question."
+		},
+		{
+			"taskId": "t06",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/host",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Deep surface of the host package (InsrcMcpRegistration.composeServerEntry) to show how the plugin registers the insrc MCP server with the host."
+		},
+		{
+			"taskId": "t07",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Deep surface of the lifecycle package to show how the plugin starts, stops and supervises its connection to the daemon process."
+		},
+		{
+			"taskId": "t08",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of the actions package: the user-facing IDE actions that state what the plugin does and which packages they call into."
+		},
+		{
+			"taskId": "t09",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of the debug package (OrphanProcessSeam.defaultDaemonEntry) to show how it locates and handles daemon processes."
+		},
+		{
+			"taskId": "t10",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of the freshness package to establish what it tracks (likely index/project staleness) and which daemon calls it depends on."
+		},
+		{
+			"taskId": "t11",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of the review package to show what review feature the plugin exposes and how it reaches the daemon or other packages."
+		},
+		{
+			"taskId": "t12",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of the settings package (SettingsView.kt) to show the configuration it exposes and which packages read it."
+		},
+		{
+			"taskId": "t13",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Shallow surface of the whole jetbrains-plugin directory to catch anything outside the Kotlin main source root: build scripts, resources and test sources."
+		},
+		{
+			"taskId": "t14",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon"
+				},
+				"maxDepth": 4
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "Walk the dependency graph rooted at the daemon package itself, to show which plugin packages reach the insrc daemon through DaemonGateway and what it depends on."
+		},
+		{
+			"taskId": "t15",
+			"template": "code.aggregate.report",
+			"kind": "leaf",
+			"params": {},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"modules",
+				"entrypoints",
+				"module-tree",
+				"functional-surface"
+			],
+			"rationale": "Stitch the module list, entrypoints, dependency trees and per-package surfaces into one report on plugin purpose and package/daemon connections."
+		}
+	],
+	"reasoning": "Focused child plan scoped to jetbrains-plugin, so the count sits at the lower bound of the L band (15). Discovery/structure tasks establish modules, entrypoints and inter-package edges (the repo-root import graph was empty), with a second dependency walk rooted at the daemon package for the daemon seam. One functional-surface leaf per Kotlin package (actions, daemon, debug, freshness, host, lifecycle, review, settings) plus shallow passes over the source root and the whole plugin directory cover what each does and where it touches the daemon. Omitted: adherence checks (no constraints in the bundle) and nested deep-dive sub-plans, since this is already a child plan and each package fits one leaf.",
+	"parentTaskPath": "t19"
+}

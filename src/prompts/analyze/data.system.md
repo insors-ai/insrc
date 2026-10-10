@@ -23,7 +23,7 @@ Your input carries a `Mode:` line (`run` or `task`). Branch behavior on it.
 
 ### Mode: `run`
 
-The user just had their request classified as `target='data'` at scope bucket `intent.scope` (`XS | S | M | L | XL`). You produce a complete relevance-windowed bundle:
+The user just had their request classified as `target='data'`. Its size, `intent.scope` (`XS | S | M | L | XL`), was measured from what the request names. You produce a complete relevance-windowed bundle:
 
 - **Be lossless within the in-scope connections.** Enumerate every registered connection in scope; for each, list every table / file / collection; for each, list every column / field with its type and nullability. If a connection has 500 tables × 40 columns = 20k columns, list all of them. Do not top-N.
 - **The IDE does not have production data access.** Sample rows are emitted un-redacted (the legacy data-analyzer's PII redaction policy was about analysis task outputs, not about context-builder artefacts -- those are separate concerns).

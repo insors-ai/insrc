@@ -247,12 +247,13 @@ test("a workspace that a registered repo contains is counted through the area pr
 interface StandInConnection { readonly id: string; readonly kind: string; readonly family: 'rdbms' | 'kv' | 'file'; readonly driver?: Record<string, unknown>; readonly path?: string; readonly recursive?: boolean; readonly unreachable?: boolean }
 
 /** A pool of stand-in connections that records what was opened, acquired and asked of each listing. */
-function standInPool(connections: readonly StandInConnection[]): { opened: string[]; acquired: string[]; asked: Array<Record<string, unknown> | undefined> } {
+function standInPool(connections: readonly StandInConnection[]): { opened: string[]; acquired: string[]; asked: Array<Record<string, unknown> | undefined>; reloads: () => number } {
 	const opened: string[] = [];
 	const acquired: string[] = [];
 	const asked: Array<Record<string, unknown> | undefined> = [];
+	let reloaded = 0;
 	const pool = {
-		reload:  async () => undefined,
+		reload:  async () => { reloaded += 1; },
 		list:    () => connections.map(c => ({ id: c.id, kind: c.kind, family: c.family, label: c.id, ...(c.path !== undefined ? { path: c.path } : {}), ...(c.recursive !== undefined ? { recursive: c.recursive } : {}) })),
 		acquire: async (id: string) => {
 			acquired.push(id);
@@ -263,7 +264,7 @@ function standInPool(connections: readonly StandInConnection[]): { opened: strin
 		},
 	};
 	_setDataPoolSourceForTest((async (path: string) => { opened.push(path); return pool; }) as never);
-	return { opened, acquired, asked };
+	return { opened, acquired, asked, reloads: () => reloaded };
 }
 const tables = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `t${i}`, kind: 'table' as const }));
 const spaces = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `ns${i}` }));
@@ -354,9 +355,11 @@ test('measureDataSource is not determined, with size XL and its own reason, for 
 	// A connection the pool does not hold, and a scope that names none.
 	assert.match((await measureDataSource({ poolPath: BIG, connectionId: 'ghost' })).note!, /the source 'ghost' cannot be reached \(no connection 'ghost'\)/);
 	assert.equal((await measureDataSource({ poolPath: BIG })).determined, false);
+	// A source whose listing is a sample is known by its kind: it is not connected to only to be refused.
+	assert.ok(!p.acquired.includes('sessions') && !p.acquired.includes('coord'), `not connected to: ${p.acquired.join(', ')}`);
+	assert.ok(p.acquired.includes('cut-sql') && p.acquired.includes('down'), 'the others are connected to');
 	// A cut count is never the count: it is in the note only.
 	assert.equal((await measureDataSource({ poolPath: BIG, connectionId: 'cut-sql' })).items, 0);
-	void p;
 
 	// A data request over several connections, one of which cannot be counted: not a count.
 	standInPool([
@@ -406,7 +409,9 @@ test('dataScopeOf gives the pool path and connection id resolveDataScope gave be
 	assert.deepEqual(summed, { source: 'data-source', items: 750, files: 0, characters: null, size: 'L', determined: true });
 	assert.deepEqual(p.acquired, ['ledger', 'warehouse', 'catalog']);
 	assert.deepEqual(asked, [{ complete: true }, { complete: true }, { complete: true }]);
-	assert.ok(p.opened.every(path => path === BIG));
+	// The pool is opened and its connections file reloaded once for the request, not once more per connection.
+	assert.deepEqual(p.opened, [BIG]);
+	assert.equal(p.reloads(), 1);
 	// A manifest directory inside the repo opens the pool at its own path.
 	p.opened.length = 0;
 	await measureRequestScope(ref('manifest-dir', inside), 'data');

@@ -188,11 +188,11 @@ The recursion is shown by the arrow back to Context Builder. Every planner-templ
 
 ### 1. Build classification context
 
-Before the classifier runs, the Context Builder's **classification-shaper** produces a small target-agnostic bundle: registered repos with primary language, declared data connections, detected IaC dirs, and a kind-count per surface. This bundle gives the classifier enough workspace signal to pick a target + a scope bucket without committing to a per-target shaper before the target is known. See [`analyze-context-builder.md`](analyze-context-builder.md) for the bundle shape.
+Before the classifier runs, the Context Builder's **classification-shaper** produces a small target-agnostic bundle: registered repos with primary language, declared data connections, detected IaC dirs, and a kind-count per surface. This bundle gives the classifier enough workspace signal to pick a target without committing to a per-target shaper before the target is known. See [`analyze-context-builder.md`](analyze-context-builder.md) for the bundle shape.
 
 ### 2. Classify
 
-LLM call (small, local Ollama) emits the `{ target, focused, focus?, scopeRef, reasoning }` part of the shape above (the size is measured after it, from the scope it names), consuming the classification-context bundle from step 1. The user message + any path the user surfaced (e.g. `/analyze src/foo.ts`) is the input. Validation: target ∈ enum, scope ∈ enum, scopeRef.kind matches target (a `connection` scope on a `code` target gets rejected). `target` can be `generic` when the request is broad ("analyze this repo") and the planner is expected to dispatch sub-plans across multiple per-target shapers.
+LLM call (small, local Ollama) emits the `{ target, focused, focus?, scopeRef, reasoning }` part of the shape above (the size is measured after it, from the scope it names), consuming the classification-context bundle from step 1. The user message + any path the user surfaced (e.g. `/analyze src/foo.ts`) is the input. Validation: target ∈ enum, scopeRef.kind matches target (a `connection` scope on a `code` target gets rejected). `target` can be `generic` when the request is broad ("analyze this repo") and the planner is expected to dispatch sub-plans across multiple per-target shapers.
 
 If `scopeRef.value` doesn't resolve (e.g. path doesn't exist) the classifier reruns with a corrective note. After two failures, the analyze run aborts with a clear `scopeRef-unresolved` error.
 
@@ -201,7 +201,7 @@ If `scopeRef.value` doesn't resolve (e.g. path doesn't exist) the classifier rer
 Immediately after classification and before context-building begins, the framework emits a one-shot informational warning over the `analyze.run.start` IPC when `scope ∈ { L, XL }`:
 
 ```
-This run is classified <scope> scope; expect significant token consumption
+This run is measured as <scope> scope; expect significant token consumption
 from your CLI provider's quota during planning + task execution.
 ```
 
@@ -428,7 +428,7 @@ A run is **resumable across the whole tree** because every artefact lands as a s
   format?:  ('json' | 'md' | 'html' | 'pdf')[];   // default ['json', 'md']
 }>;
 // Stream events:
-//   classifyDone   { target, scope, focused, focus?, reasoning }
+//   classifyDone   { target, scope, focused, focus?, reasoning }   (scope: measured, not classified)
 //   planDone       { taskCount }
 //   taskStart      { taskId, template }
 //   taskDone       { taskId, status, outputPath }
@@ -502,7 +502,7 @@ Stored under `models.analyze` in `~/.insrc/config.json`:
 }
 ```
 
-The `maxPlanDepth` map is keyed on the **root Run's classified scope**, not on the local Plan's scope. This is deliberate: a child Plan classified as M inside an XL Run is still entitled to the XL ceiling, because the user's original intent (the root's scope) is what governs how deep the analysis is allowed to go. Local plans get to recurse up to (root-ceiling − current-depth) further levels.
+The `maxPlanDepth` map is keyed on the **root Run's measured scope**, not on the local Plan's scope. This is deliberate: a child Plan measured as M inside an XL Run is still entitled to the XL ceiling, because the user's original intent (the root's scope) is what governs how deep the analysis is allowed to go. Local plans get to recurse up to (root-ceiling − current-depth) further levels.
 
 Override at run time via `--max-depth N` on the CLI for ad-hoc tightening or loosening.
 

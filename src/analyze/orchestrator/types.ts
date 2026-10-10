@@ -56,10 +56,10 @@ export interface RunAnalyzeArgs {
 	 */
 	readonly targetHint?: import('../../shared/analyze-types.js').AnalyzeTarget;
 	/**
-	 * Optional scope override. Only honoured when targetHint is also
-	 * set (otherwise the classifier picks the scope band from the
-	 * prompt + bundle). Defaults to 'M' when omitted with a target
-	 * hint.
+	 * The size the caller stated (a slash command's suffix). A hint
+	 * only: the run's size is measured from what its scope names, on
+	 * both classification branches, and this is recorded on the
+	 * measure as `sizeHint`. There is no default.
 	 */
 	readonly scopeHint?: import('../../shared/analyze-types.js').AnalyzeScope;
 }

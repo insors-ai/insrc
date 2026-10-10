@@ -19,7 +19,7 @@ Commands: `npx tsx --test 'src/analyze/**/*.test.ts'`; `npx tsx --test 'src/daem
 These failed at the baseline commit and fail the same way now. They are not this Story's.
 
 - **daemon:** `SqliteDriver (via pool)`, through its subtest on the temporal trend (`integer overflow`).
-- **VS Code extension:** the same six top-level lines as in the baseline: `runReachabilityProbe degrades a hung probe to errored within the bounded deadline`; `runReachabilityProbe never throws even if reachability() rejects`; `activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves`; `the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)`; `only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)`; `each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'`.
+- **VS Code extension:** the same six top-level lines as in the baseline (the suite's summary counts them as one failure, because five are reported as cancelled by their parent; the comparison is by the six lines): `runReachabilityProbe degrades a hung probe to errored within the bounded deadline`; `runReachabilityProbe never throws even if reachability() rejects`; `activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves`; `the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)`; `only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)`; `each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'`.
 
 ## Test names that are gone, and why
 
@@ -52,3 +52,7 @@ The Story changes what several existing tests observe. Each was changed in the T
 ## One run that did not finish, and its rerun
 
 The first run of the daemon suite for this comparison hung in `src/daemon/__tests__/model-catalog.test.ts` while the VS Code extension's suite was running beside it. Run alone the file passes in seconds, and the daemon suite rerun on its own finished with the result in the table. The file is not touched by the Story. The figures above are from the rerun.
+
+## After the wording fixes
+
+The runs above were taken before two later commits of task t9, `3ae59391` and the one after it, which change only the wording of design pages, prompts and comments. The analyze, daemon, mcp and config suites were rerun after `3ae59391`: every result line is the same as in `after/`, by name and by result.

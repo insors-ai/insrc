@@ -48,9 +48,9 @@ export interface PlanBuilderInput {
 	 */
 	readonly currentDepth?: number;
 	/**
-	 * The ROOT Run's classified scope bucket -- governs the depth
+	 * The ROOT Run's measured scope bucket -- governs the depth
 	 * cap regardless of this Plan's local scope. A child plan
-	 * classified as M inside an XL root run still uses XL's depth
+	 * measured as M inside an XL root run still uses XL's depth
 	 * ceiling. Defaults to `intent.scope` when undefined (root
 	 * invocations).
 	 */

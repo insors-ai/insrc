@@ -121,7 +121,7 @@ Each shaper's system prompt lives in `prompts/analyze/<shaper>.system.md` and is
 
 What each prompt directs the LLM to do (sketch — the actual prompt files are the source of truth):
 
-**`classification.system.md`** — "You are the analyze-intent classifier's context builder. Your job is to produce a target-agnostic bundle describing the workspace so the classifier can pick a target (code / data / infra / generic) and a scope bucket (XS-XL). Tool-use: list registered repos, run a quick kind-count per repo, list registered data connections, glob the workspace for known IaC dirs. **Do not** traverse the full graph. **Do not** read source bodies. Emit a small, kind-counted summary."
+**`classification.system.md`** — "You are the analyze-intent classifier's context builder. Your job is to produce a target-agnostic bundle describing the workspace so the classifier can pick a target (code / data / infra / generic). Tool-use: list registered repos, run a quick kind-count per repo, list registered data connections, glob the workspace for known IaC dirs. **Do not** traverse the full graph. **Do not** read source bodies. Emit a small, kind-counted summary."
 
 **`generic.system.md`** — "You are the generic-target run-level context builder. The intent is broad ('analyze this repo / workspace'). Survey what surfaces exist (code modules, data connections, infra manifests) and produce a cross-cutting bundle. Each `summary` / `surface` / `structure` layer should mention every detected surface kind. The planner will dispatch sub-plans by family namespace."
 

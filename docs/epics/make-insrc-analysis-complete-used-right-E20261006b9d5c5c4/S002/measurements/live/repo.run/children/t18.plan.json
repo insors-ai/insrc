@@ -1,0 +1,267 @@
+{
+	"planId": "src-module-map-and-connections",
+	"goal": "Explain what src/ does and how its modules connect: enumerate modules, walk the dependency tree, find entrypoints, and extract each top-level module's surface.",
+	"target": "code",
+	"scope": "L",
+	"tasks": [
+		{
+			"taskId": "t01",
+			"template": "code.discovery.modules",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src"
+				}
+			},
+			"produces": [
+				"modules"
+			],
+			"rationale": "Enumerate every source-holding directory under src/ so the report names the real module set; the bundle only profiled the repo root."
+		},
+		{
+			"taskId": "t02",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src"
+				},
+				"maxDepth": 4
+			},
+			"produces": [
+				"module-tree"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Walk the module-dependency graph rooted at src/ to answer how its modules connect; the root-level import graph returned zero edges."
+		},
+		{
+			"taskId": "t03",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/src"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "Find the executables, IPC handlers and exports inside src/; the root profile recognised none and e4 candidates were all outside src/."
+		},
+		{
+			"taskId": "t04",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/shared",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of src/shared (core types, paths, logger), expected to be the most-imported hub that other modules depend on."
+		},
+		{
+			"taskId": "t05",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/indexer",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of src/indexer (parsing and graph construction) to state what it exposes to the daemon and storage layers."
+		},
+		{
+			"taskId": "t06",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/db",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of src/db (graph and vector storage) to show the storage API that the indexer, daemon and analyze modules call."
+		},
+		{
+			"taskId": "t07",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/daemon",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Deep surface of src/daemon, the background process and IPC handler registry that ties the other modules together, plus its tools."
+		},
+		{
+			"taskId": "t08",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/config",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of src/config (on-disk config store and templates) to show which settings API the other modules read."
+		},
+		{
+			"taskId": "t09",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/agent",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of src/agent (LLM providers) to show the provider interface that analyze and workflow reach models through."
+		},
+		{
+			"taskId": "t10",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Deep surface of src/analyze, the analyze framework named in design docs; a large module with decomposer, synthesizer and recipes."
+		},
+		{
+			"taskId": "t11",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/workflow",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Deep surface of src/workflow, the framework producing DEF/HLD/LLD artifacts that the bundle's doc hits refer to."
+		},
+		{
+			"taskId": "t12",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/mcp",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of src/mcp (MCP servers and tools) to show how external agents reach analyze and workflow through the daemon."
+		},
+		{
+			"taskId": "t13",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/cli",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of src/cli (interactive terminal UI) to show the user-facing client and which daemon services it calls."
+		},
+		{
+			"taskId": "t14",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/bin",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of src/bin (executable entry files) to tie the discovered entrypoints to the modules each one starts."
+		},
+		{
+			"taskId": "t15",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src/assets",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Surface of src/assets, confirmed by the bundle's hld.md format hit, to describe the non-code resources the workflow module ships."
+		},
+		{
+			"taskId": "t16",
+			"template": "code.aggregate.report",
+			"kind": "leaf",
+			"params": {},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"modules",
+				"module-tree",
+				"entrypoints",
+				"functional-surface"
+			],
+			"rationale": "Stitch the module list, dependency tree, entrypoints and per-module surfaces into one answer on what src/ does and how it connects."
+		}
+	],
+	"reasoning": "The bundle profiled only the repo root and found no exports, entrypoints or import edges, so this plan re-anchors on src/: module discovery, a dependency tree (the direct answer to how modules connect) and entrypoint discovery, then one surface task per top-level module, then the aggregator. Only src/assets is confirmed by the bundle; the other eleven module paths are taken from the project's documented src layout and could not be checked on disk (listing that directory was blocked), so t01's output is the authority and any surface task on a missing directory should be read as absent. src/prompts is omitted as non-code. No sub-plans are used: daemon, analyze and workflow get deep surfaces instead, which keeps cost bounded at 16 tasks.",
+	"parentTaskPath": "t18"
+}

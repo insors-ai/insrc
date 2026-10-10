@@ -1,0 +1,143 @@
+{
+	"runId": "s2-live-directory-mv1ebo2b",
+	"createdAt": "2026-10-09T20:06:27.754Z",
+	"updatedAt": "2026-10-09T20:07:55.043Z",
+	"userPrompt": "What does this code do, and how are its parts connected?",
+	"initialScopeRef": {
+		"kind": "module",
+		"value": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier"
+	},
+	"stage": "done",
+	"status": "ok",
+	"intent": {
+		"target": "code",
+		"focused": true,
+		"focus": "What does this code do, and how are its parts connected?",
+		"scopeRef": {
+			"kind": "module",
+			"value": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier"
+		},
+		"reasoning": "target hinted via slash command (classifier skipped)",
+		"scope": "S"
+	},
+	"measure": {
+		"source": "named-area",
+		"items": 44,
+		"files": 9,
+		"characters": null,
+		"size": "S",
+		"determined": true,
+		"sizeHint": "M"
+	},
+	"finalReport": {
+		"summary": "Incomplete: 2 failed: run context / symbol.locate [e4] — skipped: placeholder(s) [$e1.profile.exports[0..2]] resolved to empty/undefined against prior outputs. The dependent exploration produced no data for these accessors. | run context / usage.example [e5] — skipped: placeholder(s) [$e4.hits[0].entityId] resolved to empty/undefined against prior outputs. The dependent exploration produced no data for these accessors.. Note: Entry points are recognised by file name, and by a marker in the first 4,096 characters of a file whose content the index stores; the index stores no content for a source file itself, so such a file is recognised by name only. this result holds what the stored code graph has; the graph's own coverage of the code is not established this result holds what the stored code graph has; the graph's own coverage of the code is not established. A module is a stored module entity in the area, or a directory that directly holds at least one source file the index stores and lies neither in nor under a stored module entity's directory. A directory whose files the index does not hold is not listed. Under a scope of one file or one symbol no directory is listed. this result holds what the stored code graph has; the graph's own coverage of the code is not established. A module is a stored module entity in the area, or a directory that directly holds at least one source file the index stores and lies neither in nor under a stored module entity's directory. A directory whose files the index does not hold is not listed. Under a scope of one file or one symbol no directory is listed. A file whose module is not in the area is not part of the tree, and neither are its imports. An import whose target lies outside the area is not an edge. this result holds what the stored code graph has; the graph's own coverage of the code is not established. The surface lists the functions, methods and classes of every stored source file under the module's directory, including its sub-directories.\nSize: S, measured from the area the request names: 9 files, 44 entities. The caller asked for M.\n\nTarget: code, scope S — the `src/analyze/classifier` module (5 files) plus its `__tests__` sibling (4 files) in the repo at `/Users/subhagho/work/projects/insors/insrc`. The goal was to explain what the code does and how its parts connect.\n\nThe module turns a raw user request plus a surfaced scope reference into a validated `UnsizedIntent` (target, focused, scopeRef, reasoning, optional focus). It is a three-file pipeline: `driver.ts` orchestrates (context bundle -> prompt -> structured model call -> validation -> at most one corrective retry), `schema.ts` performs Ajv shape validation against `CLASSIFIED_INTENT_SCHEMA`, and `validate.ts` performs semantic validation (scopeRef kind vs. target compatibility, and whether the scope reference actually resolves on disk or in the connection registry). Failures surface as four named error classes.\n\nConnectivity is simple and one-directional: `classify` in `driver.ts` calls into `schema.ts` and `validate.ts`; the `__tests__` module imports the classifier module (one import edge per module-tree). Gaps: only 3 of the module's 5 files and 3 of the 4 test files appear in the upstream outputs, and several collaborators that `classify` calls are referenced only by name with no definition supplied.",
+		"findings": [
+			{
+				"title": "Purpose: classify a user request into a validated UnsizedIntent",
+				"detail": "Per functional-surface, the single orchestrating entry point is `classify(args: ClassifyDriverArgs): Promise<UnsizedIntent>` in `driver.ts` (lines 127-203). It takes `input` (a `userPrompt` and a `scopeRef`) and `opts` (`runId`, optional `bypassCache`) and returns an intent whose required fields, as stated in the prompt text built by `buildInitialMessages`, are `target`, `focused`, `scopeRef` (`{kind, value}`) and `reasoning`, with `focus` optional (required when `focused=true`).\n\nThe return type is `UnsizedIntent`, i.e. the classifier emits no size; the prompt's required-field list contains no scope/size field.",
+				"sources": [
+					"functional-surface",
+					"entrypoints"
+				]
+			},
+			{
+				"title": "Control flow of classify: bundle -> prompt -> structured call -> two-stage validation -> one corrective retry",
+				"detail": "Per the `classify` body in functional-surface:\n\n1. `loadAnalyzeConfig()` loads config.\n2. `shaperFor('classification').buildClassificationBundle(input, { runId, bypassCache })` builds a context bundle, rendered with `assembleMarkdown(bundle)`.\n3. `loadPromptFile()` reads the classifier prompt; the provider is `args.provider ?? resolveRoleProvider('analyze.classify', cfg)`.\n4. `buildInitialMessages(promptContent, bundleMd, input)` produces a system + user message pair.\n5. A loop of at most 2 attempts calls `provider.completeStructured<UnsizedIntent>(messages, CLASSIFIED_INTENT_SCHEMA, { maxAttempts: cfg.shaper.structuredOutputRetries, disableThinking: true })`.\n6. Shape check via `validateIntentShapeWithErrors(raw)`; a failure throws `ClassifierSchemaUnrecoverable` immediately (no retry).\n7. Semantic check via `validateIntentSemantics(raw, connectionCheckFor(args))`; `null` means success and `raw` is returned.\n8. On semantic failure, `appendCorrectionTurn(messages, raw, failure)` appends the rejected output as an assistant turn plus a corrective user turn, and the loop retries once.\n9. After two semantic failures it throws `ClassifierValidationExhausted(lastValidationFailure)`.\n\nWorst case is 2 model calls at this level (each with its own `maxAttempts` structured-output retries inside the provider).",
+				"sources": [
+					"functional-surface"
+				]
+			},
+			{
+				"title": "How the three source files connect",
+				"detail": "- `driver.ts` is the hub. It exports `classify`, `connectionCheckFor`, and the four error classes, and holds internal helpers `buildInitialMessages`, `appendCorrectionTurn`, `loadPromptFile`, `resolveRelativeToInsrcRoot`, `classifyError`.\n- `schema.ts` is a leaf used by the driver: `validateIntentShape` and `validateIntentShapeWithErrors` both go through the lazily-compiled, memoised `getValidator()` (`ajv.compile(CLASSIFIED_INTENT_SCHEMA)`), with `formatError` rendering each Ajv error as `<path>: <message> <params>`.\n- `validate.ts` is a leaf used by the driver: `validateIntentSemantics` runs `checkKindTargetMatch` first, then `checkScopeRefResolves`, returning the first `ValidationFailure` or `null`. `isKindCompatibleWithTarget` (exported) looks up `TARGET_TO_KINDS[target]`. `checkScopeRefResolves` delegates symbol values to `checkSymbolValue`.\n\nCall direction is driver -> schema and driver -> validate; nothing in the upstream shows schema or validate calling back into the driver.",
+				"sources": [
+					"functional-surface",
+					"entrypoints"
+				]
+			},
+			{
+				"title": "Semantic validation rules (validate.ts)",
+				"detail": "Per functional-surface, two failure codes exist:\n\n- `scope-ref-kind-target-mismatch` — from `checkKindTargetMatch` when `scopeRef.kind` is not in `TARGET_TO_KINDS[target]`; the message lists the allowed kinds.\n- `scope-ref-unresolved` — from `checkScopeRefResolves` / `checkSymbolValue`.\n\nResolution rules in `checkScopeRefResolves`:\n\n- `connection`: checked through the `connectionExists` callback; if no callback is supplied the connection is treated as unverifiable and passes.\n- Kinds not in `FILESYSTEM_KINDS`: pass through (commented as future-proofing).\n- `symbol`: value must be `<absolute file path><SYMBOL_SEPARATOR><entity name>`, split on the last separator; both parts must be non-empty and the file part must exist and be a regular file. Whether the entity name matches a stored entity is explicitly not checked here.\n- `file`: path must exist and be a regular file.\n- `repo`, `module`, `manifest-dir`, `workspace`: path must exist and be a directory.",
+				"sources": [
+					"functional-surface"
+				]
+			},
+			{
+				"title": "Error taxonomy and how failures are mapped",
+				"detail": "Four exported `Error` subclasses in `driver.ts` (per entrypoints and functional-surface):\n\n- `ClassifierLlmUnavailableError` — message `The model call for classification failed: <cause>`; deliberately names the call rather than a provider because the classifier's provider is role-routed.\n- `ClassifierSchemaUnrecoverable` — carries joined shape/schema errors.\n- `ClassifierValidationExhausted` — carries `lastFailure: ValidationFailure`; thrown after the corrective retry also fails.\n- `ClassifierPromptMissingError` — thrown by `loadPromptFile` on `ENOENT`.\n\n`classifyError(err)` maps provider exceptions: non-`Error` values are wrapped in a plain `Error`; `isModelCallFailure(err)` yields `ClassifierLlmUnavailableError(modelCallFailureDetail(err))`; anything else becomes `ClassifierSchemaUnrecoverable([err.message])`.",
+				"sources": [
+					"functional-surface",
+					"entrypoints"
+				]
+			},
+			{
+				"title": "Prompt construction and dependency-injection seams",
+				"detail": "- `buildInitialMessages` builds the system message as the prompt file content plus `CONTRACT_FOOTER_MD`, and a user message containing `SchemaVersion: ${CLASSIFIER_SCHEMA_VERSION}`, the raw user request, the surfaced scope reference as JSON, and the shaper's workspace-context markdown, ending with an instruction to emit only the JSON object.\n- `loadPromptFile` resolves `CLASSIFY_PROMPT_REL` either as absolute or via `resolveRelativeToInsrcRoot`, which walks three levels up from the driver file.\n- Two injection seams on `ClassifyDriverArgs`: `provider` (falls back to `resolveRoleProvider('analyze.classify', cfg)`) and `connectionExists` (via `connectionCheckFor`, falling back to `connectionIsRegistered`).",
+				"sources": [
+					"functional-surface"
+				]
+			},
+			{
+				"title": "Module layout and test coverage",
+				"detail": "Per modules and module-tree, there are two modules: `src/analyze/classifier` (5 files) and `src/analyze/classifier/__tests__` (4 files), with a single edge from `__tests__` to the classifier module (`viaImports: 1`).\n\nTest helpers visible in functional-surface:\n\n- `classify.live.test.ts` — `uniqueRunId` and `classifyAt`, which calls the real `classify({ input, opts })` with a `workspace` scopeRef.\n- `no-size.test.ts` — `read`, `code` (strips comments), `sourceFiles` (walks non-test `.ts` files); the helpers indicate a source-scanning test, consistent with the classifier returning no size.\n- `validate.test.ts` — an `intent(...)` fixture builder and an `exists` stub that recognises only `prod-db`.\n\nNote: the `intent` fixture in `validate.test.ts` still sets `scope: 'M'` and is typed `ClassifiedIntent`, whereas the production functions take `UnsizedIntent`.",
+				"sources": [
+					"modules",
+					"module-tree",
+					"functional-surface"
+				]
+			},
+			{
+				"title": "Gaps in the upstream analysis",
+				"detail": "- **Files not surfaced:** modules reports 5 files in `src/analyze/classifier` but only `driver.ts`, `schema.ts` and `validate.ts` appear in entrypoints / functional-surface. Likewise 4 test files are counted but only 3 appear. The remaining files contributed no entities to the outputs, so their contents are unknown.\n- **Collaborators referenced but not defined upstream:** `loadAnalyzeConfig`, `shaperFor`, `assembleMarkdown`, `resolveRoleProvider`, `connectionIsRegistered`, `isModelCallFailure`, `modelCallFailureDetail`, and the constants `CLASSIFIED_INTENT_SCHEMA`, `CLASSIFIER_SCHEMA_VERSION`, `CONTRACT_FOOTER_MD`, `CLASSIFY_PROMPT_REL`, `TARGET_TO_KINDS`, `FILESYSTEM_KINDS`, `SYMBOL_SEPARATOR`. Their source locations and values are not in the upstream, so the concrete kind-to-target table and schema contents cannot be reported.\n- **No inbound callers:** module-tree only shows the `__tests__` -> classifier edge; who calls `classify` in production is not covered by this run.\n- **Entrypoints are exports, not runtime entrypoints:** the entrypoints output lists the same ten exported symbols as functional-surface.",
+				"sources": [
+					"modules",
+					"module-tree",
+					"entrypoints",
+					"functional-surface"
+				]
+			}
+		],
+		"metadata": {
+			"target": "code",
+			"scope": "S",
+			"runId": "s2-live-directory-mv1ebo2b",
+			"tasksAnalyzed": 4
+		}
+	},
+	"report": {
+		"completeness": {
+			"complete": false,
+			"incomplete": [],
+			"failed": [
+				{
+					"sourceId": "run context / symbol.locate [e4]",
+					"sourceKind": "lookup",
+					"reason": "skipped: placeholder(s) [$e1.profile.exports[0..2]] resolved to empty/undefined against prior outputs. The dependent exploration produced no data for these accessors."
+				},
+				{
+					"sourceId": "run context / usage.example [e5]",
+					"sourceKind": "lookup",
+					"reason": "skipped: placeholder(s) [$e4.hits[0].entityId] resolved to empty/undefined against prior outputs. The dependent exploration produced no data for these accessors."
+				}
+			],
+			"basisNotes": [
+				"Entry points are recognised by file name, and by a marker in the first 4,096 characters of a file whose content the index stores; the index stores no content for a source file itself, so such a file is recognised by name only.",
+				"this result holds what the stored code graph has; the graph's own coverage of the code is not established",
+				"this result holds what the stored code graph has; the graph's own coverage of the code is not established. A module is a stored module entity in the area, or a directory that directly holds at least one source file the index stores and lies neither in nor under a stored module entity's directory. A directory whose files the index does not hold is not listed. Under a scope of one file or one symbol no directory is listed.",
+				"this result holds what the stored code graph has; the graph's own coverage of the code is not established. A module is a stored module entity in the area, or a directory that directly holds at least one source file the index stores and lies neither in nor under a stored module entity's directory. A directory whose files the index does not hold is not listed. Under a scope of one file or one symbol no directory is listed. A file whose module is not in the area is not part of the tree, and neither are its imports. An import whose target lies outside the area is not an edge.",
+				"this result holds what the stored code graph has; the graph's own coverage of the code is not established. The surface lists the functions, methods and classes of every stored source file under the module's directory, including its sub-directories."
+			]
+		},
+		"measure": {
+			"source": "named-area",
+			"items": 44,
+			"files": 9,
+			"characters": null,
+			"size": "S",
+			"determined": true,
+			"sizeHint": "M"
+		}
+	},
+	"tasksCompleted": 5,
+	"tasksFailed": []
+}

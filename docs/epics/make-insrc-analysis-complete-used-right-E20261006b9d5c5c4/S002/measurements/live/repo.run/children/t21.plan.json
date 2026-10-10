@@ -1,0 +1,187 @@
+{
+	"planId": "camon-role-and-repo-links",
+	"goal": "Establish what the camon Python package does and how it connects to the TypeScript and Kotlin parts of the insrc repository.",
+	"target": "code",
+	"scope": "M",
+	"tasks": [
+		{
+			"taskId": "t01",
+			"template": "code.discovery.modules",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/camon"
+				}
+			},
+			"produces": [
+				"modules"
+			],
+			"rationale": "List every source-holding directory under camon/ so the package's internal layout is known before describing what it does."
+		},
+		{
+			"taskId": "t02",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/camon"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "Find camon's entrypoints (camon/src/camon/__main__.py was a low-score candidate) to see how the package is started and what commands it offers."
+		},
+		{
+			"taskId": "t03",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "module",
+					"value": "/Users/subhagho/work/projects/insors/insrc/camon"
+				},
+				"maxDepth": 6
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "Walk the dependency tree rooted at camon/ to show how its internal modules depend on each other and on anything outside camon."
+		},
+		{
+			"taskId": "t04",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/camon/src/camon",
+				"depth": "deep"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Extract the full functional surface of the camon Python package source (camon/src/camon) — the main evidence for what camon does."
+		},
+		{
+			"taskId": "t05",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/camon",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"consumes": [
+				"modules"
+			],
+			"rationale": "Shallow surface of the whole camon/ directory to catch tests, scripts and config that sit outside camon/src/camon."
+		},
+		{
+			"taskId": "t06",
+			"template": "code.structure.module-tree",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				},
+				"maxDepth": 2
+			},
+			"produces": [
+				"module-tree"
+			],
+			"rationale": "Shallow repo-root dependency tree to look for edges between camon and src, jetbrains-plugin, vscode-plugin and scripts; the bundle found none."
+		},
+		{
+			"taskId": "t07",
+			"template": "code.discovery.entrypoints",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"entrypoints"
+			],
+			"rationale": "Enumerate repo-wide entrypoints so camon's entrypoints can be placed beside the daemon, MCP, CLI and plugin entrypoints."
+		},
+		{
+			"taskId": "t08",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/src",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"rationale": "Shallow surface of the TypeScript src/ tree to find any place that spawns, calls or shares a contract with camon."
+		},
+		{
+			"taskId": "t09",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"rationale": "Shallow surface of the Kotlin jetbrains-plugin to check whether it references camon or only the daemon gateway."
+		},
+		{
+			"taskId": "t10",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/vscode-plugin",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"rationale": "Shallow surface of vscode-plugin to check for any link to camon; the bundle had no live detail on this directory."
+		},
+		{
+			"taskId": "t11",
+			"template": "code.surface.functional",
+			"kind": "leaf",
+			"params": {
+				"module": "/Users/subhagho/work/projects/insors/insrc/scripts",
+				"depth": "shallow"
+			},
+			"produces": [
+				"functional-surface"
+			],
+			"rationale": "Shallow surface of scripts/ since build or launch scripts are a likely place where camon is invoked from the rest of the repo."
+		},
+		{
+			"taskId": "t12",
+			"template": "code.aggregate.report",
+			"kind": "leaf",
+			"params": {},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"modules",
+				"entrypoints",
+				"module-tree",
+				"functional-surface"
+			],
+			"rationale": "Stitch camon's layout, entrypoints, dependency trees and the surfaces of the other parts into one answer on camon's role and links."
+		}
+	],
+	"reasoning": "The bundle profiled only the repo root and says almost nothing about camon, so the plan first maps camon itself (modules, entrypoints, dependency tree, deep surface of camon/src/camon plus a shallow pass over the whole directory). It then looks for links to the rest of the repo: a shallow repo-root dependency tree, repo-wide entrypoints, and shallow surfaces of src, jetbrains-plugin, vscode-plugin and scripts. Omitted: design, docs and site (no code surface), adherence checks (no constraints given), and further recursive deep-dives, since this is already a child plan.",
+	"parentTaskPath": "t21"
+}

@@ -147,6 +147,9 @@ export class SegmentGone extends Error {
 export interface SessionOutputDeps {
   readonly root: string;
   readonly fs?: SessionOutputFs | undefined;
+  /** A session file rolls over at the next turn start once it is larger than this. Default 4 MiB. */
+  readonly maxBytes?: number | undefined;
+  readonly logger?: { warn(msg: string): void } | undefined;
   /** How often a reader polls for more output. Default 100 ms. */
   readonly pollMs?: number | undefined;
   readonly now?: (() => number) | undefined;
@@ -158,7 +161,14 @@ export interface SessionOutput {
   tail(cursor: SegmentCursor, opts: { readonly finished: () => boolean; readonly signal?: AbortSignal | undefined }): AsyncIterable<{ readonly line: string; readonly cursor: SegmentCursor }>;
   /** The last part of the current turn's stderr ('' when there is none). */
   errTail(sessionId: string): string;
+  /** Deletes a session's files (its session was removed). */
+  remove(sessionId: string): Promise<void>;
+  /** Deletes the files of sessions not in `keep` that have not been written for `olderThanMs`. */
+  sweep(opts: { readonly olderThanMs: number; readonly keep: ReadonlySet<string> }): Promise<void>;
 }
+
+export const DEFAULT_MAX_BYTES = 4 * 1024 * 1024;
+const SUFFIXES = ['.1.ndjson', '.ndjson', '.err.log'] as const;
 
 const READ_CHUNK = 64 * 1024;
 const ERR_TAIL = 2000;
@@ -169,6 +179,8 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
   const fs = deps.fs ?? nodeSessionOutputFs;
   const pollMs = deps.pollMs ?? 100;
   const now = deps.now ?? Date.now;
+  const maxBytes = deps.maxBytes ?? DEFAULT_MAX_BYTES;
+  const log = deps.logger ?? { warn: () => {} };
   const paths = (sessionId: string): { current: string; previous: string; err: string } => {
     const base = `${deps.root}/${sessionFileName(sessionId)}`;
     return { current: `${base}.ndjson`, previous: `${base}.1.ndjson`, err: `${base}.err.log` };
@@ -192,6 +204,18 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       else if (m?.kind === 'turn-end' && m.turnId === open) open = undefined;
     }
     return open;
+  };
+
+  /** The offset just after a turn's turn-start marker in a file, if it is there. */
+  const turnStartOffset = async (path: string, turnId: string): Promise<number | undefined> => {
+    const buf = await fs.readFile(path);
+    let pos = 0;
+    for (let nl = buf.indexOf(0x0a, pos); nl !== -1; nl = buf.indexOf(0x0a, pos)) {
+      const m = parseMarker(buf.subarray(pos, nl).toString('utf8'));
+      pos = nl + 1;
+      if (m?.kind === 'turn-start' && m.turnId === turnId) return pos;
+    }
+    return undefined;
   };
 
   /** Appends a marker on a line of its own (terminating a CLI line the writer left unfinished). */
@@ -226,13 +250,19 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       const p = paths(sessionId);
       await fs.mkdir(deps.root);
       let generation = await generationOf(p.current);
-      if (generation === undefined) {
-        generation = ((await generationOf(p.previous)) ?? 0) + 1;
-        await fs.writeFile(p.current, `${JSON.stringify({ [MARKER_KEY]: 'file', sessionId, generation })}\n`);
-      } else {
+      if (generation !== undefined) {
         // A turn whose host went away before its exit never got a turn-end: close it first.
         const open = await openTurn(p.current);
         if (open !== undefined) await appendMarker(p.current, { [MARKER_KEY]: 'turn-end', turnId: open, code: null, signal: null, unknown: true });
+        // Roll over between turns only, so a segment is never split across files.
+        if (((await fs.size(p.current)) ?? 0) > maxBytes) {
+          await fs.rename(p.current, p.previous); // replaces the older generation
+          generation = undefined;
+        }
+      }
+      if (generation === undefined) {
+        generation = ((await generationOf(p.previous)) ?? 0) + 1;
+        await fs.writeFile(p.current, `${JSON.stringify({ [MARKER_KEY]: 'file', sessionId, generation })}\n`);
       }
       await fs.writeFile(p.err, '');
       await appendMarker(p.current, { [MARKER_KEY]: 'turn-start', turnId, at: new Date(now()).toISOString() });
@@ -250,6 +280,13 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     async *tail(cursor, opts) {
       const file = await fileFor(cursor);
       let offset = cursor.offset;
+      if (offset > ((await fs.size(file)) ?? 0)) {
+        // The file is shorter than the cursor (truncated or replaced): re-anchor at the turn's start.
+        const anchor = await turnStartOffset(file, cursor.turnId);
+        if (anchor === undefined) throw new SegmentGone(cursor);
+        log.warn(`[chat-output] session ${cursor.sessionId}: cursor past the end of its file; re-reading turn ${cursor.turnId} from its start`);
+        offset = anchor;
+      }
       let pending: Buffer = Buffer.alloc(0);
       for (;;) {
         if (opts.signal?.aborted === true) return;
@@ -287,6 +324,39 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
 
     errTail(sessionId: string): string {
       return (fs.readTextSync(paths(sessionId).err) ?? '').slice(-ERR_TAIL);
+    },
+
+    async remove(sessionId: string): Promise<void> {
+      const p = paths(sessionId);
+      await fs.rm(p.current);
+      await fs.rm(p.previous);
+      await fs.rm(p.err);
+    },
+
+    async sweep(opts): Promise<void> {
+      let names: string[];
+      try {
+        names = await fs.readdir(deps.root);
+      } catch (e) {
+        if (errCode(e) === 'ENOENT') return;
+        throw e;
+      }
+      const keep = new Set([...opts.keep].map(sessionFileName));
+      const bySession = new Map<string, string[]>();
+      for (const name of names) {
+        const suffix = SUFFIXES.find((x) => name.endsWith(x));
+        if (suffix === undefined) continue;
+        const base = name.slice(0, -suffix.length);
+        if (keep.has(base)) continue;
+        bySession.set(base, [...(bySession.get(base) ?? []), name]);
+      }
+      const cutoff = now() - opts.olderThanMs;
+      for (const files of bySession.values()) {
+        const times: number[] = [];
+        for (const f of files) times.push((await fs.mtimeMs(`${deps.root}/${f}`)) ?? 0);
+        if (times.some((t) => t > cutoff)) continue; // written recently: maybe a turn of another window's session
+        for (const f of files) await fs.rm(`${deps.root}/${f}`);
+      }
     },
   };
 }

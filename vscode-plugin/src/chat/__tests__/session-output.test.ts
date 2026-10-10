@@ -8,10 +8,10 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appendFileSync, mkdtempSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createSessionOutput, parseMarker, type SegmentCursor } from '../session-output.js';
+import { createSessionOutput, parseMarker, SegmentGone, type SegmentCursor } from '../session-output.js';
 import { tick, waitFor } from './fixtures.js';
 
 const root = (): string => join(mkdtempSync(join(tmpdir(), 'chat-output-')), 'chat-output');
@@ -133,4 +133,88 @@ test('the err log keeps only the current turn, and errTail returns its end', asy
   await out.beginTurn('s1', 'b');
   assert.equal(out.errTail('s1'), '', 'truncated at the next turn');
   assert.equal(out.errTail('never-seen'), '');
+});
+
+test('the file rolls over at a turn start once past maxBytes, keeping one previous generation, and a cursor in the previous generation is still read from <sessionId>.1.ndjson', async () => {
+  const dir = root();
+  const warns: string[] = [];
+  const out = createSessionOutput({ root: dir, pollMs: 5, maxBytes: 200, logger: { warn: (m) => warns.push(m) } });
+  const big = `{"pad":"${'x'.repeat(150)}"}\n`;
+
+  // Generation 1: a turn that grows past maxBytes. It is not split while it runs.
+  const a = await out.beginTurn('s1', 'a');
+  assert.equal(a.cursor.generation, 1);
+  appendFileSync(a.outPath, big);
+  appendFileSync(a.outPath, big);
+  assert.ok(readFileSync(a.outPath).length > 200, 'past the cap mid-turn, still one file');
+  await out.endTurn('s1', 'a', { code: 0, signal: null });
+
+  // The next turn start rolls the file over: generation 2 begins, generation 1 is .1.ndjson.
+  const b = await out.beginTurn('s1', 'b');
+  assert.equal(b.cursor.generation, 2);
+  assert.ok(existsSync(join(dir, 's1.1.ndjson')));
+  const prev = readFileSync(join(dir, 's1.1.ndjson'), 'utf8');
+  assert.match(prev, /"turnId":"a"/);
+  assert.doesNotMatch(prev, /"turnId":"b"/, 'turn b starts in the new generation');
+  assert.match(readFileSync(b.outPath, 'utf8').split('\n')[0]!, /"generation":2/);
+
+  // A cursor saved in generation 1 is still read, now from .1.ndjson.
+  const r = follow(out.tail(a.cursor, { finished: () => true }));
+  await r.done;
+  assert.equal(r.lines.length, 2);
+
+  // Rolling over again drops generation 1: its cursor reports the segment gone.
+  appendFileSync(b.outPath, big);
+  appendFileSync(b.outPath, big);
+  await out.endTurn('s1', 'b', { code: 0, signal: null });
+  const c = await out.beginTurn('s1', 'c');
+  assert.equal(c.cursor.generation, 3);
+  const files = readdirSync(dir).filter((f) => f.startsWith('s1')).sort();
+  assert.deepEqual(files, ['s1.1.ndjson', 's1.err.log', 's1.ndjson'], 'exactly one previous generation is kept');
+  await assert.rejects(async () => {
+    for await (const _ of out.tail(a.cursor, { finished: () => true })) void _;
+  }, SegmentGone);
+
+  // A cursor past the end of its (truncated) file re-reads its turn from the start, with a warning.
+  const d = await out.beginTurn('s2', 'd');
+  appendFileSync(d.outPath, '{"k":1}\n');
+  const past = { ...d.cursor, offset: d.cursor.offset + 10_000 };
+  const re = follow(out.tail(past, { finished: () => true }));
+  await re.done;
+  assert.deepEqual(re.lines, ['{"k":1}']);
+  assert.match(warns.join('\n'), /cursor past the end of its file/);
+});
+
+test("remove deletes a session's files; sweep removes old files of sessions not in keep and leaves the rest; one session uses one file pair however many turns it runs", async () => {
+  const dir = root();
+  let clock = Date.now();
+  const out = createSessionOutput({ root: dir, pollMs: 5, now: () => clock });
+
+  // Many turns, one file pair.
+  for (let i = 0; i < 50; i++) {
+    const seg = await out.beginTurn('busy', `t${i}`);
+    appendFileSync(seg.outPath, `{"i":${i}}\n`);
+    await out.endTurn('busy', `t${i}`, { code: 0, signal: null });
+  }
+  assert.deepEqual(readdirSync(dir).sort(), ['busy.err.log', 'busy.ndjson'], 'fifty turns, one file pair');
+
+  await out.beginTurn('gone', 'x');
+  await out.beginTurn('kept', 'y');
+  await out.beginTurn('fresh', 'z');
+  writeFileSync(join(dir, 'unrelated.txt'), 'not ours');
+  const old = (Date.now() - 40 * 24 * 3600 * 1000) / 1000;
+  for (const f of ['gone.ndjson', 'gone.err.log', 'kept.ndjson', 'kept.err.log']) utimesSync(join(dir, f), old, old);
+
+  await out.sweep({ olderThanMs: 30 * 24 * 3600 * 1000, keep: new Set(['busy', 'kept']) });
+  const left = readdirSync(dir).sort();
+  assert.ok(!left.includes('gone.ndjson') && !left.includes('gone.err.log'), 'an old session not in keep is swept');
+  assert.ok(left.includes('kept.ndjson'), 'a kept session stays even when old');
+  assert.ok(left.includes('fresh.ndjson'), 'a recently written session stays even when not in keep');
+  assert.ok(left.includes('unrelated.txt'), 'files that are not session output are left alone');
+
+  await out.remove('busy');
+  assert.ok(!readdirSync(dir).some((f) => f.startsWith('busy')), 'remove deletes the session files');
+  await out.remove('never-existed');
+  clock += 1;
+  await createSessionOutput({ root: join(dir, 'missing') }).sweep({ olderThanMs: 1, keep: new Set() });
 });

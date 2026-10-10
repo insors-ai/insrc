@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-10T14:08:41.695Z  ·  **Updated:** 2026-10-10T14:20:57.351Z
+**Standalone:** yes  ·  **Created:** 2026-10-10T14:08:41.695Z  ·  **Updated:** 2026-10-10T14:34:18.162Z
 
-**Commit:** 54001963
+**Commit:** 1daf3d8b
 
 ## Summary
 
@@ -21,26 +21,28 @@ docs/daemon.md has three new parts under 'How a request's size is measured': the
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-008e146ad1475ef9-S001.json` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `docs/daemon.md` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-after-d7380e11.tap` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-before-0dadf958.tap` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-comparison-t4.md` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/__tests__/measure-pass.test.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/context/__tests__/lookup-measure.test.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/context/__tests__/pipeline-outcome.test.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/context/driver.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/context/types.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/measure.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/orchestrator/__tests__/live-runs.test.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/orchestrator/__tests__/run-measure.test.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/orchestrator/driver.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/planner/__tests__/recursive.test.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/planner/recursive.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/analyze/planner/types.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/config/__tests__/config-catalog-contract.test.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/config/__tests__/data-source-listing-timeout.test.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/config/analyze.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/config/config-catalog.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/daemon/__tests__/analyze-rpc-measure.test.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
-- `src/daemon/analyze-rpc.ts` — **insrc-build** (2026-10-10T14:20:57.351Z)
+- `.insrc/artifacts/CR-008e146ad1475ef9-S001.json` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `.insrc/artifacts/PLAN-008e146ad1475ef9-S001.json` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `docs/daemon.md` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/CR.md` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-after-d7380e11.tap` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-before-0dadf958.tap` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-comparison-t4.md` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/__tests__/measure-pass.test.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/context/__tests__/lookup-measure.test.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/context/__tests__/pipeline-outcome.test.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/context/driver.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/context/types.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/measure.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/orchestrator/__tests__/live-runs.test.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/orchestrator/__tests__/run-measure.test.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/orchestrator/driver.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/planner/__tests__/recursive.test.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/planner/recursive.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/analyze/planner/types.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/config/__tests__/config-catalog-contract.test.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/config/__tests__/data-source-listing-timeout.test.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/config/analyze.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/config/config-catalog.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/daemon/__tests__/analyze-rpc-measure.test.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `src/daemon/analyze-rpc.ts` — **insrc-build** (2026-10-10T14:34:18.162Z)

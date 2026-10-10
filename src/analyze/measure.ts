@@ -27,11 +27,13 @@
  * that is not determined.
  */
 
+import { dataSourceListingTimeoutMs } from '../config/analyze.js';
 import { listFilesForConnection } from '../daemon/db/list-files.js';
 import { listEntitiesForRepo } from '../db/entities.js';
 import { listRepos } from '../db/repos.js';
 import type { AnalyzeScope, AnalyzeScopeRef, AnalyzeTarget, ClassifiedIntent } from '../shared/analyze-types.js';
 import type { KvDriver, RdbmsDriver } from '../shared/db-driver.js';
+import { getLogger } from '../shared/logger.js';
 import type { Entity, RegisteredRepo } from '../shared/types.js';
 import { scopeErrorMapping } from './context/invariants.js';
 import { resolveScopeForTarget } from './context/scope.js';
@@ -44,6 +46,8 @@ import type { DataScope } from './runtimes/data/_shared.js';
 import { walkFiles } from './runtimes/infra/_shared.js';
 import { liesUnder } from './runtimes/shared/source-modules.js';
 import { inAreaOf, resolveTaskScope } from './runtimes/shared/task-scope.js';
+
+const log = getLogger('analyze:measure');
 
 // The measure's one line is written beside the completeness line, in a module
 // that imports nothing; it is offered from here too.
@@ -249,7 +253,26 @@ export interface MeasureDeps {
 	readonly listRepos?:    (() => Promise<readonly RegisteredRepo[]>) | undefined;
 	/** The infra tasks' file walk. */
 	readonly walk?:         typeof walkFiles | undefined;
+	/** The configured time limit for one live data source, in place of the setting's reader. */
+	readonly sourceTimeoutMs?: (() => number) | undefined;
 }
+
+/** What a caller may pass to the measuring pass. */
+export interface MeasureOptions {
+	/** The request's cancellation signal: once it fires, the pass stops and the measure is not determined. */
+	readonly signal?:          AbortSignal | undefined;
+	/**
+	 * The time one live data source is given to be reached and listed, in
+	 * milliseconds, in place of the configured value. A value that is not a
+	 * finite number greater than 0 is treated as left out.
+	 */
+	readonly sourceTimeoutMs?: number | undefined;
+}
+
+/** Said when the request was cancelled before anything was read. */
+export const CANCELLED_BEFORE_MEASURE = 'the request was cancelled before it was measured';
+/** Said when the request was cancelled between the connections of a repo, workspace or manifest directory. */
+export const CANCELLED_AMONG_SOURCES = 'the request was cancelled while its data sources were being measured';
 
 let depsForTest: MeasureDeps | undefined;
 /** Test seam: pass undefined to go back to the real stores and the real disk. */
@@ -286,7 +309,11 @@ export async function measureRequestScope(
 	scopeRef:  AnalyzeScopeRef,
 	target:    AnalyzeTarget,
 	sizeHint?: AnalyzeScope,
+	options?:  MeasureOptions,
 ): Promise<RequestMeasure> {
+	if (options?.signal?.aborted === true) {
+		return notDetermined(sourceFor(scopeRef.kind, target), CANCELLED_BEFORE_MEASURE, sizeHint);
+	}
 	let scope: ResolvedScope;
 	try {
 		scope = target === 'generic'
@@ -299,7 +326,7 @@ export async function measureRequestScope(
 			: `the scope could not be resolved, because a read of the registry or the store failed (${reasonOf(err)})`;
 		return notDetermined(sourceFor(scopeRef.kind, target), note, sizeHint);
 	}
-	return measureResolvedScope(scope, target, sizeHint);
+	return measureResolvedScope(scope, target, sizeHint, options);
 }
 
 /**
@@ -317,10 +344,14 @@ export async function measureResolvedScope(
 	scope:     ResolvedScope,
 	target:    AnalyzeTarget,
 	sizeHint?: AnalyzeScope,
+	options?:  MeasureOptions,
 ): Promise<RequestMeasure> {
+	if (options?.signal?.aborted === true) {
+		return notDetermined(sourceFor(scope.kind, target), CANCELLED_BEFORE_MEASURE, sizeHint);
+	}
 	try {
-		if (scope.kind === 'connection') return await measureDataSource(dataScopeOf(scope), sizeHint);
-		if (target === 'data') return await measureDataPool(dataScopeOf(scope).poolPath, sizeHint);
+		if (scope.kind === 'connection') return await measureDataSource(dataScopeOf(scope), sizeHint, options);
+		if (target === 'data') return await measureDataPool(dataScopeOf(scope).poolPath, sizeHint, options);
 		if (target === 'infra') return await measureInfraDirectory(scope.lookupPath, sizeHint);
 		return await measureStoredArea(scope, sizeHint);
 	} catch (err) {
@@ -424,8 +455,12 @@ const SAMPLED_KINDS: ReadonlySet<string> = new Set(['redis', 'valkey', 'keydb', 
  * supported; the listing fails or reports that it was cut; or the source is
  * one whose listing is a sample of keys. It never starts a scan of a live
  * store's keys.
+ *
+ * Reaching the source and listing it are given one bounded wait (see
+ * `measureConnection`). Loading the pool is not inside it: that reads the
+ * connections file and closes the drivers of connections removed from it.
  */
-export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScope): Promise<RequestMeasure> {
+export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScope, options?: MeasureOptions): Promise<RequestMeasure> {
 	const id = scope.connectionId;
 	if (id === undefined) return notDetermined('data-source', 'no connection is named: a data source is measured one connection at a time', sizeHint);
 	let pool: DataPool;
@@ -435,13 +470,80 @@ export async function measureDataSource(scope: DataScope, sizeHint?: AnalyzeScop
 	} catch (err) {
 		return notDetermined('data-source', `the source '${id}' cannot be reached (${reasonOf(err)})`, sizeHint);
 	}
-	return measureConnection(pool, id, sizeHint);
+	return measureConnection(pool, id, sizeHint, options);
 }
 
 type DataPool = Awaited<ReturnType<typeof acquireDataPool>>;
 
-/** The measure of one connection of a pool that is already loaded. */
-async function measureConnection(pool: DataPool, id: string, sizeHint: AnalyzeScope | undefined): Promise<RequestMeasure> {
+/** How a bounded wait ended. */
+type WaitOutcome<T> =
+	| { readonly kind: 'done'; readonly value: T }
+	| { readonly kind: 'timed-out' }
+	| { readonly kind: 'cancelled' };
+
+/**
+ * Wait for `work` for at most `limitMs`, or until `signal` fires. The work
+ * itself is not stopped when the wait ends first: the data drivers have no
+ * cancellation. A rejection of the work while the wait is on rejects the
+ * wait; one that comes after the wait has ended is handed to `onLate`, so it
+ * is never left unhandled.
+ */
+function withinLimit<T>(
+	work:    Promise<T>,
+	limitMs: number,
+	signal:  AbortSignal | undefined,
+	onLate:  (err: unknown) => void,
+): Promise<WaitOutcome<T>> {
+	return new Promise<WaitOutcome<T>>((resolve, reject) => {
+		let over = false;
+		const end = (outcome: WaitOutcome<T>): void => {
+			if (over) return;
+			over = true;
+			clearTimeout(timer);
+			signal?.removeEventListener('abort', onAbort);
+			resolve(outcome);
+		};
+		const onAbort = (): void => end({ kind: 'cancelled' });
+		const timer = setTimeout(() => end({ kind: 'timed-out' }), limitMs);
+		if (signal !== undefined) {
+			if (signal.aborted) { end({ kind: 'cancelled' }); }
+			else signal.addEventListener('abort', onAbort, { once: true });
+		}
+		work.then(
+			value => end({ kind: 'done', value }),
+			err => {
+				if (over) { onLate(err); return; }
+				over = true;
+				clearTimeout(timer);
+				signal?.removeEventListener('abort', onAbort);
+				reject(err);
+			},
+		);
+	});
+}
+
+/** The time one live source is given: the caller's, when it is a usable limit, else the configured one. */
+function sourceLimitMs(options: MeasureOptions | undefined): number {
+	const given = options?.sourceTimeoutMs;
+	if (typeof given === 'number' && Number.isFinite(given) && given > 0) return given;
+	return depsForTest?.sourceTimeoutMs !== undefined ? depsForTest.sourceTimeoutMs() : dataSourceListingTimeoutMs();
+}
+
+/**
+ * The measure of one connection of a pool that is already loaded.
+ *
+ * Reaching the connection (`pool.acquire`) and listing it are given ONE
+ * bounded wait: the caller's limit, else the configured one. When the wait
+ * ends first, or the request's signal fires, the measure is not determined
+ * with its reason, and the driver's call is left to end in the background:
+ * its late result is dropped.
+ */
+async function measureConnection(
+	pool:     DataPool,
+	id:       string,
+	sizeHint: AnalyzeScope | undefined,
+	options?: MeasureOptions,
+): Promise<RequestMeasure> {
 	const nd = (note: string): RequestMeasure => notDetermined('data-source', note, sizeHint);
 
 	// A source whose listing is a sample of keys is known by its kind, which the
@@ -451,45 +553,62 @@ async function measureConnection(pool: DataPool, id: string, sizeHint: AnalyzeSc
 		return nd(`the source '${id}' (${declaredKind}) has no namespaces to count; its listing is a sample of keys`);
 	}
 
-	let driver: Awaited<ReturnType<DataPool['acquire']>>;
-	try {
-		driver = await pool.acquire(id);
-	} catch (err) {
-		return nd(`the source '${id}' cannot be reached (${reasonOf(err)})`);
-	}
+	const limitMs = sourceLimitMs(options);
+	/** True once the wait has ended without the work: what the work does after that is late. */
+	let abandoned = false;
+	const late = (what: string, err: unknown): void => {
+		log.debug({ connectionId: id, err: reasonOf(err) }, `the measure of a data source was abandoned; its ${what} failed afterwards`);
+	};
+	const outcome = await withinLimit(reachAndList(), limitMs, options?.signal, err => late('call', err));
+	if (outcome.kind === 'done') return outcome.value;
+	abandoned = true;
+	if (outcome.kind === 'cancelled') return nd(`the request was cancelled while the source '${id}' was being measured`);
+	return nd(`the listing of '${id}' timed out: the source did not answer within ${limitMs / 1000} seconds`);
 
-	try {
-		switch (driver.family) {
-			case 'rdbms': {
-				const r = driver as RdbmsDriver;
-				if (typeof r.listTables !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no table listing`);
-				const listing = await r.listTables({ complete: true });
-				if (listing.truncated) return nd(`the table listing of '${id}' was cut at ${listing.tables.length} tables`);
-				return dataMeasure(listing.tables.length, 0, sizeHint);
-			}
-			case 'kv': {
-				if (SAMPLED_KINDS.has(driver.kind)) {
-					return nd(`the source '${id}' (${driver.kind}) has no namespaces to count; its listing is a sample of keys`);
-				}
-				const k = driver as KvDriver;
-				if (typeof k.listNamespaces !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no namespace listing`);
-				const listing = await k.listNamespaces({ complete: true });
-				if (!listing.supported) return nd(`the source '${id}' (${driver.kind}) answers that listing its namespaces is not supported`);
-				if (listing.truncated) return nd(`the namespace listing of '${id}' was cut at ${listing.namespaces.length} namespaces`);
-				return dataMeasure(listing.namespaces.length, 0, sizeHint);
-			}
-			case 'file': {
-				const config = pool.list().find(c => c.id === id);
-				if (config === undefined || typeof config.path !== 'string') return nd(`the file connection '${id}' has no path`);
-				const listing = await listFilesForConnection(config.path, { recursive: config.recursive === true });
-				if (listing.truncated) return nd(`the file listing of '${id}' was cut at ${listing.files.length} files`);
-				return dataMeasure(listing.files.length, listing.files.length, sizeHint);
-			}
-			default:
-				return nd(`the source '${id}' is of a family that has no listing (${String((driver as { family?: unknown }).family)})`);
+	/** Reach the connection and list it. Never rejects: each failure is a measure that is not determined. */
+	async function reachAndList(): Promise<RequestMeasure> {
+		let driver: Awaited<ReturnType<DataPool['acquire']>>;
+		try {
+			driver = await pool.acquire(id);
+		} catch (err) {
+			if (abandoned) late('connection', err);
+			return nd(`the source '${id}' cannot be reached (${reasonOf(err)})`);
 		}
-	} catch (err) {
-		return nd(`the listing of '${id}' failed (${reasonOf(err)})`);
+
+		try {
+			switch (driver.family) {
+				case 'rdbms': {
+					const r = driver as RdbmsDriver;
+					if (typeof r.listTables !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no table listing`);
+					const listing = await r.listTables({ complete: true });
+					if (listing.truncated) return nd(`the table listing of '${id}' was cut at ${listing.tables.length} tables`);
+					return dataMeasure(listing.tables.length, 0, sizeHint);
+				}
+				case 'kv': {
+					if (SAMPLED_KINDS.has(driver.kind)) {
+						return nd(`the source '${id}' (${driver.kind}) has no namespaces to count; its listing is a sample of keys`);
+					}
+					const k = driver as KvDriver;
+					if (typeof k.listNamespaces !== 'function') return nd(`the driver '${driver.kind}' of '${id}' has no namespace listing`);
+					const listing = await k.listNamespaces({ complete: true });
+					if (!listing.supported) return nd(`the source '${id}' (${driver.kind}) answers that listing its namespaces is not supported`);
+					if (listing.truncated) return nd(`the namespace listing of '${id}' was cut at ${listing.namespaces.length} namespaces`);
+					return dataMeasure(listing.namespaces.length, 0, sizeHint);
+				}
+				case 'file': {
+					const config = pool.list().find(c => c.id === id);
+					if (config === undefined || typeof config.path !== 'string') return nd(`the file connection '${id}' has no path`);
+					const listing = await listFilesForConnection(config.path, { recursive: config.recursive === true });
+					if (listing.truncated) return nd(`the file listing of '${id}' was cut at ${listing.files.length} files`);
+					return dataMeasure(listing.files.length, listing.files.length, sizeHint);
+				}
+				default:
+					return nd(`the source '${id}' is of a family that has no listing (${String((driver as { family?: unknown }).family)})`);
+			}
+		} catch (err) {
+			if (abandoned) late('listing', err);
+			return nd(`the listing of '${id}' failed (${reasonOf(err)})`);
+		}
 	}
 }
 
@@ -498,8 +617,11 @@ async function measureConnection(pool: DataPool, id: string, sizeHint: AnalyzeSc
  * the connections registered at that path, one call of `measureDataSource`
  * per connection id, one after another. A sum that includes a source that
  * could not be counted is not a count.
+ *
+ * Each connection has its own time limit. The request's signal is checked
+ * before each one: once it has fired the rest are not asked.
  */
-async function measureDataPool(poolPath: string, sizeHint: AnalyzeScope | undefined): Promise<RequestMeasure> {
+async function measureDataPool(poolPath: string, sizeHint: AnalyzeScope | undefined, options?: MeasureOptions): Promise<RequestMeasure> {
 	const pool = await acquireDataPool(poolPath);
 	await pool.reload();
 	const ids = pool.list().map(c => c.id);
@@ -507,13 +629,16 @@ async function measureDataPool(poolPath: string, sizeHint: AnalyzeScope | undefi
 	let objects = 0;
 	let files = 0;
 	const uncounted: string[] = [];
+	const cancelled = (): boolean => options?.signal?.aborted === true;
 	for (const id of ids) {
+		if (cancelled()) return notDetermined('data-source', CANCELLED_AMONG_SOURCES, sizeHint);
 		// The pool was loaded once, above: it is not reloaded for each connection.
-		const one = await measureConnection(pool, id, undefined);
+		const one = await measureConnection(pool, id, undefined, options);
 		if (!one.determined) { uncounted.push(one.note ?? `the source '${id}' could not be counted`); continue; }
 		objects += one.items;
 		files += one.files;
 	}
+	if (cancelled()) return notDetermined('data-source', CANCELLED_AMONG_SOURCES, sizeHint);
 	if (uncounted.length > 0) {
 		return notDetermined('data-source',
 			`${uncounted.length} of the ${ids.length} connections registered at ${poolPath} could not be counted: ${uncounted.join('; ')}; ` +

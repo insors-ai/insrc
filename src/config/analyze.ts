@@ -463,3 +463,26 @@ export function resolveRepoShaperModel(
 export function _resetAnalyzeConfigCacheForTests(): void {
 	cached = undefined;
 }
+
+/** The time one live data source is given to answer when a request is measured, when the setting gives none. */
+export const DEFAULT_DATA_SOURCE_LISTING_TIMEOUT_MS = 120_000;
+
+/**
+ * Read `analyzer.dataSourceListingTimeoutMs` FRESH from disk: the time, in
+ * milliseconds, one live data source is given to be reached and listed when a
+ * request is measured. Fail-safe: the default when the file is absent or
+ * unparseable, or the value is missing or is not a finite number greater than
+ * 0. Never throws, and is not cached: it is read once per source measured.
+ *
+ * `configPath` is a test seam, as for the per-repo override above.
+ */
+export function dataSourceListingTimeoutMs(configPath: string = PATHS.config): number {
+	try {
+		if (!existsSync(configPath)) return DEFAULT_DATA_SOURCE_LISTING_TIMEOUT_MS;
+		const raw = JSON.parse(readFileSync(configPath, 'utf8')) as { analyzer?: { dataSourceListingTimeoutMs?: unknown } } | null;
+		const v = raw?.analyzer?.dataSourceListingTimeoutMs;
+		return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : DEFAULT_DATA_SOURCE_LISTING_TIMEOUT_MS;
+	} catch {
+		return DEFAULT_DATA_SOURCE_LISTING_TIMEOUT_MS;
+	}
+}

@@ -27,6 +27,7 @@ import type { Entity, EntityKind } from '../../shared/types.js';
 import type { ResolvedScope, ScopeDeps } from '../context/scope.js';
 import type { PlannedTask, TemplateExecuteArgs } from '../executor/types.js';
 import {
+	CANCELLED_AMONG_SOURCES, CANCELLED_BEFORE_MEASURE,
 	_setMeasureDepsForTest, measureDataSource, measureRequestScope, measureResolvedScope, sizeOfCounts,
 } from '../measure.js';
 import type { RequestMeasure } from '../measure.js';
@@ -244,7 +245,7 @@ test("a workspace that a registered repo contains is counted through the area pr
 // A data source
 // ---------------------------------------------------------------------------
 
-interface StandInConnection { readonly id: string; readonly kind: string; readonly family: 'rdbms' | 'kv' | 'file'; readonly driver?: Record<string, unknown>; readonly path?: string; readonly recursive?: boolean; readonly unreachable?: boolean }
+interface StandInConnection { readonly id: string; readonly kind: string; readonly family: 'rdbms' | 'kv' | 'file'; readonly driver?: Record<string, unknown>; readonly path?: string; readonly recursive?: boolean; readonly unreachable?: boolean; /** Its connection is never made: `acquire` does not settle. */ readonly stalled?: boolean }
 
 /** A pool of stand-in connections that records what was opened, acquired and asked of each listing. */
 function standInPool(connections: readonly StandInConnection[]): { opened: string[]; acquired: string[]; asked: Array<Record<string, unknown> | undefined>; reloads: () => number } {
@@ -260,6 +261,7 @@ function standInPool(connections: readonly StandInConnection[]): { opened: strin
 			const c = connections.find(x => x.id === id);
 			if (c === undefined) throw new Error(`no connection '${id}'`);
 			if (c.unreachable === true) throw new Error('connect ECONNREFUSED 127.0.0.1:5432');
+			if (c.stalled === true) return new Promise<never>(() => undefined);
 			return { family: c.family, kind: c.kind, ...(c.driver ?? {}) };
 		},
 	};
@@ -497,4 +499,169 @@ test('a generic request is measured from the stored graph for a path or entity s
 	assert.match(refused.note!, /scopeRef\.kind='connection' is incompatible with target='code'/);
 	// A connection no repo declares.
 	assert.match((await measureRequestScope(ref('connection', 'ghost'), 'generic')).note!, /Connection 'ghost' is not registered in any repo/);
+});
+
+// ---------------------------------------------------------------------------
+// A live source that does not answer, and a cancelled request (ISSUE-008e146a)
+// ---------------------------------------------------------------------------
+
+/** A promise that never settles: a source that does not answer. */
+const never = <T>(): Promise<T> => new Promise<T>(() => undefined);
+const stalledSql = { listTables: () => never() };
+const timedOut = (id: string, seconds: number): string => `the listing of '${id}' timed out: the source did not answer within ${seconds} seconds`;
+const connectionScope = (id: string): ResolvedScope => ({ kind: 'connection', value: id, repoPath: BIG, lookupPath: BIG, connectionId: id });
+const repoScope = (): ResolvedScope => ({ kind: 'repo', value: BIG, repoPath: BIG, lookupPath: BIG });
+
+test('a live source whose listing never returns, and one that is never reached, is reported as not determined after the time limit with the reason that the listing timed out, and is never a count', async () => {
+	const p = standInPool([
+		{ id: 'slow-sql',  kind: 'postgres',  family: 'rdbms', driver: stalledSql },
+		{ id: 'slow-kv',   kind: 'cassandra', family: 'kv',    driver: { listNamespaces: () => never() } },
+		{ id: 'no-answer', kind: 'postgres',  family: 'rdbms', driver: tableListing(3), stalled: true },
+		{ id: 'quick',     kind: 'postgres',  family: 'rdbms', driver: tableListing(3) },
+		{ id: 'cache',     kind: 'redis',     family: 'kv',    driver: { listNamespaces: () => never() } },
+	]);
+	for (const id of ['slow-sql', 'slow-kv', 'no-answer']) {
+		const started = Date.now();
+		const m = await measureDataSource({ poolPath: BIG, connectionId: id }, 'S', { sourceTimeoutMs: 40 });
+		const took = Date.now() - started;
+		// Never a count: nothing in the counts, the largest size, and the reason.
+		assert.deepEqual(undetermined(m), UNDETERMINED, id);
+		assert.deepEqual([m.source, m.sizeHint, m.note], ['data-source', 'S', timedOut(id, 0.04)], id);
+		assert.ok(took >= 35 && took < 2000, `${id}: waited the limit and no longer (${took} ms)`);
+	}
+	assert.deepEqual(p.acquired, ['slow-sql', 'slow-kv', 'no-answer'], 'each was asked once');
+	// The same through the pass's entry points, for a connection scope.
+	assert.equal((await measureResolvedScope(connectionScope('slow-sql'), 'data', undefined, { sourceTimeoutMs: 20 })).note, timedOut('slow-sql', 0.02));
+	assert.equal((await measureResolvedScope(connectionScope('slow-sql'), 'generic', undefined, { sourceTimeoutMs: 20 })).note, timedOut('slow-sql', 0.02));
+
+	// A source that answers within the limit is counted as before ...
+	assert.deepEqual(counts(await measureDataSource({ poolPath: BIG, connectionId: 'quick' }, undefined, { sourceTimeoutMs: 40 })),
+		{ source: 'data-source', items: 3, files: 0, size: 'S', determined: true });
+	// ... and the checks made before a source is reached start no wait: the reason is today's, at once.
+	const started = Date.now();
+	const sampled = await measureDataSource({ poolPath: BIG, connectionId: 'cache' }, undefined, { sourceTimeoutMs: 5000 });
+	assert.equal(sampled.note, "the source 'cache' (redis) has no namespaces to count; its listing is a sample of keys");
+	const unnamed = await measureDataSource({ poolPath: BIG }, undefined, { sourceTimeoutMs: 5000 });
+	assert.equal(unnamed.note, 'no connection is named: a data source is measured one connection at a time');
+	assert.ok(Date.now() - started < 1000);
+});
+
+test('a request cancelled while a source is being measured stops at once and the remaining sources of a pool are not asked; a signal already aborted reads nothing', async () => {
+	// --- one source, cancelled while its listing is out: the wait ends long before the limit ---
+	standInPool([{ id: 'slow-sql', kind: 'postgres', family: 'rdbms', driver: stalledSql }]);
+	let abort = new AbortController();
+	setTimeout(() => abort.abort(), 20);
+	let started = Date.now();
+	const one = await measureDataSource({ poolPath: BIG, connectionId: 'slow-sql' }, undefined, { signal: abort.signal, sourceTimeoutMs: 60_000 });
+	assert.ok(Date.now() - started < 2000, 'it did not wait for the limit');
+	assert.deepEqual(undetermined(one), UNDETERMINED);
+	assert.equal(one.note, "the request was cancelled while the source 'slow-sql' was being measured");
+
+	// --- a repository with three connections, cancelled while the second is out: the third is not asked ---
+	const p = standInPool([
+		{ id: 'a', kind: 'postgres', family: 'rdbms', driver: tableListing(3) },
+		{ id: 'b', kind: 'postgres', family: 'rdbms', driver: stalledSql },
+		{ id: 'c', kind: 'postgres', family: 'rdbms', driver: tableListing(4) },
+	]);
+	abort = new AbortController();
+	setTimeout(() => abort.abort(), 20);
+	started = Date.now();
+	const pool = await measureResolvedScope(repoScope(), 'data', 'M', { signal: abort.signal, sourceTimeoutMs: 60_000 });
+	assert.ok(Date.now() - started < 2000);
+	assert.deepEqual(undetermined(pool), UNDETERMINED);
+	assert.deepEqual([pool.source, pool.sizeHint, pool.note], ['data-source', 'M', CANCELLED_AMONG_SOURCES]);
+	assert.equal(CANCELLED_AMONG_SOURCES, 'the request was cancelled while its data sources were being measured');
+	assert.deepEqual(p.acquired, ['a', 'b'], 'the connection after the one that was out is not asked');
+
+	// --- a signal already aborted: nothing is opened, acquired or read ---
+	const q = standInPool([{ id: 'a', kind: 'postgres', family: 'rdbms', driver: tableListing(3) }]);
+	let entityReads = 0;
+	let scopeReads = 0;
+	const counting = new Proxy(scopeReaders(), { get: (t, prop) => { scopeReads += 1; return Reflect.get(t, prop); } });
+	_setMeasureDepsForTest({ scope: counting, listEntities: async () => { entityReads += 1; return bigEntities(); } });
+	const gone = new AbortController();
+	gone.abort();
+	const before = { signal: gone.signal };
+	for (const [scope, target, source] of [
+		[repoScope(), 'data', 'data-source'], [connectionScope('a'), 'data', 'data-source'], [repoScope(), 'code', 'named-area'],
+	] as const) {
+		const m = await measureResolvedScope(scope, target, undefined, before);
+		assert.deepEqual(undetermined(m), UNDETERMINED, `${scope.kind}/${target}`);
+		assert.deepEqual([m.source, m.note], [source, CANCELLED_BEFORE_MEASURE], `${scope.kind}/${target}`);
+	}
+	const viaRequest = await measureRequestScope(ref('repo', BIG), 'code', undefined, before);
+	assert.deepEqual([viaRequest.determined, viaRequest.note], [false, CANCELLED_BEFORE_MEASURE]);
+	assert.equal(CANCELLED_BEFORE_MEASURE, 'the request was cancelled before it was measured');
+	assert.deepEqual([q.opened, q.acquired, entityReads, scopeReads], [[], [], 0, 0]);
+	// The same scope with a signal that has not fired is measured.
+	const live = await measureResolvedScope(repoScope(), 'code', undefined, { signal: new AbortController().signal });
+	assert.equal(live.determined, true);
+	assert.equal(entityReads, 1);
+});
+
+test('one stalled connection among several does not stop the others from being measured, each has its own time limit, and the sum is not a count', async () => {
+	const p = standInPool([
+		{ id: 'a', kind: 'postgres', family: 'rdbms', driver: tableListing(3) },
+		{ id: 'b', kind: 'postgres', family: 'rdbms', driver: stalledSql },
+		{ id: 'c', kind: 'postgres', family: 'rdbms', driver: tableListing(4) },
+		{ id: 'd', kind: 'postgres', family: 'rdbms', driver: tableListing(1), stalled: true },
+	]);
+	const started = Date.now();
+	const m = await measureResolvedScope(repoScope(), 'data', undefined, { sourceTimeoutMs: 50 });
+	const took = Date.now() - started;
+	assert.deepEqual(p.acquired, ['a', 'b', 'c', 'd'], 'every connection was asked, the ones after a stalled one too');
+	assert.deepEqual(undetermined(m), UNDETERMINED);
+	assert.equal(m.note,
+		`2 of the 4 connections registered at ${BIG} could not be counted: ${timedOut('b', 0.05)}; ${timedOut('d', 0.05)}; ` +
+		'7 objects were counted in the other 2');
+	// Two stalled connections, one limit each, one after the other.
+	assert.ok(took >= 95 && took < 3000, `two limits were waited (${took} ms)`);
+	assert.equal(p.reloads(), 1);
+});
+
+test('the rejection of a listing abandoned after its time limit is caught and is not an unhandled rejection', async () => {
+	const unhandled: unknown[] = [];
+	const onUnhandled = (err: unknown): void => { unhandled.push(err); };
+	process.on('unhandledRejection', onUnhandled);
+	try {
+		let rejected = 0;
+		const lateListing = { listTables: () => new Promise((_, reject) => setTimeout(() => { rejected += 1; reject(new Error('connection reset after the wait')); }, 60)) };
+		const p = standInPool([
+			{ id: 'late-listing', kind: 'postgres', family: 'rdbms', driver: lateListing },
+			{ id: 'late-result',  kind: 'postgres', family: 'rdbms', driver: { listTables: () => new Promise(resolve => setTimeout(() => resolve({ target: 't', tables: tables(9), truncated: false }), 60)) } },
+		]);
+		const m = await measureDataSource({ poolPath: BIG, connectionId: 'late-listing' }, undefined, { sourceTimeoutMs: 15 });
+		assert.equal(m.note, timedOut('late-listing', 0.015));
+		// A result that arrives after the wait does not change the measure that was returned.
+		const late = await measureDataSource({ poolPath: BIG, connectionId: 'late-result' }, undefined, { sourceTimeoutMs: 15 });
+		assert.deepEqual([undetermined(late), late.note], [UNDETERMINED, timedOut('late-result', 0.015)]);
+		// Let both abandoned calls end.
+		await new Promise(resolve => setTimeout(resolve, 150));
+		assert.equal(rejected, 1, 'the abandoned listing did reject');
+		assert.deepEqual(unhandled, []);
+		assert.deepEqual([undetermined(late), late.note], [UNDETERMINED, timedOut('late-result', 0.015)]);
+		assert.deepEqual(p.acquired, ['late-listing', 'late-result']);
+	} finally {
+		process.off('unhandledRejection', onUnhandled);
+	}
+});
+
+test('the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds', async () => {
+	standInPool([{ id: 'slow-sql', kind: 'postgres', family: 'rdbms', driver: stalledSql }]);
+	let read = 0;
+	_setMeasureDepsForTest({ sourceTimeoutMs: () => { read += 1; return 30; } });
+	const noteWith = async (options?: Parameters<typeof measureDataSource>[2]): Promise<string | undefined> =>
+		(await measureDataSource({ poolPath: BIG, connectionId: 'slow-sql' }, undefined, options)).note;
+	// No option: the configured value, read for this source.
+	assert.equal(await noteWith(), timedOut('slow-sql', 0.03));
+	assert.equal(await noteWith({}), timedOut('slow-sql', 0.03));
+	assert.equal(read, 2, 'the setting is read each time a source is measured');
+	// A value in the options replaces it, and the setting is then not read.
+	assert.equal(await noteWith({ sourceTimeoutMs: 50 }), timedOut('slow-sql', 0.05));
+	assert.equal(read, 2);
+	// A value that cannot be a time limit is treated as not passed.
+	for (const bad of [0, -5, Number.NaN, Number.POSITIVE_INFINITY]) {
+		assert.equal(await noteWith({ sourceTimeoutMs: bad }), timedOut('slow-sql', 0.03), String(bad));
+	}
+	assert.equal(read, 6);
 });

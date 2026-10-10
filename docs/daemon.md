@@ -1034,6 +1034,41 @@ the completeness line (see above) names every failed and skipped task, by its
 path for a task of a child plan, and it is written by code, not by the model.
 A child plan with a failed task still returns its report to its parent.
 
+#### Several tasks may produce the same output
+
+A plan often has several tasks that produce an output under one name: one
+`functional-surface` per directory, one `inventory` per file, one `report` per
+child plan. A task that consumes the name is handed **every** output produced
+under it by the tasks that finished, in plan order, each with the task that
+produced it (its id, its template and its parameters). It used to be handed
+the last one only, so a report was written from one directory of eight and a
+root report from one child plan of four, and neither said so.
+
+- In the report task's input, a name one task produced is one section,
+  `### <name>`, as before. A name several tasks produced is a section
+  `### <name> (<n> outputs, one per task)` holding one sub-section per task,
+  `#### <name> from task <taskId> (<template>)`, with a `params:` line that
+  tells the tasks apart (it holds the directory, the file or the area).
+- When one of several producers of a name failed or was skipped, the report
+  task runs on the others and is told that this task's output under the name
+  is absent, with the task's id and its reason, and that the other outputs
+  under the name are available. It used not to be told: the name counted as
+  present.
+- A task that is not the report task runs when a name it consumes has at least
+  one output, and receives all that exist. It is not told which producers
+  failed; that list goes to the report task only.
+- `metadata.tasksAnalyzed` of a report is the number of outputs it was written
+  from, summed over the names.
+- A plan in which every name has one producer gives its report task the same
+  input as before, byte for byte.
+
+The report task's input now grows with the number of producers. A plan large
+enough can therefore fail at its report task with the model's own reason
+(`Prompt is too long`) where it used to return a report written from one
+output of many. That report was wrong. An input too large for one pass is the
+subject of Story s3 of the analyzer Epic (`b9d5c5c4`), which is to bound it;
+nothing here shortens or splits the input.
+
 ### A run that stops says so
 
 - An error that nothing inside the run catches no longer leaves the run

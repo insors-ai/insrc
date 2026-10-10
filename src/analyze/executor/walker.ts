@@ -256,10 +256,10 @@ async function executeLeafTask(
 		// A refused scope is a failure the caller can act on: it keeps the scope
 		// error's code and its own message, with no 'runtime-threw:' in front.
 		// So does a task that names a connection outside the request's scope.
-		const scoped = taskRefusalMapping(err);
-		if (scoped !== undefined) {
-			log.warn({ runId, taskId: task.taskId, code: scoped.code, err: msg }, 'leaf task refused its scope');
-			return failedRecord(task, scoped.message, scoped.code);
+		const refused = taskRefusalMapping(err);
+		if (refused !== undefined) {
+			log.warn({ runId, taskId: task.taskId, code: refused.code, err: msg }, 'leaf task was refused');
+			return failedRecord(task, refused.message, refused.code);
 		}
 		log.warn({ runId, taskId: task.taskId, err: msg }, 'leaf task runtime threw');
 		return failedRecord(task, `runtime-threw: ${msg}`);

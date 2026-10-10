@@ -1,0 +1,30 @@
+<!-- insrc:artifact CR-4fb22dc28697cc14-S001 -->
+
+# Code review: 4fb22dc28697cc14:S001
+
+⚠️ **WARN** — HIGH 0 · MED 0 · LOW 4 · model `claude:opus`
+
+**Changed files:** 7
+
+## adherence — 0 finding(s)
+
+_No findings._
+
+## conventions — 0 finding(s)
+
+_No findings._
+
+## coverage — 2 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | src/analyze/executor/__tests__/walker.test.ts:808 | Present but unverified: the changed behaviour has tests in this same diff, but their pass-state could not be confirmed (no build record; an attempt to run the two test files in this review was not permitted). The test 'a task refused for naming a connection outside the scope is a failed task with a code and its own message' drives connectionWithinScope -> ConnectionOutsideScopeError -> executeLeafTask -> taskRefusalMapping -> failedRecord, and asserts the tasksFailed entry, the stored record's status/code/error, and that a plain error with the same words gets no code. The testsReaching edges are empty for every changed entry only because the entries are file-level diff pseudo-entities with no graph edges at all (callers and callees are empty too), so the empty edges are not evidence of a not-exercised gap and no HIGH is raised from them. |
+| LOW | src/analyze/runtimes/data/__tests__/data-runtimes.test.ts:161 | Present but unverified: 'a data task with a connection scope works on that connection only' now asserts, for both data runtimes, that the refusal is a ConnectionOutsideScopeError with the exact message, that taskRefusalMapping gives { code: 'connection-outside-scope', message }, and that scopeErrorMapping gives undefined. This covers the changed throw in connectionWithinScope (_shared.ts) and the new class and mapping (invariants.ts), but its pass-state could not be confirmed (no build record; the test run was not permitted in this review). The type-only changes in executor/types.ts and the prose in docs/daemon.md have no runtime behaviour to exercise. |
+
+## quality — 2 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | src/analyze/executor/walker.ts:261 | The warn log on the refusal path still reads 'leaf task refused its scope', but the branch now also handles `connection-outside-scope`, where the request's scope is in order and the task was refused for naming another connection. The `code` field in the log disambiguates, so this is a wording inaccuracy only; the local variable `scoped` has the same stale name. |
+| LOW | src/analyze/executor/types.ts:168 | `FailedTask.code` and `TaskExecutionRecord.code` widen from `ScopeErrorCode` to `TaskRefusalCode`. Any consumer that forwards a failed task's `code` into a request-level failure (for example the path that carries a failed child plan's cause up to its parent) would now be able to surface `connection-outside-scope` as a request code, which docs/daemon.md says no request fails with. No such consumer is in the provided grounding, so this is unconfirmed; a consumer typed to `ScopeErrorCode` would be caught by tsc, one typed to `string` would not. |
+

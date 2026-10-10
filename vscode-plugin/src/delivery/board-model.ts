@@ -322,6 +322,19 @@ export function sectionDefaults(stage: DeliveryStage, total: number, needing: nu
   };
 }
 
+/** A stage section's shared head: its stage, label, total and attention count, and its starting state by sectionDefaults. */
+export interface SectionHead extends SectionDefaults {
+  readonly stage: DeliveryStage;
+  readonly label: string;
+  readonly total: number;
+  readonly attentionCount: number;
+}
+
+/** The head every screen's stage section starts from, so the board, Issues and Epics screens cannot drift apart. */
+export function sectionHead(stage: DeliveryStage, total: number, needing: number, attentionOnly: boolean, labels: DisplayLabels): SectionHead {
+  return { stage, label: labelOf(labels.stage, stage), total, attentionCount: needing, ...sectionDefaults(stage, total, needing, attentionOnly, labels) };
+}
+
 /** The empty stages folded into one line: always under Needs attention, and in a narrow pane (the webview decides that). */
 export function foldOf(sections: readonly { readonly label: string; readonly total: number }[], attentionOnly: boolean): { readonly always: boolean; readonly text: string } {
   const empty = sections.filter(sec => sec.total === 0);
@@ -346,10 +359,7 @@ export function buildBoardViewModel(snapshot: DeliverySnapshot, filter: MatchFil
     const all = inStage.map(m => m.card);
     const shown = all.slice(0, Math.max(0, paging[stage] ?? BOARD_PAGE_SIZE));
     const needing = attentionCount(inStage);
-    return {
-      stage, label: labelOf(labels.stage, stage), total: all.length, cards: shown, hiddenCount: all.length - shown.length,
-      attentionCount: needing, ...sectionDefaults(stage, all.length, needing, attentionOnly, labels),
-    };
+    return { ...sectionHead(stage, all.length, needing, attentionOnly, labels), cards: shown, hiddenCount: all.length - shown.length };
   });
   const unfiltered = attentionOnly ? selectMatches(snapshot, { ...filter, needsAttentionOnly: false }, labels, byId).length : matches.length;
   const noMatches = placeableCount(snapshot) > 0 && matches.length === 0;

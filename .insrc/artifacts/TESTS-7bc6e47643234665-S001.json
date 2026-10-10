@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "7bc6e47643234665",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T12:12:19.902Z",
+    "updatedAt": "2026-10-10T12:16:01.847Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "968dc661",
+        "ranAt": "2026-10-10T12:16:01.847Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/delivery/__tests__/board-model.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/delivery/__tests__/board-model.test.ts"
+            ]
+          },
+          {
+            "name": "vscode-plugin/src/delivery/__tests__/labels.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/delivery/__tests__/labels.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-model.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 347,
+            "titles": [
+              {
+                "title": "six stage sections in workflow order hold every story and issue exactly once, in the column the snapshot assigns",
+                "result": "pass"
+              },
+              {
+                "title": "with an epic scope and a search, cards, hidden counts, column totals and totals agree, and clearing both restores the full set",
+                "result": "pass"
+              },
+              {
+                "title": "the same snapshot and filters give an identical model, including items with equal timestamps",
+                "result": "pass"
+              },
+              {
+                "title": "unknownStages counts every stage id outside the six, and those items are in no column",
+                "result": "pass"
+              },
+              {
+                "title": "an approved build with failed tasks stays in Complete and carries a text-labelled validation-conflict badge",
+                "result": "pass"
+              },
+              {
+                "title": "a review-blocked design shows a Review blocked badge, matches Needs attention and keeps its column",
+                "result": "pass"
+              },
+              {
+                "title": "a failed story-level result shows Validation failed, badges never repeat a label, and the accessible label names every badge",
+                "result": "pass"
+              },
+              {
+                "title": "selectMatches returns the board's matches in snapshot order, each with its epic and card",
+                "result": "pass"
+              },
+              {
+                "title": "compactId is 'ABCDEF01 / S001' for 'E20261009abcdef01:S001', 'ABCDEF01' for an epic-level 'E20261009abcdef01', 'ABCDEF01 / S002' for the H-form 'Habcdef0123456789:S002', and the full id for a ':R(<raw>)' fallback id",
+                "result": "pass"
+              },
+              {
+                "title": "taskSummary is 'n/N tasks passed' from validation and null when validation is null or has no recorded tasks",
+                "result": "pass"
+              },
+              {
+                "title": "accessibleLabel carries the compactId and task summary, and badges are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "an approval state or review verdict this build does not know shows its code, ranks worst and is neutral, with no undefined label",
+                "result": "pass"
+              },
+              {
+                "title": "stage sections start open when they hold matches, closed when empty, and Complete closed with its attention hint unless Needs attention is on",
+                "result": "pass"
+              },
+              {
+                "title": "totals read N items · M need attention, or M of N with Show all under Needs attention, and empty stages fold under Needs attention",
+                "result": "pass"
+              },
+              {
+                "title": "idParts reads the hash and story number of a published id, and nothing from any other id",
+                "result": "pass"
+              },
+              {
+                "title": "sectionDefaults and foldOf give the board screens' existing section models",
+                "result": "pass"
+              },
+              {
+                "title": "screenKindOf opens an epic as its board, a story or issue at one of the six stages as its own screen, and nothing else",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/labels.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 318,
+            "titles": [
+              {
+                "title": "every stage, attention reason, notice code, task result, approval state and review verdict has a display label",
+                "result": "pass"
+              },
+              {
+                "title": "the six stage labels read in workflow order",
+                "result": "pass"
+              },
+              {
+                "title": "DISPLAY_LABELS carries chain.notRecorded, conflictHeadline and noMatchesTitle",
+                "result": "pass"
+              },
+              {
+                "title": "DISPLAY_LABELS carries the view, item-tab, attention and stage-section labels",
+                "result": "pass"
+              },
+              {
+                "title": "readableTime shows an ISO time as YYYY-MM-DD HH:MM UTC and anything else as recorded",
+                "result": "pass"
+              },
+              {
+                "title": "msBetween measures from one ISO time to a later one, counts a future time as now, and gives null for an unreadable one",
+                "result": "pass"
+              },
+              {
+                "title": "plural writes a count with the noun that fits it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

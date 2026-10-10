@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "7bc6e47643234665",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T12:08:21.565Z",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix (small): one module (the plugin's delivery board), approach chosen with the user; issue then build, no LLD.",
+    "updatedAt": "2026-10-10T12:20:39.036Z",
+    "approvedAt": "2026-10-10T12:20:39.390Z"
+  },
+  "body": {
+    "focus": "ISSUE-7bc6e476 (bugfix, small: issue then build). Group the delivery board's Epics screen by stage: each epic in the stage box of its least-advanced story (Complete only when every story is complete), the same six collapsible boxes and open/hint/fold rules as the board and Issues screens, the reader's open/closed choice kept across a refresh, and epics with no stories in a 'No stories yet' note after the boxes; rows, search, Needs attention, counts and opening an epic unchanged. Make the app bar's Refresh an icon-only button with the accessible name 'Refresh' and a tooltip; CSP, text-only rendering and theme colours unchanged.",
+    "producesLld": false,
+    "commit": "968dc661",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "EpicsBody carries six stage sections (each epic at the stage of its least-advanced story, epics with no stories after the boxes), built from the shared sectionHead that the board and Issues screens also use; the webview renders them in the shared stage boxes, with 'No stories yet' from the labels table. Refresh is an icon-only button named 'Refresh' with a tooltip. Full plugin suite: 966 tests, 961 pass, 4 skipped, 1 known baseline failure.",
+    "testRecord": {
+      "md": "docs/standalone/delivery-board-vs-code-plugin-group-E202610107bc6e476/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/standalone/delivery-board-vs-code-plugin-group-E202610107bc6e476/S001/evidence/epics-1200.jpg"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T12:20:39.036Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/delivery-board-vs-code-plugin-group-E202610107bc6e476/S001/evidence/epics-360.jpg"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T12:20:39.036Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T12:20:39.036Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-model.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T12:20:39.036Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T12:20:39.036Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/labels.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T12:20:39.036Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T12:20:39.036Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-model.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T12:20:39.036Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T12:20:39.036Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-views.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T12:20:39.036Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/labels.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T12:20:39.036Z"
+      }
+    ]
+  }
+}

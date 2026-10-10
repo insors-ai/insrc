@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, foldOf, idParts, placeableCount, screenKindOf, sectionDefaults, selectMatches, showMore, unknownStages, type BoardPaging, type MatchFilter } from '../board-model.js';
+import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, foldOf, idParts, placeableCount, screenKindOf, sectionDefaults, sectionHead, selectMatches, showMore, unknownStages, type BoardPaging, type MatchFilter } from '../board-model.js';
 import type { StagesBody } from '../board-protocol.js';
 import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
 import { evidence as fixtureEvidence, item, review, snapshot } from './board-fixtures.js';
@@ -333,6 +333,8 @@ test('sectionDefaults and foldOf give the board screens\' existing section model
   assert.deepEqual(sectionDefaults('complete', 2, 1, false, DISPLAY_LABELS), { defaultOpen: false, emptyText: null, hint: '1 needs attention' });
   assert.deepEqual(sectionDefaults('scoped', 0, 0, true, DISPLAY_LABELS), { defaultOpen: false, emptyText: DISPLAY_LABELS.nothingAtStage, hint: null });
   assert.deepEqual(foldOf([{ label: 'A', total: 0 }, { label: 'B', total: 1 }], false), { always: false, text: 'A 0' });
+  assert.deepEqual(sectionHead('complete', 2, 1, false, DISPLAY_LABELS),
+    { stage: 'complete', label: 'Complete', total: 2, attentionCount: 1, defaultOpen: false, emptyText: null, hint: '1 needs attention' }, 'the head every screen\'s section starts from');
 });
 
 test('screenKindOf opens an epic as its board, a story or issue at one of the six stages as its own screen, and nothing else', () => {

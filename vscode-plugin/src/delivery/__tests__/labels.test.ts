@@ -79,6 +79,7 @@ test('DISPLAY_LABELS carries the view, item-tab, attention and stage-section lab
   assert.equal(DISPLAY_LABELS.needsAttention, 'Needs attention');
   assert.equal(DISPLAY_LABELS.nothingAtStage, 'nothing at this stage');
   assert.equal(DISPLAY_LABELS.otherStages, 'Other stages · 0 matching');
+  assert.equal(DISPLAY_LABELS.noStories, 'No stories yet');
 });
 
 test('readableTime shows an ISO time as YYYY-MM-DD HH:MM UTC and anything else as recorded', () => {

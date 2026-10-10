@@ -750,7 +750,7 @@ test('clear-filters clears the screen\'s search and attention, keeps the screen,
   send(host.ch, { type: 'set-search', search: 'nothing like this' });
   send(host.ch, { type: 'clear-filters' });
   const epics = lastScreen(host.ch)!.body;
-  assert.ok(epics.kind === 'epics' && epics.rows.length === 2);
+  assert.ok(epics.kind === 'epics' && epics.sections.reduce((n, sec) => n + sec.rows.length, epics.noStories.length) === 2);
 
   // With no snapshot shown, clear-filters posts only the status.
   const s = setup();
@@ -1484,9 +1484,9 @@ test('the epic board and Epics rows follow the mocks: head with meter, rows with
   click(findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'epics')[0]!);
   b.relay();
   // Epics: one row per epic, its three columns side by side: name block, completion over the meter, attention.
-  const rows = findAll(main, e => e.tag === 'div' && e.attrs['class'] === 'rows')[0]!;
-  assert.deepEqual(rows.children.map(shape), ['button.row', 'button.row']);
-  const row = rows.children[0]!;
+  const allRows = findAll(main, e => e.tag === 'button' && e.attrs['class'] === 'row');
+  assert.deepEqual(allRows.map(r => r.attrs['data-epic']).sort(), [EPIC_A, 'E20261009bbbbbbbb'], 'one row per epic, inside the stage boxes');
+  const row = allRows.find(r => r.attrs['data-epic'] === EPIC_A)!;
   assert.deepEqual(row.children.map(shape), ['div.', 'div.completion', 'span.pill attention-count']);
   assert.deepEqual(row.children[0]!.children.map(c => [shape(c), c.textContent]), [['div.kicker', 'EPIC · AAAAAAAA'], ['div.name', 'Board epic'], ['div.muted', '2 stories · 0 tasks']]);
   assert.deepEqual(row.children[1]!.children.map(shape), ['span.muted', 'div.meter']);
@@ -1608,6 +1608,52 @@ test('state panels use the mocks\' panel and warning styles', () => {
   assert.deepEqual(shown(w.el['main']!), [['panel', 'empty', 'h3', 'empty title']], 'an empty workspace is a plain panel, not a warning');
   status(panelOf('no-matches', 'body', 'clear-filters'));
   assert.deepEqual(findAll(w.el['main']!, e => e.tag === 'button').map(x => [x.attrs['class'], x.textContent]), [['btn primary', 'Clear filters']]);
+});
+
+test('the Epics screen shows its epics in collapsible stage boxes, and epics with no stories after them', async () => {
+  const snap = () => screensSnapshot([item({ id: 'E20261009dddddddd', kind: 'epic', title: 'Not started' })]);
+  const b = await liveBoard(snap());
+  const main = b.w.el['main']!;
+  click(findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'epics')[0]!);
+  b.relay();
+  const boxes = () => findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'acc');
+  const rowsIn = (d: FakeEl) => findAll(d, e => e.tag === 'button' && e.attrs['class'] === 'row').map(r => r.attrs['data-epic']);
+  assert.deepEqual(boxes().map(d => [d.attrs['data-stage'], d.attrs['open'] !== undefined, rowsIn(d)]), [
+    ['scoped', true, [EPIC_A]], ['design-plan', true, ['E20261009bbbbbbbb']], ['ready-design-approved', false, []],
+    ['ready-plan-approved', false, []], ['build-recorded', false, []], ['complete', false, []],
+  ], 'each epic in the box of its least-advanced story, with the board screens\' defaults');
+  assert.deepEqual(texts(boxes()[0]!.children[0]!), ['Scoped', '1']);
+  const note = findAll(main, e => e.attrs['class'] === 'no-stories')[0]!;
+  assert.deepEqual([texts(note)[0], rowsIn(note)], ['No stories yet', ['E20261009dddddddd']], 'an epic with no stories follows the boxes');
+
+  // The reader closes Scoped; a refresh keeps it closed. A row still opens its epic's board.
+  const scoped = boxes()[0]!;
+  scoped.removeAttribute('open');
+  scoped.listeners['toggle']!();
+  b.ch.send({ v: 1, payload: { type: 'refresh' } });
+  b.s.snapshots.at(-1)!.resolve({ ok: true, value: snap() });
+  await flush();
+  b.pump();
+  assert.equal(boxes()[0]!.attrs['open'], undefined, 'the reader\'s choice survives a refresh');
+  b.w.posted.length = 0;
+  click(findAll(main, e => e.attrs['data-epic'] === 'E20261009bbbbbbbb')[0]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-epic', epicItemId: 'E20261009bbbbbbbb' }]);
+
+  // A narrow pane folds the empty stages, as on the other list screens.
+  b.w.resize(360);
+  assert.deepEqual(findAll(main, e => e.tag === 'details' && (e.attrs['class'] ?? '').startsWith('acc')).map(d => d.attrs['data-stage'] ?? 'fold'), ['scoped', 'design-plan', 'fold']);
+});
+
+test('Refresh is an icon-only button that keeps its name and tooltip', () => {
+  const doc = renderBoardDocument('N0NCE');
+  const button = doc.match(/<button id="refresh"[^>]*>([^<]*)<\/button>/);
+  assert.ok(button !== null, 'the Refresh button is in the app bar');
+  assert.match(button[0], /aria-label="Refresh"/);
+  assert.match(button[0], /title="Refresh"/);
+  assert.equal(button[1], '↻', 'its face is the refresh glyph, not the word');
+  assert.match(BOARD_STYLE, /\.icon-btn\{/);
+  const w = runScript();
+  assert.deepEqual(payloadsOf(w.posted).at(-1), { type: 'refresh' }, 'clicking it still refreshes');
 });
 
 test('BOARD_STYLE carries the mocks\' product rules with theme colours and no hiding rule', () => {

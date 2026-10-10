@@ -643,7 +643,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     return lease;
   }
 
-  async function runTurn(text: unknown, allowedTools?: readonly string[], opts?: { readonly suppressEcho?: boolean }): Promise<void> {
+  async function runTurn(text: unknown, allowedTools?: readonly string[], opts?: { readonly suppressEcho?: boolean | undefined }): Promise<void> {
     if (typeof text !== 'string') return; // malformed submit-turn -> no-op (never throws)
     const prompt = text.trim();
     if (prompt === '' || session === undefined) return; // empty submit is a no-op
@@ -725,7 +725,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           // Superseded/disposed: post nothing more, but keep reading so the superseded turn's CLI
           // never stalls on a full pipe; its process (and the lease) end when it exits.
           if (disposed || myGen !== generation) {
-            if (next.value.kind === 'done' || next.value.kind === 'error') break;
+            if (next.value.kind === 'done' || next.value.kind === 'error') {
+              void iterator.return?.(undefined); // as on the live path: finish the generator
+              break;
+            }
             continue;
           }
           const ev = next.value;

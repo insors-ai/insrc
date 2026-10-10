@@ -901,7 +901,7 @@ export function createProviderRegistry(deps: AdapterDeps): ProviderRegistry {
 export async function deriveChatTitle(
   providers: ProviderRegistry,
   input: { readonly provider: ProviderId; readonly prompt: string; readonly cwd: string },
-  opts?: { readonly timeoutMs?: number },
+  opts?: { readonly timeoutMs?: number | undefined },
 ): Promise<string | undefined> {
   let adapter: StreamAdapter;
   try {

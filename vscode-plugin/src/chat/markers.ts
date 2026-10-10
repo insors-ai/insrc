@@ -40,12 +40,17 @@ export const MARKER_CLASS = Object.freeze({
  * future/unknown kind — adapter drift). Pure + total + deterministic; no I/O, no
  * vscode import; never invokes a workflow/MCP tool (k8).
  */
+/** The status line while a turn waits for the session's previous CLI process to exit. */
+export const WAITING_LABEL = 'Waiting for the previous turn to finish';
+
 export function markerFor(event: TurnEvent): MarkerLine | null {
   switch (event.kind) {
     case 'assistant-delta':
       return null;
     case 'status':
       switch (event.phase) {
+        case 'waiting':
+          return { cssClass: MARKER_CLASS.pending, label: WAITING_LABEL };
         case 'thinking':
           return { cssClass: MARKER_CLASS.pending, label: 'thinking…' };
         case 'streaming':
@@ -120,6 +125,7 @@ export function markerWebviewSource(): string {
     `var k=event.kind;` +
     `if(k==='assistant-delta')return null;` +
     `if(k==='status'){` +
+    `if(event.phase==='waiting')return{cssClass:${JSON.stringify(c.pending)},label:${JSON.stringify(WAITING_LABEL)}};` +
     `if(event.phase==='thinking')return{cssClass:${JSON.stringify(c.pending)},label:'thinking…'};` +
     `if(event.phase==='streaming')return{cssClass:${JSON.stringify(c.pending)},label:'streaming…'};` +
     `if(event.phase==='tool')return{cssClass:${JSON.stringify(c.tool)},label:'running tool…'};` +

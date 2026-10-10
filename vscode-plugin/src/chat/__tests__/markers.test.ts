@@ -10,12 +10,13 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { markerFor, markerWebviewSource, MARKER_CLASS, type MarkerLine } from '../markers.js';
+import { markerFor, markerWebviewSource, MARKER_CLASS, WAITING_LABEL, type MarkerLine } from '../markers.js';
 import type { TurnEvent } from '../stream-events.js';
 
 /** One sample TurnEvent per kind (incl. tool-call with and without mcp, done ok true/false). */
 const SAMPLES: TurnEvent[] = [
   { kind: 'assistant-delta', turnId: 't', text: 'hi' },
+  { kind: 'status', turnId: 't', phase: 'waiting' },
   { kind: 'status', turnId: 't', phase: 'thinking' },
   { kind: 'status', turnId: 't', phase: 'streaming' },
   { kind: 'status', turnId: 't', phase: 'tool' },
@@ -158,4 +159,14 @@ test('markerWebviewSource() is CSP-safe: only the five marker classes, no import
   assert.doesNotMatch(src, /\bvscode\b/, 'no vscode reference');
   const classes = src.match(/insrc-term__marker--[a-z]+/g) ?? [];
   for (const c of classes) assert.ok(ALL_CLASSES.has(c), `webview source references unknown class ${c}`);
+});
+
+test("phase 'waiting' maps to 'Waiting for the previous turn to finish' in both markerFor and the webview mirror", () => {
+  const event: TurnEvent = { kind: 'status', turnId: 't', phase: 'waiting' };
+  const expected: MarkerLine = { cssClass: MARKER_CLASS.pending, label: 'Waiting for the previous turn to finish' };
+  assert.equal(WAITING_LABEL, expected.label);
+  assert.deepEqual(markerFor(event), expected);
+  // eslint-disable-next-line no-eval
+  const webviewMarkerFor = eval(`(${markerWebviewSource()})`) as (e: unknown) => MarkerLine | null;
+  assert.deepEqual(webviewMarkerFor(event), expected);
 });

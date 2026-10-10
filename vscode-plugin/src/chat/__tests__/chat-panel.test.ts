@@ -2621,3 +2621,34 @@ test("Stop ends a resumed turn's process through the handle resume() hands over"
   await waitFor(() => proc.exited());
   assert.deepEqual(proc.signals, ['SIGTERM'], 'Stop ended the resumed turn through the handed-over handle');
 });
+
+test('closing the panel mid-turn leaves a session-file turn running with its cursor saved', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const proc = fakeLiveProc(1700);
+  const adapter: StreamAdapter = {
+    async *run(_req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+      const cursor = { sessionId: opts!.sessionId!, turnId: 'bg', generation: 1, offset: 10 };
+      opts?.onSpawn?.({ ...proc, cursor, outPath: '/out/s.ndjson' });
+      await Promise.resolve();
+      yield { kind: 'assistant-delta', turnId: 'bg', text: 'working' };
+      opts?.onProgress?.({ ...cursor, offset: 60 });
+      await proc.exit; // the CLI is still busy when the panel closes
+    },
+    async *resume(): AsyncIterable<TurnEvent> {},
+    cancel: async () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'bg job' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'assistant-delta'));
+  const id = store.list()[0]!.id;
+  host.dispose();
+  await new Promise((r) => setTimeout(r, 20));
+  assert.deepEqual(proc.signals, [], 'closing the panel did not stop the session-file turn');
+  assert.equal(proc.exited(), false);
+  assert.equal(store.get(id)?.liveTurn?.cursor.offset, 60, 'its cursor is saved for a later resume');
+  proc.exitNow();
+});

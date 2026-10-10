@@ -21,7 +21,7 @@
 
 import type { DeliveryResult } from './delivery-client.js';
 import type { DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
-import { buildBoardViewModel, epicOf, idParts, indexItems, isPlaceable, showMore, titleOf, type BoardPaging, type MatchFilter } from './board-model.js';
+import { buildBoardViewModel, epicOf, idParts, indexItems, isPlaceable, screenKindOf, showMore, titleOf, type BoardPaging, type MatchFilter } from './board-model.js';
 import { buildEpicRollup, buildIssueView, epicRowOf, issueEntries } from './board-views.js';
 import type {
   BoardDownMessage, BoardScreen, CrumbView, Density, Envelope, ItemDetailsViewModel, ItemTab, ListView, ScreenBody, ScreenModel,
@@ -133,8 +133,8 @@ function isPartial(s: DeliverySnapshot): boolean {
 function stillOnBoard(screen: BoardScreen, snapshot: DeliverySnapshot): boolean {
   switch (screen.kind) {
     case 'list': return true;
-    case 'epic': return snapshot.items.some(i => i.kind === 'epic' && i.id === screen.epicItemId);
-    case 'item': return snapshot.items.some(i => i.id === screen.itemId && isPlaceable(i));
+    case 'epic': return snapshot.items.some(i => i.id === screen.epicItemId && screenKindOf(i) === 'epic');
+    case 'item': return snapshot.items.some(i => i.id === screen.itemId && screenKindOf(i) === 'item');
   }
 }
 

@@ -35,7 +35,7 @@
 
 import { attr, type ChatPanelChannel, type ChatPanelLogger } from '../chat/chat-panel.js';
 import type { Envelope } from '../chat/protocol.js';
-import { isPlaceable, unknownStages } from './board-model.js';
+import { screenKindOf, unknownStages } from './board-model.js';
 import { parseBoardUpMessage, type BoardUpMessage } from './board-protocol.js';
 import {
   boardDownMessages, currentEntry, currentItemId, initialBoardState, reduceBoardState, refreshAnnouncement, screenAnnouncement, shownSnapshot,
@@ -535,20 +535,8 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const gen = generation;
     const seq = ++nextSeq;
     const started = deps.now();
-    try {
-      dispatch({ type: 'refresh-requested', seq });
-    } catch (err) {
-      // The loading state could not be shown; state is unchanged, so no request is made for it.
-      log.error(`delivery board: refresh ${seq} could not start: ${errorText(err)}`);
-      return;
-    }
-    // The client resolves every failure to a typed result; a throw is turned into one so the board never stays on 'loading'.
-    let result: DeliveryResult<DeliverySnapshot>;
-    try {
-      result = await deps.client.snapshot();
-    } catch (err) {
-      result = { ok: false, failure: { kind: 'read-failed', message: errorText(err) } };
-    }
+    if (!startLoading(seq)) return;
+    const result = await readSnapshot();
     if (gen !== generation || channel === undefined) return;   // the panel was closed meanwhile
     const at = deps.now();
     if (seq !== state.latestSeq) {
@@ -560,13 +548,39 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     if (!result.ok) {
       log.error(`delivery board: refresh ${seq} ${result.failure.kind} after ${elapsed(started)}: ${result.failure.message}`);
     }
-    let applied = false;
+    const applied = applyAnswer(seq, result, at);
+    afterRefresh(seq, applied && result.ok ? result.value : null);
+  }
+
+  /** Show the loading state; false when it cannot be shown, so no request is made for it (state is unchanged). */
+  function startLoading(seq: number): boolean {
+    try {
+      dispatch({ type: 'refresh-requested', seq });
+      return true;
+    } catch (err) {
+      log.error(`delivery board: refresh ${seq} could not start: ${errorText(err)}`);
+      return false;
+    }
+  }
+
+  /** The client resolves every failure to a typed result; a throw is turned into one so the board never stays on 'loading'. */
+  async function readSnapshot(): Promise<DeliveryResult<DeliverySnapshot>> {
+    try {
+      return await deps.client.snapshot();
+    } catch (err) {
+      return { ok: false, failure: { kind: 'read-failed', message: errorText(err) } };
+    }
+  }
+
+  /**
+   * Apply the answer; true when it rendered. A snapshot that slipped past the client's checks but cannot be rendered
+   * leaves state on the previous board, so this shows a failed refresh over it rather than a frozen board.
+   */
+  function applyAnswer(seq: number, result: DeliveryResult<DeliverySnapshot>, at: string): boolean {
     try {
       dispatch({ type: 'snapshot-arrived', seq, result, at });
-      applied = true;
+      return true;
     } catch (err) {
-      // A snapshot that slipped past the client's checks but cannot be rendered: state still holds the previous
-      // board, so this shows a failed refresh over it rather than a frozen board.
       const message = errorText(err);
       log.error(`delivery board: refresh ${seq} could not be applied: ${message}`);
       try {
@@ -575,20 +589,25 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
         // Last resort: the board keeps whatever it last posted.
         log.error(`delivery board: refresh ${seq} failure could not be shown: ${errorText(again)}`);
       }
+      return false;
     }
-    // Outside the tries, like the stage log below: an announcement that cannot be posted is only logged.
+  }
+
+  /**
+   * After the answer is applied, the announcement and (for a snapshot that rendered) the unknown-stage log. Each is
+   * only logged when it fails: neither may turn a board that rendered into a failed refresh.
+   */
+  function afterRefresh(seq: number, rendered: DeliverySnapshot | null): void {
     try {
       announceRefresh(seq);
     } catch (err) {
       log.error(`delivery board: refresh ${seq} result could not be announced: ${errorText(err)}`);
     }
-    // Outside the try: a failure to log must never turn a board that rendered into a failed refresh.
-    if (applied && result.ok) {
-      try {
-        logUnknownStages(seq, result.value);
-      } catch (err) {
-        log.error(`delivery board: refresh ${seq} unknown stages could not be listed: ${errorText(err)}`);
-      }
+    if (rendered === null) return;
+    try {
+      logUnknownStages(seq, rendered);
+    } catch (err) {
+      log.error(`delivery board: refresh ${seq} unknown stages could not be listed: ${errorText(err)}`);
     }
   }
 
@@ -642,8 +661,9 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   /** open-epic must name an epic on the board; open-item a story or issue on it, and an epic id opens the epic. */
   function open(id: string, asEpic: boolean): void {
     const item = itemOnBoard(id);
-    if (item !== undefined && item.kind === 'epic') { go({ type: 'open-epic', epicItemId: id }); return; }
-    if (!asEpic && item !== undefined && isPlaceable(item)) { go({ type: 'open-item', itemId: id }); return; }
+    const kind = item === undefined ? null : screenKindOf(item);
+    if (kind === 'epic') { go({ type: 'open-epic', epicItemId: id }); return; }
+    if (!asEpic && kind === 'item') { go({ type: 'open-item', itemId: id }); return; }
     log.warn('delivery board: ignored a link to an item that is not on the board');
   }
 
@@ -704,8 +724,12 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     },
     dispose(): void {
       const open = channel;
-      reset();
-      open?.dispose();
+      // The panel closes even if resetting the board's memory throws.
+      try {
+        reset();
+      } finally {
+        open?.dispose();
+      }
     },
   };
 }

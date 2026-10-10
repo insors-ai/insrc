@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, foldOf, idParts, placeableCount, sectionDefaults, selectMatches, showMore, unknownStages, type BoardPaging, type MatchFilter } from '../board-model.js';
+import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, foldOf, idParts, placeableCount, screenKindOf, sectionDefaults, selectMatches, showMore, unknownStages, type BoardPaging, type MatchFilter } from '../board-model.js';
 import type { StagesBody } from '../board-protocol.js';
 import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
 import { evidence as fixtureEvidence, item, review, snapshot } from './board-fixtures.js';
@@ -333,4 +333,12 @@ test('sectionDefaults and foldOf give the board screens\' existing section model
   assert.deepEqual(sectionDefaults('complete', 2, 1, false, DISPLAY_LABELS), { defaultOpen: false, emptyText: null, hint: '1 needs attention' });
   assert.deepEqual(sectionDefaults('scoped', 0, 0, true, DISPLAY_LABELS), { defaultOpen: false, emptyText: DISPLAY_LABELS.nothingAtStage, hint: null });
   assert.deepEqual(foldOf([{ label: 'A', total: 0 }, { label: 'B', total: 1 }], false), { always: false, text: 'A 0' });
+});
+
+test('screenKindOf opens an epic as its board, a story or issue at one of the six stages as its own screen, and nothing else', () => {
+  assert.equal(screenKindOf(item({ id: 'E1', kind: 'epic' })), 'epic');
+  assert.equal(screenKindOf(item({ id: 'S1', stage: 'scoped' })), 'item');
+  assert.equal(screenKindOf(item({ id: 'I1', kind: 'issue', stage: 'complete' })), 'item');
+  assert.equal(screenKindOf(item({ id: 'T1', kind: 'task' })), null, 'a task has no screen of its own');
+  assert.equal(screenKindOf(item({ id: 'S2', stage: 'from-the-future' as never })), null, 'an unknown stage is off the board');
 });

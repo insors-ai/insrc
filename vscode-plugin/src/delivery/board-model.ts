@@ -237,6 +237,15 @@ export function isPlaceable(item: DeliveryItemView): item is CardItem & { readon
   return isCardKind(item) && item.stage !== null && KNOWN_STAGES.has(item.stage.stage);
 }
 
+/**
+ * What an item opens as: an epic its board, a story or issue at one of the six stages its own screen, anything else
+ * nothing. The host checks a link with it and the trail keeps an entry by it, so the two never disagree.
+ */
+export function screenKindOf(item: DeliveryItemView): 'epic' | 'item' | null {
+  if (item.kind === 'epic') return 'epic';
+  return isPlaceable(item) ? 'item' : null;
+}
+
 /** How many items in the snapshot can be cards, whatever the selection; zero means an empty board, not an empty selection. */
 export function placeableCount(snapshot: DeliverySnapshot): number {
   return snapshot.items.filter(isPlaceable).length;

@@ -269,14 +269,16 @@ test('a 1,000-record store forming 500 work items is served within 500 ms', () =
 		const slug = `epic-${e}`;
 		const folder = `docs/epics/${slug}-E20261007${hash.slice(0, 8)}`;
 		const meta = { epicHash: hash, epicSlug: slug, createdAt: CREATED, epicCreatedAt: CREATED, approvedAt: CREATED };
-		const stories = [1, 2, 3, 4].map(n => ({ id: `s${n}`, title: `Story ${n}` }));
-		files[store(`DEF-${hash}.json`)] = { meta, body: { epic: { title: `Epic ${e}` }, stories } };
-		files[store(`HLD-${hash}.json`)] = { meta, body: {} };
+		// Every record carries the descriptive values and feedback the snapshot publishes (ISSUE-7224d0d4).
+		const feedback = [1, 2].map(n => ({ id: `f${n}`, author: 'reviewer', timestamp: CREATED, target: { file: `${folder}/DEF.md` }, comment: `Feedback ${n} on epic ${e}` }));
+		const stories = [1, 2, 3, 4].map(n => ({ id: `s${n}`, title: `Story ${n}`, userValue: `Story ${n} of epic ${e} lets a reader act`, sizeEstimate: 'M' }));
+		files[store(`DEF-${hash}.json`)] = { meta, body: { epic: { title: `Epic ${e}` }, problem: `Epic ${e} solves a problem`, summary: { prose: `Epic ${e} summary` }, stories, feedback } };
+		files[store(`HLD-${hash}.json`)] = { meta, body: { feedback } };
 		files[`${folder}/DEF.md`] = `<!-- insrc:artifact DEF-${hash} -->\n# Define\n`;
 		for (const { id } of stories) {
 			const storyMeta = { ...meta, storyId: id };
-			files[store(`LLD-${hash}-${id}.json`)] = { meta: storyMeta, body: {} };
-			files[store(`PLAN-${hash}-${id}.json`)] = { meta: storyMeta, body: { tasks: [] } };
+			files[store(`LLD-${hash}-${id}.json`)] = { meta: storyMeta, body: { feedback } };
+			files[store(`PLAN-${hash}-${id}.json`)] = { meta: storyMeta, body: { tasks: [], feedback } };
 			files[`${folder}/S00${id.slice(1)}/LLD.md`] = `<!-- insrc:artifact LLD-${hash}-${id} -->\n# LLD\n`;
 		}
 	}
@@ -296,6 +298,12 @@ test('a 1,000-record store forming 500 work items is served within 500 ms', () =
 		assert.equal(snapshot.items.length, 500);
 		assert.ok(snapshot.items.filter(i => i.kind === 'story').every(i => i.evidence.some(e => e.kind === 'LLD' && e.openWith === 'review-view')),
 			'the real port found every LLD');
+		const epics = snapshot.items.filter(i => i.kind === 'epic');
+		const stories = snapshot.items.filter(i => i.kind === 'story');
+		assert.ok(epics.every(i => i.description.kind === 'epic' && i.description.problem.state === 'recorded' && i.feedback.length === 4),
+			'every epic carries its recorded problem and its DEF and HLD feedback');
+		assert.ok(stories.every(i => i.description.kind === 'story' && i.description.purpose.state === 'recorded' && i.description.size.state === 'recorded' && i.feedback.length === 4),
+			'every story carries its recorded purpose and size and its LLD and PLAN feedback');
 		assert.ok(best < 500, `best of three took ${Math.round(best)} ms`);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });

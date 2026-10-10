@@ -11,12 +11,24 @@ import type { DeliveryEvidenceEntry, DeliveryItem, DeliverySnapshot } from '../d
 /** stage is the stage id (null for none); reasonIds are the records its reason names. */
 export type ItemSpec = Partial<Omit<DeliveryItem, 'stage'>> & { readonly id: string; readonly stage?: string | null; readonly reasonIds?: readonly string[] };
 
+/** The description an item of this kind carries when nothing is recorded for it. */
+function unrecordedDescription(kind: DeliveryItem['kind']): DeliveryItem['description'] {
+  const none = { state: 'not-recorded' } as const;
+  switch (kind) {
+    case 'epic': return { kind, problem: none, summary: none };
+    case 'story': return { kind, purpose: none, size: none };
+    case 'issue': return { kind, reproduction: none, rootCause: none, fixIntent: none };
+    case 'task': return { kind };
+  }
+}
+
 export function item(spec: ItemSpec): DeliveryItem {
   const { stage = spec.kind === 'epic' || spec.kind === 'task' ? null : 'scoped', reasonIds = [], ...rest } = spec;
   return {
     kind: 'story', title: `Title ${spec.id}`, standalone: false, sourceIds: [], parentId: null, childIds: [],
     evidence: [], tasks: [], validation: null, storyLevelResult: null, conflict: null, correctsRef: null,
     amendments: [], notices: [], needsAttention: false, attentionReasons: [],
+    description: unrecordedDescription(spec.kind ?? 'story'), feedback: [],
     ...rest,
     stage: stage === null ? null : { stage, route: 'full-chain', reason: { text: '', artifactIds: reasonIds } },
   } as unknown as DeliveryItem;

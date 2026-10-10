@@ -10,7 +10,7 @@ Captured at commit `c04e408a`, the t3 commit.
 |---|---|---|---|
 | 5,169 | 5,039 | 126 | 1 |
 
-- **The one failure is not caused by this story.** It is `temporalTrend recovers slope/intercept/R² via expression-based regression` in `src/daemon/db/__tests__/sqlite-driver.test.ts`. It also fails with this story's changes stashed (12 pass, 1 fail either way).
+- **The one failure is not caused by this story.** It is `temporalTrend recovers slope/intercept/R² via expression-based regression` in `src/daemon/db/__tests__/sqlite-driver.test.ts`, code this story does not touch. It fails the same way at `19effad1`, the main commit before this story: [sqlite-driver-before-story.txt](sqlite-driver-before-story.txt) shows 13 tests, 12 pass, 1 fail, from a git worktree of that commit. It is a baseline failure, alongside the plugin's manifest-catalog one.
 - **Why `--test-force-exit`:** without it, an open handle keeps the runner alive after the last test and the run never ends.
 - **The total varies:** across runs it reports 5,062 to 5,169 tests, with the same single failure each time.
 

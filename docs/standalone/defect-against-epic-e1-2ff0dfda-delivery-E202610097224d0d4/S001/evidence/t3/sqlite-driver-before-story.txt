@@ -1,0 +1,7 @@
+# npx tsx --test --test-force-exit src/daemon/db/__tests__/sqlite-driver.test.ts, in a git worktree of 19effad1 (main before this story; no ISSUE-7224d0d4 change)
+✖ SqliteDriver (via pool) (23.450737ms)
+ℹ tests 13
+ℹ pass 12
+ℹ fail 1
+✖ failing tests:
+✖ temporalTrend recovers slope/intercept/R² via expression-based regression (Phase 5g.1) (1.795907ms)

@@ -86,12 +86,22 @@ function standInWatcher(): Watcher {
 	} as unknown as Watcher;
 }
 
-/** Counts the resolver runs the clean-up job makes. */
+/** Counts the resolver runs the clean-up job makes, and can make a store
+ *  removal or the resolver run fail. */
 class ProbeService extends IndexerService {
 	resolverRuns: string[] = [];
+	removed: string[] = [];
+	failRemovalOf: string | null = null;
+	failResolver = false;
 	protected override async resolveAfterReconcile(repoPath: string): Promise<void> {
 		this.resolverRuns.push(repoPath);
+		if (this.failResolver) throw new Error('resolver failed');
 		await super.resolveAfterReconcile(repoPath);
+	}
+	protected override async removeStoredFile(repoPath: string, file: string, ids: readonly string[]): Promise<void> {
+		if (file === this.failRemovalOf) throw new Error('store write failed');
+		await super.removeStoredFile(repoPath, file, ids);
+		this.removed.push(file);
 	}
 }
 
@@ -174,19 +184,14 @@ async function cached(repo: string): Promise<boolean> {
 
 test('a clean-up job for a registered repository with nothing stored is processed without error', async () => {
 	const svc = service();
-	// processJob's switch has no exhaustiveness check: count the calls the
-	// job makes into the pass, so a missing `case 'reconcile'` fails here.
-	const real = svc.reconcileRepo.bind(svc);
-	const seen: string[] = [];
-	svc.reconcileRepo = async (repoPath: string) => { seen.push(repoPath); return real(repoPath); };
 
 	await svc.processJob({ kind: 'reconcile', repoPath: repoA });
 
-	assert.deepEqual(seen, [repoA]);
-	assert.deepEqual(
-		await real(repoA),
-		{ compared: 0, removedAbsent: 0, removedIgnored: 0, notChecked: 0 },
-	);
+	// Nothing was removed, so nothing followed. (That the job reaches the pass at
+	// all is shown by every test below that runs it against a stale file.)
+	assert.deepEqual(svc.removed, []);
+	assert.deepEqual(svc.resolverRuns, []);
+	assert.deepEqual(await svc.reconcileRepo(repoA), ZERO);
 });
 
 // ---------------------------------------------------------------------------
@@ -453,6 +458,55 @@ test('the clean-up method called directly removes the stale files, runs no resol
 	assert.deepEqual(svc.resolverRuns, []);
 	assert.equal(await cached(repoA), true);
 	assert.equal(svc._armedSettleTimersForTest(), 0);
+});
+
+test('a store failure part-way through a clean-up job still drops the cached results and runs the resolver for the files already removed, and the job fails', async () => {
+	const keepFile = join(repoA, 'src', 'keep.ts');
+	onDisk(keepFile);
+	const stale = ['one', 'two', 'three'].map(n => ent(repoA, join(repoA, 'src', `${n}.ts`), 'function', n));
+	await upsertEntities(null, [ent(repoA, keepFile, 'function', 'keep'), ...stale]);
+	await putCachedExploration(repoA, 1n, EXP, OUTPUT);
+	const svc = service();
+	// Fail on the LAST stale file the pass reaches, so the others are already removed.
+	const order = [...(await listEntityFilesForRepo(null, repoA)).keys()].filter(f => f !== keepFile);
+	svc.failRemovalOf = order[order.length - 1] ?? null;
+
+	await assert.rejects(svc.processJob({ kind: 'reconcile', repoPath: repoA }), /store write failed/);
+
+	assert.equal(svc.removed.length, 2, 'two files were removed before the failure');
+	assert.deepEqual(svc.resolverRuns, [repoA], 'the resolver still ran for them');
+	assert.equal(await cached(repoA), false, 'and the cached results were dropped');
+
+	// The next pass finishes the job: one file left to remove.
+	svc.failRemovalOf = null;
+	await svc.processJob({ kind: 'reconcile', repoPath: repoA });
+	assert.deepEqual([...(await listEntityFilesForRepo(null, repoA)).keys()], [keepFile]);
+});
+
+test('a resolver failure after a clean-up fails the job with the cached results already dropped', async () => {
+	const gone = ent(repoA, join(repoA, 'src', 'gone.ts'), 'function', 'gone');
+	await upsertEntities(null, [gone]);
+	await putCachedExploration(repoA, 1n, EXP, OUTPUT);
+	const svc = service();
+	svc.failResolver = true;
+
+	await assert.rejects(svc.processJob({ kind: 'reconcile', repoPath: repoA }), /resolver failed/);
+
+	assert.equal(await exists(gone), false);
+	assert.equal(await cached(repoA), false);
+});
+
+test('a clean-up failure inside a full index fails the full index and marks the repository error', async () => {
+	onDisk(join(repoA, 'src', 'real.ts'), 'export function hello(): number { return 1; }\n');
+	const gone = join(repoA, 'src', 'gone.ts');
+	await upsertEntities(null, [ent(repoA, gone, 'function', 'gone')]);
+	const svc = service();
+	svc.failRemovalOf = gone;
+
+	await assert.rejects(svc.processJob({ kind: 'full', repoPath: repoA }), /store write failed/);
+
+	const row = (await listRepos(null)).find(r => r.path === repoA);
+	assert.equal(row?.status, 'error');
 });
 
 // ---------------------------------------------------------------------------

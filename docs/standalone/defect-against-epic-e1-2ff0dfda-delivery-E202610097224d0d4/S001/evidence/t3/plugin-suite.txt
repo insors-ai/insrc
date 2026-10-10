@@ -1,0 +1,24 @@
+# npx tsc -p tsconfig.json --noEmit (vscode-plugin)
+exit 0
+
+# npx tsc -p tsconfig.delivery-contract.json --noEmit (vscode-plugin)
+exit 0
+# npx tsx --test 'src/**/__tests__/*.test.ts' (vscode-plugin)
+✖ each declared key's type/enum/default matches its ConfigOption, and scope is 'machine' (1.928533ms)
+✖ failing tests:
+ℹ asserting 5x the targets; set INSRC_PERF=1 for the exact targets
+ℹ attention: 2.5 ms (target 150 ms)
+ℹ cancelled 0
+ℹ duration_ms 15165.825561
+ℹ fail 1
+ℹ first board: 4.2 ms (target 1000 ms)
+ℹ issues: 3.7 ms (target 150 ms)
+ℹ open epic: 0.7 ms (target 150 ms)
+ℹ open story: 0.5 ms (target 150 ms)
+ℹ pass 961
+ℹ search: 1.1 ms (target 150 ms)
+ℹ skipped 4
+ℹ suites 0
+ℹ tests 966
+ℹ todo 0
+ℹ view: 0.5 ms (target 150 ms)

@@ -1,0 +1,13 @@
+# npx tsx --test --test-force-exit --test-timeout=120000 'src/**/__tests__/*.test.ts' (repo root, at commit c04e408a)
+ℹ tests 5169
+ℹ suites 104
+ℹ pass 5039
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 126
+ℹ todo 3
+ℹ duration_ms 35644.656933
+
+✖ failing tests:
+✖ SqliteDriver (via pool) (81.390883ms)
+✖ temporalTrend recovers slope/intercept/R² via expression-based regression (Phase 5g.1) (4.24641ms)

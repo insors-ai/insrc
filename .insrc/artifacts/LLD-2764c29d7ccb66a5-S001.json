@@ -228,7 +228,7 @@
           ],
           "returns": {
             "type": "void",
-            "meaning": "As today, and for each repository that is `ready`, and for one left `indexing` that has a last-indexed time, a `reconcile` job is enqueued, whether or not the start-up comparison of modification times found changed files. A repository that gets a `full` job at start is cleaned by that job and gets no separate one."
+            "meaning": "As today, and for each repository that is `ready` a `reconcile` job is enqueued, whether or not the start-up comparison of modification times found changed files. A repository that gets a `full` job at start is cleaned by that job and gets no separate one."
           },
           "errors": [],
           "preconditions": [],
@@ -354,7 +354,7 @@
         },
         {
           "input": "A repository left `indexing` with a last-indexed time at daemon start (the daemon stopped during a second full index).",
-          "expected": "Today it gets no job at start. It now gets a `reconcile` job and is cleaned. That it stays `indexing` and is not indexed again is an existing defect which this design leaves as it is."
+          "expected": "This state does not arise: a full index marks the repository `indexing` through updateRepoStatus, which clears the last-indexed time (src/db/repos.ts), so an interrupted second full index is `indexing` without a last-indexed time and gets a `full` job at start, as today. An earlier version of this design called the state an existing defect and gave it a `reconcile` job; that was wrong, and the rule and its test were removed after the build (corrected 2026-10-10 on the user's word)."
         },
         {
           "input": "A create or update file job (from the watcher or from the daemon's `index.file` request) for a file under an ignored directory.",
@@ -427,8 +427,7 @@
           "level": "integration",
           "purpose": "The clean-up runs when the daemon starts and at the end of a full index.",
           "subjects": [
-            "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready",
-            "a repository left indexing with a last-indexed time gets a clean-up job at daemon start"
+            "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready"
           ],
           "fixturesNeeded": [
             "a stand-in queue that records the jobs enqueued",
@@ -492,8 +491,7 @@
           "provingTests": [
             "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready",
             "running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was",
-            "a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued",
-            "a repository left indexing with a last-indexed time gets a clean-up job at daemon start"
+            "a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued"
           ]
         },
         {
@@ -524,7 +522,7 @@
         },
         {
           "order": 3,
-          "action": "Enqueue the job at daemon start for each ready repository and for one left `indexing` with a last-indexed time, and run the removals in a full index before its cross-file resolver. Make a create or update file job skip a file that the repository's ignore list excludes.",
+          "action": "Enqueue the job at daemon start for each ready repository, and run the removals in a full index before its cross-file resolver. Make a create or update file job skip a file that the repository's ignore list excludes.",
           "rollbackable": true
         },
         {

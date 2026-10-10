@@ -4,9 +4,10 @@
     "epicHash": "2764c29d7ccb66a5",
     "storyId": "S001",
     "createdAt": "2026-10-10T15:41:06.406Z",
-    "updatedAt": "2026-10-10T16:30:39.608Z",
+    "updatedAt": "2026-10-10T16:38:39.311Z",
     "authoredBy": "controller",
-    "standalone": true
+    "standalone": true,
+    "approvedAt": "2026-10-10T16:38:39.527Z"
   },
   "body": {
     "tasks": [
@@ -41,93 +42,93 @@
           "file": ".insrc/artifacts/CR-2764c29d7ccb66a5-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-2764c29d7ccb66a5-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": "docs/daemon.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": "docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/CR.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": "docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/smoke-installed-daemon.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/queue-depth-for-repo.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": "src/daemon/queue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/entity-files-for-repo.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": "src/db/entities.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/reconcile.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T16:30:39.608Z"
+        "timestamp": "2026-10-10T16:38:39.311Z"
       }
     ],
-    "commit": "53a6fc92"
+    "commit": "ad23a568"
   }
 }

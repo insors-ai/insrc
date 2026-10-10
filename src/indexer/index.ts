@@ -314,10 +314,6 @@ export class IndexerService {
         // ignored directory, while the daemon was not watching are removed
         // by the clean-up pass -- queued, so start-up does not wait for it.
         this.queue.enqueue({ kind: 'reconcile', repoPath: repo.path });
-      } else if (repo.status === 'indexing' && repo.lastIndexed) {
-        // An index that is neither re-run (above) nor delta-indexed still
-        // gets its stale files removed.
-        this.queue.enqueue({ kind: 'reconcile', repoPath: repo.path });
       }
 
       // Watch project config dir if it exists

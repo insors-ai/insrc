@@ -645,16 +645,3 @@ test('a ready repository gets a clean-up job at daemon start, one that gets a fu
 	assert.deepEqual(svc.resolverRuns, []);
 	assert.equal(svc._armedSettleTimersForTest(), 0);
 });
-
-test('a repository left indexing with a last-indexed time gets a clean-up job at daemon start', async () => {
-	const queue = new RecordingQueue();
-	const svc = new ProbeService(db, queue, standInWatcher(), undefined, 600_000);
-
-	await svc.start([
-		registered(repoA, 'indexing', NOW),   // neither re-indexed nor delta-indexed today
-		registered(repoC, 'indexing'),        // interrupted before its first checkpoint: full index
-	]);
-
-	assert.deepEqual(queue.of(repoA), ['reconcile']);
-	assert.deepEqual(queue.of(repoC), ['full']);
-});

@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-10T15:41:06.406Z  ·  **Updated:** 2026-10-10T16:30:39.608Z
+**Standalone:** yes  ·  **Created:** 2026-10-10T15:41:06.406Z  ·  **Updated:** 2026-10-10T16:38:39.311Z
 
-**Commit:** 53a6fc92
+**Commit:** ad23a568
 
 ## Summary
 
@@ -22,16 +22,16 @@ The guide (docs/daemon.md, "The index is cleaned of files that are gone or ignor
 
 ## Changes
 
-- `.insrc/artifacts/CR-2764c29d7ccb66a5-S001.json` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `.insrc/artifacts/PLAN-2764c29d7ccb66a5-S001.json` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `docs/daemon.md` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/CR.md` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/smoke-installed-daemon.md` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `src/daemon/__tests__/queue-depth-for-repo.test.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `src/daemon/queue.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `src/db/__tests__/entity-files-for-repo.test.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `src/db/entities.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `src/db/relations.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `src/indexer/__tests__/reconcile.test.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `src/indexer/index.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
-- `src/shared/types.ts` — **insrc-build** (2026-10-10T16:30:39.608Z)
+- `.insrc/artifacts/CR-2764c29d7ccb66a5-S001.json` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `.insrc/artifacts/PLAN-2764c29d7ccb66a5-S001.json` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `docs/daemon.md` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/CR.md` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/smoke-installed-daemon.md` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `src/daemon/__tests__/queue-depth-for-repo.test.ts` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `src/daemon/queue.ts` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `src/db/__tests__/entity-files-for-repo.test.ts` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `src/db/entities.ts` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `src/db/relations.ts` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `src/indexer/__tests__/reconcile.test.ts` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `src/indexer/index.ts` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `src/shared/types.ts` — **insrc-build** (2026-10-10T16:38:39.311Z)

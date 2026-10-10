@@ -22,7 +22,7 @@ import { dirname, join } from 'node:path';
 import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
 import { closeLanceConn, setLanceConnPath } from '../../db/lance/conn.js';
 import { _resetEntityVecCache, searchEntityVecs } from '../../db/lance/entity-vec.js';
-import { addRepo } from '../../db/repos.js';
+import { addRepo, listRepos } from '../../db/repos.js';
 import {
 	upsertEntities,
 	getEntity,
@@ -35,7 +35,7 @@ import { outNeighbors, inNeighbors } from '../../db/graph/edges.js';
 import { getCachedExploration, putCachedExploration } from '../../db/exploration-cache.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import type { DbClient } from '../../db/client.js';
-import type { Entity, Relation } from '../../shared/types.js';
+import type { Entity, IndexJob, RegisteredRepo, Relation } from '../../shared/types.js';
 import type { Exploration, ExplorationOutput } from '../../analyze/explore/types.js';
 import { IndexQueue } from '../../daemon/queue.js';
 import type { Watcher } from '../watcher.js';
@@ -92,6 +92,20 @@ class ProbeService extends IndexerService {
 	protected override async resolveAfterReconcile(repoPath: string): Promise<void> {
 		this.resolverRuns.push(repoPath);
 		await super.resolveAfterReconcile(repoPath);
+	}
+}
+
+/** A queue that records what is enqueued (nothing drains it). */
+class RecordingQueue extends IndexQueue {
+	jobs: IndexJob[] = [];
+	override enqueue(job: IndexJob): void {
+		this.jobs.push(job);
+		super.enqueue(job);
+	}
+	of(repoPath: string): string[] {
+		return this.jobs
+			.filter(j => 'repoPath' in j && j.repoPath === repoPath)
+			.map(j => j.kind);
 	}
 }
 
@@ -466,4 +480,60 @@ test('a create or update file job for a file under an ignored directory indexes 
 	await upsertEntities(null, [leftover]);
 	await svc.processJob({ kind: 'file', filePath: ignored, event: 'delete' });
 	assert.equal(await exists(leftover), false);
+});
+
+// ---------------------------------------------------------------------------
+// When the clean-up runs
+// ---------------------------------------------------------------------------
+
+function registered(path: string, status: RegisteredRepo['status'], lastIndexed?: string): RegisteredRepo {
+	return { path, name: '', addedAt: NOW, status, ...(lastIndexed !== undefined ? { lastIndexed } : {}) };
+}
+
+test('a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready', async () => {
+	const realFile = join(repoA, 'src', 'real.ts');
+	onDisk(realFile, 'export function hello(): number { return 1; }\n');
+	const queue = new RecordingQueue();
+	const svc = new ProbeService(db, queue, standInWatcher(), undefined, 600_000);
+
+	// repoA is ready and unchanged since its last index; repoC was never indexed.
+	const future = new Date(Date.now() + 3_600_000).toISOString();
+	await svc.start([registered(repoA, 'ready', future), registered(repoC, 'pending')]);
+
+	assert.deepEqual(queue.of(repoA), ['reconcile'], 'no changed file, and still one clean-up job');
+	assert.deepEqual(queue.of(repoC), ['full'], 'the full index cleans up itself: no separate job');
+
+	// A full index of a repository that holds a stale stored file.
+	const stale = ent(repoA, join(repoA, 'src', 'gone.ts'), 'function', 'gone');
+	await upsertEntities(null, [stale]);
+	const statusAtCleanUp: string[] = [];
+	const real = svc.reconcileRepo.bind(svc);
+	svc.reconcileRepo = async (repoPath: string) => {
+		const row = (await listRepos(null)).find(r => r.path === repoPath);
+		statusAtCleanUp.push(row?.status ?? 'missing');
+		return real(repoPath);
+	};
+
+	await svc.processJob({ kind: 'full', repoPath: repoA });
+
+	assert.deepEqual(statusAtCleanUp, ['indexing'], 'the clean-up ran once, before the repository was marked ready');
+	assert.equal(await exists(stale), false);
+	assert.ok((await findEntitiesByFile(null, realFile)).some(e => e.name === 'hello'), 'the file on disk is indexed');
+	assert.equal((await listRepos(null)).find(r => r.path === repoA)?.status, 'ready');
+	// The full index's own resolver run covers the removals: none of the clean-up's, no timer.
+	assert.deepEqual(svc.resolverRuns, []);
+	assert.equal(svc._armedSettleTimersForTest(), 0);
+});
+
+test('a repository left indexing with a last-indexed time gets a clean-up job at daemon start', async () => {
+	const queue = new RecordingQueue();
+	const svc = new ProbeService(db, queue, standInWatcher(), undefined, 600_000);
+
+	await svc.start([
+		registered(repoA, 'indexing', NOW),   // neither re-indexed nor delta-indexed today
+		registered(repoC, 'indexing'),        // interrupted before its first checkpoint: full index
+	]);
+
+	assert.deepEqual(queue.of(repoA), ['reconcile']);
+	assert.deepEqual(queue.of(repoC), ['full']);
 });

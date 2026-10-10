@@ -301,6 +301,14 @@ export class IndexerService {
         } else {
           log.info({ repo: repo.path }, 'no changes since last index');
         }
+        // The delta only adds and updates. Files deleted, or put under an
+        // ignored directory, while the daemon was not watching are removed
+        // by the clean-up pass -- queued, so start-up does not wait for it.
+        this.queue.enqueue({ kind: 'reconcile', repoPath: repo.path });
+      } else if (repo.status === 'indexing' && repo.lastIndexed) {
+        // An index that is neither re-run (above) nor delta-indexed still
+        // gets its stale files removed.
+        this.queue.enqueue({ kind: 'reconcile', repoPath: repo.path });
       }
 
       // Watch project config dir if it exists
@@ -565,6 +573,13 @@ export class IndexerService {
 
       // Emit DEPENDS_ON edges from repo manifest
       await this.indexManifest(repoPath);
+
+      // Index clean-up: drop the stored files this pass did not see because
+      // they are gone from disk or excluded by the repo's ignore list. Runs
+      // before the cross-file resolver so that one resolver run covers the
+      // removals too; a failure propagates like an indexing failure.
+      const reconciled = await this.reconcileRepo(repoPath);
+      log.info({ repo: repoPath, ...reconciled }, 'index clean-up inside full index');
 
       // Cross-file resolver: now that every file in the repo has been
       // parsed once, walk the unresolved relations and try to link

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -56,3 +56,79 @@ Run at 2026-10-10T15:43:41.783Z on commit `c8667e0b`. Tests check: **passed**. 2
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/queue-depth-for-repo.test.ts` | 0 | 5 | 0.5 s |  |
 | `src/indexer/__tests__/reconcile.test.ts` | 0 | 1 | 0.8 s |  |
+
+## t3
+
+Run at 2026-10-10T15:48:18.037Z on commit `f9041216`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was | `src/indexer/__tests__/reconcile.test.ts` |
+
+**integration: a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept | `src/indexer/__tests__/reconcile.test.ts` |
+
+**integration: a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept | `src/indexer/__tests__/reconcile.test.ts` |
+
+**integration: running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was | `src/indexer/__tests__/reconcile.test.ts` |
+
+**integration: a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them | `src/indexer/__tests__/reconcile.test.ts` |
+
+**integration: a file whose parent directory became a file is removed as absent**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a file whose parent directory became a file is removed as absent | `src/indexer/__tests__/reconcile.test.ts` |
+
+**integration: the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it | `src/indexer/__tests__/reconcile.test.ts` |
+
+**integration: the vector rows of a removed file are gone after the clean-up and those of a kept file remain**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the vector rows of a removed file are gone after the clean-up and those of a kept file remain | `src/indexer/__tests__/reconcile.test.ts` |
+
+**integration: a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed | `src/indexer/__tests__/reconcile.test.ts` |
+
+**integration: a kept file's link into a removed entity is removed with it, and the kept file's other links and entities stay**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a kept file's link into a removed entity is removed with it, and the kept file's other links and entities stay | `src/indexer/__tests__/reconcile.test.ts` |
+
+**integration: the clean-up method called directly removes the stale files, runs no resolver and removes no cached result**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the clean-up method called directly removes the stale files, runs no resolver and removes no cached result | `src/indexer/__tests__/reconcile.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/reconcile.test.ts` | 0 | 12 | 2 s |  |

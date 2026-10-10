@@ -4,7 +4,7 @@
     "epicHash": "0f17539c98aa78ee",
     "storyId": "S001",
     "createdAt": "2026-10-10T07:36:48.435Z",
-    "updatedAt": "2026-10-10T07:45:20.509Z",
+    "updatedAt": "2026-10-10T07:49:03.725Z",
     "standalone": true
   },
   "body": {
@@ -471,6 +471,181 @@
               },
               {
                 "title": "an override that yields no constraint fails naming the override and does not fall back to the topic",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "106fc6b0",
+        "ranAt": "2026-10-10T07:49:03.725Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a plan whose adherence task has no topic, no inline constraints and no stored-document ids fails validation with the task, the three ways to give constraints and the option to leave the task out (code, data and infra), and the INV-5 fix hint sent with the message gives the same remedies, including removing the task and renumbering the ids that follow",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/templates.test.ts",
+                "title": "a plan whose adherence task has no topic, no inline constraints and no stored-document ids fails validation with the task, the three ways to give constraints and the option to leave the task out (code, data and infra), and the INV-5 fix hint sent with the message gives the same remedies, including removing the task and renumbering the ids that follow",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an adherence task with a topic, with an inline list, or with stored-document ids validates; one whose only source is an empty topic or an empty list does not, a non-empty override with an empty list beside it still validates, one with the removed constraintsSource does not, and for constraintsSource the message says to give constraintTopic instead, also in a generic plan that holds the docs task and also beside a usable override",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/templates.test.ts",
+                "title": "an adherence task with a topic, with an inline list, or with stored-document ids validates; one whose only source is an empty topic or an empty list does not, a non-empty override with an empty list beside it still validates, one with the removed constraintsSource does not, and for constraintsSource the message says to give constraintTopic instead, also in a generic plan that holds the docs task and also beside a usable override",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the catalog shown to the planner for each adherence template names constraintTopic and does not name constraintsSource or docs.constraint.enumerate",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/templates.test.ts",
+                "title": "the catalog shown to the planner for each adherence template names constraintTopic and does not name constraintsSource or docs.constraint.enumerate",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/planner/__tests__/templates.test.ts",
+                "title": "every builtin template has a syntactically valid inputSchema (Ajv compiles)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/templates.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 713,
+            "titles": [
+              {
+                "title": "registerTemplate accepts a well-formed template",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate rejects id collision",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate rejects missing inputSchema",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate rejects empty produces",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate rejects missing description",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate: family=aggregate without isAggregator flag is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate: isAggregator without family=aggregate is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "registerTemplate: family=aggregate AND isAggregator:true is accepted",
+                "result": "pass"
+              },
+              {
+                "title": "registerBuiltinTemplates registers exactly 27 builtins (7 code + 5 data + 8 infra + 1 generic + 6 docs) without collision",
+                "result": "pass"
+              },
+              {
+                "title": "registerBuiltinTemplates is idempotent (latch prevents double-register)",
+                "result": "pass"
+              },
+              {
+                "title": "every per-target subset has its own aggregator",
+                "result": "pass"
+              },
+              {
+                "title": "getTemplatesForTarget(code) returns 7 code templates (6 leaf + 1 planner)",
+                "result": "pass"
+              },
+              {
+                "title": "getTemplatesForTarget(data) returns 5 data templates",
+                "result": "pass"
+              },
+              {
+                "title": "getTemplatesForTarget(infra) returns 8 infra templates",
+                "result": "pass"
+              },
+              {
+                "title": "getTemplatesForTarget(docs) returns 6 docs templates (5 leaf + 1 planner)",
+                "result": "pass"
+              },
+              {
+                "title": "getTemplatesForTarget(generic) returns the FULL catalog (INV-4 permits cross-target)",
+                "result": "pass"
+              },
+              {
+                "title": "every builtin template has a syntactically valid inputSchema (Ajv compiles)",
+                "result": "pass"
+              },
+              {
+                "title": "every builtin template produces non-empty string entries",
+                "result": "pass"
+              },
+              {
+                "title": "every builtin template id namespaces its target as the leading prefix",
+                "result": "pass"
+              },
+              {
+                "title": "every builtin template description is at least one sentence (>= 20 chars)",
+                "result": "pass"
+              },
+              {
+                "title": "aggregator templates produce exactly ['report']",
+                "result": "pass"
+              },
+              {
+                "title": "every builtin template's scopeRef lists exactly the kinds of scope its family accepts, and the catalog shows the planner those kinds only",
+                "result": "pass"
+              },
+              {
+                "title": "a plan whose task carries a kind of scope its family does not accept fails validation with the task, the kind and the accepted kinds",
+                "result": "pass"
+              },
+              {
+                "title": "the scope of a child plan is held to the kinds its own kind of source accepts",
+                "result": "pass"
+              },
+              {
+                "title": "a scopeRef that is not an object, or whose kind is not a string, still fails validation by the schema",
+                "result": "pass"
+              },
+              {
+                "title": "a plan whose adherence task has no topic, no inline constraints and no stored-document ids fails validation with the task, the three ways to give constraints and the option to leave the task out (code, data and infra), and the INV-5 fix hint sent with the message gives the same remedies, including removing the task and renumbering the ids that follow",
+                "result": "pass"
+              },
+              {
+                "title": "an adherence task with a topic, with an inline list, or with stored-document ids validates; one whose only source is an empty topic or an empty list does not, a non-empty override with an empty list beside it still validates, one with the removed constraintsSource does not, and for constraintsSource the message says to give constraintTopic instead, also in a generic plan that holds the docs task and also beside a usable override",
+                "result": "pass"
+              },
+              {
+                "title": "the catalog shown to the planner for each adherence template names constraintTopic and does not name constraintsSource or docs.constraint.enumerate",
                 "result": "pass"
               }
             ],

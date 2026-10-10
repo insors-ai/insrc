@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -116,3 +116,32 @@ Run at 2026-10-10T07:45:20.509Z on commit `af4c2bbc`. Tests check: **passed**. 2
 | `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 7 | 0.3 s |  |
 | `src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts` | 0 | 6 | 1.1 s |  |
 | `src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts` | 0 | 8 | 1.3 s |  |
+
+## t3
+
+Run at 2026-10-10T07:49:03.725Z on commit `106fc6b0`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: a plan whose adherence task has no topic, no inline constraints and no stored-document ids fails validation with the task, the three ways to give constraints and the option to leave the task out (code, data and infra), and the INV-5 fix hint sent with the message gives the same remedies, including removing the task and renumbering the ids that follow**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a plan whose adherence task has no topic, no inline constraints and no stored-document ids fails validation with the task, the three ways to give constraints and the option to leave the task out (code, data and infra), and the INV-5 fix hint sent with the message gives the same remedies, including removing the task and renumbering the ids that follow | `src/analyze/planner/__tests__/templates.test.ts` |
+
+**unit: an adherence task with a topic, with an inline list, or with stored-document ids validates; one whose only source is an empty topic or an empty list does not, a non-empty override with an empty list beside it still validates, one with the removed constraintsSource does not, and for constraintsSource the message says to give constraintTopic instead, also in a generic plan that holds the docs task and also beside a usable override**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an adherence task with a topic, with an inline list, or with stored-document ids validates; one whose only source is an empty topic or an empty list does not, a non-empty override with an empty list beside it still validates, one with the removed constraintsSource does not, and for constraintsSource the message says to give constraintTopic instead, also in a generic plan that holds the docs task and also beside a usable override | `src/analyze/planner/__tests__/templates.test.ts` |
+
+**unit: the catalog shown to the planner for each adherence template names constraintTopic and does not name constraintsSource or docs.constraint.enumerate**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the catalog shown to the planner for each adherence template names constraintTopic and does not name constraintsSource or docs.constraint.enumerate | `src/analyze/planner/__tests__/templates.test.ts` |
+| pass | every builtin template has a syntactically valid inputSchema (Ajv compiles) | `src/analyze/planner/__tests__/templates.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/planner/__tests__/templates.test.ts` | 0 | 28 | 0.7 s |  |

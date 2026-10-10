@@ -4,7 +4,7 @@
     "epicHash": "0f17539c98aa78ee",
     "storyId": "S001",
     "createdAt": "2026-10-10T07:36:48.435Z",
-    "updatedAt": "2026-10-10T07:45:20.509Z",
+    "updatedAt": "2026-10-10T07:49:03.725Z",
     "authoredBy": "controller",
     "standalone": true
   },
@@ -17,9 +17,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "Task 2: the shared adherence check takes its constraints from a non-empty inline list, else non-empty stored-document ids, else a topic it enumerates from the documents of the repository it reads (once per run and topic, through the record of task 1). It no longer reads constraintsSource or the upstream outputs; an empty inline list counts as not given; each way of having nothing to judge against has its own reason; the enumeration's limits, partly read and skipped items are in the check's completeness record; the adherence-report of all three families carries the constraints judged against and their source. Eight new integration tests (adherence-topic-route.test.ts), the existing constraint tests rewritten for the new result shape, and the two source-scan tests updated. Nine mutations each fail a test. The catch-clause count test also needed rows for the module added in task 1. The first validate turn failed on a test title the builder mapped from memory that does not exist; the mapping was corrected and no code changed.",
+    "summary": "Task 3: the three adherence templates require a topic or an override and no longer declare constraintsSource (revision r2; the parameter shapes and descriptions are shared from shared-schemas.ts); plan validation fails, in the planner's words, a task with no source of constraints that is not empty and a task that still carries constraintsSource, including in a generic plan that holds the docs task; the INV-5 fix hint gains the remedy. Three tests against the real catalog in templates.test.ts; six mutations each fail the intended test. (A first mutation run left two files mutated because of mis-named backups; they were restored from the backups, verified byte-identical, and the run was repeated.)",
     "testRecord": {
       "md": "docs/standalone/bug-analyze-planner-plans-adherence-check-E202610090f17539c/S001/TESTS.md"
     },
@@ -29,86 +33,135 @@
           "file": ".insrc/artifacts/PLAN-0f17539c98aa78ee-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/__tests__/templates.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T07:49:03.725Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/invariant-fix-hints.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T07:49:03.725Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/code/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T07:49:03.725Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/data/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T07:49:03.725Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/infra/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T07:49:03.725Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/shared-schemas.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T07:49:03.725Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T07:49:03.725Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/code/adherence-check.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/data/adherence-check.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/adherence-check.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-constraints.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/adherence-topic-constraints.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/adherence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
       },
       {
         "target": {
           "file": "src/shared/paths.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T07:45:20.509Z"
+        "timestamp": "2026-10-10T07:49:03.725Z"
       }
     ],
-    "commit": "af4c2bbc"
+    "commit": "106fc6b0"
   }
 }

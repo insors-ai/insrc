@@ -27,7 +27,7 @@ import type {
   BoardDownMessage, BoardScreen, CrumbView, Density, Envelope, ItemDetailsViewModel, ItemTab, ListView, ScreenBody, ScreenModel,
   StatePanelView, StatusView,
 } from './board-protocol.js';
-import { msBetween, readableTime, type DisplayLabels } from './labels.js';
+import { labelOf, msBetween, readableTime, type DisplayLabels } from './labels.js';
 
 export interface AppliedSnapshot {
   readonly snapshot: DeliverySnapshot;
@@ -402,6 +402,22 @@ function screenBody(
       return { title: titleOf(item), body: { kind: 'story', tab: screen.tab, details, epic: epic === null ? null : epicRowOf(snapshot, epic, labels) } };
     }
   }
+}
+
+/**
+ * The announcement for a screen change (s5): 'Showing <view>', 'Epic: <title>' or 'Opened: <title> · <stage>' for a
+ * new screen, and 'Back to <crumb>' for a return, naming the screen as its breadcrumb does. Null when the screen's
+ * epic or item is not in the snapshot.
+ */
+export function screenAnnouncement(state: BoardState, snapshot: DeliverySnapshot, labels: DisplayLabels, how: 'opened' | 'back'): string | null {
+  const screen = currentEntry(state.selection).screen;
+  const byId = indexItems(snapshot);
+  if (screen.kind === 'list') return how === 'back' ? `Back to ${labels.views[screen.view]}` : `Showing ${labels.views[screen.view]}`;
+  const item = byId.get(screen.kind === 'epic' ? screen.epicItemId : screen.itemId);
+  if (item === undefined) return null;
+  if (how === 'back') return `Back to ${screenLabel(screen, byId, labels)}`;
+  if (screen.kind === 'epic') return `Epic: ${titleOf(item)}`;
+  return `Opened: ${titleOf(item)}${item.stage === null ? '' : ` \u00b7 ${labelOf(labels.stage, item.stage.stage)}`}`;
 }
 
 /** The screen message for the trail's current entry, or null when it cannot be built from this snapshot. */

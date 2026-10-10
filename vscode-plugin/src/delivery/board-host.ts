@@ -35,17 +35,17 @@
 
 import { attr, type ChatPanelChannel, type ChatPanelLogger } from '../chat/chat-panel.js';
 import type { Envelope } from '../chat/protocol.js';
-import { isPlaceable, placeableCount, titleOf, unknownStages } from './board-model.js';
+import { isPlaceable, placeableCount, unknownStages } from './board-model.js';
 import { parseBoardUpMessage, type BoardUpMessage } from './board-protocol.js';
 import {
-  boardDownMessages, currentEntry, currentItemId, initialBoardState, reduceBoardState, shortId, shownSnapshot, statusView,
+  boardDownMessages, currentEntry, currentItemId, initialBoardState, reduceBoardState, screenAnnouncement, shownSnapshot, statusView,
   type BoardEvent, type BoardState, type NavIntent,
 } from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
 import { createDetailsMemory, type DetailsMemory } from './details-memory.js';
 import { errorText } from './guards.js';
-import { DISPLAY_LABELS, labelOf, msBetween } from './labels.js';
+import { DISPLAY_LABELS, msBetween } from './labels.js';
 
 export const BOARD_VIEW_TYPE = 'insrc.deliveryBoard';
 export const BOARD_TITLE = 'Delivery board';
@@ -477,8 +477,10 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     apply(reduceBoardState(state, event));
   }
 
-  function elapsedMs(since: string): number {
-    return msBetween(since, deps.now()) ?? 0;
+  /** How long since a refresh started, for the log: 'N ms', or says so when a clock reading cannot be parsed. */
+  function elapsed(since: string): string {
+    const ms = msBetween(since, deps.now());
+    return ms === null ? 'an unmeasurable time (unreadable clock)' : `${ms} ms`;
   }
 
   async function refresh(): Promise<void> {
@@ -504,11 +506,11 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     if (seq !== state.latestSeq) {
       const n = result.ok ? result.value.items.length : 0;
       const answer = result.ok ? `${n} item${n === 1 ? '' : 's'}` : result.failure.kind;
-      log.warn(`delivery board: dropped the answer to refresh ${seq} (${answer}); refresh ${state.latestSeq} is newer (${elapsedMs(started)} ms)`);
+      log.warn(`delivery board: dropped the answer to refresh ${seq} (${answer}); refresh ${state.latestSeq} is newer (${elapsed(started)})`);
       return;
     }
     if (!result.ok) {
-      log.error(`delivery board: refresh ${seq} ${result.failure.kind} after ${elapsedMs(started)} ms: ${result.failure.message}`);
+      log.error(`delivery board: refresh ${seq} ${result.failure.kind} after ${elapsed(started)}: ${result.failure.message}`);
     }
     let applied = false;
     try {
@@ -583,18 +585,6 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     return shownSnapshot(state.status)?.snapshot.items.find(i => i.id === id);
   }
 
-  /** The screen the reader is on, in words, for the announcement (s5). */
-  function screenWords(s: BoardState, opened: boolean): string | null {
-    const screen = currentEntry(s.selection).screen;
-    if (screen.kind === 'list') return opened ? `Showing ${DISPLAY_LABELS.views[screen.view]}` : DISPLAY_LABELS.views[screen.view];
-    const item = itemOnBoard(screen.kind === 'epic' ? screen.epicItemId : screen.itemId);
-    if (item === undefined) return null;
-    if (screen.kind === 'epic') return opened ? `Epic: ${titleOf(item)}` : titleOf(item);
-    const stage = item.stage === null ? '' : ` \u00b7 ${labelOf(DISPLAY_LABELS.stage, item.stage.stage)}`;
-    // A return names the screen as its breadcrumb does: the story's number or the issue's short hash.
-    return opened ? `Opened: ${titleOf(item)}${stage}` : shortId(item.id);
-  }
-
   /**
    * Navigate, then announce once when the screen changed: 'Opened: …', 'Epic: …' or 'Showing …' for a new screen,
    * 'Back to …' for a return. Posted after the state is kept, so a failure here is only logged by the message handler.
@@ -603,9 +593,10 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const before = currentEntry(state.selection).id;
     dispatch({ type: 'navigate', intent });
     if (currentEntry(state.selection).id === before) return;
-    const back = intent.type === 'back' || intent.type === 'go-to-crumb';
-    const words = screenWords(state, !back);
-    if (words !== null) announce(back ? `Back to ${words}` : words);
+    const shown = shownSnapshot(state.status);
+    const text = shown === null ? null
+      : screenAnnouncement(state, shown.snapshot, DISPLAY_LABELS, intent.type === 'back' || intent.type === 'go-to-crumb' ? 'back' : 'opened');
+    if (text !== null) announce(text);
   }
 
   /** open-epic must name an epic on the board; open-item a story or issue on it, and an epic id opens the epic. */

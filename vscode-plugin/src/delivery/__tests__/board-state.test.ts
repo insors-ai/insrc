@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { boardDownMessages, currentEntry, initialBoardState, reduceBoardState, statusView, TRAIL_LIMIT, type BoardEvent, type BoardState, type NavIntent } from '../board-state.js';
+import { boardDownMessages, currentEntry, initialBoardState, reduceBoardState, screenAnnouncement, statusView, TRAIL_LIMIT, type BoardEvent, type BoardState, type NavIntent } from '../board-state.js';
 import type { ScreenModel, StagesBody, StatusView } from '../board-protocol.js';
 import type { DeliveryItem, DeliverySnapshot } from '../delivery-contract.js';
 import type { DeliveryFailureKind } from '../delivery-client.js';
@@ -311,4 +311,19 @@ test('statusView places empty and snapshot-less failures in the body and stale f
   assert.equal(placement(partial), 'banner', 'partial evidence');
   assert.equal(selectionPanel('no-matches', DISPLAY_LABELS).placement, 'body');
   assert.equal(selectionPanel('no-issues', DISPLAY_LABELS).placement, 'body');
+});
+
+test('screenAnnouncement names a new screen, and a return as its breadcrumb does', () => {
+  const home = loadedBoard();
+  const snap = trailSnapshot();
+  const say = (s: BoardState, how: 'opened' | 'back') => screenAnnouncement(s, snap, DISPLAY_LABELS, how);
+  assert.equal(say(home, 'opened'), 'Showing All work');
+  const epic = run([nav({ type: 'set-view', view: 'epics' }), nav({ type: 'open-epic', epicItemId: EPIC })], home);
+  assert.equal(say(epic, 'opened'), 'Epic: Board epic');
+  const story = run([nav({ type: 'open-item', itemId: STORY })], epic);
+  assert.equal(say(story, 'opened'), 'Opened: Columns · Complete');
+  assert.equal(say(story, 'back'), 'Back to S001', 'a return uses the crumb label');
+  assert.equal(say(epic, 'back'), 'Back to Board epic');
+  assert.equal(say(run([nav({ type: 'back' })], epic), 'back'), 'Back to Epics');
+  assert.equal(screenAnnouncement(story, snapshot([]), DISPLAY_LABELS, 'opened'), null, 'nothing to name when the item is gone');
 });

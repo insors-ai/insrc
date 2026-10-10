@@ -1364,3 +1364,18 @@ test('BOARD_STYLE keeps a 320px minimum, card and column minimums, the records t
   assert.match(BOARD_STYLE, /:focus-visible\{outline:2px solid var\(--vscode-focusBorder\)/);
   assert.match(BOARD_STYLE, /\.stage>summary\{cursor:pointer;/, 'a closed section\'s summary stays visible and clickable');
 });
+
+test('a refresh timing that cannot be measured says so in the log instead of reading as instant', async () => {
+  const { client, calls } = controlledClient();
+  const logs = { warn: [] as string[], error: [] as string[] };
+  const host = createDeliveryBoardHost({
+    createPanel: () => fakeChannel(), client,
+    logger: { warn: m => logs.warn.push(m), error: m => logs.error.push(m) },
+    now: () => 'not a time', genNonce: () => 'N0NCE',
+  });
+  host.open();
+  calls[0]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'slow' } });
+  await flush();
+  assert.ok(logs.error.some(e => /refresh 1 timed-out after an unmeasurable time \(unreadable clock\): slow/.test(e)), logs.error.join('\n'));
+  host.dispose();
+});

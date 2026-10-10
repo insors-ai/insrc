@@ -22,3 +22,5 @@ exit 0
 ℹ tests 966
 ℹ todo 0
 ℹ view: 0.5 ms (target 150 ms)
+
+# The one plugin failure is the known manifest-catalog baseline; the one root failure (sqlite-driver temporalTrend) also fails without this story's changes (checked with the changes stashed).

@@ -6,6 +6,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import { runWithRoutingContext } from '../../context/shaper-provider.js';
@@ -16,6 +20,7 @@ import { dataAggregateReportRuntime } from '../data/aggregate-report.js';
 import { docsAggregateReportRuntime } from '../docs/aggregate-report.js';
 import { genericAggregateReportRuntime } from '../generic/aggregate-report.js';
 import { infraAggregateReportRuntime } from '../infra/aggregate-report.js';
+import { _renderUpstreamSectionForTest } from '../shared/aggregator.js';
 
 const RUNTIMES: readonly TemplateRuntime[] = [
 	codeAggregateReportRuntime, dataAggregateReportRuntime, docsAggregateReportRuntime,
@@ -106,5 +111,35 @@ test('each of the five aggregate-report runtimes hands every output of a name to
 		// The count is of outputs, not of names.
 		const report = result.outputs.get('report') as { metadata: { tasksAnalyzed: number } };
 		assert.equal(report.metadata.tasksAnalyzed, 4, id);
+	}
+});
+
+test('each of the five aggregate prompts describes the block as it is rendered and no longer says one section per task id', () => {
+	const prompts = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'prompts', 'analyze');
+	// The headings as the code renders them, with the placeholders the prompts use in place of the values.
+	const one = _renderUpstreamSectionForTest(new Map([['<output name>', [{ taskId: '<taskId>', template: '<template>', params: {}, value: 1 }]]]));
+	const several = _renderUpstreamSectionForTest(new Map([['<output name>', [
+		{ taskId: '<taskId>', template: '<template>', params: {}, value: 1 },
+		{ taskId: '<taskId>', template: '<template>', params: {}, value: 2 },
+	]]]));
+	const [title, nameHeading] = one.split('\n\n')[0] === 'Upstream task outputs:' ? ['Upstream task outputs:', one.split('\n')[2]!] : ['', ''];
+	const [, countHeading, sub] = several.split('\n\n');
+	const subHeading = sub!.split('\n')[0]!;
+	const paramsLine = sub!.split('\n')[1]!;
+	assert.deepEqual([title, nameHeading, countHeading, subHeading, paramsLine], [
+		'Upstream task outputs:', '### <output name>', '### <output name> (2 outputs, one per task)',
+		'#### <output name> from task <taskId> (<template>)', 'params: {}',
+	]);
+
+	for (const family of ['code', 'data', 'docs', 'generic', 'infra']) {
+		// Whitespace is folded: four of the five files wrap their lines.
+		const text = readFileSync(join(prompts, `${family}.aggregate.system.md`), 'utf8').replace(/\s+/g, ' ');
+		assert.ok(!text.includes('### <taskId>'), `${family}: no longer one section per task id`);
+		assert.ok(!text.includes('section per prior task'), family);
+		assert.ok(text.includes(`A block titled \`${title}\` with one \`${nameHeading}\` section per output name.`), `${family}: the name section`);
+		assert.ok(text.includes(`\`${countHeading.replace('2', '<n>')}\``), `${family}: the heading of a name several tasks produced`);
+		assert.ok(text.includes(`one \`${subHeading}\` sub-section per task`), `${family}: the per-task sub-section`);
+		assert.ok(text.includes(`a \`${paramsLine.slice(0, 'params:'.length)}\` line`), `${family}: the params line`);
+		assert.ok(text.includes('The report must cover every sub-section'), family);
 	}
 });

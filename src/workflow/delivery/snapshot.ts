@@ -19,6 +19,7 @@
 
 import { describeItem, feedbackOf } from './describe.js';
 import { makeNotice, sortNotices } from './notice.js';
+import { byText } from './read.js';
 import type {
 	ArtifactRecord,
 	ArtifactRecordSet,
@@ -49,8 +50,6 @@ export const ATTENTION_RULE = 'An item needs attention when it has a gate attent
 	+ 'a blocking review, a failed validation or a validation conflict; a pending record stops counting once a later gate on '
 	+ 'its item is approved) or a notice whose code is marked for attention.';
 
-/** Code-unit order, independent of locale. */
-const byText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
 /** The build-without-plan notices for stories whose route requires a plan. */
 function completenessNotices(graph: WorkItemGraph, byId: ReadonlyMap<string, ArtifactRecord>, stages: StagePassResult): DeliveryNotice[] {

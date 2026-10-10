@@ -29,6 +29,9 @@ export function asString(value: unknown): string | null {
 	return typeof value === 'string' ? value : null;
 }
 
+/** Code-unit order, independent of locale: the one string order every sorted list in the snapshot uses. */
+export const byText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
 /** The ordinal of an `s<n>` / `S<nnn>` story id, or null when it does not parse. */
 export function storyOrdinalOf(storyId: string): number | null {
 	try {

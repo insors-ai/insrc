@@ -265,7 +265,8 @@ test('feedback from an item\'s own design records is listed read-only, in order,
 	const build = buildRecord(DESC, 's1', [{ id: 't1', passed: true }], {});
 	const buildWithFeedback = { ...build, body: { ...(build.body as object), feedback: [entry('b1', '2026-10-08T12:00:00.000Z')] } };
 	const issue = issueRecord(FIX, { slug: 'nothing' }, {}, { feedback: [entry('i1', '2026-10-08T12:00:00.000Z')] });
-	const odd = hldRecord(SOLO, {}, { feedback: { id: 'not-a-list' } });
+	// Not a list, though it looks like one well-formed entry: left out whole.
+	const odd = hldRecord(SOLO, {}, { feedback: entry('lone', '2026-10-08T12:00:00.000Z') });
 	const s = snapshotOf([def, hld, lld, plan, buildWithFeedback, issue, defRecord(SOLO, ['s1']), odd]);
 
 	const epic = byKindAndSource(s, 'epic', 'dddddddd');

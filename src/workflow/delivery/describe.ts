@@ -15,7 +15,7 @@
  */
 
 import { makeNotice } from './notice.js';
-import { asObject, storyOrdinalOf } from './read.js';
+import { asObject, byText, storyOrdinalOf } from './read.js';
 import type {
 	ArtifactRecord, DeliveryArtifactKind, DeliveryFeedback, DeliveryItemDescription, DeliveryItemKind, DeliveryNotice, DeliveryRecorded, DeliverySize,
 	WorkItemGraph, WorkItemNode,
@@ -101,9 +101,6 @@ const FEEDBACK_KINDS: Readonly<Record<DeliveryItemKind, ReadonlySet<DeliveryArti
 };
 const FEEDBACK_ENTRY_KINDS: ReadonlySet<string> = new Set(['feedback', 'suggestion', 'comment']);
 
-/** Code-unit order, independent of locale. */
-const byText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
-
 /** One feedback entry, or null when it lacks a string id, author, timestamp, comment or target file. */
 function feedbackEntry(value: unknown, artifactId: string): DeliveryFeedback | null {
 	const e = asObject(value);
@@ -139,18 +136,21 @@ export function feedbackOf(node: WorkItemNode, byId: ReadonlyMap<string, Artifac
 		if (record === undefined || !kinds.has(record.kind)) continue;
 		const raw = asObject(record.body)?.['feedback'];
 		if (raw === undefined) continue;
-		const entries: readonly unknown[] = Array.isArray(raw) ? raw : [raw];
+		// A feedback record is a list; anything else is left out whole, even if it looks like one entry.
+		if (!Array.isArray(raw)) {
+			notices.push(makeNotice('incomplete-evidence', `${artifactId} has feedback that is not a list, so none of it could be read`,
+				{ itemIds: [node.id], artifactIds: [artifactId] }));
+			continue;
+		}
 		let dropped = 0;
-		for (const value of entries) {
+		for (const value of raw) {
 			const entry = feedbackEntry(value, artifactId);
 			if (entry === null) dropped++;
 			else feedback.push(entry);
 		}
 		if (dropped > 0) {
 			notices.push(makeNotice('incomplete-evidence',
-				Array.isArray(raw)
-					? `${artifactId} has ${dropped} feedback ${dropped === 1 ? 'entry' : 'entries'} that could not be read; the readable feedback is shown`
-					: `${artifactId} has feedback that is not a list, so none of it could be read`,
+				`${artifactId} has ${dropped} feedback ${dropped === 1 ? 'entry' : 'entries'} that could not be read; the readable feedback is shown`,
 				{ itemIds: [node.id], artifactIds: [artifactId] }));
 		}
 	}

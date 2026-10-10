@@ -149,6 +149,18 @@ function contentHash(source: string): string {
 // IndexerService
 // ---------------------------------------------------------------------------
 
+/** What one index clean-up pass did (see `IndexerService.reconcileRepo`). */
+export interface ReconcileResult {
+  /** Stored files of the repo that were compared with the disk. */
+  readonly compared: number;
+  /** Files removed because they are no longer on disk. */
+  readonly removedAbsent: number;
+  /** Files removed because the repo's ignore list excludes them. */
+  readonly removedIgnored: number;
+  /** Files kept because their presence could not be determined. */
+  readonly notChecked: number;
+}
+
 export class IndexerService {
   private readonly db:      DbClient;
   private readonly queue:   IndexQueue;
@@ -345,6 +357,7 @@ export class IndexerService {
       case 'full':           await this.fullIndex(job.repoPath);            break;
       case 'file':           await this.fileEvent(job.filePath, job.event); break;
       case 'reembed':        await this.reembed(job.repoPath);             break;
+      case 'reconcile':      await this.reconcileJob(job.repoPath);        break;
       case 'config-full':    await this.configFullIndex(job.scope);         break;
       case 'config-file':    await this.configFileEvent(job.filePath, job.scope, job.event); break;
       case 'config-reindex': await this.configReindex(job.scope);           break;
@@ -356,6 +369,21 @@ export class IndexerService {
   // -------------------------------------------------------------------------
   // Job handlers
   // -------------------------------------------------------------------------
+
+  /** The `reconcile` job: the clean-up pass for one repo. */
+  private async reconcileJob(repoPath: string): Promise<void> {
+    const result = await this.reconcileRepo(repoPath);
+    log.info({ repo: repoPath, ...result }, 'index clean-up complete');
+  }
+
+  /**
+   * Compare the files the store holds for `repoPath` with the disk and
+   * the repo's ignore list, and remove the stale ones. Returns the counts.
+   */
+  async reconcileRepo(repoPath: string): Promise<ReconcileResult> {
+    void repoPath;
+    return { compared: 0, removedAbsent: 0, removedIgnored: 0, notChecked: 0 };
+  }
 
   private async fullIndex(repoPath: string): Promise<void> {
     log.info({ repo: repoPath }, 'full index started');

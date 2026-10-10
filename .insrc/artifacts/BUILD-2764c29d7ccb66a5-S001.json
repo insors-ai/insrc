@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2764c29d7ccb66a5",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T15:41:06.406Z",
+    "updatedAt": "2026-10-10T15:41:06.406Z",
+    "authoredBy": "controller",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Added listEntityFilesForRepo (src/db/entities.ts) and deleteUnresolvedForRepoFile (src/db/relations.ts), both limited to one repository, with three tests over a temporary store. Five mutations of the two functions were each caught by a test.",
+    "testRecord": {
+      "md": "docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-2764c29d7ccb66a5-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T15:41:06.406Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/entity-files-for-repo.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T15:41:06.406Z"
+      },
+      {
+        "target": {
+          "file": "src/db/entities.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T15:41:06.406Z"
+      },
+      {
+        "target": {
+          "file": "src/db/relations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-10T15:41:06.406Z"
+      }
+    ],
+    "commit": "0d26867b"
+  }
+}

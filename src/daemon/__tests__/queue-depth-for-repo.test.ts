@@ -55,3 +55,22 @@ test('depthForRepo returns 0 for a repo with no queued jobs; get depth() is the 
 	assert.equal(q.depthForRepo('/work/never'), 0);
 	assert.equal(q.depth, 2, 'the global depth counts every job regardless of repo');
 });
+
+test('a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued', () => {
+	const q = new IndexQueue();
+	q.enqueue({ kind: 'reconcile', repoPath: A });
+
+	assert.equal(q.depthForRepo(A), 1);
+	assert.equal(q.depthForRepo(B), 0, 'not counted for another repository');
+
+	q.enqueue({ kind: 'reconcile', repoPath: A });
+	assert.equal(q.depth, 1, 'the second clean-up job for A is not queued');
+
+	q.enqueue({ kind: 'reconcile', repoPath: B });
+	assert.equal(q.depth, 2, 'a clean-up job for another repository is queued');
+	assert.equal(q.depthForRepo(B), 1);
+
+	// A full index for the same repository is a different job and is still queued.
+	q.enqueue({ kind: 'full', repoPath: A });
+	assert.equal(q.depthForRepo(A), 2);
+});

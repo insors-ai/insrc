@@ -25,7 +25,7 @@ export class IndexQueue {
   /**
    * Pending jobs attributable to one repo (Story repo-stats / S001). Counts a
    * queued job when it names `repoPath` directly (`full` / `reembed` /
-   * `doc-summarise-repo`) or its `filePath` lives under `repoPath` (`file` /
+   * `reconcile` / `doc-summarise-repo`) or its `filePath` lives under `repoPath` (`file` /
    * `config-file`). Repo-agnostic jobs (`config-full` / `config-reindex` /
    * `doc-summarise-entity`) never count. Read-only over the in-memory queue;
    * the private `queue` array is not exposed.
@@ -37,6 +37,7 @@ export class IndexQueue {
       switch (job.kind) {
         case 'full':
         case 'reembed':
+        case 'reconcile':
         case 'doc-summarise-repo':
           if (job.repoPath === repoPath) n++;
           break;
@@ -59,6 +60,15 @@ export class IndexQueue {
     if (job.kind === 'full') {
       const already = this.queue.some(
         j => j.kind === 'full' && j.repoPath === job.repoPath,
+      );
+      if (already) return;
+    }
+
+    // Deduplicate reconcile jobs for the same repo -- the queued pass
+    // compares against the disk when it runs, so a second one adds nothing.
+    if (job.kind === 'reconcile') {
+      const already = this.queue.some(
+        j => j.kind === 'reconcile' && j.repoPath === job.repoPath,
       );
       if (already) return;
     }

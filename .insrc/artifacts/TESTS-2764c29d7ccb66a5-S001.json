@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "2764c29d7ccb66a5",
+    "storyId": "S001",
+    "createdAt": "2026-10-10T15:41:06.406Z",
+    "updatedAt": "2026-10-10T15:41:06.406Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "0d26867b",
+        "ranAt": "2026-10-10T15:41:06.406Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the read of a repository's stored files returns each file once, only that repository's files, and no empty path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-files-for-repo.test.ts",
+                "title": "the read of a repository's stored files returns each file once, only that repository's files, and no empty path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the removal of one repository's unresolved relations of a file leaves another repository's unresolved relations of the same path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-files-for-repo.test.ts",
+                "title": "the removal of one repository's unresolved relations of a file leaves another repository's unresolved relations of the same path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an unregistered repository has no stored files and its removal of unresolved relations does nothing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entity-files-for-repo.test.ts",
+                "title": "an unregistered repository has no stored files and its removal of unresolved relations does nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/entity-files-for-repo.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1418,
+            "titles": [
+              {
+                "title": "the read of a repository's stored files returns each file once, only that repository's files, and no empty path",
+                "result": "pass"
+              },
+              {
+                "title": "the removal of one repository's unresolved relations of a file leaves another repository's unresolved relations of the same path",
+                "result": "pass"
+              },
+              {
+                "title": "an unregistered repository has no stored files and its removal of unresolved relations does nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

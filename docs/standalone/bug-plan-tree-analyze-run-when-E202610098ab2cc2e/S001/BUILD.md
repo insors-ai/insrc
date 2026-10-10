@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-10T12:08:41.130Z  ·  **Updated:** 2026-10-10T12:18:03.796Z
+**Standalone:** yes  ·  **Created:** 2026-10-10T12:08:41.130Z  ·  **Updated:** 2026-10-10T12:31:30.435Z
 
-**Commit:** 50e3b1ea
+**Commit:** 09d9bcbb
 
 ## Summary
 
@@ -20,29 +20,31 @@ docs/daemon.md (a new part of the section on the final report being written from
 
 ## Changes
 
-- `design/analyze-framework.md` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `docs/daemon.md` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/S001/measurements/analyze-suite-after-f50af845.tap` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/S001/measurements/analyze-suite-before-bc072f79.tap` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/S001/measurements/analyze-suite-comparison-t3.md` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/executor/__tests__/walker-aggregate.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/executor/__tests__/walker-walk-failure.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/executor/__tests__/walker.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/executor/types.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/executor/walker.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/runtimes/code/__tests__/aggregate-report.live.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/runtimes/data/__tests__/aggregate-report.live.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/runtimes/generic/__tests__/aggregate-report.live.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/runtimes/infra/__tests__/aggregate-report.live.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/runtimes/shared/__tests__/aggregate-message-before-8ab2cc2e.json` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/runtimes/shared/__tests__/aggregator.test.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/analyze/runtimes/shared/aggregator.ts` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/prompts/analyze/code.aggregate.system.md` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/prompts/analyze/data.aggregate.system.md` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/prompts/analyze/docs.aggregate.system.md` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/prompts/analyze/generic.aggregate.system.md` — **insrc-build** (2026-10-10T12:18:03.796Z)
-- `src/prompts/analyze/infra.aggregate.system.md` — **insrc-build** (2026-10-10T12:18:03.796Z)
+- `.insrc/artifacts/CR-8ab2cc2edb3743df-S001.json` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `design/analyze-framework.md` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `docs/daemon.md` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/S001/CR.md` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/S001/measurements/analyze-suite-after-f50af845.tap` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/S001/measurements/analyze-suite-before-bc072f79.tap` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/S001/measurements/analyze-suite-comparison-t3.md` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/executor/__tests__/walker-aggregate.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/executor/__tests__/walker-walk-failure.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/executor/__tests__/walker.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/executor/types.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/executor/walker.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/runtimes/code/__tests__/aggregate-report.live.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/runtimes/data/__tests__/aggregate-report.live.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/runtimes/generic/__tests__/aggregate-report.live.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/runtimes/infra/__tests__/aggregate-report.live.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/runtimes/shared/__tests__/adherence-constraints.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/runtimes/shared/__tests__/adherence-topic-route.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/runtimes/shared/__tests__/aggregate-message-before-8ab2cc2e.json` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/runtimes/shared/__tests__/aggregator.test.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/analyze/runtimes/shared/aggregator.ts` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/prompts/analyze/code.aggregate.system.md` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/prompts/analyze/data.aggregate.system.md` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/prompts/analyze/docs.aggregate.system.md` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/prompts/analyze/generic.aggregate.system.md` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `src/prompts/analyze/infra.aggregate.system.md` — **insrc-build** (2026-10-10T12:31:30.435Z)

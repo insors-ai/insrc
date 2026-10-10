@@ -20,7 +20,7 @@ import type { ChatPanelChannel } from '../../chat/chat-panel.js';
 import { createDeliveryBoardHost } from '../board-host.js';
 import type { BoardDownMessage, Envelope } from '../board-protocol.js';
 import { largeSnapshot } from './board-fixtures.js';
-import { cardsIn, runScript } from './board-webview-harness.js';
+import { cardsIn, findAll, runScript } from './board-webview-harness.js';
 import { flush } from './flush.js';
 
 const FIRST_RENDER_MS = 1000;
@@ -119,4 +119,23 @@ test('a 500-item, 1,000-record board renders within one second and each filter c
   for (const [name, ms] of Object.entries(timings)) {
     assert.ok(ms <= FILTER_CHANGE_MS * SLACK, `${name} ${ms.toFixed(1)} ms > ${FILTER_CHANGE_MS * SLACK} ms`);
   }
+});
+
+test('switching the 500-item board to the Issues screen renders within 150 ms, best of three', async (t) => {
+  const board = boardOverScript();
+  board.host.open();
+  await flush();
+  assert.ok(cards(board.w) > 0, 'the board was rendered');
+  const issueRows = () => findAll(board.w.el['main']!, e => e.attrs['class'] === 'row issue-row').length;
+  let best = Infinity;
+  for (let run = 0; run < RUNS; run++) {
+    const t0 = performance.now();
+    board.send({ type: 'set-view', view: 'issues' });
+    best = Math.min(best, performance.now() - t0);
+    assert.equal(board.w.el['main']!.attrs['data-screen'], 'issues');
+    assert.ok(issueRows() > 0, 'the Issues screen shows its issues in their stage boxes');
+    board.send({ type: 'set-view', view: 'all' });
+  }
+  t.diagnostic(`issues: ${best.toFixed(1)} ms (target ${FILTER_CHANGE_MS} ms)`);
+  assert.ok(best <= FILTER_CHANGE_MS * SLACK, `issues ${best.toFixed(1)} ms > ${FILTER_CHANGE_MS * SLACK} ms`);
 });

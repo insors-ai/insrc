@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791634761462-pspxmo",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-10T12:19:21.463Z",
+    "model": "claude:opus",
+    "elapsedMs": 65635,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7bc6e47643234665",
+    "storyId": "S001",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "7bc6e47643234665",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-model.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+        "vscode-plugin/src/delivery/__tests__/labels.test.ts",
+        "vscode-plugin/src/delivery/board-host.ts",
+        "vscode-plugin/src/delivery/board-model.ts",
+        "vscode-plugin/src/delivery/board-protocol.ts",
+        "vscode-plugin/src/delivery/board-views.ts",
+        "vscode-plugin/src/delivery/labels.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-host.ts:1",
+            "message": "Caveat on how coverage was judged. The graph's testsReaching edges are mostly empty: almost every production symbol in board-host.ts, board-model.ts, board-views.ts, board-protocol.ts and labels.ts has none. Only buildBoardViewModel is reached, through the board-model.test.ts helper build. The edges are empty because the graph does not link node:test test() callbacks to the code they call. They are not real gaps, so no HIGH findings were raised from them. Instead, coverage was checked by running the suite: `npx tsx --test 'src/delivery/__tests__/*.test.ts'` gave 117 tests, 117 passed, 0 failed. A grep also confirmed that each changed public entry point is called directly by a test file: createDeliveryBoardHost and renderBoardDocument (board-host.test.ts); showMore, unknownStages and screenKindOf (board-model.test.ts); buildEpicRollup, epicRowOf, epicRows, buildIssueView and issueEntries (board-views.test.ts); parseBoardUpMessage (board-protocol.test.ts, board-host.test.ts); readableTime, msBetween and plural (labels.test.ts). approvalTone and verdictTone are reached through badgesOf, cardOf and buildBoardViewModel. taskResultTone is reached through board-details.ts. Private helpers are reached through these entry points. No build record was supplied, so the passing result comes from this local run, not from a recorded build.",
+            "expectationRef": "testsReaching grounding (graph-hollow on node:test callbacks)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-views.ts:150",
+            "message": "buildIssueView repeats the same body-assembly steps as buildBoardViewModel: index the items, select matches, group by stage, map STAGE_ORDER to sectionHead plus attentionCount, re-run selectMatches with needsAttentionOnly:false to get the unfiltered count, then build totalsLabel, showAll and foldOf. The only differences are the issue-kind filter, the noun pair, the per-section payload and the empty-panel rule. Both already call the shared helpers, so the risk is small. Still, the attentionOnly-to-unfiltered recount and the totals/fold rules now live in two places and could drift. A shared builder that takes an item predicate and a per-section mapper would keep them in one place.",
+            "counterpartRef": "buildBoardViewModel",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

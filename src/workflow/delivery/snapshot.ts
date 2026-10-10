@@ -13,11 +13,11 @@
  * holds a BUILD but no PLAN gets an incomplete-evidence notice; no other route
  * does. An item needs attention when it has a gate attention reason or a notice
  * whose code is marked for attention; each reason is listed once. Notices that
- * name no item are the snapshot's own. Each item also carries its description, read
- * from its own records (describe.ts). Pure and deterministic; plain JSON out.
+ * name no item are the snapshot's own. Each item also carries its description and
+ * the feedback recorded on its own design records, read from its records (describe.ts). Pure and deterministic; plain JSON out.
  */
 
-import { describeItem } from './describe.js';
+import { describeItem, feedbackOf } from './describe.js';
 import { makeNotice, sortNotices } from './notice.js';
 import type {
 	ArtifactRecord,
@@ -79,9 +79,11 @@ export function assembleSnapshot(
 	markdown: DeliveryMarkdownPort,
 ): DeliverySnapshot {
 	const byId = new Map(recordSet.records.map(r => [r.artifactId, r] as const));
+	const feedback = new Map([...graph.items.values()].map(node => [node.id, feedbackOf(node, byId)] as const));
 	const allNotices = sortNotices([
 		...graph.notices, ...stages.notices, ...gates.notices, ...currency.notices,
 		...completenessNotices(graph, byId, stages),
+		...[...feedback.values()].flatMap(f => f.notices),
 	]);
 	const noticesByItem = new Map<string, DeliveryNotice[]>();
 	for (const n of allNotices) {
@@ -147,6 +149,7 @@ export function assembleSnapshot(
 			needsAttention:   reasons.length > 0,
 			attentionReasons: reasons,
 			description:      describeItem(node, graph, byId),
+			feedback:         [...(feedback.get(node.id)?.feedback ?? [])],
 		};
 	};
 

@@ -116,10 +116,16 @@ test('every work item is joined with its stage, evidence, gates, currency and no
 
 test('two snapshots of the same store, with equal timestamps, are identical in order and counts', () => {
 	// Every fabricated record shares one createdAt, so no order can come from time.
-	const records = [...STORE, defRecord(SOLO, ['s1']), lldRecord(SOLO, 's1'), issueRecord(ISSUE, { slug: 'nothing' })];
+	// Descriptions and feedback (with equal timestamps across records) take part too.
+	const fb = (id: string) => ({ id, author: 'reviewer', timestamp: CREATED, target: { file: 'docs/x.md' }, comment: `note ${id}` });
+	const records = [...STORE, defRecord(SOLO, [{ id: 's1', userValue: 'Value', sizeEstimate: 'S' }], {}, { problem: 'Problem', feedback: [fb('f2'), fb('f1')] }),
+		lldRecord(SOLO, 's1', {}, { feedback: [fb('f1')] }), planRecord(SOLO, 's1', ['t1'], {}, { feedback: [fb('f0')] }),
+		issueRecord(ISSUE, { slug: 'nothing' }, {}, { fixIntent: 'Fix it' })];
 	const first = snapshotOf(records);
 	const second = snapshotOf([...records].reverse());
 	assert.deepEqual(second, first);
+	assert.ok(first.items.some(i => i.feedback.length > 0) && first.items.some(i => i.description.kind === 'issue' && i.description.fixIntent.state === 'recorded'),
+		'the compared snapshots carry feedback and recorded descriptions');
 	assert.deepEqual(second.items.map(i => i.id), first.items.map(i => i.id));
 	assert.deepEqual(second.counts, first.counts);
 });
@@ -242,4 +248,49 @@ test('a story added by an extension takes its purpose from the EXT, and a standa
 	const none = { state: 'not-recorded' };
 	assert.deepEqual(byKindAndSource(s, 'story', 'cccccccc').description, { kind: 'story', purpose: none, size: none }, 'a standalone story');
 	assert.deepEqual(byKindAndSource(s, 'story', 'eeeeeeee').description, { kind: 'story', purpose: none, size: none }, 'an issue\'s fix story');
+});
+
+test('feedback from an item\'s own design records is listed read-only, in order, and malformed entries are noticed', () => {
+	const entry = (id: string, timestamp: string, extra: Record<string, unknown> = {}) =>
+		({ id, author: 'ana', timestamp, target: { file: 'docs/epic/LLD.md', version: 'v2', segment: { startLine: 3, endLine: 9 } }, comment: `comment ${id}`, kind: 'suggestion', ...extra });
+	const def = defRecord(DESC, ['s1'], APPROVED, { feedback: [entry('d1', '2026-10-08T10:00:00.000Z')] });
+	const hld = hldRecord(DESC, APPROVED, { feedback: [entry('h1', '2026-10-08T09:00:00.000Z')] });
+	const lld = lldRecord(DESC, 's1', {}, { feedback: [
+		entry('l2', '2026-10-08T11:00:00.000Z'),
+		{ id: 'bad', author: 'ana', comment: 'no timestamp', target: { file: 'x' } },
+		{ id: 'l1', author: 'bo', timestamp: '2026-10-08T11:00:00.000Z', target: { file: 'docs/epic/LLD.md' }, comment: 'bare' },
+		'not an entry',
+	] });
+	const plan = planRecord(DESC, 's1', ['t1'], {}, { feedback: [entry('p1', '2026-10-08T11:00:00.000Z')] });
+	const build = buildRecord(DESC, 's1', [{ id: 't1', passed: true }], {});
+	const buildWithFeedback = { ...build, body: { ...(build.body as object), feedback: [entry('b1', '2026-10-08T12:00:00.000Z')] } };
+	const issue = issueRecord(FIX, { slug: 'nothing' }, {}, { feedback: [entry('i1', '2026-10-08T12:00:00.000Z')] });
+	const odd = hldRecord(SOLO, {}, { feedback: { id: 'not-a-list' } });
+	const s = snapshotOf([def, hld, lld, plan, buildWithFeedback, issue, defRecord(SOLO, ['s1']), odd]);
+
+	const epic = byKindAndSource(s, 'epic', 'dddddddd');
+	assert.deepEqual(epic.feedback.map(f => [f.artifactId, f.id]), [[hld.artifactId, 'h1'], [def.artifactId, 'd1']], 'the epic\'s DEF and HLD, by timestamp');
+	assert.deepEqual(epic.feedback[1], {
+		artifactId: def.artifactId, id: 'd1', author: 'ana', timestamp: '2026-10-08T10:00:00.000Z', kind: 'suggestion', comment: 'comment d1',
+		target: { file: 'docs/epic/LLD.md', version: 'v2', segment: { startLine: 3, endLine: 9 } },
+	});
+	const story = byKindAndSource(s, 'story', 'dddddddd', 's1');
+	assert.deepEqual(story.feedback.map(f => [f.artifactId, f.id]), [[lld.artifactId, 'l1'], [lld.artifactId, 'l2'], [plan.artifactId, 'p1']],
+		'the story\'s LLD and PLAN by timestamp, then artifactId, then id; never the epic\'s, and never the BUILD\'s');
+	assert.deepEqual(story.feedback[0], {
+		artifactId: lld.artifactId, id: 'l1', author: 'bo', timestamp: '2026-10-08T11:00:00.000Z', kind: null, comment: 'bare',
+		target: { file: 'docs/epic/LLD.md', version: null, segment: null },
+	}, 'absent kind, version and segment are null');
+	assert.ok(!epic.feedback.some(f => f.artifactId === lld.artifactId), 'a child\'s feedback is not the epic\'s');
+	assert.deepEqual(item(s, i => i.kind === 'task', 'a task').feedback, [], 'a task inherits none of its story\'s PLAN feedback');
+	assert.deepEqual(byKindAndSource(s, 'issue', 'eeeeeeee').feedback, [], 'an ISSUE body is not read for feedback');
+
+	const notice = story.notices.find(n => n.code === 'incomplete-evidence' && n.artifactIds.includes(lld.artifactId));
+	assert.ok(notice !== undefined, 'the malformed entries are named');
+	assert.match(notice.message, /2 feedback entries that could not be read/);
+	assert.equal(notice.attention, false);
+	const solo = byKindAndSource(s, 'epic', 'cccccccc');
+	assert.deepEqual(solo.feedback, []);
+	assert.ok(solo.notices.some(n => n.code === 'incomplete-evidence' && n.artifactIds.includes(odd.artifactId) && /not a list/.test(n.message)), 'feedback that is not a list is named');
+	assertPlainJson(s);
 });

@@ -97,7 +97,8 @@
         "summary": {
           "state": "not-recorded"
         }
-      }
+      },
+      "feedback": []
     },
     {
       "id": "E20261007aaaaaaaa:S001",
@@ -225,7 +226,8 @@
         "size": {
           "state": "not-recorded"
         }
-      }
+      },
+      "feedback": []
     },
     {
       "id": "E20261007aaaaaaaa:S001:T001",
@@ -275,7 +277,8 @@
       "attentionReasons": [],
       "description": {
         "kind": "task"
-      }
+      },
+      "feedback": []
     },
     {
       "id": "E20261007aaaaaaaa:S002",
@@ -335,7 +338,8 @@
         "size": {
           "state": "not-recorded"
         }
-      }
+      },
+      "feedback": []
     },
     {
       "id": "E20261007bbbbbbbb",
@@ -406,7 +410,8 @@
         "fixIntent": {
           "state": "not-recorded"
         }
-      }
+      },
+      "feedback": []
     }
   ],
   "rootIds": [

@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { DeliveryStoreUnreadableError } from '../types.js';
 import type {
 	ArtifactCurrency, ArtifactGate, AttentionReason, CurrencyPassResult, DeliveryDeps, DeliveryError, DeliveryEvidenceEntry,
-	DeliveryEvidenceRecord, DeliveryEvidenceRequest, DeliveryEvidenceResponse, DeliveryItem, DeliveryItemDescription, DeliveryMarkdownPort, DeliveryRecorded, DeliverySize,
+	DeliveryEvidenceRecord, DeliveryEvidenceRequest, DeliveryEvidenceResponse, DeliveryFeedback, DeliveryItem, DeliveryItemDescription, DeliveryMarkdownPort, DeliveryRecorded, DeliverySize,
 	DeliveryRoute, DeliverySnapshot, DeliverySnapshotRequest, DeliverySnapshotResponse, DeliveryStage, EffectiveAmendment,
 	GatePassResult, ItemGates, ReviewCurrency, ReviewVerdict, StageAnnotation, StagePassResult, TaskResult,
 } from '../types.js';
@@ -130,6 +130,7 @@ test('the delivery IPC types list exactly the sketched members', () => {
 		storyLevelResult: null, conflict: null, correctsRef: null, amendments: [], notices: [],
 		needsAttention: false, attentionReasons: [],
 		description: { kind: 'story', purpose: { state: 'recorded', value: 'Readers find it', artifactId: 'DEF-h' }, size: { state: 'not-recorded' } },
+		feedback: [{ artifactId: 'LLD-h-s1', id: 'f1', author: 'ana', timestamp: '2026-10-08T00:00:00.000Z', kind: null, comment: 'note', target: { file: 'docs/x.md', version: null, segment: null } }],
 	};
 	const snapshot: DeliverySnapshot = {
 		schemaVersion: 1, repo: '/repo', takenAt: '2026-10-08T00:00:00.000Z', recordCount: 1, unreadableCount: 0,
@@ -164,6 +165,9 @@ test('the delivery IPC types list exactly the sketched members', () => {
 	const sizes: DeliverySize[] = ['S', 'M', 'L', 'XL'];
 	const recorded: DeliveryRecorded<DeliverySize> = { state: 'recorded', value: sizes[3]!, artifactId: 'DEF-h' };
 	assert.deepEqual(Object.keys(recorded), ['state', 'value', 'artifactId']);
+	const feedback: DeliveryFeedback = item.feedback[0]!;
+	assert.deepEqual(Object.keys(feedback), ['artifactId', 'id', 'author', 'timestamp', 'kind', 'comment', 'target']);
+	assert.deepEqual(Object.keys(feedback.target), ['file', 'version', 'segment']);
 });
 
 function recordStub(): Parameters<DeliveryMarkdownPort['markdownOf']>[0] {

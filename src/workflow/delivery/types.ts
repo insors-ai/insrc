@@ -300,6 +300,17 @@ export type DeliveryItemDescription =
 	| { readonly kind: 'issue'; readonly reproduction: DeliveryRecorded<string>; readonly rootCause: DeliveryRecorded<string>; readonly fixIntent: DeliveryRecorded<string> }
 	| { readonly kind: 'task' };
 
+/** One read-only feedback entry recorded on an item's own design record; absent optional fields are null. */
+export interface DeliveryFeedback {
+	readonly artifactId: string;
+	readonly id:         string;
+	readonly author:     string;
+	readonly timestamp:  string;
+	readonly kind:       'feedback' | 'suggestion' | 'comment' | null;
+	readonly comment:    string;
+	readonly target:     { readonly file: string; readonly version: string | null; readonly segment: { readonly startLine: number; readonly endLine: number } | null };
+}
+
 export interface DeliveryItem {
 	readonly id:               string;
 	readonly kind:             DeliveryItemKind;
@@ -325,6 +336,8 @@ export interface DeliveryItem {
 	readonly attentionReasons: readonly (AttentionReason | NoticeCode)[];
 	/** What the item is about, from its own records; see DeliveryItemDescription. */
 	readonly description:      DeliveryItemDescription;
+	/** The feedback recorded on the item's own design records (an epic's DEF and HLD, a story's LLD and PLAN); never inherited. */
+	readonly feedback:         readonly DeliveryFeedback[];
 }
 
 export interface DeliverySnapshot {

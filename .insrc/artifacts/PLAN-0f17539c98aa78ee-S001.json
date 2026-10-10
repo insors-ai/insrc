@@ -1,0 +1,328 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791616606915-nq9qc2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-10T07:20:20.182Z",
+    "epicCreatedAt": "2026-10-09T14:46:12.867Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 213261,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0f17539c98aa78ee",
+    "epicSlug": "bug-analyze-planner-plans-adherence-check",
+    "storyId": "S001",
+    "lldRunId": "wf-1791614468378-usou2x",
+    "lldEffectiveHash": "608412609e921a3485cb1f203212b24a8245f313a5f08fb09a2f4c8f6ced244a",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build has four tasks in a line. First the record of one constraint lookup per run, repository and topic, as a module on its own. Then the shared adherence check is changed to take its constraints from an inline list, from stored-document ids or from that lookup, to fail with a distinct reason for each way it can fail, and to report what it judged against. Then the three templates and plan validation are changed so that a plan must give a topic or an override and can no longer name an upstream task. Last come the test through the plan walk, the scan for the removed parameter, and the documents."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "The enumeration record: one lookup of constraints per run, repository and topic, kept as a file",
+        "summary": "Add the path entry for a run's constraint records to PATHS (src/shared/paths.ts) and a new module, src/analyze/runtimes/shared/adherence-topic-constraints.ts, with constraintsForTopic({ runId, taskId, repoPath, topic, maxSources, db }): it returns the stored enumeration when a readable record of schema version 1 for the same repository and normalised topic exists, and otherwise calls runSharedDocConstraintEnumerate for the whole repository (no area), writes the record atomically and returns it with the record's path. The key is made from the repository path, the normalised topic and maxSources. A failed enumeration writes nothing and throws on; a finished one with no constraint is written; an unreadable or mismatched record is treated as absent and overwritten; a record that cannot be written is logged and the enumeration is still returned, with no path. Includes a test seam for the enumeration's stand-in model and purgeConstraintRecords(runId). Nothing calls the module yet. Its tests are in a new file, __tests__/adherence-topic-constraints.test.ts.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A second call for the same run, repository and topic makes no enumeration and returns the same constraints and record path; a topic that differs only in case or spacing reuses the record; a different maxSources, topic or run does not.",
+          "A failed enumeration leaves no record and the next call enumerates again; an enumeration with no constraint is recorded and reused.",
+          "An unreadable record, one of another schema version and one of another topic or repository are each enumerated again and overwritten; a record that cannot be written does not make the call fail.",
+          "The record holds schemaVersion, repoPath, the topic as first written, maxSources, the time, the task that made it and the enumeration's whole output, its completeness included.",
+          "The record's path is <the run's directory>/constraints/<key>.json, and purgeConstraintRecords(runId) removes the run's records.",
+          "`npx tsc --noEmit` is clean."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "one enumeration per run, repository and topic is made, recorded under the run's directory with its whole output, and read back; a topic that differs only in case or spacing reuses it; a different maxSources, topic or run does not; a failed enumeration is not recorded and one with no constraint is"
+          },
+          {
+            "level": "integration",
+            "name": "a record that is unreadable, of another version or of another topic is enumerated again and overwritten; a record that cannot be written does not fail the check"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "The check finds its constraints: inline list, then stored ids, then the topic; distinct failures; what it judged against in its output",
+        "summary": "Change src/analyze/runtimes/shared/adherence.ts. runAdherenceCheck resolves the repository once through adherenceRepoPath, before the constraints, and passes it to resolveConstraints, which passes it to the ids route and the topic route. resolveConstraints returns { constraints, source } and reads, in order: a non-empty inline list (an empty one now counts as not given), non-empty stored-document ids, the topic through constraintsForTopic; it no longer reads constraintsSource or the upstream outputs, so from this task on a constraintsSource in a task's params is ignored by the check (the validator refuses it from t3 on). Failures have their own reasons: the enumeration could not be made (with the cause), the documents state no constraint on the topic (with the number of sections read, or that none matched), an override that yields nothing (naming it, with no fall back to the topic), none of the three given. ConstraintSourceFacts gains skipped; the enumeration's limited, partly read and skipped items are folded into the check's completeness record, which is built with all three. AdherenceResult gains constraints and constraintSource, and the three family runtimes copy both into the adherence-report. The seam _resolveConstraintsForTest returns the new shape; the existing tests in adherence-constraints.test.ts are updated to read it, the two tests of constraintsSource and the 'returns empty' test are replaced, and scope-sources.test.ts expects one call of adherenceRepoPath. The task is an L and is kept whole: the new return shape of resolveConstraints changes runAdherenceCheck, the seam, the three family runtimes and the existing tests in one compile unit, and the design's first integration test spans the source order and the output fields together.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A check with a topic and no override judges against the constraints enumerated from the repository's documents; its output carries those constraints with their citations, constraintSource of kind 'documents' with the topic, the repository, the number of sections retrieved and the record's path.",
+          "Four checks with one topic in one run make one enumeration and carry the same constraints.",
+          "The enumeration's reached limit, partly read section and skipped search by meaning are in the completeness record of the check that enumerated and of a check that read the record.",
+          "A non-empty inline list, or non-empty ids, is used alone with a topic also present and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic; an override that yields nothing fails naming the override.",
+          "A task whose params carry constraintsSource beside a usable override runs on the override; the check does not read the parameter.",
+          "No constraint found, a failed enumeration and a failed judging call each fail with their own reason; after a failed judging the record is still there.",
+          "A data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository; a code check scoped to one file reads the whole repository's documents.",
+          "adherence.ts calls adherenceRepoPath once and has no other source of a repository path; it does not read upstreamOutputs.",
+          "The suites that mention adherence (adherence-constraints, partly-read-plan-tasks, completeness-all-runtimes, dropped-or-failed, aggregate-absent-inputs, scope-sources) pass; `npx tsc --noEmit` is clean."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path"
+          },
+          {
+            "level": "integration",
+            "name": "four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not"
+          },
+          {
+            "level": "integration",
+            "name": "the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record"
+          },
+          {
+            "level": "integration",
+            "name": "an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic"
+          },
+          {
+            "level": "integration",
+            "name": "a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents"
+          },
+          {
+            "level": "integration",
+            "name": "when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration"
+          },
+          {
+            "level": "integration",
+            "name": "when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays"
+          },
+          {
+            "level": "integration",
+            "name": "an override that yields no constraint fails naming the override and does not fall back to the topic"
+          },
+          {
+            "level": "unit",
+            "name": "the existing tests of constraintIds and inline constraints keep their assertions, read through the new result shape of the seam; the two tests of constraintsSource are replaced, and the test that no source returns an empty list is replaced by one that asserts the throw naming constraintTopic, constraints and constraintIds"
+          },
+          {
+            "level": "unit",
+            "name": "the adherence check resolves its repository once and reads neither constraintsSource nor upstreamOutputs"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "The templates and plan validation: a topic or an override is required, and the upstream-task route is gone",
+        "summary": "Change the three adherence templates (code, data, infra): add constraintTopic and maxConstraintSources, remove constraintsSource, add the anyOf that requires one of constraintTopic, constraints or constraintIds, rewrite the template descriptions and the descriptions of the constraints and constraintIds properties so that they name only the ways that work and their order, list the two new output fields in the outputSchema where one is declared, and raise the revision to r2. In src/analyze/planner/validate.ts add, beside refusedScopeKind in the INV-5 loop, a check that fails a task of a template that declares constraintTopic when it has no non-empty topic, no non-empty inline list and no non-empty ids (message: the task, the template, that an adherence check needs constraints, the three ways, that the task may be left out) and when it carries constraintsSource (message: no longer accepted, give constraintTopic instead). Extend the INV-5 entry of src/analyze/planner/invariant-fix-hints.ts with the remedy for an adherence task with no source, including removing the task and renumbering the ids that follow.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A plan whose adherence task has no topic, no inline list and no ids fails INV-5 with the stated message, for the code, the data and the infra template.",
+          "A task with a topic, with a non-empty inline list or with non-empty ids validates; a non-empty override with an empty list beside it validates; one whose only source is an empty topic or an empty list does not.",
+          "A task that carries constraintsSource fails with the message that says to give constraintTopic instead, in a generic plan that holds the docs task and beside a usable override too.",
+          "The catalog rendered for each of the three templates names constraintTopic and names neither constraintsSource nor docs.constraint.enumerate.",
+          "Each adherence template that declares an outputSchema lists constraints and constraintSource as properties and does not require them.",
+          "The INV-5 fix hint names the three ways and the option to remove the task and renumber.",
+          "The planner suites pass (templates, validate, driver-unit, recursive, schema); `npx tsc --noEmit` is clean."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a plan whose adherence task has no topic, no inline constraints and no stored-document ids fails validation with the task, the three ways to give constraints and the option to leave the task out (code, data and infra), and the INV-5 fix hint sent with the message gives the same remedies, including removing the task and renumbering the ids that follow"
+          },
+          {
+            "level": "unit",
+            "name": "an adherence task with a topic, with an inline list, or with stored-document ids validates; one whose only source is an empty topic or an empty list does not, a non-empty override with an empty list beside it still validates, one with the removed constraintsSource does not, and for constraintsSource the message says to give constraintTopic instead, also in a generic plan that holds the docs task and also beside a usable override"
+          },
+          {
+            "level": "unit",
+            "name": "the catalog shown to the planner for each adherence template names constraintTopic and does not name constraintsSource or docs.constraint.enumerate"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Through the plan walk, the removed route's absence, and the documents",
+        "summary": "Add the test that runs the real adherence runtime through the plan walk: a check that fails for lack of constraints in the documents has its reason in the task's record and in tasksFailed, and the plan's report is still written from the other tasks. Add the source scan that no template, runtime or prompt of the analyze framework names constraintsSource (reading code and prompt text, not comments on history). Update docs/plans/docs-module.md where it describes how an adherence check gets its constraints (sections 3.5 and 8.5 and the lines on constraintIds), and add to docs/daemon.md a short section: the three ways and their order, the enumeration's record file, and the reasons a check can fail with.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Run through the plan walk, a failed check's own reason is in its task record and in tasksFailed, and the plan's final report exists.",
+          "The source scan finds no use of constraintsSource in the templates, the runtimes or the prompts of the analyze framework.",
+          "docs/plans/docs-module.md no longer describes the upstream-task route as a way to give constraints, and docs/daemon.md has the new section.",
+          "The whole analyze suite passes with no failure that is not in the baseline; `npx tsc --noEmit` is clean."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks"
+          },
+          {
+            "level": "unit",
+            "name": "no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "a plan whose adherence task has no topic, no inline constraints and no stored-document ids fails validation with the task, the three ways to give constraints and the option to leave the task out (code, data and infra), and the INV-5 fix hint sent with the message gives the same remedies, including removing the task and renumbering the ids that follow",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "an adherence task with a topic, with an inline list, or with stored-document ids validates; one whose only source is an empty topic or an empty list does not, a non-empty override with an empty list beside it still validates, one with the removed constraintsSource does not, and for constraintsSource the message says to give constraintTopic instead, also in a generic plan that holds the docs task and also beside a usable override",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the catalog shown to the planner for each adherence template names constraintTopic and does not name constraintsSource or docs.constraint.enumerate",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "an override that yields no constraint fails naming the override and does not fall back to the topic",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a record that is unreadable, of another version or of another topic is enumerated again and overwritten; a record that cannot be written does not fail the check",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the existing tests of constraintIds and inline constraints keep their assertions, read through the new result shape of the seam; the two tests of constraintsSource are replaced, and the test that no source returns an empty list is replaced by one that asserts the throw naming constraintTopic, constraints and constraintIds",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails (LLD-0f17539c98aa78ee-S001): runAdherenceCheck, resolveConstraints, runSharedDocConstraintEnumerate, validatePlan"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges (LLD-0f17539c98aa78ee-S001): the templates' inputSchema, AdherenceResult and the adherence-report, the enumeration record, which documents the topic route reads"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths (LLD-0f17539c98aa78ee-S001): error cases, edge cases and invariants to preserve"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy (LLD-0f17539c98aa78ee-S001): the four test levels and the acceptance mapping"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration (LLD-0f17539c98aa78ee-S001): the four steps and backward compatibility"
+    }
+  ]
+}

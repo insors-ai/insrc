@@ -152,6 +152,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // The saved turn this host is following after a reload (resume), if any.
   let following: { readonly sessionId: string; readonly ctl: AbortController } | undefined;
   let resumedProc: TurnProcess | undefined;
+  // Detaches from the live turn (stops reading, leaves its process running) — set while one runs.
+  let detachLive: (() => void) | undefined;
   const lockTimeoutMs = (): number => deps.turnLockTimeoutMs?.() ?? DEFAULT_TURN_LOCK_TIMEOUT_MS;
   // The wait of a turn that is queued behind the session's previous process; aborting it drops
   // the turn without stopping anything (a newer submit, Stop, a chat switch).
@@ -653,16 +655,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   };
 
   /**
-   * Stop: drop a waiting turn and end the running CLI process at once (no lock timeout). Used by
-   * the Stop control, a chat switch and dispose. The reap is cancel(turnId) through the turn's OWN
-   * captured provider (never the current session's, which may have switched), plus the process
-   * handed over by onSpawn, which also covers a process still running after its answer.
-   * Abandoning the async iterator (.return()) is best-effort cleanup. Resolves once the process
-   * has exited (or there was none). Idempotent.
+   * End the live turn's CLI process at once (no lock timeout) and drop a waiting turn. The reap is
+   * cancel(turnId) through the turn's OWN captured provider (never the current session's, which
+   * may have switched), plus the process handed over by onSpawn, which also covers a process still
+   * running after its answer. Abandoning the async iterator (.return()) is best-effort cleanup.
+   * Resolves once the process has exited (or there was none). Idempotent.
    */
-  const cancelActive = async (): Promise<void> => {
+  const stopLive = async (): Promise<void> => {
     waitCtl?.abort();
     waitCtl = undefined;
+    detachLive = undefined;
     const it = activeIterator;
     const prov = activeProvider;
     const tid = activeTurnId;
@@ -686,6 +688,38 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
     }
     if (proc !== undefined) await proc.stop();
+  };
+
+  /** Stop (the Stop control): end the live turn, and a turn followed after a reload, at once. */
+  const stopActive = async (): Promise<void> => {
+    following?.ctl.abort();
+    const resumed = resumedProc;
+    resumedProc = undefined;
+    await stopLive();
+    if (resumed !== undefined) await resumed.stop();
+  };
+
+  /**
+   * A chat switch, the panel closing, or adopt(): stop FOLLOWING the turn. A turn that writes to
+   * the session file keeps running (with its lease) and its cursor stays saved, so showing the
+   * session again resumes it. A pipe turn could not be resumed, so it is stopped as before.
+   */
+  const detachActive = async (): Promise<void> => {
+    waitCtl?.abort();
+    waitCtl = undefined;
+    following?.ctl.abort(); // a resumed turn: its process is not ours to stop here
+    resumedProc = undefined;
+    const detach = detachLive;
+    if (detach !== undefined && liveProc?.cursor !== undefined) {
+      detachLive = undefined;
+      liveProc = undefined;
+      activeIterator = undefined;
+      activeProvider = undefined;
+      activeTurnId = undefined;
+      detach();
+      return;
+    }
+    await stopLive();
   };
 
   /**
@@ -824,6 +858,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       const clearCursor = (turnId: string): void => {
         if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
       };
+      let detached = false;
+      let detachThis: (() => void) | undefined;
       try {
         // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn),
         // so the diff + revert are computed against the true pre-turn content (k8 observer).
@@ -832,14 +868,25 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // separate edit-review gate is retired, Claude-Code style). Inside the try, so a failed
         // baseline capture or adapter start is a turn error and the lease is still released.
         if (governor !== undefined) await governor.beginTurn({ mode: 'auto', cwd: deps.cwd() });
-        // Hold the iterator explicitly so cancelActive() can .return() it even while it
+        // Hold the iterator explicitly so stopLive() can .return() it even while it
         // is parked awaiting its first event.
         const iterator = adapter.run(req, { onSpawn, onProgress, sessionId: s.id })[Symbol.asyncIterator]();
         activeIterator = iterator;
         activeProvider = s.provider;
+        detachThis = (): void => {
+          detached = true;
+          if (s.liveTurn !== undefined) runningTurns.delete(s.liveTurn.cursor.turnId); // resumable now
+          try {
+            deps.store.save(s); // the cursor and the rows handled so far
+          } catch {
+            /* persistence failure must not surface */
+          }
+          void iterator.return?.(undefined); // stop reading; the CLI keeps writing to the session file
+        };
+        if (myGen === generation) detachLive = detachThis;
         for (;;) {
           const next = await iterator.next();
-          if (next.done === true) break;
+          if (next.done === true || detached) break;
           // Superseded/disposed: post nothing more, but keep reading so the superseded turn's CLI
           // never stalls on a full pipe; its process (and the lease) end when it exits.
           if (disposed || myGen !== generation) {
@@ -905,6 +952,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           activeProvider = undefined;
           activeTurnId = undefined;
         }
+        if (detachThis !== undefined && detachLive === detachThis) detachLive = undefined;
       }
     });
   }
@@ -962,8 +1010,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         return;
       case 'cancel-turn':
         // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.
-        // Idempotent when no turn is active (cancelActive() no-ops).
-        void cancelActive();
+        // Idempotent when no turn is active (stopActive() no-ops).
+        void stopActive();
         return;
       case 'new-chat': {
         if (typeof msg.provider !== 'string') return;
@@ -973,9 +1021,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           log.warn(`[chat] new-chat: provider not available ${msg.provider}`);
           return;
         }
-        // Switching the active session must stop any in-flight turn first, or its
-        // deltas would paint into the newly-restored session's view.
-        void cancelActive();
+        // Switching the active session stops following any in-flight turn first, or its deltas
+        // would paint into the newly-restored session's view (a session-file turn keeps running).
+        void detachActive();
         ++generation;
         // A DRAFT (unsaved): the new chat is not written to history until its first turn, so
         // repeatedly starting/abandoning new chats never leaves empty sessions behind.
@@ -995,7 +1043,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           postHistory();
           return;
         }
-        void cancelActive();
+        void detachActive();
         ++generation;
         session = s;
         permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
@@ -1130,7 +1178,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     disposed = false;
     channel = ch;
     channel.onDidDispose(() => {
-      void cancelActive();
+      void detachActive();
       disposed = true;
       channel = undefined;
     });
@@ -1152,7 +1200,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // A restored panel arrived. Supersede any live channel (kill its in-flight turn + dispose
       // it) so exactly one channel remains, then wire the restored one in place.
       if (channel !== undefined) {
-        void cancelActive();
+        void detachActive();
         try {
           channel.dispose();
         } catch {
@@ -1163,7 +1211,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       wireChannel(ch);
     },
     dispose(): void {
-      void cancelActive();
+      void detachActive();
       disposed = true;
       channel?.dispose();
       channel = undefined;

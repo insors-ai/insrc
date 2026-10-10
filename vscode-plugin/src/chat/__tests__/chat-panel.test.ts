@@ -2541,3 +2541,83 @@ test("a second live window that is not the cursor's owner does not follow it; on
   await waitFor(() => requests.length === 1);
   await waitFor(() => store.get(id)?.liveTurn === undefined);
 });
+
+test('switching chat or closing the panel stops following a turn writing to the session file without stopping its process, and showing the session again resumes it; a turn without one is still stopped', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  let release!: () => void;
+  const gate = new Promise<void>((r) => (release = r));
+  const proc = fakeLiveProc(1500);
+  const resumes: Array<{ cursor: { offset: number } }> = [];
+  const adapter: StreamAdapter = {
+    async *run(_req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+      const cursor = { sessionId: opts!.sessionId!, turnId: 'long', generation: 1, offset: 10 };
+      opts?.onSpawn?.({ ...proc, cursor, outPath: '/out/s.ndjson' });
+      await Promise.resolve();
+      yield { kind: 'assistant-delta', turnId: 'long', text: 'part one' };
+      opts?.onProgress?.({ ...cursor, offset: 50 });
+      await gate;
+      yield { kind: 'assistant-delta', turnId: 'long', text: 'part two (read again on resume)' };
+      yield { kind: 'done', turnId: 'long', ok: true };
+    },
+    async *resume(req): AsyncIterable<TurnEvent> {
+      resumes.push(req as { cursor: { offset: number } });
+      yield { kind: 'assistant-delta', turnId: 'long', text: 'part two' };
+      yield { kind: 'done', turnId: 'long', ok: true };
+    },
+    cancel: async () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 3, isAlive: () => true });
+  host.open();
+  fc.send(env('submit-turn', { text: 'long job' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'assistant-delta'));
+  const id = store.list()[0]!.id;
+
+  // Switch to a new chat mid-turn: the process keeps running, the cursor stays saved.
+  fc.send(env('new-chat', { provider: 'claude' }));
+  release();
+  await new Promise((r) => setTimeout(r, 30));
+  assert.deepEqual(proc.signals, [], 'the session-file turn was not stopped');
+  assert.equal(proc.exited(), false);
+  assert.equal(store.get(id)?.liveTurn?.cursor.offset, 50, 'its cursor is kept');
+  const texts = () => store.get(id)!.transcript.filter((r) => r.role === 'assistant').map((r) => (r as { text: string }).text);
+  assert.deepEqual(texts(), ['part one'], 'nothing past the cursor was taken while detached');
+
+  // Showing the session again resumes it from the cursor.
+  fc.send(env('open-chat', { chatId: id }));
+  await waitFor(() => resumes.length === 1);
+  assert.equal(resumes[0]!.cursor.offset, 50);
+  await waitFor(() => store.get(id)?.liveTurn === undefined);
+  assert.deepEqual(texts(), ['part one', 'part two']);
+
+  // Closing the panel does not stop a session-file turn either.
+  host.dispose();
+  assert.deepEqual(proc.signals, []);
+  proc.exitNow();
+});
+
+test("Stop ends a resumed turn's process through the handle resume() hands over", async () => {
+  const { store, id } = storeWithLiveTurn(1); // the owner window is gone
+  const proc = fakeLiveProc(1600);
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {},
+    async *resume(_req, opts): AsyncIterable<TurnEvent> {
+      opts?.onAttach?.({ ...proc });
+      yield { kind: 'assistant-delta', turnId: 't1', text: 'still going' };
+      await new Promise<void>((r) => opts?.signal?.addEventListener('abort', () => r(), { once: true }));
+    },
+    cancel: async () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 2, isAlive: (pid) => pid === 2 });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'assistant-delta'));
+  fc.send(env('cancel-turn'));
+  await waitFor(() => proc.exited());
+  assert.deepEqual(proc.signals, ['SIGTERM'], 'Stop ended the resumed turn through the handed-over handle');
+});

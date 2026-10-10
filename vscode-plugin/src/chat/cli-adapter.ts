@@ -918,10 +918,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       }
     } finally {
-      // A consumer that abandons the stream before any terminal event must never orphan
-      // the child: stop it (kill is idempotent + safe on an already-exited process).
-      // After a terminal event the process is left to finish; its exit cleans up.
-      if (!terminal) {
+      // A consumer that abandons a PIPE turn before any terminal event must never orphan the
+      // child: stop it (kill is idempotent + safe on an already-exited process). A turn writing to
+      // its session file is only detached from: the CLI goes on writing there and the turn can be
+      // resumed from its cursor. After a terminal event the process is left to finish either way.
+      if (!terminal && output === undefined) {
         proc.kill('SIGTERM');
         pendingByTurn.delete(turnId);
       }

@@ -1,0 +1,451 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791652083890-xnqndx",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-10T17:11:58.826Z",
+    "epicCreatedAt": "2026-10-10T14:59:06.102Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 234933,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1d04e56057b3daba",
+    "epicSlug": "vs-code-plugin-chat-cli-turn",
+    "storyId": "s1",
+    "lldRunId": "wf-1791650359896-a1tx5r",
+    "lldEffectiveHash": "92be0f55a8af9be99c9a2ce79fbd7933cec7d7b7ce9b688ede4f578012e2dea8",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-10T17:35:23.766Z",
+    "rangeBase": "52a320a5d09dddbd25cf8f62db94084a825d6628"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this Story adds a vscode-free module that keeps one rolling output file per chat session, with each turn framed as a segment by marker lines, a tail reader that yields only complete lines with a resumable cursor, and roll-over and cleanup that keep disk use bounded. The real spawner then points the CLI's stdout and stderr at those files, the adapter writes each turn as a segment, reports its cursor and can resume a saved one. Finally the lock record and the session store carry the segment and cursor, the panel records the cursor and resumes it after a reload, Stop is separated from merely detaching, and the extension wires it all in."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the session-output module: segments, markers and the tail reader",
+        "summary": "New vscode-free vscode-plugin/src/chat/session-output.ts: createSessionOutput({ root, fs, maxBytes, pollMs, now }) with beginTurn (generation header on a new file, closes an open segment with a turn-end marker of unknown code, appends turn-start, truncates the err log, returns paths and cursor), endTurn (turn-end marker), tail(cursor, { finished, signal }) yielding complete CLI lines of one segment with the cursor after each (markers skipped; ends at the segment's turn-end, the next turn-start, or EOF once finished), errTail, and the marker grammar (top-level \"insrc.marker\" key only).",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A segment is exactly the CLI lines between its turn-start and turn-end markers; markers are never yielded.",
+          "tail holds back a half-written line until its newline and follows growth until finished() is true; a final unterminated line is yielded only then.",
+          "Tailing again from a yielded cursor resumes exactly after that line; a segment without a turn-end ends at the next turn-start or once finished at EOF, and the next beginTurn closes it with a turn-end of unknown code.",
+          "A CLI line that merely contains the text insrc.marker inside a string is yielded as a CLI line."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "session-output.test.ts: a turn's segment is the lines between its turn-start and turn-end markers; tail yields only complete CLI lines with the cursor after each, skips marker lines, holds back a half-written line until its newline, and follows growth until the writer finishes"
+          },
+          {
+            "level": "unit",
+            "name": "session-output.test.ts: tailing again from a yielded cursor resumes exactly after that line; a segment without a turn-end marker ends at the next turn-start or once the writer is finished"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add roll-over, remove and sweep to the session-output module",
+        "summary": "beginTurn rolls the session file over at a turn start once it passes maxBytes (default 4 MiB): rename to <sessionId>.1.ndjson replacing the older generation, start a new generation with its header. tail reads a cursor's generation from whichever file holds it; an offset past its file's end re-anchors at the cursor's turn-start marker or reports the segment gone. remove(sessionId) deletes the session's files; sweep({ olderThanMs, keep }) removes stale files of sessions not in keep.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Past maxBytes the file rolls over only at a turn start, keeping exactly one previous generation; a segment is never split.",
+          "A cursor in the previous generation is read from <sessionId>.1.ndjson; a generation that is gone is reported so the caller can clear its cursor.",
+          "One session uses one file pair (plus one previous generation) however many turns it runs; remove and sweep delete only what they should."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "session-output.test.ts: the file rolls over at a turn start once past maxBytes, keeping one previous generation, and a cursor in the previous generation is still read from <sessionId>.1.ndjson"
+          },
+          {
+            "level": "unit",
+            "name": "session-output.test.ts: remove deletes a session's files; sweep removes old files of sessions not in keep and leaves the rest; one session uses one file pair however many turns it runs"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Let the real spawner write the CLI's output to the session files",
+        "summary": "cli-adapter.ts: SpawnFn opts.output { outPath, errPath, cursor, tail, errTail }; when present nodeSpawner opens outPath and errPath in append mode and passes them as the child's stdout and stderr (stdin stays a pipe), lines() reads the turn's segment through tail until the process has exited and the segment is read, stderr() returns errTail(), and SpawnedProcess.cursor tracks the latest position. Without output the pipe path is unchanged. The stream mappers skip marker lines.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "With output, the CLI's stdout lands in the session file inside its segment and stderr in the err log; lines() yields every line, including lines written after the result line.",
+          "Without output, the spawner and all existing adapter tests behave as before.",
+          "Marker lines reaching a mapper produce no events."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "cli-adapter.test.ts: the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line"
+          },
+          {
+            "level": "unit",
+            "name": "cli-adapter.test.ts: marker lines reaching a mapper produce no events"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Make run() write each turn as a segment and report progress",
+        "summary": "AdapterDeps.sessionOutput and RunOptions.sessionId/onProgress. When both are present run() calls beginTurn(sessionId, turnId) before spawning, passes the segment to the spawner, reports onProgress(cursor) after each line's events, hands TurnProcess.cursor in onSpawn, keeps draining after the terminal event, and calls endTurn with the exit when the process exits (only while this host is alive; a turn that outlives the host is closed by the next beginTurn). A beginTurn failure logs once and uses the pipe for that turn.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "run() yields the same events from the session file as from a pipe and reports a cursor after each line.",
+          "The turn-end marker is written after the process's real exit, including when it outlives its answer.",
+          "A beginTurn failure falls back to the pipe with one logged error; without sessionId or sessionOutput the pipe is used."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "cli-adapter.test.ts: run() yields the same events from the output file as from a pipe, reports progress offsets, and writes the turn-end marker after the process exits"
+          },
+          {
+            "level": "integration",
+            "name": "cli-adapter.test.ts: a beginTurn failure falls back to the pipe with one logged error"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add resume() for following a saved segment",
+        "summary": "StreamAdapter.resume({ cursor, pid, startedAt }, { onProgress, signal, onAttach }): maps the segment's lines from the cursor with the same mapper, ends at the terminal event or the segment's end, and ends with an error when the recorded process is gone without one; onAttach hands a TurnProcess whose stop() signals the recorded pid's group only while its start time matches (SIGTERM, then SIGKILL after the grace).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "resume() from a saved cursor yields only the later events and ends at the terminal event.",
+          "When the recorded process is gone and the segment has no terminal event, resume() ends with an error saying the turn ended without a result.",
+          "The handed-over process stops the recorded group only while the start time matches; a reused pid is never signalled."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "cli-adapter.test.ts: resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one"
+          },
+          {
+            "level": "integration",
+            "name": "cli-adapter.test.ts: resume()'s handed-over process stops the recorded pid's group only while its start time matches"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Record the segment on the lock and the session",
+        "summary": "session-lock.ts: LockFileRecord gains output: { sessionFile, turnId } | null, written on attach from TurnProcess.cursor. session-store.ts: ChatSession gains optional liveTurn { cursor, ownerHostPid, pid?, startedAt? }, and the memento store gains an onEvict hook so an evicted session's output files can be removed.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "After attach the lock record names the holder's session file and turn.",
+          "A stored session without liveTurn loads unchanged; liveTurn round-trips through the store.",
+          "Evicting a session calls onEvict with its id."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "session-lock.test.ts: the lock record carries the holder's session file and turn after attach"
+          },
+          {
+            "level": "unit",
+            "name": "session-store.test.ts: liveTurn round-trips through the store, a session without it loads unchanged, and eviction calls onEvict with the evicted id"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Record and clear the turn cursor in the panel",
+        "summary": "chat-panel.ts: runTurn passes sessionId and onProgress to adapter.run (inside runLeased), saves liveTurn { cursor, ownerHostPid: this host, pid, startedAt } as lines are handled, and clears it at the terminal event.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t4",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "A turn records its cursor on the session as lines are handled, with this host as owner.",
+          "The cursor is cleared at the terminal event; a pipe turn records none."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: a turn records its cursor on the session as lines are handled and clears it at the terminal event"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Resume a saved cursor when a session is shown",
+        "summary": "chat-panel.ts: when a session is shown (open, ready, restore, open-chat) with a liveTurn, follow it with adapter.resume only if its owner host is this host or is gone (taking ownership), post and append only the new events, clear liveTurn at the end, and clear a cursor whose generation is gone without resuming.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t5",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "A new host over the same store follows a live cursor from the saved offset; only new events are posted and appended; the cursor is cleared at the end.",
+          "A second live window that is not the owner does not follow; once the owner host is gone it takes over.",
+          "A cursor whose generation is gone is cleared without resuming."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: after a reload (a new host over the same store) a session with a live cursor is followed from the saved offset, only new events are posted and appended, and the cursor is cleared at the end"
+          },
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: a cursor whose generation is gone (rolled over twice) is cleared without resuming"
+          },
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: a second live window that is not the cursor's owner does not follow it; once the owner host is gone it takes over"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Split Stop from detach in the panel",
+        "summary": "cancelActive splits: Stop (cancel-turn) ends the running process at once for a live turn and for a resumed one (the TurnProcess from onAttach). A chat switch, onDidDispose, dispose and adopt only stop following a turn that writes to the session file, leaving its process running with the lease and its cursor saved; a turn without a session file is still stopped on those paths.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "Switching chat or closing the panel leaves a session-file turn's process running, and showing the session again resumes it.",
+          "A turn without a session file is still stopped on those paths (existing tests pass).",
+          "Stop ends a resumed turn's process through the handed-over handle."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: switching chat or closing the panel stops following a turn writing to the session file without stopping its process, and showing the session again resumes it; a turn without one is still stopped"
+          },
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: Stop ends a resumed turn's process through the handle resume() hands over"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Wire the session output in the extension",
+        "summary": "extension.ts: build createSessionOutput on ~/.insrc/chat-output, pass it as AdapterDeps.sessionOutput to createProviderRegistry, remove an evicted session's files via the store's onEvict, and sweep stale files of sessions not in the store at start (30 days).",
+        "size": "S",
+        "order": 10,
+        "dependsOn": [
+          "t2",
+          "t4",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "extension.ts passes a session output on ~/.insrc/chat-output into the provider registry and wires onEvict and the start-up sweep (wiring test).",
+          "The plugin's full suite and typecheck pass apart from the known manifest-catalog baseline."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring.test.ts: the extension builds a session output on ~/.insrc/chat-output, passes it to the provider registry, and wires onEvict and the start-up sweep"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "session-output.test.ts: a turn's segment is the lines between its turn-start and turn-end markers; tail yields only complete CLI lines with the cursor after each, skips marker lines, holds back a half-written line until its newline, and follows growth until the writer finishes",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "session-output.test.ts: tailing again from a yielded cursor resumes exactly after that line; a segment without a turn-end marker ends at the next turn-start or once the writer is finished",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "session-output.test.ts: the file rolls over at a turn start once past maxBytes, keeping one previous generation, and a cursor in the previous generation is still read from <sessionId>.1.ndjson",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "session-output.test.ts: remove deletes a session's files; sweep removes old files of sessions not in keep and leaves the rest; one session uses one file pair however many turns it runs",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "cli-adapter.test.ts: the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "cli-adapter.test.ts: run() yields the same events from the output file as from a pipe, reports progress offsets, and writes the turn-end marker after the process exits",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "cli-adapter.test.ts: resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "session-lock.test.ts: the lock record carries the holder's session file and turn after attach",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "cli-adapter.test.ts: resume()'s handed-over process stops the recorded pid's group only while its start time matches",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: a turn records its cursor on the session as lines are handled and clears it at the terminal event",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: after a reload (a new host over the same store) a session with a live cursor is followed from the saved offset, only new events are posted and appended, and the cursor is cleared at the end",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: a cursor whose generation is gone (rolled over twice) is cleared without resuming",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: switching chat or closing the panel stops following a turn writing to the session file without stopping its process, and showing the session again resumes it; a turn without one is still stopped",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: Stop ends a resumed turn's process through the handle resume() hands over",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: a second live window that is not the cursor's owner does not follow it; once the owner host is gone it takes over",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails + dataModelChanges: createSessionOutput and the session output files (segments, markers, roll-over)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: nodeSpawner/SpawnFn output, StreamAdapter run/resume, RunOptions, AdapterDeps.sessionOutput, TurnProcess.cursor"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: LockFileRecord.output"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: ChatSession.liveTurn and removal with the session"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails + dataModelChanges: createChatPanelHost runTurn / postInitialState / cancelActive (cursor, resume, owner host, Stop vs detach)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges + migration step 4: extension wiring and start-up sweep"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths: create/append failure, unreadable file, gone generation, no terminal event, offset past end, missing turn-end marker"
+    }
+  ]
+}

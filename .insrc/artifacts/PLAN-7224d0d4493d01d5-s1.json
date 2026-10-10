@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791636127578-domrg4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-10T12:44:46.573Z",
+    "epicCreatedAt": "2026-10-09T16:27:38.957Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 158994,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7224d0d4493d01d5",
+    "epicSlug": "defect-against-epic-e1-2ff0dfda-delivery",
+    "storyId": "s1",
+    "lldRunId": "wf-1791635476911-jq0q2k",
+    "lldEffectiveHash": "9e79cdbd89bf712e4d7129cb167beb560ce20a61c3d77b5489505388c81255c6",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-10T13:38:50.709Z",
+    "rangeBase": "18588974359000f3eb9e2f6dedd393bd56e7e5a0"
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "Building this Story makes the delivery snapshot say what each work item is about, straight from its records: first the purpose, size, problem, summary and issue body as recorded-or-not values with their source, then the read-only feedback recorded on each item's design records. It ends by mirroring both fields in the VS Code plugin's view of the contract and checking that a 1,000-record store is still served within its budget."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Publish each item's description from its records",
+        "summary": "Add DeliveryRecorded, DeliveryItemDescription and DeliveryItem.description to src/workflow/delivery/types.ts, and fill description for every item in assembleSnapshot: an epic's problem and summary from its head DEF, a story's purpose and size from its DEF entry by ordinal (else the EXT addedStory's userValue), an issue's reproduction, root cause and fix intent from its ISSUE body, and { kind: 'task' } for a task. A value is recorded only when it is a non-empty string (size: one of S, M, L, XL), published exactly as stored with its record's artifactId. Extend the record fixtures with body overrides, update the IPC member test and regenerate the JetBrains sample so the suite stays green.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Every item's description.kind equals its kind, and each kind carries only its own fields.",
+          "Recorded values carry the source record's artifactId and equal the stored strings exactly; missing, blank or wrongly typed values read not-recorded.",
+          "A story added by an extension takes its purpose from the EXT; a standalone story reads not-recorded for purpose and size.",
+          "Two snapshots of the same store are identical, including description.",
+          "The JetBrains sample equals the assembler's output and the IPC member test lists description; the root suite passes."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "snapshot.test.ts: an epic's problem and summary, a story's purpose and size, and an issue's reproduction, root cause and fix intent are published from their records"
+          },
+          {
+            "level": "unit",
+            "name": "snapshot.test.ts: missing, blank or wrongly typed values read not recorded, and a value that does not apply to a kind is absent"
+          },
+          {
+            "level": "unit",
+            "name": "snapshot.test.ts: a story added by an extension takes its purpose from the EXT, and a standalone story reads not recorded"
+          },
+          {
+            "level": "integration",
+            "name": "types.test.ts: the delivery IPC types list exactly the sketched members"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Publish the feedback recorded on an item's own design records",
+        "summary": "Add DeliveryFeedback and DeliveryItem.feedback to the published types and fill feedback in assembleSnapshot from body.feedback on the item's own DEF, HLD, LLD and PLAN evidence records, with absent optional fields as null, sorted by timestamp, artifactId and id, never inherited. Malformed entries (or a non-array feedback) are left out and named in an incomplete-evidence notice on the item. Regenerate the sample and update the member test.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "An item lists every well-formed feedback entry of its own design records, with its artifactId, in timestamp, artifactId, id order; a parent's or child's feedback is not listed.",
+          "Missing kind, version or segment read as null; feedback on BUILD, CR or ISSUE bodies is not read.",
+          "A malformed entry is left out, the others on the same record are kept, and an incomplete-evidence notice names the record and the count.",
+          "Two snapshots of the same store are identical, including description and feedback."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "snapshot.test.ts: feedback from an item's own design records is listed read-only, in order, and malformed entries are noticed"
+          },
+          {
+            "level": "unit",
+            "name": "snapshot.test.ts: two snapshots of the same store, with equal timestamps, are identical in order and counts"
+          },
+          {
+            "level": "integration",
+            "name": "contract.test.ts: the JetBrains sample snapshot is plain JSON and equals what the assembler produces"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Mirror the new fields in the plugin's contract and verify the budget",
+        "summary": "Add 'description' and 'feedback' to DeliveryItemView in vscode-plugin/src/delivery/delivery-contract.ts, re-export the three new types, and add a type-level assertion that DeliveryItemView's keys include both fields so the contract typecheck fails when either is dropped. Give the board's item fixture default values for the two fields. Make the 1,000-record budget test's records carry descriptive values and feedback entries, and confirm it still serves within 500 ms; the board's rendering is unchanged.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "tsconfig.delivery-contract.json typechecks, and removing 'description' or 'feedback' from the Pick fails it.",
+          "The board fixtures carry the new fields and the full plugin suite passes unchanged.",
+          "handlers.test.ts serves a 1,000-record store whose records carry descriptive values and feedback within 500 ms, and its snapshot contains recorded descriptions and feedback.",
+          "The root and plugin suites pass apart from the known manifest-catalog baseline failure; both typechecks are clean."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "contract.test.ts: the VS Code plugin type-checks against the published delivery types"
+          },
+          {
+            "level": "integration",
+            "name": "handlers.test.ts: a 1,000-record store forming 500 work items is served within 500 ms"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "snapshot.test.ts: an epic's problem and summary, a story's purpose and size, and an issue's reproduction, root cause and fix intent are published from their records with the record's artifactId",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "snapshot.test.ts: missing, blank or wrongly typed values read not-recorded, values are published exactly as stored, a task's description has no fields, and a field that does not apply to a kind is absent",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "snapshot.test.ts: a story added by an extension takes its purpose from the EXT; a standalone story reads not-recorded",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "snapshot.test.ts: feedback from an item's own DEF/HLD/LLD/PLAN records is listed read-only in timestamp, artifactId, id order with absent optional fields as null, never inherited, and malformed entries are left out with an incomplete-evidence notice",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "snapshot.test.ts: two snapshots of the same store, with descriptions and feedback, are identical",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "types.test.ts: the delivery IPC types list exactly the sketched members, including DeliveryItem.description and feedback and the three new types",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "contract.test.ts: the VS Code plugin type-checks against the published delivery types (DeliveryItemView picks description and feedback)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "contract.test.ts: the JetBrains sample snapshot, regenerated with descriptions and feedback, equals what the assembler produces",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "delivery-contract.ts: a type-level assertion that DeliveryItemView's keys include 'description' and 'feedback', so the contract typecheck (contract.test.ts) fails when the plugin mirror omits either field",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "handlers.test.ts: a 1,000-record store forming 500 work items is served within 500 ms, with descriptions and feedback present (a regression guard: it passes before the fix and must still pass after it)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin board tests: the board fixtures carry the new fields and every board test still passes unchanged",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.assembleSnapshot postconditions (description per kind)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.assembleSnapshot postconditions (feedback) and errorPaths"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges (DeliveryRecorded, DeliveryItemDescription, DeliveryFeedback, DeliveryItem)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.DeliveryItemView"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration"
+    }
+  ]
+}

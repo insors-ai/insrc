@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791643137014-95kri7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-10T14:38:57.014Z",
+    "model": "claude:opus",
+    "elapsedMs": 64033,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7224d0d4493d01d5",
+    "storyId": "s1",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "7224d0d4493d01d5",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/delivery/__tests__/fixtures.ts",
+        "src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json",
+        "src/workflow/delivery/__tests__/handlers.test.ts",
+        "src/workflow/delivery/__tests__/snapshot.test.ts",
+        "src/workflow/delivery/__tests__/types.test.ts",
+        "src/workflow/delivery/describe.ts",
+        "src/workflow/delivery/read.ts",
+        "src/workflow/delivery/snapshot.ts",
+        "src/workflow/delivery/types.ts",
+        "vscode-plugin/src/delivery/__tests__/board-fixtures.ts",
+        "vscode-plugin/src/delivery/delivery-contract.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/__tests__/snapshot.test.ts:197",
+            "message": "Present but unverified: all 9 tests the plan promised are in the tree. snapshot.test.ts has six of them (lines 117, 197, 223, 240, 253), types.test.ts:119 has the IPC-types test, contract.test.ts:56 and :65 have the two contract tests, and handlers.test.ts:265 has the 1,000-record / 500 ms test. There is no build record, so none of them can be confirmed as passing. Most changed production symbols in describe.ts, snapshot.ts and read.ts show an empty testsReaching, but that comes from gaps in the graph grounding, not from missing coverage. snapshot.test.ts:45 and contract.test.ts:53 call assembleSnapshot directly, and assembleSnapshot reaches describeItem, feedbackOf, completenessNotices and the inner entryOf/itemOf. read.test.ts covers asObject, asString and taskOrdinalOf, and handlers.test.ts exercises errorText through handlers.ts. No HIGH not-exercised finding is raised from this incomplete grounding. Run the delivery suite to confirm the pass-state.",
+            "expectationRef": "all promised tests (pass-state unverified, no build record)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

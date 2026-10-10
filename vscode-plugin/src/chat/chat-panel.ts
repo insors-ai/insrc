@@ -18,8 +18,8 @@ import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from './render-reg
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, CHAT_MARKDOWN_TOKENS } from './markdown-style.js';
 import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
-import type { ProviderRegistry, ProviderId, TurnProcess } from './cli-adapter.js';
-import { createMemorySessionLocks, LockWaitAborted, LockWaitSuperseded, runLeased, type SessionLease, type SessionLocks } from './session-lock.js';
+import type { ProviderRegistry, ProviderId, TurnCursor, TurnProcess } from './cli-adapter.js';
+import { createMemorySessionLocks, defaultProcessStartTime, LockWaitAborted, LockWaitSuperseded, runLeased, type SessionLease, type SessionLocks } from './session-lock.js';
 // S001 (bugfix): a value import — the pure classifier that tells a tool-permission gate apart from
 // a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial } from './cli-adapter.js';
@@ -92,7 +92,14 @@ export interface ChatPanelHostDeps {
   readonly sessionLocks?: SessionLocks | undefined;
   /** Live read of how long a turn waits for the session's previous process before stopping it. */
   readonly turnLockTimeoutMs?: (() => number) | undefined;
+  /** This extension host's pid, recorded as the owner of a turn's saved cursor. Default process.pid. */
+  readonly hostPid?: number | undefined;
+  /** A pid's process start time, recorded with the cursor so a reused pid is never followed. */
+  readonly processStartTime?: ((pid: number) => number | undefined) | undefined;
 }
+
+/** How often a running turn's cursor (and transcript) is saved at most. */
+const CURSOR_SAVE_MS = 500;
 
 /** insrc.chat.turnLockTimeoutMs default: 10 minutes. */
 export const DEFAULT_TURN_LOCK_TIMEOUT_MS = 600_000;
@@ -135,6 +142,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   let activeIterator: AsyncIterator<TurnEvent> | undefined;
   let generation = 0;
   const locks = deps.sessionLocks ?? createMemorySessionLocks({ logger: log });
+  const hostPid = deps.hostPid ?? process.pid;
+  const startTime = deps.processStartTime ?? defaultProcessStartTime;
   const lockTimeoutMs = (): number => deps.turnLockTimeoutMs?.() ?? DEFAULT_TURN_LOCK_TIMEOUT_MS;
   // The wait of a turn that is queued behind the session's previous process; aborting it drops
   // the turn without stopping anything (a newer submit, Stop, a chat switch).
@@ -705,6 +714,38 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           if (liveProc === proc) liveProc = undefined;
         };
         proc.exit.then(forget, forget);
+        // The turn's output is kept in the session file: remember where it starts, owned by this
+        // host, so a reloaded window can follow it from there.
+        if (proc.cursor !== undefined) {
+          const { turnId, generation: gen, offset } = proc.cursor;
+          s.liveTurn = {
+            cursor: { turnId, generation: gen, offset },
+            ownerHostPid: hostPid,
+            ...(proc.pid !== undefined ? { pid: proc.pid, startedAt: startTime(proc.pid) ?? null } : {}),
+          };
+          saveCursorNow();
+        }
+      };
+      // Save the cursor as lines are handled, together with the transcript rows they produced, so
+      // the saved session is always a consistent snapshot. Throttled; the terminal event saves.
+      let lastCursorSave = 0;
+      const saveCursorNow = (): void => {
+        lastCursorSave = Date.now();
+        try {
+          deps.store.save(s);
+        } catch {
+          /* persistence failure must not break the turn */
+        }
+      };
+      const onProgress = (c: TurnCursor): void => {
+        const live = s.liveTurn;
+        if (live === undefined || live.cursor.turnId !== c.turnId) return;
+        s.liveTurn = { ...live, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset } };
+        if (Date.now() - lastCursorSave >= CURSOR_SAVE_MS) saveCursorNow();
+      };
+      /** At the turn's terminal event its output has been fully handled: forget its cursor. */
+      const clearCursor = (turnId: string): void => {
+        if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
       };
       try {
         // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn),
@@ -716,7 +757,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (governor !== undefined) await governor.beginTurn({ mode: 'auto', cwd: deps.cwd() });
         // Hold the iterator explicitly so cancelActive() can .return() it even while it
         // is parked awaiting its first event.
-        const iterator = adapter.run(req, { onSpawn })[Symbol.asyncIterator]();
+        const iterator = adapter.run(req, { onSpawn, onProgress, sessionId: s.id })[Symbol.asyncIterator]();
         activeIterator = iterator;
         activeProvider = s.provider;
         for (;;) {
@@ -726,6 +767,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           // never stalls on a full pipe; its process (and the lease) end when it exits.
           if (disposed || myGen !== generation) {
             if (next.value.kind === 'done' || next.value.kind === 'error') {
+              clearCursor(next.value.turnId);
               void iterator.return?.(undefined); // as on the live path: finish the generator
               break;
             }
@@ -754,6 +796,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           // (auto: visualize-only; review: track for accept/reject). Fire-and-forget so
           // the incremental turn loop never blocks on git/fs IO.
           if (governor !== undefined && ev.kind === 'file-edit') void governor.observe(ev.path);
+          if (ev.kind === 'done' || ev.kind === 'error') clearCursor(ev.turnId);
           if (ev.kind === 'done') {
             if (ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
             deps.store.save(s);

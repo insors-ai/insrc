@@ -2410,3 +2410,55 @@ test('a turn whose adapter fails to start releases the session lease (the next t
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'), 500);
   assert.ok(!waitingPosted(fc), 'the second turn never waited: the failed turn released its lease');
 });
+
+// ---- S001 (E202610101d04e560): the turn's cursor in the session output file ------------
+
+test('a turn records its cursor on the session as lines are handled and clears it at the terminal event', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  let release!: () => void;
+  const gate = new Promise<void>((r) => (release = r));
+  const seen: Array<string | undefined> = [];
+  const proc = fakeLiveProc(1001);
+  const adapter: StreamAdapter = {
+    async *run(_req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+      seen.push(opts?.sessionId);
+      const cursor = { sessionId: opts!.sessionId!, turnId: 't1', generation: 2, offset: 40 };
+      opts?.onSpawn?.({ ...proc, cursor, outPath: '/out/s.ndjson' });
+      await Promise.resolve();
+      yield { kind: 'assistant-delta', turnId: 't1', text: 'hi' };
+      opts?.onProgress?.({ ...cursor, offset: 90 });
+      await gate;
+      yield { kind: 'done', turnId: 't1', ok: true };
+    },
+    resume: async function* () {},
+    cancel: async () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 4242, processStartTime: () => 77 });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'assistant-delta'));
+  const id = store.list()[0]!.id;
+  assert.equal(seen[0], id, 'the adapter is told which session the turn belongs to');
+  await waitFor(() => store.get(id)?.liveTurn !== undefined);
+  // Recorded at spawn (offset 40, owned by this host) and advanced as lines are handled (offset 90).
+  assert.deepEqual(store.get(id)?.liveTurn, { cursor: { turnId: 't1', generation: 2, offset: 90 }, ownerHostPid: 4242, pid: 1001, startedAt: 77 }, 'recorded, owned by this host, and advanced');
+
+  release();
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.equal(store.get(id)?.liveTurn, undefined, 'cleared at the terminal event');
+
+  // A pipe turn (no cursor from the adapter) records none.
+  const plain = procAdapter();
+  const fc2 = fakeChannel();
+  const store2 = createInMemoryChatSessionStore();
+  const host2 = createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: plain.adapter }, ['claude']), store: store2, cwd: () => '/repo' });
+  host2.open();
+  fc2.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc2).some((e) => e.kind === 'done'));
+  assert.equal(store2.get(store2.list()[0]!.id)?.liveTurn, undefined);
+  plain.procs[0]!.exitNow();
+  proc.exitNow();
+});

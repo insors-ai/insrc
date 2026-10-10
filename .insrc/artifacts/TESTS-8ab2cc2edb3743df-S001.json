@@ -4,7 +4,7 @@
     "epicHash": "8ab2cc2edb3743df",
     "storyId": "S001",
     "createdAt": "2026-10-10T12:08:41.130Z",
-    "updatedAt": "2026-10-10T12:08:41.130Z",
+    "updatedAt": "2026-10-10T12:11:05.590Z",
     "standalone": true
   },
   "body": {
@@ -444,6 +444,112 @@
               },
               {
                 "title": "an absent output of one of several producers is worded by its task and the others are said to be available; a name with no output keeps the old wording",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "b79348f8",
+        "ranAt": "2026-10-10T12:11:05.590Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "each of the five aggregate prompts describes the block as it is rendered and no longer says one section per task id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+                "title": "each of the five aggregate prompts describes the block as it is rendered and no longer says one section per task id",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/boot-validator.test.ts",
+                "title": "validateAnalyzePrompts: every PROMPT_PATHS entry is present + non-empty",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/boot-validator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 891,
+            "titles": [
+              {
+                "title": "validateAnalyzePrompts: every PROMPT_PATHS entry is present + non-empty",
+                "result": "pass"
+              },
+              {
+                "title": "validateAnalyzePrompts: throws when a prompt file is missing",
+                "result": "pass"
+              },
+              {
+                "title": "validateAnalyzePrompts: throws when a prompt file is empty",
+                "result": "pass"
+              },
+              {
+                "title": "validateAnalyzePrompts: collects ALL failures in one error",
+                "result": "pass"
+              },
+              {
+                "title": "AnalyzePromptValidationError preserves the failures array on the instance",
+                "result": "pass"
+              },
+              {
+                "title": "prompt file for 'classification' has a role intro matching expectations",
+                "result": "pass"
+              },
+              {
+                "title": "prompt file for 'generic' has a role intro matching expectations",
+                "result": "pass"
+              },
+              {
+                "title": "prompt file for 'code' has a role intro matching expectations",
+                "result": "pass"
+              },
+              {
+                "title": "prompt file for 'data' has a role intro matching expectations",
+                "result": "pass"
+              },
+              {
+                "title": "prompt file for 'infra' has a role intro matching expectations",
+                "result": "pass"
+              },
+              {
+                "title": "prompt file for 'docs' has a role intro matching expectations",
+                "result": "pass"
+              },
+              {
+                "title": "tmp helpers are wired (smoke)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 578,
+            "titles": [
+              {
+                "title": "each of the five aggregate-report runtimes hands absentInputs to the aggregator",
+                "result": "pass"
+              },
+              {
+                "title": "each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs",
+                "result": "pass"
+              },
+              {
+                "title": "each of the five aggregate prompts describes the block as it is rendered and no longer says one section per task id",
                 "result": "pass"
               }
             ],

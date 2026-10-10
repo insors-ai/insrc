@@ -31,7 +31,7 @@ import { runWithRoutingContext } from '../../../context/shaper-provider.js';
 import type { RoutingSeamContext } from '../../../context/shaper-provider.js';
 import { buildCompleteness } from '../../../completeness.js';
 import { purgeAllTaskOutputs, readTaskOutput, registerTemplateRuntime, runExecutor, _resetRuntimeRegistryForTests } from '../../../executor/index.js';
-import type { AbsentInput, PlannedTask, TemplateExecuteArgs, TemplateRuntime } from '../../../executor/types.js';
+import type { AbsentInput, PlannedTask, TemplateExecuteArgs, TemplateRuntime, UpstreamOutput } from '../../../executor/types.js';
 import type { PlanTask } from '../../../planner/types.js';
 import { codeAdherenceCheckRuntime } from '../../code/adherence-check.js';
 import { dataAdherenceCheckRuntime } from '../../data/adherence-check.js';
@@ -123,7 +123,7 @@ async function check(
 	} as unknown as PlannedTask;
 	const intent: ClassifiedIntent = { target, scope: 'M', focused: true, focus: 'ci', scopeRef: over.scopeRef ?? { kind: 'repo', value: REPO }, reasoning: 'test' };
 	// A map that fails the test if the check asks it for anything.
-	const upstreamOutputs = new Proxy(new Map<string, unknown>(), {
+	const upstreamOutputs = new Proxy(new Map<string, UpstreamOutput[]>(), {
 		get: (_t, prop) => { throw new Error(`the check read upstreamOutputs.${String(prop)}`); },
 	});
 	const args: TemplateExecuteArgs = { task, intent, upstreamOutputs, runId };

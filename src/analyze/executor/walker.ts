@@ -56,6 +56,7 @@ import {
 	type ExecutorResult,
 	type FailedTask,
 	type AbsentInput,
+	type UpstreamOutput,
 	type PlanExecutionResult,
 	type PlannedTask,
 	type PlanTreeNode,
@@ -107,7 +108,7 @@ async function executePlan(
 	runId:  string,
 	opts:   WalkOpts,
 ): Promise<ExecutorResult> {
-	const outputs     = new Map<string, unknown>();
+	const outputs     = new Map<string, UpstreamOutput[]>();
 	const failed      = new Set<string>();
 	const perTask     = new Map<string, TaskExecutionRecord>();
 	const tasksFailed: FailedTask[] = [];
@@ -195,8 +196,13 @@ async function executePlan(
 		if (result.status === 'ok') {
 			tasksCompleted++;
 			if (result.outputs !== undefined) {
+				// Append, never replace: several tasks of a plan may produce the
+				// same name, and a consumer is handed every one of them.
 				for (const [name, value] of Object.entries(result.outputs)) {
-					outputs.set(name, value);
+					const produced: UpstreamOutput = { taskId: task.taskId, template: task.template, params: task.params, value };
+					const list = outputs.get(name);
+					if (list === undefined) outputs.set(name, [produced]);
+					else list.push(produced);
 				}
 			}
 			if (isAggregator) {
@@ -232,7 +238,7 @@ async function executeLeafTask(
 	task:    PlannedTask,
 	intent:  ClassifiedIntent,
 	runId:   string,
-	outputs: ReadonlyMap<string, unknown>,
+	outputs: ReadonlyMap<string, readonly UpstreamOutput[]>,
 	/** For the aggregate-report task only: what the plan did not produce. */
 	absentInputs?: readonly AbsentInput[] | undefined,
 ): Promise<TaskExecutionRecord> {
@@ -383,7 +389,7 @@ function childFailureCause(
  */
 function unmetDependencies(
 	task:    PlannedTask,
-	outputs: ReadonlyMap<string, unknown>,
+	outputs: ReadonlyMap<string, readonly UpstreamOutput[]>,
 	failed:  ReadonlySet<string>,
 ): string | null {
 	for (const name of task.consumes ?? []) {
@@ -409,7 +415,7 @@ function unmetDependencies(
  */
 function aggregateUnmet(
 	task:    PlannedTask,
-	outputs: ReadonlyMap<string, unknown>,
+	outputs: ReadonlyMap<string, readonly UpstreamOutput[]>,
 ): string | null {
 	const consumes = task.consumes ?? [];
 	if (consumes.length === 0) return null;
@@ -420,7 +426,9 @@ function aggregateUnmet(
 /**
  * What the plan did not produce, for its aggregate-report task:
  *   - one entry per name that a failed or skipped task before it would have
- *     produced, with that task's id and its recorded reason;
+ *     produced, with that task's id and its recorded reason, whether or not
+ *     another task of the plan produced the same name: the consumer has the
+ *     siblings' outputs and is told which one is missing;
  *   - one entry, with no producing task, for a name the aggregate task
  *     consumes that no task of the plan produces.
  * Built from the plan's tasks and not only from the aggregate task's own
@@ -431,7 +439,7 @@ function aggregateUnmet(
 function absentInputsFor(
 	task:    PlannedTask,
 	tasks:   readonly PlannedTask[],
-	outputs: ReadonlyMap<string, unknown>,
+	outputs: ReadonlyMap<string, readonly UpstreamOutput[]>,
 	perTask: ReadonlyMap<string, TaskExecutionRecord>,
 ): AbsentInput[] {
 	const absent: AbsentInput[] = [];
@@ -442,8 +450,6 @@ function absentInputsFor(
 		const record = perTask.get(other.taskId);
 		if (record === undefined || record.status === 'ok') continue;
 		for (const name of other.produces) {
-			// Another task may have produced the same name; it is then not absent.
-			if (outputs.has(name)) continue;
 			absent.push({ name, producedBy: other.taskId, reason: record.error ?? record.status });
 		}
 	}
@@ -456,19 +462,17 @@ function absentInputsFor(
 
 /**
  * Pull just the upstream names this task `consumes` out of the
- * full outputs map. Aggregator tasks (with `consumes` listing
- * everything they need) get the projected subset; the runtime
- * decides how to stitch.
+ * full outputs map: for each, the whole list of outputs produced
+ * under it, in plan order. The runtime decides how to stitch.
  */
 function projectUpstream(
 	task:    PlannedTask,
-	outputs: ReadonlyMap<string, unknown>,
-): ReadonlyMap<string, unknown> {
-	const out = new Map<string, unknown>();
+	outputs: ReadonlyMap<string, readonly UpstreamOutput[]>,
+): ReadonlyMap<string, readonly UpstreamOutput[]> {
+	const out = new Map<string, readonly UpstreamOutput[]>();
 	for (const name of task.consumes ?? []) {
-		if (outputs.has(name)) {
-			out.set(name, outputs.get(name));
-		}
+		const list = outputs.get(name);
+		if (list !== undefined && list.length > 0) out.set(name, [...list]);
 	}
 	return out;
 }

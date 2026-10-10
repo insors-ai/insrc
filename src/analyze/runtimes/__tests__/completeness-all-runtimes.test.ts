@@ -70,7 +70,9 @@ function intent(): ClassifiedIntent {
 
 function args(templateId: string, params: Record<string, unknown>, upstream: Record<string, unknown> = {}): TemplateExecuteArgs {
 	const task: PlannedTask = { taskId: 't01', template: templateId, kind: 'leaf', params, produces: [], rationale: 'test' } as PlannedTask;
-	return { task, intent: intent(), upstreamOutputs: new Map(Object.entries(upstream)), runId: 'r1' };
+	// Each value is the one output of a task: a bare empty array would be read as a name with no output.
+	const upstreamOutputs = new Map(Object.entries(upstream).map(([name, value]) => [name, [{ taskId: 't00', template: 'demo.ok', params: {}, value }]]));
+	return { task, intent: intent(), upstreamOutputs, runId: 'r1' };
 }
 
 /** One answer that fits every schema a runtime asks the model for. */

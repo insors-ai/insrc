@@ -10,7 +10,7 @@ import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import { runWithRoutingContext } from '../../context/shaper-provider.js';
 import type { RoutingSeamContext } from '../../context/shaper-provider.js';
-import type { AbsentInput, PlannedTask, TemplateExecuteArgs, TemplateRuntime } from '../../executor/types.js';
+import type { AbsentInput, PlannedTask, TemplateExecuteArgs, TemplateRuntime, UpstreamOutput } from '../../executor/types.js';
 import { codeAggregateReportRuntime } from '../code/aggregate-report.js';
 import { dataAggregateReportRuntime } from '../data/aggregate-report.js';
 import { docsAggregateReportRuntime } from '../docs/aggregate-report.js';
@@ -35,7 +35,7 @@ async function promptOf(runtime: TemplateRuntime, absentInputs: readonly AbsentI
 	const task = { taskId: 't09', template: runtime.templateId, kind: 'leaf', params: {}, produces: ['report'], rationale: 'test' } as unknown as PlannedTask;
 	const intent: ClassifiedIntent = { target: 'code', scope: 'M', focused: true, focus: 'refunds', scopeRef: { kind: 'repo', value: '/work/app' }, reasoning: 'test' };
 	const args: TemplateExecuteArgs = {
-		task, intent, upstreamOutputs: new Map<string, unknown>([['t01', { found: ['pay'] }]]), runId: 'r1',
+		task, intent, upstreamOutputs: new Map([['t01', [{ taskId: 't01', template: 'demo.ok', params: {}, value: { found: ['pay'] } }]]]), runId: 'r1',
 		...(omit ? {} : { absentInputs }),
 	};
 	prompts = [];
@@ -76,5 +76,35 @@ test('each of the five aggregate-report runtimes hands absentInputs to the aggre
 		const end = some.indexOf('\n\nCompose the aggregate report.');
 		assert.ok(at > 0 && end > at, id);
 		assert.equal(some.slice(0, at) + some.slice(end), none, id);
+	}
+});
+
+test('each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs', async () => {
+	const upstreamOutputs = new Map<string, UpstreamOutput[]>([
+		['functional-surface', [
+			{ taskId: 't02', template: 'code.surface.functional', params: { module: 'src/pay' },    value: { symbols: ['settle'] } },
+			{ taskId: 't03', template: 'code.surface.functional', params: { module: 'src/refund' }, value: { symbols: ['refund'] } },
+			{ taskId: 't04', template: 'code.surface.functional', params: { module: 'src/ledger' }, value: { symbols: ['post'] } },
+		]],
+		['modules', [{ taskId: 't01', template: 'code.discovery.modules', params: {}, value: ['pay', 'refund', 'ledger'] }]],
+	]);
+	const intent: ClassifiedIntent = { target: 'code', scope: 'M', focused: true, focus: 'refunds', scopeRef: { kind: 'repo', value: '/work/app' }, reasoning: 'test' };
+	for (const runtime of RUNTIMES) {
+		const id = runtime.templateId;
+		const task = { taskId: 't09', template: id, kind: 'leaf', params: {}, produces: ['report'], rationale: 'test' } as unknown as PlannedTask;
+		prompts = [];
+		const result = await runWithRoutingContext(routing, () => runtime.execute({ task, intent, upstreamOutputs, runId: 'r1' }));
+		assert.equal(prompts.length, 1, id);
+		const prompt = prompts[0]!;
+		// Every output of the name is in the prompt, each under its own task, in the order given.
+		const at = ['pay', 'refund', 'ledger'].map((dir, i) => prompt.indexOf(
+			`#### functional-surface from task t0${i + 2} (code.surface.functional)\nparams: {"module":"src/${dir}"}\n\`\`\`json\n{\n  "symbols": [\n    "${dir === 'pay' ? 'settle' : dir === 'ledger' ? 'post' : 'refund'}"\n  ]\n}\n\`\`\``));
+		assert.ok(at.every(i => i > 0), `${id}: each of the three outputs, whole: ${at.join(',')}`);
+		assert.deepEqual([...at].sort((a, b) => a - b), at, `${id}: in the order given`);
+		assert.ok(prompt.includes('### functional-surface (3 outputs, one per task)\n\n#### functional-surface from task t02 '), id);
+		assert.ok(prompt.includes('### modules\n```json\n['), id);
+		// The count is of outputs, not of names.
+		const report = result.outputs.get('report') as { metadata: { tasksAnalyzed: number } };
+		assert.equal(report.metadata.tasksAnalyzed, 4, id);
 	}
 });

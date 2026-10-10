@@ -1005,7 +1005,7 @@ test('empty replaces the screen, no matches replaces the list area with Clear fi
   input.value = 'nothing like this';
   input.listeners['input']!();
   b.relay();
-  assert.equal(findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage').length, 0);
+  assert.equal(findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'acc').length, 0);
   const panel = findAll(main, e => e.attrs['class'] === 'panel')[0]!;
   assert.deepEqual([panel.attrs['data-kind'], texts(panel)[0]], ['no-matches', 'Nothing matches this view']);
   b.w.posted.length = 0;
@@ -1022,7 +1022,7 @@ test('empty replaces the screen, no matches replaces the list area with Clear fi
   b.s.snapshots[1]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'took too long' } });
   await flush();
   b.pump();
-  const banner = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel')[0]!;
+  const banner = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel warnp')[0]!;
   assert.deepEqual([banner.attrs['data-kind'], texts(banner).includes('Stale')], ['refresh-failed', true]);
   assert.equal(shownScreen(b.w), 'story', 'the story stays under the banner');
   b.w.posted.length = 0;
@@ -1045,7 +1045,7 @@ test('empty replaces the screen, no matches replaces the list area with Clear fi
   b.s.snapshots[3]!.resolve({ ok: true, value: screensSnapshot().items.length ? { ...screensSnapshot(), notices: [notice] as never } : screensSnapshot() });
   await flush();
   b.pump();
-  const partial = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel')[0]!;
+  const partial = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel warnp')[0]!;
   assert.equal(partial.attrs['data-kind'], 'partial');
   assert.ok(texts(partial).some(t => t === 'PLAN-x'));
   assert.equal(shownScreen(b.w), 'stages', 'the board is usable under it');
@@ -1148,8 +1148,8 @@ test('the story tabs post set-item-tab; overview shows the conflict first, tasks
   ]);
   const body = findAll(b.main, e => e.attrs['class'] === 'screen-body')[0]!;
   const order = body.children.map(c => c.attrs['class'] ?? c.tag);
-  assert.ok(order.indexOf('conflict') >= 0 && order.indexOf('conflict') < order.indexOf('item-tabs'), `the warning comes before the tabs and any task: ${order}`);
-  const conflict = findAll(body, e => e.attrs['class'] === 'conflict')[0]!;
+  assert.ok(order.indexOf('warnbox') >= 0 && order.indexOf('warnbox') < order.indexOf('subtabs'), `the warning comes before the tabs and any task: ${order}`);
+  const conflict = findAll(body, e => e.attrs['class'] === 'warnbox')[0]!;
   assert.deepEqual([conflict.attrs['role'], texts(conflict)[0]], ['note', 'Two records disagree']);
   const panel = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
   const tasks = findAll(panel, e => e.tag === 'details' && e.attrs['class'] === 'task');
@@ -1157,8 +1157,8 @@ test('the story tabs post set-item-tab; overview shows the conflict first, tasks
   assert.deepEqual(findAll(tasks[1]!, e => e.attrs['class'] === 'pill').map(x => [x.textContent, x.attrs['data-tone']]), [['Failed', 'danger']]);
   assert.ok(texts(panel).includes('Why this stage?'));
   assert.ok(findAll(panel, e => e.attrs['class'] === 'chain').length === 1, 'the artifact chain');
-  const cols = findAll(panel, e => e.attrs['class'] === 'item-cols')[0]!;
-  assert.deepEqual(cols.children.map(c => c.attrs['class']), ['item-main', 'item-side'], 'tasks beside why and chain');
+  const cols = findAll(panel, e => e.attrs['class'] === 'cols')[0]!;
+  assert.deepEqual(cols.children.map(c => c.attrs['class']), ['col-main', 'col-side'], 'tasks beside why and chain');
 
   // Left/Right walk the tabs; a tab posts set-item-tab and the panel follows.
   tabs[0]!.listeners['keydown']!(keyEvent('ArrowRight'));
@@ -1172,11 +1172,11 @@ test('the story tabs post set-item-tab; overview shows the conflict first, tasks
   assert.equal(findAll(evidence, e => e.attrs['class'] === 'task').length, 0, 'evidence shows no tasks');
   const wrap = findAll(evidence, e => e.attrs['class'] === 'table-wrap')[0]!;
   const rows = findAll(wrap, e => e.tag === 'tr' && e.attrs['data-artifact-id'] !== undefined);
-  assert.deepEqual(rows.map(r => r.children.slice(0, 4).map(c => c.textContent)), [
-    ['BUILD BUILD-c', 'Approved · 2026-10-01 11:43 UTC', '—', '—'],
-    ['CR CR-c', 'Pending', '—', '—'],
-    ['LLD LLD-c', 'Approved', '—', '—'],
-  ], 'every record, with approval, review and override in their own columns');
+  assert.deepEqual(rows.map(r => r.children.slice(0, 3).map(c => texts(c).join(''))), [
+    ['BUILD BUILD-c', 'Approved · 2026-10-01 11:43 UTC', '—'],
+    ['CR CR-c', 'Pending', '—'],
+    ['LLD LLD-c', 'Approved', '—'],
+  ], 'every record, with its approval and its review (and any override) in their own columns');
   assert.deepEqual(rows.map(r => findAll(r, e => e.tag === 'button')[0]!.textContent), ['Open read-only', 'Open read-only', 'Open in review']);
   assert.ok(texts(evidence).includes('Code review without a build record: CR-c reviewed code early.'), 'notices in words');
   b.w.posted.length = 0;
@@ -1200,13 +1200,14 @@ test('linked work lists the epic, children and correcting issues, each opening i
   click(tabsIn(b.main)[2]!);
   b.relay();
   const panel = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
-  assert.deepEqual(findAll(panel, e => e.tag === 'h2').map(h => h.textContent), ['Epic', 'Children', 'Issues correcting this story']);
-  const children = findAll(panel, e => e.tag === 'ul' && e.attrs['class'] === 'linked')[1]!;
+  assert.deepEqual(findAll(panel, e => e.attrs['class'] === 'label').map(h => h.textContent), ['Epic', 'Children', 'Issues correcting this story']);
+  const children = findAll(panel, e => e.attrs['class'] === 'linked')[1]!;
   assert.deepEqual(texts(children), ['TASK · Project records · on Overview & tasks', 'TASK · Render structure · on Overview & tasks'],
     'the story\'s children are its tasks, which have no screen of their own: named here, expanded on the overview');
   const links = findAll(panel, e => e.tag === 'button');
-  assert.deepEqual(links.map(l => l.textContent), ['Board epic', 'ISSUE · Jump is off by one · Design & plan']);
-  assert.ok(texts(panel).includes(' · 2 of 3 stories complete'), 'the epic with its completion');
+  assert.deepEqual(links.map(l => l.textContent), ['Board epic', 'ISSUE · Jump is off by one']);
+  assert.ok(texts(panel).includes('Design & plan'), 'the correcting issue with its stage');
+  assert.ok(texts(panel).includes('2 of 3 stories complete'), 'the epic with its completion');
   b.w.posted.length = 0;
   click(links[0]!);
   click(links[1]!);
@@ -1224,7 +1225,7 @@ test('linked work lists the epic, children and correcting issues, each opening i
   click(tabsIn(b.main)[2]!);
   b.relay();
   const fixPanel = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
-  assert.deepEqual(findAll(fixPanel, e => e.tag === 'h2').map(h => h.textContent), ['Part of', 'Issues correcting this story']);
+  assert.deepEqual(findAll(fixPanel, e => e.attrs['class'] === 'label').map(h => h.textContent), ['Part of', 'Issues correcting this story']);
   assert.deepEqual(findAll(fixPanel, e => e.tag === 'button').map(x => x.textContent), ['Jump is off by one']);
   assert.ok(texts(fixPanel).includes('No issue records this story as its parent.'));
   assert.deepEqual(b.s.logs.warn, []);
@@ -1540,6 +1541,73 @@ test('the Issues screen shows its issues in collapsible stage boxes', async () =
   assert.deepEqual(boxes().map(d => d.attrs['data-stage']), ['complete']);
   assert.match(findAll(main, e => e.attrs['class'] === 'fold')[0]!.textContent, /^5 stages have nothing needing attention/);
   assert.match(findAll(main, e => e.attrs['class'] === 'count-line')[0]!.textContent, /^1 of 3 issues needs attention/);
+});
+
+test('story and issue screens follow the mocks: stage pill, section labels, chain rows and the Open what it corrects button', async () => {
+  const shape = (e: FakeEl) => `${e.tag}.${e.attrs['class'] ?? ''}`;
+  const b = await onStory(STORY_C);
+  const body = findAll(b.main, e => e.attrs['class'] === 'screen-body')[0]!;
+  assert.deepEqual(body.children.map(shape), ['button.btn ghost back', 'div.head', 'div.warnbox', 'nav.subtabs', 'div.tab-panel'],
+    'Back, the head, the conflict, the tabs, then the tab');
+  const head = body.children[1]!;
+  assert.deepEqual(head.children.map(shape), ['div.kicker', 'h1.', 'div.pills']);
+  const chips = head.children[2]!.children;
+  assert.deepEqual([shape(chips[0]!), chips[0]!.attrs['data-kind'], chips[0]!.textContent], ['span.pill stage-pill', 'stage', 'Complete'], 'the stage pill first');
+  const tabs = body.children[3]!;
+  assert.deepEqual([tabs.attrs['role'], tabs.children.map(t => t.attrs['role'])], ['tablist', ['tab', 'tab', 'tab']]);
+  tabs.children[2]!.listeners['keydown']!(keyEvent('ArrowRight'));
+  assert.equal(focusState.active, tabs.children[0], 'Right from the last tab wraps to the first');
+  tabs.children[0]!.listeners['keydown']!(keyEvent('ArrowLeft'));
+  assert.equal(focusState.active, tabs.children[2]);
+
+  const panel = body.children[4]!;
+  assert.deepEqual(findAll(panel, e => e.attrs['class'] === 'label').map(l => l.textContent), ['Planned tasks', 'Why this stage?', 'Artifact chain'], 'section labels, not headings');
+  assert.equal(findAll(panel, e => e.tag === 'h2').length, 0);
+  const chain = findAll(panel, e => e.tag === 'ul' && e.attrs['class'] === 'chain')[0]!;
+  for (const li of chain.children) assert.deepEqual(li.children.map(shape), ['b.', 'span.muted', 'span.pill'], 'kind | record | approval');
+  assert.ok(chain.children.some(li => li.children[1]!.textContent === 'BUILD-c'));
+
+  // A story with no plan says so in the mocks' empty line; an issue's screen puts Back and what it corrects on one line.
+  click(tabs.children[2]!);
+  b.relay();
+  click(findAll(b.main, e => e.tag === 'button' && e.textContent === 'ISSUE · Jump is off by one')[0]!);
+  b.relay();
+  const issueBody = findAll(b.main, e => e.attrs['class'] === 'screen-body')[0]!;
+  const line = issueBody.children[0]!;
+  assert.deepEqual(line.children.map(c => [shape(c), c.textContent]), [['button.btn ghost back', '← Back to S003'], ['button.btn', 'Open what it corrects →']]);
+  assert.equal(shape(line), 'div.between');
+  const issueHead = issueBody.children[1]!;
+  assert.equal(shape(issueHead.children[2]!.children[0]!), 'span.pill stage-pill');
+  assert.deepEqual(findAll(issueBody, e => e.attrs['class'] === 'label').map(l => l.textContent).slice(0, 3), ['Corrects', 'Fix stories', 'Records']);
+  assert.ok(texts(issueBody).includes('No records yet.'), 'empty records say so');
+  b.w.posted.length = 0;
+  click(line.children[1]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-item', itemId: STORY_C }]);
+  click(findAll(b.main, e => e.attrs['data-item-id'] === 'H9999aaaa0000bbbb:S001')[0]!);
+  b.relay();
+  assert.ok(texts(b.main).includes('No task plan recorded yet.'), 'a story with no plan says so');
+});
+
+test('state panels use the mocks\' panel and warning styles', () => {
+  const w = runScript();
+  const panelOf = (kind: string, placement: 'body' | 'banner', action: 'retry' | 'clear-filters' | null) => ({
+    kind, title: `${kind} title`, text: `${kind} text`, action, stale: kind === 'refresh-failed', placement,
+    affected: kind === 'partial' ? [{ artifactIds: ['PLAN-x'], text: 'could not be parsed' }] : [],
+  });
+  const status = (panel: unknown) => w.deliver({ v: 1, payload: { type: 'status', status: {
+    state: 'ready', takenAt: null, message: null, partialNotice: null, stale: false, freshnessLabel: 'Updated just now', panel } } });
+  const shown = (root: FakeEl) => findAll(root, e => e.attrs['role'] === 'note').map(d => [d.attrs['class'], d.attrs['data-kind'], d.children[0]!.tag, d.children[0]!.textContent]);
+  for (const [kind, placement, action] of [['refresh-failed', 'banner', 'retry'], ['partial', 'banner', null]] as const) {
+    status(panelOf(kind, placement, action));
+    assert.deepEqual(shown(w.el['banner']!), [['panel warnp', kind, 'h3', `${kind} title`]], `${kind} warns, above the screen`);
+  }
+  status(panelOf('unavailable', 'body', 'retry'));
+  assert.deepEqual(shown(w.el['main']!), [['panel warnp', 'unavailable', 'h3', 'unavailable title']]);
+  assert.deepEqual(findAll(w.el['main']!, e => e.tag === 'button').map(x => [x.attrs['class'], x.textContent]), [['btn', 'Retry']]);
+  status(panelOf('empty', 'body', null));
+  assert.deepEqual(shown(w.el['main']!), [['panel', 'empty', 'h3', 'empty title']], 'an empty workspace is a plain panel, not a warning');
+  status(panelOf('no-matches', 'body', 'clear-filters'));
+  assert.deepEqual(findAll(w.el['main']!, e => e.tag === 'button').map(x => [x.attrs['class'], x.textContent]), [['btn primary', 'Clear filters']]);
 });
 
 test('BOARD_STYLE carries the mocks\' product rules with theme colours and no hiding rule', () => {

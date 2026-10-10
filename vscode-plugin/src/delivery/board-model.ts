@@ -237,6 +237,15 @@ export function isPlaceable(item: DeliveryItemView): item is CardItem & { readon
   return isCardKind(item) && item.stage !== null && KNOWN_STAGES.has(item.stage.stage);
 }
 
+/**
+ * What an item opens as: an epic its board, a story or issue at one of the six stages its own screen, anything else
+ * nothing. The host checks a link with it and the trail keeps an entry by it, so the two never disagree.
+ */
+export function screenKindOf(item: DeliveryItemView): 'epic' | 'item' | null {
+  if (item.kind === 'epic') return 'epic';
+  return isPlaceable(item) ? 'item' : null;
+}
+
 /** How many items in the snapshot can be cards, whatever the selection; zero means an empty board, not an empty selection. */
 export function placeableCount(snapshot: DeliverySnapshot): number {
   return snapshot.items.filter(isPlaceable).length;
@@ -293,11 +302,39 @@ export function totalsLabel(matched: number, needing: number, attentionOnly: boo
   return `${plural(matched, noun[0], noun[1])} \u00b7 ${needing} ${needing === 1 ? 'needs' : 'need'} attention`;
 }
 
+/** A stage section's starting state, shared by the board screens and the Issues screen. */
+export interface SectionDefaults {
+  readonly defaultOpen: boolean;
+  readonly emptyText: string | null;
+  readonly hint: string | null;
+}
+
 /**
- * A board screen's body: six stage sections in workflow order. A section with matches starts open, except Complete,
- * which starts closed (with how many need attention) unless Needs attention is on; an empty section starts closed and
- * says so. Under Needs attention the empty stages always fold into one line; in a narrow pane the webview folds them
- * too. The epic header is filled in by the screen that knows the epic.
+ * A section with matches starts open, except Complete, which starts closed (with how many need attention) unless
+ * Needs attention is on; an empty section starts closed and says so.
+ */
+export function sectionDefaults(stage: DeliveryStage, total: number, needing: number, attentionOnly: boolean, labels: DisplayLabels): SectionDefaults {
+  const defaultOpen = total > 0 && (stage !== 'complete' || attentionOnly);
+  return {
+    defaultOpen,
+    emptyText: total === 0 ? labels.nothingAtStage : null,
+    hint: !defaultOpen && total > 0 && needing > 0 ? attentionLabel(needing) : null,
+  };
+}
+
+/** The empty stages folded into one line: always under Needs attention, and in a narrow pane (the webview decides that). */
+export function foldOf(sections: readonly { readonly label: string; readonly total: number }[], attentionOnly: boolean): { readonly always: boolean; readonly text: string } {
+  const empty = sections.filter(sec => sec.total === 0);
+  const text = empty.length === 0 ? ''
+    : attentionOnly
+      ? `${plural(empty.length, 'stage has', 'stages have')} nothing needing attention: ${empty.map(sec => sec.label).join(', ')}.`
+      : empty.map(sec => `${sec.label} 0`).join(' \u00b7 ');
+  return { always: attentionOnly, text };
+}
+
+/**
+ * A board screen's body: six stage sections in workflow order, opened and folded by sectionDefaults and foldOf.
+ * The epic header is filled in by the screen that knows the epic.
  */
 export function buildBoardViewModel(snapshot: DeliverySnapshot, filter: MatchFilter, paging: BoardPaging, labels: DisplayLabels): StagesBody {
   const byId = indexItems(snapshot);
@@ -309,19 +346,11 @@ export function buildBoardViewModel(snapshot: DeliverySnapshot, filter: MatchFil
     const all = inStage.map(m => m.card);
     const shown = all.slice(0, Math.max(0, paging[stage] ?? BOARD_PAGE_SIZE));
     const needing = attentionCount(inStage);
-    const defaultOpen = all.length > 0 && (stage !== 'complete' || attentionOnly);
     return {
       stage, label: labelOf(labels.stage, stage), total: all.length, cards: shown, hiddenCount: all.length - shown.length,
-      attentionCount: needing, defaultOpen,
-      emptyText: all.length === 0 ? labels.nothingAtStage : null,
-      hint: !defaultOpen && all.length > 0 && needing > 0 ? attentionLabel(needing) : null,
+      attentionCount: needing, ...sectionDefaults(stage, all.length, needing, attentionOnly, labels),
     };
   });
-  const empty = sections.filter(sec => sec.total === 0);
-  const foldText = empty.length === 0 ? ''
-    : attentionOnly
-      ? `${plural(empty.length, 'stage has', 'stages have')} nothing needing attention: ${empty.map(sec => sec.label).join(', ')}.`
-      : empty.map(sec => `${sec.label} 0`).join(' \u00b7 ');
   const unfiltered = attentionOnly ? selectMatches(snapshot, { ...filter, needsAttentionOnly: false }, labels, byId).length : matches.length;
   const noMatches = placeableCount(snapshot) > 0 && matches.length === 0;
   return {
@@ -330,7 +359,7 @@ export function buildBoardViewModel(snapshot: DeliverySnapshot, filter: MatchFil
     totalsLabel: totalsLabel(matches.length, attentionCount(matches), attentionOnly, unfiltered, ['item', 'items']),
     showAll: attentionOnly,
     sections,
-    fold: { always: attentionOnly, text: foldText },
+    fold: foldOf(sections, attentionOnly),
     emptyPanel: noMatches ? selectionPanel('no-matches', labels) : null,
   };
 }

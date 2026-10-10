@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791616141902-c7bwsh",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-10T07:10:07.093Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 65190,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "7405471c72bd3e88",
+    "epicSlug": "defect-delivery-board-shipped-issue-348d4663",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-10T07:17:05.310Z",
+    "parentRef": {
+      "slug": "defect-delivery-board-shipped-issue-348d4663"
+    }
+  },
+  "body": {
+    "title": "Style the delivery board's screens as the approved mocks, and group Issues by stage",
+    "reproduction": "1. Install insrc-vscode 0.5.13 (built from af68be3e), reload the window and run \"insrc: Open delivery board\".\n2. Compare each screen with the approved mocks in docs/plans/delivery-board-screen-mocks.html at the same pane width.\n\nObserved:\n- Stages are flat sections divided by a top border; the count sits next to the label and a closed Complete shows its hint as a yellow pill. A large focused title (\"All work\", \"Epics\", …) heads every screen, and the search box follows the attention chip on the left.\n- Epics rows stack the counts, completion label, meter and attention pill in one column beside the title.\n- On a story or issue screen the section headings are ordinary h2 text, the stage chip looks like every other chip, chain rows stack the pill and the record id under the kind, and \"Open what it corrects →\" is a link under the chips.\n- The live announcement (\"Board refreshed: …\", \"Opened: …\") shows as a line of text under the app bar, and density is two full-size Compact/Comfortable buttons.\n- The Issues screen is one flat list in stage order, with no stage sections.\n\nExpected (mocks 1, 2, 3, 5, 7 and 11):\n- Each stage is its own bordered, rounded box whose summary carries the label on the left and the count chip at the right, with \"· nothing at this stage\" or \"· N needs attention\" as muted text.\n- The four list screens have no large title; the filter bar sits under the app bar with the search box at the right. An epic's board opens with a kicker, a large title, count and attention chips, and its completion meter at the top right.\n- Epics rows run on one line: link-coloured title with its counts below, then the completion label over the meter, then the attention pill at the far right.\n- Story and issue screens use small uppercase section labels, a highlighted stage chip, chain rows laid out as kind | description | pill at the right, and \"Open what it corrects →\" as a button at the top right.\n- The announcement line and the density control are visible but unobtrusive.\n- Issues are grouped by stage in the same collapsible sections as the board screens.",
+    "rootCause": "The approved mocks were used as a layout and behaviour reference but not as a styling reference.\n\n- ISSUE-348d4663's t6 wrote BOARD_STYLE in vscode-plugin/src/delivery/board-host.ts from scratch to the LLD's layout rules (minimum widths, container queries, accordions). It did not port the mocks' own stylesheet: the .acc/.acc>summary stage boxes, .filterbar/.seg/.search, .head, .row, .label, .chain and .warnbox rules in docs/plans/delivery-board-screen-mocks.html.\n- BOARD_WEBVIEW_SCRIPT in the same file builds its own markup and class names (details.stage with a flat summary, an h1.screen-title on every screen, .epic-row with a stacked .epic-summary, h2 section headings, chain rows with the pill under the kind). Its structure does not follow the mocks' markup, so even the right stylesheet would not produce the mocks' look.\n- renderBoardDocument keeps #announce as a visible paragraph under the app bar, and the density group as two full buttons; neither appears in the mocks.\n- The flat Issues list was a deliberate choice in ISSUE-348d4663's LLD (open question q1099e950, resolved \"keep stage-sorted list\"). buildIssueView in board-views.ts returns IssuesBody with a single issues array, so the screen has no stage sections to render. The reader now asks for issues grouped by stage, reversing that choice.\n\nThe tests pin today's markup and the flat list (board-host.test.ts, board-views.test.ts), so they passed while the look departed from the mocks.",
+    "fixIntent": "Make every screen of the delivery board look like its approved mock, and group the Issues screen by stage, within vscode-plugin/src/delivery:\n- port the mocks' stylesheet into BOARD_STYLE, mapping its colours onto --vscode-* theme variables, and align the webview script's markup and classes to the mocks, screen by screen;\n- give the Issues screen the same collapsible stage sections as the board screens, holding the issue rows, with the same open/closed defaults;\n- keep the live announcement region and the density control visible but unobtrusive, as the mocks place them;\n- compare each screen with its mock in headless-Chrome screenshots at 1200, 600 and 360 px.\n\nWhat stays: the screens, navigation and messages from ISSUE-348d4663; the CSP; text-only rendering; theme colours only; no CSS hiding rules; keyboard and focus behaviour; the single live region; both densities; the 1 s first-render and 150 ms filter targets; the daemon read model. Badge wording is out of scope."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/delivery-board-screen-mocks.html",
+      "quotedText": "Approved mocks, screens 1-14, with their stylesheet (.acc, .filterbar, .seg, .head, .row, .label, .chain, .warnbox)"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/board-host.ts",
+      "quotedText": "BOARD_STYLE, BOARD_WEBVIEW_SCRIPT and renderBoardDocument (#announce paragraph, density buttons)"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/board-views.ts",
+      "quotedText": "buildIssueView returns IssuesBody with one issues array in stage order"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/board-protocol.ts",
+      "quotedText": "IssuesBody { kind: 'issues'; totalsLabel; issues; emptyPanel }"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/S001/LLD.md",
+      "quotedText": "Open question q1099e950: The Issues view is a list sorted by stage, not a stage-grouped issue board; resolved: keep stage-sorted list"
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-10",
+      "quotedText": "the styling seems to be completely different compared to the approved mocks … also issues aren't grouped by state"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+      "quotedText": "tests pin today's markup and the flat Issues list"
+    }
+  ]
+}

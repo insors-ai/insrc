@@ -14,8 +14,8 @@ import assert from 'node:assert/strict';
 
 import { buildBoardViewModel, type MatchFilter } from '../board-model.js';
 import type { StagesBody } from '../board-protocol.js';
-import { attentionLabel, buildEpicRollup, buildIssueView, epicRowOf } from '../board-views.js';
-import { DISPLAY_LABELS } from '../labels.js';
+import { attentionLabel, buildEpicRollup, buildIssueView, epicRowOf, issueEntries } from '../board-views.js';
+import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
 import { item, snapshot } from './board-fixtures.js';
 
 type Snap = ReturnType<typeof snapshot>;
@@ -75,7 +75,7 @@ test('a standalone issue correcting a story of an epic counts towards no epic, a
   assert.equal(row.total, cardsOf(e1Board).length);
 
   assert.deepEqual(cardsOf(board(snap, { scope: { kind: 'standalone' } })).map(c => c.itemId).sort(), ['IS2', 'SA1']);
-  assert.deepEqual(issues(snap).issues.map(e => e.card.itemId).sort(), ['IS2', 'IS3']);
+  assert.deepEqual(issueEntries(issues(snap)).map(e => e.card.itemId).sort(), ['IS2', 'IS3']);
 });
 
 test('the Epics body filters rows by epic title or id and by attention, with whole-epic counts, and a search matching no epic gives the no-matches panel', () => {
@@ -162,8 +162,8 @@ test('the Issues body lists issues in stage order with their parent, parent noti
   ]);
   const m = issues(snap);
   assert.equal(m.kind, 'issues');
-  assert.deepEqual(m.issues.map(e => e.card.itemId), ['I2', 'I4', 'I1', 'I5', 'I3'], 'stage order, then snapshot order within a stage');
-  const by = (id: string) => m.issues.find(e => e.card.itemId === id)!;
+  assert.deepEqual(issueEntries(m).map(e => e.card.itemId), ['I2', 'I4', 'I1', 'I5', 'I3'], 'stage order, then snapshot order within a stage');
+  const by = (id: string) => issueEntries(m).find(e => e.card.itemId === id)!;
 
   assert.deepEqual(by('I1').parent, { itemId: 'E1:S001', kind: 'story', title: 'Columns', stageLabel: 'Build recorded' });
   assert.deepEqual([by('I1').parentNotice, by('I1').stageLabel], [null, 'Design & plan']);
@@ -178,7 +178,7 @@ test('the Issues body lists issues in stage order with their parent, parent noti
 
   assert.equal(m.totalsLabel, '5 issues · 1 needs attention');
   assert.equal(issues(snap, { needsAttentionOnly: true }).totalsLabel, '1 of 5 issues needs attention');
-  assert.deepEqual(issues(snap, { search: 'columns' }).issues.map(e => e.card.itemId), ['I1'], 'the fix stories do not match the search themselves');
+  assert.deepEqual(issueEntries(issues(snap, { search: 'columns' })).map(e => e.card.itemId), ['I1'], 'the fix stories do not match the search themselves');
   assert.equal(m.emptyPanel, null);
   assert.equal(issues(snap, { search: 'nothing like this' }).emptyPanel?.kind, 'no-matches');
   assert.deepEqual(issues(snapshot([item({ id: 'S1' })])).emptyPanel,
@@ -195,6 +195,38 @@ test('with a search and a scope, the Issues list holds the same issues as the bo
   ]);
   for (const f of [{}, { search: 'board' }, { scope: { kind: 'epic' as const, epicItemId: 'E1' } }, { needsAttentionOnly: true }, { scope: { kind: 'standalone' as const } }]) {
     const fromBoard = cardsOf(board(snap, f)).filter(c => c.kind === 'issue').map(c => c.itemId).sort();
-    assert.deepEqual(issues(snap, f).issues.map(e => e.card.itemId).sort(), fromBoard, JSON.stringify(f));
+    assert.deepEqual(issueEntries(issues(snap, f)).map(e => e.card.itemId).sort(), fromBoard, JSON.stringify(f));
   }
+});
+
+test('the Issues body groups issues into stage sections with the board screens\' defaults and fold', () => {
+  const snap = snapshot([
+    item({ id: 'S1', stage: 'design-plan', title: 'A story' }),
+    item({ id: 'I1', kind: 'issue', standalone: true, stage: 'design-plan', title: 'Planned fix' }),
+    item({ id: 'I2', kind: 'issue', standalone: true, stage: 'scoped', title: 'New defect', needsAttention: true }),
+    item({ id: 'I3', kind: 'issue', standalone: true, stage: 'complete', title: 'Done fix', needsAttention: true }),
+    item({ id: 'I4', kind: 'issue', standalone: true, stage: 'design-plan', title: 'Second planned fix' }),
+  ]);
+  const m = issues(snap);
+  assert.deepEqual(m.sections.map(sec => sec.stage), [...STAGE_ORDER], 'six sections in stage order');
+  for (const sec of m.sections) for (const e of sec.issues) assert.equal(snap.items.find(i => i.id === e.card.itemId)?.stage?.stage, sec.stage, 'each issue sits in its own stage');
+  assert.deepEqual(issueEntries(m).map(e => e.card.itemId).sort(), ['I1', 'I2', 'I3', 'I4'], 'every issue exactly once; stories are not issues');
+  const design = m.sections.find(sec => sec.stage === 'design-plan')!;
+  assert.deepEqual(design.issues.map(e => e.card.itemId), ['I1', 'I4'], 'snapshot order within a stage');
+
+  // The same defaults, hints and fold as the board screen holding the same issues.
+  const onlyIssues = snapshot(snap.items.filter(i => i.kind === 'issue'));
+  for (const attention of [false, true]) {
+    const b = board(onlyIssues, { needsAttentionOnly: attention });
+    const im = issues(snap, { needsAttentionOnly: attention });
+    assert.deepEqual(im.sections.map(sec => [sec.stage, sec.label, sec.total, sec.attentionCount, sec.defaultOpen, sec.emptyText, sec.hint]),
+      b.sections.map(sec => [sec.stage, sec.label, sec.total, sec.attentionCount, sec.defaultOpen, sec.emptyText, sec.hint]), `attention ${attention}`);
+    assert.deepEqual(im.fold, b.fold, `fold, attention ${attention}`);
+    assert.equal(im.showAll, attention);
+  }
+  const complete = m.sections.find(sec => sec.stage === 'complete')!;
+  assert.deepEqual([complete.defaultOpen, complete.hint], [false, '1 needs attention'], 'Complete starts closed with its hint');
+  const empty = m.sections.find(sec => sec.stage === 'build-recorded')!;
+  assert.deepEqual([empty.defaultOpen, empty.emptyText, empty.issues], [false, DISPLAY_LABELS.nothingAtStage, []]);
+  assert.match(issues(snap, { needsAttentionOnly: true }).fold.text, /stages have nothing needing attention/);
 });

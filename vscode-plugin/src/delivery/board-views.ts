@@ -10,8 +10,8 @@
  * matches, in the same order, as a board screen. Pure and vscode-free.
  */
 
-import { attentionCount, attentionLabel, compactIdOf, indexItems, isPlaceable, selectionPanel, selectMatches, titleOf, totalsLabel, type MatchedCard, type MatchFilter } from './board-model.js';
-import type { EpicRollupRowView, EpicsBody, IssueEntryView, IssuesBody, LinkView } from './board-protocol.js';
+import { attentionCount, attentionLabel, compactIdOf, foldOf, groupByStage, indexItems, isPlaceable, sectionDefaults, selectionPanel, selectMatches, titleOf, totalsLabel, type MatchedCard, type MatchFilter } from './board-model.js';
+import type { EpicRollupRowView, EpicsBody, IssueEntryView, IssueSectionView, IssuesBody, LinkView } from './board-protocol.js';
 import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
 import { labelOf, STAGE_ORDER, type DisplayLabels } from './labels.js';
 
@@ -95,46 +95,62 @@ function linkOf(item: DeliveryItemView, labels: DisplayLabels): LinkView {
   };
 }
 
+/** An issue's row: the story or epic its correctsRef resolves to, or its unresolved-parent notice, and its fix stories. */
+function issueEntryOf(m: MatchedCard, byId: ReturnType<typeof indexItems>, labels: DisplayLabels): IssueEntryView {
+  const ref = m.item.correctsRef;
+  const parentItem = ref === null || ref.resolvedItemId === null ? undefined : byId.get(ref.resolvedItemId);
+  const notice = m.item.notices.find(n => n.code === 'unresolved-parent')?.message ?? null;
+  const recordedButMissing = ref !== null && ref.resolvedItemId !== null && parentItem === undefined;
+  const fixStories: LinkView[] = [];
+  for (const childId of m.item.childIds) {
+    const child = byId.get(childId);
+    if (child?.kind === 'story') fixStories.push(linkOf(child, labels));
+  }
+  return {
+    card: m.card,
+    stageLabel: labelOf(labels.stage, m.stage),
+    parent: parentItem === undefined ? null : linkOf(parentItem, labels),
+    parentNotice: parentItem !== undefined ? null : notice ?? (recordedButMissing ? PARENT_NOT_ON_BOARD : null),
+    fixStories,
+  };
+}
+
 /**
- * The Issues screen: each matching issue in stage order, then snapshot order, with the story or epic its correctsRef
- * resolves to, or its unresolved-parent notice (a fixed text when a recorded parent is not in the snapshot and the
- * daemon gave no notice), and every fix story among its children with its own stage, whether or not the fix story
- * itself matches the search.
+ * The Issues screen: the matching issues in six stage sections, snapshot order within a stage, opened and folded by
+ * the board screens' rule (sectionDefaults, foldOf). Each row carries the story or epic its correctsRef resolves to,
+ * or its unresolved-parent notice (a fixed text when a recorded parent is not in the snapshot and the daemon gave no
+ * notice), and every fix story among its children with its own stage, whether or not the fix story itself matches.
  */
 export function buildIssueView(snapshot: DeliverySnapshot, filter: MatchFilter, labels: DisplayLabels): IssuesBody {
   const byId = indexItems(snapshot);
-  const issues: IssueEntryView[] = [];
-  const stageRank = (m: MatchedCard): number => STAGE_ORDER.indexOf(m.stage);
+  const attentionOnly = filter.needsAttentionOnly;
   const issueMatches = selectMatches(snapshot, filter, labels, byId).filter(m => m.item.kind === 'issue');
-  // A stable sort keeps snapshot order within a stage.
-  const ordered = [...issueMatches].sort((a, b) => stageRank(a) - stageRank(b));
-  for (const m of ordered) {
-    const ref = m.item.correctsRef;
-    const parentItem = ref === null || ref.resolvedItemId === null ? undefined : byId.get(ref.resolvedItemId);
-    const notice = m.item.notices.find(n => n.code === 'unresolved-parent')?.message ?? null;
-    const recordedButMissing = ref !== null && ref.resolvedItemId !== null && parentItem === undefined;
-    const fixStories: LinkView[] = [];
-    for (const childId of m.item.childIds) {
-      const child = byId.get(childId);
-      if (child?.kind === 'story') fixStories.push(linkOf(child, labels));
-    }
-    issues.push({
-      card: m.card,
-      stageLabel: labelOf(labels.stage, m.stage),
-      parent: parentItem === undefined ? null : linkOf(parentItem, labels),
-      parentNotice: parentItem !== undefined ? null : notice ?? (recordedButMissing ? PARENT_NOT_ON_BOARD : null),
-      fixStories,
-    });
-  }
+  const byStage = groupByStage(issueMatches);
+  const sections: IssueSectionView[] = STAGE_ORDER.map(stage => {
+    const inStage = byStage.get(stage) ?? [];
+    const needing = attentionCount(inStage);
+    return {
+      stage, label: labelOf(labels.stage, stage), total: inStage.length, attentionCount: needing,
+      ...sectionDefaults(stage, inStage.length, needing, attentionOnly, labels),
+      issues: inStage.map(m => issueEntryOf(m, byId, labels)),
+    };
+  });
   const anyIssue = snapshot.items.some(i => i.kind === 'issue' && isPlaceable(i));
-  const unfiltered = filter.needsAttentionOnly
+  const unfiltered = attentionOnly
     ? selectMatches(snapshot, { ...filter, needsAttentionOnly: false }, labels, byId).filter(m => m.item.kind === 'issue').length
-    : issues.length;
+    : issueMatches.length;
   return {
     kind: 'issues',
-    totalsLabel: totalsLabel(issues.length, attentionCount(issueMatches), filter.needsAttentionOnly, unfiltered, ['issue', 'issues']),
-    issues,
+    totalsLabel: totalsLabel(issueMatches.length, attentionCount(issueMatches), attentionOnly, unfiltered, ['issue', 'issues']),
+    showAll: attentionOnly,
+    sections,
+    fold: foldOf(sections, attentionOnly),
     // 'Nothing matches' only when there are issues to match: a board with no issues says so instead.
-    emptyPanel: issues.length > 0 ? null : anyIssue ? selectionPanel('no-matches', labels) : selectionPanel('no-issues', labels),
+    emptyPanel: issueMatches.length > 0 ? null : anyIssue ? selectionPanel('no-matches', labels) : selectionPanel('no-issues', labels),
   };
+}
+
+/** Every issue row of an Issues body, in stage order. */
+export function issueEntries(body: IssuesBody): readonly IssueEntryView[] {
+  return body.sections.flatMap(sec => sec.issues);
 }

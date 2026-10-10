@@ -21,8 +21,8 @@
 
 import type { DeliveryResult } from './delivery-client.js';
 import type { DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
-import { buildBoardViewModel, epicOf, idParts, indexItems, isPlaceable, showMore, titleOf, type BoardPaging, type MatchFilter } from './board-model.js';
-import { buildEpicRollup, buildIssueView, epicRowOf } from './board-views.js';
+import { buildBoardViewModel, epicOf, idParts, indexItems, isPlaceable, screenKindOf, showMore, titleOf, type BoardPaging, type MatchFilter } from './board-model.js';
+import { buildEpicRollup, buildIssueView, epicRowOf, issueEntries } from './board-views.js';
 import type {
   BoardDownMessage, BoardScreen, CrumbView, Density, Envelope, ItemDetailsViewModel, ItemTab, ListView, ScreenBody, ScreenModel,
   StatePanelView, StatusView,
@@ -133,8 +133,8 @@ function isPartial(s: DeliverySnapshot): boolean {
 function stillOnBoard(screen: BoardScreen, snapshot: DeliverySnapshot): boolean {
   switch (screen.kind) {
     case 'list': return true;
-    case 'epic': return snapshot.items.some(i => i.kind === 'epic' && i.id === screen.epicItemId);
-    case 'item': return snapshot.items.some(i => i.id === screen.itemId && isPlaceable(i));
+    case 'epic': return snapshot.items.some(i => i.id === screen.epicItemId && screenKindOf(i) === 'epic');
+    case 'item': return snapshot.items.some(i => i.id === screen.itemId && screenKindOf(i) === 'item');
   }
 }
 
@@ -396,7 +396,7 @@ function screenBody(
       const details = detailsOf(screen.itemId);
       if (item === undefined || details === null) return null;
       if (item.kind === 'issue') {
-        const entryView = buildIssueView(snapshot, { scope: { kind: 'all' }, search: '', needsAttentionOnly: false }, labels).issues.find(e => e.card.itemId === item.id);
+        const entryView = issueEntries(buildIssueView(snapshot, { scope: { kind: 'all' }, search: '', needsAttentionOnly: false }, labels)).find(e => e.card.itemId === item.id);
         if (entryView === undefined) return null;
         return { title: titleOf(item), body: { kind: 'issue', details, entry: entryView } };
       }

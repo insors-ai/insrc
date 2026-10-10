@@ -11,6 +11,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import type { ChatPanelChannel } from '../../chat/chat-panel.js';
 import { BOARD_STYLE, BOARD_VIEW_TYPE, BOARD_WEBVIEW_SCRIPT, createDeliveryBoardHost, renderBoardDocument } from '../board-host.js';
@@ -804,7 +806,7 @@ test('opening an epic and then a story replaces #main each time, and nothing fro
   assert.equal(cardsIn(main).length, 0, 'no card from the epic board stays under the story');
   assert.equal(findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage').length, 0, 'and no stage section');
   assert.ok(texts(main).includes('Columns'), 'the story\'s own screen');
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic', '/', 'S001']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery', '/', 'Epics', '/', 'Board epic', '/', 'S001']);
 
   // Choosing another view leaves the story's screen.
   click(buttonsIn(b.w.el['crumbs']!, 'crumb')[0]!);
@@ -819,9 +821,9 @@ test('opening an epic and then a story replaces #main each time, and nothing fro
 test('the filter bar has exactly the four views and Needs attention, and no epic is a chip', async () => {
   const b = await liveBoard(screensSnapshot());
   const main = b.w.el['main']!;
-  const bar = findAll(main, e => e.attrs['class'] === 'filters')[0]!;
+  const bar = findAll(main, e => e.attrs['class'] === 'filterbar')[0]!;
   const views = buttonsIn(bar, 'view');
-  assert.deepEqual(views.map(v => [v.textContent, v.attrs['aria-pressed']]), [['All work', 'true'], ['Epics', 'false'], ['Standalone', 'false'], ['Issues', 'false']]);
+  assert.deepEqual(views.map(v => [v.textContent, v.attrs['aria-current'] ?? null]), [['All work', 'page'], ['Epics', null], ['Standalone', null], ['Issues', null]]);
   const att = buttonsIn(bar, 'attention');
   assert.deepEqual(att.map(a => [a.textContent, a.attrs['aria-pressed']]), [['Needs attention', 'false']]);
   assert.equal(findAll(bar, e => e.tag === 'button').length, 5, 'five filters, nothing else');
@@ -834,7 +836,7 @@ test('the filter bar has exactly the four views and Needs attention, and no epic
   b.relay();
   assert.deepEqual([att[0]!.textContent, att[0]!.attrs['aria-pressed']], ['Needs attention ×', 'true']);
   assert.deepEqual(cardsIn(main).map(c => c.attrs['data-item-id']), [STORY_A]);
-  const totals = findAll(main, e => e.attrs['class'] === 'totals')[0]!;
+  const totals = findAll(main, e => e.attrs['class'] === 'count-line')[0]!;
   assert.match(totals.textContent, /^1 of 5 items needs attention/);
   click(buttonsIn(totals, 'show-all')[0]!);
   b.relay();
@@ -851,7 +853,7 @@ test('the filter bar has exactly the four views and Needs attention, and no epic
   // Each view posts set-view; the pressed one follows the screen.
   click(views[2]!);
   b.relay();
-  assert.equal(buttonsIn(main, 'view').find(v => v.attrs['aria-pressed'] === 'true')!.attrs['data-view'], 'standalone');
+  assert.equal(buttonsIn(main, 'view').find(v => v.attrs['aria-current'] === 'page')!.attrs['data-view'], 'standalone');
   for (const m of b.w.posted) assert.notEqual(parseBoardUpMessage(m), null);
 });
 
@@ -860,13 +862,13 @@ test('an Epics row opens that epic\'s board with its header, breadcrumb and ← 
   const main = b.w.el['main']!;
   click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'epics')!);
   b.relay();
-  const rows = findAll(main, e => e.attrs['class'] === 'epic-row');
+  const rows = findAll(main, e => e.attrs['class'] === 'row');
   assert.deepEqual(rows.map(r => r.attrs['data-epic']), [EPIC_A, 'E20261009bbbbbbbb'], 'one row per epic');
   assert.deepEqual(texts(rows[0]!).slice(0, 5), ['EPIC · AAAAAAAA', 'Board epic', '2 stories · 0 tasks', '1 of 2 stories complete', '1 needs attention']);
   const meter = findAll(rows[0]!, e => e.attrs['role'] === 'meter')[0]!;
   assert.deepEqual([meter.attrs['aria-valuenow'], meter.attrs['aria-valuemax'], meter.children[0]!.attrs['style']], ['1', '2', 'width:50%']);
   assert.ok(texts(main).includes('Work outside any epic is under '));
-  assert.equal(findAll(main, e => e.attrs['class'] === 'totals')[0]!.textContent, '2 epics · completion counts stories at Complete');
+  assert.equal(findAll(main, e => e.attrs['class'] === 'count-line')[0]!.textContent, '2 epics · completion counts stories at Complete');
 
   b.w.posted.length = 0;
   click(rows[0]!);
@@ -879,7 +881,7 @@ test('an Epics row opens that epic\'s board with its header, breadcrumb and ← 
   assert.equal(buttonsIn(main, 'view').length, 0, 'no view control inside an epic');
   assert.equal(buttonsIn(main, 'attention').length, 1);
   assert.equal(findAll(main, e => e.tag === 'input')[0]!.attrs['placeholder'], 'Search this epic');
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery', '/', 'Epics', '/', 'Board epic']);
   const crumbButtons = buttonsIn(b.w.el['crumbs']!, 'crumb');
   assert.deepEqual(crumbButtons.map(c => c.textContent), ['Delivery', 'Epics'], 'the earlier crumbs return to Epics; the current place is not a button');
   b.w.posted.length = 0;
@@ -898,8 +900,8 @@ test('an Epics row opens that epic\'s board with its header, breadcrumb and ← 
   assert.ok(!cardsIn(main).some(c => texts(c).includes('Standalone')), 'no Standalone line repeated on the Standalone screen');
   click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'issues')!);
   b.relay();
-  const issueRows = findAll(main, e => e.attrs['class'] === 'issue-row');
-  assert.deepEqual(texts(issueRows[0]!), ['ISSUE · 1234ABCD', 'Overflow', 'Corrects Columns · no fix story yet', 'Design & plan']);
+  const issueRows = findAll(main, e => e.attrs['class'] === 'row issue-row');
+  assert.deepEqual(texts(issueRows[0]!), ['ISSUE · 1234ABCD', 'Overflow', 'Corrects Columns · no fix story yet'], 'the stage is the box the row sits in');
   b.w.posted.length = 0;
   click(issueRows[0]!);
   assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-item', itemId: 'H1234abcd5678ef00' }]);
@@ -908,12 +910,12 @@ test('an Epics row opens that epic\'s board with its header, breadcrumb and ← 
 test('stages render as six <details> sections in workflow order, and a toggled section stays as the reader left it across a refresh', async () => {
   const b = await liveBoard(screensSnapshot());
   const main = b.w.el['main']!;
-  const sections = () => findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage');
+  const sections = () => findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'acc');
   assert.deepEqual(sections().map(d => [d.attrs['data-stage'], d.attrs['open'] !== undefined]), [
     ['scoped', true], ['design-plan', true], ['ready-design-approved', false], ['ready-plan-approved', false], ['build-recorded', false], ['complete', false],
   ]);
   const summaries = sections().map(d => texts(d.children[0]!));
-  assert.deepEqual(summaries[2], ['Ready · design approved', '0', 'nothing at this stage'], 'an empty stage says so and stays listed');
+  assert.deepEqual(summaries[2], ['Ready · design approved', '· nothing at this stage', '0'], 'an empty stage says so and stays listed');
   assert.deepEqual(summaries[5], ['Complete', '1'], 'Complete starts closed');
   assert.equal(cardsIn(sections()[5]!).length, 1, 'its card is inside the closed section, not dropped');
 
@@ -943,31 +945,31 @@ test('a narrow pane shortens the breadcrumb and folds empty stages into Other st
   b.relay();
   click(findAll(main, e => e.attrs['data-epic'] === EPIC_A)[0]!);
   b.relay();
-  const stages = () => findAll(main, e => e.tag === 'details' && (e.attrs['class'] ?? '').startsWith('stage')).map(d => d.attrs['data-stage'] ?? 'fold');
+  const stages = () => findAll(main, e => e.tag === 'details' && (e.attrs['class'] ?? '').startsWith('acc')).map(d => d.attrs['data-stage'] ?? 'fold');
   assert.deepEqual(stages(), ['scoped', 'design-plan', 'ready-design-approved', 'ready-plan-approved', 'build-recorded', 'complete']);
 
   b.w.resize(360);
   assert.deepEqual(stages(), ['scoped', 'complete', 'fold'], 'empty stages fold into one section');
-  const fold = findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage fold')[0]!;
+  const fold = findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'acc fold')[0]!;
   assert.deepEqual(texts(fold), ['Other stages · 0 matching', 'Design & plan 0 · Ready · design approved 0 · Ready · plan approved 0 · Build recorded 0']);
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['← Epics', 'Board epic'], 'only the back step and the current place');
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['← Epics', '/', 'Board epic'], 'only the back step and the current place: no wordmark');
 
   b.w.resize(900);
   assert.equal(stages().length, 6, 'widening re-renders the wide form');
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery', '/', 'Epics', '/', 'Board epic']);
 
   // Under Needs attention the empty stages fold into one line at any width.
   click(buttonsIn(main, 'attention')[0]!);
   b.relay();
   assert.deepEqual(stages(), ['scoped']);
-  assert.deepEqual(findAll(main, e => e.attrs['class'] === 'fold muted').map(e => e.textContent),
+  assert.deepEqual(findAll(main, e => e.attrs['class'] === 'fold').map(e => e.textContent),
     ['5 stages have nothing needing attention: Design & plan, Ready · design approved, Ready · plan approved, Build recorded, Complete.']);
 });
 
 test('Back restores the saved scroll and focuses the card that opened the story; Escape goes back', async () => {
   const b = await liveBoard(screensSnapshot());
   const main = b.w.el['main']!;
-  assert.equal(focusState.active, findAll(main, e => e.tag === 'h1')[0], 'a new screen focuses its heading');
+  assert.equal(focusState.active, findAll(main, e => e.attrs['data-view'] === 'all')[0], 'a new list screen focuses its chosen view');
   b.w.scroll(420);
   click(cardOf(main, 'SA1'));
   b.relay();
@@ -1003,7 +1005,7 @@ test('empty replaces the screen, no matches replaces the list area with Clear fi
   input.value = 'nothing like this';
   input.listeners['input']!();
   b.relay();
-  assert.equal(findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'stage').length, 0);
+  assert.equal(findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'acc').length, 0);
   const panel = findAll(main, e => e.attrs['class'] === 'panel')[0]!;
   assert.deepEqual([panel.attrs['data-kind'], texts(panel)[0]], ['no-matches', 'Nothing matches this view']);
   b.w.posted.length = 0;
@@ -1020,7 +1022,7 @@ test('empty replaces the screen, no matches replaces the list area with Clear fi
   b.s.snapshots[1]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'took too long' } });
   await flush();
   b.pump();
-  const banner = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel')[0]!;
+  const banner = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel warnp')[0]!;
   assert.deepEqual([banner.attrs['data-kind'], texts(banner).includes('Stale')], ['refresh-failed', true]);
   assert.equal(shownScreen(b.w), 'story', 'the story stays under the banner');
   b.w.posted.length = 0;
@@ -1035,7 +1037,7 @@ test('empty replaces the screen, no matches replaces the list area with Clear fi
   assert.equal(shownScreen(b.w), 'panel');
   assert.deepEqual(texts(main).slice(0, 2), ['No work items yet', 'The workspace was read successfully. No epic, story or issue records were found.']);
   assert.deepEqual(texts(b.w.el['banner']!), []);
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery']);
 
   // Partial evidence sits in the banner, with its records to inspect.
   const notice = { code: 'store-incomplete', message: 'PLAN-x could not be parsed.', itemIds: [], artifactIds: ['PLAN-x'], fileNames: [] };
@@ -1043,7 +1045,7 @@ test('empty replaces the screen, no matches replaces the list area with Clear fi
   b.s.snapshots[3]!.resolve({ ok: true, value: screensSnapshot().items.length ? { ...screensSnapshot(), notices: [notice] as never } : screensSnapshot() });
   await flush();
   b.pump();
-  const partial = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel')[0]!;
+  const partial = findAll(b.w.el['banner']!, e => e.attrs['class'] === 'panel warnp')[0]!;
   assert.equal(partial.attrs['data-kind'], 'partial');
   assert.ok(texts(partial).some(t => t === 'PLAN-x'));
   assert.equal(shownScreen(b.w), 'stages', 'the board is usable under it');
@@ -1054,8 +1056,8 @@ test('CSP string unchanged, exactly one aria-live region, and the script uses te
   assert.match(doc, /content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-N0NCE';"/);
   assert.deepEqual(doc.match(/aria-live="[^"]+"/g), ['aria-live="polite"'], 'the announcer is the only live region');
   assert.match(doc, /<p id="status" role="status"><\/p>/, 'the status keeps its role without aria-live');
-  for (const part of ['<span class="wordmark">insrc</span>', '<nav id="crumbs" class="crumbs" aria-label="Breadcrumb"></nav>', '<span class="readonly">Read-only</span>',
-    '<div id="banner"></div>', '<main id="main"></main>']) assert.ok(doc.includes(part), part);
+  for (const part of ['<nav id="crumbs" class="crumbs" aria-label="Breadcrumb"></nav>', '<span class="readonly">Read-only</span>',
+    '<div id="banner"></div>', '<main id="main" class="body"></main>']) assert.ok(doc.includes(part), part);
   for (const gone of ['id="details"', 'id="board"', 'id="scope-chips"', 'role="tablist"', 'id="tab-']) assert.ok(!doc.includes(gone), `no ${gone}`);
   assert.doesNotMatch(BOARD_WEBVIEW_SCRIPT, /innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(/);
 
@@ -1070,7 +1072,7 @@ test('CSP string unchanged, exactly one aria-live region, and the script uses te
   const main = b.w.el['main']!;
   const card = cardOf(main, 'E20261009cccccccc:S001');
   assert.deepEqual(texts(card), ['STORY · CCCCCCCC / S001', hostile, `Epic ${hostile}`, 'Validation conflict', 'Unknown route']);
-  assert.deepEqual(findAll(card, x => x.attrs['class'] === 'badge').map(x => x.attrs['data-tone']), ['danger', 'warning']);
+  assert.deepEqual(findAll(card, x => x.attrs['class'] === 'pill').map(x => x.attrs['data-tone']), ['danger', 'warning']);
   click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'epics')!);
   b.relay();
   assert.ok(texts(main).includes(`Epic ${hostile}`));
@@ -1133,7 +1135,7 @@ test('opening a story replaces the screen: #main holds only the story screen, wi
   assert.equal(findAll(b.main, e => e.attrs['class'] === 'filters').length, 0, 'a story screen has no filters');
   assert.deepEqual(buttonsIn(b.main, 'back').map(x => x.textContent), ['← Back to epic']);
   assert.deepEqual(findAll(b.main, e => e.tag === 'h1').map(h => h.textContent), ['Section navigation']);
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Epics', '/', 'Board epic', '/', 'S003']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery', '/', 'Epics', '/', 'Board epic', '/', 'S003']);
   assert.equal(findAll(b.main, e => e.attrs['class'] === 'kicker')[0]!.textContent, 'STORY · AAAAAAAA / S003');
   assert.equal(focusState.active, findAll(b.main, e => e.tag === 'h1')[0], 'the story\'s heading has focus');
 });
@@ -1146,8 +1148,8 @@ test('the story tabs post set-item-tab; overview shows the conflict first, tasks
   ]);
   const body = findAll(b.main, e => e.attrs['class'] === 'screen-body')[0]!;
   const order = body.children.map(c => c.attrs['class'] ?? c.tag);
-  assert.ok(order.indexOf('conflict') >= 0 && order.indexOf('conflict') < order.indexOf('item-tabs'), `the warning comes before the tabs and any task: ${order}`);
-  const conflict = findAll(body, e => e.attrs['class'] === 'conflict')[0]!;
+  assert.ok(order.indexOf('warnbox') >= 0 && order.indexOf('warnbox') < order.indexOf('subtabs'), `the warning comes before the tabs and any task: ${order}`);
+  const conflict = findAll(body, e => e.attrs['class'] === 'warnbox')[0]!;
   assert.deepEqual([conflict.attrs['role'], texts(conflict)[0]], ['note', 'Two records disagree']);
   const panel = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
   const tasks = findAll(panel, e => e.tag === 'details' && e.attrs['class'] === 'task');
@@ -1155,8 +1157,8 @@ test('the story tabs post set-item-tab; overview shows the conflict first, tasks
   assert.deepEqual(findAll(tasks[1]!, e => e.attrs['class'] === 'pill').map(x => [x.textContent, x.attrs['data-tone']]), [['Failed', 'danger']]);
   assert.ok(texts(panel).includes('Why this stage?'));
   assert.ok(findAll(panel, e => e.attrs['class'] === 'chain').length === 1, 'the artifact chain');
-  const cols = findAll(panel, e => e.attrs['class'] === 'item-cols')[0]!;
-  assert.deepEqual(cols.children.map(c => c.attrs['class']), ['item-main', 'item-side'], 'tasks beside why and chain');
+  const cols = findAll(panel, e => e.attrs['class'] === 'cols')[0]!;
+  assert.deepEqual(cols.children.map(c => c.attrs['class']), ['col-main', 'col-side'], 'tasks beside why and chain');
 
   // Left/Right walk the tabs; a tab posts set-item-tab and the panel follows.
   tabs[0]!.listeners['keydown']!(keyEvent('ArrowRight'));
@@ -1170,11 +1172,11 @@ test('the story tabs post set-item-tab; overview shows the conflict first, tasks
   assert.equal(findAll(evidence, e => e.attrs['class'] === 'task').length, 0, 'evidence shows no tasks');
   const wrap = findAll(evidence, e => e.attrs['class'] === 'table-wrap')[0]!;
   const rows = findAll(wrap, e => e.tag === 'tr' && e.attrs['data-artifact-id'] !== undefined);
-  assert.deepEqual(rows.map(r => r.children.slice(0, 4).map(c => c.textContent)), [
-    ['BUILD BUILD-c', 'Approved · 2026-10-01 11:43 UTC', '—', '—'],
-    ['CR CR-c', 'Pending', '—', '—'],
-    ['LLD LLD-c', 'Approved', '—', '—'],
-  ], 'every record, with approval, review and override in their own columns');
+  assert.deepEqual(rows.map(r => r.children.slice(0, 3).map(c => texts(c).join(''))), [
+    ['BUILD BUILD-c', 'Approved · 2026-10-01 11:43 UTC', '—'],
+    ['CR CR-c', 'Pending', '—'],
+    ['LLD LLD-c', 'Approved', '—'],
+  ], 'every record, with its approval and its review (and any override) in their own columns');
   assert.deepEqual(rows.map(r => findAll(r, e => e.tag === 'button')[0]!.textContent), ['Open read-only', 'Open read-only', 'Open in review']);
   assert.ok(texts(evidence).includes('Code review without a build record: CR-c reviewed code early.'), 'notices in words');
   b.w.posted.length = 0;
@@ -1198,13 +1200,14 @@ test('linked work lists the epic, children and correcting issues, each opening i
   click(tabsIn(b.main)[2]!);
   b.relay();
   const panel = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
-  assert.deepEqual(findAll(panel, e => e.tag === 'h2').map(h => h.textContent), ['Epic', 'Children', 'Issues correcting this story']);
-  const children = findAll(panel, e => e.tag === 'ul' && e.attrs['class'] === 'linked')[1]!;
+  assert.deepEqual(findAll(panel, e => e.attrs['class'] === 'label').map(h => h.textContent), ['Epic', 'Children', 'Issues correcting this story']);
+  const children = findAll(panel, e => e.attrs['class'] === 'linked')[1]!;
   assert.deepEqual(texts(children), ['TASK · Project records · on Overview & tasks', 'TASK · Render structure · on Overview & tasks'],
     'the story\'s children are its tasks, which have no screen of their own: named here, expanded on the overview');
   const links = findAll(panel, e => e.tag === 'button');
-  assert.deepEqual(links.map(l => l.textContent), ['Board epic', 'ISSUE · Jump is off by one · Design & plan']);
-  assert.ok(texts(panel).includes(' · 2 of 3 stories complete'), 'the epic with its completion');
+  assert.deepEqual(links.map(l => l.textContent), ['Board epic', 'ISSUE · Jump is off by one']);
+  assert.ok(texts(panel).includes('Design & plan'), 'the correcting issue with its stage');
+  assert.ok(texts(panel).includes('2 of 3 stories complete'), 'the epic with its completion');
   b.w.posted.length = 0;
   click(links[0]!);
   click(links[1]!);
@@ -1222,7 +1225,7 @@ test('linked work lists the epic, children and correcting issues, each opening i
   click(tabsIn(b.main)[2]!);
   b.relay();
   const fixPanel = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
-  assert.deepEqual(findAll(fixPanel, e => e.tag === 'h2').map(h => h.textContent), ['Part of', 'Issues correcting this story']);
+  assert.deepEqual(findAll(fixPanel, e => e.attrs['class'] === 'label').map(h => h.textContent), ['Part of', 'Issues correcting this story']);
   assert.deepEqual(findAll(fixPanel, e => e.tag === 'button').map(x => x.textContent), ['Jump is off by one']);
   assert.ok(texts(fixPanel).includes('No issue records this story as its parent.'));
   assert.deepEqual(b.s.logs.warn, []);
@@ -1233,11 +1236,11 @@ test('the issue screen opens what it corrects, or shows the parent notice, and l
   const main = b.w.el['main']!;
   click(buttonsIn(main, 'view').find(v => v.attrs['data-view'] === 'issues')!);
   b.relay();
-  click(findAll(main, e => e.attrs['class'] === 'issue-row' && e.attrs['data-item-id'] === 'H9999aaaa0000bbbb')[0]!);
+  click(findAll(main, e => e.attrs['class'] === 'row issue-row' && e.attrs['data-item-id'] === 'H9999aaaa0000bbbb')[0]!);
   b.relay();
   assert.equal(shownScreen(b.w), 'issue');
   assert.deepEqual(buttonsIn(main, 'back').map(x => x.textContent), ['← Issues']);
-  assert.deepEqual(texts(b.w.el['crumbs']!), ['Delivery', '/', 'Issues', '/', '9999AAAA']);
+  assert.deepEqual(texts(b.w.el['crumbs']!), ['insrc', 'Delivery', '/', 'Issues', '/', '9999AAAA']);
   const open = findAll(main, e => e.tag === 'button' && e.textContent === 'Open what it corrects →')[0]!;
   assert.ok(texts(main).includes('Corrects Section navigation · Complete'));
   const fixes = findAll(main, e => e.attrs['aria-label'] === 'Fix stories')[0]!;
@@ -1250,7 +1253,7 @@ test('the issue screen opens what it corrects, or shows the parent notice, and l
   // An epic parent opens the epic; an unresolved parent shows its notice and no button.
   click(findAll(b.w.el['crumbs']!, e => e.tag === 'button' && e.textContent === 'Issues')[0]!);
   b.relay();
-  click(findAll(main, e => e.attrs['class'] === 'issue-row' && e.attrs['data-item-id'] === 'H5555eeee0000ffff')[0]!);
+  click(findAll(main, e => e.attrs['class'] === 'row issue-row' && e.attrs['data-item-id'] === 'H5555eeee0000ffff')[0]!);
   b.relay();
   b.w.posted.length = 0;
   click(findAll(main, e => e.tag === 'button' && e.textContent === 'Open what it corrects →')[0]!);
@@ -1258,7 +1261,7 @@ test('the issue screen opens what it corrects, or shows the parent notice, and l
   b.w.posted.length = 0;
   main.listeners['keydown']!(keyEvent('Escape'));
   b.relay();
-  click(findAll(main, e => e.attrs['class'] === 'issue-row' && e.attrs['data-item-id'] === 'H7777cccc0000dddd')[0]!);
+  click(findAll(main, e => e.attrs['class'] === 'row issue-row' && e.attrs['data-item-id'] === 'H7777cccc0000dddd')[0]!);
   b.relay();
   assert.equal(findAll(main, e => e.textContent === 'Open what it corrects →').length, 0);
   assert.ok(texts(main).includes('Unresolved parent') && texts(main).includes("corrects 'gone', which is not in the store"));
@@ -1340,29 +1343,331 @@ test('the refresh announcement text is unchanged after statusView takes now', as
   assert.match(last.text, /^The refresh failed at 2026-10-09T12:00:00.000Z: bad store Showing the board from 2026-10-09T10:00:00.000Z\.$/);
 });
 
-test('BOARD_STYLE keeps a 320px minimum, card and column minimums, the records table scroll wrapper and only var(--vscode-*) colours, with no hiding rule', () => {
+/** The mocks' product rules (from '.appbar' to '.center', outside the container rules), as selector lists. */
+function mockProductSelectors(): string[] {
+  const html = readFileSync(fileURLToPath(new URL('../../../../docs/plans/delivery-board-screen-mocks.html', import.meta.url)), 'utf8');
+  const css = html.slice(html.indexOf('<style>') + 7, html.indexOf('</style>'));
+  const product = css.slice(css.indexOf('.appbar{'), css.indexOf('}', css.indexOf('.center{')) + 1).replace(/\/\*[^*]*\*\//g, '');
+  const outside = product.replace(/@container[^{]*\{(?:[^{}]*\{[^}]*\})*\s*\}/g, '');
+  return [...outside.matchAll(/([^{}]+)\{[^}]*\}/g)].map(m => m[1]!.trim()).filter(sel => sel.length > 0);
+}
+
+/** Selectors of BOARD_STYLE's top-level rules. */
+const boardSelectors = (): Set<string> => new Set([...BOARD_STYLE.replace(/@container[^{]*\{(?:[^{}]*\{[^}]*\})*\}/g, '').matchAll(/([^{}]+)\{[^}]*\}/g)].flatMap(m => m[1]!.split(',').map(x => x.trim())));
+
+test('the live region and density control sit in a small footer, and a new list screen focuses its chosen view', async () => {
+  // The page wrapper holds the app bar, the banner, the screen and then the footer with the one live region and density.
+  const doc = renderBoardDocument('N0NCE');
+  const at = (part: string) => { const i = doc.indexOf(part); assert.ok(i >= 0, part); return i; };
+  assert.ok(at('<div class="page">') < at('<header class="appbar">') && at('<header class="appbar">') < at('<div id="banner">')
+    && at('<div id="banner">') < at('<main id="main" class="body">') && at('<main id="main" class="body">') < at('<footer class="foot">'), 'page, app bar, banner, screen, footer');
+  const foot = doc.slice(at('<footer class="foot">'), at('</footer>'));
+  assert.match(foot, /<p id="announce" aria-live="polite" aria-atomic="true"><\/p>/);
+  assert.match(foot, /<div class="seg density" role="group" aria-label="Density"><button id="density-compact"[^>]*>Compact<\/button><button id="density-comfortable"[^>]*>Comfortable<\/button><\/div>/);
+  assert.deepEqual(doc.match(/aria-live="[^"]+"/g), ['aria-live="polite"'], 'one live region');
+  assert.equal(doc.match(/<script nonce="N0NCE">/g)?.length, 1, 'one nonce\'d script');
+  assert.doesNotMatch(doc.slice(0, at('<footer')), /density-/, 'density is not in the app bar');
+
+  // A new list screen has no heading, so its chosen view takes focus; the footer's density still switches.
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  assert.equal(findAll(main, e => e.tag === 'h1').length, 0, 'a list screen has no heading');
+  assert.equal(focusState.active, findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'all')[0]);
+  click(findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'issues')[0]!);
+  b.relay();
+  assert.equal(focusState.active, findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'issues')[0], 'each new list screen focuses its own view');
+  b.w.el['density-compact']!.listeners['click']!();
+  assert.equal(b.w.el['body']!.attrs['data-density'], 'compact');
+
+  // A screen the reader returns to, whose opener is no longer shown, focuses the first target instead of throwing.
+  const list = lastScreen(b.ch)!;
+  b.w.deliver({ v: 1, payload: { type: 'screen', model: { ...list, entryId: 990, restored: true, focusItemId: 'gone' } } });
+  assert.equal(focusState.active, findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'issues')[0], 'the chosen view, as on a fresh list screen');
+  click(findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'epics')[0]!);
+  b.relay();
+  click(findAll(main, e => e.attrs['data-epic'] === EPIC_A)[0]!);
+  b.relay();
+  const epic = lastScreen(b.ch)!;
+  b.w.deliver({ v: 1, payload: { type: 'screen', model: { ...epic, entryId: 991, restored: true, focusItemId: 'gone' } } });
+  assert.equal(focusState.active, findAll(main, e => e.tag === 'h1')[0], 'the heading on a screen that has one');
+});
+
+test('the breadcrumb renders the wordmark, crumbs and current place, without the wordmark when narrow', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const crumbs = b.w.el['crumbs']!;
+  const kinds = () => crumbs.children.map(c => `${c.tag}.${c.attrs['class'] ?? ''}:${c.textContent}`);
+  assert.deepEqual(kinds(), ['span.wordmark:insrc', 'span.here:Delivery'], 'the top level is the wordmark and Delivery');
+  assert.equal(crumbs.children[1]!.attrs['aria-current'], 'page');
+  click(findAll(b.w.el['main']!, e => e.tag === 'button' && e.attrs['data-view'] === 'epics')[0]!);
+  b.relay();
+  click(findAll(b.w.el['main']!, e => e.attrs['data-epic'] === EPIC_A)[0]!);
+  b.relay();
+  assert.deepEqual(kinds(), ['span.wordmark:insrc', 'button.crumb:Delivery', 'span.sep:/', 'button.crumb:Epics', 'span.sep:/', 'span.here:Board epic']);
+  b.w.resize(400);
+  assert.deepEqual(kinds(), ['button.crumb:← Epics', 'span.sep:/', 'span.here:Board epic'], 'narrow: the back step and the current place, no wordmark');
+  b.w.resize(900);
+  assert.equal(kinds()[0], 'span.wordmark:insrc', 'widening brings the wordmark back');
+});
+
+test('list screens use the mocks\' filter bar, count line and stage boxes, with no heading', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  assert.equal(findAll(main, e => e.tag === 'h1').length, 0, 'no heading: the screen leads with its filters');
+  const bar = findAll(main, e => e.attrs['class'] === 'filterbar')[0]!;
+  assert.deepEqual(bar.children.map(c => `${c.tag}.${c.attrs['class']}`), ['nav.seg', 'button.toggle attention', 'input.search']);
+  const seg = bar.children[0]!;
+  assert.deepEqual(seg.children.map(v => [v.tag, v.textContent, v.attrs['aria-current'] ?? null]), [
+    ['button', 'All work', 'page'], ['button', 'Epics', null], ['button', 'Standalone', null], ['button', 'Issues', null]]);
+  assert.equal(bar.children[1]!.attrs['aria-pressed'], 'false');
+  // The count line comes before the stage boxes.
+  const body = findAll(main, e => e.attrs['class'] === 'screen-body')[0]!;
+  assert.deepEqual(body.children.slice(0, 2).map(c => `${c.tag}.${c.attrs['class']}`), ['p.count-line', 'details.acc']);
+  assert.equal(body.children[0]!.textContent, '5 items · 1 needs attention');
+
+  // A stage box: label, the muted hint, then the count pill at the right; an empty one is marked and says so.
+  const boxes = findAll(body, e => e.tag === 'details' && e.attrs['class'] === 'acc');
+  assert.equal(boxes.length, 6);
+  const summary = (d: FakeEl) => d.children[0]!.children.map(c => `${c.tag}.${c.attrs['class']}:${c.textContent}`);
+  assert.deepEqual(summary(boxes[0]!), ['span.stage-label:Scoped', 'span.pill count:2']);
+  assert.deepEqual(summary(boxes[2]!), ['span.stage-label:Ready · design approved', 'span.hint muted:· nothing at this stage', 'span.pill count:0']);
+  assert.equal(boxes[2]!.attrs['data-empty'], '');
+  assert.equal(boxes[0]!.attrs['data-empty'], undefined);
+
+  // A card: kicker, title, the muted epic line, then the tone pills.
+  const card = cardOf(main, STORY_A);
+  assert.deepEqual(card.children.map(c => `${c.tag}.${c.attrs['class']}`), ['div.kicker', 'div.t', 'div.muted', 'div.pills']);
+  assert.deepEqual(texts(card).slice(0, 3), ['STORY · AAAAAAAA / S001', 'Columns', 'Board epic']);
+  assert.ok(findAll(card.children[3]!, e => e.attrs['class'] === 'pill' && e.attrs['data-tone'] !== undefined).length > 0, 'tone pills');
+  assert.equal(findAll(body, e => e.tag === 'ul' && e.attrs['class'] === 'cards').length, 3, 'every stage with work holds a card grid, closed Complete too');
+
+  // Keyboard: Left/Right walk the view group, arrows walk the cards, Enter opens one.
+  const views = seg.children;
+  views[0]!.listeners['keydown']!(keyEvent('ArrowRight'));
+  assert.equal(focusState.active, views[1]);
+  views[0]!.listeners['keydown']!(keyEvent('ArrowLeft'));
+  assert.equal(focusState.active, views[3], 'Left from the first wraps to the last');
+  const cards = cardsIn(main);
+  cards[0]!.listeners['keydown']!(keyEvent('ArrowDown'));
+  assert.equal(focusState.active, cards[1]);
+  b.w.posted.length = 0;
+  cards[1]!.listeners['keydown']!(keyEvent(' '));
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-item', itemId: cards[1]!.attrs['data-item-id'] }]);
+});
+
+test('Back to a list screen whose opener is gone focuses the chosen view', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  const input = findAll(main, e => e.tag === 'input')[0]!;
+  input.value = 'loose';
+  input.listeners['input']!();
+  b.relay();
+  click(cardOf(main, 'SA1'));
+  b.relay();
+  assert.equal(shownScreen(b.w), 'story');
+  // While the story is shown it is retitled, so the list's search no longer matches it.
+  const renamed = screensSnapshot().items.map(i => (i.id === 'SA1' ? { ...i, title: 'Tight' } : i));
+  b.ch.send({ v: 1, payload: { type: 'refresh' } });
+  b.s.snapshots.at(-1)!.resolve({ ok: true, value: { ...screensSnapshot(), items: renamed } });
+  await flush();
+  b.pump();
+  main.listeners['keydown']!(keyEvent('Escape'));
+  b.relay();
+  assert.equal(shownScreen(b.w), 'stages');
+  assert.equal(cardsIn(main).length, 0, 'the opener is no longer shown');
+  assert.equal(focusState.active, findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'all')[0], 'focus falls back to the chosen view');
+});
+
+test('the epic board and Epics rows follow the mocks: head with meter, rows with completion and attention on one line', async () => {
+  const b = await liveBoard(screensSnapshot());
+  const main = b.w.el['main']!;
+  const shape = (e: FakeEl) => `${e.tag}.${e.attrs['class'] ?? ''}`;
+  click(findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'epics')[0]!);
+  b.relay();
+  // Epics: one row per epic, its three columns side by side: name block, completion over the meter, attention.
+  const rows = findAll(main, e => e.tag === 'div' && e.attrs['class'] === 'rows')[0]!;
+  assert.deepEqual(rows.children.map(shape), ['button.row', 'button.row']);
+  const row = rows.children[0]!;
+  assert.deepEqual(row.children.map(shape), ['div.', 'div.completion', 'span.pill attention-count']);
+  assert.deepEqual(row.children[0]!.children.map(c => [shape(c), c.textContent]), [['div.kicker', 'EPIC · AAAAAAAA'], ['div.name', 'Board epic'], ['div.muted', '2 stories · 0 tasks']]);
+  assert.deepEqual(row.children[1]!.children.map(shape), ['span.muted', 'div.meter']);
+  assert.equal(row.children[1]!.children[0]!.textContent, '1 of 2 stories complete');
+  assert.deepEqual([row.children[2]!.textContent, row.children[2]!.attrs['data-tone']], ['1 needs attention', 'warning']);
+
+  // The epic board: the epic's head (kicker, heading, count pills | completion and meter), then a filter bar led by ← Epics.
+  click(row);
+  b.relay();
+  const head = findAll(main, e => e.attrs['class'] === 'between head')[0]!;
+  assert.deepEqual(head.children.map(shape), ['div.', 'div.completion']);
+  assert.deepEqual(head.children[0]!.children.map(shape), ['div.kicker', 'h1.', 'div.pills']);
+  assert.deepEqual(texts(head.children[0]!.children[2]!), ['2 stories', '0 tasks', '1 needs attention']);
+  assert.equal(findAll(head, e => e.attrs['role'] === 'meter')[0]!.attrs['aria-valuenow'], '1');
+  assert.equal(focusState.active, head.children[0]!.children[1], 'a new epic board focuses its heading');
+  const bar = findAll(main, e => e.attrs['class'] === 'filterbar')[0]!;
+  assert.deepEqual(bar.children.map(c => [shape(c), c.textContent]), [['button.btn ghost back', '← Epics'], ['button.toggle attention', 'Needs attention'], ['input.search', '']]);
+  assert.equal(findAll(main, e => e.attrs['class'] === 'count-line')[0]!.textContent, '2 items · 1 needs attention');
+});
+
+test('the Issues screen shows its issues in collapsible stage boxes', async () => {
+  const snap = () => screensSnapshot([
+    item({ id: 'H2222abcd5678ef00', kind: 'issue', title: 'Wrong count', standalone: true, stage: 'complete', needsAttention: true, attentionReasons: ['pending-decision'] }),
+    item({ id: 'H3333abcd5678ef00', kind: 'issue', title: 'New defect', standalone: true, stage: 'scoped' }),
+  ]);
+  const b = await liveBoard(snap());
+  const main = b.w.el['main']!;
+  click(findAll(main, e => e.tag === 'button' && e.attrs['data-view'] === 'issues')[0]!);
+  b.relay();
+  const boxes = () => findAll(main, e => e.tag === 'details' && e.attrs['class'] === 'acc');
+  assert.deepEqual(boxes().map(d => [d.attrs['data-stage'], d.attrs['open'] !== undefined, d.attrs['data-empty'] !== undefined]), [
+    ['scoped', true, false], ['design-plan', true, false], ['ready-design-approved', false, true], ['ready-plan-approved', false, true], ['build-recorded', false, true], ['complete', false, false],
+  ], 'the board screens\' defaults: open with work, Complete closed, empty ones closed and marked');
+  const rowsIn = (d: FakeEl) => findAll(d, e => e.attrs['class'] === 'row issue-row').map(r => r.attrs['data-item-id']);
+  assert.deepEqual(boxes().map(rowsIn), [['H3333abcd5678ef00'], ['H1234abcd5678ef00'], [], [], [], ['H2222abcd5678ef00']]);
+  assert.deepEqual(texts(boxes()[5]!.children[0]!), ['Complete', '· 1 needs attention', '1'], 'closed Complete says how many need attention');
+  assert.equal(boxes()[1]!.children[1]!.attrs['class'], 'rows', 'the rows sit in the box');
+
+  // The reader opens Complete; a refresh keeps it open.
+  const complete = boxes()[5]!;
+  complete.setAttribute('open', '');
+  complete.listeners['toggle']!();
+  b.ch.send({ v: 1, payload: { type: 'refresh' } });
+  b.s.snapshots.at(-1)!.resolve({ ok: true, value: snap() });
+  await flush();
+  b.pump();
+  assert.equal(boxes()[5]!.attrs['open'], '', 'the reader\'s choice survives a refresh');
+
+  // Under Needs attention only the stage with such an issue stays; the rest fold into one line.
+  click(buttonsIn(main, 'attention')[0]!);
+  b.relay();
+  assert.deepEqual(boxes().map(d => d.attrs['data-stage']), ['complete']);
+  assert.match(findAll(main, e => e.attrs['class'] === 'fold')[0]!.textContent, /^5 stages have nothing needing attention/);
+  assert.match(findAll(main, e => e.attrs['class'] === 'count-line')[0]!.textContent, /^1 of 3 issues needs attention/);
+});
+
+test('story and issue screens follow the mocks: stage pill, section labels, chain rows and the Open what it corrects button', async () => {
+  const shape = (e: FakeEl) => `${e.tag}.${e.attrs['class'] ?? ''}`;
+  const b = await onStory(STORY_C);
+  const body = findAll(b.main, e => e.attrs['class'] === 'screen-body')[0]!;
+  assert.deepEqual(body.children.map(shape), ['button.btn ghost back', 'div.head', 'div.warnbox', 'nav.subtabs', 'div.tab-panel'],
+    'Back, the head, the conflict, the tabs, then the tab');
+  const head = body.children[1]!;
+  assert.deepEqual(head.children.map(shape), ['div.kicker', 'h1.', 'div.pills']);
+  const chips = head.children[2]!.children;
+  assert.deepEqual([shape(chips[0]!), chips[0]!.attrs['data-kind'], chips[0]!.textContent], ['span.pill stage-pill', 'stage', 'Complete'], 'the stage pill first');
+  const tabs = body.children[3]!;
+  assert.deepEqual([tabs.attrs['role'], tabs.children.map(t => t.attrs['role'])], ['tablist', ['tab', 'tab', 'tab']]);
+  tabs.children[2]!.listeners['keydown']!(keyEvent('ArrowRight'));
+  assert.equal(focusState.active, tabs.children[0], 'Right from the last tab wraps to the first');
+  tabs.children[0]!.listeners['keydown']!(keyEvent('ArrowLeft'));
+  assert.equal(focusState.active, tabs.children[2]);
+
+  const panel = body.children[4]!;
+  assert.deepEqual(findAll(panel, e => e.attrs['class'] === 'label').map(l => l.textContent), ['Planned tasks', 'Why this stage?', 'Artifact chain'], 'section labels, not headings');
+  assert.equal(findAll(panel, e => e.tag === 'h2').length, 0);
+  const chain = findAll(panel, e => e.tag === 'ul' && e.attrs['class'] === 'chain')[0]!;
+  for (const li of chain.children) assert.deepEqual(li.children.map(shape), ['b.', 'span.muted', 'span.pill'], 'kind | record | approval');
+  assert.ok(chain.children.some(li => li.children[1]!.textContent === 'BUILD-c'));
+
+  // A story with no plan says so in the mocks' empty line; an issue's screen puts Back and what it corrects on one line.
+  click(tabs.children[2]!);
+  b.relay();
+  click(findAll(b.main, e => e.tag === 'button' && e.textContent === 'ISSUE · Jump is off by one')[0]!);
+  b.relay();
+  const issueBody = findAll(b.main, e => e.attrs['class'] === 'screen-body')[0]!;
+  const line = issueBody.children[0]!;
+  assert.deepEqual(line.children.map(c => [shape(c), c.textContent]), [['button.btn ghost back', '← Back to S003'], ['button.btn', 'Open what it corrects →']]);
+  assert.equal(shape(line), 'div.between');
+  const issueHead = issueBody.children[1]!;
+  assert.equal(shape(issueHead.children[2]!.children[0]!), 'span.pill stage-pill');
+  assert.deepEqual(findAll(issueBody, e => e.attrs['class'] === 'label').map(l => l.textContent).slice(0, 3), ['Corrects', 'Fix stories', 'Records']);
+  assert.ok(texts(issueBody).includes('No records yet.'), 'empty records say so');
+  b.w.posted.length = 0;
+  click(line.children[1]!);
+  assert.deepEqual(payloadsOf(b.w.posted), [{ type: 'open-item', itemId: STORY_C }]);
+  click(findAll(b.main, e => e.attrs['data-item-id'] === 'H9999aaaa0000bbbb:S001')[0]!);
+  b.relay();
+  assert.ok(texts(b.main).includes('No task plan recorded yet.'), 'a story with no plan says so');
+});
+
+test('state panels use the mocks\' panel and warning styles', () => {
+  const w = runScript();
+  const panelOf = (kind: string, placement: 'body' | 'banner', action: 'retry' | 'clear-filters' | null) => ({
+    kind, title: `${kind} title`, text: `${kind} text`, action, stale: kind === 'refresh-failed', placement,
+    affected: kind === 'partial' ? [{ artifactIds: ['PLAN-x'], text: 'could not be parsed' }] : [],
+  });
+  const status = (panel: unknown) => w.deliver({ v: 1, payload: { type: 'status', status: {
+    state: 'ready', takenAt: null, message: null, partialNotice: null, stale: false, freshnessLabel: 'Updated just now', panel } } });
+  const shown = (root: FakeEl) => findAll(root, e => e.attrs['role'] === 'note').map(d => [d.attrs['class'], d.attrs['data-kind'], d.children[0]!.tag, d.children[0]!.textContent]);
+  for (const [kind, placement, action] of [['refresh-failed', 'banner', 'retry'], ['partial', 'banner', null]] as const) {
+    status(panelOf(kind, placement, action));
+    assert.deepEqual(shown(w.el['banner']!), [['panel warnp', kind, 'h3', `${kind} title`]], `${kind} warns, above the screen`);
+  }
+  status(panelOf('unavailable', 'body', 'retry'));
+  assert.deepEqual(shown(w.el['main']!), [['panel warnp', 'unavailable', 'h3', 'unavailable title']]);
+  assert.deepEqual(findAll(w.el['main']!, e => e.tag === 'button').map(x => [x.attrs['class'], x.textContent]), [['btn', 'Retry']]);
+  status(panelOf('empty', 'body', null));
+  assert.deepEqual(shown(w.el['main']!), [['panel', 'empty', 'h3', 'empty title']], 'an empty workspace is a plain panel, not a warning');
+  status(panelOf('no-matches', 'body', 'clear-filters'));
+  assert.deepEqual(findAll(w.el['main']!, e => e.tag === 'button').map(x => [x.attrs['class'], x.textContent]), [['btn primary', 'Clear filters']]);
+});
+
+test('BOARD_STYLE carries the mocks\' product rules with theme colours and no hiding rule', () => {
+  // The mocks' anchors are the board's buttons; the details marker is hidden by list-style alone.
+  const retarget: Record<string, string | null> = {
+    '.seg a': '.seg button', '.seg a:last-child': '.seg button:last-child', '.seg a[aria-current="page"]': '.seg button[aria-current="page"]',
+    '.subtabs a': '.subtabs button', '.subtabs a[aria-current="page"]': '.subtabs button[aria-selected="true"]',
+    '.acc>summary::-webkit-details-marker': null,
+    // Mock-only content the board does not show: the purpose paragraph, quoted text, file excerpts and the gallery's state grid.
+    '.purpose': null, '.quote': null, '.file': null, '.file .focus': null, '.states': null,
+  };
+  const have = boardSelectors();
+  const missing: string[] = [];
+  for (const list of mockProductSelectors()) {
+    for (const raw of list.split(',').map(x => x.trim())) {
+      const sel = raw in retarget ? retarget[raw] : raw;
+      if (sel !== null && sel !== undefined && !have.has(sel)) missing.push(raw);
+    }
+  }
+  assert.deepEqual(missing, [], 'every mock product selector has a board rule');
+  assert.ok(have.has('.seg button:first-child'), 'the segmented group rounds its first button instead of clipping');
+  assert.doesNotMatch(BOARD_STYLE, /\.seg a\b|\.subtabs a\b/, 'no anchor selectors: the board uses buttons');
+  assert.doesNotMatch(BOARD_STYLE, /wordmark\{display/, 'the wordmark is never hidden by CSS');
+  assert.match(BOARD_STYLE, /\.acc>summary\{list-style:none;/);
+
+  // Theme colours only; no rule hides content.
   assert.doesNotMatch(BOARD_STYLE, /#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\(/, 'no literal colour');
   for (const v of BOARD_STYLE.match(/var\(--[a-zA-Z-]+/g) ?? []) assert.match(v, /^var\(--(vscode-|gap|pad|small)/, v);
   for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /text-overflow/, /overflow:\s*hidden/, /height:\s*0[;}]/]) {
     assert.doesNotMatch(BOARD_STYLE, hiding, `no ${hiding} rule`);
   }
-  // Minimum widths: the page, the card grid, the epic row's name, the story's two columns, the records table.
+  for (const tone of ['success', 'warning', 'danger']) assert.match(BOARD_STYLE, new RegExp(`\\[data-tone="${tone}"\\]\\{color:var\\(--vscode-`), `${tone} pills are tinted from the theme`);
+  assert.match(BOARD_STYLE, /\[data-tone="neutral"\]\{color:var\(--vscode-descriptionForeground\);\}/);
+
+  // Minimum widths: the page, the card grid, the rows' name column, the story's two columns, the records table.
   assert.match(BOARD_STYLE, /body\{[^}]*min-width:320px;/);
-  assert.match(BOARD_STYLE, /#main\{container-type:inline-size;\}/);
   assert.match(BOARD_STYLE, /\.cards\{display:grid;grid-template-columns:repeat\(auto-fill,minmax\(min\(240px,100%\),1fr\)\);/);
-  assert.match(BOARD_STYLE, /\.epic-row\{grid-template-columns:minmax\(220px,1fr\) /);
-  assert.match(BOARD_STYLE, /\.item-cols\{display:grid;grid-template-columns:minmax\(340px,1\.4fr\) minmax\(280px,1fr\);/);
-  assert.match(BOARD_STYLE, /@container \(max-width:760px\)\{\.item-cols\{grid-template-columns:minmax\(0,1fr\);\}\.item-side\{order:-1;\}\}/, 'the stage explanation and chain come first when stacked');
-  assert.match(BOARD_STYLE, /\.table-wrap\{overflow-x:auto;/);
-  assert.match(BOARD_STYLE, /table\.records\{min-width:620px;/);
-  // The old composite page is gone.
-  for (const gone of [/repeat\(6,/, /@media \(max-width:600px\)/, /#details/, /\.layout/]) assert.doesNotMatch(BOARD_STYLE, gone, `no ${gone}`);
-  for (const tone of ['success', 'warning', 'danger', 'neutral']) assert.match(BOARD_STYLE, new RegExp(`\\[data-tone="${tone}"\\]\\{color:var\\(--vscode-`), `${tone} pills are tinted from the theme`);
-  // Density changes spacing and font size only.
+  assert.match(BOARD_STYLE, /\.row\{display:grid;grid-template-columns:minmax\(220px,1fr\) 150px auto;/);
+  assert.match(BOARD_STYLE, /\.issue-row\{grid-template-columns:minmax\(220px,1fr\) auto;\}/);
+  assert.match(BOARD_STYLE, /\.cols\{display:grid;grid-template-columns:minmax\(340px,1\.45fr\) minmax\(280px,1fr\);/);
+  assert.match(BOARD_STYLE, /\.table-wrap\{overflow-x:auto;\}/);
+  assert.match(BOARD_STYLE, /table\.records\{min-width:620px;\}/);
+
+  // Density changes spacing and the small text only.
   assert.match(BOARD_STYLE, /body\[data-density="compact"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;]+;font-size:[^;}]+;\}/);
   assert.match(BOARD_STYLE, /body\[data-density="comfortable"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;}]+;\}/);
   assert.match(BOARD_STYLE, /:focus-visible\{outline:2px solid var\(--vscode-focusBorder\)/);
-  assert.match(BOARD_STYLE, /\.stage>summary\{cursor:pointer;/, 'a closed section\'s summary stays visible and clickable');
+});
+
+test('the narrow layout applies the mocks\' container rules to the body', () => {
+  // The container is the page wrapper, so its rules reach .body (a container query cannot style its own container).
+  assert.match(BOARD_STYLE, /\.page\{container-type:inline-size;/);
+  assert.doesNotMatch(BOARD_STYLE, /(^|\})(#main|\.body)\{[^}]*container-type/, 'neither main nor .body is the container');
+  const rule = (width: number): string => BOARD_STYLE.match(new RegExp(`@container \\(max-width:${width}px\\)\\{((?:[^{}]*\\{[^}]*\\})*)\\}`))?.[1] ?? '';
+  const at760 = rule(760);
+  for (const r of ['.cols{grid-template-columns:minmax(0,1fr);}', '.row{grid-template-columns:minmax(0,1fr) 120px;}', '.issue-row{grid-template-columns:minmax(0,1fr);}',
+    '.search{margin-left:0;flex:1 1 100%;min-width:0;}', '.head.between{flex-wrap:wrap;}']) assert.ok(at760.includes(r), `760: ${r}`);
+  const at480 = rule(480);
+  for (const r of ['.row{grid-template-columns:minmax(0,1fr);}', '.seg button{padding:4px 9px;}', '.body{padding:12px;}']) assert.ok(at480.includes(r), `480: ${r}`);
+  assert.doesNotMatch(at480, /wordmark|\.seg a/);
 });
 
 test('a refresh timing that cannot be measured says so in the log instead of reading as instant', async () => {

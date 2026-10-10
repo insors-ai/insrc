@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791615051437-mobyw1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-10T06:50:51.437Z",
+    "model": "claude:opus",
+    "elapsedMs": 145494,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "348d4663a4bc17af",
+    "storyId": "s1",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "348d4663a4bc17af",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-fixtures.ts",
+        "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-model.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-perf.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-webview-harness.ts",
+        "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts",
+        "vscode-plugin/src/delivery/__tests__/details-memory.test.ts",
+        "vscode-plugin/src/delivery/__tests__/labels.test.ts",
+        "vscode-plugin/src/delivery/board-details.ts",
+        "vscode-plugin/src/delivery/board-host.ts",
+        "vscode-plugin/src/delivery/board-model.ts",
+        "vscode-plugin/src/delivery/board-protocol.ts",
+        "vscode-plugin/src/delivery/board-state.ts",
+        "vscode-plugin/src/delivery/board-views.ts",
+        "vscode-plugin/src/delivery/labels.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-state.ts:1",
+            "message": "The graph grounding is hollow. Every production symbol in board-details/board-host/board-model/board-protocol/board-state/board-views/labels shows an empty testsReaching list, and test helpers that clearly call production code (e.g. board-model.test.ts `build` → buildBoardViewModel) show no callees. So the empty edges come from missing indexing, not from untested code. I judged coverage by running the suite instead: `npx tsx --test src/delivery/__tests__/*.test.ts` gave 101 tests, 101 pass, 0 fail. No empty-edge HIGHs are raised.",
+            "expectationRef": "testsReaching grounding (all changed production symbols)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/__tests__/board-perf.test.ts:1",
+            "message": "The promised perf test is present and passing, but by default it asserts 5x the promised targets (5 s first board, 750 ms per interaction). The exact 1 s / 150 ms limits are only enforced with INSRC_PERF=1. Measured times are far under the exact targets anyway (2.4 ms first board, ≤2.4 ms interactions), so this is about how strict the default check is, not a coverage gap.",
+            "expectationRef": "board-perf.test.ts: 'a 500-item, 1,000-record board renders within one second and each filter change or drill-down within 150 ms, best of three'",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

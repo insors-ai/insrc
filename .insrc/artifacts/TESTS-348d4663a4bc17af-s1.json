@@ -1,0 +1,1273 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "348d4663a4bc17af",
+    "storyId": "s1",
+    "createdAt": "2026-10-10T05:47:27.819Z",
+    "updatedAt": "2026-10-10T06:22:58.974Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "defe3195",
+        "ranAt": "2026-10-10T05:47:27.819Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "board-protocol.test.ts: 'every new up-message parses and a malformed crumb, back or set-view gives null'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts",
+                "title": "every new up-message parses and a malformed crumb, back or set-view gives null",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-state.test.ts: 'statusView places empty and snapshot-less failures in the body and stale failures and partial evidence in the banner'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+                "title": "statusView places empty and snapshot-less failures in the body and stale failures and partial evidence in the banner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "labels.test.ts: 'DISPLAY_LABELS carries the view, item-tab, attention and stage-section labels'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/labels.test.ts",
+                "title": "DISPLAY_LABELS carries the view, item-tab, attention and stage-section labels",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 320,
+            "titles": [
+              {
+                "title": "every valid up-message parses and a wrong version, unknown type or mistyped field gives null",
+                "result": "pass"
+              },
+              {
+                "title": "show-more is accepted only for one of the six stages",
+                "result": "pass"
+              },
+              {
+                "title": "parseBoardUpMessage accepts { type: 'clear-filters' } and rejects it with extra fields",
+                "result": "pass"
+              },
+              {
+                "title": "every new up-message parses and a malformed crumb, back or set-view gives null",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 337,
+            "titles": [
+              {
+                "title": "an answer to a superseded refresh is dropped and nothing from it is applied",
+                "result": "pass"
+              },
+              {
+                "title": "empty, unavailable, failed and partial snapshots each give their own status, a partial snapshot still lists every item, and a snapshot with no items but unreadable records is partial, not empty",
+                "result": "pass"
+              },
+              {
+                "title": "a failed refresh keeps the last snapshot as stale with the failure and its time",
+                "result": "pass"
+              },
+              {
+                "title": "a refresh keeps the selection, and clears a selected item that is gone with a notice",
+                "result": "pass"
+              },
+              {
+                "title": "statusView panel kinds — empty, unavailable, refresh-failed (stale with a shown snapshot, retry action), partial with affected entries from store notices and the unreadable count; freshnessLabel phrasing and NaN fallback",
+                "result": "pass"
+              },
+              {
+                "title": "boardDownMessages with now keeps status first and the selected view's model second",
+                "result": "pass"
+              },
+              {
+                "title": "statusView places empty and snapshot-less failures in the body and stale failures and partial evidence in the banner",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/labels.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 328,
+            "titles": [
+              {
+                "title": "every stage, attention reason, notice code, task result, approval state and review verdict has a display label",
+                "result": "pass"
+              },
+              {
+                "title": "the six stage labels read in workflow order",
+                "result": "pass"
+              },
+              {
+                "title": "DISPLAY_LABELS carries chain.notRecorded, conflictHeadline and noMatchesTitle",
+                "result": "pass"
+              },
+              {
+                "title": "DISPLAY_LABELS carries the view, item-tab, attention and stage-section labels",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "777b5d67",
+        "ranAt": "2026-10-10T05:52:36.045Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "board-model.test.ts: 'stage sections start open when they hold matches, closed when empty, and Complete closed with its attention hint unless Needs attention is on'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-model.test.ts",
+                "title": "stage sections start open when they hold matches, closed when empty, and Complete closed with its attention hint unless Needs attention is on",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-model.test.ts: 'totals read N items · M need attention, or M of N with Show all under Needs attention, and empty stages fold under Needs attention'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-model.test.ts",
+                "title": "totals read N items · M need attention, or M of N with Show all under Needs attention, and empty stages fold under Needs attention",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-views.test.ts: 'a standalone issue correcting a story of an epic counts towards no epic, and the epic's Epics row equals its board header'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+                "title": "a standalone issue correcting a story of an epic counts towards no epic, and the epic's Epics row equals its board header",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-views.test.ts: 'the Epics body filters rows by epic title or id and by attention, with whole-epic counts, and a search matching no epic gives the no-matches panel'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+                "title": "the Epics body filters rows by epic title or id and by attention, with whole-epic counts, and a search matching no epic gives the no-matches panel",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-views.test.ts: 'the Issues body lists issues in stage order with their parent, parent notice and fix stories'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+                "title": "the Issues body lists issues in stage order with their parent, parent notice and fix stories",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-details.test.ts: 'correctedBy lists the issues correcting the item and approvedAt reads the approval time'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+                "title": "correctedBy lists the issues correcting the item and approvedAt reads the approval time",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 334,
+            "titles": [
+              {
+                "title": "planned tasks show their dependencies and checks with Passed, Failed or Unrecorded, a build-only task is unplanned, and unrecorded tasks are counted apart",
+                "result": "pass"
+              },
+              {
+                "title": "the details give the daemon's stage reason and the records it cites",
+                "result": "pass"
+              },
+              {
+                "title": "an approved build with failed tasks shows the approval, the failed rows and a sentence explaining the conflict",
+                "result": "pass"
+              },
+              {
+                "title": "a rejected record reads Rejected, and the original review verdict is shown with any override",
+                "result": "pass"
+              },
+              {
+                "title": "a code review with no build keeps its stage, lists the review-without-build notice and shows the review as evidence",
+                "result": "pass"
+              },
+              {
+                "title": "chain rows per route — full-chain story shows DEF/HLD from its epic plus LLD/PLAN/BUILD; small story has no PLAN row; small-bugfix has ISSUE and BUILD only; trivial has BUILD only; unknown lists recorded kinds only; a missing expected kind is 'Not recorded'; two BUILDs give two rows",
+                "result": "pass"
+              },
+              {
+                "title": "a story with CR, SPEC, EXT and AMD evidence gets a chain without those kinds, they remain in Records, and buildItemDetails does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "conflict is { headline: 'Two records disagree', text } exactly when item.conflict is set",
+                "result": "pass"
+              },
+              {
+                "title": "kicker, chips and TaskRowView.resultTone",
+                "result": "pass"
+              },
+              {
+                "title": "the chain takes DEF and HLD only from a parent epic, and ISSUE only from a parent issue",
+                "result": "pass"
+              },
+              {
+                "title": "an item kind or approval state this build does not know still gives a readable kicker and a neutral chain row",
+                "result": "pass"
+              },
+              {
+                "title": "the tasks chip is danger when the story-level result failed, even with every task passed",
+                "result": "pass"
+              },
+              {
+                "title": "correctedBy lists the issues correcting the item and approvedAt reads the approval time",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-model.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 345,
+            "titles": [
+              {
+                "title": "six stage sections in workflow order hold every story and issue exactly once, in the column the snapshot assigns",
+                "result": "pass"
+              },
+              {
+                "title": "with an epic scope and a search, cards, hidden counts, column totals and totals agree, and clearing both restores the full set",
+                "result": "pass"
+              },
+              {
+                "title": "the same snapshot and filters give an identical model, including items with equal timestamps",
+                "result": "pass"
+              },
+              {
+                "title": "unknownStages counts every stage id outside the six, and those items are in no column",
+                "result": "pass"
+              },
+              {
+                "title": "an approved build with failed tasks stays in Complete and carries a text-labelled validation-conflict badge",
+                "result": "pass"
+              },
+              {
+                "title": "a review-blocked design shows a Review blocked badge, matches Needs attention and keeps its column",
+                "result": "pass"
+              },
+              {
+                "title": "a failed story-level result shows Validation failed, badges never repeat a label, and the accessible label names every badge",
+                "result": "pass"
+              },
+              {
+                "title": "selectMatches returns the board's matches in snapshot order, each with its epic and card",
+                "result": "pass"
+              },
+              {
+                "title": "compactId is 'ABCDEF01 / S001' for 'E20261009abcdef01:S001', 'ABCDEF01' for an epic-level 'E20261009abcdef01', 'ABCDEF01 / S002' for the H-form 'Habcdef0123456789:S002', and the full id for a ':R(<raw>)' fallback id",
+                "result": "pass"
+              },
+              {
+                "title": "taskSummary is 'n/N tasks passed' from validation and null when validation is null or has no recorded tasks",
+                "result": "pass"
+              },
+              {
+                "title": "accessibleLabel carries the compactId and task summary, and badges are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "an approval state or review verdict this build does not know shows its code, ranks worst and is neutral, with no undefined label",
+                "result": "pass"
+              },
+              {
+                "title": "stage sections start open when they hold matches, closed when empty, and Complete closed with its attention hint unless Needs attention is on",
+                "result": "pass"
+              },
+              {
+                "title": "totals read N items · M need attention, or M of N with Show all under Needs attention, and empty stages fold under Needs attention",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 339,
+            "titles": [
+              {
+                "title": "an epic with five stories, two complete, reads 2 of 5 stories complete, and every epic is a row in snapshot order",
+                "result": "pass"
+              },
+              {
+                "title": "a standalone issue correcting a story of an epic counts towards no epic, and the epic's Epics row equals its board header",
+                "result": "pass"
+              },
+              {
+                "title": "the Epics body filters rows by epic title or id and by attention, with whole-epic counts, and a search matching no epic gives the no-matches panel",
+                "result": "pass"
+              },
+              {
+                "title": "epic rows count the planned tasks of the epic's stories and an issue's count separately",
+                "result": "pass"
+              },
+              {
+                "title": "attentionLabel is 'No open gates' at 0, '1 needs attention' at 1, 'N need attention' otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "an epic row's compactId is the epic's compact id",
+                "result": "pass"
+              },
+              {
+                "title": "the Issues body lists issues in stage order with their parent, parent notice and fix stories",
+                "result": "pass"
+              },
+              {
+                "title": "with a search and a scope, the Issues list holds the same issues as the board screen",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "88e9a2b4",
+        "ranAt": "2026-10-10T05:59:13.757Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "board-state.test.ts: 'set-view from a story screen resets the trail to one root and keeps only the attention flag'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+                "title": "set-view from a story screen resets the trail to one root and keeps only the attention flag",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-state.test.ts: 'open-epic and open-item push entries with new ids and record the opener, and the trail is capped at 20 keeping the root'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+                "title": "open-epic and open-item push entries with new ids and record the opener, and the trail is capped at 20 keeping the root",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-state.test.ts: 'back and go-to-crumb restore the earlier entry with its own search, attention and paging'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+                "title": "back and go-to-crumb restore the earlier entry with its own search, attention and paging",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-state.test.ts: 'filter intents are ignored on an item screen, and a refresh that removes the item truncates the trail with a notice'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+                "title": "filter intents are ignored on an item screen, and a refresh that removes the item truncates the trail with a notice",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-state.test.ts: 'every screen message carries a breadcrumb that follows the trail and a back label naming where Back goes'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+                "title": "every screen message carries a breadcrumb that follows the trail and a back label naming where Back goes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "details-memory.test.ts: 'the memory is told null once the item screen is left'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/details-memory.test.ts",
+                "title": "the memory is told null once the item screen is left",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/details-memory.test.ts",
+                "title": "the host checks the ids it is sent and announces each screen change once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 346,
+            "titles": [
+              {
+                "title": "an answer to a superseded refresh is dropped and nothing from it is applied",
+                "result": "pass"
+              },
+              {
+                "title": "empty, unavailable, failed and partial snapshots each give their own status, a partial snapshot still lists every item, and a snapshot with no items but unreadable records is partial, not empty",
+                "result": "pass"
+              },
+              {
+                "title": "a failed refresh keeps the last snapshot as stale with the failure and its time",
+                "result": "pass"
+              },
+              {
+                "title": "set-view from a story screen resets the trail to one root and keeps only the attention flag",
+                "result": "pass"
+              },
+              {
+                "title": "open-epic and open-item push entries with new ids and record the opener, and the trail is capped at 20 keeping the root",
+                "result": "pass"
+              },
+              {
+                "title": "back and go-to-crumb restore the earlier entry with its own search, attention and paging",
+                "result": "pass"
+              },
+              {
+                "title": "filter intents are ignored on an item screen, and a refresh that removes the item truncates the trail with a notice",
+                "result": "pass"
+              },
+              {
+                "title": "every screen message carries a breadcrumb that follows the trail and a back label naming where Back goes",
+                "result": "pass"
+              },
+              {
+                "title": "statusView places empty and snapshot-less failures in the body and stale failures and partial evidence in the banner",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/details-memory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 372,
+            "titles": [
+              {
+                "title": "the details memory follows kept states only, and a new snapshot or selection supersedes the reads in flight",
+                "result": "pass"
+              },
+              {
+                "title": "the memory is told null once the item screen is left",
+                "result": "pass"
+              },
+              {
+                "title": "the host checks the ids it is sent and announces each screen change once",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "ecad4653",
+        "ranAt": "2026-10-10T06:06:38.783Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "board-host.test.ts: 'opening an epic and then a story replaces #main each time, and nothing from an earlier screen remains'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "opening an epic and then a story replaces #main each time, and nothing from an earlier screen remains",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-host.test.ts: 'the filter bar has exactly the four views and Needs attention, and no epic is a chip'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "the filter bar has exactly the four views and Needs attention, and no epic is a chip",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-host.test.ts: 'an Epics row opens that epic's board with its header, breadcrumb and ← Epics, and no view control'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "an Epics row opens that epic's board with its header, breadcrumb and ← Epics, and no view control",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-host.test.ts: 'stages render as six <details> sections in workflow order, and a toggled section stays as the reader left it across a refresh'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "stages render as six <details> sections in workflow order, and a toggled section stays as the reader left it across a refresh",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-host.test.ts: 'a narrow pane shortens the breadcrumb and folds empty stages into Other stages · 0 matching, and widening re-renders the wide form'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "a narrow pane shortens the breadcrumb and folds empty stages into Other stages · 0 matching, and widening re-renders the wide form",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-host.test.ts: 'Back restores the saved scroll and focuses the card that opened the story; Escape goes back'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "Back restores the saved scroll and focuses the card that opened the story; Escape goes back",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-host.test.ts: 'empty replaces the screen, no matches replaces the list area with Clear filters, and a failed refresh over a story keeps the story under the banner'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "empty replaces the screen, no matches replaces the list area with Clear filters, and a failed refresh over a story keeps the story under the banner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-host.test.ts: 'CSP string unchanged, exactly one aria-live region, and the script uses textContent only and posts only BoardUpMessage envelopes'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "CSP string unchanged, exactly one aria-live region, and the script uses textContent only and posts only BoardUpMessage envelopes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 396,
+            "titles": [
+              {
+                "title": "opening the board creates one editor-tab panel with a CSP-locked document and posts the snapshot's items with its taken-at time",
+                "result": "pass"
+              },
+              {
+                "title": "when the earlier refresh answers after the later one, only the later snapshot is posted",
+                "result": "pass"
+              },
+              {
+                "title": "a client that throws synchronously ends the refresh as failed instead of leaving the board loading",
+                "result": "pass"
+              },
+              {
+                "title": "an answer or timeout that arrives after the panel is closed is neither posted nor logged",
+                "result": "pass"
+              },
+              {
+                "title": "the board document inserts text only through textContent and posts only board up-messages",
+                "result": "pass"
+              },
+              {
+                "title": "show-more reveals the next page of one stage, and a new search resets paging",
+                "result": "pass"
+              },
+              {
+                "title": "an item with an unknown stage is left off the board and logged once per refresh",
+                "result": "pass"
+              },
+              {
+                "title": "a filter change that cannot be rendered keeps the previous board and is logged",
+                "result": "pass"
+              },
+              {
+                "title": "a refresh whose loading state cannot be shown is logged and asks the daemon nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a logger that throws never leaves the board loading or stops a refresh",
+                "result": "pass"
+              },
+              {
+                "title": "opening a story reads its plan once per snapshot and shows the dependencies when it arrives",
+                "result": "pass"
+              },
+              {
+                "title": "a review-view record opens in the review pane and a build record opens read-only from the daemon as text",
+                "result": "pass"
+              },
+              {
+                "title": "a failed, malformed or stale plan read leaves the details standing with a notice",
+                "result": "pass"
+              },
+              {
+                "title": "a filter change, Back and announcements: screen changes are announced once, a settled refresh once, and filters, density and reloads say nothing",
+                "result": "pass"
+              },
+              {
+                "title": "clear-filters clears the screen's search and attention, keeps the screen, and resets paging",
+                "result": "pass"
+              },
+              {
+                "title": "opening an epic and then a story replaces #main each time, and nothing from an earlier screen remains",
+                "result": "pass"
+              },
+              {
+                "title": "the filter bar has exactly the four views and Needs attention, and no epic is a chip",
+                "result": "pass"
+              },
+              {
+                "title": "an Epics row opens that epic's board with its header, breadcrumb and ← Epics, and no view control",
+                "result": "pass"
+              },
+              {
+                "title": "stages render as six <details> sections in workflow order, and a toggled section stays as the reader left it across a refresh",
+                "result": "pass"
+              },
+              {
+                "title": "a narrow pane shortens the breadcrumb and folds empty stages into Other stages · 0 matching, and widening re-renders the wide form",
+                "result": "pass"
+              },
+              {
+                "title": "Back restores the saved scroll and focuses the card that opened the story; Escape goes back",
+                "result": "pass"
+              },
+              {
+                "title": "empty replaces the screen, no matches replaces the list area with Clear filters, and a failed refresh over a story keeps the story under the banner",
+                "result": "pass"
+              },
+              {
+                "title": "CSP string unchanged, exactly one aria-live region, and the script uses textContent only and posts only BoardUpMessage envelopes",
+                "result": "pass"
+              },
+              {
+                "title": "density is restored from the webview state, saved on change and mirrored to the host, and both densities render every screen",
+                "result": "pass"
+              },
+              {
+                "title": "the refresh announcement text is unchanged after statusView takes now",
+                "result": "pass"
+              },
+              {
+                "title": "BOARD_STYLE has only var(--vscode-*) colours, no display:none/visibility:hidden/clip, six equal columns when wide, density rules and :focus-visible",
+                "result": "pass"
+              },
+              {
+                "title": "BOARD_STYLE's 600 px block orders empty stage sections after non-empty ones and contains no hiding rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "76fc89e8",
+        "ranAt": "2026-10-10T06:11:36.811Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "board-host.test.ts: 'opening a story replaces the screen: #main holds only the story screen, with its breadcrumb and Back, and no card from the list it came from'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "opening a story replaces the screen: #main holds only the story screen, with its breadcrumb and Back, and no card from the list it came from",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-host.test.ts: 'the story tabs post set-item-tab; overview shows the conflict first, tasks, why and chain; evidence is a records table with open buttons'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "the story tabs post set-item-tab; overview shows the conflict first, tasks, why and chain; evidence is a records table with open buttons",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-host.test.ts: 'linked work lists the epic, children and correcting issues, each opening its own screen'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "linked work lists the epic, children and correcting issues, each opening its own screen",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-host.test.ts: 'the issue screen opens what it corrects, or shows the parent notice, and lists its fix stories'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "the issue screen opens what it corrects, or shows the parent notice, and lists its fix stories",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 413,
+            "titles": [
+              {
+                "title": "opening the board creates one editor-tab panel with a CSP-locked document and posts the snapshot's items with its taken-at time",
+                "result": "pass"
+              },
+              {
+                "title": "when the earlier refresh answers after the later one, only the later snapshot is posted",
+                "result": "pass"
+              },
+              {
+                "title": "a client that throws synchronously ends the refresh as failed instead of leaving the board loading",
+                "result": "pass"
+              },
+              {
+                "title": "an answer or timeout that arrives after the panel is closed is neither posted nor logged",
+                "result": "pass"
+              },
+              {
+                "title": "the board document inserts text only through textContent and posts only board up-messages",
+                "result": "pass"
+              },
+              {
+                "title": "show-more reveals the next page of one stage, and a new search resets paging",
+                "result": "pass"
+              },
+              {
+                "title": "an item with an unknown stage is left off the board and logged once per refresh",
+                "result": "pass"
+              },
+              {
+                "title": "a filter change that cannot be rendered keeps the previous board and is logged",
+                "result": "pass"
+              },
+              {
+                "title": "a refresh whose loading state cannot be shown is logged and asks the daemon nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a logger that throws never leaves the board loading or stops a refresh",
+                "result": "pass"
+              },
+              {
+                "title": "opening a story reads its plan once per snapshot and shows the dependencies when it arrives",
+                "result": "pass"
+              },
+              {
+                "title": "a review-view record opens in the review pane and a build record opens read-only from the daemon as text",
+                "result": "pass"
+              },
+              {
+                "title": "a failed, malformed or stale plan read leaves the details standing with a notice",
+                "result": "pass"
+              },
+              {
+                "title": "a filter change, Back and announcements: screen changes are announced once, a settled refresh once, and filters, density and reloads say nothing",
+                "result": "pass"
+              },
+              {
+                "title": "clear-filters clears the screen's search and attention, keeps the screen, and resets paging",
+                "result": "pass"
+              },
+              {
+                "title": "opening an epic and then a story replaces #main each time, and nothing from an earlier screen remains",
+                "result": "pass"
+              },
+              {
+                "title": "the filter bar has exactly the four views and Needs attention, and no epic is a chip",
+                "result": "pass"
+              },
+              {
+                "title": "an Epics row opens that epic's board with its header, breadcrumb and ← Epics, and no view control",
+                "result": "pass"
+              },
+              {
+                "title": "stages render as six <details> sections in workflow order, and a toggled section stays as the reader left it across a refresh",
+                "result": "pass"
+              },
+              {
+                "title": "a narrow pane shortens the breadcrumb and folds empty stages into Other stages · 0 matching, and widening re-renders the wide form",
+                "result": "pass"
+              },
+              {
+                "title": "Back restores the saved scroll and focuses the card that opened the story; Escape goes back",
+                "result": "pass"
+              },
+              {
+                "title": "empty replaces the screen, no matches replaces the list area with Clear filters, and a failed refresh over a story keeps the story under the banner",
+                "result": "pass"
+              },
+              {
+                "title": "CSP string unchanged, exactly one aria-live region, and the script uses textContent only and posts only BoardUpMessage envelopes",
+                "result": "pass"
+              },
+              {
+                "title": "opening a story replaces the screen: #main holds only the story screen, with its breadcrumb and Back, and no card from the list it came from",
+                "result": "pass"
+              },
+              {
+                "title": "the story tabs post set-item-tab; overview shows the conflict first, tasks, why and chain; evidence is a records table with open buttons",
+                "result": "pass"
+              },
+              {
+                "title": "linked work lists the epic, children and correcting issues, each opening its own screen",
+                "result": "pass"
+              },
+              {
+                "title": "the issue screen opens what it corrects, or shows the parent notice, and lists its fix stories",
+                "result": "pass"
+              },
+              {
+                "title": "density is restored from the webview state, saved on change and mirrored to the host, and both densities render every screen",
+                "result": "pass"
+              },
+              {
+                "title": "the refresh announcement text is unchanged after statusView takes now",
+                "result": "pass"
+              },
+              {
+                "title": "BOARD_STYLE has only var(--vscode-*) colours, no display:none/visibility:hidden/clip, six equal columns when wide, density rules and :focus-visible",
+                "result": "pass"
+              },
+              {
+                "title": "BOARD_STYLE's 600 px block orders empty stage sections after non-empty ones and contains no hiding rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "dc87f5bd",
+        "ranAt": "2026-10-10T06:19:06.714Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "board-host.test.ts: 'BOARD_STYLE keeps a 320px minimum, card and column minimums, the records table scroll wrapper and only var(--vscode-*) colours, with no hiding rule'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "BOARD_STYLE keeps a 320px minimum, card and column minimums, the records table scroll wrapper and only var(--vscode-*) colours, with no hiding rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-host.test.ts: 'density is restored from the webview state, saved on change and mirrored to the host, and both densities render every screen'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "density is restored from the webview state, saved on change and mirrored to the host, and both densities render every screen",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 381,
+            "titles": [
+              {
+                "title": "opening the board creates one editor-tab panel with a CSP-locked document and posts the snapshot's items with its taken-at time",
+                "result": "pass"
+              },
+              {
+                "title": "when the earlier refresh answers after the later one, only the later snapshot is posted",
+                "result": "pass"
+              },
+              {
+                "title": "a client that throws synchronously ends the refresh as failed instead of leaving the board loading",
+                "result": "pass"
+              },
+              {
+                "title": "an answer or timeout that arrives after the panel is closed is neither posted nor logged",
+                "result": "pass"
+              },
+              {
+                "title": "the board document inserts text only through textContent and posts only board up-messages",
+                "result": "pass"
+              },
+              {
+                "title": "show-more reveals the next page of one stage, and a new search resets paging",
+                "result": "pass"
+              },
+              {
+                "title": "an item with an unknown stage is left off the board and logged once per refresh",
+                "result": "pass"
+              },
+              {
+                "title": "a filter change that cannot be rendered keeps the previous board and is logged",
+                "result": "pass"
+              },
+              {
+                "title": "a refresh whose loading state cannot be shown is logged and asks the daemon nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a logger that throws never leaves the board loading or stops a refresh",
+                "result": "pass"
+              },
+              {
+                "title": "opening a story reads its plan once per snapshot and shows the dependencies when it arrives",
+                "result": "pass"
+              },
+              {
+                "title": "a review-view record opens in the review pane and a build record opens read-only from the daemon as text",
+                "result": "pass"
+              },
+              {
+                "title": "a failed, malformed or stale plan read leaves the details standing with a notice",
+                "result": "pass"
+              },
+              {
+                "title": "a filter change, Back and announcements: screen changes are announced once, a settled refresh once, and filters, density and reloads say nothing",
+                "result": "pass"
+              },
+              {
+                "title": "clear-filters clears the screen's search and attention, keeps the screen, and resets paging",
+                "result": "pass"
+              },
+              {
+                "title": "opening an epic and then a story replaces #main each time, and nothing from an earlier screen remains",
+                "result": "pass"
+              },
+              {
+                "title": "the filter bar has exactly the four views and Needs attention, and no epic is a chip",
+                "result": "pass"
+              },
+              {
+                "title": "an Epics row opens that epic's board with its header, breadcrumb and ← Epics, and no view control",
+                "result": "pass"
+              },
+              {
+                "title": "stages render as six <details> sections in workflow order, and a toggled section stays as the reader left it across a refresh",
+                "result": "pass"
+              },
+              {
+                "title": "a narrow pane shortens the breadcrumb and folds empty stages into Other stages · 0 matching, and widening re-renders the wide form",
+                "result": "pass"
+              },
+              {
+                "title": "Back restores the saved scroll and focuses the card that opened the story; Escape goes back",
+                "result": "pass"
+              },
+              {
+                "title": "empty replaces the screen, no matches replaces the list area with Clear filters, and a failed refresh over a story keeps the story under the banner",
+                "result": "pass"
+              },
+              {
+                "title": "CSP string unchanged, exactly one aria-live region, and the script uses textContent only and posts only BoardUpMessage envelopes",
+                "result": "pass"
+              },
+              {
+                "title": "opening a story replaces the screen: #main holds only the story screen, with its breadcrumb and Back, and no card from the list it came from",
+                "result": "pass"
+              },
+              {
+                "title": "the story tabs post set-item-tab; overview shows the conflict first, tasks, why and chain; evidence is a records table with open buttons",
+                "result": "pass"
+              },
+              {
+                "title": "linked work lists the epic, children and correcting issues, each opening its own screen",
+                "result": "pass"
+              },
+              {
+                "title": "the issue screen opens what it corrects, or shows the parent notice, and lists its fix stories",
+                "result": "pass"
+              },
+              {
+                "title": "density is restored from the webview state, saved on change and mirrored to the host, and both densities render every screen",
+                "result": "pass"
+              },
+              {
+                "title": "the refresh announcement text is unchanged after statusView takes now",
+                "result": "pass"
+              },
+              {
+                "title": "BOARD_STYLE keeps a 320px minimum, card and column minimums, the records table scroll wrapper and only var(--vscode-*) colours, with no hiding rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "314e42d7",
+        "ranAt": "2026-10-10T06:21:19.626Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "board-protocol.test.ts: 'the removed set-scope, select-item, close-details and set-view board give null'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts",
+                "title": "the removed set-scope, select-item, close-details and set-view board give null",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board-wiring.test.ts: 'extension.ts registers insrc.delivery.openBoard outside the chat gate with a warn-and-error logger and a repo-scoped delivery client'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts",
+                "title": "extension.ts registers insrc.delivery.openBoard outside the chat gate with a warn-and-error logger and a repo-scoped delivery client",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 315,
+            "titles": [
+              {
+                "title": "every valid up-message parses and a wrong version, unknown type or mistyped field gives null",
+                "result": "pass"
+              },
+              {
+                "title": "show-more is accepted only for one of the six stages",
+                "result": "pass"
+              },
+              {
+                "title": "parseBoardUpMessage accepts { type: 'clear-filters' } and rejects it with extra fields",
+                "result": "pass"
+              },
+              {
+                "title": "every new up-message parses and a malformed crumb, back or set-view gives null",
+                "result": "pass"
+              },
+              {
+                "title": "the removed set-scope, select-item, close-details and set-view board give null",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 359,
+            "titles": [
+              {
+                "title": "extension.ts registers insrc.delivery.openBoard outside the chat gate with a warn-and-error logger and a repo-scoped delivery client",
+                "result": "pass"
+              },
+              {
+                "title": "the board receives the review pane when the chat setting creates one, and reads evidence itself when it does not",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "9c2f0f3f",
+        "ranAt": "2026-10-10T06:22:58.974Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "board-perf.test.ts: 'a 500-item, 1,000-record board renders within one second and each filter change or drill-down within 150 ms, best of three'",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-perf.test.ts",
+                "title": "a 500-item, 1,000-record board renders within one second and each filter change or drill-down within 150 ms, best of three",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-perf.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 418,
+            "titles": [
+              {
+                "title": "a 500-item, 1,000-record board renders within one second and each filter change or drill-down within 150 ms, best of three",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

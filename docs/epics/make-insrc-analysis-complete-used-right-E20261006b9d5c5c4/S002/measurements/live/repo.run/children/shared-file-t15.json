@@ -1,0 +1,99 @@
+{
+	"taskId": "t15",
+	"template": "code.aggregate.report",
+	"kind": "leaf",
+	"produces": [
+		"report"
+	],
+	"status": "ok",
+	"outputs": {
+		"report": {
+			"summary": "Target: code, scope XL. The analysed code is the `jetbrains-plugin` module of the insrc repo (`/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin`): a Kotlin plugin for JetBrains IDEs that acts as a thin client of the local insrc daemon. Per `modules` it has 33 indexed directories: 15 main Kotlin packages (67 files), 14 mirrored test packages (69 files), bundled JS resources for the review pane, and build output.\n\nThe parts connect in three layers. (1) A platform layer turns IDE events (project opened, plugin uninstalled) into calls on `LifecycleBroadcaster`, which fans out to registered `PluginLifecycle` consumers. (2) A single `DaemonGateway` (interface, `DaemonGatewayImpl`, app-level `DaemonGatewayService`) carries all daemon communication through `DaemonRpc` / `UnixSocketDaemonRpc` and returns typed results (`Loaded` / `Unavailable` / ...). (3) Feature packages sit on those two: daemon install/update, freshness self-update, MCP registration and steering injection into AI hosts, onboarding, the artifact review tool window, settings pages, ops/debug pages and a project-view action.\n\nCaveat: the `module-tree` output is lossy. It returned one module and zero edges, so the connections described here are inferred from signatures, type names and test names in `entrypoints` / `functional-surface`, not from a dependency graph. The `entrypoints` list is also the full export list (tests included), not a filtered set of real entry points.",
+			"findings": [
+				{
+					"title": "What it is: a single-artifact JetBrains plugin that fronts the insrc daemon",
+					"detail": "- Module `jetbrains-plugin`, package root `ai.insors.insrc.jetbrains` (per `functional-surface.module` and `modules`).\n- Main packages and file counts (per `modules`): root (4), `actions` (3), `daemon` (3), `debug` (9), `freshness` (3), `host` (9), `lifecycle` (9), `onboarding` (2), `ops` (4), `platform` (2), `review` (9), `settings` (6), `steering` (2), `ui` (1), `workflow` (1), plus `src/main/resources/insrc-review` (2 JS files).\n- Root types: `InsrcPlugin` (object), `IdeKind` (enum with `fromProductCode`), `ProjectContext` / `ProjectContexts.of(projectRootPath, productCode)`, `PluginLifecycle`, `LifecycleBroadcaster`.\n- Build contract, as stated by test names in `BuildContractTest` and `PluginDescriptorSmokeTest`: one module emitting one plugin artifact, and a descriptor that depends only on the common platform module. `Sc1LifecycleTest` names idea, pycharm, goland and webstorm as the resolved `IdeKind` values.",
+					"sources": [
+						"modules",
+						"functional-surface",
+						"entrypoints"
+					]
+				},
+				{
+					"title": "Lifecycle spine: IDE events -> LifecycleBroadcaster -> five consumers",
+					"detail": "- **Event sources** (`platform` package): `InsrcProjectOpenActivity.execute(project)` and `InsrcPluginStateListener.install/uninstall(descriptor)`. `AppScopedConsumers.ensureRegistered()` and `RunOnce.run(action)` handle once-only consumer registration.\n- **Hub** (`PluginLifecycle.kt`): `LifecycleBroadcaster.register/unregister/fireProjectOpened(ctx)/firePluginUninstalled()/clear()`. `UninstallPolicy.shouldSignalUninstall(PluginStateEvent)` gates the uninstall signal; test names say it fires on uninstall but not on a mere disable, and that the broadcaster isolates consumer failures.\n- **Consumers** (each overrides `onProjectOpened(ctx)` and `onPluginUninstalled()`):\n  - `DaemonLifecycleService` (`lifecycle`)\n  - `McpWiringLifecycle` (`host`)\n  - `SteeringInjectionLifecycle` (`steering`)\n  - `OnboardingLifecycle` (`onboarding`)\n  - `InstalledCommitFreshnessConsumer` (`freshness`)\n- The activity-to-broadcaster link is inferred from the test name `testProjectOpenActivityBroadcastsContextForOpenedProject`; no call edge was provided.",
+					"sources": [
+						"entrypoints",
+						"functional-surface"
+					]
+				},
+				{
+					"title": "DaemonGateway is the single choke point for daemon communication",
+					"detail": "All in `daemon/DaemonGateway.kt`, `DaemonGatewayService.kt`, `UnixSocketDaemonRpc.kt`.\n\n- **Interface `DaemonGateway`** methods: `probe`, `isProjectRegistered`, `registerProject(root, steering)`, `repoStats`, `pendingArtifacts`, `artifactReviewView`, `resolveComment`, `approve`, `settingsCatalog`, `writeSetting`, `clearSetting`, `perRoleOverrides`, `perRepoOverrides`, `registeredRepos`, `listModels`, `daemonStatus`, `debugStatus`, `shutdown`, `backup`, `compact`, `update`, `updateOutcome`.\n- **Stack**: `DaemonGatewayService` (`@Service(Service.Level.APP)`, one override per method) -> `DaemonGatewayImpl` -> `DaemonRpc.call(method, params)` returning `DaemonResult` -> `UnixSocketDaemonRpc.call` (private `readLine`, internal `parse`), with `DaemonSocket.defaultPath()`.\n- **Typed results** instead of exceptions: `PendingQueryResult`, `ArtifactContentResult`, `ResolveCommentResult`, `ApproveResult` (`Approved`/`Withheld`/`Unavailable`), `SettingsCatalogResult`, `ModelListResult`, `SaveResult` (`Saved`/`Rejected`/`Unavailable`), `PerRoleOverridesResult`, `PerRepoOverridesResult`, `RegisteredReposResult`, `RepoStatsResult`, `DaemonStatusResult` (`Loaded`/`Stopped`/`Unavailable`), `DebugStatusResult`, `DaemonActionResult` (`Ok`/`Failed`), `DaemonUpdateOutcomeResult`. `DaemonUnavailableException` also exists; test names indicate `isProjectRegistered` and `registerProject` surface it while the other calls map it to `Unavailable`/`Failed`.\n- **Parsing helpers** in `DaemonGatewayImpl.Companion`: `parseRepoStats`, `parseDaemonStatus`, `parseUpdateOutcome`, `parseAttachedSessions`, `parseCatalog`, `parseView`, `parseArtifacts`, `parseRepoOverride`, `classifyApprove`; private `configWrite` and `runAction` back the write and action methods.\n- Wire names appear only in test names: `repo_add`, `repo_list`, `config-write`, `config-show`, `daemon-update`.",
+					"sources": [
+						"entrypoints",
+						"functional-surface",
+						"module-tree"
+					]
+				},
+				{
+					"title": "Daemon install/update and freshness self-update",
+					"detail": "**`lifecycle` package (provisioning)**\n- `DaemonLifecycleService.onProjectOpened` -> private `evaluate` -> `startSetup(kind, recordConsent)` -> `performSetup(kind)`.\n- Decision: `DefaultDaemonSetupPolicy.decide(state: DaemonState, consented)` returns `DaemonSetupAction.NoOp` / `OfferSetup` / `RunSilently`. Consent persists in `SetupConsentStoreService` (`@State` in `insrc.xml`).\n- Node runtime: `DefaultNodeRuntimeResolver.resolve()` (with `parseMajor`), `RealSystemNodeProbe.detect()`, then `DefaultPrivateNodeProvisioner.ensurePrivateNode()` using `NodePlatform`, `HttpNodeArchiveDownloader`, `TarNodeArchiveExtractor`; failures raise `NodeProvisioningException`.\n- Execution: `ScriptDaemonProvisioner.run(kind: ProvisionKind, node: NodeRuntime)` via `ProcessBuilderRunner.run(Subprocess)`, scripts located by `DefaultDaemonScriptLocator.scriptFor(kind)` (bundled installer extraction or a script under the daemon home).\n- `DaemonLifecycleCommandRunner.run(LifecycleCommand)` maps commands to subcommands and exit codes; test names refer to `daemon-ctl.sh`.\n\n**`freshness` package (drift check)**\n- `InstalledCommitFreshnessConsumer.onProjectOpened` schedules `DaemonFreshnessFlow.check(FreshnessDeps)`.\n- `FreshnessGateway` (`installedCommit`, `update`, `updateOutcome`) is implemented by `GatewayFreshnessView`, so updates go through the daemon gateway; a test name states this is the daemon-owned IPC, not the lifecycle shell-out.\n- Private steps: `performUpdate`, `confirmUpdate`, `isFresh`; upstream commit via private `gitLsRemote(root, branch)`; user feedback via `FreshnessNotify` / `NotifyKind`; `LastSeenPluginVersionStore` persists the last seen plugin version.",
+					"sources": [
+						"entrypoints",
+						"functional-surface"
+					]
+				},
+				{
+					"title": "AI-host integration: MCP registration, steering injection, onboarding",
+					"detail": "**`host` package**\n- Contract `AiHostAdapter`: `detectPresent`, `writeMcpRegistration(host, serverEntryJson)`, `removeMcpRegistration`, `writeRulesBlock(host, MarkerDelimitedBlock)`, `removeRulesBlock`. Implemented by `AiHostAdapterImpl`.\n- Detection: `HostDetector.detectPresent()` over `JetBrainsHostProbes.all()`, yielding `HostResolution.Present` / `Absent` / `Unrecognised`. Model types: `AiHostKind`, `AiHost`.\n- Writers: `JsonMcpConfigWriter.writeInsrcServer/removeInsrcServer` for MCP config; `MarkerFileWriter.writeBlock/removeBlock` plus pure `MarkerSection.render/upsert/removal` for rules files; file access behind `HostFileIo` / `NioHostFileIo`; errors as `HostFileAccessException`.\n- Entry composition: `InsrcMcpRegistration.composeServerEntry(projectRootPath, launchTargetPath)`, `InsrcMcpLaunchTarget.resolve()`.\n\n**Consumers of the adapter**\n- `McpWiringLifecycle` writes the MCP registration on project open.\n- `SteeringInjectionLifecycle` writes a rules block whose body comes from `SteeringContent.steeringBody()` (a bundled resource, per test names).\n- `OnboardingLifecycle` (private `evaluate`, `register`) combines the adapter with `DaemonGateway`: it offers registration through `NotificationOnboardingOffer.offerEnable(root, onAccept)` and, per test names, removes MCP and rules entries per host on uninstall.\n- `debug/McpRegistrationReader` reuses host detection to report registration status (`McpHostStatusDto`).",
+					"sources": [
+						"entrypoints",
+						"functional-surface"
+					]
+				},
+				{
+					"title": "User-facing surfaces: review tool window, settings, ops pages, repo action",
+					"detail": "**Review (`review` package)**\n- `ReviewToolWindowFactory.createToolWindowContent` -> `ReviewPanel` (`start`, private `poll`, `schedule`, `render`, `openSelected`), list state via `ReviewListViews.of(PendingQueryResult)`.\n- `ArtifactContentPane.render(view, mdPath)` builds HTML (`composeHtml`, `jsStringLiteral`) and handles approval (`doApprove`, `promptOverrideAndApprove`) using `ApproveDecision`; `renderModeFor(jcefSupported)` selects a `RenderMode`.\n- Comments: `ArtifactCommentLayer` (`handlePayload`, `submit`, `pushSnapshot`) with `CommentBuffer` / `CommentBufferStore`, `applyCommentOp(buffer, payloadJson)` and `SubmitDecision.shouldClear`.\n- Browser side: `comment-layer.js` (`post`, `captureSelectionAnchor`, `renderComments`, `install`) and `markdown-renderer.js` (`renderMarkdown`, `slugify`, `sectionPathFor`).\n\n**Settings (`settings` package)**\n- `InsrcSettingsConfigurable` hosts `SettingsSection` implementations `ModelTiersSection`, `PerRoleSection`, `PerRepoSection` and fans out `isModified/apply/reset`.\n- Pure models: `SettingsView` (`groupsOf`, `settingsTree`, `displayValue`), `SettingsEditModel`, `SettingsTableModel`, `ModelTiersModel`, `PerRoleOverridesModel`, `PerRepoOverridesModel`; edits become `PendingWrite` / `WriteOp.Set` / `WriteOp.Clear`, persisted through the gateway's `writeSetting` / `clearSetting` (per test names).\n\n**Ops (`ops`, `debug`, `workflow`, `ui`)**\n- Base `InsrcOpsConfigurable` (abstract `pageTitle`, `buildBody`) with children `DaemonConfigurable`, `DebugConfigurable`, `WorkflowsConfigurable`.\n- Debug page sections (`DebugSection` / `DebugPageHost`): status card (`DebugStatusCardReader`), orphan processes (`OrphanProcessSeam.scan/kill`, `ProcessKiller`), MCP (`McpDebugSection`), logs (`LogEditorSection`, `LogEditorSurface`, `LogTailSeam`, `LogModel`).\n- Workflows page reads artifacts from disk via `WorkflowChainReader.readAll()` (`WorkflowChainDto`, `StageMark`, `StoryChainMark`); a test name says this page uses no daemon IPC.\n- Shared widgets: `InsrcCollapsible.collapsiblePanel`, `ScrollableColumn`.\n\n**Action (`actions`)**\n- `ShowOrRegisterRepoAction` (`update`, `actionPerformed`, private `probeRegistered`) opens `RepoStatusDialog` or `RegisterRepoDialog`.",
+					"sources": [
+						"entrypoints",
+						"functional-surface",
+						"modules"
+					]
+				},
+				{
+					"title": "Test layout mirrors main packages and relies on injected seams",
+					"detail": "- 14 test packages with 69 files against 67 main Kotlin files (per `modules`); `daemon` has the most test files (12).\n- Recurring patterns visible in `functional-surface.internalHelpers`:\n  - Hand-written fakes of the seams: `FakeDaemonRpc`, `RecordingRpc`, `WireRpc`, `FakeGateway`, `NoopGateway`, `RecordingAdapter`, `FakeIo`, `RecordingRunner`, `ScriptedKiller`, `ScriptedLogTailFs`.\n  - Source-scan tests that read files through a private `read(path)` helper (`DaemonPageTest`, `DebugPageTest`, `NestedOpsPagesTest`, `WorkflowsPageTest`, `InsrcSettingsConfigurableTest`, `ModelTiersWiringSourceScanTest`, `LogEditorSourceScanTest`, `RepoStatusPopupLayoutTest`, `ShowOrRegisterRepoActionTest`).\n  - Integration tests: `Sc1ActivationIntegrationTest`, `ProjectOpenWiringTest`, `OnboardingCleanupIntegrationTest`, `OnboardingWiringTest`, `SteeringInjectionIntegrationTest`.\n- Invariants repeated across test names: gateway calls never throw on an unreachable daemon; blocking work runs off the EDT; host files are not clobbered and other content is preserved; single-flight guards on install and update.",
+					"sources": [
+						"functional-surface",
+						"modules"
+					]
+				},
+				{
+					"title": "Gaps: no dependency edges, unfiltered entrypoints, build output in the index",
+					"detail": "- **`module-tree` is nearly empty**: one module (`.../jetbrains/daemon`) and `edges: []`, against 33 directories in `modules`. No module-to-module or call edges were available, so every connection in this report is inferred from signatures, shared types and test names.\n- **`entrypoints` is not a real entry-point set**: it lists the same entities as `functional-surface.exports`, including test classes, test methods and DTOs. The actual platform hooks (`InsrcProjectOpenActivity`, `InsrcPluginStateListener`, `ReviewToolWindowFactory`, the configurables, `ShowOrRegisterRepoAction`) were picked out by name.\n- **Build output is indexed**: `build/reports/tests/test/js/report.js` and `build/resources/main/insrc-review/*.js` appear as modules and helpers; the latter duplicate `src/main/resources/insrc-review`.\n- **Some entities look mis-attributed by the indexer**: `interface.FreshnessNotify` and `interface.DaemonSetupPolicy` are recorded as extension methods, and functions such as `selectRunner`, `collectWrites`, `onSaved` (`ModelTiersModel.kt`) and `setTaskTier`, `setTierField` (`SettingsView.kt`) are recorded as top-level functions starting after their class's recorded end line.\n- **No file contents or plugin descriptor were provided**: RPC method names, script names and threading behaviour come from test names only.",
+					"sources": [
+						"module-tree",
+						"entrypoints",
+						"functional-surface",
+						"modules"
+					]
+				}
+			],
+			"metadata": {
+				"target": "code",
+				"scope": "XL",
+				"runId": "s2-live-repo-mv1edxtn",
+				"tasksAnalyzed": 4
+			}
+		}
+	},
+	"completedAt": "2026-10-09T20:15:25.721Z",
+	"completeness": {
+		"complete": true,
+		"total": 1,
+		"returned": 1,
+		"basis": "model-directed",
+		"basisNote": "a summary written by a model from the other tasks' results; its completeness is that of the tasks it summarises"
+	}
+}

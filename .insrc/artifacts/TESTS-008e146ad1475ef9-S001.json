@@ -4,7 +4,7 @@
     "epicHash": "008e146ad1475ef9",
     "storyId": "S001",
     "createdAt": "2026-10-10T14:08:41.695Z",
-    "updatedAt": "2026-10-10T14:08:41.695Z",
+    "updatedAt": "2026-10-10T14:11:59.702Z",
     "standalone": true
   },
   "body": {
@@ -227,6 +227,111 @@
               },
               {
                 "title": "the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "b909bfb9",
+        "ranAt": "2026-10-10T14:11:59.702Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a symbol scope is measured with one read by id and a file scope with the read of that file's entities; the measure of a resolved scope (measureResolvedScope) asks the store for every entity of the repository in neither case, and the counts and the size equal those of the whole-repository read; driven through measureRequestScope for a code request, the index check of the scope resolution is the only whole-repository read",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "a symbol scope is measured with one read by id and a file scope with the read of that file's entities; the measure of a resolved scope (measureResolvedScope) asks the store for every entity of the repository in neither case, and the counts and the size equal those of the whole-repository read; driven through measureRequestScope for a code request, the index check of the scope resolution is the only whole-repository read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/__tests__/measure-pass.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4373,
+            "titles": [
+              {
+                "title": "measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)",
+                "result": "pass"
+              },
+              {
+                "title": "measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)",
+                "result": "pass"
+              },
+              {
+                "title": "a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)",
+                "result": "pass"
+              },
+              {
+                "title": "measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)",
+                "result": "pass"
+              },
+              {
+                "title": "measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not",
+                "result": "pass"
+              },
+              {
+                "title": "dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id",
+                "result": "pass"
+              },
+              {
+                "title": "an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)",
+                "result": "pass"
+              },
+              {
+                "title": "a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution",
+                "result": "pass"
+              },
+              {
+                "title": "a live source whose listing never returns, and one that is never reached, is reported as not determined after the time limit with the reason that the listing timed out, and is never a count",
+                "result": "pass"
+              },
+              {
+                "title": "a request cancelled while a source is being measured stops at once and the remaining sources of a pool are not asked; a signal already aborted reads nothing",
+                "result": "pass"
+              },
+              {
+                "title": "one stalled connection among several does not stop the others from being measured, each has its own time limit, and the sum is not a count",
+                "result": "pass"
+              },
+              {
+                "title": "the rejection of a listing abandoned after its time limit is caught and is not an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "a symbol scope is measured with one read by id and a file scope with the read of that file's entities; the measure of a resolved scope (measureResolvedScope) asks the store for every entity of the repository in neither case, and the counts and the size equal those of the whole-repository read; driven through measureRequestScope for a code request, the index check of the scope resolution is the only whole-repository read",
+                "result": "pass"
+              },
+              {
+                "title": "a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before",
                 "result": "pass"
               }
             ],

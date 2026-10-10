@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -55,3 +55,25 @@ Run at 2026-10-10T14:08:41.695Z on commit `169e973a`. Tests check: **passed**. 8
 | `src/analyze/__tests__/measure-pass.test.ts` | 0 | 13 | 2.6 s |  |
 | `src/config/__tests__/config-catalog-contract.test.ts` | 0 | 10 | 0.4 s |  |
 | `src/config/__tests__/data-source-listing-timeout.test.ts` | 0 | 2 | 0.5 s |  |
+
+## t2
+
+Run at 2026-10-10T14:11:59.702Z on commit `b909bfb9`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: a symbol scope is measured with one read by id and a file scope with the read of that file's entities; the measure of a resolved scope (measureResolvedScope) asks the store for every entity of the repository in neither case, and the counts and the size equal those of the whole-repository read; driven through measureRequestScope for a code request, the index check of the scope resolution is the only whole-repository read**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a symbol scope is measured with one read by id and a file scope with the read of that file's entities; the measure of a resolved scope (measureResolvedScope) asks the store for every entity of the repository in neither case, and the counts and the size equal those of the whole-repository read; driven through measureRequestScope for a code request, the index check of the scope resolution is the only whole-repository read | `src/analyze/__tests__/measure-pass.test.ts` |
+
+**unit: a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before | `src/analyze/__tests__/measure-pass.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/__tests__/measure-pass.test.ts` | 0 | 15 | 4.4 s |  |

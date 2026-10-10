@@ -4,7 +4,7 @@
     "epicHash": "008e146ad1475ef9",
     "storyId": "S001",
     "createdAt": "2026-10-10T14:08:41.695Z",
-    "updatedAt": "2026-10-10T14:08:41.695Z",
+    "updatedAt": "2026-10-10T14:11:59.702Z",
     "authoredBy": "controller",
     "standalone": true
   },
@@ -13,9 +13,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "Reaching one live data source and listing it are now given one bounded wait in measureConnection: the caller's limit, else the new setting analyzer.dataSourceListingTimeoutMs (120000 ms by default, read fresh for each source by a reader that never throws). A source that does not answer gives a measure that is not determined with the reason that the listing timed out; a cancelled request ends the wait at once, the remaining connections of a pool are not asked, and a signal already aborted reads nothing. The driver's call is abandoned, not stopped; its late rejection is caught and logged at debug level. The three exported measuring functions take the new optional MeasureOptions; no caller passes it yet. Eight falsifying mutations were each caught (one by the test run exceeding its time).",
+    "summary": "The measure of a stored area now reads a symbol scope by its entity's id and a file scope by the entities of its file, counts only entities of the scope's repository, and falls back to the whole-repository read when the narrow read finds none, so every result is the one the whole read gives. The index check made while a code or docs scope is resolved is unchanged and is, through measureRequestScope, the only whole-repository read left for such a scope. One follow-up from the gate's note on t1 is included: a direct measure of one source with a signal already aborted returns before its pool is loaded. Five falsifying mutations were each caught.",
     "testRecord": {
       "md": "docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/TESTS.md"
     },
@@ -25,51 +29,51 @@
           "file": ".insrc/artifacts/PLAN-008e146ad1475ef9-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T14:08:41.695Z"
+        "timestamp": "2026-10-10T14:11:59.702Z"
       },
       {
         "target": {
           "file": "src/analyze/__tests__/measure-pass.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T14:08:41.695Z"
+        "timestamp": "2026-10-10T14:11:59.702Z"
       },
       {
         "target": {
           "file": "src/analyze/measure.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T14:08:41.695Z"
+        "timestamp": "2026-10-10T14:11:59.702Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/config-catalog-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T14:08:41.695Z"
+        "timestamp": "2026-10-10T14:11:59.702Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/data-source-listing-timeout.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T14:08:41.695Z"
+        "timestamp": "2026-10-10T14:11:59.702Z"
       },
       {
         "target": {
           "file": "src/config/analyze.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T14:08:41.695Z"
+        "timestamp": "2026-10-10T14:11:59.702Z"
       },
       {
         "target": {
           "file": "src/config/config-catalog.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-10T14:08:41.695Z"
+        "timestamp": "2026-10-10T14:11:59.702Z"
       }
     ],
-    "commit": "169e973a"
+    "commit": "b909bfb9"
   }
 }

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-11T09:57:20.461Z"
+    "updatedAt": "2026-10-11T10:02:56.088Z"
   },
   "body": {
     "tasks": [
@@ -274,6 +274,131 @@
               },
               {
                 "title": "store library after another process removed its locks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "fa7c3218",
+        "ranAt": "2026-10-11T10:02:56.088Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "detection through the real wrappers: asynchronous write by probe, synchronous write at once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/lock-loss-detection.test.ts",
+                "title": "detection through the real wrappers: asynchronous write by probe, synchronous write at once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health.test.ts",
+                "title": "health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "health record: after locks-lost getGraphStore itself rejects with the named error",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health.test.ts",
+                "title": "health record: after locks-lost getGraphStore itself rejects with the named error",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sync wrapper: code 22 with a succeeding probe read is rethrown and leaves the record ok",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health.test.ts",
+                "title": "sync wrapper: code 22 with a succeeding probe read is rethrown and leaves the record ok",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "slow healthy write: the probe runs and returns, nothing is recorded, the write completes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health.test.ts",
+                "title": "slow healthy write: the probe runs and returns, nothing is recorded, the write completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/lock-loss-detection.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1723,
+            "titles": [
+              {
+                "title": "detection through the real wrappers: asynchronous write by probe, synchronous write at once",
+                "result": "pass"
+              },
+              {
+                "title": "control: the same wrappers on a store that was not broken write and record nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/store-health.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1211,
+            "titles": [
+              {
+                "title": "recordStoreFailureIfLockError: records both read failures once, and nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "the named error's message names another process and does not repeat the library's advice",
+                "result": "pass"
+              },
+              {
+                "title": "health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close",
+                "result": "pass"
+              },
+              {
+                "title": "health record: after locks-lost getGraphStore itself rejects with the named error",
+                "result": "pass"
+              },
+              {
+                "title": "sync wrapper: code 22 with a succeeding probe read is rethrown and leaves the record ok",
+                "result": "pass"
+              },
+              {
+                "title": "slow healthy write: the probe runs and returns, nothing is recorded, the write completes",
                 "result": "pass"
               }
             ],

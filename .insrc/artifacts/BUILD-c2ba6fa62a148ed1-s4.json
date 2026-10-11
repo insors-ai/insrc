@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-11T09:57:20.461Z",
+    "updatedAt": "2026-10-11T10:02:56.088Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -20,9 +20,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "A child-process helper (store-child.ts and its driver) holds a graph store and obeys commands; the reproduction test runs the breaking sequence against the real library on a temporary store and asserts each behaviour separately. Finding beyond the design: a read fails with code -30775 only in a process that never read; a process that had read (as the daemon always has, since the store module reads while opening) gets code 22 with MDB_BAD_RSLOT. Both are pinned, plus a control case. The detection of Tasks t4 and t5 must recognise both.",
+    "summary": "The store module gains a health record (set once to locks-lost, never cleared in the process), getStoreHealth, recordStoreFailureIfLockError and LmdbStoreLocksLostError. withWriteTxn bounds its wait at 10 seconds and probes with one read; withWriteTxnSync confirms a code 22 or -30775 failure with the same probe. Once recorded, getGraphStore and both wrappers refuse without reaching the library and closeGraphStore skips the library's close. Deviation from the design text, recorded on the design: a read counts as a lock failure by code -30775 or by code 22 with MDB_BAD_RSLOT, since Task t3 showed that a process which has read before (as the daemon has) gets the second.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/TESTS.md"
     },
@@ -32,121 +36,149 @@
           "file": ".insrc/artifacts/LLD-c2ba6fa62a148ed1-s4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-c2ba6fa62a148ed1-s4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "scripts/daemon-ctl.sh"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/command.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/tui.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/cli/command.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/cli/panes/DaemonPane.tsx"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/cli/services/__tests__/daemon-stop.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/cli/services/daemon.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/cli/services/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/cli/services/maintenance.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/helpers/store-child-driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/helpers/store-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/lock-loss-detection.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:02:56.088Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T09:57:20.461Z"
+        "timestamp": "2026-10-11T10:02:56.088Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/store-health.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:02:56.088Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:02:56.088Z"
       }
     ],
-    "commit": "2495f8ab"
+    "commit": "fa7c3218"
   }
 }

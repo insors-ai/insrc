@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -74,3 +74,26 @@ Run at 2026-10-11T09:53:01.556Z on commit `f48863cf`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts` | 0 | 4 | 6.6 s |  |
+
+## t3
+
+Run at 2026-10-11T09:57:20.461Z on commit `2495f8ab`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: reproduction against the real library: read throws -30775, synchronous transaction throws 22, asynchronous transaction does not settle**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reproduction against the real library: read throws -30775, synchronous transaction throws 22, asynchronous transaction does not settle | `src/db/graph/__tests__/lock-loss-reproduction.test.ts` |
+| pass | reproduction through the store module: a process that has read before gets code 22 with MDB_BAD_RSLOT on a read | `src/db/graph/__tests__/lock-loss-reproduction.test.ts` |
+
+**integration: control case: without the second descriptor, the other process's close leaves the first process's write working**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | control case: without the second descriptor, the other process's close leaves the first process's write working | `src/db/graph/__tests__/lock-loss-reproduction.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/graph/__tests__/lock-loss-reproduction.test.ts` | 0 | 4 | 7.5 s |  |

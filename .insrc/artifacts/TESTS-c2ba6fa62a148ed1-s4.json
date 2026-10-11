@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-11T09:53:01.556Z"
+    "updatedAt": "2026-10-11T09:57:20.461Z"
   },
   "body": {
     "tasks": [
@@ -208,6 +208,72 @@
               },
               {
                 "title": "control script stop of a healthy daemon behaves and exits as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "2495f8ab",
+        "ranAt": "2026-10-11T09:57:20.461Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "reproduction against the real library: read throws -30775, synchronous transaction throws 22, asynchronous transaction does not settle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+                "title": "reproduction against the real library: read throws -30775, synchronous transaction throws 22, asynchronous transaction does not settle",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+                "title": "reproduction through the store module: a process that has read before gets code 22 with MDB_BAD_RSLOT on a read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "control case: without the second descriptor, the other process's close leaves the first process's write working",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+                "title": "control case: without the second descriptor, the other process's close leaves the first process's write working",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7478,
+            "titles": [
+              {
+                "title": "reproduction against the real library: read throws -30775, synchronous transaction throws 22, asynchronous transaction does not settle",
+                "result": "pass"
+              },
+              {
+                "title": "reproduction through the store module: a process that has read before gets code 22 with MDB_BAD_RSLOT on a read",
+                "result": "pass"
+              },
+              {
+                "title": "control case: without the second descriptor, the other process's close leaves the first process's write working",
+                "result": "pass"
+              },
+              {
+                "title": "store library after another process removed its locks",
                 "result": "pass"
               }
             ],

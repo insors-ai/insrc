@@ -42,7 +42,14 @@ export interface SourceRootsResult {
 	readonly roots: SourceRoot[];
 	/** true when the graph yielded no file roots and repoPath was substituted. */
 	readonly fallbackUsed: boolean;
+	/** Why the repository root was substituted; present only with `fallbackUsed`. */
+	readonly fallbackReason?: string | undefined;
 }
+
+/** Reads a repository's indexed entities. The default opens the store, which
+ *  only the daemon may do; a review that runs in another process (the CLI's)
+ *  passes a reader that asks the daemon. */
+export type EntitiesForRepoReader = (repoPath: string) => Promise<readonly Entity[]>;
 
 export interface SourceRootsOpts {
 	/**
@@ -95,7 +102,7 @@ export async function resolveSourceRoots(
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		log.warn({ repoPath, err: msg }, 'review:source-roots: graph read failed; falling back to repo root');
-		return { roots: [{ path: repoPath, fileCount: 0 }], fallbackUsed: true };
+		return { roots: [{ path: repoPath, fileCount: 0 }], fallbackUsed: true, fallbackReason: `the index could not be read (${msg})` };
 	}
 
 	const counts = new Map<string, number>();
@@ -108,7 +115,7 @@ export async function resolveSourceRoots(
 	}
 
 	if (total === 0) {
-		return { roots: [{ path: repoPath, fileCount: 0 }], fallbackUsed: true };
+		return { roots: [{ path: repoPath, fileCount: 0 }], fallbackUsed: true, fallbackReason: 'the index holds no file for this repository' };
 	}
 
 	// Root-level indexed files mean repoPath is itself a code root that

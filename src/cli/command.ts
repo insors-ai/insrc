@@ -278,6 +278,9 @@ function renderReviewSummary(res: ReviewArtifactResult): string[] {
 			lines.push(`    [${f.severity}] ${f.ref ?? '?'} · ${f.fixability} · ${f.kind} — ${f.premise.slice(0, 80)}`);
 		}
 	}
+	if (r.sourceRootFallback !== undefined) {
+		lines.push(`  note: the source roots could not be read from the index (${r.sourceRootFallback}); the whole repository root was searched`);
+	}
 	if (r.verdict === 'block') lines.push(`  → resolve/override before approve`);
 	return lines;
 }

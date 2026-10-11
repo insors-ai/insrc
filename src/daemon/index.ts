@@ -46,6 +46,7 @@ import { collectRepoStats } from './repo-stats.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer } from './server.js';
 import { buildDaemonStatus } from './status.js';
+import { entitiesForSourceRoots, METHOD_ENTITIES_FOR_SOURCE_ROOTS } from './source-roots-rpc.js';
 import { reportFatal } from './fatal.js';
 import { createShutdown, exitRespectingStoreHealth } from './shutdown.js';
 import {
@@ -576,6 +577,10 @@ async function main(): Promise<void> {
 			}
 			return all;
 		},
+
+		// Read-only: a repository's file entities, for a review that runs
+		// outside the daemon and may not open the store (Epic c2ba6fa6, Story s4).
+		[METHOD_ENTITIES_FOR_SOURCE_ROOTS]: async (params) => entitiesForSourceRoots(params),
 
 		// Append one post-hoc, human-authored feedback entry to a workflow
 		// artifact JSON (Story S001 — provenance/feedback). Delegates to the

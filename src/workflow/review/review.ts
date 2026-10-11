@@ -23,6 +23,7 @@ import { verifyClaim } from './verify.js';
 import { isDesignStage } from './template.js';
 import { runTemplateReview } from './template-review.js';
 import type { DesignIntent } from './template.js';
+import type { EntitiesForRepoReader } from './source-roots.js';
 import type { Finding, ReviewReport, ReviewVerdict, Severity } from './types.js';
 import { computeVerdict, DEFAULT_BLOCK_ON, severityForOutcome, tally } from './verdict.js';
 
@@ -57,6 +58,10 @@ export interface RunReviewOpts {
 	readonly deadlineMs?: number | undefined;
 	/** Design stages only: millisecond clock for the deadline (test seam). */
 	readonly nowMs?: (() => number) | undefined;
+	/** Reads a repository's indexed entities for the source roots. Passed by a
+	 *  review that runs outside the daemon (the CLI's), which may not open the
+	 *  store; absent, the default reader is used. */
+	readonly readEntitiesForRepo?: EntitiesForRepoReader | undefined;
 }
 
 
@@ -82,7 +87,11 @@ export async function runReview(
 
 	throwIfAborted(signal);
 	emit('probe');
-	const evidence = await gatherEvidence(claims, repo);
+	let sourceRootFallback: string | undefined;
+	const evidence = await gatherEvidence(claims, repo, {
+		readEntitiesForRepo: opts.readEntitiesForRepo,
+		onSourceRootFallback: reason => { sourceRootFallback = reason; },
+	});
 	const evidenceById = new Map(evidence.map(e => [e.claimId, e] as const));
 
 	const findings: Finding[] = [];
@@ -108,6 +117,7 @@ export async function runReview(
 		counts,
 		reviewedAt,
 		model,
+		...(sourceRootFallback !== undefined ? { sourceRootFallback } : {}),
 	};
 }
 

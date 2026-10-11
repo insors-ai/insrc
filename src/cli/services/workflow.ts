@@ -61,6 +61,8 @@ import { createRoleRouter } from '../../analyze/context/role-router.js';
 import { runWithRoutingContext } from '../../analyze/context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
+import { rpc } from '../client.js';
+import type { Entity } from '../../shared/types.js';
 import { runWorkflowStream } from '../../mcp/daemon-stream.js';
 import type { ProgressEvent } from '../../shared/types.js';
 import {
@@ -238,22 +240,40 @@ export async function runWorkflowStreaming(
  *  (core) tier via the RoleRouter (default: claude opus; whatever the operator
  *  pinned core to otherwise). The resulting `block` verdict is what `approve`
  *  then enforces. */
-export async function reviewArtifact(repoPath: string, artifactPath: string): Promise<ReviewArtifactResult> {
+export async function reviewArtifact(
+	repoPath: string,
+	artifactPath: string,
+	reviewFile: typeof reviewArtifactFile = reviewArtifactFile,
+): Promise<ReviewArtifactResult> {
 	const router = createRoleRouter({});
 	// Establish the sc6 routing seam so the review resolves through the same
 	// choke point as the workflow runner, and any deep reasoning it triggers is
 	// tiered per-role rather than falling through to the legacy provider.
 	return runWithRoutingContext({ router, repoPath }, async () => {
 		const { provider, resolution } = router.resolveProviderForRole('review', loadAnalyzeConfig(), repoPath);
-		return reviewArtifactFile({
+		return reviewFile({
 			mdPath:     artifactPath,
 			jsonPath:   jsonPathForMd(artifactPath),
 			repo:       repoPath,
 			provider,
 			model:      `${resolution.runner}:${resolution.model}`,
 			reviewedAt: new Date().toISOString(),
+			// This review runs in the CLI's process, which may not open the
+			// store: the source roots come from the daemon.
+			readEntitiesForRepo: readEntitiesForRepoFromDaemon,
 		});
 	});
+}
+
+/**
+ * The repository's indexed file entities, asked of the daemon. Only the daemon
+ * opens the store; a failure here (no daemon, an unknown request on an older
+ * daemon) makes the review fall back to the repository root and say so.
+ */
+export async function readEntitiesForRepoFromDaemon(repoPath: string): Promise<Entity[]> {
+	const reply = await rpc<Entity[] | { error: string }>('repo.entitiesForSourceRoots', { repoPath });
+	if (!Array.isArray(reply)) throw new Error(reply.error);
+	return reply;
 }
 
 export function ackStale(artifactPath: string, reason: string): { readonly path: string; readonly ackedAt: string; readonly reason: string } {

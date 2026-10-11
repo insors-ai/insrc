@@ -73,7 +73,10 @@ export type StoreChildCommand =
 	 */
 	| { op: 'daemon-like'; logPath: string; crashLogDir: string }
 	/** Raise a rejection that nothing handles. */
-	| { op: 'reject-unhandled' };
+	| { op: 'reject-unhandled' }
+	/** Register `repoPath` and index one `file` entity per path in `files`
+	 *  (plus one function entity, which a source-root read must leave out). */
+	| { op: 'seed-repo'; repoPath: string; files: string[] };
 
 export type StoreChildReply =
 	| { ok: true; value?: unknown; settled?: boolean }
@@ -182,6 +185,7 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 			const { createShutdown, realEndDeps } = await import('../../../../daemon/shutdown.js');
 			const { reportFatal } = await import('../../../../daemon/fatal.js');
 			const { buildDaemonStatus } = await import('../../../../daemon/status.js');
+			const { entitiesForSourceRoots, METHOD_ENTITIES_FOR_SOURCE_ROOTS } = await import('../../../../daemon/source-roots-rpc.js');
 			const { PATHS } = await import('../../../../shared/paths.js');
 			const { getLogger } = await import('../../../../shared/logger.js');
 			const log = getLogger('store-child');
@@ -207,6 +211,7 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 					modelState: { status: 'ready' },
 					installedCommit: '',
 				}),
+				[METHOD_ENTITIES_FOR_SOURCE_ROOTS]: async params => entitiesForSourceRoots(params),
 				'test.enqueue': async params => {
 					const p = params as { ms: number; key: string };
 					queue.enqueue({ kind: 'full', repoPath: `/job-${p.key}`, ms: p.ms, key: p.key } as never);
@@ -222,6 +227,22 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 			});
 			await server.listen();
 			return { ok: true, value: PATHS.sockFile };
+		}
+		case 'seed-repo': {
+			const { addRepo } = await import('../../../repos.js');
+			const { upsertEntities } = await import('../../../entities.js');
+			const { makeEntityId } = await import('../../../../indexer/parser/base.js');
+			await addRepo(null as never, { path: cmd.repoPath, name: 'seeded', addedAt: new Date().toISOString(), status: 'ready' });
+			const entity = (file: string, kind: 'file' | 'function', name: string) => ({
+				id: makeEntityId(cmd.repoPath, file, kind, name), kind, name, language: 'typescript' as const, repoId: 1,
+				repo: cmd.repoPath, file, startLine: 1, endLine: 1, body: '', embedding: [], indexedAt: new Date().toISOString(),
+			});
+			const first = cmd.files[0];
+			await upsertEntities(null as never, [
+				...cmd.files.map(f => entity(f, 'file', f)),
+				...(first !== undefined ? [entity(first, 'function', 'notAFile')] : []),
+			] as never);
+			return { ok: true };
 		}
 		case 'reject-unhandled':
 			void Promise.reject(new Error('nothing handles this'));

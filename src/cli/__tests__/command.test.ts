@@ -287,3 +287,16 @@ test('daemon status adds the store failure line when the status carries it', asy
 	assert.match(out[0] ?? '', /^running · /);
 	assert.equal(out[1], `✗ store FAILED since 2026-10-11T10:00:00.000Z (during: request search): ${cause}`);
 });
+
+test('workflow review says when the source roots could not be read from the index', async () => {
+	const { ctx } = ctxWith();
+	const report = { artifact: 'PLAN', stage: 'plan', verdict: 'pass', findings: [], counts: { high: 0, med: 0, low: 1 }, reviewedAt: '', model: 'm' };
+	ctx.services.workflow.reviewArtifact = async () => ({
+		report: { ...report, sourceRootFallback: 'the index could not be read (daemon is not running)' }, applied: [], skipped: [], pendingUser: [],
+	}) as never;
+	const out = await runCommand('workflow review docs/plans/PLAN-x.md', ctx);
+	assert.ok(out.some(l => l.includes('the source roots could not be read from the index (the index could not be read (daemon is not running)); the whole repository root was searched')), out.join('\n'));
+
+	ctx.services.workflow.reviewArtifact = async () => ({ report, applied: [], skipped: [], pendingUser: [] }) as never;
+	assert.equal((await runCommand('workflow review docs/plans/PLAN-x.md', ctx)).some(l => /source roots/.test(l)), false);
+});

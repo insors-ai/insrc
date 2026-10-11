@@ -26,6 +26,7 @@ import { renderReviewReport } from './report.js';
 import { runReview } from './review.js';
 import { isDesignStage, resolveDesignReview } from './template.js';
 import type { Finding, ReviewReport, Severity } from './types.js';
+import type { EntitiesForRepoReader } from './source-roots.js';
 
 const log = getLogger('review');
 
@@ -43,6 +44,9 @@ export interface ReviewArtifactOpts {
 	readonly reviewedAt?: string | undefined;
 	readonly onProgress?: ((msg: string) => void) | undefined;
 	readonly signal?:   AbortSignal | undefined;
+	/** Reads a repository's indexed entities for the source roots. Passed by a
+	 *  caller outside the daemon (the CLI), which may not open the store. */
+	readonly readEntitiesForRepo?: EntitiesForRepoReader | undefined;
 }
 
 export interface ReviewArtifactResult {
@@ -94,6 +98,7 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 		...(opts.reviewedAt !== undefined ? { reviewedAt: opts.reviewedAt } : {}),
 		...(opts.onProgress !== undefined ? { onProgress: opts.onProgress } : {}),
 		...(opts.signal !== undefined ? { signal: opts.signal } : {}),
+		...(opts.readEntitiesForRepo !== undefined ? { readEntitiesForRepo: opts.readEntitiesForRepo } : {}),
 	};
 
 	const first = await runReview(md, base);

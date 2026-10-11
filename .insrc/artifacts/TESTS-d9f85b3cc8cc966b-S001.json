@@ -4,7 +4,7 @@
     "epicHash": "d9f85b3cc8cc966b",
     "storyId": "S001",
     "createdAt": "2026-10-11T15:39:50.029Z",
-    "updatedAt": "2026-10-11T15:39:50.029Z",
+    "updatedAt": "2026-10-11T15:43:01.214Z",
     "standalone": true
   },
   "body": {
@@ -194,6 +194,89 @@
               },
               {
                 "title": "d9f85b3c t1 — design.story and design.epic synth schemas admit a UX card narrative and described elements",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "f6e03b84",
+        "ranAt": "2026-10-11T15:43:01.214Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "panzoom asset: no http(s)/import references; exposes init + fit entry points",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+                "title": "d9f85b3c t2 — the panzoom asset references nothing outside itself",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+                "title": "d9f85b3c t2 — the asset exposes window.insrcPanZoom.init, which returns fit() and reset()",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+                "title": "d9f85b3c t2 — fit-on-load centres the stage at the scale that fits the viewport, and labels it",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+                "title": "d9f85b3c t2 — the toolbar zooms about the centre and 1:1 resets; missing controls are skipped",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+                "title": "d9f85b3c t2 — a missing viewport or stage yields a no-op handle instead of throwing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "headless Chrome: each generated page draws, fit-on-load applied, no console error",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "At t2 (before any page generator exists): /tmp/pz-smoke/page.html with the approved mock's view-panel markup, the shipped panzoom.js inlined and the vendored mermaid.min.js, loaded in google-chrome --headless=new --dump-dom --virtual-time-budget=8000. The DOM shows the Mermaid SVG drawn and the stage transformed by fit() after render: 'translate(395.247px, 16.8px) scale(0.782186) | 78%'. chrome.log has 0 console errors. The same check is rerun over every generated companion page once the builders land (t8)."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 286,
+            "titles": [
+              {
+                "title": "d9f85b3c t2 — the panzoom asset references nothing outside itself",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t2 — the asset exposes window.insrcPanZoom.init, which returns fit() and reset()",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t2 — fit-on-load centres the stage at the scale that fits the viewport, and labels it",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t2 — the toolbar zooms about the centre and 1:1 resets; missing controls are skipped",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t2 — a missing viewport or stage yields a no-op handle instead of throwing",
                 "result": "pass"
               }
             ],

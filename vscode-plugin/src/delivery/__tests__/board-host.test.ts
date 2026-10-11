@@ -441,7 +441,7 @@ test('opening a story reads its plan once per snapshot and shows the dependencie
   const ready = detailsOf(ch).at(-1)!;
   assert.deepEqual(ready.tasks.map(t => [t.title, t.dependsOn, t.acceptanceChecks]), [
     ['Types', [], ['types compile']],
-    ['Builder', ['Types'], ['rows built']],
+    ['Builder', [{ shortId: 'T1', title: 'Types' }], ['rows built']],
   ]);
   assert.equal(ready.planNotice, null);
 
@@ -453,7 +453,7 @@ test('opening a story reads its plan once per snapshot and shows the dependencie
   send(ch, { type: 'back' });
   send(ch, { type: 'open-item', itemId: 'S1' });
   assert.equal(s.evidence.length, 1, 'no second read in the same snapshot');
-  assert.deepEqual(detailsOf(ch).at(-1)!.tasks[1]!.dependsOn, ['Types']);
+  assert.deepEqual(detailsOf(ch).at(-1)!.tasks[1]!.dependsOn, [{ shortId: 'T1', title: 'Types' }]);
 
   // A new snapshot reads again.
   send(ch, { type: 'refresh' });
@@ -555,7 +555,7 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
     { id: 't2', dependsOn: ['t1'], acceptanceChecks: ['rows built'] },
   ] }) });
   await flush();
-  assert.deepEqual(detailsOf(ch3).at(-1)!.tasks.map(t => [t.dependsOn, t.acceptanceChecks]), [[[], []], [['Types'], ['rows built']]],
+  assert.deepEqual(detailsOf(ch3).at(-1)!.tasks.map(t => [t.dependsOn, t.acceptanceChecks]), [[[], []], [[{ shortId: 'T1', title: 'Types' }], ['rows built']]],
     'a task with a string id keeps its row, its malformed lists read as empty, and entries without a string id are skipped');
 
   // Stale: a read that finishes after a newer snapshot is dropped; one after the panel closed posts nothing.
@@ -571,7 +571,7 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
   assert.ok(s4.logs.warn.some(w => /dropped the plan read of PLAN-x/.test(w)));
   s4.evidence[1]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
   await flush();
-  assert.deepEqual(detailsOf(ch4).at(-1)!.tasks[1]!.dependsOn, ['Types'], 'the new snapshot\'s own read is');
+  assert.deepEqual(detailsOf(ch4).at(-1)!.tasks[1]!.dependsOn, [{ shortId: 'T1', title: 'Types' }], 'the new snapshot\'s own read is');
 
   // A record read that answers after a newer snapshot was applied is dropped, as a stale plan read is.
   const s7 = detailsSetup();
@@ -1152,8 +1152,8 @@ test('the story tabs post set-item-tab; overview shows the conflict first, tasks
   const conflict = findAll(body, e => e.attrs['class'] === 'warnbox')[0]!;
   assert.deepEqual([conflict.attrs['role'], texts(conflict)[0]], ['note', 'Two records disagree']);
   const panel = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
-  const tasks = findAll(panel, e => e.tag === 'details' && e.attrs['class'] === 'task');
-  assert.deepEqual(tasks.map(t => texts(t.children[0]!)[0]), ['Project records', 'Render structure']);
+  const tasks = findAll(panel, e => e.tag === 'tr' && e.attrs['class'] === 'task-row');
+  assert.deepEqual(tasks.map(t => texts(t.children[1]!)[0]), ['Project records', 'Render structure']);
   assert.deepEqual(findAll(tasks[1]!, e => e.attrs['class'] === 'pill').map(x => [x.textContent, x.attrs['data-tone']]), [['Failed', 'danger']]);
   assert.ok(texts(panel).includes('Why this stage?'));
   assert.ok(findAll(panel, e => e.attrs['class'] === 'chain').length === 1, 'the artifact chain');
@@ -1169,7 +1169,7 @@ test('the story tabs post set-item-tab; overview shows the conflict first, tasks
   b.relay();
   const evidence = findAll(b.main, e => e.attrs['role'] === 'tabpanel')[0]!;
   assert.equal(evidence.attrs['data-tab'], 'evidence');
-  assert.equal(findAll(evidence, e => e.attrs['class'] === 'task').length, 0, 'evidence shows no tasks');
+  assert.equal(findAll(evidence, e => e.attrs['class'] === 'task-row').length, 0, 'evidence shows no tasks');
   const wrap = findAll(evidence, e => e.attrs['class'] === 'table-wrap')[0]!;
   const rows = findAll(wrap, e => e.tag === 'tr' && e.attrs['data-artifact-id'] !== undefined);
   assert.deepEqual(rows.map(r => r.children.slice(0, 3).map(c => texts(c).join(''))), [
@@ -1664,6 +1664,8 @@ test('BOARD_STYLE carries the mocks\' product rules with theme colours and no hi
     '.acc>summary::-webkit-details-marker': null,
     // Mock-only content the board does not show: the purpose paragraph, quoted text, file excerpts and the gallery's state grid.
     '.purpose': null, '.quote': null, '.file': null, '.file .focus': null, '.states': null,
+    // The mock's per-task blocks: a story's tasks are a table now (LLD-0184df38314415ae-S001), whose rules are table.tasks.
+    '.task': null, '.task:last-of-type': null, '.task>summary': null, '.task p': null, '.checks li::before': null,
   };
   const have = boardSelectors();
   const missing: string[] = [];
@@ -1749,4 +1751,89 @@ test('an intent that changes nothing posts nothing', async () => {
   assert.equal(ch.posted.length, onStory, 'the item already shown, and filters on an item screen, post nothing');
   send(ch, { type: 'ready' });
   assert.ok(ch.posted.length > onStory, 'a reloaded webview still gets the screen again');
+});
+
+/** The story screen for S1 with this PLAN read in, on the live board (the real webview script on the fake DOM). */
+async function storyWithPlan(body: unknown) {
+  const b = await liveBoard(storySnapshot());
+  b.ch.send({ v: 1, payload: { type: 'open-item', itemId: 'S1' } });
+  b.pump();
+  b.s.evidence[0]!.resolve({ ok: true, value: planRecord(body) });
+  await flush();
+  b.pump();
+  return { ...b, main: b.w.el['main']! };
+}
+const TABLE_PLAN = { tasks: [
+  { id: 't1', dependsOn: [], acceptanceChecks: ['types compile', 'no any'] },
+  { id: 't2', dependsOn: ['t1'], acceptanceChecks: ['rows built'] },
+] };
+const tasksTable = (root: FakeEl) => findAll(root, e => e.tag === 'table' && e.attrs['class'] === 'records tasks')[0];
+const taskRowsIn = (root: FakeEl) => findAll(root, e => e.tag === 'tr' && e.attrs['class'] === 'task-row');
+const checksRowOf = (root: FakeEl, id: string) => findAll(root, e => e.tag === 'tr' && e.attrs['class'] === 'checks-row' && e.attrs['data-item-id'] === id)[0]!;
+const toggleOf = (row: FakeEl) => findAll(row, e => e.tag === 'button' && e.attrs['class'] === 'link checks-toggle')[0]!;
+
+test("a story's planned tasks are a table: short id, title, result pill, dependency chips with the title on hover, and a checks count", async () => {
+  const b = await storyWithPlan(TABLE_PLAN);
+  const table = tasksTable(b.main);
+  assert.ok(table, 'the tasks are a table');
+  assert.equal(table.attrs['aria-label'], 'Tasks');
+  assert.deepEqual(findAll(table, e => e.tag === 'th').map(h => h.textContent), ['ID', 'Task', 'Result', 'Depends on', 'Checks']);
+  const rows = taskRowsIn(table);
+  assert.deepEqual(rows.map(r => r.attrs['data-item-id']), ['S1:T1', 'S1:T2']);
+  assert.deepEqual(rows.map(r => r.children.map(c => texts(c).join(' '))), [
+    ['T1', 'Types', 'Passed', '—', '▸ 2 checks'],
+    ['T2', 'Builder', 'Failed', 'T1', '▸ 1 check'],
+  ]);
+  assert.deepEqual(findAll(rows[1]!.children[2]!, e => e.attrs['class'] === 'pill').map(p => p.attrs['data-tone']), ['danger'], 'the result pill keeps its tone');
+  const chip = findAll(rows[1]!.children[3]!, e => e.attrs['class'] === 'pill')[0]!;
+  assert.deepEqual([chip.textContent, chip.attrs['title'], chip.attrs['data-tone']], ['T1', 'Types', 'neutral'], 'a dependency chip shows the short id, with the full title on hover');
+  assert.equal(findAll(b.main, e => e.tag === 'details' && e.attrs['class'] === 'task').length, 0, 'no collapsible task blocks');
+  assert.equal(texts(b.main).some(t => t.includes('☐')), false, 'no checkbox glyphs');
+});
+
+test("a task's checks toggle opens them as a plain list under its row, and the open choice survives a re-render", async () => {
+  const b = await storyWithPlan(TABLE_PLAN);
+  const row = taskRowsIn(b.main)[0]!;
+  const toggle = toggleOf(row);
+  const sub = checksRowOf(b.main, 'S1:T1');
+  assert.equal(toggle.attrs['aria-expanded'], 'false');
+  assert.equal(sub.attrs['hidden'], '', 'the checks start closed');
+  click(toggle);
+  assert.deepEqual([toggle.textContent, toggle.attrs['aria-expanded']], ['▾ 2 checks', 'true']);
+  assert.equal(sub.attrs['hidden'], undefined, 'the checks row is shown');
+  const list = findAll(sub, e => e.tag === 'ul' && e.attrs['class'] === 'checks')[0]!;
+  assert.deepEqual(list.children.map(li => li.textContent), ['types compile', 'no any']);
+  assert.equal(findAll(sub, e => e.tag === 'td')[1]!.attrs['colspan'], '4', 'the list spans the columns after the ID');
+
+  // A re-render (the same screen posted again, as a refresh does) builds a new table that keeps the choice.
+  const screen = [...b.ch.posted].reverse().find(m => (m as { payload: { type: string } }).payload.type === 'screen')!;
+  b.w.deliver(screen);
+  const again = checksRowOf(b.main, 'S1:T1');
+  assert.notEqual(again, sub, 'a new row was rendered');
+  assert.equal(again.attrs['hidden'], undefined, 'still open after the re-render');
+  assert.equal(toggleOf(taskRowsIn(b.main)[0]!).attrs['aria-expanded'], 'true');
+  assert.equal(checksRowOf(b.main, 'S1:T2').attrs['hidden'], '', 'the other task stays closed');
+
+  click(toggleOf(taskRowsIn(b.main)[0]!));
+  assert.equal(checksRowOf(b.main, 'S1:T1').attrs['hidden'], '', 'and closes again');
+});
+
+test('a task with no checks, or a plan still loading, shows a dash and no checks row; a story with no plan has no table', async () => {
+  const b = await storyWithPlan({ tasks: [{ id: 't1', dependsOn: [], acceptanceChecks: [] }, { id: 't2', dependsOn: ['t1'], acceptanceChecks: ['rows built'] }] });
+  const first = taskRowsIn(b.main)[0]!;
+  assert.deepEqual(texts(first.children[4]!), ['—']);
+  assert.equal(findAll(b.main, e => e.attrs['class'] === 'checks-row' && e.attrs['data-item-id'] === 'S1:T1').length, 0);
+
+  // Before the PLAN read answers, dependencies and checks are dashes.
+  const loading = await liveBoard(storySnapshot());
+  loading.ch.send({ v: 1, payload: { type: 'open-item', itemId: 'S1' } });
+  loading.pump();
+  const rows = taskRowsIn(loading.w.el['main']!);
+  assert.deepEqual(rows.map(r => [texts(r.children[3]!).join(''), texts(r.children[4]!).join('')]), [['—', '—'], ['—', '—']]);
+
+  loading.ch.send({ v: 1, payload: { type: 'open-item', itemId: 'S2' } });
+  loading.pump();
+  const main = loading.w.el['main']!;
+  assert.equal(tasksTable(main), undefined, 'no table without tasks');
+  assert.ok(texts(main).includes('No task plan recorded yet.'));
 });

@@ -1,0 +1,320 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c00559b7e38bb6ce",
+    "storyId": "S001",
+    "createdAt": "2026-10-11T13:52:39.338Z",
+    "updatedAt": "2026-10-11T15:15:38.139Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "approvedAt": "2026-10-11T15:15:38.855Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "Ran planMigration over this repo (2 moves, 0 unmappable), showed the dry run to the user, and on approval applied it with per-work-item commits (1b2284fc d9f85b3c, 0d865df2 f2f08ccf), leaving out the one link rewrite into ISSUE-c00559b7's own defect description so it stays accurate. A second dry run has nothing left to move.",
+    "testRecord": {
+      "md": "docs/standalone/standalone-features-cannot-built-task-task-E20261011c00559b7/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-c00559b7e38bb6ce-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-b2e05b043846451c.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-c00559b7e38bb6ce.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-c00559b7e38bb6ce-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-d9f85b3cc8cc966b-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-f2f08ccf89f8ab25-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/SPEC-34d7bb72df47a5e5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/SPEC-77932eaa1a85819b.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/companion-template-mocks/component-dependency.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/companion-template-mocks/er-model.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/companion-template-mocks/sequence-diagram.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/companion-template-mocks/ux-mock.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/anchor-standalone-features-their-lld-name-E2026101134d7bb72/SPEC.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/fully-converged-spec-all-decisions-made-E2026101177932eaa/SPEC.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/implement-approved-spec-77932eaa1a85819b-docs-standalone-E20261011d9f85b3c/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/standalone-features-cannot-built-task-task-E20261011c00559b7/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/standalone-features-cannot-built-task-task-E20261011c00559b7/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/standalone-features-cannot-built-task-task-E20261011c00559b7/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/schema-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/triage-step/__tests__/handler.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/triage-step/phases/classify.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/triage-step/phases/start.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/triage-step/state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/triage-step/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/folder-identity-finalize.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/head-naming.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/id-resolve.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/lld-head-resolve.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/lld-head.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/migrate-docs-tree.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/storage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/define.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/spec.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/migrate-docs-tree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/orchestrator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/storage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/resolve.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:15:38.139Z"
+      }
+    ],
+    "commit": "98d75dd8"
+  }
+}

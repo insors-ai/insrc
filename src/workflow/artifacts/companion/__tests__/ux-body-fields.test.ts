@@ -21,6 +21,8 @@ import { isHldBody, type HldBody } from '../../hld.js';
 import { isLldBody, renderLldMarkdown, type LldArtifact, type LldBody } from '../../lld.js';
 import type { UxDefinition } from '../ux.js';
 import type { CompanionArtifactRef } from '../types.js';
+import { prepareSynthesize } from '../../../orchestrator.js';
+import type { WorkflowIntent } from '../../../types.js';
 import { ADHERENCE_PROPERTY_SCHEMA, isAdherenceDimension, ADHERENCE_DIMENSIONS, type AdherenceSelection } from '../adherence.js';
 import { validateAgainstSchema } from '../../../../agent/providers/structured-output.js';
 
@@ -100,4 +102,31 @@ test('isAdherenceDimension: only the five selectable members', () => {
 	for (const d of ADHERENCE_DIMENSIONS) assert.equal(isAdherenceDimension(d), true);
 	assert.equal(isAdherenceDimension('diagram'), false);   // ReviewDimension, not an AdherenceDimension
 	assert.equal(isAdherenceDimension('nope'), false);
+});
+
+// ---------------------------------------------------------------------------
+// LLD-d9f85b3c S001/t1 — the design synthesizers' schemas admit a UX card's
+// optional narrative. Per-element descriptions are checked by the vendored
+// Adaptive Cards subset (descriptions.test.ts), as the synth schema leaves
+// body items open.
+// ---------------------------------------------------------------------------
+
+test('d9f85b3c t1 — design.story and design.epic synth schemas admit a UX card narrative and described elements', () => {
+	const card = {
+		type: 'AdaptiveCard', narrative: 'The sign-in screen.',
+		body: [{ type: 'TextBlock', text: 'Sign in', description: 'Screen title.' }],
+	};
+	const story = prepareSynthesize({
+		workflow: 'design.story', focus: 'a standalone story', repoPath: '/tmp/insrc-no-repo', repoIndexedAt: null,
+		params: { standalone: true, epicHash: 'abcdef0123456789', storyId: 'S001', sizeClass: 'feature' },
+	} as unknown as WorkflowIntent, {});
+	const epic = prepareSynthesize({
+		workflow: 'design.epic', focus: 'an epic', repoPath: '/tmp/insrc-no-repo', repoIndexedAt: null,
+		params: { epicHash: 'abcdef0123456789' },
+	} as unknown as WorkflowIntent, {});
+	for (const s of [story.schema, epic.schema]) {
+		const ux = (s as { properties: { body: { properties: Record<string, unknown> } } }).properties.body.properties['uxDefinition'];
+		const r = validateAgainstSchema(ux as Record<string, unknown>, card);
+		assert.equal(r.ok, true, JSON.stringify(r));
+	}
 });

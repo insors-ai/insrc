@@ -21,19 +21,22 @@ export const ER_DEFINITION_PROPERTY_SCHEMA: Record<string, unknown> = {
 	required: ['classes'],
 	additionalProperties: false,
 	properties: {
-		id: { type: 'string' },
+		id:        { type: 'string' },
+		narrative: { type: 'string' },
 		classes: {
 			type: 'object',
 			additionalProperties: {
 				type: 'object',
 				additionalProperties: false,
 				properties: {
+					description: { type: 'string' },
 					attributes: {
 						type: 'object',
 						additionalProperties: {
 							type: 'object',
 							additionalProperties: false,
 							properties: {
+								description:         { type: 'string' },
 								range:               { type: 'string' },
 								required:            { type: 'boolean' },
 								multivalued:         { type: 'boolean' },
@@ -69,4 +72,4 @@ export const COMPANIONS_PROPERTY_SCHEMA: Record<string, unknown> = {
 
 /** The content-gate HARD RULE the HLD + LLD synthesizers and their s4 steps share. */
 export const ER_CONTENT_GATE_RULE =
-	'- CONTENT-GATE — author an `erDefinition` (LinkML `classes`/slots) ONLY when a data model / entity-relationship visual would materially aid understanding of THIS document; omit it entirely otherwise. It is the SOURCE OF TRUTH; a companion diagram is generated from it deterministically. Do NOT author `companions` — the framework renders + attaches those.';
+	'- CONTENT-GATE — author an `erDefinition` (LinkML `classes`/slots) ONLY when a data model / entity-relationship visual would materially aid understanding of THIS document; omit it entirely otherwise. It is the SOURCE OF TRUTH; a companion diagram is generated from it deterministically. Do NOT author `companions` — the framework renders + attaches those. Give it a `narrative` (one or two sentences on what the visual shows and why) and a `description` on every class and attribute; both are optional, but a missing one is flagged at code review.';

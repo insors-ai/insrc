@@ -113,14 +113,15 @@ import {
 	type TrackerPushRefs,
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, inheritedEpicSlug, inheritedStandalone, lldArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, inheritedEpicSlug, inheritedStandalone, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from './storage.js';
 import { basename, dirname, join as joinPath } from 'node:path';
 import { validateErDefinition, type ErDefinition } from './artifacts/companion/er.js';
 import { validateUxDefinition, type UxDefinition } from './artifacts/companion/ux.js';
 import { validateSequenceDefinition, type SequenceDefinition } from './artifacts/companion/sequence.js';
 import { validateComponentDependencyDefinition, type ComponentDependencyDefinition } from './artifacts/companion/component.js';
 import { renderErCompanion, renderUxCompanion, renderSequenceCompanion, renderComponentCompanion, DiagramGenerationError } from './artifacts/companion/render.js';
-import type { CompanionArtifactRef } from './artifacts/companion/types.js';
+import type { CompanionArtifactRef, CompanionHeader } from './artifacts/companion/types.js';
+import { resolveCompanionHeader, type CompanionHeaderDeps, type CompanionHeaderSource } from './artifacts/companion/header.js';
 import { ER_DEFINITION_PROPERTY_SCHEMA, COMPANIONS_PROPERTY_SCHEMA, ER_CONTENT_GATE_RULE } from './artifacts/companion/er-schema.js';
 import { UX_DEFINITION_PROPERTY_SCHEMA, UX_CONTENT_GATE_RULE } from './artifacts/companion/ux-schema.js';
 import { SEQUENCE_DEFINITION_PROPERTY_SCHEMA, SEQUENCE_CONTENT_GATE_RULE } from './artifacts/companion/sequence-schema.js';
@@ -607,6 +608,9 @@ function brainstormSynthesizer(
 		'',
 		'HARD RULES:',
 		'- `body.category` MUST equal s1.category verbatim.',
+		'- `body.title`: a short (3-8 words), outcome-phrased name for what this delivers, e.g.',
+		'  "Anchor standalone features on their LLD". It names the folder the work item lives in, so',
+		'  name the SUBJECT — never a preamble about the process ("Fully converged spec ...").',
 		'- Split s1.workingStatement into TWO fields: `body.intent` (what the request IS) and',
 		'  `body.scopeBoundary` (where it stops / what it deliberately does not cover). Both non-empty.',
 		'- `body.decisions` MUST preserve s1.decisions verbatim (same chosen / ruledOut / reason).',
@@ -635,6 +639,7 @@ function brainstormSynthesizer(
 				type: 'object',
 				required: ['category', 'intent', 'scopeBoundary', 'nonGoals', 'decisions', 'openItems'],
 				properties: {
+					title:         { type: 'string', minLength: 1 },
 					category:      { enum: ['requirements', 'design', 'implementation', 'testing', 'general'] },
 					intent:        { type: 'string', minLength: 1 },
 					scopeBoundary: { type: 'string', minLength: 1 },
@@ -713,7 +718,7 @@ function finalizeBrainstorm(
 	}
 	// A SpecArtifact is not Epic-scoped — it mints its OWN run-derived identity.
 	const specHash = computeEpicHash(runId);
-	const slug     = safeDeriveSlug(intent.focus);
+	const slug     = headLabel(body.title, intent.focus);
 	const artifact: SpecArtifact = {
 		meta: {
 			workflow:      'brainstorm',
@@ -885,7 +890,7 @@ function finalizeIssue(
 	// identity (like a SpecArtifact), and is a standalone work item until the
 	// s3 locator stamps meta.parentRef.
 	const issueHash = computeEpicHash(runId);
-	const slug      = safeDeriveSlug(intent.focus);
+	const slug      = headLabel(body.title, intent.focus);
 	const magnitude = intent.params['magnitude'];
 	const artifact: IssueArtifact = {
 		meta: {
@@ -966,6 +971,9 @@ function defineSynthesizer(
 		'- `citations[]` MUST be the UNION of s2.citations + s3.citations, de-duplicated by id. No new citation ids invented at this step.',
 		'- `openQuestions` is populated from s4 verdict: every `missed`/`ambiguous` result (except the sb1/sb2/sb3 hard-fail items — those fail the whole synthesize) becomes an open question phrased as "Item <itemId>: <notes|verdict>".',
 		'- `body.flavor` matches s1.flavor exactly.',
+		'- `body.title`: a short (3-8 words), outcome-phrased name for what this delivers, e.g.',
+		'  "Anchor standalone features on their LLD". It names the folder the work item lives in, so',
+		'  name the SUBJECT — never a preamble about the process ("Fully converged spec ...").',
 		'- `body.summary` MUST be carried verbatim from s2.summary when s2 emitted one (a `{ prose, audience? }` object). Omit `body.summary` when s2 has none — do NOT invent it.',
 		'- Do NOT emit `functionalDefinition` (or any FR ids) in the body: the framework assembles the functional-definition record from the FR statements elicited in s2/s3 and mints its stable ids deterministically after this step.',
 		FEEDBACK_NEVER_AUTHOR_RULE,
@@ -997,6 +1005,7 @@ function defineSynthesizer(
 							audience: { enum: ['business', 'product'] },
 						},
 					},
+					title:        { type: 'string', minLength: 1 },
 					flavor:       { enum: ['enhancement', 'new-capability'] },
 					problem:      { type: 'string', minLength: 20 },
 					nonGoals:     { type: 'array' },
@@ -1179,7 +1188,7 @@ function finalizeDefine(
 	// derived from the focus. Both flow through the meta so downstream
 	// workflows can look up their Epic by hash and display the slug.
 	const epicHash = computeEpicHash(runId);
-	const epicSlug = safeDeriveSlug(intent.focus);
+	const epicSlug = headLabel(body.title, intent.focus);
 	// Provenance (S008/ac3): when this Epic was seeded from an approved spec, the
 	// start params carry its specHash — stamp it so the Epic identifies its
 	// source. Absent on a plain-focus run (ac4).
@@ -1589,26 +1598,28 @@ export function firstCompanionValidationFailure(body: {
  * content-gate); finalize renders the companion DETERMINISTICALLY — NO provider
  * here. The definition's validation is now the finalizer's pre-render gate
  * (`firstCompanionValidationFailure`), so this helper assumes an already-valid
- * definition and only renders the sibling `er-model.html` via docgen's
- * assembleShell, returning the CompanionArtifactRef the Diagrams slot links. Never
- * throws: a DiagramGenerationError (docgen infra failure) leaves the erDefinition
- * in-body without a picture (that is NOT an author error). `destPath` is a sibling
- * of the artifact `.md`.
+ * definition and only renders the sibling `er-model.html` as a companion page
+ * (render.ts → shell.ts), returning the CompanionArtifactRef the Diagrams slot
+ * links. Never throws on a companion fault: a DiagramGenerationError (a missing
+ * runtime or a failed write) leaves the erDefinition in-body without a picture
+ * (that is NOT an author error). `destPath` is a sibling of the artifact `.md`.
  */
-/** S001: the escaped-link back-reference from a companion HTML to its source
- *  artifact markdown. The companion is written as a sibling of `mdPath`, so the
- *  href is the relative sibling filename (e.g. `./HLD.md` / `./LLD.md`) — a
- *  relative path only, never an absolute/remote URL. */
-function siblingSourceLink(mdPath: string): { readonly label: string; readonly href: string } {
-	const name = basename(mdPath);
-	return { label: `View the source document (${name})`, href: `./${name}` };
+/** LLD-d9f85b3c S001/t8: the one header every companion of a finalize site
+ *  shares. The companions are siblings of `mdPath`, so the source-doc link is the
+ *  relative sibling filename (e.g. `./LLD.md`). Never throws. */
+function companionHeaderFor(repoPath: string, source: CompanionHeaderSource, artifactId: string, mdPath: string): CompanionHeader {
+	return resolveCompanionHeader({ repoPath, source, artifactId, sourceMdPath: mdPath }, companionHeaderDeps);
 }
+
+/** Test seam for the header's clock and user lookups. */
+let companionHeaderDeps: CompanionHeaderDeps = {};
+export function _setCompanionHeaderDepsForTests(deps?: CompanionHeaderDeps): void { companionHeaderDeps = deps ?? {}; }
 
 async function renderErCompanionForBody(
 	body:         { readonly erDefinition?: ErDefinition | undefined; readonly functionalDefinition?: FunctionalDefinition | undefined },
 	destPath:     string,
 	repoPath:     string,
-	sourceMdPath: string,
+	header:       CompanionHeader,
 ): Promise<CompanionArtifactRef | undefined> {
 	const erDef = body.erDefinition;
 	if (erDef === undefined) return undefined;
@@ -1616,7 +1627,7 @@ async function renderErCompanionForBody(
 	// (firstCompanionValidationFailure) — this helper renders an already-valid
 	// definition. A DiagramGenerationError (infra failure) is still swallowed below.
 	try {
-		return await renderErCompanion(erDef, 'ER model', destPath, { repoPath, sourceLink: siblingSourceLink(sourceMdPath) });
+		return await renderErCompanion(erDef, 'ER model', destPath, { repoPath, header });
 	} catch (err) {
 		if (err instanceof DiagramGenerationError) {
 			log.warn({ repoPath, status: err.status }, 'finalize: ER companion render failed; erDefinition stays in-body without a picture');
@@ -1631,17 +1642,18 @@ async function renderErCompanionForBody(
  * renderErCompanionForBody. The synthesizer LLM authors the `uxDefinition` into the
  * body only when a user-facing experience materially aids understanding (the
  * content-gate); finalize renders the mock DETERMINISTICALLY — NO provider here.
- * Given an authored uxDefinition that carries no HIGH validation finding, it renders
- * the sibling `ux-mock.html` via docgen's assembleShell and returns the
- * kind:'ux-mock' CompanionArtifactRef the S002 UX slot links (never inlined —
- * ac1/k1). Never throws on a companion fault: a HIGH validation finding or a
- * DiagramGenerationError leaves the uxDefinition in-body without a picture (k1/k3).
+ * Validation is the finalizer's pre-render gate (firstCompanionValidationFailure),
+ * so this renders an already-valid uxDefinition as the sibling `ux-mock.html`
+ * companion page (render.ts → shell.ts) and returns the kind:'ux-mock'
+ * CompanionArtifactRef the S002 UX slot links (never inlined — ac1/k1). Never
+ * throws on a companion fault: a DiagramGenerationError leaves the uxDefinition
+ * in-body without a picture (k1/k3).
  */
 async function renderUxCompanionForBody(
 	body:         { readonly uxDefinition?: UxDefinition | undefined; readonly functionalDefinition?: FunctionalDefinition | undefined },
 	destPath:     string,
 	repoPath:     string,
-	sourceMdPath: string,
+	header:       CompanionHeader,
 ): Promise<CompanionArtifactRef | undefined> {
 	const uxDef = body.uxDefinition;
 	if (uxDef === undefined) return undefined;
@@ -1649,7 +1661,7 @@ async function renderUxCompanionForBody(
 	// (firstCompanionValidationFailure) — this helper renders an already-valid
 	// definition. A DiagramGenerationError (infra failure) is still swallowed below.
 	try {
-		return await renderUxCompanion(uxDef, 'UX mock', destPath, { repoPath, sourceLink: siblingSourceLink(sourceMdPath) });
+		return await renderUxCompanion(uxDef, 'UX mock', destPath, { repoPath, header });
 	} catch (err) {
 		if (err instanceof DiagramGenerationError) {
 			log.warn({ repoPath, status: err.status }, 'finalize: UX mock render failed; uxDefinition stays in-body without a picture');
@@ -1665,22 +1677,21 @@ async function renderUxCompanionForBody(
  * renderUxCompanionForBody. The synthesizer LLM authors a `sequenceDefinition`
  * and/or a `componentDependencyDefinition` into the body only when a behaviour /
  * structure diagram materially aids understanding (the content-gate); finalize
- * renders each DETERMINISTICALLY — NO provider here. For each authored definition
- * that carries no HIGH validation finding it renders the sibling HTML via docgen's
- * assembleShell and returns its `kind:'diagram-mermaid'` CompanionArtifactRef.
- * Content-gated + non-throwing: an absent slot yields no companion, and a HIGH
- * validation finding or a DiagramGenerationError leaves that definition in-body
- * without a picture (k1) — a valid second definition still renders. Returns the
+ * renders each DETERMINISTICALLY — NO provider here. Validation is the finalizer's
+ * pre-render gate, so each authored definition renders as a sibling companion page
+ * (render.ts → shell.ts) and returns its `kind:'diagram-mermaid'` ref.
+ * Content-gated + non-throwing: an absent slot yields no companion, and a
+ * DiagramGenerationError leaves that definition in-body without a picture (k1) —
+ * a valid second definition still renders. Returns the
  * refs for whichever slots the body carries ([] when neither is present).
  */
 async function renderDiagramCompanionsForBody(
 	body:         { readonly sequenceDefinition?: SequenceDefinition | undefined; readonly componentDependencyDefinition?: ComponentDependencyDefinition | undefined },
 	destDir:      string,
 	repoPath:     string,
-	sourceMdPath: string,
+	header:       CompanionHeader,
 ): Promise<readonly CompanionArtifactRef[]> {
 	const refs: CompanionArtifactRef[] = [];
-	const sourceLink = siblingSourceLink(sourceMdPath);
 
 	// S001: validation is the finalizer's pre-render gate now
 	// (firstCompanionValidationFailure) — render each already-valid definition. A
@@ -1689,7 +1700,7 @@ async function renderDiagramCompanionsForBody(
 	const seqDef = body.sequenceDefinition;
 	if (seqDef !== undefined) {
 		try {
-			refs.push(await renderSequenceCompanion(seqDef, 'Sequence diagram', joinPath(destDir, 'sequence-diagram.html'), { repoPath, sourceLink }));
+			refs.push(await renderSequenceCompanion(seqDef, 'Sequence diagram', joinPath(destDir, 'sequence-diagram.html'), { repoPath, header }));
 		} catch (err) {
 			if (err instanceof DiagramGenerationError) {
 				log.warn({ repoPath, status: err.status }, 'finalize: sequence companion render failed; sequenceDefinition stays in-body without a picture');
@@ -1702,7 +1713,7 @@ async function renderDiagramCompanionsForBody(
 	const compDef = body.componentDependencyDefinition;
 	if (compDef !== undefined) {
 		try {
-			refs.push(await renderComponentCompanion(compDef, 'Component dependencies', joinPath(destDir, 'component-dependency.html'), { repoPath, sourceLink }));
+			refs.push(await renderComponentCompanion(compDef, 'Component dependencies', joinPath(destDir, 'component-dependency.html'), { repoPath, header }));
 		} catch (err) {
 			if (err instanceof DiagramGenerationError) {
 				log.warn({ repoPath, status: err.status }, 'finalize: component companion render failed; componentDependencyDefinition stays in-body without a picture');
@@ -1831,13 +1842,16 @@ async function finalizeDesignEpic(
 	// it. Runs before any render/write, so no partial artifact is produced.
 	const companionValidationFailure = firstCompanionValidationFailure(body);
 	if (companionValidationFailure !== undefined) return { ok: false, failure: companionValidationFailure };
-	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(hldMd), 'er-model.html'), intent.repoPath, hldMd);
+	const companionHeader = companionHeaderFor(intent.repoPath, {
+		kind: 'HLD', epicHash, epicSlug, anchorCreatedAt: workItemAnchorCreatedAt(meta), summary: body.summary?.prose,
+	}, hldArtifactId(epicHash), hldMd);
+	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(hldMd), 'er-model.html'), intent.repoPath, companionHeader);
 	// sc4 (S004): a document can carry BOTH an ER diagram and a UX mock — render the
 	// UX companion alongside the ER one and attach both refs.
-	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(hldMd), 'ux-mock.html'), intent.repoPath, hldMd);
+	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(hldMd), 'ux-mock.html'), intent.repoPath, companionHeader);
 	// sc3 (S003, artifact-companion-wiring): render + attach the sequence /
 	// component-dependency companions when the LLM authored either (content-gated).
-	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(hldMd), intent.repoPath, hldMd);
+	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(hldMd), intent.repoPath, companionHeader);
 	const artifact: HldArtifact = {
 		meta,
 		body: withCompanions(withCompanion(withCompanion(body, companionRef), uxCompanionRef), diagramRefs),
@@ -1881,6 +1895,21 @@ export function safeDeriveSlug(focus: string | undefined): string {
 	if (focus === undefined || focus.length === 0) return 'untitled';
 	try { return deriveSlug(focus); }
 	catch { return focus.slice(0, 40).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled'; }
+}
+
+/**
+ * ISSUE-c00559b7 — the label a work item's HEAD artifact (SPEC, DEF, ISSUE, or a
+ * standalone LLD with no head above it) is named by: derived from a short
+ * written title when there is one, so the folder names the subject rather than
+ * the first words of the stage's prompt. A title that is absent, empty, or too
+ * short to make a slug (all stopwords, say) falls back to the focus, as before.
+ * No extra LLM call: the synthesizer writes the title in the same pass.
+ */
+export function headLabel(title: string | undefined, focus: string | undefined): string {
+	if (title !== undefined && title.trim().length > 0) {
+		try { return deriveSlug(title); } catch { /* degenerate title: use the focus */ }
+	}
+	return safeDeriveSlug(focus);
 }
 
 // ---------------------------------------------------------------------------
@@ -2187,12 +2216,16 @@ async function finalizeDesignStory(
 	// it. Runs before any render/write, so no partial artifact is produced.
 	const companionValidationFailure = firstCompanionValidationFailure(body);
 	if (companionValidationFailure !== undefined) return { ok: false, failure: companionValidationFailure };
-	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath, lldMd);
+	const companionHeader = companionHeaderFor(intent.repoPath, {
+		kind: 'LLD-epic', epicHash, epicSlug, storyId, anchorCreatedAt: workItemAnchorCreatedAt(meta),
+		storyTitle: story.title, userValue: story.userValue,
+	}, lldArtifactId(epicHash, storyId), lldMd);
+	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath, companionHeader);
 	// sc4 (S004): render the UX mock companion alongside the ER one; both refs attach.
-	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(lldMd), 'ux-mock.html'), intent.repoPath, lldMd);
+	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(lldMd), 'ux-mock.html'), intent.repoPath, companionHeader);
 	// sc3 (S003, artifact-companion-wiring): render + attach the sequence /
 	// component-dependency companions when the LLM authored either (content-gated).
-	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(lldMd), intent.repoPath, lldMd);
+	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(lldMd), intent.repoPath, companionHeader);
 	const artifact: LldArtifact = {
 		meta,
 		body: withCompanions(withCompanion(withCompanion(body, companionRef), uxCompanionRef), diagramRefs),
@@ -2295,7 +2328,13 @@ async function finalizeStandaloneLld(
 	// and therefore different folders. safeDeriveSlug stays the fallback for a work
 	// item with no definition artifact to inherit from, and an empty-string label
 	// counts as absent so it can never compose a folder name starting with '-'.
-	const epicSlug = inheritedEpicSlug(intent.repoPath, epicHash, safeDeriveSlug(intent.focus));
+	//
+	// ISSUE-c00559b7 — with no head yet (a first-time standalone feature, whose LLD
+	// IS the head), the label comes from the Story title triage passed, not the
+	// focus prose. A re-finalized LLD inherits the label its own earlier version
+	// carries, since that LLD now heads the work item.
+	const storyTitle = typeof intent.params['storyTitle'] === 'string' ? intent.params['storyTitle'] as string : undefined;
+	const epicSlug = inheritedEpicSlug(intent.repoPath, epicHash, headLabel(storyTitle, intent.focus));
 
 	// A standalone LLD has no parent Epic, so there is no EXTERNAL acceptance
 	// contract to validate the test-strategy mapping against — the LLD is
@@ -2361,12 +2400,16 @@ async function finalizeStandaloneLld(
 	// it. Runs before any render/write, so no partial artifact is produced.
 	const companionValidationFailure = firstCompanionValidationFailure(body);
 	if (companionValidationFailure !== undefined) return { ok: false, failure: companionValidationFailure };
-	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath, lldMd);
+	const companionHeader = companionHeaderFor(intent.repoPath, {
+		kind: 'LLD-standalone', epicHash, storyId, anchorCreatedAt: workItemAnchorCreatedAt(meta),
+		storyTitle: storyTitle ?? body.hldContextSlice.boundary.internal, summary: body.summary?.prose,
+	}, lldArtifactId(epicHash, storyId), lldMd);
+	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath, companionHeader);
 	// sc4 (S004): render the UX mock companion alongside the ER one; both refs attach.
-	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(lldMd), 'ux-mock.html'), intent.repoPath, lldMd);
+	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(lldMd), 'ux-mock.html'), intent.repoPath, companionHeader);
 	// sc3 (S003, artifact-companion-wiring): render + attach the sequence /
 	// component-dependency companions when the LLM authored either (content-gated).
-	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(lldMd), intent.repoPath, lldMd);
+	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(lldMd), intent.repoPath, companionHeader);
 	const artifact: LldArtifact = {
 		meta,
 		body: withCompanions(withCompanion(withCompanion(body, companionRef), uxCompanionRef), diagramRefs),

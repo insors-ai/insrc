@@ -24,7 +24,7 @@ import type { LLMProvider } from '../../../../../shared/types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding } from '../../../types.js';
 import type { CompanionArtifactRef } from '../../../../artifacts/companion/types.js';
 import type { ComponentDependencyDefinition } from '../../../../artifacts/companion/component.js';
-import { validateComponentDependencyDefinition } from '../../../../artifacts/companion/component.js';
+import { componentCompletenessFindings, validateComponentDependencyDefinition } from '../../../../artifacts/companion/component.js';
 import { registerDiagramHandler, type DiagramAdherenceHandler } from '../registry.js';
 
 /** The diagram type this handler owns. */
@@ -49,7 +49,8 @@ export const componentDiagramHandler: DiagramAdherenceHandler = {
 	async judge(subject: CodeReviewSubject, _grounding: CodeReviewGrounding, _provider: LLMProvider): Promise<readonly DimensionFinding[]> {
 		const body = subjectBody(subject);
 		if (body.componentDependencyDefinition === undefined) return [];
-		return validateComponentDependencyDefinition(body.componentDependencyDefinition);
+		// LLD-d9f85b3c S001/t9: completeness (narrative / descriptions) is LOW and never blocks.
+		return [...validateComponentDependencyDefinition(body.componentDependencyDefinition), ...componentCompletenessFindings(body.componentDependencyDefinition)];
 	},
 };
 

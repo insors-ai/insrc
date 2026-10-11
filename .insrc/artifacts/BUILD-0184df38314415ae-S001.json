@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "0184df38314415ae",
+    "storyId": "S001",
+    "createdAt": "2026-10-11T09:34:09.996Z",
+    "updatedAt": "2026-10-11T09:38:49.739Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story in one module (vscode-plugin/src/delivery) with the approach already settled by the approved mock.",
+    "approvedAt": "2026-10-11T09:38:49.995Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "A story's planned tasks on the Delivery board are now a table: short id, title, result pill, dependency chips (short id, full title on hover) and a checks count that opens the acceptance checks as a plain list under the row, with the open choice kept across re-renders. TaskRowView gained shortId and { shortId, title } dependencies built in taskRows.",
+    "testRecord": {
+      "md": "docs/standalone/show-story-s-planned-tasks-delivery-E202610110184df38/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:38:49.739Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:38:49.739Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-details.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:38:49.739Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:38:49.739Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:38:49.739Z"
+      }
+    ],
+    "commit": "6b315bf9"
+  }
+}

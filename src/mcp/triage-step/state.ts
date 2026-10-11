@@ -29,5 +29,8 @@ export function decodeState(token: string): TriageState {
 	if (typeof s.runId !== 'string' || typeof s.focus !== 'string' || typeof s.repo !== 'string') {
 		throw new Error(`insrc_triage: state token missing runId/focus/repo.`);
 	}
-	return { runId: s.runId, focus: s.focus, repo: s.repo };
+	if (s.specHash !== undefined && typeof s.specHash !== 'string') {
+		throw new Error(`insrc_triage: state token carries a non-string specHash.`);
+	}
+	return { runId: s.runId, focus: s.focus, repo: s.repo, ...(s.specHash !== undefined ? { specHash: s.specHash } : {}) };
 }

@@ -1,0 +1,1794 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "d9f85b3cc8cc966b",
+    "storyId": "S001",
+    "createdAt": "2026-10-11T15:39:50.029Z",
+    "updatedAt": "2026-10-11T16:32:23.490Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "1b3e512a",
+        "ranAt": "2026-10-11T15:39:50.029Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "er/ux/sequence/component validators: described definition (narrative + descriptions) -> no HIGH",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — er: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — ux: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — sequence: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — component: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — the closed schemas still reject an unknown field, so the additions are deliberate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "er/ux/sequence/component validators: sound undescribed definition -> []",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — er: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — ux: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — sequence: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — component: a sound definition without the new fields still returns []",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "body-fields / ux-body-fields: synth property schemas admit narrative + description",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/body-fields.test.ts",
+                "title": "d9f85b3c t1 — design.story and design.epic synth schemas admit narrative + descriptions on ER, sequence and component definitions",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-body-fields.test.ts",
+                "title": "d9f85b3c t1 — design.story and design.epic synth schemas admit a UX card narrative and described elements",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/body-fields.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 506,
+            "titles": [
+              {
+                "title": "isHldBody: passes with NEITHER new field (older body) and WITH the new fields",
+                "result": "pass"
+              },
+              {
+                "title": "isLldBody: passes with NEITHER new field (older body) and WITH the new fields",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — design.story and design.epic synth schemas admit narrative + descriptions on ER, sequence and component definitions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 466,
+            "titles": [
+              {
+                "title": "d9f85b3c t1 — er: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — er: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — ux: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — ux: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — sequence: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — sequence: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — component: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — component: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — the closed schemas still reject an unknown field, so the additions are deliberate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/ux-body-fields.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 512,
+            "titles": [
+              {
+                "title": "isHldBody / isLldBody: pass with NEITHER new field and WITH uxDefinition + adherence",
+                "result": "pass"
+              },
+              {
+                "title": "renderLldMarkdown: uxDefinition + adherence present but NO ux-mock companion → byte-identical (omit-slot)",
+                "result": "pass"
+              },
+              {
+                "title": "renderLldMarkdown: a ux-mock companion renders the UX section as a LINK (never inlined)",
+                "result": "pass"
+              },
+              {
+                "title": "renderLldMarkdown: an ER + a UX companion render in their OWN slots",
+                "result": "pass"
+              },
+              {
+                "title": "ADHERENCE_PROPERTY_SCHEMA: validates a recorded selection against the AdherenceDimension set",
+                "result": "pass"
+              },
+              {
+                "title": "isAdherenceDimension: only the five selectable members",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — design.story and design.epic synth schemas admit a UX card narrative and described elements",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "f6e03b84",
+        "ranAt": "2026-10-11T15:43:01.214Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "panzoom asset: no http(s)/import references; exposes init + fit entry points",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+                "title": "d9f85b3c t2 — the panzoom asset references nothing outside itself",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+                "title": "d9f85b3c t2 — the asset exposes window.insrcPanZoom.init, which returns fit() and reset()",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+                "title": "d9f85b3c t2 — fit-on-load centres the stage at the scale that fits the viewport, and labels it",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+                "title": "d9f85b3c t2 — the toolbar zooms about the centre and 1:1 resets; missing controls are skipped",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+                "title": "d9f85b3c t2 — a missing viewport or stage yields a no-op handle instead of throwing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "headless Chrome: each generated page draws, fit-on-load applied, no console error",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "At t2 (before any page generator exists): /tmp/pz-smoke/page.html with the approved mock's view-panel markup, the shipped panzoom.js inlined and the vendored mermaid.min.js, loaded in google-chrome --headless=new --dump-dom --virtual-time-budget=8000. The DOM shows the Mermaid SVG drawn and the stage transformed by fit() after render: 'translate(395.247px, 16.8px) scale(0.782186) | 78%'. chrome.log has 0 console errors. The same check is rerun over every generated companion page once the builders land (t8)."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 286,
+            "titles": [
+              {
+                "title": "d9f85b3c t2 — the panzoom asset references nothing outside itself",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t2 — the asset exposes window.insrcPanZoom.init, which returns fit() and reset()",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t2 — fit-on-load centres the stage at the scale that fits the viewport, and labels it",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t2 — the toolbar zooms about the centre and 1:1 resets; missing controls are skipped",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t2 — a missing viewport or stage yields a no-op handle instead of throwing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "521e35c2",
+        "ranAt": "2026-10-11T15:47:04.734Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "shell: section order + header table rows + no external URL",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — Header, Narrative, View and Description appear in that order",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — the header table has the four rows: Work item, Source doc (linked), Date, User",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — no http(s) URL appears: none in the shell markup, none at all on an HTML page",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shell view panel: toolbar controls, pan/zoom init, fit-on-load for mermaid and html visuals; html page has no Mermaid",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its init",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — a Mermaid page inlines Mermaid and fits once the diagram is drawn",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — an inlined runtime cannot close its script element early",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shell: escaping of all table text; null cell -> em dash; missing narrative renders only the context line",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — every header, narrative and table string is escaped",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — a null cell renders as an em dash, and a tagged cell as its badge",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — a missing narrative renders only the context line; a present one renders its paragraphs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shell runtime loader: missing asset -> DiagramGenerationError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — the runtime loader reads the shipped assets: pan/zoom always, Mermaid for a Mermaid visual only",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 447,
+            "titles": [
+              {
+                "title": "d9f85b3c t3 — Header, Narrative, View and Description appear in that order",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — the header table has the four rows: Work item, Source doc (linked), Date, User",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — no http(s) URL appears: none in the shell markup, none at all on an HTML page",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its init",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a Mermaid page inlines Mermaid and fits once the diagram is drawn",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — an inlined runtime cannot close its script element early",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — every header, narrative and table string is escaped",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a null cell renders as an em dash, and a tagged cell as its badge",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a missing narrative renders only the context line; a present one renders its paragraphs",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — the runtime loader reads the shipped assets: pan/zoom always, Mermaid for a Mermaid visual only",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "1a0b7703",
+        "ranAt": "2026-10-11T15:49:07.959Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "header: projectName override / basename fallback / malformed config ignored",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — projectName comes from .insrc/config.json when set",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — projectName falls back to the repo folder name with no config, or no / an empty / a non-string projectName",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — a malformed config is ignored, not thrown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "header: git user / OS fallback / 'unknown'; injected clock format",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — user is git user.name, else the OS login, else unknown",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — the real lookups do not throw outside a git repo",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — the date comes from the injected clock as YYYY-MM-DD HH:mm local time",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — the source doc is the artifact id linked to its markdown beside the companion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "header: malformed createdAt/epicHash/storyId -> plain id fallback, no throw",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — a well-formed source gets the hierarchical story or epic id",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — a malformed createdAt, epicHash or storyId falls back to the plain id without throwing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "header contextLine: HLD / epic-Story LLD / standalone LLD / placement-only",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — an HLD context line is the Epic plus the first sentence of its summary",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — an epic Story's LLD context line is its placement, title and value",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — a standalone LLD's context line is the story title and the LLD summary's first sentence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — with nothing to say, the context line is placement only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 435,
+            "titles": [
+              {
+                "title": "d9f85b3c t4 — projectName comes from .insrc/config.json when set",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — projectName falls back to the repo folder name with no config, or no / an empty / a non-string projectName",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — a malformed config is ignored, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — user is git user.name, else the OS login, else unknown",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — the real lookups do not throw outside a git repo",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — the date comes from the injected clock as YYYY-MM-DD HH:mm local time",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — the source doc is the artifact id linked to its markdown beside the companion",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — a well-formed source gets the hierarchical story or epic id",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — a malformed createdAt, epicHash or storyId falls back to the plain id without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — an HLD context line is the Epic plus the first sentence of its summary",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — an epic Story's LLD context line is its placement, title and value",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — a standalone LLD's context line is the story title and the LLD summary's first sentence",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — with nothing to say, the context line is placement only",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "0a781b6e",
+        "ranAt": "2026-10-11T15:52:05.210Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "er page builder: erDiagram, PK, cardinality, self-loop (Delivery read-model fixture)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — the visual is a Mermaid erDiagram, never a classDiagram, and the fixture is a valid definition",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — entity boxes carry typed scalar columns, list types for multi-valued, PK for identifiers, and no class-ranged slots",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — relationship lines carry the slot name and the cardinality: many, required one, optional one, and a self-loop",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "er page builder: entities + columns tables, null descriptions, no-columns row",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — the entities table lists each entity with its description, key and relationships",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — one columns table per entity, with keys tagged and missing descriptions as null cells",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — an attribute-less entity's columns table has a single 'No columns' row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "er page builder: hostile characters sanitised",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — names with quotes, angle brackets, colons or non-ASCII give safe erDiagram source and escaped tables",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 470,
+            "titles": [
+              {
+                "title": "d9f85b3c t5 — the visual is a Mermaid erDiagram, never a classDiagram, and the fixture is a valid definition",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — entity boxes carry typed scalar columns, list types for multi-valued, PK for identifiers, and no class-ranged slots",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — relationship lines carry the slot name and the cardinality: many, required one, optional one, and a self-loop",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — the entities table lists each entity with its description, key and relationships",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — one columns table per entity, with keys tagged and missing descriptions as null cells",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — an attribute-less entity's columns table has a single 'No columns' row",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — names with quotes, angle brackets, colons or non-ASCII give safe erDiagram source and escaped tables",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "6466a39d",
+        "ranAt": "2026-10-11T16:03:18.447Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sequence page builder: autonumber, labels, dashed returns, notes; participants + messages tables (Delivery-board fixture)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — the sequenceDiagram is autonumbered, labels every message, dashes returns and keeps the notes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — the participants and messages tables, in call order with kind tags",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — awkward participant ids are aliased; no truncations block when there are none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "component page builder: flowchart + components table",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — the component flowchart has one box per component and one arrow per dependency",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — the components table lists path, depends-on and description, null when absent",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — component labels with quotes, pipes or markup cannot break the flowchart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 298,
+            "titles": [
+              {
+                "title": "d9f85b3c t6 — the sequenceDiagram is autonumbered, labels every message, dashes returns and keeps the notes",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — the participants and messages tables, in call order with kind tags",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — awkward participant ids are aliased; no truncations block when there are none",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — the component flowchart has one box per component and one arrow per dependency",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — the components table lists path, depends-on and description, null when absent",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — component labels with quotes, pipes or markup cannot break the flowchart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "04b8d49f",
+        "ranAt": "2026-10-11T16:05:55.645Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "ux page builder: stable depth-first markers match key-elements table (S002 card fixture)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — key elements are numbered depth-first: top-level text, inputs, described elements and every action",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — the markers in the card are exactly the table numbers, in the same order",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — numbering is stable: the same definition always gives the same markers and table",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — descriptions fill the table, and an undescribed key element gets a null cell",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ux page builder: Submit vs OpenUrl distinguishable; html visual",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — Submit and OpenUrl stay distinguishable in the card and the table",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — the visual is HTML with its own card CSS, so the page inlines no Mermaid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 476,
+            "titles": [
+              {
+                "title": "d9f85b3c t7 — key elements are numbered depth-first: top-level text, inputs, described elements and every action",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — the markers in the card are exactly the table numbers, in the same order",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — numbering is stable: the same definition always gives the same markers and table",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — descriptions fill the table, and an undescribed key element gets a null cell",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — Submit and OpenUrl stay distinguishable in the card and the table",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — the visual is HTML with its own card CSS, so the page inlines no Mermaid",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "76d4f441",
+        "ranAt": "2026-10-11T16:19:19.702Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "finalize[standalone-LLD]: four companions with header (LLD id + work item), same header values on all",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+                "title": "finalize[standalone-LLD]: all four companions carry the header with the LLD id and work item, identically",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize[design.epic]: HLD id as source doc",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+                "title": "finalize[design.epic]: HLD companions name the HLD as the source doc and the Epic as the work item",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize: missing runtime asset -> companion skipped, artifact written",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+                "title": "finalize: a missing runtime asset skips the companions and still writes the artifact",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize[standalone-LLD]: described definitions pass the HIGH gate and appear in the tables",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+                "title": "finalize[standalone-LLD]: described definitions pass the HIGH gate and their narrative and descriptions reach the page",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docgen shell.test.ts + docgen pipeline tests unchanged and passing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/docgen/render/__tests__/shell.test.ts",
+                "title": "documentIRToMermaid: classDiagram with class decls + inherit/implement arrows",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/render/__tests__/shell.test.ts",
+                "title": "assembleShell: offline self-contained shell — runtime INLINED, no external fetch",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/__tests__/generate.test.ts",
+                "title": "listDocTypes exposes the Phase A type-structure capability (serializable, no extract fn)",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/__tests__/generate.test.ts",
+                "title": "generateDocument with an unknown docType → not-found, without touching the graph",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/docgen/__tests__/generate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 522,
+            "titles": [
+              {
+                "title": "listDocTypes exposes the Phase A type-structure capability (serializable, no extract fn)",
+                "result": "pass"
+              },
+              {
+                "title": "generateDocument with an unknown docType → not-found, without touching the graph",
+                "result": "pass"
+              },
+              {
+                "title": "describeOutcome renders each variant to a human line",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/docgen/render/__tests__/shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 312,
+            "titles": [
+              {
+                "title": "documentIRToMermaid: classDiagram with class decls + inherit/implement arrows",
+                "result": "pass"
+              },
+              {
+                "title": "documentIRToMermaid: an edge to an alias-less node is skipped; labels are escaped",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: offline self-contained shell — runtime INLINED, no external fetch",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: assets absent → sc4 fallbackUnavailable naming copy-assets (UNCHANGED s1 degrade), not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: the s5 fallback backend is ALSO self-contained offline (both backends, ac4)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 651,
+            "titles": [
+              {
+                "title": "finalize[standalone-LLD]: all four companions carry the header with the LLD id and work item, identically",
+                "result": "pass"
+              },
+              {
+                "title": "finalize[standalone-LLD]: described definitions pass the HIGH gate and their narrative and descriptions reach the page",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: a missing runtime asset skips the companions and still writes the artifact",
+                "result": "pass"
+              },
+              {
+                "title": "finalize[design.epic]: HLD companions name the HLD as the source doc and the Epic as the work item",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "e812e0b2",
+        "ranAt": "2026-10-11T16:22:21.248Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "completenessFindings: absent narrative / missing descriptions / fully described",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+                "title": "d9f85b3c t9 — an absent narrative is one LOW, and missing descriptions one LOW naming them",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+                "title": "d9f85b3c t9 — a fully described definition of each kind has no completeness findings",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+                "title": "d9f85b3c t9 — a narrative alone, or descriptions alone, leaves exactly the other LOW",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+                "title": "d9f85b3c t9 — a long list is summarised after eight names",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+                "title": "d9f85b3c t9 — the validators are unchanged: a sound undescribed definition still validates to []",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "code-review diagram + ux dimensions: completeness LOWs recorded, verdict not block",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diagram-conditional.test.ts",
+                "title": "runCodeReview: a sound erDefinition runs the diagram dimension + folds to pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/diagram-handlers.test.ts",
+                "title": "judgeDiagram: a sound sequence / component definition → only the completeness LOWs (LLD-d9f85b3c t9)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/diagram.test.ts",
+                "title": "judgeDiagram: dispatches an erDefinition-bearing body to the ER handler (sound → only completeness LOWs)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/ux.test.ts",
+                "title": "judgeUx: a schema-valid uxDefinition → dimension:ux, only completeness LOWs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 460,
+            "titles": [
+              {
+                "title": "d9f85b3c t9 — an absent narrative is one LOW, and missing descriptions one LOW naming them",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t9 — a fully described definition of each kind has no completeness findings",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t9 — a narrative alone, or descriptions alone, leaves exactly the other LOW",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t9 — a long list is summarised after eight names",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t9 — the validators are unchanged: a sound undescribed definition still validates to []",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/diagram-conditional.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 524,
+            "titles": [
+              {
+                "title": "effectiveJudges keeps diagram only for a subject with an erDefinition/diagram companion",
+                "result": "pass"
+              },
+              {
+                "title": "DEFAULT_DEPS carries the diagram slot (conditional at run time)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a sound erDefinition runs the diagram dimension + folds to pass",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a broken (dangling) erDefinition folds a diagram HIGH to block",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a no-ER subject runs exactly the base dimensions (byte-shape compatible with pre-S003)",
+                "result": "pass"
+              },
+              {
+                "title": "expectedDimensions appends diagram only with an ER/diagram; schema enum + arity follow",
+                "result": "pass"
+              },
+              {
+                "title": "enforceCodeReviewGate: a diagram block withholds under enforce=true, is advisory-warn under false",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/dimensions/__tests__/diagram-handlers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 442,
+            "titles": [
+              {
+                "title": "registry: the sequence + component peer handlers register alongside er (additive, er untouched)",
+                "result": "pass"
+              },
+              {
+                "title": "hasDiagramReferences: engages on a body carrying only a sequence / component definition (body-keyed)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: a sound sequence / component definition → only the completeness LOWs (LLD-d9f85b3c t9)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: a dangling sequence definition folds a HIGH breach through the diagram dimension",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: a dangling component definition folds a HIGH breach through the diagram dimension",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/dimensions/__tests__/diagram.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 452,
+            "titles": [
+              {
+                "title": "registry: S003 registers the ER handler; a duplicate registration throws (fail-fast)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: dispatches an erDefinition-bearing body to the ER handler (sound → only completeness LOWs)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: a dangling erDefinition folds a HIGH breach through the dimension",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: dispatches a companion to its owning registered handler (spy) + aggregates",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: a companion no handler owns yields ONE LOW observation (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "ER handler: a referenced-but-absent companion file → HIGH breach (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "ER handler: a present companion file → no absent-file breach",
+                "result": "pass"
+              },
+              {
+                "title": "hasDiagramReferences: true for an erDefinition and/or a diagram companion; false otherwise",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/dimensions/__tests__/ux.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 465,
+            "titles": [
+              {
+                "title": "hasUxAcceptance: true for a uxDefinition, an adherence selection incl 'ux', or a ux-mock companion; false otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "adherenceSelectionOf: reads the recorded selection ([] when absent)",
+                "result": "pass"
+              },
+              {
+                "title": "hasDiagramReferences: FALSE for a ux-mock-only subject (excludes ux-mock; counts only diagram-*)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: a schema-valid uxDefinition → dimension:ux, only completeness LOWs",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: adherence requires 'ux' but no uxDefinition / no ux-mock evidence → HIGH breach (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: a schema-invalid uxDefinition folds a HIGH breach through the dimension",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: a referenced-but-absent ux-mock companion file → HIGH breach",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: a present ux-mock companion file → no absent-file breach",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: an unknown recorded adherence member → HIGH breach",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "6def791e",
+        "ranAt": "2026-10-11T16:32:23.490Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "tsc --noEmit passes with the removed symbols gone",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/removed-paths.test.ts",
+                "title": "d9f85b3c t10 — the dead render paths are removed",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/removed-paths.test.ts",
+                "title": "d9f85b3c t10 — the references the plugin parity tests import are kept",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "full companion + workflow + mcp + docgen test subsets pass",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/component.test.ts",
+                "title": "validateComponentDependencyDefinition: sound → no findings; dangling → HIGH breach",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux.test.ts",
+                "title": "validateUxDefinition: a schema-valid card → no findings (ac1)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/context-sections.test.ts",
+                "title": "renderErCompanion writes the source document link and context line from the header",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+                "title": "finalize[standalone-LLD]: all four companions carry the header with the LLD id and work item, identically",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/render/__tests__/shell.test.ts",
+                "title": "assembleShell: offline self-contained shell — runtime INLINED, no external fetch",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/build-step/__tests__/build-step.test.ts",
+                "title": "c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was unresolved-target)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/docgen/render/__tests__/shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 301,
+            "titles": [
+              {
+                "title": "documentIRToMermaid: classDiagram with class decls + inherit/implement arrows",
+                "result": "pass"
+              },
+              {
+                "title": "documentIRToMermaid: an edge to an alias-less node is skipped; labels are escaped",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: offline self-contained shell — runtime INLINED, no external fetch",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: assets absent → sc4 fallbackUnavailable naming copy-assets (UNCHANGED s1 degrade), not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: the s5 fallback backend is ALSO self-contained offline (both backends, ac4)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/build-step/__tests__/build-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4813,
+            "titles": [
+              {
+                "title": "implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref",
+                "result": "pass"
+              },
+              {
+                "title": "implement: does NOT gate on the LLD open questions (resolved at stage-start now)",
+                "result": "pass"
+              },
+              {
+                "title": "implement: unapproved plan returns next=refused with reason plan-unapproved",
+                "result": "pass"
+              },
+              {
+                "title": "implement: a non-task target (a story) is a resolution error",
+                "result": "pass"
+              },
+              {
+                "title": "validate: returns the judge verdict from a stubbed CliProvider review session",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a failing judge verdict gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "validate: persists a plan-driven BUILD ledger record (standalone key ABSENT since t9) recording the task + passed",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a BUILD-record persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone key ABSENT since t9, story task)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record carries the file-level change-log for a non-empty changed set",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a Small build with no resolvable identity → err(no-identity)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record is approvable by the completion gate",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + { target:'s1/t1', epicHash } resolves + proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "validate: multi-epic dir + { target:'s1/t1', epicHash } resolves + returns a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + 's1/t1' WITHOUT epicHash still returns err(unresolved-target)",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION A (INVERTED at t8): a standalone build's persisted md now RENDERS '## Scope' for its body.focus",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION B (INVERTED at t9): a standalone build KEEPS meta.standalone true through validate",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section",
+                "result": "pass"
+              },
+              {
+                "title": "t10 END-TO-END: a trivial-routed build produces ONE record carrying the change set, the summary, the commit, its scope and its route — none of which it could carry before this Story",
+                "result": "pass"
+              },
+              {
+                "title": "t10 AUDIT: all three of t1's characterisations are still here, each carrying the task that INVERTED it — none deleted, none skipped",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION harness: read-only — rev-list --count and status --porcelain unchanged afterwards, and the suite skips cleanly when git is unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the validate writer EXCLUDES its own json + md from its own change-log, keeping the Story's real change",
+                "result": "pass"
+              },
+              {
+                "title": "t6 THE POINT OF THE STORY: a CLEAN tree WITH a stamped base yields the Story's committed change set",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a multi-task Story's change set GROWS across tasks rather than describing only the latest",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a DIRTY tree yields today's working-tree result and does NOT union in the committed range",
+                "result": "pass"
+              },
+              {
+                "title": "t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and substitutes no range",
+                "result": "pass"
+              },
+              {
+                "title": "t6: BOTH writers resolve the SAME base for the same Story — one resolver, not two chains",
+                "result": "pass"
+              },
+              {
+                "title": "t7: a SUPPLIED summary reaches body.summary",
+                "result": "pass"
+              },
+              {
+                "title": "t7: NO summary supplied → the record carries NO summary key (never synthesised from the task list)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: an EMPTY or WHITESPACE-ONLY summary is treated as omitted, not stored as a blank",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the summary input is OPTIONAL — a controller that never supplies it sees no behavioural difference",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a standalone work item gets meta.standalone TRUE on the FIRST write, read from its definition head",
+                "result": "pass"
+              },
+              {
+                "title": "validate: an EPIC-parented work item is unchanged — no flag written, record under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, LLD-only Small story: first write is standalone, sized, and filed beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, no head and no LLD: the route the standalone branch declared is what is written",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate: a caller's declaration does NOT relabel a story whose definition head says otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — completion: an LLD-only story's record is written standalone, beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — a record that never got its flag is still re-rendered beside its story, and resolves by its md path",
+                "result": "pass"
+              },
+              {
+                "title": "validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results",
+                "result": "pass"
+              },
+              {
+                "title": "a judge passed:true with a failing typecheck gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "a judge timeout returns verdict-session-timeout and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "the validate judge is called through runReviewSession with the repo as cwd and a verdict schema",
+                "result": "pass"
+              },
+              {
+                "title": "a judge object without a boolean passed gives unparseable-verdict",
+                "result": "pass"
+              },
+              {
+                "title": "a non-timeout judge error gives verdict-session-failed and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "plan-driven and standalone validate each hand the check runner the plan for their route",
+                "result": "pass"
+              },
+              {
+                "title": "implement and validate return merge-in-progress while a merge is uncommitted",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)",
+                "result": "pass"
+              },
+              {
+                "title": "a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails",
+                "result": "pass"
+              },
+              {
+                "title": "the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path",
+                "result": "pass"
+              },
+              {
+                "title": "when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)",
+                "result": "pass"
+              },
+              {
+                "title": "when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)",
+                "result": "pass"
+              },
+              {
+                "title": "a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)",
+                "result": "pass"
+              },
+              {
+                "title": "when the Story's route cannot be resolved, the verdict is returned with a note and neither record is written on that turn",
+                "result": "pass"
+              },
+              {
+                "title": "a stored test record that cannot be read is said so in the verdict, and a stored reported result is not reused once its test is no longer live",
+                "result": "pass"
+              },
+              {
+                "title": "on the standalone routes: a wrong mapping on a small build is refused with 'invalid-test-mapping', a good one is planned by subject, and `tests` is ignored on a trivial build",
+                "result": "pass"
+              },
+              {
+                "title": "builder text in the judge's evidence is kept to one line",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was unresolved-target)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 661,
+            "titles": [
+              {
+                "title": "finalize[standalone-LLD]: all four companions carry the header with the LLD id and work item, identically",
+                "result": "pass"
+              },
+              {
+                "title": "finalize[standalone-LLD]: described definitions pass the HIGH gate and their narrative and descriptions reach the page",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: a missing runtime asset skips the companions and still writes the artifact",
+                "result": "pass"
+              },
+              {
+                "title": "finalize[design.epic]: HLD companions name the HLD as the source doc and the Epic as the work item",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/component.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 287,
+            "titles": [
+              {
+                "title": "validateComponentDependencyDefinition: sound → no findings; dangling → HIGH breach",
+                "result": "pass"
+              },
+              {
+                "title": "validateComponentDependencyDefinition: a duplicate component id → HIGH breach",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/context-sections.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 516,
+            "titles": [
+              {
+                "title": "erDefinitionToIr: sections = Purpose + Fields & schema + Legend",
+                "result": "pass"
+              },
+              {
+                "title": "sequenceDefinitionToIr: sections = Purpose + Participants & message flow + Legend",
+                "result": "pass"
+              },
+              {
+                "title": "empty-but-valid definitions emit Purpose + Legend only (field section omitted, no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "toIr does not mutate the input definition (read-only derivation)",
+                "result": "pass"
+              },
+              {
+                "title": "renderErCompanion writes the source document link and context line from the header",
+                "result": "pass"
+              },
+              {
+                "title": "renderSequenceCompanion writes the narrative and the description tables beside the diagram",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/removed-paths.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 442,
+            "titles": [
+              {
+                "title": "d9f85b3c t10 — the dead render paths are removed",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t10 — the references the plugin parity tests import are kept",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/ux.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 488,
+            "titles": [
+              {
+                "title": "validateUxDefinition: a schema-valid card → no findings (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "validateUxDefinition: an unknown card element type → HIGH breach via ajv vs the vendored schema (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "validateUxDefinition: a missing required field (TextBlock without text) → HIGH breach",
+                "result": "pass"
+              },
+              {
+                "title": "validateUxDefinition: a wrong card discriminator → HIGH breach",
+                "result": "pass"
+              },
+              {
+                "title": "validateUxDefinition: validates the JSON element only — no path/file input exists",
+                "result": "pass"
+              },
+              {
+                "title": "validateUxDefinition: a malformed vendored asset raises UxDefinitionError (t1)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

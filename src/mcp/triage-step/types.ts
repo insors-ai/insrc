@@ -20,6 +20,10 @@ export interface TriageInputStart {
 	readonly phase: 'start';
 	readonly focus: string;
 	readonly repo?: string | undefined;
+	/** The approved SPEC this request was brainstormed into, when there is one.
+	 *  Checked at start and forwarded into the routed stage so it is seeded from
+	 *  the spec (ISSUE-c00559b7). */
+	readonly specHash?: string | undefined;
 }
 
 export interface TriageInputClassify {
@@ -32,9 +36,11 @@ export type TriageInput = TriageInputStart | TriageInputClassify;
 
 /** Opaque state carried between the two turns (base64 JSON). */
 export interface TriageState {
-	readonly runId: string;
-	readonly focus: string;
-	readonly repo:  string;
+	readonly runId:     string;
+	readonly focus:     string;
+	readonly repo:      string;
+	/** An approved SPEC's hash, verified at start. */
+	readonly specHash?: string | undefined;
 }
 
 export interface TriageEmitClassification {

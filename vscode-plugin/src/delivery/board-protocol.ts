@@ -118,15 +118,23 @@ export interface IssueEntryView {
   readonly fixStories: readonly LinkView[];
 }
 
+/** A task a row depends on: its short id (T002) and full title, or its PLAN id for both when no task item carries it. */
+export interface TaskDependencyView {
+  readonly shortId: string;
+  readonly title: string;
+}
+
 /** One task of the selected story (s4): its result, and its dependencies and checks from the story's PLAN. */
 export interface TaskRowView {
   readonly taskItemId: string;
+  /** The last ':'-separated segment of taskItemId (E1:S001:T002 gives T002); an id with no ':' whole. */
+  readonly shortId: string;
   readonly title: string | null;
   /** Result label from sc4, or the unplanned label. */
   readonly resultLabel: string;
   readonly planned: boolean;
   /** From the story's PLAN, read through workflow.deliveryEvidence; null when no PLAN or it could not be read. */
-  readonly dependsOn: readonly string[] | null;
+  readonly dependsOn: readonly TaskDependencyView[] | null;
   readonly acceptanceChecks: readonly string[] | null;
   /** Passed success, Failed danger, Unrecorded and Unplanned neutral. */
   readonly resultTone: BadgeView['tone'];

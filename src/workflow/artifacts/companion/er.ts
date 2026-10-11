@@ -25,6 +25,9 @@ import type { DimensionFinding } from '../../code-review/types.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
 import { loadLinkmlMetamodelSchema } from './metamodel.js';
+import { MermaidIds, mermaidLabel, mermaidToken } from './mermaid-text.js';
+import type { CompanionPageContent, DescriptionBlock, DescriptionCell } from './shell.js';
+import { completenessFindings, described } from './completeness.js';
 
 // ---------------------------------------------------------------------------
 // t1 — ErDefinition (LinkML subset) types
@@ -32,6 +35,8 @@ import { loadLinkmlMetamodelSchema } from './metamodel.js';
 
 /** One slot of an ER class — a LinkML SlotDefinition subset. */
 export interface ErSlot {
+	/** What this slot holds, shown in the companion page's description table. Optional. */
+	readonly description?:         string | undefined;
 	/** The slot type: a scalar type name (attribute) or a class name (relationship). */
 	readonly range?:               string | undefined;
 	readonly required?:            boolean | undefined;
@@ -44,13 +49,17 @@ export interface ErSlot {
 
 /** One ER class (entity) — a LinkML ClassDefinition subset. */
 export interface ErClass {
+	/** What this entity represents, shown in the companion page's description table. Optional. */
+	readonly description?: string | undefined;
 	readonly attributes?: Record<string, ErSlot> | undefined;
 }
 
 /** The authored ER data model — the source of truth for the ER companion. */
 export interface ErDefinition {
-	readonly id?:      string | undefined;
-	readonly classes:  Record<string, ErClass>;
+	readonly id?:        string | undefined;
+	/** A short narrative of what this visual shows, rendered above it on the companion page. Optional: a missing one is a LOW completeness finding at code review. */
+	readonly narrative?: string | undefined;
+	readonly classes:    Record<string, ErClass>;
 }
 
 /** Thrown by erDefinitionToIr when a class-ranged slot names a class absent from
@@ -260,6 +269,11 @@ function erNarratedSections(erDef: ErDefinition): IrSection[] {
 }
 
 /**
+ * Not used by finalize any more (LLD-d9f85b3c S001/t8: companions render through
+ * shell.ts). KEPT because the VS Code plugin's document review panel derives the
+ * same diagram client-side, and its parity tests use this as the reference the
+ * client must match (vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts).
+ *
  * Transform an ErDefinition into a docgen DocumentIR: each class → an entity
  * IrNode (its scalar-range slots folded into the label as attributes), each
  * class-ranged slot → a relationship IrEdge whose id encodes the crow's-foot
@@ -321,4 +335,104 @@ export function erDefinitionToIr(erDef: ErDefinition): DocumentIR {
 		narrated:            { sections: erNarratedSections(erDef) },
 		generatedAtRevision: 'authored-er',
 	};
+}
+
+// ---------------------------------------------------------------------------
+// LLD-d9f85b3c S001/t5 — the ER companion page content
+// ---------------------------------------------------------------------------
+
+/** The kind badge on an ER companion page. */
+export const ER_KIND_LABEL = 'Entity-relationship model';
+
+/** The right-hand end of a relationship line: many, required one, or optional one. */
+function erTargetCardinality(slot: ErSlot): string {
+	const token = crowsFootToken(slot);
+	if (token.endsWith('-to-many')) return 'o{';
+	return token === 'one-to-one' ? '||' : 'o|';
+}
+
+/**
+ * Build the ER companion page from its definition: an erDiagram with each
+ * entity's scalar columns (multi-valued ones typed `<type>_list`, identifiers
+ * marked PK) and one labelled line per class-ranged slot, plus an entities table
+ * and one columns table per entity. Pure: the same definition always gives the
+ * same page.
+ */
+export function erDefinitionToPage(erDef: ErDefinition, title: string): CompanionPageContent {
+	const classes = Object.entries(erDef.classes ?? {});
+	const isClass = (range: string | undefined): range is string => range !== undefined && Object.prototype.hasOwnProperty.call(erDef.classes ?? {}, range);
+	const ids = new MermaidIds('Entity');
+	for (const [name] of classes) ids.id(name);
+
+	const lines = ['erDiagram'];
+	for (const [name, cls] of classes) {
+		const id = ids.id(name);
+		lines.push(ids.renamed(name) ? `  ${id}["${mermaidLabel(name)}"] {` : `  ${id} {`);
+		const attrIds = new MermaidIds('field');
+		for (const [slotName, slot] of Object.entries(cls.attributes ?? {})) {
+			if (isClass(slot.range)) continue;
+			const type = `${mermaidToken(slot.range ?? 'string', 'string')}${slot.multivalued === true ? '_list' : ''}`;
+			const key = slot.identifier === true ? ' PK' : '';
+			const comment = attrIds.renamed(slotName) ? ` "${mermaidLabel(slotName)}"` : '';
+			lines.push(`    ${type} ${attrIds.id(slotName)}${key}${comment}`);
+		}
+		lines.push('  }');
+	}
+	for (const [name, cls] of classes) {
+		for (const [slotName, slot] of Object.entries(cls.attributes ?? {})) {
+			if (!isClass(slot.range)) continue;
+			lines.push(`  ${ids.id(name)} ||--${erTargetCardinality(slot)} ${ids.id(slot.range)} : "${mermaidLabel(slotName)}"`);
+		}
+	}
+
+	let columnCount = 0;
+	const entityRows: DescriptionCell[][] = [];
+	const columnBlocks: DescriptionBlock[] = [];
+	for (const [name, cls] of classes) {
+		const slots = Object.entries(cls.attributes ?? {});
+		columnCount += slots.length;
+		const pk = slots.filter(([, s]) => s.identifier === true).map(([n]) => n);
+		const rels = slots.filter(([, s]) => isClass(s.range)).map(([n, s]) => `${n} → ${s.range}`);
+		entityRows.push([name, cls.description ?? null, pk.length > 0 ? pk.join(', ') : null, rels.length > 0 ? rels.join(', ') : null]);
+		const rows: DescriptionCell[][] = slots.length === 0
+			? [['No columns', null, null, null, null, null]]
+			: slots.map(([slotName, s]) => [
+				slotName,
+				s.range ?? 'string',
+				s.required === true ? 'yes' : 'no',
+				s.multivalued === true ? 'yes' : 'no',
+				s.identifier === true ? { tag: 'pk', text: 'PK' } : isClass(s.range) ? { tag: 'fk', text: 'FK' } : null,
+				s.description ?? null,
+			]);
+		columnBlocks.push({ heading: name, columns: ['Column', 'Type', 'Required', 'Multi-valued', 'Key', 'Description'], rows });
+	}
+	return {
+		title,
+		kindLabel: ER_KIND_LABEL,
+		...(erDef.narrative !== undefined ? { narrative: erDef.narrative } : {}),
+		visual: { kind: 'mermaid', source: lines.join('\n') },
+		description: [
+			{
+				heading: 'Entities',
+				lead: `${classes.length} ${classes.length === 1 ? 'entity' : 'entities'}, ${columnCount} ${columnCount === 1 ? 'column' : 'columns'}. `
+					+ 'Relationships are listed against the owning entity.',
+				columns: ['Entity', 'Description', 'Key', 'Relationships'],
+				rows: entityRows,
+			},
+			...columnBlocks,
+		],
+	};
+}
+
+/** LLD-d9f85b3c S001/t9: LOW findings for a missing narrative and for entities
+ *  and columns with no description. Never part of validateErDefinition. */
+export function erCompletenessFindings(erDef: ErDefinition): readonly DimensionFinding[] {
+	const undescribed: string[] = [];
+	for (const [name, cls] of Object.entries(erDef.classes ?? {})) {
+		if (!described(cls.description)) undescribed.push(`entity ${name}`);
+		for (const [slot, s] of Object.entries(cls.attributes ?? {})) {
+			if (!described(s.description)) undescribed.push(`${name}.${slot}`);
+		}
+	}
+	return completenessFindings('diagram', 'erDefinition', described(erDef.narrative), undescribed);
 }

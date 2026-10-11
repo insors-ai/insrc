@@ -73,6 +73,9 @@ export interface DefineStory {
 }
 
 export interface DefineBody {
+	/** ISSUE-c00559b7: a short outcome-phrased name the synthesizer writes; the
+	 *  Epic's folder label is derived from it. Absent on Defines written before it. */
+	readonly title?: string | undefined;
 	readonly flavor:  DefineFlavor;
 	readonly problem: string;
 	readonly nonGoals:    readonly DefineNonGoal[];
@@ -187,6 +190,7 @@ export function isDefineBody(v: unknown): v is DefineBody {
 	if (typeof v !== 'object' || v === null) return false;
 	const r = v as Record<string, unknown>;
 	if (r['flavor'] !== 'enhancement' && r['flavor'] !== 'new-capability') return false;
+	if (r['title'] !== undefined && typeof r['title'] !== 'string') return false;
 	if (typeof r['problem'] !== 'string')       return false;
 	if (!Array.isArray(r['nonGoals']))          return false;
 	if (!Array.isArray(r['assumptions']))       return false;

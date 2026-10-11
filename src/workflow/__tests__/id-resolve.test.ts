@@ -388,12 +388,20 @@ test("resolver — a DEF-less bugfix epic resolves 'S001/t1' to its PlanTask (wa
 	} finally { s.cleanup(); }
 });
 
-test('resolver — MUTATION: delete the ISSUE and the same target goes back to null', () => {
+test('resolver — MUTATION (INVERTED at ISSUE-c00559b7): delete the ISSUE and the LLD heads the work item; delete the LLD too and the target goes back to null', () => {
 	const s = setupBugfixRepo({ withIssue: false });
 	try {
+		// This used to assert null: a work item with neither DEF nor ISSUE was
+		// unaddressable, which is exactly the defect that blocked every standalone
+		// feature's plan from building. The LLD now heads such a work item.
+		const r = resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH });
+		assert.equal(r?.task?.id, 't1', 'with no DEF or ISSUE, the LLD anchors the work item');
+		assert.equal(r?.epicSlug, 'resolver-blocked', 'identity comes off the LLD meta');
+
+		rmSync(join(s.dir, `LLD-${BUG_HASH}-S001.json`));
 		assert.equal(
 			resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH }), null,
-			'with neither DEF nor ISSUE the epic is unaddressable — proving the ISSUE anchor is what makes the positive case pass',
+			'with no head at all the work item is unaddressable — proving a head is what makes the positive case pass',
 		);
 	} finally { s.cleanup(); }
 });

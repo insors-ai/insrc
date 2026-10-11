@@ -812,7 +812,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'(LLD) → plan → build; Small → standalone `design.story` → build; Trivial ' +
 				'→ `build` (no LLD).\n\n' +
 				'Two-turn loop:\n' +
-				'  1. phase=\'start\' with { focus, repo? }. Server returns ' +
+				'  1. phase=\'start\' with { focus, repo?, specHash? } (specHash: an approved SPEC to seed the routed stage). Server returns ' +
 				'{ next: \'emit_classification\', prompt, schema, state }.\n' +
 				'  2. GROUND the sizing on `insrc_analyze_step` passes (which modules/files ' +
 				'it touches, caller counts, new-vs-reuse), emit a TriageResult JSON matching ' +
@@ -833,6 +833,9 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.optional(),
 				repo: z.string()
 					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
+					.optional(),
+				specHash: z.string()
+					.describe('Only for phase=start. The approved SPEC this request was brainstormed into. It must exist and be approved; it is forwarded into the routed design.story / define call so that stage is seeded from it.')
 					.optional(),
 				result: z.record(z.string(), z.unknown())
 					.describe('Only for phase=classify. The TriageResult JSON your LLM emitted (matches the emit_classification schema).')

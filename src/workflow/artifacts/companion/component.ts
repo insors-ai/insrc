@@ -12,16 +12,18 @@
  * source of truth): named `components` (the modules) and directed `dependencies`
  * (which component depends on which). The JSON element is validated (a light
  * structural + referential-integrity check) and visualized
- * (componentDependencyDefinitionToIr → docgen assembleShell, which already renders a
- * `component-dependency` DocumentIR as a mermaid `flowchart LR`); the companion is
+ * as a companion page (componentDependencyDefinitionToPage → shell.ts, a Mermaid
+ * `flowchart LR` plus a components table); the companion is
  * DERIVED from it, never the reverse. Validation runs against the JSON element ONLY —
  * it never reads a rendered companion file (k2).
  *
  * Deterministic + provider-free. Mirrors ./er.ts.
  */
 
-import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/types.js';
 import type { DimensionFinding } from '../../code-review/types.js';
+import { MermaidIds, mermaidFlowText } from './mermaid-text.js';
+import type { CompanionPageContent, DescriptionCell } from './shell.js';
+import { completenessFindings, described } from './completeness.js';
 
 // ---------------------------------------------------------------------------
 // t2 — ComponentDependencyDefinition types
@@ -29,8 +31,12 @@ import type { DimensionFinding } from '../../code-review/types.js';
 
 /** One component (module/box) in the dependency graph. */
 export interface Component {
-	readonly id:     string;
-	readonly label?: string | undefined;
+	readonly id:           string;
+	readonly label?:       string | undefined;
+	/** What this component is responsible for, shown in the companion page's description table. Optional. */
+	readonly description?: string | undefined;
+	/** The repo path the component lives at, shown beside it in the description table. Optional. */
+	readonly path?:        string | undefined;
 }
 
 /** One directed dependency edge (`from` depends on `to`). */
@@ -44,19 +50,10 @@ export interface ComponentDependency {
  *  component-dependency companion. */
 export interface ComponentDependencyDefinition {
 	readonly id?:           string | undefined;
+	/** A short narrative of what this visual shows, rendered above it on the companion page. Optional: a missing one is a LOW completeness finding at code review. */
+	readonly narrative?:    string | undefined;
 	readonly components:    readonly Component[];
 	readonly dependencies:  readonly ComponentDependency[];
-}
-
-/** Thrown by componentDependencyDefinitionToIr when a dependency endpoint names a
- *  component absent from `components` — a dangling reference (referential
- *  integrity), enforced as defense-in-depth after
- *  validateComponentDependencyDefinition. Mirrors ErDefinitionError. */
-export class ComponentDefinitionError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = 'ComponentDefinitionError';
-	}
 }
 
 const DIMENSION = 'diagram' as const;
@@ -133,110 +130,59 @@ function breach(location: string, message: string): DimensionFinding {
 }
 
 // ---------------------------------------------------------------------------
-// t2 — componentDependencyDefinitionToIr (deterministic; feeds docgen assembleShell)
+// LLD-d9f85b3c S001/t6 — the component-dependency companion page content
 // ---------------------------------------------------------------------------
 
-/** The docType stamped on the component IR. Consumed by assembleShell's mermaid
- *  emitter, which renders a `component-dependency` DocumentIR as a `flowchart LR`
- *  (a box per node, one `A --> B` arrow per edge). */
-export const COMPONENT_DOC_TYPE = 'component-dependency';
+/** The kind badge on a component-dependency companion page. */
+export const COMPONENT_KIND_LABEL = 'Component dependencies';
 
 /**
- * Derive the reader-facing narrated sections for a component-dependency
- * companion (S001): a Purpose section, a Components & dependencies section (the
- * modules and each directed dependency edge), and a Legend. Read-only over the
- * same parse the diagram uses. For an empty-but-valid definition the
- * components/dependencies section is omitted (Purpose + Legend only). The band
- * renderer escapes all this text.
+ * Build the component-dependency page from its definition: a left-to-right
+ * flowchart with one box per component (its file name under the label when it
+ * has a path) and one arrow per dependency, labelled when the dependency is,
+ * plus a components table. Pure.
  */
-function componentNarratedSections(compDef: ComponentDependencyDefinition): IrSection[] {
-	const labelOf = (id: string): string => {
-		const c = compDef.components.find(cc => cc.id === id);
-		return c?.label !== undefined && c.label.length > 0 ? c.label : id;
-	};
-	const names = compDef.components.map(c => labelOf(c.id));
-	const sections: IrSection[] = [{
-		id:    'purpose',
-		title: 'Purpose',
-		narrativeText:
-			`This component-dependency map shows ${compDef.components.length} component${compDef.components.length === 1 ? '' : 's'}` +
-			`${names.length > 0 ? ` (${names.join(', ')})` : ''} and the ${compDef.dependencies.length} directed ` +
-			`dependenc${compDef.dependencies.length === 1 ? 'y' : 'ies'} between them (an arrow means "from depends on to"). ` +
-			`Use it to see the module boundaries and what depends on what without tracing imports by hand.`,
-	}];
+export function componentDependencyDefinitionToPage(compDef: ComponentDependencyDefinition, title: string): CompanionPageContent {
+	const components = compDef.components ?? [];
+	const dependencies = compDef.dependencies ?? [];
+	const ids = new MermaidIds('c');
+	for (const c of components) ids.id(c.id);
+	const nameOf = new Map(components.map(c => [c.id, c.label ?? c.id]));
 
-	if (compDef.components.length > 0 || compDef.dependencies.length > 0) {
-		const lines: string[] = [];
-		if (compDef.components.length > 0) {
-			lines.push('Components:');
-			for (const c of compDef.components) {
-				lines.push(`  • ${c.id}${c.label !== undefined && c.label.length > 0 && c.label !== c.id ? ` — ${c.label}` : ''}`);
-			}
-		}
-		if (compDef.dependencies.length > 0) {
-			lines.push('Dependencies:');
-			for (const d of compDef.dependencies) {
-				const label = d.label !== undefined && d.label.length > 0 ? ` — ${d.label}` : '';
-				lines.push(`  • ${labelOf(d.from)} → ${labelOf(d.to)}${label}`);
-			}
-		}
-		sections.push({ id: 'fields', title: 'Components & dependencies', narrativeText: lines.join('\n') });
+	const lines = ['flowchart LR'];
+	for (const c of components) {
+		const file = c.path !== undefined && c.path.length > 0 ? c.path.split('/').filter(s => s.length > 0).pop() : undefined;
+		const sub = file !== undefined ? `<br/><small>${mermaidFlowText(file)}</small>` : '';
+		lines.push(`  ${ids.id(c.id)}["${mermaidFlowText(c.label ?? c.id)}${sub}"]`);
+	}
+	for (const d of dependencies) {
+		const label = d.label !== undefined && d.label.length > 0 ? `|${mermaidFlowText(d.label)}|` : '';
+		lines.push(`  ${ids.id(d.from)} -->${label} ${ids.id(d.to)}`);
 	}
 
-	sections.push({
-		id:    'legend',
-		title: 'Legend',
-		narrativeText:
-			`box — a component (module).\n` +
-			`arrow (→) — a directed dependency: the source depends on the target.`,
+	const rows: DescriptionCell[][] = components.map(c => {
+		const deps = dependencies.filter(d => d.from === c.id).map(d => nameOf.get(d.to) ?? d.to);
+		return [c.label ?? c.id, c.path ?? null, deps.length > 0 ? deps.join(', ') : null, c.description ?? null];
 	});
-	return sections;
+	return {
+		title,
+		kindLabel: COMPONENT_KIND_LABEL,
+		...(compDef.narrative !== undefined ? { narrative: compDef.narrative } : {}),
+		visual: { kind: 'mermaid', source: lines.join('\n') },
+		description: [{
+			heading: 'Components',
+			lead: `${components.length} ${components.length === 1 ? 'component' : 'components'}, `
+				+ `${dependencies.length} ${dependencies.length === 1 ? 'dependency' : 'dependencies'}. `
+				+ 'An arrow points from a component to what it depends on.',
+			columns: ['Component', 'Path', 'Depends on', 'Description'],
+			rows,
+		}],
+	};
 }
 
-/**
- * Transform a ComponentDependencyDefinition into a docgen DocumentIR: each
- * component → a 'component' IrNode; each dependency → a 'depends-on' IrEdge. Pure +
- * deterministic: component + dependency order is preserved verbatim, so the same
- * compDef always yields byte-identical IR (no graph, no provider).
- *
- * @throws ComponentDefinitionError when a dependency endpoint names a component
- *   absent from `components` (referential integrity — should have been caught by
- *   validateComponentDependencyDefinition; enforced here as defense-in-depth,
- *   mirroring erDefinitionToIr).
- */
-export function componentDependencyDefinitionToIr(compDef: ComponentDependencyDefinition): DocumentIR {
-	const ids = new Set(compDef.components.map(c => c.id));
-	const nodes: IrNode[] = [];
-	const edges: IrEdge[] = [];
-
-	for (const c of compDef.components) {
-		nodes.push({
-			id:    c.id,
-			label: c.label !== undefined && c.label.length > 0 ? c.label : c.id,
-			kind:  'component',
-		});
-	}
-
-	compDef.dependencies.forEach((d, i) => {
-		if (!ids.has(d.from)) {
-			throw new ComponentDefinitionError(`componentDependencyDefinitionToIr: dependency ${i} 'from' names undeclared component '${d.from}'`);
-		}
-		if (!ids.has(d.to)) {
-			throw new ComponentDefinitionError(`componentDependencyDefinitionToIr: dependency ${i} 'to' names undeclared component '${d.to}'`);
-		}
-		edges.push({
-			id:   `${d.from}->${d.to}#${i}`,
-			from: d.from,
-			to:   d.to,
-			kind: 'depends-on',
-		});
-	});
-
-	return {
-		docType:             COMPONENT_DOC_TYPE,
-		scopeDescription:    compDef.id !== undefined && compDef.id.length > 0 ? `Components: ${compDef.id}` : 'Component dependencies',
-		derived:             { nodes, edges },
-		narrated:            { sections: componentNarratedSections(compDef) },
-		generatedAtRevision: 'authored-component',
-	};
+/** LLD-d9f85b3c S001/t9: LOW findings for a missing narrative and for components
+ *  with no description. Never part of validateComponentDependencyDefinition. */
+export function componentCompletenessFindings(compDef: ComponentDependencyDefinition): readonly DimensionFinding[] {
+	const undescribed = (compDef.components ?? []).filter(c => !described(c.description)).map(c => `component ${c.id}`);
+	return completenessFindings('diagram', 'componentDependencyDefinition', described(compDef.narrative), undescribed);
 }

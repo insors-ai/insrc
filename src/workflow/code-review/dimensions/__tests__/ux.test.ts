@@ -64,10 +64,12 @@ test('hasDiagramReferences: FALSE for a ux-mock-only subject (excludes ux-mock; 
 
 // ── judgeUx ───────────────────────────────────────────────────────────────────
 
-test('judgeUx: a schema-valid uxDefinition → dimension:ux, no findings', async () => {
+test('judgeUx: a schema-valid uxDefinition → dimension:ux, only completeness LOWs', async () => {
 	const res = await judgeUx(subject({ uxDefinition: validUx }), grounding, provider);
 	assert.equal(res.dimension, 'ux');
-	assert.deepEqual(res.findings, []);
+	// LLD-d9f85b3c t9: an undescribed card draws only LOW completeness findings.
+	assert.ok(res.findings.length > 0);
+	assert.ok(res.findings.every(f => f.severity === 'LOW' && f.dimension === 'ux'), JSON.stringify(res.findings));
 });
 
 test('judgeUx: adherence requires \'ux\' but no uxDefinition / no ux-mock evidence → HIGH breach (ac2)', async () => {

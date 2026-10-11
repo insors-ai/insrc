@@ -48,6 +48,9 @@ export interface SpecDecision {
 }
 
 export interface SpecArtifactBody {
+	/** ISSUE-c00559b7: a short outcome-phrased name the synthesizer writes; the
+	 *  spec's folder label is derived from it. Absent on specs written before it. */
+	readonly title?:        string | undefined;
 	/** The request category, from the shared BrainstormCategory vocabulary
 	 *  (reused, never invented — c33). */
 	readonly category:      BrainstormCategory;
@@ -157,6 +160,7 @@ export function isSpecBody(v: unknown): v is SpecArtifactBody {
 	if (typeof v !== 'object' || v === null) return false;
 	const r = v as Record<string, unknown>;
 	if (typeof r['category'] !== 'string' || !CATEGORY_IDS.has(r['category'])) return false;
+	if (r['title'] !== undefined && typeof r['title'] !== 'string') return false;
 	if (typeof r['intent'] !== 'string' || r['intent'].length === 0) return false;
 	if (typeof r['scopeBoundary'] !== 'string' || r['scopeBoundary'].length === 0) return false;
 	if (!isStringArray(r['nonGoals'])) return false;

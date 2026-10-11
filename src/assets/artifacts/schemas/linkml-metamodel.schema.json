@@ -9,6 +9,10 @@
       "type": "string",
       "description": "Optional schema/definition identifier."
     },
+    "narrative": {
+      "type": "string",
+      "description": "insrc extension (not LinkML-native): a short narrative of what the data model is for, shown above the diagram on the companion page."
+    },
     "classes": {
       "type": "object",
       "description": "The entities of the data model, keyed by class name. Each value is an ErClass.",
@@ -21,6 +25,10 @@
       "additionalProperties": false,
       "description": "A LinkML ClassDefinition subset — an entity with named slots.",
       "properties": {
+        "description": {
+          "type": "string",
+          "description": "LinkML `description`: what the entity represents."
+        },
         "attributes": {
           "type": "object",
           "description": "The class's slots, keyed by slot name. Each value is an ErSlot.",
@@ -33,6 +41,10 @@
       "additionalProperties": false,
       "description": "A LinkML SlotDefinition subset. A `range` naming a scalar type is an attribute; a `range` naming another class is a relationship. Cardinality follows LinkML (required/multivalued or the explicit minimum/maximum_cardinality).",
       "properties": {
+        "description": {
+          "type": "string",
+          "description": "LinkML `description`: what the slot holds."
+        },
         "range": {
           "type": "string",
           "description": "The slot's type: a scalar type name (attribute) or a class name defined in `classes` (relationship)."

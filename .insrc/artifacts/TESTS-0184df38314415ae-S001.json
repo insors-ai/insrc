@@ -1,0 +1,433 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "0184df38314415ae",
+    "storyId": "S001",
+    "createdAt": "2026-10-11T09:34:09.996Z",
+    "updatedAt": "2026-10-11T09:34:09.996Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "924f9410",
+        "ranAt": "2026-10-11T09:34:09.996Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "taskRows gives each row its short id (last ':' segment; the whole id when there is none)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+                "title": "a task's short id is the last ':' segment of its item id, or the whole id without one",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+                "title": "planned tasks show their dependencies and checks with Passed, Failed or Unrecorded, a build-only task is unplanned, and unrecorded tasks are counted apart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "taskRows gives each dependency its task item's short id and title, and the raw PLAN id for both when no task item joins",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+                "title": "planned tasks show their dependencies and checks with Passed, Failed or Unrecorded, a build-only task is unplanned, and unrecorded tasks are counted apart",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+                "title": "a task row with no title shows its id, as the same task does among the dependencies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dependsOn and acceptanceChecks stay null while the PLAN is loading or failed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+                "title": "planned tasks show their dependencies and checks with Passed, Failed or Unrecorded, a build-only task is unplanned, and unrecorded tasks are counted apart",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "opening a story reads its plan once per snapshot and shows the dependencies when it arrives",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the Planned tasks section renders table.records.tasks with ID, Task, Result, Depends on and Checks headers and one row per task",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "a story's planned tasks are a table: short id, title, result pill, dependency chips with the title on hover, and a checks count",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a row shows the short id, the title (or the task item id), the result pill with its tone, and dependency chips with the full title as their hover title, or a dash",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "a story's planned tasks are a table: short id, title, result pill, dependency chips with the title on hover, and a checks count",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+                "title": "a task row with no title shows its id, as the same task does among the dependencies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the checks toggle reads '<n> checks' or '1 check', starts closed, opens a row listing the checks as plain lines with no bullet or checkbox glyph, and its aria-expanded follows",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "a task's checks toggle opens them as a plain list under its row, and the open choice survives a re-render",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "a story's planned tasks are a table: short id, title, result pill, dependency chips with the title on hover, and a checks count",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an open checks row stays open across a re-render (openOf under the screen entry)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "a task's checks toggle opens them as a plain list under its row, and the open choice survives a re-render",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no task plan: 'No task plan recorded yet.' and no table; the plan notice still renders",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "a task with no checks, or a plan still loading, shows a dash and no checks row; a story with no plan has no table",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "a failed, malformed or stale plan read leaves the details standing with a notice",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the evidence tab still shows no task rows",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+                "title": "the story tabs post set-item-tab; overview shows the conflict first, tasks, why and chain; evidence is a records table with open buttons",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 336,
+            "titles": [
+              {
+                "title": "planned tasks show their dependencies and checks with Passed, Failed or Unrecorded, a build-only task is unplanned, and unrecorded tasks are counted apart",
+                "result": "pass"
+              },
+              {
+                "title": "the details give the daemon's stage reason and the records it cites",
+                "result": "pass"
+              },
+              {
+                "title": "an approved build with failed tasks shows the approval, the failed rows and a sentence explaining the conflict",
+                "result": "pass"
+              },
+              {
+                "title": "a rejected record reads Rejected, and the original review verdict is shown with any override",
+                "result": "pass"
+              },
+              {
+                "title": "a code review with no build keeps its stage, lists the review-without-build notice and shows the review as evidence",
+                "result": "pass"
+              },
+              {
+                "title": "chain rows per route — full-chain story shows DEF/HLD from its epic plus LLD/PLAN/BUILD; small story has no PLAN row; small-bugfix has ISSUE and BUILD only; trivial has BUILD only; unknown lists recorded kinds only; a missing expected kind is 'Not recorded'; two BUILDs give two rows",
+                "result": "pass"
+              },
+              {
+                "title": "a story with CR, SPEC, EXT and AMD evidence gets a chain without those kinds, they remain in Records, and buildItemDetails does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "conflict is { headline: 'Two records disagree', text } exactly when item.conflict is set",
+                "result": "pass"
+              },
+              {
+                "title": "kicker, chips and TaskRowView.resultTone",
+                "result": "pass"
+              },
+              {
+                "title": "the chain takes DEF and HLD only from a parent epic, and ISSUE only from a parent issue",
+                "result": "pass"
+              },
+              {
+                "title": "an item kind or approval state this build does not know still gives a readable kicker and a neutral chain row",
+                "result": "pass"
+              },
+              {
+                "title": "the tasks chip is danger when the story-level result failed, even with every task passed",
+                "result": "pass"
+              },
+              {
+                "title": "correctedBy lists the issues correcting the item and approvedAt reads the approval time",
+                "result": "pass"
+              },
+              {
+                "title": "a task row with no title shows its id, as the same task does among the dependencies",
+                "result": "pass"
+              },
+              {
+                "title": "a task's short id is the last ':' segment of its item id, or the whole id without one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 455,
+            "titles": [
+              {
+                "title": "opening the board creates one editor-tab panel with a CSP-locked document and posts the snapshot's items with its taken-at time",
+                "result": "pass"
+              },
+              {
+                "title": "when the earlier refresh answers after the later one, only the later snapshot is posted",
+                "result": "pass"
+              },
+              {
+                "title": "a client that throws synchronously ends the refresh as failed instead of leaving the board loading",
+                "result": "pass"
+              },
+              {
+                "title": "an answer or timeout that arrives after the panel is closed is neither posted nor logged",
+                "result": "pass"
+              },
+              {
+                "title": "the board document inserts text only through textContent and posts only board up-messages",
+                "result": "pass"
+              },
+              {
+                "title": "show-more reveals the next page of one stage, and a new search resets paging",
+                "result": "pass"
+              },
+              {
+                "title": "an item with an unknown stage is left off the board and logged once per refresh",
+                "result": "pass"
+              },
+              {
+                "title": "a filter change that cannot be rendered keeps the previous board and is logged",
+                "result": "pass"
+              },
+              {
+                "title": "a refresh whose loading state cannot be shown is logged and asks the daemon nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a logger that throws never leaves the board loading or stops a refresh",
+                "result": "pass"
+              },
+              {
+                "title": "opening a story reads its plan once per snapshot and shows the dependencies when it arrives",
+                "result": "pass"
+              },
+              {
+                "title": "a review-view record opens in the review pane and a build record opens read-only from the daemon as text",
+                "result": "pass"
+              },
+              {
+                "title": "a failed, malformed or stale plan read leaves the details standing with a notice",
+                "result": "pass"
+              },
+              {
+                "title": "a filter change, Back and announcements: screen changes are announced once, a settled refresh once, and filters, density and reloads say nothing",
+                "result": "pass"
+              },
+              {
+                "title": "clear-filters clears the screen's search and attention, keeps the screen, and resets paging",
+                "result": "pass"
+              },
+              {
+                "title": "opening an epic and then a story replaces #main each time, and nothing from an earlier screen remains",
+                "result": "pass"
+              },
+              {
+                "title": "the filter bar has exactly the four views and Needs attention, and no epic is a chip",
+                "result": "pass"
+              },
+              {
+                "title": "an Epics row opens that epic's board with its header, breadcrumb and ← Epics, and no view control",
+                "result": "pass"
+              },
+              {
+                "title": "stages render as six <details> sections in workflow order, and a toggled section stays as the reader left it across a refresh",
+                "result": "pass"
+              },
+              {
+                "title": "a narrow pane shortens the breadcrumb and folds empty stages into Other stages · 0 matching, and widening re-renders the wide form",
+                "result": "pass"
+              },
+              {
+                "title": "Back restores the saved scroll and focuses the card that opened the story; Escape goes back",
+                "result": "pass"
+              },
+              {
+                "title": "empty replaces the screen, no matches replaces the list area with Clear filters, and a failed refresh over a story keeps the story under the banner",
+                "result": "pass"
+              },
+              {
+                "title": "CSP string unchanged, exactly one aria-live region, and the script uses textContent only and posts only BoardUpMessage envelopes",
+                "result": "pass"
+              },
+              {
+                "title": "opening a story replaces the screen: #main holds only the story screen, with its breadcrumb and Back, and no card from the list it came from",
+                "result": "pass"
+              },
+              {
+                "title": "the story tabs post set-item-tab; overview shows the conflict first, tasks, why and chain; evidence is a records table with open buttons",
+                "result": "pass"
+              },
+              {
+                "title": "linked work lists the epic, children and correcting issues, each opening its own screen",
+                "result": "pass"
+              },
+              {
+                "title": "the issue screen opens what it corrects, or shows the parent notice, and lists its fix stories",
+                "result": "pass"
+              },
+              {
+                "title": "density is restored from the webview state, saved on change and mirrored to the host, and both densities render every screen",
+                "result": "pass"
+              },
+              {
+                "title": "the refresh announcement text is unchanged after statusView takes now",
+                "result": "pass"
+              },
+              {
+                "title": "the live region and density control sit in a small footer, and a new list screen focuses its chosen view",
+                "result": "pass"
+              },
+              {
+                "title": "the breadcrumb renders the wordmark, crumbs and current place, without the wordmark when narrow",
+                "result": "pass"
+              },
+              {
+                "title": "list screens use the mocks' filter bar, count line and stage boxes, with no heading",
+                "result": "pass"
+              },
+              {
+                "title": "Back to a list screen whose opener is gone focuses the chosen view",
+                "result": "pass"
+              },
+              {
+                "title": "the epic board and Epics rows follow the mocks: head with meter, rows with completion and attention on one line",
+                "result": "pass"
+              },
+              {
+                "title": "the Issues screen shows its issues in collapsible stage boxes",
+                "result": "pass"
+              },
+              {
+                "title": "story and issue screens follow the mocks: stage pill, section labels, chain rows and the Open what it corrects button",
+                "result": "pass"
+              },
+              {
+                "title": "state panels use the mocks' panel and warning styles",
+                "result": "pass"
+              },
+              {
+                "title": "the Epics screen shows its epics in collapsible stage boxes, and epics with no stories after them",
+                "result": "pass"
+              },
+              {
+                "title": "Refresh is an icon-only button that keeps its name and tooltip",
+                "result": "pass"
+              },
+              {
+                "title": "BOARD_STYLE carries the mocks' product rules with theme colours and no hiding rule",
+                "result": "pass"
+              },
+              {
+                "title": "the narrow layout applies the mocks' container rules to the body",
+                "result": "pass"
+              },
+              {
+                "title": "a refresh timing that cannot be measured says so in the log instead of reading as instant",
+                "result": "pass"
+              },
+              {
+                "title": "an intent that changes nothing posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a story's planned tasks are a table: short id, title, result pill, dependency chips with the title on hover, and a checks count",
+                "result": "pass"
+              },
+              {
+                "title": "a task's checks toggle opens them as a plain list under its row, and the open choice survives a re-render",
+                "result": "pass"
+              },
+              {
+                "title": "a task with no checks, or a plan still loading, shows a dash and no checks row; a story with no plan has no table",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

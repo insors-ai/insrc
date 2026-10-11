@@ -55,9 +55,12 @@ test('hasDiagramReferences: engages on a body carrying only a sequence / compone
 	assert.equal(hasDiagramReferences(subject({})), false);
 });
 
-test('judgeDiagram: a sound sequence / component definition → no findings', async () => {
-	assert.deepEqual((await judgeDiagram(subject({ sequenceDefinition: validSeq }), grounding, provider)).findings, []);
-	assert.deepEqual((await judgeDiagram(subject({ componentDependencyDefinition: validComp }), grounding, provider)).findings, []);
+test('judgeDiagram: a sound sequence / component definition → only the completeness LOWs (LLD-d9f85b3c t9)', async () => {
+	const onlyCompleteness = (fs: readonly DimensionFinding[]) => fs.every(f => f.severity === 'LOW' && /:(narrative|description)$/.test(f.location));
+	const seq = (await judgeDiagram(subject({ sequenceDefinition: validSeq }), grounding, provider)).findings;
+	const comp = (await judgeDiagram(subject({ componentDependencyDefinition: validComp }), grounding, provider)).findings;
+	assert.ok(seq.length > 0 && onlyCompleteness(seq), JSON.stringify(seq));
+	assert.ok(comp.length > 0 && onlyCompleteness(comp), JSON.stringify(comp));
 });
 
 test('judgeDiagram: a dangling sequence definition folds a HIGH breach through the diagram dimension', async () => {

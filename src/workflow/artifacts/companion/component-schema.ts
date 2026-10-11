@@ -25,7 +25,8 @@ export const COMPONENT_DEFINITION_PROPERTY_SCHEMA: Record<string, unknown> = {
 	required: ['components', 'dependencies'],
 	additionalProperties: false,
 	properties: {
-		id: { type: 'string' },
+		id:        { type: 'string' },
+		narrative: { type: 'string' },
 		components: {
 			type: 'array',
 			items: {
@@ -33,8 +34,10 @@ export const COMPONENT_DEFINITION_PROPERTY_SCHEMA: Record<string, unknown> = {
 				required: ['id'],
 				additionalProperties: false,
 				properties: {
-					id:    { type: 'string' },
-					label: { type: 'string' },
+					id:          { type: 'string' },
+					label:       { type: 'string' },
+					description: { type: 'string' },
+					path:        { type: 'string' },
 				},
 			},
 		},
@@ -56,4 +59,4 @@ export const COMPONENT_DEFINITION_PROPERTY_SCHEMA: Record<string, unknown> = {
 
 /** The content-gate HARD RULE the HLD + LLD synthesizers share for the component element. */
 export const COMPONENT_CONTENT_GATE_RULE =
-	'- CONTENT-GATE — author a `componentDependencyDefinition` (named `components` + directed `dependencies`) ONLY when a component / module dependency diagram would materially aid understanding of THIS document; omit it entirely otherwise. It is the SOURCE OF TRUTH; a component-dependency companion is generated from it deterministically. Do NOT author `companions` — the framework renders + attaches those.';
+	'- CONTENT-GATE — author a `componentDependencyDefinition` (named `components` + directed `dependencies`) ONLY when a component / module dependency diagram would materially aid understanding of THIS document; omit it entirely otherwise. It is the SOURCE OF TRUTH; a component-dependency companion is generated from it deterministically. Do NOT author `companions` — the framework renders + attaches those. Give it a `narrative` (one or two sentences on what the visual shows and why) and a `description` on every component (and its repo `path` where it has one); both are optional, but a missing one is flagged at code review.';

@@ -23,6 +23,9 @@
 
 import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/types.js';
 import type { DimensionFinding } from '../../code-review/types.js';
+import { MermaidIds, mermaidLineText } from './mermaid-text.js';
+import type { CompanionPageContent, DescriptionBlock, TaggedCell } from './shell.js';
+import { completenessFindings, described } from './completeness.js';
 
 // ---------------------------------------------------------------------------
 // t1 — SequenceDefinition types
@@ -30,8 +33,10 @@ import type { DimensionFinding } from '../../code-review/types.js';
 
 /** One participant (actor) in the sequence. */
 export interface SequenceParticipant {
-	readonly id:     string;
-	readonly label?: string | undefined;
+	readonly id:           string;
+	readonly label?:       string | undefined;
+	/** Who or what this participant is, shown in the companion page's description table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** One ordered message (call) between two participants. */
@@ -42,6 +47,8 @@ export interface SequenceMessage {
 	/** 'recurse' marks a self/cycle repeat (rendered as a recursion note). */
 	readonly kind?: 'call' | 'return' | 'recurse' | undefined;
 	readonly note?: string | undefined;
+	/** What this step does, shown in the companion page's description table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** A "depth truncated here" marker attached to a participant. */
@@ -53,6 +60,8 @@ export interface SequenceTruncation {
 /** The authored sequence (behaviour) — the source of truth for the sequence companion. */
 export interface SequenceDefinition {
 	readonly id?:           string | undefined;
+	/** A short narrative of what this visual shows, rendered above it on the companion page. Optional: a missing one is a LOW completeness finding at code review. */
+	readonly narrative?:    string | undefined;
 	readonly participants:  readonly SequenceParticipant[];
 	readonly messages:      readonly SequenceMessage[];
 	readonly truncations?:  readonly SequenceTruncation[] | undefined;
@@ -227,6 +236,11 @@ function sequenceNarratedSections(seqDef: SequenceDefinition): IrSection[] {
 }
 
 /**
+ * Not used by finalize any more (LLD-d9f85b3c S001/t8: companions render through
+ * shell.ts). KEPT because the VS Code plugin's document review panel derives the
+ * same diagram client-side, and its parity tests use this as the reference the
+ * client must match (vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts).
+ *
  * Transform a SequenceDefinition into a docgen DocumentIR: each participant → a
  * 'call-frame' IrNode; each message → an IrEdge (a 'recurse'-kind message's edge
  * id carries the ':repeat' suffix the sequenceDiagram emitter turns into a
@@ -288,4 +302,79 @@ export function sequenceDefinitionToIr(seqDef: SequenceDefinition): DocumentIR {
 		narrated:            { sections: sequenceNarratedSections(seqDef) },
 		generatedAtRevision: 'authored-sequence',
 	};
+}
+
+// ---------------------------------------------------------------------------
+// LLD-d9f85b3c S001/t6 — the sequence companion page content
+// ---------------------------------------------------------------------------
+
+/** The kind badge on a sequence companion page. */
+export const SEQUENCE_KIND_LABEL = 'Sequence diagram';
+
+/**
+ * Build the sequence companion page from its definition: an autonumbered
+ * sequenceDiagram with each message's own label (dashed arrows for returns, a
+ * recursion note after a recurse step, a note for each truncation), plus a
+ * participants table and the messages table in call order. Pure.
+ */
+export function sequenceDefinitionToPage(seqDef: SequenceDefinition, title: string): CompanionPageContent {
+	const participants = seqDef.participants ?? [];
+	const messages = seqDef.messages ?? [];
+	const truncations = seqDef.truncations ?? [];
+	const ids = new MermaidIds('p');
+	for (const p of participants) ids.id(p.id);
+	const nameOf = new Map(participants.map(p => [p.id, p.label ?? p.id]));
+	const name = (id: string): string => nameOf.get(id) ?? id;
+
+	const lines = ['sequenceDiagram', '  autonumber'];
+	for (const p of participants) lines.push(`  participant ${ids.id(p.id)} as ${mermaidLineText(p.label ?? p.id)}`);
+	for (const m of messages) {
+		const arrow = m.kind === 'return' ? '-->>' : '->>';
+		lines.push(`  ${ids.id(m.from)}${arrow}${ids.id(m.to)}: ${mermaidLineText(m.label)}`);
+		if (m.kind === 'recurse') lines.push(`  Note over ${ids.id(m.to)}: recursion`);
+	}
+	for (const t of truncations) lines.push(`  Note over ${ids.id(t.atParticipant)}: ${mermaidLineText(t.note)}`);
+
+	const kindCell = (m: SequenceMessage): TaggedCell =>
+		m.kind === 'return' ? { tag: 'return', text: 'return' } : { tag: 'call', text: m.kind ?? 'call' };
+	const description: DescriptionBlock[] = [
+		{
+			heading: 'Participants',
+			lead: `${participants.length} ${participants.length === 1 ? 'participant' : 'participants'}, `
+				+ `${messages.length} ${messages.length === 1 ? 'message' : 'messages'}, in call order.`,
+			columns: ['Participant', 'Id', 'Description'],
+			rows: participants.map(p => [p.label ?? p.id, p.id, p.description ?? null]),
+		},
+		{
+			heading: 'Messages',
+			columns: ['Step', 'From → To', 'Message', 'Kind', 'Description'],
+			rows: messages.map((m, i) => [String(i + 1), `${name(m.from)} → ${name(m.to)}`, m.label, kindCell(m), m.description ?? m.note ?? null]),
+		},
+	];
+	if (truncations.length > 0) {
+		description.push({
+			heading: 'Truncations',
+			lead: 'Where the trace was cut off at a depth limit.',
+			columns: ['Participant', 'Note'],
+			rows: truncations.map(t => [name(t.atParticipant), t.note]),
+		});
+	}
+	return {
+		title,
+		kindLabel: SEQUENCE_KIND_LABEL,
+		...(seqDef.narrative !== undefined ? { narrative: seqDef.narrative } : {}),
+		visual: { kind: 'mermaid', source: lines.join('\n') },
+		description,
+	};
+}
+
+/** LLD-d9f85b3c S001/t9: LOW findings for a missing narrative and for participants
+ *  and messages with no description. Never part of validateSequenceDefinition. */
+export function sequenceCompletenessFindings(seqDef: SequenceDefinition): readonly DimensionFinding[] {
+	const undescribed = [
+		...(seqDef.participants ?? []).filter(p => !described(p.description)).map(p => `participant ${p.id}`),
+		...(seqDef.messages ?? []).map((m, i) => [m, i] as const).filter(([m]) => !described(m.description) && !described(m.note))
+			.map(([m, i]) => `message ${i + 1} (${m.label})`),
+	];
+	return completenessFindings('diagram', 'sequenceDefinition', described(seqDef.narrative), undescribed);
 }

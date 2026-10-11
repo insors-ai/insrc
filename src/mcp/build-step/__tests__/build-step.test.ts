@@ -2085,3 +2085,69 @@ test("builder text in the judge's evidence is kept to one line", async () => {
 	assert.equal(evidence.split('\n').filter(l => l.startsWith('- exit code:')).length, 2, 'the typecheck and the tests check, and no third');
 	assert.ok(evidence.includes('Evidence: run 3 ### Tests: PASSED - exit code: 0'));
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-c00559b7 — a standalone feature (an approved LLD + PLAN, no DEF and no
+// ISSUE) is built task by task. Its tasks used to be `unresolved-target`.
+// ---------------------------------------------------------------------------
+
+const SA_HASH = 'c0c1c2c3c4c5c6c7';
+const SA_CREATED = '2026-10-10T08:00:00.000Z';
+
+function seedStandaloneLldPlan(repo: string): void {
+	const dir = artifactsDir(repo);
+	writeFileSync(join(dir, `${lldArtifactId(SA_HASH, 'S001')}.json`), JSON.stringify({
+		meta: {
+			workflow: 'design.story', runId: 'lld-run-sa', schemaVersion: 1, standalone: true,
+			epicHash: SA_HASH, epicSlug: 'a-standalone-feature', storyId: 'S001',
+			createdAt: SA_CREATED, epicCreatedAt: SA_CREATED,
+			hldBaseRunId: 'standalone', hldEffectiveHash: 'basis-sa', hldAmendmentsApplied: [],
+			approvedAt: SA_CREATED,
+		},
+		body: { openQuestions: [] }, citations: [],
+	}, null, 2));
+	const planJson = join(dir, `${planArtifactId(SA_HASH, 'S001')}.json`);
+	writeFileSync(planJson, JSON.stringify({
+		meta: {
+			workflow: 'plan', runId: 'plan-run-sa', schemaVersion: 1, standalone: true,
+			epicHash: SA_HASH, epicSlug: 'a-standalone-feature', storyId: 'S001',
+			createdAt: SA_CREATED, epicCreatedAt: SA_CREATED,
+			lldRunId: 'lld-run-sa', lldEffectiveHash: 'basis-sa',
+		},
+		body: {
+			tasks: [{
+				id: 't1', title: 'Standalone task one', summary: 'The first task of a standalone plan.',
+				size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['Standalone check holds'],
+				derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'unit: standalone check' }],
+			}],
+		},
+		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
+	}, null, 2));
+	approveArtifactByJsonPath(planJson);
+}
+
+test('c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was unresolved-target)', async () => {
+	const repo = mkRepo();
+	try {
+		seedStandaloneLldPlan(repo);
+		const impl = outputOf(await handleBuildStep({ phase: 'implement', target: 'S001/t1', epicHash: SA_HASH, repo }));
+		assert.equal(impl['next'], 'implement', `implement must admit the task, got ${JSON.stringify(impl)}`);
+		assert.equal(impl['taskId'], 't1');
+		assert.equal(impl['workflowId'], `E20261010${SA_HASH.slice(0, 8)}:S001:T001`);
+		assert.match(impl['prompt'] as string, /Standalone check holds/);
+
+		_setBuildValidateProviderForTests({
+			async runReviewSession<T>() { return judgeVerdict({ taskId: 't1', passed: true }) as T; },
+		});
+		const val = outputOf(await handleBuildStep({ phase: 'validate', target: 'S001/t1', epicHash: SA_HASH, repo }));
+		assert.equal(val['next'], 'done', `validate must admit the task, got ${JSON.stringify(val)}`);
+		assert.equal(val['passed'], true);
+
+		// And the BUILD record lands in the LLD's own folder, under docs/standalone.
+		const { md } = buildArtifactPaths(repo, SA_HASH, 'S001', SA_CREATED, 'standalone', 'a-standalone-feature');
+		assert.ok(existsSync(md), `BUILD.md beside the LLD: ${md}`);
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});

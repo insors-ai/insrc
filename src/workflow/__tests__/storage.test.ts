@@ -575,7 +575,9 @@ test('0855311b — inheritedStoryStandalone: the head wins, the LLD is the fallb
 		// LLD only — the triage-routed Small story, which has no definition head.
 		seedMeta(r.repo, `LLD-${T5_HASH}-S001`, { createdAt: T5_CREATED, standalone: true });
 		assert.equal(inheritedStoryStandalone(r.repo, T5_HASH, 'S001'), true, 'the LLD answers when there is no head');
-		assert.equal(inheritedStoryStandalone(r.repo, T5_HASH, 'S002'), undefined, 'another Story\'s LLD does not answer');
+		// ISSUE-c00559b7 — the LLD now HEADS a work item with no DEF/ISSUE, so its
+		// placement is the whole work item's, a sibling Story included.
+		assert.equal(inheritedStoryStandalone(r.repo, T5_HASH, 'S002'), true, 'the LLD head places every Story of its work item');
 
 		// A head that speaks outranks the LLD.
 		seedMeta(r.repo, `ISSUE-${T5_HASH}`, { createdAt: T5_CREATED, standalone: false });

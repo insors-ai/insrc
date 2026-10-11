@@ -43,7 +43,7 @@ import {
 	type ArtifactKind,
 	type WorkItemKind,
 } from './path-scheme.js';
-import { ARTIFACT_ID_MARKER_RE, ARTIFACTS_DIR } from './storage.js';
+import { ARTIFACT_ID_MARKER_RE, ARTIFACTS_DIR, compareStoryOrdinal } from './storage.js';
 
 const log = getLogger('workflow:migrate-docs-tree');
 
@@ -298,6 +298,14 @@ function slugFromFlatFilename(kind: ArtifactKind, storyId: string | undefined, f
 	return body.length > 0 ? body : undefined;
 }
 
+/** The lowest-ordinal Story's LLD among a work item's members, by the same
+ *  rule storage uses to pick a work item's head LLD. */
+function lowestOrdinalLld(members: readonly Artifact[]): Artifact | undefined {
+	return members
+		.filter(m => m.kind === 'LLD')
+		.sort((a, b) => compareStoryOrdinal(a.storyId ?? '', b.storyId ?? ''))[0];
+}
+
 /**
  * Compute the migration plan PURELY — no disk writes, no git. Enumerates the
  * artifact set from `.insrc/artifacts/*.json`, groups by work item, derives one
@@ -356,22 +364,33 @@ export function planMigration(repoPath: string): MigrationPlan {
 	const segmentRoots = new Map<string, { readonly root: string; readonly identity: WorkItemIdentity; readonly groupHash: string }>();
 
 	for (const [hash, members] of [...groups.entries()].sort()) {
-		const workItemKind: WorkItemKind = members.some(m => m.standalone) ? 'standalone' : 'epic';
+		const def   = members.find(m => m.kind === 'DEF');
+		const issue = members.find(m => m.kind === 'ISSUE');
+		// ISSUE-c00559b7 — with no DEF and no ISSUE, the lowest-ordinal Story's LLD
+		// HEADS the work item, as readEpicDefinitionCore decides for the live writer.
+		// Such an item is never an epic, so it is standalone even when no member
+		// carries the flag (a legacy standalone LLD wrote none).
+		const lldHead = def === undefined && issue === undefined ? lowestOrdinalLld(members) : undefined;
+		const workItemKind: WorkItemKind = members.some(m => m.standalone) || lldHead !== undefined ? 'standalone' : 'epic';
 
 		// Anchor createdAt: prefer the STAMPED epicCreatedAt (S002) — that IS the
 		// folder key the live writer uses, so migrated + future-written members
 		// coincide. Fall back to the DEF's createdAt (its own anchor; what the stamp
 		// would have been), else a standalone item's own (the LLD's, or the earliest
 		// member). Shared by every member so the group stays in one folder.
-		const def = members.find(m => m.kind === 'DEF');
-		const lld = members.find(m => m.kind === 'LLD');
+		//
+		// An LLD-headed item anchors on its head LLD first (its stamp, else its own
+		// createdAt) — the key that LLD's own folder uses — so a later member's stamp
+		// written while the item had no head cannot pull the group elsewhere.
+		const lld = lldHead ?? members.find(m => m.kind === 'LLD');
 		const stamped = def?.epicCreatedAt ?? members.map(m => m.epicCreatedAt).find((c): c is string => typeof c === 'string');
-		const anchor = stamped
+		const anchor = (lldHead !== undefined ? lldHead.epicCreatedAt ?? lldHead.createdAt : undefined)
+			?? stamped
 			?? def?.createdAt
 			?? lld?.createdAt
 			?? members.map(m => m.createdAt).filter((c): c is string => typeof c === 'string').sort()[0];
 
-		// Slug label: prefer the DEFINITION HEAD's slug (DEF, else ISSUE), then any
+		// Slug label: prefer the HEAD's slug (DEF, else ISSUE, else the head LLD), then any
 		// slug-carrying member, then a slug-named flat filename. The head ordering is
 		// explicit rather than incidental: members arrive in sorted-id order, where
 		// `BUILD-` precedes `DEF-`/`ISSUE-`, so a downstream record that carries its
@@ -380,9 +399,9 @@ export function planMigration(repoPath: string): MigrationPlan {
 		// precedence (t1), so the migration and the live writer agree on the label.
 		const slugOf = (m: Artifact | undefined): string | undefined =>
 			typeof m?.epicSlug === 'string' && m.epicSlug.length > 0 ? m.epicSlug : undefined;
-		const issue = members.find(m => m.kind === 'ISSUE');
 		let slug = slugOf(def)
 			?? slugOf(issue)
+			?? slugOf(lldHead)
 			?? members.map(m => m.epicSlug).find((s): s is string => typeof s === 'string' && s.length > 0);
 		if (slug === undefined) {
 			for (const m of members) {

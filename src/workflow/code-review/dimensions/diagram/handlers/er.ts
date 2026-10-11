@@ -21,7 +21,7 @@ import type { LLMProvider } from '../../../../../shared/types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding } from '../../../types.js';
 import type { CompanionArtifactRef } from '../../../../artifacts/companion/types.js';
 import type { ErDefinition } from '../../../../artifacts/companion/er.js';
-import { validateErDefinition } from '../../../../artifacts/companion/er.js';
+import { erCompletenessFindings, validateErDefinition } from '../../../../artifacts/companion/er.js';
 import type { FunctionalDefinition } from '../../../../artifacts/functional-definition.js';
 import { registerDiagramHandler, type DiagramAdherenceHandler } from '../registry.js';
 
@@ -61,6 +61,8 @@ export const erDiagramHandler: DiagramAdherenceHandler = {
 		// (1) Validate the authored erDefinition JSON element (never the rendered doc).
 		if (body.erDefinition !== undefined) {
 			findings.push(...validateErDefinition(body.erDefinition, body.functionalDefinition));
+			// LLD-d9f85b3c S001/t9: completeness (narrative / descriptions) is LOW and never blocks.
+			findings.push(...erCompletenessFindings(body.erDefinition));
 		}
 
 		// (2) A referenced-but-absent companion file — a doc claiming an ER it does

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>insrc · Document review pane — functional requirements</title><style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f5f8;color:#1b1f24;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.page{max-width:1180px;margin:0 auto;padding:28px 28px 48px}
+.mock-banner{background:#fff8e1;border:1px solid #f0d58a;color:#7a5b00;border-radius:6px;padding:6px 12px;font-size:12px;margin-bottom:18px}
+header.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:18px;border-bottom:2px solid #1f3a8a}
+.hdr .proj{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#5b6673;font-weight:600}
+.hdr h1{margin:4px 0 0;font-size:24px;color:#0f1d4a}
+.hdr .kind{display:inline-block;margin-top:6px;font-size:11px;font-weight:600;color:#1f3a8a;background:#e6ecfb;border-radius:10px;padding:2px 10px}
+table.ref{border-collapse:collapse;font-size:13px;min-width:380px}
+table.ref th{text-align:left;font-weight:600;color:#44505e;background:#eef1f6;padding:6px 12px;border:1px solid #d6dbe1;width:120px;white-space:nowrap}
+table.ref td{padding:6px 12px;border:1px solid #d6dbe1;background:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+table.ref a{color:#1f6feb;text-decoration:none}
+section.blk{margin-top:26px}
+section.blk>h2{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:#1f3a8a;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid #d6dbe1}
+.context{font-size:13px;color:#44505e;background:#eef1f6;border-left:3px solid #1f3a8a;padding:8px 12px;border-radius:0 4px 4px 0;margin:0 0 10px}
+.narr p{margin:0 0 8px;max-width:900px}
+.vp-wrap{border:1px solid #c9d0d9;border-radius:8px;background:#fff;overflow:hidden;box-shadow:0 1px 3px rgba(16,22,26,.06)}
+.vp-bar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f7f8fa;border-bottom:1px solid #e1e5ea;font-size:12px;color:#5b6673}
+.vp-bar .sp{flex:1}
+.vp-bar button{font:inherit;font-size:12px;border:1px solid #c9d0d9;background:#fff;border-radius:4px;padding:3px 9px;cursor:pointer;color:#1b1f24}
+.vp-bar button:hover{background:#eef1f6}
+.vp-bar .zl{min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+.vp{position:relative;height:62vh;min-height:380px;overflow:hidden;cursor:grab;background:#fff;
+  background-image:radial-gradient(#e3e7ec 1px,transparent 1px);background-size:18px 18px}
+.vp.drag{cursor:grabbing}
+.stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.stage pre.mermaid{margin:0;background:transparent}
+.desc h3{font-size:14px;margin:18px 0 8px;color:#0f1d4a}
+.desc p.lead{margin:0 0 10px;color:#44505e}
+table.dt{border-collapse:collapse;width:100%;font-size:13px;background:#fff}
+table.dt th{text-align:left;background:#eef1f6;color:#44505e;font-weight:600;padding:7px 10px;border:1px solid #d6dbe1}
+table.dt td{padding:7px 10px;border:1px solid #d6dbe1;vertical-align:top}
+table.dt td.m{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;white-space:nowrap}
+table.dt td.c{text-align:center}
+td.missing{color:#9aa4af}
+.tag{display:inline-block;font-size:11px;border-radius:9px;padding:1px 8px;background:#eef1f6;color:#44505e;margin-right:4px}
+.tag.pk{background:#fde9c9;color:#8a5300}.tag.fk{background:#dcebff;color:#174ea6}
+.tag.call{background:#e6ecfb;color:#1f3a8a}.tag.ret{background:#e7f5ea;color:#1a7f37}
+footer.ft{margin-top:30px;padding-top:10px;border-top:1px dashed #c9d0d9;font-size:12px;color:#8b95a1;display:flex;justify-content:space-between}
+/* UX card (unchanged look from the current ux-mock renderer) */
+.ux-card{width:640px;background:#fff;border:1px solid #d6dbe1;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(16,22,26,.08);margin:24px}
+.ux-card>*+*{margin-top:10px}.ux-text{margin:0}.ux-bolder{font-weight:700}.ux-subtle{color:#6b7684}
+.ux-size-small{font-size:12px}.ux-size-medium{font-size:17px}.ux-color-accent{color:#1f6feb}
+.ux-container{position:relative;border:1px solid #e4e8ec;border-radius:6px;padding:12px;background:#fafbfc}.ux-container>*+*{margin-top:10px}
+.ux-columnset{display:flex;gap:12px}.ux-column{flex:1 1 0;min-width:0}
+.ux-label{display:block;font-size:12px;font-weight:600;color:#44505e;margin-bottom:4px}
+.ux-input{display:block;border:1px solid #c4ccd4;border-radius:5px;padding:7px 10px;color:#8b95a1;font-size:13px;min-height:34px}
+.ux-choices{display:flex;gap:14px}.ux-choice{font-size:13px}
+.ux-actions{display:flex;gap:8px}.ux-btn{border-radius:5px;padding:7px 14px;font-size:13px;font-weight:600}
+.ux-btn--submit{background:#1f6feb;color:#fff}.ux-btn--link{background:#fff;color:#1f6feb;border:1px solid #9dc1f5}
+.ux-pin.abs{position:absolute;left:-9px;top:-9px;margin:0}
+.ux-pin{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#cf6a00;color:#fff;font-size:10px;font-weight:700;text-align:center;margin-right:6px;vertical-align:middle}
+</style></head>
+<body><div class="page">
+<div class="mock-banner">MOCK — proposed companion template. Sample content taken from existing artifacts; descriptions are illustrative.</div>
+<header class="hdr">
+  <div>
+    <div class="proj">insrc</div>
+    <h1>Document review pane — functional requirements</h1>
+    <span class="kind">UX mock</span>
+  </div>
+  <table class="ref">
+    <tr><th>Work item</th><td>E20260929bfe98ff7:S002</td></tr>
+    <tr><th>Source doc</th><td><a href="./LLD.md">LLD-bfe98ff7f97178cf-s2 (LLD.md)</a></td></tr>
+    <tr><th>Date</th><td>2026-10-11 14:32</td></tr>
+    <tr><th>User</th><td>Subho Ghosh</td></tr>
+  </table>
+</header>
+<section class="blk narr"><h2>Narrative</h2>
+  <p class="context">Story S002 of Epic “Build VS Code plugin UI integration” — show a document&#x27;s functional requirements from its structured record.</p>
+  <p>When a reviewer opens a generated document, the pane replaces the generated bullet list under “Functional requirements” with one row per requirement, built from the record the artifact carries.</p><p>Each row shows the requirement&#x27;s stable id beside its outcome, so the same commitment can be recognised across stages. The approve and request-changes controls are unchanged from S001.</p>
+</section>
+<section class="blk"><h2>View</h2>
+  <div class="vp-wrap">
+    <div class="vp-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span>
+      <button id="zout" title="Zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in">+</button>
+      <button id="zfit">Fit</button><button id="z100">1:1</button></div>
+    <div class="vp" id="vp"><div class="stage" id="stage"><div class="ux-card">
+<p class="ux-text ux-bolder ux-size-medium"><span class="ux-pin">1</span>insrc docs review</p>
+<p class="ux-text ux-subtle ux-size-small"><span class="ux-pin">2</span>DEF-bfe98ff7f97178cf — build-vs-code-plugin-ui-integration</p>
+<div><span class="ux-label"><span class="ux-pin">3</span>Jump to section</span><span class="ux-input">2. Functional requirements ▾</span></div>
+<p class="ux-text ux-bolder ux-size-medium">2. Functional requirements</p>
+<div class="ux-container"><span class="ux-pin abs">4</span><div class="ux-columnset"><div class="ux-column" style="flex:0 0 220px"><p class="ux-text ux-bolder ux-color-accent"><span class="ux-pin">5</span>E20260929bfe98ff7:FR001</p></div>
+<div class="ux-column"><p class="ux-text">A reviewer opening a generated workflow document sees its functional requirements as discrete, individually identified outcomes.</p></div></div></div>
+<div class="ux-container"><div class="ux-columnset"><div class="ux-column" style="flex:0 0 220px"><p class="ux-text ux-bolder ux-color-accent">E20260929bfe98ff7:FR002</p></div>
+<div class="ux-column"><p class="ux-text">A reviewer can navigate a generated document by its structure rather than scrolling its full length.</p></div></div></div>
+<div><span class="ux-label"><span class="ux-pin">6</span>Reviewer note</span><span class="ux-input" style="min-height:68px">Optional note for the author…</span></div>
+<div class="ux-actions"><span class="ux-pin">7</span><span class="ux-btn ux-btn--submit">Approve</span><span class="ux-pin">8</span><span class="ux-btn ux-btn--submit" style="background:#57606a">Request changes</span><span class="ux-pin">9</span><span class="ux-btn ux-btn--link">Open source ↗</span></div>
+</div></div></div>
+  </div>
+</section>
+<section class="blk desc"><h2>Description</h2>
+<p class="lead">9 key elements. Numbers match the markers on the mock; layout-only containers are omitted.</p><table class="dt"><thead><tr><th>#</th><th>Element</th><th>Type</th><th>Id / target</th><th>Description</th></tr></thead><tbody><tr><td><span class="ux-pin">1</span></td><td>Title</td><td class="m">TextBlock</td><td class="m">—</td><td>Name of the review surface the reviewer has opened.</td></tr><tr><td><span class="ux-pin">2</span></td><td>Document id</td><td class="m">TextBlock</td><td class="m">—</td><td>The artifact under review and its Epic slug, so the reviewer knows which version they are approving.</td></tr><tr><td><span class="ux-pin">3</span></td><td>Section jump</td><td class="m">Input.ChoiceSet</td><td class="m">jumpTo</td><td>Jumps to any numbered section of the document.</td></tr><tr><td><span class="ux-pin">4</span></td><td>Requirement row</td><td class="m">Container</td><td class="m">—</td><td>One functional requirement: its stable id on the left, its outcome on the right.</td></tr><tr><td><span class="ux-pin">5</span></td><td>Requirement id</td><td class="m">TextBlock</td><td class="m">—</td><td>Identifier written straight off the record; never reformatted.</td></tr><tr><td><span class="ux-pin">6</span></td><td>Reviewer note</td><td class="m">Input.Text</td><td class="m">note</td><td class="missing">—</td></tr><tr><td><span class="ux-pin">7</span></td><td>Approve</td><td class="m">Action.Submit</td><td class="m">approve</td><td>Approves the artifact and advances the chain.</td></tr><tr><td><span class="ux-pin">8</span></td><td>Request changes</td><td class="m">Action.Submit</td><td class="m">requestChanges</td><td>Sends the note back to the author for another pass.</td></tr><tr><td><span class="ux-pin">9</span></td><td>Open source</td><td class="m">Action.OpenUrl</td><td class="m">./LLD.md</td><td>Opens the source document in a new tab.</td></tr></tbody></table>
+</section>
+<footer class="ft"><span>Generated by insrc · companion of LLD-bfe98ff7f97178cf-s2 (LLD.md)</span><span>2026-10-11 14:32</span></footer>
+</div>
+<script>
+(function(){
+  var vp=document.getElementById('vp'), st=document.getElementById('stage'), zl=document.getElementById('zl');
+  var s=1,x=0,y=0,MIN=0.2,MAX=8;
+  function apply(){st.style.transform='translate('+x+'px,'+y+'px) scale('+s+')';zl.textContent=Math.round(s*100)+'%';}
+  function zoomAt(f,cx,cy){var n=Math.min(MAX,Math.max(MIN,s*f));x=cx-(cx-x)*(n/s);y=cy-(cy-y)*(n/s);s=n;apply();}
+  function fit(){var w=st.scrollWidth,h=st.scrollHeight,W=vp.clientWidth,H=vp.clientHeight;if(!w||!h)return;
+    s=Math.min(W/w,H/h)*0.92;s=Math.min(s,2);x=(W-w*s)/2;y=(H-h*s)/2;apply();}
+  vp.addEventListener('wheel',function(ev){ev.preventDefault();var r=vp.getBoundingClientRect();
+    zoomAt(ev.deltaY<0?1.12:1/1.12,ev.clientX-r.left,ev.clientY-r.top);},{passive:false});
+  var d=null;
+  vp.addEventListener('pointerdown',function(ev){d={px:ev.clientX,py:ev.clientY,x:x,y:y};vp.classList.add('drag');vp.setPointerCapture(ev.pointerId);});
+  vp.addEventListener('pointermove',function(ev){if(!d)return;x=d.x+ev.clientX-d.px;y=d.y+ev.clientY-d.py;apply();});
+  vp.addEventListener('pointerup',function(){d=null;vp.classList.remove('drag');});
+  vp.addEventListener('dblclick',function(ev){var r=vp.getBoundingClientRect();zoomAt(1.5,ev.clientX-r.left,ev.clientY-r.top);});
+  function c(){return [vp.clientWidth/2,vp.clientHeight/2];}
+  document.getElementById('zin').onclick=function(){var p=c();zoomAt(1.25,p[0],p[1]);};
+  document.getElementById('zout').onclick=function(){var p=c();zoomAt(1/1.25,p[0],p[1]);};
+  document.getElementById('zfit').onclick=fit;
+  document.getElementById('z100').onclick=function(){s=1;x=20;y=20;apply();};
+  window.__fit=fit;
+  if(!window.__mermaidPending){setTimeout(fit,0);}
+})();
+</script>
+</body></html>

@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791731518838-abyfly",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-11T15:11:58.839Z",
+    "model": "claude:opus",
+    "elapsedMs": 111376,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c00559b7e38bb6ce",
+    "storyId": "S001",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "c00559b7e38bb6ce",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "docs/plans/companion-template-mocks/component-dependency.html",
+        "docs/plans/companion-template-mocks/er-model.html",
+        "docs/plans/companion-template-mocks/sequence-diagram.html",
+        "docs/plans/companion-template-mocks/ux-mock.html",
+        "src/mcp/__tests__/schema-registry.test.ts",
+        "src/mcp/build-step/__tests__/build-step.test.ts",
+        "src/mcp/server.ts",
+        "src/mcp/triage-step/__tests__/handler.test.ts",
+        "src/mcp/triage-step/phases/classify.ts",
+        "src/mcp/triage-step/phases/start.ts",
+        "src/mcp/triage-step/state.ts",
+        "src/mcp/triage-step/types.ts",
+        "src/workflow/__tests__/folder-identity-finalize.test.ts",
+        "src/workflow/__tests__/head-naming.test.ts",
+        "src/workflow/__tests__/id-resolve.test.ts",
+        "src/workflow/__tests__/lld-head-resolve.test.ts",
+        "src/workflow/__tests__/lld-head.test.ts",
+        "src/workflow/__tests__/migrate-docs-tree.test.ts",
+        "src/workflow/__tests__/storage.test.ts",
+        "src/workflow/artifacts/define.ts",
+        "src/workflow/artifacts/spec.ts",
+        "src/workflow/migrate-docs-tree.ts",
+        "src/workflow/orchestrator.ts",
+        "src/workflow/storage.ts",
+        "src/workflow/tracker/resolve.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/migrate-docs-tree.ts:276",
+            "message": "readMeta's return type declares optional properties without `| undefined` ({ createdAt?: string; epicCreatedAt?: string; epicSlug?: string; standalone?: boolean }). The repo convention under exactOptionalPropertyTypes is `prop?: T | undefined`, and sibling code in src/workflow/storage.ts follows it (for example `standalone?: boolean | undefined` in pathsForWorkflow and storyRecordFolderArgs).",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/spec.ts:133",
+            "message": "spec.ts redefines private `firstSentence` (line 133) and exported `isCitationArray` (line 172), which duplicate the same helpers in src/workflow/artifacts/define.ts (lines 175 and 203). This rests on only two artifact modules, so it is reported as possible drift from a shared-helper idiom, not a confirmed breach.",
+            "expectationRef": "module-idiom:shared-artifact-helpers",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/migrate-docs-tree.ts:1",
+            "message": "Promised smoke check (planMigration dry run over this repo listing d9f85b3c's consolidation with no unmappable standalone entries) has no corresponding test in the grounding, and a grep of src/**/*.test.ts finds no reference to d9f85b3c. It may have been a manual dry run, but no build record confirms it ran or what it produced. Present-but-unverified at best; it cannot be confirmed from the evidence available.",
+            "expectationRef": "planMigration dry run over this repo lists d9f85b3c's consolidation with no unmappable standalone entries",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/storage.ts:1",
+            "message": "The changed storage symbols (readEpicDefinitionCore, lowestOrdinalLldId, compareStoryOrdinal, buildRecordFolderArgs, storyRecordFolderArgs, inheritedStoryStandalone) all show EMPTY testsReaching. The grounding is hollow, though: test bodies inside test() callbacks are not indexed as callers. For example, only the helper 'repo' in lld-head.test.ts reaches writeAtomic. Suites that target this code (storage.test.ts, lld-head.test.ts, folder-identity-finalize.test.ts) are in the changed set. These symbols are present but unverified, not proven unexercised. With no build record, their pass-state is unconfirmed.",
+            "expectationRef": "readEpicDefinitionCore head precedence, LLD fallback, standalone:true and tracker",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/migrate-docs-tree.ts:1",
+            "message": "planMigration, lowestOrdinalLld, storyOrdinalOf and applyMigration show EMPTY testsReaching. migrate-docs-tree.test.ts calls planMigration(repo) directly (e.g. lines 69, 89, 102), so the empty edges are a graph-indexing gap and not missing coverage. The seedSplitStandalone({flagged}) fixture matches the promised tests for the anchorless split item and the unflagged LLD-headed item. These tests are present, but their pass-state is unverified because there is no build record.",
+            "expectationRef": "planMigration consolidates an anchorless split item into the LLD folder / planMigration groups an unflagged LLD-headed item as standalone",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/tracker/resolve.ts:1",
+            "message": "resolveWorkflowRef, workflowIdForIssue, listEpicHeads, readEpicIdentity, resolveByLabel and storyEvidence show EMPTY testsReaching. id-resolve.test.ts and lld-head-resolve.test.ts both import resolveWorkflowRef and workflowIdForIssue and call them directly (id-resolve.test.ts:294-299). Their fixtures (seedStandalone/seedEpic/seedBugfix, addRivalDefEpicWithS1, setupDeclaredStoryRepo) match the promised DEF/ISSUE/LLD-only, label-tiering and workflowIdForIssue tests. These tests are present, but their pass-state is unverified.",
+            "expectationRef": "resolveWorkflowRef reaches an LLD+PLAN-only task by scoped label and hierarchical id",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/mcp/triage-step/state.ts:1",
+            "message": "encodeState/decodeState, handleStart and buildNextCall show EMPTY testsReaching. handler.test.ts:227 has 'the triage state token round-trips specHash', and the startWithSpec/specRepo helpers cover start validation of specHash and classify forwarding it into the nextCall. These tests are present, but their pass-state is unverified because there is no build record.",
+            "expectationRef": "triage state round-trips specHash / triage start validates specHash and classify forwards it into the nextCall",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/orchestrator.ts:1",
+            "message": "finalizePlan, finalizeStandaloneLld and headLabel show EMPTY testsReaching. finalizeArtifact is reached only through the slugOf helper in head-naming.test.ts. The head-naming fixtures (specEmit/defineEmit/issueEmit/lldBody) and the folder-identity-finalize fixtures (planIntent/minimalPlanBody) match the promised head-naming test and the 'finalizePlan writes PLAN.md into the anchor LLD's folder' test. The seededFromSpec regression guard lives in seed-focus.test.ts, which is outside the changed set. These tests are present, but their pass-state is unverified.",
+            "expectationRef": "head naming from title with focus fallback (SPEC, DEF, ISSUE, standalone LLD) / finalizePlan writes PLAN.md into the anchor LLD's folder",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/__tests__/build-step.test.ts:1",
+            "message": "The promised 'insrc_build_step implement + validate admit t1 of a standalone plan' test appears to be present: seedStandaloneLldPlan was added and the standalone/standaloneTurn helpers drive handleBuildStep. Its pass-state is unverified because there is no build record.",
+            "expectationRef": "insrc_build_step implement + validate admit t1 of a standalone plan",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/migrate-docs-tree.ts:180",
+            "message": "`storyOrdinalOf` re-derives a Story ordinal by calling `deriveWorkItemIdentity` with a dummy all-zero hash and an epoch timestamp, then reading `.story`, and returns undefined on any error. It reaches the same `storyIdToOrdinal` parse that `compareStoryOrdinal` (storage.ts:450) calls directly. That gives the codebase a second, roundabout ordinal path, while the recent commits set out to have one story-ordinal rule. If `storyWorkflowId`/`deriveWorkItemIdentity` ever adds validation on the hash or date, this helper will quietly start returning undefined. `nestedShapeKey`/`artifactShapeKey` would then drop markerless BUILD/CR artifacts from the nested index without any error, while `compareStoryOrdinal` keeps working. Call `storyIdToOrdinal` directly, or share one exported ordinal helper.",
+            "counterpartRef": "compareStoryOrdinal",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/spec.ts:172",
+            "message": "`isCitationArray` is a byte-for-byte copy of the exported guard in define.ts:203, and both are exported. If the Citation shape changes and only one copy is updated, the two validators will disagree. Import the define.ts guard, or move it to a shared module.",
+            "counterpartRef": "isCitationArray",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/spec.ts:133",
+            "message": "The private `firstSentence` helper is identical to `firstSentence` in define.ts:175 (same regex and same 80/77-char truncation). This is minor duplication. Extract it to a shared render util.",
+            "counterpartRef": "firstSentence",
+            "confidence": "breach"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 7,
+      "low": 5
+    }
+  }
+}

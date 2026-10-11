@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "workflow": "brainstorm",
+    "runId": "wf-1791720795206-ug7r92",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-11T12:13:38.810Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 23603,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "specHash": "34d7bb72df47a5e5",
+    "epicSlug": "anchor-standalone-features-their-lld-name",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-11T12:15:33.293Z"
+  },
+  "body": {
+    "category": "design",
+    "intent": "Standalone features (triage → standalone design.story LLD → plan → build) can't be built task by task because the tracker resolver anchors an epic only on DEF or ISSUE, and each stage names its docs folder from its own focus text, splitting one story's docs across folders; the originating SPEC is never linked. Converged: (1) the standalone LLD is the third identity anchor after DEF and ISSUE, no new artifact kind; (2) insrc_triage accepts and verifies an approved specHash and threads it into the design.story nextCall, stamping meta.seededFromSpec and showing 'Seeded from SPEC-...' in the LLD, with the SPEC keeping its own hash and folder; (3) the anchor LLD's slug comes from triage's storyTitle (fallback focus-derived) and PLAN/BUILD/TESTS/CR inherit epicSlug from the anchor; (4) the resolver accepts any LLD for a hash with no DEF/ISSUE (including legacy unflagged), and migrate-docs-tree.ts consolidates anchorless items' story-scoped files into the anchor LLD's folder (dry-run, then apply, no artifacts created); (5) a head artifact's synthesizer writes a short outcome-phrased `title` in the same pass (SPEC body gains `title`) and the folder slug derives from it, with no extra LLM call. One rule: a folder is named from its head artifact's title and everything downstream inherits it.",
+    "scopeBoundary": "Only PLAN-bearing routes need an anchor (epic: DEF, bugfix sized: ISSUE, standalone feature: the LLD); small/trivial/bugfix-small are unaffected.",
+    "nonGoals": [
+      "A new artifact kind (no FEAT artifact, no minimal one-story DEF)",
+      "Promoting the SPEC to be the anchor, or epic hash = SPEC hash",
+      "Moving the SPEC md into the feature folder",
+      "Slug from SPEC intent text or a deterministic first-sentence slug",
+      "A separate cheap-tier LLM call to produce a slug",
+      "Read-compat only without consolidation of existing items",
+      "Renaming historical folders to story titles",
+      "Changes to the epic or bugfix routes beyond naming",
+      "Anchors for small/trivial/bugfix-small routes"
+    ],
+    "decisions": [],
+    "openItems": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-b2e05b043846451c"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/slug.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/migrate-docs-tree.ts"
+    }
+  ]
+}

@@ -665,7 +665,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (governor !== undefined && ev.kind === 'file-edit') void governor.observe(ev.path);
       },
       onTerminal: () => {
-        deps.store.save(s); // persist the turn's transcript rows (an errored turn's too)
+        trySave(s); // persist the turn's transcript rows (an errored turn's too); a failing save never breaks the turn
         if (governor !== undefined) void governor.resolveTurn();
         postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
       },

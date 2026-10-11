@@ -2699,3 +2699,29 @@ test('a failing store save or a failing process stop never becomes an unhandled 
     process.off('unhandledRejection', onUnhandled);
   }
 });
+
+test('a save failing at the end of a turn is logged; the turn still ends cleanly and the history is refreshed', async () => {
+  const fc = fakeChannel();
+  const warns: string[] = [];
+  const base = createInMemoryChatSessionStore();
+  let failSaves = false;
+  const store = {
+    ...base,
+    save: (s: Parameters<typeof base.save>[0]) => {
+      if (failSaves) throw new Error('disk full');
+      base.save(s);
+    },
+  };
+  const { adapter, procs } = procAdapter();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', logger: { warn: (m) => warns.push(m), error: () => {} } });
+  host.open();
+  failSaves = true;
+  const listsBefore = historyLists(fc).length;
+  fc.send(env('submit-turn', { text: 'hi' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(turnEvents(fc).map((e) => e.kind), ['assistant-delta', 'done'], 'no error is shown after a good answer');
+  assert.ok(historyLists(fc).length > listsBefore, 'the history dropdown is still refreshed');
+  assert.match(warns.join('\n'), /not saved: disk full/);
+  procs[0]!.exitNow();
+});

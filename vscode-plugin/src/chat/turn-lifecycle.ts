@@ -42,7 +42,10 @@ export interface TurnSink {
   beforeRun(): Promise<void>;
   /** Every event of the turn, the terminal one included. */
   onEvent(ev: TurnEvent): void;
-  /** After onEvent of the terminal event, its cursor cleared and nativeSessionId set. May throw. */
+  /**
+   * After onEvent of the terminal event, its cursor cleared, nativeSessionId set and the event
+   * iterator finished. A throw is logged: the turn has finished, so it is not a turn error.
+   */
   onTerminal(ev: TurnEvent & { kind: 'done' | 'error' }): void;
   onError(message: string, turnId: string): void;
 }
@@ -131,6 +134,9 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   // The wait of a turn that is queued behind the session's previous process; aborting it drops
   // the turn without stopping anything (a newer submit, Stop, a chat switch).
   let waitCtl: AbortController | undefined;
+  // A turn that holds its lease but has not started its CLI yet (beforeRun runs); aborting it
+  // drops the turn before it starts anything (Stop, or a chat switch that stops).
+  let setupCtl: AbortController | undefined;
   // The newest CLI process this host started; kept until it exits, even after its answer, so Stop
   // can end a process that is still running in the background.
   let liveProc: TurnProcess | undefined;
@@ -257,7 +263,15 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       try {
         // Inside the try, so a failed beforeRun or adapter start is a turn error and the lease is
         // still released.
-        await sink.beforeRun();
+        const setup = new AbortController();
+        setupCtl = setup;
+        try {
+          await sink.beforeRun();
+        } finally {
+          if (setupCtl === setup) setupCtl = undefined;
+        }
+        // Superseded, closed or stopped while beforeRun ran: start nothing (the lease is released).
+        if (setup.signal.aborted || !isCurrent(myGen)) return;
         // Hold the iterator explicitly so a stop or detach can .return() it. A return() made while
         // a next() is pending only takes effect once that next() settles (the next line, or the
         // end of the output when the process exits).
@@ -280,6 +294,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           if (!isCurrent(myGen)) {
             if (isTerminal(ev)) {
               clearCursor(s, ev.turnId);
+              keepNativeSession(s, ev);
+              trySave(s); // a reload must not follow a turn that has ended
               finishIterator(iterator); // as on the live path: finish the generator
               break;
             }
@@ -290,8 +306,12 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           if (isTerminal(ev)) {
             clearCursor(s, ev.turnId);
             keepNativeSession(s, ev);
-            sink.onTerminal(ev);
             finishIterator(iterator); // finish the generator; the process is left to exit
+            try {
+              sink.onTerminal(ev);
+            } catch (err) {
+              log.warn(`[chat] session ${s.id}: after turn ${ev.turnId} ended: ${err instanceof Error ? err.message : String(err)}`);
+            }
             break;
           }
         }
@@ -324,6 +344,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     following = { sessionId: s.id, ctl };
     const cursor = cursorTracker(s, Date.now());
     const turnId = live.cursor.turnId;
+    let attached: TurnProcess | undefined;
     void (async () => {
       try {
         const events = adapter.resume(
@@ -331,6 +352,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           {
             signal: ctl.signal,
             onAttach: (p) => {
+              attached = p;
               resumedProc = p;
             },
             onProgress: cursor.progress,
@@ -351,19 +373,22 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         log.warn(`[chat] session ${s.id}: could not resume turn ${turnId}: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         if (following?.ctl === ctl) following = undefined;
-        resumedProc = undefined;
+        // Only this follow's process: a newer follow (another session) may have attached its own.
+        if (attached !== undefined && resumedProc === attached) resumedProc = undefined;
       }
     })();
   }
 
   /**
-   * Ends the live turn: drops a turn waiting for its lease, returns the iterator, cancels the
-   * provider's turn and stops the newest CLI process. Resolves once the process has exited (or
-   * there was none). Idempotent.
+   * Ends the live turn: drops a turn waiting for its lease or still setting up (beforeRun),
+   * returns the iterator, cancels the provider's turn and stops the newest CLI process. Resolves
+   * once the process has exited (or there was none). Idempotent.
    */
   const stopLive = async (): Promise<void> => {
     waitCtl?.abort();
     waitCtl = undefined;
+    setupCtl?.abort();
+    setupCtl = undefined;
     detachLive = undefined;
     const it = activeIterator;
     const prov = activeProvider;

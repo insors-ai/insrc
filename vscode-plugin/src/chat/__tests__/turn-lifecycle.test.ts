@@ -724,3 +724,136 @@ test("a generator whose cleanup throws when the turn finishes it is not an unhan
     process.off('unhandledRejection', onUnhandled);
   }
 });
+
+test('a turn superseded or stopped while beforeRun runs starts no CLI', async () => {
+  let releaseA!: () => void;
+  const gateA = new Promise<void>((r) => (releaseA = r));
+  const { adapter, runs } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter) });
+  const pa = h.lc.start(h.session, { ...REQ, prompt: 'first' }, recSink({ beforeRun: () => gateA }).sink);
+  await tick(10); // the first turn holds the lease and is in beforeRun
+  const b = recSink();
+  const pb = h.lc.start(h.session, { ...REQ, prompt: 'second' }, b.sink);
+  await waitFor(() => b.calls.includes('waiting'));
+  releaseA();
+  await Promise.race([pa, tick(100)]);
+  await waitFor(() => runs.length === 1);
+  assert.equal(runs[0]!.req.prompt, 'second', 'the superseded turn never started its CLI');
+  runs[0]!.feed.push(done('t1'));
+  await pb;
+  runs[0]!.proc.exitNow();
+
+  let releaseC!: () => void;
+  const gateC = new Promise<void>((r) => (releaseC = r));
+  const c = scriptedAdapter();
+  const h2 = harness({ providers: registry(c.adapter) });
+  const pc = h2.lc.start(h2.session, REQ, recSink({ beforeRun: () => gateC }).sink);
+  await tick(10);
+  await h2.lc.stop(); // Stop while the turn sets up
+  releaseC();
+  await Promise.race([pc, tick(100)]);
+  await tick(10);
+  assert.equal(c.runs.length, 0, 'a turn stopped during beforeRun starts no CLI');
+  const d = recSink();
+  const pd = h2.lc.start(h2.session, REQ, d.sink);
+  await waitFor(() => c.runs.length === 1);
+  assert.ok(!d.calls.includes('waiting'), "the stopped turn's lease was released");
+  c.runs[0]!.feed.push(done('t1'));
+  await pd;
+  c.runs[0]!.proc.exitNow();
+});
+
+test("a superseded turn's end saves its cleared cursor and keeps its native session", async () => {
+  const { adapter, runs } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter) });
+  const pa = h.lc.start(h.session, REQ, recSink().sink);
+  await waitFor(() => runs.length === 1);
+  runs[0]!.feed.push(delta('t1'));
+  await waitFor(() => h.session.liveTurn?.cursor.offset === 10);
+  const b = recSink();
+  const pb = h.lc.start(h.session, REQ, b.sink);
+  await waitFor(() => b.calls.includes('waiting'));
+  runs[0]!.feed.push(done('t1', 'native-A'));
+  await pa;
+  assert.equal(h.saves.at(-1), undefined, 'the session is saved with the cursor cleared');
+  assert.equal(h.session.nativeSessionId, 'native-A');
+  await h.lc.stop(); // drops the waiting turn and ends the first process
+  await pb;
+});
+
+test('a throwing onTerminal is logged, still finishes the generator and is not a turn error', async () => {
+  const warnings: string[] = [];
+  const proc = fakeLiveProc(3101);
+  const f = feed();
+  let cleanedUp = false;
+  const adapter: StreamAdapter = {
+    async *run(_req, o): AsyncIterable<TurnEvent> {
+      o?.onSpawn?.(proc);
+      try {
+        for (;;) {
+          const r = await f.next();
+          if (r.done === true) return;
+          yield r.value;
+        }
+      } finally {
+        cleanedUp = true;
+      }
+    },
+    async *resume(): AsyncIterable<TurnEvent> {},
+    cancel: async () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const h = harness({ providers: registry(adapter), warnings });
+  const a = recSink({
+    onTerminal: () => {
+      throw new Error('history refresh failed');
+    },
+  });
+  const p = h.lc.start(h.session, REQ, a.sink);
+  f.push(done('t1'));
+  await p;
+  await tick(10);
+  assert.deepEqual(a.calls, ['beforeRun', 'event:done'], 'a finished turn is not reported as an error');
+  assert.equal(cleanedUp, true, "the adapter's generator is finished");
+  assert.match(warnings.join('\n'), /after turn t1 ended: history refresh failed/);
+  proc.exitNow();
+});
+
+test("an aborted follow unwinding late does not drop the next follow's process, so Stop still ends it", async () => {
+  const procA = fakeLiveProc(4001);
+  const procB = fakeLiveProc(4002);
+  let releaseA!: () => void;
+  const gateA = new Promise<void>((r) => (releaseA = r));
+  const attached: number[] = [];
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {},
+    async *resume(req, o): AsyncIterable<TurnEvent> {
+      const proc = req.cursor.sessionId === 'A' ? procA : procB;
+      o?.onAttach?.(proc);
+      attached.push(proc.pid);
+      if (proc === procA) {
+        await gateA; // A unwinds only when the test lets it, after B attached
+        return;
+      }
+      await proc.exit;
+    },
+    cancel: async () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const h = harness({ providers: registry(adapter), isAlive: () => false });
+  const sessionA: ChatSession = { ...h.session, id: 'A', liveTurn: savedTurn(99) };
+  const sessionB: ChatSession = { ...h.session, id: 'B', liveTurn: savedTurn(99) };
+  h.lc.follow(sessionA, followSink(h).sink);
+  await waitFor(() => attached.includes(4001));
+  await h.lc.detach(); // a chat switch: A is no longer followed (its loop has not unwound yet)
+  h.lc.follow(sessionB, followSink(h).sink);
+  await waitFor(() => attached.includes(4002));
+  releaseA();
+  await tick(10);
+  await h.lc.stop();
+  assert.deepEqual(procB.signals, ['SIGTERM'], "Stop ends the followed session's process");
+  assert.deepEqual(procA.signals, [], "the detached session's process is left running");
+  procA.exitNow();
+});

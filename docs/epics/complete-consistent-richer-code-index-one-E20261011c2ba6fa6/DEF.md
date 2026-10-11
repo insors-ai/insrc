@@ -42,7 +42,7 @@ The code index cannot be trusted to be complete or consistent, and it records le
 **s1:**
 
 - **E20261011c2ba6fa6:S001:FR001** — A relationship whose target has not been indexed yet is kept and completed once the target exists.
-- **E20261011c2ba6fa6:S001:FR002** — A reindex rebuilds the relationships of files whose content has not changed.
+- **E20261011c2ba6fa6:S001:FR002** — A reindex reads every file again and rebuilds its entities and relationships from scratch, whether or not its content has changed; it is the one command for this, and there is no separate repair.
 - **E20261011c2ba6fa6:S001:FR003** — A call that reaches a function through a re-exporting file is linked to that function.
 - **E20261011c2ba6fa6:S001:FR004** — A repository whose graph is known to be incomplete does not report itself as fully ready, and a relationship that cannot be written is surfaced rather than skipped silently.
 
@@ -72,7 +72,7 @@ The code index cannot be trusted to be complete or consistent, and it records le
 
 **s6:**
 
-- **E20261011c2ba6fa6:S006:FR001** — A file is left out of the index when, and only when, the repository's ignore files leave it out.
+- **E20261011c2ba6fa6:S006:FR001** — A file is left out of the index when, and only when, git's ignore sources leave it out and git does not track it, with two named exceptions that are left out everywhere: a generated or minified file, and anything in the daemon's own .insrc directory.
 - **E20261011c2ba6fa6:S006:FR002** — Ignore files in subdirectories are honoured, each for its own directory and below.
 - **E20261011c2ba6fa6:S006:FR003** — A full walk, a single file event and the watcher apply the same rule.
 - **E20261011c2ba6fa6:S006:FR004** — A change to an ignore file takes effect without the repository being removed and added again: newly ignored files leave the index and newly included files enter it.
@@ -114,7 +114,7 @@ The code index cannot be trusted to be complete or consistent, and it records le
 - **Replacing LMDB or LanceDB, or adopting Graphify as a dependency or as the index.** — The comparison found additions to the ingestion and context layers; none requires a different store.
 - **Exposing a graph query language.** — The project rule is a typed traversal API only.
 - **Calling a cloud model service directly from the daemon.** — Model access beyond the local provider goes through the installed CLI providers only.
-- **Sources of exclusion rules other than the repository's ignore files.** — The stakeholder limited the filter to those files for now; the filter leaves room for other sources later but this Epic delivers none.
+- **Sources of exclusion rules other than git's own ignore sources.** — The stakeholder limited the filter to those sources for now; the filter leaves room for other sources later but this Epic delivers none.
 - **Changing an ignore file that already exists in a repository.** — The repository's own file is the user's statement of what to leave out; the daemon only creates one where none exists at the root.
 - **The analyzer's own planning and report defects (Epic b9d5c5c40df5a574).** — That Epic owns the analyzer above the index; this Epic takes only the defects in how the index's state is read.
 - **New entity and relation kinds for external services (Epic 914cbf5ea9026b92).** — Owned by that Epic; this Epic must not renumber the kinds it added.
@@ -144,7 +144,7 @@ The code index cannot be trusted to be complete or consistent, and it records le
 | `k8` | stakeholder | Each absorbed issue keeps its identity: its Story names it, and the issue is marked as consolidated into this Epic rather than closed unfixed. | [[c11]] |
 | `k9` | stakeholder | The proposal of an ignore file and the subsystem summaries use the local model, meaning the tier named cheap, which the local Ollama provider serves by default; the extraction of document relationships uses the mid-tier model; embeddings stay local. | [[c11]] |
 | `k10` | stakeholder | Model-proposed document relationships are used only when at least 95% of those proposed are right and at least 60% of the real ones are found, measured on at least 100 hand-checked links. | [[c11]] |
-| `k11` | stakeholder | The exclusion rule comes from the repository's ignore files only, including those in subdirectories, each applying to its own directory and below. | [[c11]] |
+| `k11` | stakeholder | The exclusion rule comes from git's own ignore sources only: the repository's .gitignore files, including those in subdirectories, each applying to its own directory and below, the clone's exclude file and the user's global ignore file. A file that git tracks is indexed even when a rule matches it. Two built-in exclusions stand beside git's sources and apply at every place that selects files: generated or minified files, and the daemon's own .insrc directory. | [[c11]] |
 
 ## 6. Stories
 
@@ -159,13 +159,13 @@ Someone asking what calls or imports a piece of code gets every caller and impor
 **Acceptance criteria:**
 
 - **ac1:** Given a repository in which a file that sorts earlier imports and calls into a file that sorts later, when the repository is indexed in full for the first time, then the import and the call are both stored, and asking for the callers of the later file's function returns the earlier file's call site. _(operationalizes `k1`)_
-- **ac2:** Given this repository with an index that has already lost cross-file relationships, when a repair of the index is requested without removing the repository, then the callers of runGrepSearch are 4 and the callers of pickScope are 1, as the issue's reproduction expects. _(operationalizes `k1`, `k8`)_
+- **ac2:** Given this repository with an index that has already lost cross-file relationships, when a reindex of the repository is requested, without removing it, then the callers of runGrepSearch are 4, as the issue's reproduction expects, and the callers of one function that this repository reaches only through a re-exporting file, named in the Story's design with its count from a text search, match that count. _(operationalizes `k1`, `k8`)_
 - **ac3:** Given a function that is reached only through a file that re-exports it, when the callers of that function are requested, then the call sites that go through the re-exporting file are returned. _(operationalizes `k1`)_
-- **ac4:** Given a repository in which some relationships could not be written or remain unresolved after indexing, when the repository's status is read, then the status says the graph is incomplete and gives the count, and it does not read as fully ready. _(operationalizes `k1`)_
+- **ac4:** Given a repository in which some relationships could not be written or remain unresolved after indexing, when the repository's status is read, then a completeness field shown wherever the status is shown says the graph is incomplete and gives the count, so the repository does not read as fully ready. _(operationalizes `k1`)_
 
 **Local constraints:**
 
-- `lc1` (stakeholder) This Story absorbs ISSUE-12f70133491114c9 in full, including its reproduction figures as the acceptance measure. [[c4]]
+- `lc1` (stakeholder) This Story absorbs ISSUE-12f70133491114c9 in full, including its reproduction figures as the acceptance measure, except the figure for pickScope, a function since removed from the source. [[c4]]
 
 ### 6.2 E20261011c2ba6fa6:S002 — Refreshing one file happens in full or not at all
 
@@ -255,7 +255,7 @@ The index holds exactly the files the repository does not ask to leave out: no s
 - **ac6:** Given a repository with no ignore file at its root, when it is added, then an ignore file is created at its root with entries that fit the project's languages and tools, proposed by the local model, before the first index runs. _(operationalizes `k3`, `k9`)_
 - **ac7:** Given a repository with no ignore file at its root and a model call that fails, when it is added, then the repository is still added, a plain ignore file is written, and the result says the fallback was used. _(operationalizes `k1`)_
 - **ac8:** Given a repository that already has an ignore file at its root, when it is added or indexed, then the file is byte-for-byte unchanged. _(operationalizes `k11`)_
-- **ac9:** Given a folder that is not under version control and has ignore files at its root and in a subdirectory, when it is indexed, then the same files are left out as would be if it were under version control. _(operationalizes `k11`)_
+- **ac9:** Given a folder that is not under version control and has ignore files at its root and in a subdirectory, when it is indexed, then the files its ignore files leave out are left out, as untracked files would be under version control. _(operationalizes `k11`)_
 
 **Local constraints:**
 
@@ -276,7 +276,7 @@ A reader of an answer can tell a relationship read straight from the source from
 **Acceptance criteria:**
 
 - **ac1:** Given a file with a call to a function in the same file and a call resolved across files, when the file is indexed and its relationships are read, then the first is marked as read from the source and the second as inferred. _(operationalizes `k1`)_
-- **ac2:** Given a call that matched several candidate targets and was resolved to one, when the relationship is read, then it is marked as chosen among candidates. _(operationalizes `k1`)_
+- **ac2:** Given a call that matches several candidate targets, when the relationship is read, then it is kept as pending with its candidates and reported as ambiguous, no target is guessed, and the value 'chosen among candidates' is reserved for a choosing rule that this Epic does not add. _(operationalizes `k1`)_
 - **ac3:** Given a store written before this change, when the daemon opens it and a relationship is read, then the relationship is returned and marked as of unknown origin, with no re-index required. _(operationalizes `k5`, `k6`)_
 - **ac4:** Given an analyzer answer that lists callers, when some of the listed callers rest on inferred or chosen relationships, then the answer says which. _(operationalizes `k1`)_
 
@@ -370,6 +370,8 @@ A question about a design or a rule finds the documents that bear on it through 
 ## 8. Feedback
 
 - **Subho Ghosh** (2026-10-11T05:34:54.178Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Resolution of the daemon review of 2026-10-11 (block: 0 HIGH, 20 MED, 17 LOW), made after that review and not re-reviewed. CORRECTED in the definition (4): (1) languages: SQL files are already indexed, as one whole-file document (src/indexer/parser/artifact.ts), so the problem, FR012 and Story s9 now say SQL moves from a whole document to its structure, and the summary no longer says "four more languages"; (2) the assumption on reindexFile: it also removes the relationships of the entities it replaces (detachDeleteEntitiesInTxn, src/db/entities.ts) and does not write new relationships or touch the unresolved queue; (3) k9 names the local model as the tier named cheap, served by Ollama by default (docs/daemon.md:382); (4) the file-event check is at src/indexer/index.ts:766 and the watcher is src/indexer/watcher.ts, not src/daemon/watcher.ts (the definition cites neither path wrongly; noted for the design stage). VERIFIED BY HAND (16), each left unfinished by the review because its searches stop at 50 matches: reindexFile has no caller outside src/db/entities.ts:363; a reindex skips a file whose stored hash is unchanged unless cleanFirst (src/indexer/index.ts:1004-1008); the quoted sentences of ISSUE-12f70133 (root cause 1, reproduction steps 1-2, the re-export gap) and of ISSUE-61045de9 are in those files; ISSUE-0d577569 carries approvedAt 2026-10-10T12:01:29.521Z; CLAUDE.md:122 and :135 hold the two quoted rules; the non-git walker (walkFilesLegacy) filters by the name list only; RelationKind has no member the indexer emits between documents (REFERENCES is declared and never emitted under src/indexer); the Story dependency edges and the constraint ids were checked by the define checklist step. NOT read by hand: the body of the daemon shutdown path (finding on s4) and the migration-on-open code (finding on k5); both rest on the filed issues and are for the design stage to confirm.
+- **Subho Ghosh** (2026-10-11T07:31:05.256Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Amended after approval, on the stakeholder's decisions of 2026-10-11 made while the high-level design was reviewed. (1) k11 and Story s6: the filter honours all three of git's ignore sources (.gitignore files, the clone's exclude file, the global ignore file); a file git tracks is indexed even when a rule matches; two built-in exclusions apply everywhere (generated or minified files, the daemon's own .insrc directory); a plain folder is filtered by the rules alone (ac9 reworded). (2) Story s1: the pickScope figure is removed from ac2 because that function no longer exists in the source, and the Story's design names the re-export case instead; ac4 says completeness is a field shown beside the status, whose four values are kept. (3) Story s7 ac2: an ambiguous call stays pending with its candidates and is reported apart; the value "chosen among candidates" is reserved. These amendments were not re-reviewed as a definition.
+- **Subho Ghosh** (2026-10-11T07:43:12.977Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Amended after approval, 2026-10-11, on the stakeholder's decision: reindex is the one command and indexes every file from scratch, whether or not its content has changed; there is no separate repair. Today repo.reindex skips every file whose stored content hash is unchanged (src/indexer/index.ts:628 and :1004-1008). Not re-reviewed. Open for the stakeholder to confirm: unchanged text with an unchanged embedding model keeps its vector.
 
 <!-- insrc:review -->
 

@@ -2,6 +2,8 @@
 
 # Reading the entities of one file or one repository scans the whole entity table
 
+> **Consolidated (2026-10-11):** absorbed into Epic `c2ba6fa62a148ed1` as Story s3 — see [the Epic definition](../../epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md). Not closed; it is designed and delivered through that Story, not on its own.
+
 ## Reproduction
 
 Not seen as a failure; read from the code, and confirmed by the daemon's review of the design for ISSUE-008e146ad1475ef9. It can be shown without a model: register two repositories, index both, and ask the store for the entities of one file of the smaller one (or for the entities of the smaller repository), with a counter on the rows the read decodes. Observed (by reading): both reads pass over every row of the entity table, of both repositories, and decode each one; the read by file also works out each row's absolute path before comparing it. The cost of reading one file's entities grows with the size of the whole store, not with the size of the file. Expected: the entities of one file, and of one repository, are read by going to their rows, at a cost that grows with what is returned.

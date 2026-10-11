@@ -2,6 +2,8 @@
 
 # Keep the daemon within the LMDB semaphore limit, and let it stop when a store operation fails
 
+> **Consolidated (2026-10-11):** absorbed into Epic `c2ba6fa62a148ed1` as Story s4 — see [the Epic definition](../../epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md). Not closed; it is designed and delivered through that Story, not on its own.
+
 ## Reproduction
 
 Observed on 2026-10-10 on macOS 27, with the installed daemon (one process, started 06:04 UTC) after about four hours of use that included build-gate and review runs.

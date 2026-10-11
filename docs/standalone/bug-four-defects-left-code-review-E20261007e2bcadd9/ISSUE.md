@@ -2,6 +2,8 @@
 
 # Fix four context-builder defects left by story 6's code review
 
+> **Consolidated (2026-10-11):** absorbed into Epic `c2ba6fa62a148ed1` as Story s5 — see [the Epic definition](../../epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md). Not closed; it is designed and delivered through that Story, not on its own.
+
 ## Reproduction
 
 Four separate defects in the analyzer's context builder, each found by reading the code in the daemon's second code review of story 6 (CR-b9d5c5c40df5a574-s6). None has been observed in a run.

@@ -4,7 +4,7 @@
     "epicHash": "d9f85b3cc8cc966b",
     "storyId": "S001",
     "createdAt": "2026-10-11T15:39:50.029Z",
-    "updatedAt": "2026-10-11T16:03:18.447Z",
+    "updatedAt": "2026-10-11T16:05:55.645Z",
     "standalone": true
   },
   "body": {
@@ -799,6 +799,95 @@
               },
               {
                 "title": "d9f85b3c t6 — component labels with quotes, pipes or markup cannot break the flowchart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "04b8d49f",
+        "ranAt": "2026-10-11T16:05:55.645Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "ux page builder: stable depth-first markers match key-elements table (S002 card fixture)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — key elements are numbered depth-first: top-level text, inputs, described elements and every action",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — the markers in the card are exactly the table numbers, in the same order",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — numbering is stable: the same definition always gives the same markers and table",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — descriptions fill the table, and an undescribed key element gets a null cell",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ux page builder: Submit vs OpenUrl distinguishable; html visual",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — Submit and OpenUrl stay distinguishable in the card and the table",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+                "title": "d9f85b3c t7 — the visual is HTML with its own card CSS, so the page inlines no Mermaid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 476,
+            "titles": [
+              {
+                "title": "d9f85b3c t7 — key elements are numbered depth-first: top-level text, inputs, described elements and every action",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — the markers in the card are exactly the table numbers, in the same order",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — numbering is stable: the same definition always gives the same markers and table",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — descriptions fill the table, and an undescribed key element gets a null cell",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — Submit and OpenUrl stay distinguishable in the card and the table",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t7 — the visual is HTML with its own card CSS, so the page inlines no Mermaid",
                 "result": "pass"
               }
             ],

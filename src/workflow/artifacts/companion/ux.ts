@@ -294,11 +294,9 @@ function uxNarratedSections(uxDef: UxDefinition): IrSection[] {
 // ---------------------------------------------------------------------------
 // S001/t1 (ISSUE-85e6a58693579b6d) — the UX mock LAYOUT emitter.
 //
-// `uxDefinitionToIr` above lowers a card into a node/edge graph, which the
-// shared docgen shell draws as a mermaid diagram. That is the right shape for
-// the ER / sequence / component companions and the WRONG shape for this one: a
-// reviewer opening an "experience mock" was shown boxes labelled with element
-// TYPE NAMES rather than anything resembling the interface.
+// A card was once lowered into a node/edge graph and drawn as a Mermaid
+// diagram, which showed a reviewer boxes labelled with element TYPE NAMES
+// rather than anything resembling the interface.
 //
 // This emitter is the terminal renderer for the UX companion instead. A card is
 // structurally a nested box layout, so it lowers to nested markup directly: each

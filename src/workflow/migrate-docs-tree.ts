@@ -43,7 +43,7 @@ import {
 	type ArtifactKind,
 	type WorkItemKind,
 } from './path-scheme.js';
-import { ARTIFACT_ID_MARKER_RE, ARTIFACTS_DIR } from './storage.js';
+import { ARTIFACT_ID_MARKER_RE, ARTIFACTS_DIR, compareStoryOrdinal } from './storage.js';
 
 const log = getLogger('workflow:migrate-docs-tree');
 
@@ -298,16 +298,12 @@ function slugFromFlatFilename(kind: ArtifactKind, storyId: string | undefined, f
 	return body.length > 0 ? body : undefined;
 }
 
-/** The lowest-ordinal Story's LLD among a work item's members (`S001` before
- *  `S002`, `s2` before `s10`), mirroring storage's head pick. */
+/** The lowest-ordinal Story's LLD among a work item's members, by the same
+ *  rule storage uses to pick a work item's head LLD. */
 function lowestOrdinalLld(members: readonly Artifact[]): Artifact | undefined {
-	const ordinal = (a: Artifact): number => {
-		const m = /(\d+)$/.exec(a.storyId ?? '');
-		return m === null ? Number.MAX_SAFE_INTEGER : Number(m[1]);
-	};
 	return members
 		.filter(m => m.kind === 'LLD')
-		.sort((a, b) => ordinal(a) - ordinal(b) || a.id.localeCompare(b.id))[0];
+		.sort((a, b) => compareStoryOrdinal(a.storyId ?? '', b.storyId ?? ''))[0];
 }
 
 /**

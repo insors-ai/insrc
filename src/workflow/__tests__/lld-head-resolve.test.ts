@@ -52,7 +52,7 @@ function mkRepo(): { repo: string; dir: string; cleanup: () => void } {
 }
 
 /** A standalone feature: an LLD (optionally unflagged, as legacy ones are) and its PLAN. */
-function seedStandalone(dir: string, hash: string, slug: string, opts: { flagged?: boolean; storyId?: string } = {}): void {
+function seedStandalone(dir: string, hash: string, slug: string, opts: { flagged?: boolean | undefined; storyId?: string | undefined } = {}): void {
 	const storyId = opts.storyId ?? 'S001';
 	writeJson(join(dir, `LLD-${hash}-${storyId}.json`), {
 		meta: {

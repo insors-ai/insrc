@@ -22,7 +22,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { inheritedStoryStandalone, readEpicDefinitionCore, storyRecordFolderArgs, writeAtomic } from '../storage.js';
+import { compareStoryOrdinal, inheritedStoryStandalone, readEpicDefinitionCore, storyRecordFolderArgs, writeAtomic } from '../storage.js';
 import { buildRecordPathsFor } from '../runners/build/standalone-record.js';
 import { testRecordPaths } from '../runners/build/test-record.js';
 
@@ -162,4 +162,8 @@ test('c00559b7 — a legacy unflagged LLD-only item files its BUILD and TESTS re
 		const tests = testRecordPaths(r.repo, HASH, 'S001', { now: '2026-10-11T00:00:00.000Z' });
 		assert.equal(tests.md, join(folder, 'TESTS.md'));
 	} finally { r.cleanup(); }
+});
+
+test('c00559b7 — compareStoryOrdinal orders by ordinal, then by id, for both id spellings', () => {
+	assert.deepEqual(['S010', 's2', 'S002', 'S001', 's10'].sort(compareStoryOrdinal), ['S001', 'S002', 's2', 'S010', 's10']);
 });

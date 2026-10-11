@@ -134,3 +134,12 @@ test('the injected skeleton (stripGuideSections) drops all guide markers, stays 
 		assert.ok(skeleton.includes(tool), `the skeleton catalog should still name ${tool}`);
 	}
 });
+
+test('c00559b7 — insrc_triage start serves the optional specHash field, so an MCP client can send it', () => {
+	const { schemaRegistry } = buildInsrcMcpServerWithRegistry();
+	const r = handleInsrcSchema({ tool: 'insrc_triage', phase: 'start' }, schemaRegistry);
+	assert.ok(!('error' in r));
+	const schema = (r as InsrcSchemaOk).schema as { properties?: Record<string, { type?: string }>; required?: string[] };
+	assert.equal(schema.properties?.['specHash']?.type, 'string', JSON.stringify(schema));
+	assert.ok(!(schema.required ?? []).includes('specHash'), 'specHash stays optional');
+});

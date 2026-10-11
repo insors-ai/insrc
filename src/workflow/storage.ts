@@ -439,12 +439,20 @@ function lowestOrdinalLldId(repoPath: string, epicHash: string): string | undefi
 		.map(f => f.slice(prefix.length, -'.json'.length))
 		.filter(id => id.length > 0);
 	if (storyIds.length === 0) return undefined;
+	const [first] = [...storyIds].sort(compareStoryOrdinal);
+	return first === undefined ? undefined : lldArtifactId(epicHash, first);
+}
+
+/** Orders Story ids by ordinal (`S001` before `S002`, `s2` before `s10`), the id
+ *  itself breaking ties, so the pick is stable. The ONE rule for which Story's
+ *  LLD heads a work item: the docs migrator sorts with it too, so the migrated
+ *  folder and the runtime head can never disagree. */
+export function compareStoryOrdinal(a: string, b: string): number {
 	const ordinal = (id: string): number => {
 		const m = /(\d+)$/.exec(id);
 		return m === null ? Number.MAX_SAFE_INTEGER : Number(m[1]);
 	};
-	const [first] = [...storyIds].sort((a, b) => ordinal(a) - ordinal(b) || a.localeCompare(b));
-	return first === undefined ? undefined : lldArtifactId(epicHash, first);
+	return ordinal(a) - ordinal(b) || a.localeCompare(b);
 }
 
 /** Resolve the sc2 folder args (anchor createdAt + top-level split + slug label)

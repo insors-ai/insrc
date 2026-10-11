@@ -19,9 +19,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { erDefinitionToIr, type ErDefinition } from '../er.js';
-import { uxDefinitionToIr, type UxDefinition } from '../ux.js';
 import { sequenceDefinitionToIr, type SequenceDefinition } from '../sequence.js';
-import { componentDependencyDefinitionToIr, type ComponentDependencyDefinition } from '../component.js';
 import { renderErCompanion, renderSequenceCompanion } from '../render.js';
 import type { IrSection } from '../../../docgen/types.js';
 import type { CompanionHeader } from '../types.js';
@@ -32,17 +30,9 @@ const er: ErDefinition = {
 		Order:    { attributes: { id: { range: 'string', identifier: true }, customer: { range: 'Customer', required: true } } },
 	},
 };
-const ux: UxDefinition = {
-	type: 'AdaptiveCard',
-	body: [{ type: 'TextBlock', text: 'Hello' }, { type: 'ActionSet', actions: [{ type: 'Action.Submit', title: 'OK' }] }],
-};
 const seq: SequenceDefinition = {
 	participants: [{ id: 'A' }, { id: 'B' }],
 	messages: [{ from: 'A', to: 'B', label: 'do it', kind: 'call' }],
-};
-const comp: ComponentDependencyDefinition = {
-	components: [{ id: 'x' }, { id: 'y' }],
-	dependencies: [{ from: 'x', to: 'y' }],
 };
 
 const titles = (s: readonly IrSection[]): string[] => s.map(x => x.title);
@@ -58,31 +48,17 @@ test('erDefinitionToIr: sections = Purpose + Fields & schema + Legend', () => {
 	assert.match(s.find(x => x.title === 'Legend')!.narrativeText, /Crow's-foot/);
 });
 
-test('uxDefinitionToIr: sections = Purpose + Elements & roles + Legend', () => {
-	const s = uxDefinitionToIr(ux).narrated.sections;
-	assert.deepEqual(titles(s), ['Purpose', 'Elements & roles', 'Legend']);
-	assert.match(s.find(x => x.title === 'Elements & roles')!.narrativeText, /ActionSet .* row of buttons/);
-});
-
 test('sequenceDefinitionToIr: sections = Purpose + Participants & message flow + Legend', () => {
 	const s = sequenceDefinitionToIr(seq).narrated.sections;
 	assert.deepEqual(titles(s), ['Purpose', 'Participants & message flow', 'Legend']);
 	assert.match(s.find(x => x.title === 'Participants & message flow')!.narrativeText, /A → B: do it \[call\]/);
 });
 
-test('componentDependencyDefinitionToIr: sections = Purpose + Components & dependencies + Legend', () => {
-	const s = componentDependencyDefinitionToIr(comp).narrated.sections;
-	assert.deepEqual(titles(s), ['Purpose', 'Components & dependencies', 'Legend']);
-	assert.match(s.find(x => x.title === 'Components & dependencies')!.narrativeText, /x → y/);
-});
-
 // ── t4: empty-but-valid def → Purpose + Legend, Fields omitted ──────────────
 
 test('empty-but-valid definitions emit Purpose + Legend only (field section omitted, no throw)', () => {
 	assert.deepEqual(titles(erDefinitionToIr({ classes: {} }).narrated.sections), ['Purpose', 'Legend']);
-	assert.deepEqual(titles(uxDefinitionToIr({ type: 'AdaptiveCard', body: [] }).narrated.sections), ['Purpose', 'Legend']);
 	assert.deepEqual(titles(sequenceDefinitionToIr({ participants: [], messages: [] }).narrated.sections), ['Purpose', 'Legend']);
-	assert.deepEqual(titles(componentDependencyDefinitionToIr({ components: [], dependencies: [] }).narrated.sections), ['Purpose', 'Legend']);
 });
 
 // ── t4: read-only — the input definition is not mutated ─────────────────────

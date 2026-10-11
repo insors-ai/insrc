@@ -236,6 +236,11 @@ function sequenceNarratedSections(seqDef: SequenceDefinition): IrSection[] {
 }
 
 /**
+ * Not used by finalize any more (LLD-d9f85b3c S001/t8: companions render through
+ * shell.ts). KEPT because the VS Code plugin's document review panel derives the
+ * same diagram client-side, and its parity tests use this as the reference the
+ * client must match (vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts).
+ *
  * Transform a SequenceDefinition into a docgen DocumentIR: each participant → a
  * 'call-frame' IrNode; each message → an IrEdge (a 'recurse'-kind message's edge
  * id carries the ':repeat' suffix the sequenceDiagram emitter turns into a

@@ -12,14 +12,14 @@
  * element is one of a small, sensible subset (TextBlock, Container, ColumnSet/
  * Column, Image, Input.Text, Input.ChoiceSet, ActionSet/Action.Submit/OpenUrl). The
  * JSON element is validated (against the vendored Adaptive Cards schema via the
- * shared ajv) and visualized (uxDefinitionToIr → docgen assembleShell); the ux-mock
+ * shared ajv) and visualized as a companion page (uxDefinitionToPage → shell.ts); the ux-mock
  * companion is DERIVED from it, never the reverse. Validation runs against the JSON
  * element ONLY — it never reads a rendered companion file (k2).
  *
  * Deterministic + provider-free.
  */
 
-import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/types.js';
+import type { IrSection } from '../../../docgen/types.js';
 import type { DimensionFinding } from '../../code-review/types.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
@@ -190,13 +190,8 @@ function breach(location: string, message: string): DimensionFinding {
 }
 
 // ---------------------------------------------------------------------------
-// t1 — uxDefinitionToIr (deterministic; feeds docgen assembleShell)
+// Card structure + the narrated sections of the standalone mock document
 // ---------------------------------------------------------------------------
-
-/** The docType stamped on the UX IR. Not a registered extractor docType — it is
- *  consumed only by assembleShell's mermaid emitter, which renders any non
- *  call-sequence / component-dependency docType as a classDiagram. */
-export const UX_DOC_TYPE = 'ux';
 
 /** The nested child elements of a container-like element (Container/Column items,
  *  ColumnSet columns); a leaf element yields []. */
@@ -295,41 +290,6 @@ function uxNarratedSections(uxDef: UxDefinition): IrSection[] {
 	return sections;
 }
 
-/**
- * Transform a UxDefinition into a docgen DocumentIR: the card is the root node,
- * every element is a node, and containment (a container-like element → each child)
- * is an IrEdge. Pure + deterministic: array order is preserved, so the same uxDef
- * always yields byte-identical IR (no graph, no provider).
- */
-export function uxDefinitionToIr(uxDef: UxDefinition): DocumentIR {
-	const nodes: IrNode[] = [];
-	const edges: IrEdge[] = [];
-	const rootId = 'AdaptiveCard';
-	nodes.push({
-		id:    rootId,
-		label: uxDef.version !== undefined && uxDef.version.length > 0 ? `AdaptiveCard (v${uxDef.version})` : 'AdaptiveCard',
-		kind:  'card',
-	});
-
-	const walk = (elements: readonly UxElement[], parentId: string, prefix: string): void => {
-		elements.forEach((el, i) => {
-			const id = `${prefix}${i}`;
-			nodes.push({ id, label: labelFor(el), kind: el.type });
-			edges.push({ id: `${parentId}->${id}`, from: parentId, to: id, kind: 'contains' });
-			const children = childrenOf(el);
-			if (children.length > 0) walk(children, id, `${id}.`);
-		});
-	};
-	walk(uxDef.body, rootId, 'el');
-
-	return {
-		docType:             UX_DOC_TYPE,
-		scopeDescription:    'UX mock',
-		derived:             { nodes, edges },
-		narrated:            { sections: uxNarratedSections(uxDef) },
-		generatedAtRevision: 'authored-ux',
-	};
-}
 
 // ---------------------------------------------------------------------------
 // S001/t1 (ISSUE-85e6a58693579b6d) — the UX mock LAYOUT emitter.
@@ -506,6 +466,11 @@ const UX_CARD_STYLE = [
 const UX_MOCK_STYLE = UX_PAGE_CHROME_STYLE + UX_CARD_STYLE;
 
 /**
+ * Not used by finalize any more (LLD-d9f85b3c S001/t8: companions render through
+ * shell.ts). KEPT because the VS Code plugin's document review panel renders the
+ * same card client-side, and its parity tests use this as the reference the
+ * client must match (vscode-plugin/src/chat/__tests__/fixtures/ux-parity.ts).
+ *
  * Render a UxDefinition as a self-contained offline HTML document showing the
  * card as an INTERFACE. The narrated prose sections are emitted BESIDE the mock
  * rather than instead of it — they carry authorial intent a mock alone cannot.

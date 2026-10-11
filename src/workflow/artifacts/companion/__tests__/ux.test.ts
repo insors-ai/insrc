@@ -5,7 +5,7 @@
 
 /**
  * sc4 (S004) unit tests — validateUxDefinition (Adaptive Cards schema validity,
- * against the JSON element) + uxDefinitionToIr (deterministic card→IR). Proves
+ * against the JSON element); the page is covered by ux-page.test.ts. Proves
  * validation runs on the structured element, never a rendered file (there is no
  * file/path input). A malformed vendored asset raises UxDefinitionError. ac1/ac2.
  *
@@ -20,9 +20,7 @@ import { join } from 'node:path';
 
 import {
 	validateUxDefinition,
-	uxDefinitionToIr,
 	UxDefinitionError,
-	UX_DOC_TYPE,
 	type UxDefinition,
 } from '../ux.js';
 import { _setArtifactSchemaDirForTests } from '../metamodel.js';
@@ -87,22 +85,4 @@ test('validateUxDefinition: a malformed vendored asset raises UxDefinitionError 
 	_resetAdaptiveCardsCacheForTests();
 	assert.throws(() => validateUxDefinition(validUx), UxDefinitionError);
 	rmSync(dir, { recursive: true, force: true });
-});
-
-// ── uxDefinitionToIr ──────────────────────────────────────────────────────────
-
-test('uxDefinitionToIr: card→root node, every element a node, containment an edge (ac1)', () => {
-	const ir = uxDefinitionToIr(validUx);
-	assert.equal(ir.docType, UX_DOC_TYPE);
-	// root card + 4 top-level + 2 container items + 1 column + 1 image = 9 nodes
-	assert.equal(ir.derived.nodes.length, 9);
-	assert.equal(ir.derived.nodes[0]!.id, 'AdaptiveCard');
-	assert.match(ir.derived.nodes[0]!.label, /v1\.5/);
-	// every non-root node is reached by a containment edge
-	assert.equal(ir.derived.edges.length, 8);
-	assert.ok(ir.derived.edges.every(e => e.kind === 'contains'));
-});
-
-test('uxDefinitionToIr: deterministic — same uxDef yields byte-identical IR', () => {
-	assert.deepEqual(uxDefinitionToIr(validUx), uxDefinitionToIr(validUx));
 });

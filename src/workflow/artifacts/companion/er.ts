@@ -269,6 +269,11 @@ function erNarratedSections(erDef: ErDefinition): IrSection[] {
 }
 
 /**
+ * Not used by finalize any more (LLD-d9f85b3c S001/t8: companions render through
+ * shell.ts). KEPT because the VS Code plugin's document review panel derives the
+ * same diagram client-side, and its parity tests use this as the reference the
+ * client must match (vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts).
+ *
  * Transform an ErDefinition into a docgen DocumentIR: each class → an entity
  * IrNode (its scalar-range slots folded into the label as attributes), each
  * class-ranged slot → a relationship IrEdge whose id encodes the crow's-foot

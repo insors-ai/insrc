@@ -37,10 +37,10 @@ test('the insrc.delivery.openBoard command declares the light/dark icon pair', (
   assert.deepEqual(cmd.icon, { light: LIGHT, dark: DARK });
 });
 
-test("the board's editor tab shows the icon pair", () => {
+test('extension.ts hands the board the icon pair as its tab icon', () => {
   const ext = read('src/extension.ts');
   const block = /registerDeliveryBoard\(\{([\s\S]*?)\n  \}\);/.exec(ext);
   assert.ok(block, 'the delivery board is registered');
   const b = block![1]!;
-  assert.match(b, /panel\.iconPath = \{[\s\S]*'insrc-delivery-icon\.svg'[\s\S]*'insrc-delivery-icon-dark\.svg'/, 'the board panel sets its light/dark tab icon');
+  assert.match(b, /tabIcon: \{\s*light: vscode\.Uri\.file\(join\(context\.extensionPath, 'media', 'insrc-delivery-icon\.svg'\)\),\s*dark: vscode\.Uri\.file\(join\(context\.extensionPath, 'media', 'insrc-delivery-icon-dark\.svg'\)\),\s*\}/, 'the light and dark files from media/');
 });

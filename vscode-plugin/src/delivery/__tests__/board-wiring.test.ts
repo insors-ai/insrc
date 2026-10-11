@@ -192,3 +192,23 @@ test('the board receives the review pane when the chat setting creates one, and 
   assert.deepEqual(without.rpcCalls[1]!.params, { repo: '/ws', artifactId: 'LLD-x' });
   assert.deepEqual(without.details.at(-1)!.details!.openedRecord, { artifactId: 'LLD-x', text: '# LLD' }, 'and shows it read-only');
 });
+
+test("the board panel gets the tab icon it is given, and keeps VS Code's default without one", async () => {
+  for (const tabIcon of [{ light: 'light-uri', dark: 'dark-uri' }, undefined]) {
+    const handlers = new Map<string, () => Promise<void>>();
+    const panels: FakePanel[] = [];
+    registerDeliveryBoard({
+      commands: { register: (d: CommandDescriptor, run) => { handlers.set(d.id, run); } },
+      subscriptions: { push: () => undefined },
+      createWebviewPanel: () => { const panel = fakePanel(); panels.push(panel); return panel; },
+      tabIcon,
+      rpc: (async () => { throw new Error('daemon is not running'); }) as never,
+      repo: () => '/ws',
+      logger: { warn: () => undefined, error: () => undefined },
+    });
+    await handlers.get('insrc.delivery.openBoard')!();
+    await flush();
+    assert.equal(panels.length, 1);
+    assert.deepEqual((panels[0] as FakePanel & { iconPath?: unknown }).iconPath, tabIcon, tabIcon === undefined ? 'no icon is set' : 'the panel shows the light/dark pair');
+  }
+});

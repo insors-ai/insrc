@@ -633,13 +633,11 @@ export function activate(context: vscode.ExtensionContext): void {
   registerDeliveryBoard({
     commands,
     subscriptions: context.subscriptions,
-    createWebviewPanel: (viewType, title) => {
-      const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
-      panel.iconPath = {
-        light: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-delivery-icon.svg')),
-        dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-delivery-icon-dark.svg')),
-      };
-      return panel;
+    createWebviewPanel: (viewType, title) =>
+      vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true }),
+    tabIcon: {
+      light: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-delivery-icon.svg')),
+      dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-delivery-icon-dark.svg')),
     },
     rpc: client.rpc,
     repo: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null,

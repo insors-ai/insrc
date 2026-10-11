@@ -1,3 +1,4 @@
+import { recordContentDigest } from '../canonical.js';
 import type { GuidanceKind, GuidanceRecord } from '../contracts.js';
 
 /** Original test guidance, not a licensed source import or curated corpus release. */
@@ -15,3 +16,11 @@ export function recordFixture(kind: GuidanceKind = 'pattern'): GuidanceRecord {
     review: { status: 'draft', reviewer: '', contentDigest: '', reviewedAt: '' },
   };
 }
+
+/** Bind a fixture after intentional edits, without changing its authored content. */
+export function sealRecord(record: GuidanceRecord): GuidanceRecord {
+  const recordVersion = recordContentDigest(record);
+  return { ...record, recordVersion, review: { status: 'reviewed', reviewer: 'Fixture reviewer',
+    contentDigest: recordVersion, reviewedAt: '2026-10-11T00:00:00.000Z' } };
+}
+export const specimenPaths = new Set(['examples/good.json', 'examples/bad.json']);

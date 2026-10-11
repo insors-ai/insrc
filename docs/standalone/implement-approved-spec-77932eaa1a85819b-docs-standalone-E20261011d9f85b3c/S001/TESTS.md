@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 28 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -67,3 +67,45 @@ Reported by the builder, not run by the gate: **pass**. Evidence: At t2 (before 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/artifacts/companion/__tests__/panzoom.test.ts` | 0 | 5 | 0.3 s |  |
+
+## t3
+
+Run at 2026-10-11T15:47:04.734Z on commit `521e35c2`. Tests check: **passed**. 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: shell: section order + header table rows + no external URL**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t3 — Header, Narrative, View and Description appear in that order | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — the header table has the four rows: Work item, Source doc (linked), Date, User | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — no http(s) URL appears: none in the shell markup, none at all on an HTML page | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+
+**unit: shell view panel: toolbar controls, pan/zoom init, fit-on-load for mermaid and html visuals; html page has no Mermaid**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its init | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — a Mermaid page inlines Mermaid and fits once the diagram is drawn | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — an inlined runtime cannot close its script element early | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+
+**unit: shell: escaping of all table text; null cell -> em dash; missing narrative renders only the context line**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t3 — every header, narrative and table string is escaped | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — a null cell renders as an em dash, and a tagged cell as its badge | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — a missing narrative renders only the context line; a present one renders its paragraphs | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+
+**unit: shell runtime loader: missing asset -> DiagramGenerationError**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t3 — the runtime loader reads the shipped assets: pan/zoom always, Mermaid for a Mermaid visual only | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/artifacts/companion/__tests__/shell.test.ts` | 0 | 12 | 0.4 s |  |

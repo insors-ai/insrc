@@ -4,7 +4,7 @@
     "epicHash": "d9f85b3cc8cc966b",
     "storyId": "S001",
     "createdAt": "2026-10-11T15:39:50.029Z",
-    "updatedAt": "2026-10-11T15:43:01.214Z",
+    "updatedAt": "2026-10-11T15:47:04.734Z",
     "standalone": true
   },
   "body": {
@@ -277,6 +277,165 @@
               },
               {
                 "title": "d9f85b3c t2 — a missing viewport or stage yields a no-op handle instead of throwing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "521e35c2",
+        "ranAt": "2026-10-11T15:47:04.734Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "shell: section order + header table rows + no external URL",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — Header, Narrative, View and Description appear in that order",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — the header table has the four rows: Work item, Source doc (linked), Date, User",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — no http(s) URL appears: none in the shell markup, none at all on an HTML page",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shell view panel: toolbar controls, pan/zoom init, fit-on-load for mermaid and html visuals; html page has no Mermaid",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its init",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — a Mermaid page inlines Mermaid and fits once the diagram is drawn",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — an inlined runtime cannot close its script element early",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shell: escaping of all table text; null cell -> em dash; missing narrative renders only the context line",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — every header, narrative and table string is escaped",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — a null cell renders as an em dash, and a tagged cell as its badge",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — a missing narrative renders only the context line; a present one renders its paragraphs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shell runtime loader: missing asset -> DiagramGenerationError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — the runtime loader reads the shipped assets: pan/zoom always, Mermaid for a Mermaid visual only",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 447,
+            "titles": [
+              {
+                "title": "d9f85b3c t3 — Header, Narrative, View and Description appear in that order",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — the header table has the four rows: Work item, Source doc (linked), Date, User",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — no http(s) URL appears: none in the shell markup, none at all on an HTML page",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its init",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a Mermaid page inlines Mermaid and fits once the diagram is drawn",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — an inlined runtime cannot close its script element early",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — every header, narrative and table string is escaped",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a null cell renders as an em dash, and a tagged cell as its badge",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a missing narrative renders only the context line; a present one renders its paragraphs",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — the runtime loader reads the shipped assets: pan/zoom always, Mermaid for a Mermaid visual only",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError",
                 "result": "pass"
               }
             ],

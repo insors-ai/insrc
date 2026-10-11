@@ -69,7 +69,7 @@ The code index cannot be trusted to be complete or consistent, and it records le
 - **E20261011c2ba6fa6:S005:FR001** — A request whose scope will be refused is refused before it is announced with a size, or its announcement makes plain that its size could not be counted.
 - **E20261011c2ba6fa6:S005:FR002** — A failure to read a repository's last-indexed time, or a failure inside a lookup, is one of the named causes of not proceeding.
 - **E20261011c2ba6fa6:S005:FR003** — The remaining defects recorded in ISSUE-e2bcadd9 are closed as that issue states them.
-- **E20261011c2ba6fa6:S005:FR004** — While a repository is being indexed or reindexed, a search or analyze request about it is refused with a named error that states the indexing state; no partial answer is returned.
+- **E20261011c2ba6fa6:S005:FR004** — While a repository is being indexed or reindexed, a search or analyze request about it is refused with a named error that states the indexing state; no partial answer is returned. Only that repository is offline: requests about other repositories are answered as usual.
 
 **s6:**
 
@@ -233,7 +233,7 @@ A request about code the index does not hold is refused for that reason, and nev
 - **ac1:** Given a request whose scope the index does not hold, when the request is run, then no event announces it as the largest size, and it is refused with the same code and message as today. _(operationalizes `k1`)_
 - **ac2:** Given a read of a repository's last-indexed time that throws, when a context is being built for a request, then the request ends with a named cause and its own error code, not an internal error. _(operationalizes `k1`)_
 - **ac3:** Given each of the four reproductions in ISSUE-e2bcadd9, when it is run, then the expected result that issue states is observed. _(operationalizes `k8`)_
-- **ac4:** Given a repository whose index or reindex is in progress, when a search request or an analyze request about that repository is made, then the request is refused with a named error and its own code that says the repository is being indexed and how far the run has got, and no partial result is returned. _(operationalizes `k1`, `k2`)_
+- **ac4:** Given a repository whose index or reindex is in progress, or ended in an error before it completed, when a search request or an analyze request about that repository is made, then the request is refused with a named error and its own code that says the repository is being indexed and how far the run has got, and no partial result is returned. _(operationalizes `k1`, `k2`)_
 
 **Local constraints:**
 
@@ -376,6 +376,7 @@ A question about a design or a rule finds the documents that bear on it through 
 - **Subho Ghosh** (2026-10-11T07:43:12.977Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Amended after approval, 2026-10-11, on the stakeholder's decision: reindex is the one command and indexes every file from scratch, whether or not its content has changed; there is no separate repair. Today repo.reindex skips every file whose stored content hash is unchanged (src/indexer/index.ts:628 and :1004-1008). Not re-reviewed. Open for the stakeholder to confirm: unchanged text with an unchanged embedding model keeps its vector.
 - **Subho Ghosh** (2026-10-11T07:46:08.673Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Clarified by the stakeholder, 2026-10-11: a reindex calls the delete operations on the graph store and the vector store for the repository and builds everything again, vectors and document summaries included. This supersedes the earlier note that unchanged text keeps its vector. Not re-reviewed.
 - **Subho Ghosh** (2026-10-11T07:53:00.814Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Amended after approval, 2026-10-11, on the stakeholder's decision: while a repository is being indexed or reindexed, search and analyze requests about it return a named error that states the indexing state, and no partial answer. Carried by Story s5 (a new requirement and acceptance criterion ac4 in the definition). Not re-reviewed.
+- **Subho Ghosh** (2026-10-11T07:56:39.209Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Stakeholder decision, 2026-10-11: a reindex is queued at once, for a request and for the migration alike; only the repository being reindexed is offline, from the start of its own run until that run completes, and other repositories are answered as usual. Not re-reviewed.
 
 <!-- insrc:review -->
 

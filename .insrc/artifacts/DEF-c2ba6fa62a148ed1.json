@@ -1009,7 +1009,7 @@
             "statement": "The remaining defects recorded in ISSUE-e2bcadd9 are closed as that issue states them."
           },
           {
-            "statement": "While a repository is being indexed or reindexed, a search or analyze request about it is refused with a named error that states the indexing state; no partial answer is returned."
+            "statement": "While a repository is being indexed or reindexed, a search or analyze request about it is refused with a named error that states the indexing state; no partial answer is returned. Only that repository is offline: requests about other repositories are answered as usual."
           }
         ],
         "acceptanceCriteria": [
@@ -1042,7 +1042,7 @@
           },
           {
             "id": "ac4",
-            "given": "a repository whose index or reindex is in progress",
+            "given": "a repository whose index or reindex is in progress, or ended in an error before it completed",
             "when": "a search request or an analyze request about that repository is made",
             "then": "the request is refused with a named error and its own code that says the repository is being indexed and how far the run has got, and no partial result is returned",
             "operationalizes": [
@@ -1690,7 +1690,7 @@
         },
         {
           "id": "E20261011c2ba6fa6:S005:FR004",
-          "statement": "While a repository is being indexed or reindexed, a search or analyze request about it is refused with a named error that states the indexing state; no partial answer is returned.",
+          "statement": "While a repository is being indexed or reindexed, a search or analyze request about it is refused with a named error that states the indexing state; no partial answer is returned. Only that repository is offline: requests about other repositories are answered as usual.",
           "scope": "item",
           "itemRef": "s5"
         },
@@ -1889,6 +1889,16 @@
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
         },
         "comment": "Amended after approval, 2026-10-11, on the stakeholder's decision: while a repository is being indexed or reindexed, search and analyze requests about it return a named error that states the indexing state, and no partial answer. Carried by Story s5 (a new requirement and acceptance criterion ac4 in the definition). Not re-reviewed.",
+        "kind": "comment"
+      },
+      {
+        "id": "dd70abc7",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-11T07:56:39.209Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
+        },
+        "comment": "Stakeholder decision, 2026-10-11: a reindex is queued at once, for a request and for the migration alike; only the repository being reindexed is offline, from the start of its own run until that run completes, and other repositories are answered as usual. Not re-reviewed.",
         "kind": "comment"
       }
     ]

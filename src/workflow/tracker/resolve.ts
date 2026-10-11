@@ -35,7 +35,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { ARTIFACTS_DIR } from '../storage.js';
+import { ARTIFACTS_DIR, readEpicDefinitionCore, type TrackerBlock } from '../storage.js';
 import {
 	epicWorkflowId, ordinalToStoryId, ordinalToTaskId, parseWorkflowId,
 	storyIdToOrdinal, storyWorkflowId, taskWorkflowId, toCanonical, toSlug,
@@ -89,12 +89,6 @@ const PLAN_RE = /^PLAN-([0-9a-f]{16})-([sS]\d+)\.json$/;
 // Minimal artifact reads
 // ---------------------------------------------------------------------------
 
-interface TrackerBlock {
-	readonly epicRef?:   string;
-	readonly storyRef?:  string;
-	readonly storyRefs?: Readonly<Record<string, string>>;
-	readonly taskRefs?:  Readonly<Record<string, string>>;
-}
 
 interface ArtifactShape {
 	readonly meta?: {
@@ -141,44 +135,56 @@ function listFiles(dir: string): readonly string[] {
 	}
 }
 
-/** Every distinct epic hash present in the artifacts dir — from DEF files, plus
- *  ISSUE files for a bugfix chain, which writes no DEF. Without the ISSUE pass a
- *  bugfix epic is INVISIBLE here, so `resolveByLabel`/`resolveByHier` find zero
- *  hashes and refuse before `buildRef` is ever reached. DEF hashes come first and
- *  a hash present as both is listed once, so ordering + membership are unchanged
- *  for every DEF-bearing epic. */
-function listEpicHashes(dir: string): readonly string[] {
-	const hashes: string[] = [];
+/** One work item present in the artifacts dir, and whether only an LLD heads it. */
+interface EpicHead {
+	readonly hash:       string;
+	/** True when the work item has an LLD and neither a DEF nor an ISSUE. */
+	readonly lldHeaded:  boolean;
+}
+
+/** Every distinct work item present in the artifacts dir — from DEF files, plus
+ *  ISSUE files for a bugfix chain, which writes no DEF, plus (ISSUE-c00559b7)
+ *  LLD files for a standalone feature, which writes neither. Without a pass a
+ *  work item is INVISIBLE here, so `resolveByLabel`/`resolveByHier` find no hash
+ *  and refuse before `buildRef` is ever reached. DEF hashes come first, then
+ *  ISSUE, then LLD-only, and a hash is listed once, so ordering + membership are
+ *  unchanged for every DEF- or ISSUE-bearing work item. */
+function listEpicHeads(dir: string): readonly EpicHead[] {
+	const heads: EpicHead[] = [];
 	const seen = new Set<string>();
 	const files = listFiles(dir);
-	for (const f of files) {
-		const m = DEF_RE.exec(f);
-		if (m !== null && !seen.has(m[1]!)) { seen.add(m[1]!); hashes.push(m[1]!); }
+	for (const [re, lldHeaded] of [[DEF_RE, false], [ISSUE_RE, false], [LLD_RE, true]] as const) {
+		for (const f of files) {
+			const m = re.exec(f);
+			if (m !== null && !seen.has(m[1]!)) { seen.add(m[1]!); heads.push({ hash: m[1]!, lldHeaded }); }
+		}
 	}
-	for (const f of files) {
-		const m = ISSUE_RE.exec(f);
-		if (m !== null && !seen.has(m[1]!)) { seen.add(m[1]!); hashes.push(m[1]!); }
-	}
-	return hashes;
+	return heads;
+}
+
+function listEpicHashes(dir: string): readonly string[] {
+	return listEpicHeads(dir).map(h => h.hash);
 }
 
 // ---------------------------------------------------------------------------
 // Builder — (epicHash, storyId?, taskId?) → ResolvedRef
 // ---------------------------------------------------------------------------
 
-/** The epic's identity (slug + creation anchor) for hierarchical-id minting.
- *  Prefers the DEF; falls back to the ISSUE artifact a bugfix chain writes
- *  instead. Deterministic by construction — the DEF is consulted FIRST and wins
- *  outright whenever it is usable, so the resolver never has to choose between
- *  two anchors that both exist. */
+/** The work item's identity (slug + creation anchor) for hierarchical-id
+ *  minting, taken from the same head storage's {@link readEpicDefinitionCore}
+ *  selects: the DEF, else the ISSUE a bugfix chain writes, else the LLD of a
+ *  standalone feature (ISSUE-c00559b7). The head ORDER lives only there, so the
+ *  resolver and folder naming cannot disagree about which artifact heads a work
+ *  item. Null when there is no head or it lacks a slug or anchor. */
 function readEpicIdentity(dir: string, epicHash: string): EpicIdentity | null {
-	for (const name of [`DEF-${epicHash}.json`, `ISSUE-${epicHash}.json`]) {
-		const meta = readArtifact(join(dir, name))?.meta;
-		if (meta !== undefined && typeof meta.epicSlug === 'string' && typeof meta.createdAt === 'string') {
-			return { epicSlug: meta.epicSlug, createdAt: meta.createdAt, tracker: meta.tracker };
-		}
-	}
-	return null;
+	const head = readEpicDefinitionCore(repoPathOf(dir), epicHash);
+	if (head.epicSlug === undefined || head.createdAt === undefined) return null;
+	return { epicSlug: head.epicSlug, createdAt: head.createdAt, tracker: head.tracker };
+}
+
+/** The repo root an artifacts dir belongs to (the inverse of {@link artifactsDir}). */
+function repoPathOf(dir: string): string {
+	return join(dir, ...ARTIFACTS_DIR.split('/').map(() => '..'));
 }
 
 /** The epic's DEFINITION artifact plus which kind it turned out to be.
@@ -197,12 +203,14 @@ interface EpicDefinition {
 /** Read the epic's definition artifact: `DEF-<hash>.json` first, then
  *  `ISSUE-<hash>.json`. Returns null when neither is readable.
  *
- *  The order is COPIED FROM {@link readEpicIdentity}, not newly decided, so the
- *  two readers can never disagree about which artifact defines an epic — and
- *  because {@link readArtifact} yields null on a malformed file, the rule is
+ *  Because {@link readArtifact} yields null on a malformed file, the rule is
  *  first-READABLE-wins: a corrupt DEF falls through to the ISSUE rather than
- *  aborting. readEpicIdentity itself cannot be reused here: it returns only
+ *  aborting. readEpicIdentity cannot be reused here: it returns only
  *  {epicSlug, createdAt, tracker}, and the story-existence check needs the BODY.
+ *
+ *  Deliberately DEF/ISSUE only, unlike readEpicIdentity (ISSUE-c00559b7): this
+ *  read serves story DECLARATIONS, and an LLD-headed work item's story is
+ *  already proven by the `artifact` evidence clause, so it needs no declaration.
  *
  *  Consumed by {@link storyExists} (S001/t3) to decide whether a named story
  *  exists. Never throws. */
@@ -301,8 +309,8 @@ function storyExists(dir: string, epicHash: string, storyId: string): boolean {
 	return storyEvidence(dir, epicHash, storyId) !== null;
 }
 
-/** Assemble a `ResolvedRef` for a located node. Returns null when NEITHER the
- *  epic's DEF nor its ISSUE artifact yields a slug + createdAt (both are
+/** Assemble a `ResolvedRef` for a located node. Returns null when the work
+ *  item's head (DEF, ISSUE or LLD) yields no slug + createdAt (both are
  *  required to mint the hierarchical id). */
 function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: string): ResolvedRef | null {
 	const dmeta = readEpicIdentity(dir, epicHash);
@@ -442,7 +450,8 @@ function resolveByHier(dir: string, wfid: WorkflowId): ResolvedRef | null {
 /** label `s1/t3` / `s1` → node. Requires a single-epic artifacts dir, OR a
  *  caller-provided `epicHash` scope that uniquely names a present epic. */
 function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?: string): ResolvedRef | null {
-	const hashes = listEpicHashes(dir);
+	const heads = listEpicHeads(dir);
+	const hashes = heads.map(h => h.hash);
 	if (epicHash !== undefined) {
 		// Scoped: prefix-match the provided hash against the present epics
 		// (mirroring resolveByHier's `hash8` startsWith match). Exactly one
@@ -484,14 +493,24 @@ function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?
 	// storyArtifactPath falls back to a listing scan whenever the exact filename
 	// misses, which is the common case here, so without this the whole artifacts
 	// dir was re-read twice per epic.
+	//
+	// ISSUE-c00559b7 — a work item headed only by an LLD (a standalone feature)
+	// competes in a THIRD tier, below both: whenever a DEF- or ISSUE-anchored work
+	// item evidences the label, the answer is exactly what it was before LLD heads
+	// existed. Such an item is always reachable by its epicHash or hierarchical id.
 	const files = listFiles(dir);
-	const candidates: { readonly hash: string; readonly evidence: StoryEvidence }[] = [];
-	for (const h of hashes) {
-		const evidence = storyEvidence(dir, h, storyId, files);
-		if (evidence !== null) candidates.push({ hash: h, evidence });
+	const candidates: { readonly hash: string; readonly evidence: StoryEvidence; readonly lldHeaded: boolean }[] = [];
+	for (const h of heads) {
+		const evidence = storyEvidence(dir, h.hash, storyId, files);
+		if (evidence !== null) candidates.push({ hash: h.hash, evidence, lldHeaded: h.lldHeaded });
 	}
-	for (const explicit of [true, false]) {
-		const tier = candidates.filter(c => EXPLICIT_EVIDENCE.has(c.evidence) === explicit);
+	const tiers: readonly ((c: typeof candidates[number]) => boolean)[] = [
+		c => !c.lldHeaded && EXPLICIT_EVIDENCE.has(c.evidence),
+		c => !c.lldHeaded && !EXPLICIT_EVIDENCE.has(c.evidence),
+		c => c.lldHeaded,
+	];
+	for (const inTier of tiers) {
+		const tier = candidates.filter(inTier);
 		// A tie WITHIN a tier is genuine ambiguity and refuses outright — it must
 		// not fall through to a weaker tier and be resolved by accident.
 		if (tier.length > 1) return null;

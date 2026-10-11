@@ -1,0 +1,319 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "7d42920dbef28b51",
+    "storyId": "S001",
+    "createdAt": "2026-10-11T18:07:28.997Z",
+    "updatedAt": "2026-10-11T18:12:15.731Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "d0dfe573",
+        "ranAt": "2026-10-11T18:07:28.997Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "t1: MigrationPlan from planMigration carries metaRewrites (empty for a repo with no artifacts)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t1 — a repo with no artifact store plans an empty metaRewrites list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "t1: epicShortName / hldShortName exported: slug when set, else first sentence / first line",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t1 — epicShortName and hldShortName: the slug when set, else the first sentence / first line",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 428,
+            "titles": [
+              {
+                "title": "t1 — a repo with no artifact store plans an empty metaRewrites list",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — epicShortName and hldShortName: the slug when set, else the first sentence / first line",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "16068b12",
+        "ranAt": "2026-10-11T18:09:41.926Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "planMigration: a moved PLAN whose stored epicSlug and anchor differ from its LLD head gets one metaRewrite setting both",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t2 — a moved PLAN whose stored label and anchor differ from its LLD head gets one rewrite setting both",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "planMigration: an already-placed member with stale metadata (no move) still gets a metaRewrite",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t2 — an already-placed member with stale metadata (no move) still gets a rewrite",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "planMigration: a hash-fallback group gets no epicSlug rewrite; anchor/standalone rewrites still planned",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t2 — a hash-fallback group gets no label rewrite; anchor and standalone rewrites are still planned",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "planMigration: a legacy unflagged head LLD in a standalone group gets only standalone: true; false is never planned",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t2 — a legacy unflagged head LLD in a standalone group gets only standalone: true; false is never planned",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "planMigration: a SPEC with no stored standalone flag in a standalone group gets standalone: true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t2 — a SPEC with no stored standalone flag in a standalone group gets standalone: true",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "planMigration: a same-day unstamped BUILD plans no anchor rewrite; a later-day unstamped BUILD plans epicCreatedAt = group anchor",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t2 — a same-day unstamped BUILD plans no anchor rewrite; a later-day unstamped BUILD plans epicCreatedAt = group anchor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "planMigration: a consistent repo plans metaRewrites: [] and docs + .insrc stay byte-identical after planning",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t2 — a consistent repo plans no metaRewrites, and planning leaves docs and .insrc byte-identical",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 432,
+            "titles": [
+              {
+                "title": "t1 — a repo with no artifact store plans an empty metaRewrites list",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — epicShortName and hldShortName: the slug when set, else the first sentence / first line",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a moved PLAN whose stored label and anchor differ from its LLD head gets one rewrite setting both",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — an already-placed member with stale metadata (no move) still gets a rewrite",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a hash-fallback group gets no label rewrite; anchor and standalone rewrites are still planned",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a legacy unflagged head LLD in a standalone group gets only standalone: true; false is never planned",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a SPEC with no stored standalone flag in a standalone group gets standalone: true",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a same-day unstamped BUILD plans no anchor rewrite; a later-day unstamped BUILD plans epicCreatedAt = group anchor",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a consistent repo plans no metaRewrites, and planning leaves docs and .insrc byte-identical",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "6c068e9f",
+        "ranAt": "2026-10-11T18:12:15.731Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "planMigration: PLAN/LLD get the '**Epic:**' md edit at the post-move path (including an old '`undefined`' line)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t3 — PLAN and LLD get the '**Epic:**' edit at the post-move path, including an old '`undefined`' line",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "planMigration: BUILD/CR/TESTS get JSON-only rewrites; EXT gets its two title-line edits; DEF and HLD get their H1 edit (slug-less DEF first-sentence H1 -> slug H1)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t3 — BUILD/CR/TESTS get JSON-only rewrites; EXT gets its two title-line edits; DEF and HLD get their H1 edit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "planMigration: a relabelled HLD with a companion page plans no edit to the page and lists it in companionNotes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t3 — a relabelled HLD with a companion page plans no edit to the page and lists it in companionNotes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 444,
+            "titles": [
+              {
+                "title": "t1 — a repo with no artifact store plans an empty metaRewrites list",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — epicShortName and hldShortName: the slug when set, else the first sentence / first line",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a moved PLAN whose stored label and anchor differ from its LLD head gets one rewrite setting both",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — an already-placed member with stale metadata (no move) still gets a rewrite",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a hash-fallback group gets no label rewrite; anchor and standalone rewrites are still planned",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a legacy unflagged head LLD in a standalone group gets only standalone: true; false is never planned",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a SPEC with no stored standalone flag in a standalone group gets standalone: true",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a same-day unstamped BUILD plans no anchor rewrite; a later-day unstamped BUILD plans epicCreatedAt = group anchor",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a consistent repo plans no metaRewrites, and planning leaves docs and .insrc byte-identical",
+                "result": "pass"
+              },
+              {
+                "title": "t3 — PLAN and LLD get the '**Epic:**' edit at the post-move path, including an old '`undefined`' line",
+                "result": "pass"
+              },
+              {
+                "title": "t3 — BUILD/CR/TESTS get JSON-only rewrites; EXT gets its two title-line edits; DEF and HLD get their H1 edit",
+                "result": "pass"
+              },
+              {
+                "title": "t3 — a relabelled HLD with a companion page plans no edit to the page and lists it in companionNotes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -53,7 +53,7 @@ function fakeServices(): Services {
 			isRunning:   () => true,
 			getStatus:   async () => status(),
 			startDaemon: async () => ({ started: true, logPath: '/tmp/.insrc/daemon.log', alreadyRunning: false }),
-			stopDaemon:  async () => {},
+			stopDaemon:  async () => ({ stopped: true as const, forced: false }),
 			restart:     async () => ({ ok: true, steps: ['stop', 'start'] }),
 			update:      async () => ({ ok: true, steps: ['sync', 'build'] }),
 			backup:      async () => ({ targetDir: '/b', lmdbBytes: 0, lanceBytes: 0, elapsedMs: 0 }),

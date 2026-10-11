@@ -25,7 +25,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-import { startDaemon, stopDaemon } from './daemon.js';
+import { describeStop, startDaemon, stopDaemon } from './daemon.js';
+import type { StartResult, StopOutcome } from './daemon.js';
 import { loadBuiltCatalog } from '../../config/config-catalog-loader.js';
 import { reconcileConfigFile, type ConfigIoOutcome } from '../../config/reconcile-io.js';
 import { refreshSteeringAcrossRepos, type SteeringRefreshDeps, type SteeringRefreshReport } from '../../daemon/steering-inject.js';
@@ -273,18 +274,32 @@ export function summarizeReconcile(outcome: ConfigIoOutcome, onLog: LogFn): Reco
 }
 
 /** Drained stop then start. Faithful to `daemon-ctl.sh cmd_restart`. */
-export async function restart(onLog: LogFn): Promise<MaintenanceResult> {
+export async function restart(onLog: LogFn, deps: RestartDeps = { stopDaemon, startDaemon }): Promise<MaintenanceResult> {
 	onLog('stopping daemon');
+	const steps = ['stop'];
 	try {
-		await stopDaemon();
+		const outcome = await deps.stopDaemon();
+		if (outcome.forced) {
+			// A daemon that would not stop no longer ends the restart half down.
+			steps.push('force-stop');
+			onLog(`${describeStop(outcome)}; starting`);
+		} else {
+			onLog('daemon stopped; starting');
+		}
 	} catch (err) {
-		return { ok: false, steps: ['stop'], error: err instanceof Error ? err.message : String(err) };
+		return { ok: false, steps, error: err instanceof Error ? err.message : String(err) };
 	}
-	onLog('daemon stopped; starting');
-	const r = await startDaemon();
+	const r = await deps.startDaemon();
+	steps.push('start');
 	return r.started
-		? { ok: true, steps: ['stop', 'start'] }
-		: { ok: false, steps: ['stop', 'start'], error: 'daemon did not become ready within 60 s' };
+		? { ok: true, steps }
+		: { ok: false, steps, error: 'daemon did not become ready within 60 s' };
+}
+
+/** Test seam for `restart`: the stop and the start it drives. */
+export interface RestartDeps {
+	readonly stopDaemon:  () => Promise<StopOutcome>;
+	readonly startDaemon: () => Promise<StartResult>;
 }
 
 // ---------------------------------------------------------------------------

@@ -15,6 +15,7 @@ import type { SteeringSelection } from '../shared/types.js';
 import type { TrackerSetupStep } from '../workflow/tracker/setup.js';
 import type { ReviewArtifactResult } from '../workflow/review/index.js';
 import { formatMcpOutcome } from './services/repo.js';
+import { describeStop } from './services/daemon.js';
 import { formatBytes, formatUptime } from './ui/format.js';
 import { CONFIG_CATALOG } from './config-catalog.js';
 
@@ -81,7 +82,7 @@ async function runDaemon(sub: string | undefined, rest: readonly string[], svc: 
 			const r = await svc.daemon.startDaemon();
 			return [r.started ? `daemon running${r.pid !== undefined ? ` (pid ${r.pid})` : ''}` : 'daemon did not become ready within 60 s'];
 		}
-		case 'stop': await svc.daemon.stopDaemon(); return ['daemon stopped'];
+		case 'stop': return [describeStop(await svc.daemon.stopDaemon())];
 		case 'restart': {
 			const r = await svc.daemon.restart(ctx.onLog);
 			return [r.ok ? 'daemon restarted' : `✗ restart failed: ${r.error ?? '?'}`];

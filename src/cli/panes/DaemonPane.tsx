@@ -18,6 +18,7 @@ import { useServices, useUi, useCaptured } from '../ui/context.js';
 import type { UiTask } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 import { formatBytes, formatUptime } from '../ui/format.js';
+import { describeStop } from '../services/daemon.js';
 
 type Modal = 'none' | 'busy' | 'backup';
 
@@ -50,7 +51,7 @@ export function DaemonPane(props: { daemon: DaemonState; nonce: number }): React
 			const r = await svc.daemon.startDaemon();
 			return r.started ? `daemon running${r.pid !== undefined ? ` (pid ${r.pid})` : ''}` : 'daemon did not become ready within 60 s';
 		});
-		else if (input === 'x') void run('stopping daemon…', async () => { await svc.daemon.stopDaemon(); return 'daemon stopped'; });
+		else if (input === 'x') void run('stopping daemon…', async () => describeStop(await svc.daemon.stopDaemon()));
 		else if (input === 'R') void run('restarting daemon…', async (task) => {
 			const r = await svc.daemon.restart(task.push);
 			if (!r.ok) throw new Error(r.error ?? 'restart failed');

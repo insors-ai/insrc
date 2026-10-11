@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 77 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 85 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -314,3 +314,37 @@ Run at 2026-10-11T16:22:21.248Z on commit `e812e0b2`. Tests check: **passed**. 9
 | `src/workflow/code-review/dimensions/__tests__/diagram-handlers.test.ts` | 0 | 5 | 0.4 s |  |
 | `src/workflow/code-review/dimensions/__tests__/diagram.test.ts` | 0 | 8 | 0.5 s |  |
 | `src/workflow/code-review/dimensions/__tests__/ux.test.ts` | 0 | 9 | 0.5 s |  |
+
+## t10
+
+Run at 2026-10-11T16:32:23.490Z on commit `6def791e`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: tsc --noEmit passes with the removed symbols gone**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t10 — the dead render paths are removed | `src/workflow/artifacts/companion/__tests__/removed-paths.test.ts` |
+| pass | d9f85b3c t10 — the references the plugin parity tests import are kept | `src/workflow/artifacts/companion/__tests__/removed-paths.test.ts` |
+
+**integration: full companion + workflow + mcp + docgen test subsets pass**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | validateComponentDependencyDefinition: sound → no findings; dangling → HIGH breach | `src/workflow/artifacts/companion/__tests__/component.test.ts` |
+| pass | validateUxDefinition: a schema-valid card → no findings (ac1) | `src/workflow/artifacts/companion/__tests__/ux.test.ts` |
+| pass | renderErCompanion writes the source document link and context line from the header | `src/workflow/artifacts/companion/__tests__/context-sections.test.ts` |
+| pass | finalize[standalone-LLD]: all four companions carry the header with the LLD id and work item, identically | `src/workflow/__tests__/companion-context-finalize.test.ts` |
+| pass | assembleShell: offline self-contained shell — runtime INLINED, no external fetch | `src/docgen/render/__tests__/shell.test.ts` |
+| pass | c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was unresolved-target) | `src/mcp/build-step/__tests__/build-step.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/docgen/render/__tests__/shell.test.ts` | 0 | 5 | 0.3 s |  |
+| `src/mcp/build-step/__tests__/build-step.test.ts` | 0 | 62 | 4.8 s |  |
+| `src/workflow/__tests__/companion-context-finalize.test.ts` | 0 | 4 | 0.7 s |  |
+| `src/workflow/artifacts/companion/__tests__/component.test.ts` | 0 | 2 | 0.3 s |  |
+| `src/workflow/artifacts/companion/__tests__/context-sections.test.ts` | 0 | 6 | 0.5 s |  |
+| `src/workflow/artifacts/companion/__tests__/removed-paths.test.ts` | 0 | 2 | 0.4 s |  |
+| `src/workflow/artifacts/companion/__tests__/ux.test.ts` | 0 | 6 | 0.5 s |  |

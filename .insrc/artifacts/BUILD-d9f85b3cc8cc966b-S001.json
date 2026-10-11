@@ -4,7 +4,7 @@
     "epicHash": "d9f85b3cc8cc966b",
     "storyId": "S001",
     "createdAt": "2026-10-11T15:39:50.029Z",
-    "updatedAt": "2026-10-11T16:22:21.248Z",
+    "updatedAt": "2026-10-11T16:32:23.490Z",
     "authoredBy": "controller",
     "standalone": true
   },
@@ -45,9 +45,13 @@
       {
         "id": "t9",
         "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
       }
     ],
-    "summary": "Added completeness.ts and one completeness function per kind returning at most two LOWs (missing narrative; undescribed elements named), wired into the code-review ER/sequence/component handlers and the ux dimension. Validators and the finalize HIGH gate are unchanged; LOWs never move the verdict.",
+    "summary": "Removed generate.ts (+test), componentDependencyDefinitionToIr / ComponentDefinitionError and uxDefinitionToIr, trimming their IR tests. Kept erDefinitionToIr, sequenceDefinitionToIr (+ error classes, crowsFootToken) and renderUxMockDocument because the VS Code plugin's parity tests still import them (the task deletes only once nothing imports them); each is documented as the plugin's parity reference. Full subsets: workflow 1725/0, docgen 111/0, mcp 437/0, plugin docs-review-panel 203/203.",
     "testRecord": {
       "md": "docs/standalone/implement-approved-spec-77932eaa1a85819b-docs-standalone-E20261011d9f85b3c/S001/TESTS.md"
     },
@@ -57,310 +61,338 @@
           "file": "src/assets/artifacts/companion/panzoom.js"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/assets/artifacts/schemas/adaptive-cards.schema.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/assets/artifacts/schemas/linkml-metamodel.schema.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/companion-context-finalize.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/body-fields.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/component.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/context-sections.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/diagram-render.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/generate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/header.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/removed-paths.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/render.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/ux-body-fields.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/ux-integration.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/ux-mock-render.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/ux-page.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/ux-render.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/ux.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/completeness.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/component-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/component.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/er-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/er.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/generate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/header.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/mermaid-text.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/render.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/sequence-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/sequence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/shell.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/ux-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/ux.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/diagram-conditional.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/__tests__/diagram-handlers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/__tests__/diagram.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/__tests__/ux.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/diagram/handlers/component.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/diagram/handlers/er.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/diagram/handlers/sequence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/ux/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       },
       {
         "target": {
           "file": "src/workflow/orchestrator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T16:22:21.248Z"
+        "timestamp": "2026-10-11T16:32:23.490Z"
       }
     ],
-    "commit": "e812e0b2"
+    "commit": "6def791e"
   }
 }

@@ -22,6 +22,8 @@
 
 import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/types.js';
 import type { DimensionFinding } from '../../code-review/types.js';
+import { MermaidIds, mermaidFlowText } from './mermaid-text.js';
+import type { CompanionPageContent, DescriptionCell } from './shell.js';
 
 // ---------------------------------------------------------------------------
 // t2 — ComponentDependencyDefinition types
@@ -244,5 +246,56 @@ export function componentDependencyDefinitionToIr(compDef: ComponentDependencyDe
 		derived:             { nodes, edges },
 		narrated:            { sections: componentNarratedSections(compDef) },
 		generatedAtRevision: 'authored-component',
+	};
+}
+
+// ---------------------------------------------------------------------------
+// LLD-d9f85b3c S001/t6 — the component-dependency companion page content
+// ---------------------------------------------------------------------------
+
+/** The kind badge on a component-dependency companion page. */
+export const COMPONENT_KIND_LABEL = 'Component dependencies';
+
+/**
+ * Build the component-dependency page from its definition: a left-to-right
+ * flowchart with one box per component (its file name under the label when it
+ * has a path) and one arrow per dependency, labelled when the dependency is,
+ * plus a components table. Pure.
+ */
+export function componentDependencyDefinitionToPage(compDef: ComponentDependencyDefinition, title: string): CompanionPageContent {
+	const components = compDef.components ?? [];
+	const dependencies = compDef.dependencies ?? [];
+	const ids = new MermaidIds('c');
+	for (const c of components) ids.id(c.id);
+	const nameOf = new Map(components.map(c => [c.id, c.label ?? c.id]));
+
+	const lines = ['flowchart LR'];
+	for (const c of components) {
+		const file = c.path !== undefined && c.path.length > 0 ? c.path.split('/').filter(s => s.length > 0).pop() : undefined;
+		const sub = file !== undefined ? `<br/><small>${mermaidFlowText(file)}</small>` : '';
+		lines.push(`  ${ids.id(c.id)}["${mermaidFlowText(c.label ?? c.id)}${sub}"]`);
+	}
+	for (const d of dependencies) {
+		const label = d.label !== undefined && d.label.length > 0 ? `|${mermaidFlowText(d.label)}|` : '';
+		lines.push(`  ${ids.id(d.from)} -->${label} ${ids.id(d.to)}`);
+	}
+
+	const rows: DescriptionCell[][] = components.map(c => {
+		const deps = dependencies.filter(d => d.from === c.id).map(d => nameOf.get(d.to) ?? d.to);
+		return [c.label ?? c.id, c.path ?? null, deps.length > 0 ? deps.join(', ') : null, c.description ?? null];
+	});
+	return {
+		title,
+		kindLabel: COMPONENT_KIND_LABEL,
+		...(compDef.narrative !== undefined ? { narrative: compDef.narrative } : {}),
+		visual: { kind: 'mermaid', source: lines.join('\n') },
+		description: [{
+			heading: 'Components',
+			lead: `${components.length} ${components.length === 1 ? 'component' : 'components'}, `
+				+ `${dependencies.length} ${dependencies.length === 1 ? 'dependency' : 'dependencies'}. `
+				+ 'An arrow points from a component to what it depends on.',
+			columns: ['Component', 'Path', 'Depends on', 'Description'],
+			rows,
+		}],
 	};
 }

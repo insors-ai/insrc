@@ -49,3 +49,16 @@ export function mermaidToken(text: string, fallback: string): string {
 	const t = text.replace(/[^A-Za-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
 	return t.length > 0 && /^[A-Za-z]/.test(t) ? t : fallback;
 }
+
+/** Text that runs to the end of a Mermaid line (a sequence message or note, or
+ *  a participant's display name): one line, with the statement separator `;`
+ *  and the entity-code marker `#` encoded. */
+export function mermaidLineText(text: string): string {
+	return text.replace(/[\r\n]+/g, ' ').replace(/[#;]/g, c => (c === '#' ? '#35;' : '#59;')).trim();
+}
+
+/** Text for a quoted flowchart node label or an edge label: one line, with no
+ *  quote, pipe or markup of its own (flowchart labels are rendered as HTML). */
+export function mermaidFlowText(text: string): string {
+	return mermaidLabel(text).replace(/[|]/g, '/').replace(/</g, '#lt;').replace(/>/g, '#gt;');
+}

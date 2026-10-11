@@ -8,8 +8,8 @@
  * insrc-migrate-docs — one-time relocation of the flat docs artifacts into the
  * nested work-item tree (Story S003). DRY-RUN by default; `--apply` executes.
  *
- *   insrc-migrate-docs            # print the plan (moves / link rewrites / unmappable), mutate nothing
- *   insrc-migrate-docs --apply    # git mv + link rewrite + validate + per-epic commits
+ *   insrc-migrate-docs            # print the plan (moves / link rewrites / metadata rewrites / unmappable), mutate nothing
+ *   insrc-migrate-docs --apply    # git mv + link rewrite + metadata realign + validate + per-epic commits
  *
  * Repo root defaults to `$INSRC_REPO` or the current working directory.
  */
@@ -25,9 +25,16 @@ function main(): void {
 	const plan = planMigration(repoPath);
 	const rel = (p: string): string => relative(repoPath, p);
 
-	process.stdout.write(`insrc-migrate-docs: ${plan.moves.length} move(s), ${plan.linkRewrites.length} link rewrite(s), ${plan.unmappable.length} unmappable — repo ${repoPath}\n`);
+	process.stdout.write(`insrc-migrate-docs: ${plan.moves.length} move(s), ${plan.linkRewrites.length} link rewrite(s), ${plan.metaRewrites.length} metadata rewrite(s), ${plan.unmappable.length} unmappable — repo ${repoPath}\n`);
 	for (const m of plan.moves) process.stdout.write(`  move  ${rel(m.from)}  ->  ${rel(m.to)}\n`);
 	for (const l of plan.linkRewrites) process.stdout.write(`  link  ${rel(l.file)}: ${l.from} -> ${l.to}\n`);
+	for (const r of plan.metaRewrites) {
+		const fields = Object.entries(r.set).map(([k, v]) => `${k}=${String(v)}`).join(' ');
+		process.stdout.write(`  meta  ${r.artifactId}: ${fields}\n`);
+		for (const e of r.mdEdits) process.stdout.write(`        ${rel(e.file)}: '${e.from}' -> '${e.to}'\n`);
+		for (const e of r.unmatchedLabelLines) process.stdout.write(`        note  ${rel(e.file)}: label line not found exactly once, left as is: '${e.from}'\n`);
+		for (const c of r.companionNotes) process.stdout.write(`        note  ${rel(c)}: companion page still shows the old label until it is regenerated\n`);
+	}
 	for (const u of plan.unmappable) process.stdout.write(`  UNMAPPABLE  ${u.artifactId}: ${u.reason}\n`);
 
 	if (plan.unmappable.length > 0) {
@@ -39,7 +46,7 @@ function main(): void {
 		return;
 	}
 	applyMigration(repoPath, plan);
-	process.stdout.write(`\nApplied: ${plan.moves.length} artifact(s) relocated into the nested tree.\n`);
+	process.stdout.write(`\nApplied: ${plan.moves.length} artifact(s) relocated into the nested tree, ${plan.metaRewrites.length} artifact(s) realigned.\n`);
 }
 
 try {

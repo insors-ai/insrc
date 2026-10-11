@@ -18,8 +18,9 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, relative } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import { epicShortName, type DefineArtifact } from '../artifacts/define.js';
 import { hldShortName, type HldArtifact } from '../artifacts/hld.js';
@@ -390,8 +391,8 @@ test('t4 — only the planned meta fields change; a consistent member\'s JSON is
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-const E2 = '0f1e2d3c4b5a6978';
-const E2_FOLDER = 'docs/standalone/second-item-E202610110f1e2d3c';
+const E2 = '0c0ffee012345678';
+const E2_FOLDER = 'docs/standalone/second-item-E202610110c0ffee0';
 
 /** A second, already-placed work item whose PLAN still carries an old label:
  *  it needs a rewrite but no move. Its hash sorts before H. */
@@ -513,5 +514,39 @@ test('t4 — a label line the md does not hold is reported, not planned, and the
 		applyMigration(repo, plan);
 		assert.match(readJson(repo, `PLAN-${H}-S001`), new RegExp(`"epicSlug": "${LABEL}"`));
 		assert.deepEqual(planMigration(repo).metaRewrites, []);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// t5 — the CLI dry run lists every metadata rewrite
+// ---------------------------------------------------------------------------
+
+const CLI = join(dirname(fileURLToPath(import.meta.url)), '../../bin/insrc-migrate-docs.ts');
+
+test('t5 — the insrc-migrate-docs dry run prints each metadata rewrite, its md edits and companion notes, and mutates nothing', () => {
+	const repo = newRepo();
+	try {
+		seedSplitItem(repo);
+		seedRewriteOnlyItem(repo);
+		seedRelabelledEpic(repo, { companions: [{ kind: 'component-dependency', relPath: 'docs/epics/old-label-E202610110f1e2d3c/component-dependency.html', title: 'Components' }] });
+		seedMd(repo, 'docs/epics/old-label-E202610110f1e2d3c/component-dependency.html', null, '<p>Epic old-label</p>');
+		gitInit(repo);
+		const before = fingerprint(repo);
+		const plan = planMigration(repo);
+
+		// tsx is resolved from this repo: the child runs inside the fixture repo.
+		const out = execFileSync(process.execPath, ['--import', import.meta.resolve('tsx'), CLI], {
+			cwd: repo, encoding: 'utf8', env: { ...process.env, INSRC_REPO: repo, INSRC_LOG_LEVEL: 'silent' },
+		});
+		assert.match(out, new RegExp(`, ${plan.metaRewrites.length} metadata rewrite\\(s\\), `));
+		const metaLines = out.split('\n').filter(l => l.startsWith('  meta  '));
+		assert.equal(metaLines.length, plan.metaRewrites.length, out);
+		assert.ok(metaLines.includes(`  meta  PLAN-${H}-S001: epicSlug=${LABEL} epicCreatedAt=${ANCHOR}`), out);
+		assert.ok(metaLines.includes(`  meta  PLAN-${E2}-S001: epicSlug=second-item`), out);
+		assert.ok(out.includes(`        ${E2_FOLDER}/S001/PLAN.md: '**Epic:** \`old-second\`' -> '**Epic:** \`second-item\`'`), out);
+		assert.ok(out.includes(`        note  ${E_ROOT}/component-dependency.html: companion page still shows the old label`), out);
+		assert.match(out, /Dry-run only/);
+		assert.deepEqual(fingerprint(repo), before, 'the dry run wrote nothing');
+		assert.equal(git(repo, 'status', '--porcelain').trim(), '');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

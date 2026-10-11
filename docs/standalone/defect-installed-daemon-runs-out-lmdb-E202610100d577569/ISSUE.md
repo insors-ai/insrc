@@ -4,6 +4,8 @@
 
 > **Consolidated (2026-10-11):** absorbed into Epic `c2ba6fa62a148ed1` as Story s4 — see [the Epic definition](../../epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md). Not closed; it is designed and delivered through that Story, not on its own.
 
+> **Cause established (2026-10-11):** the failure is not the semaphore limit. On macOS the library reports any failed semaphore call with this message (`mdb_mutex_failed` in the bundled `mdb.c` turns `EINVAL` into `MDB_LOCK_FAILURE`). Reproduced on a temporary store: a process that holds the store open loses its file lock on the `-lock` file when any other descriptor on that file is closed in the same process; another process that then opens and closes the store takes the exclusive lock as the last user and removes the semaphore set; the first process's next write fails with this error at `lmdb/write.js:516`, and its exit hangs in `EnvWrap::onExit → closeEnv → cleanupStrayTxns`. Not exhausted by 40 open-and-close cycles, 40 stores open at once or 5,000 writes. Not yet identified: which daemon code closes a descriptor on the lock file. The SIGABRT of the two test files was not reproduced.
+
 ## Reproduction
 
 Observed on 2026-10-10 on macOS 27, with the installed daemon (one process, started 06:04 UTC) after about four hours of use that included build-gate and review runs.

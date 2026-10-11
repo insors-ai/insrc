@@ -586,7 +586,7 @@
       "prose": "Answers about a codebase are only as good as the index behind them. This Epic makes the index complete (no relationship is lost, nothing is left out that the repository did not ask to leave out, and a repository that is incomplete says so), consistent (a file's refresh either happens in full or not at all, and the daemon stays healthy while it works), and richer (each relationship says how it was found, related code is grouped into subsystems with summaries, Rust, C#, C and C++ are read, SQL is read in its structure where today it is stored as one whole document, and relationships between documents are recorded). It brings five filed issues under one design, so the changes they share are made once."
     },
     "flavor": "enhancement",
-    "problem": "The code index cannot be trusted to be complete or consistent, and it records less than it could. Relationships between files are lost while a repository is indexed and are never restored, yet the repository reports itself ready and answers are returned as plain facts with nothing to say they may be partial [[c4]]. A single file's refresh is a series of separate removals and writes, so an error or a crash part-way leaves the file with no entities, or with entities and no relationships [[c2]]. Reading the entities of one file or one repository passes over every stored row [[c5]], the daemon can exhaust a system limit on its store and then cannot be stopped [[c12]], and the code that reads the index's state reports a scope the index does not hold as the largest size and lets a failed read of the last-indexed time escape as an unexplained error [[c13]] [[c14]]. What the index leaves out is decided twice, by two rules that disagree: a full walk follows the repository's own ignore files, and then a separate list of bare names is applied to every part of every path, so a source directory that the repository does not ignore can be hidden, a rule meant for the top level applies at every depth, later edits to the ignore files never reach the list, and a file event is checked against the list alone [[c16]] [[c17]] [[c18]]. Beyond these defects, a stored relationship carries no record of how it was established [[c1]], the index holds no grouping of related code into subsystems, and it reads the structure of only six programming languages (TypeScript with JavaScript, Python, Go, Java, Scala and Kotlin), stores an SQL file only as one whole document, and records no relationships between documents. These have been found and filed one at a time, with overlapping changes to the same store and the same refresh path, and no single statement of what a correct index is.",
+    "problem": "The code index cannot be trusted to be complete or consistent, and it records less than it could. Relationships between files are lost while a repository is indexed and are never restored, yet the repository reports itself ready and answers are returned as plain facts with nothing to say they may be partial [[c4]]. A single file's refresh is a series of separate removals and writes, so an error or a crash part-way leaves the file with no entities, or with entities and no relationships [[c2]]. Reading the entities of one file or one repository passes over every stored row [[c5]], the daemon's store can be broken under it by another process, after which it cannot be stopped [[c12]], and the code that reads the index's state reports a scope the index does not hold as the largest size and lets a failed read of the last-indexed time escape as an unexplained error [[c13]] [[c14]]. What the index leaves out is decided twice, by two rules that disagree: a full walk follows the repository's own ignore files, and then a separate list of bare names is applied to every part of every path, so a source directory that the repository does not ignore can be hidden, a rule meant for the top level applies at every depth, later edits to the ignore files never reach the list, and a file event is checked against the list alone [[c16]] [[c17]] [[c18]]. Beyond these defects, a stored relationship carries no record of how it was established [[c1]], the index holds no grouping of related code into subsystems, and it reads the structure of only six programming languages (TypeScript with JavaScript, Python, Go, Java, Scala and Kotlin), stores an SQL file only as one whole document, and records no relationships between documents. These have been found and filed one at a time, with overlapping changes to the same store and the same refresh path, and no single statement of what a correct index is.",
     "nonGoals": [
       {
         "text": "Replacing LMDB or LanceDB, or adopting Graphify as a dependency or as the index.",
@@ -932,20 +932,20 @@
       },
       {
         "id": "s4",
-        "title": "The daemon stays within the store's lock limit and stops cleanly when a store operation fails (ISSUE-0d577569)",
+        "title": "The daemon's store is not broken by another process, and the daemon always stops (ISSUE-0d577569)",
         "userValue": "The daemon keeps running through long indexing and many requests, and when something does go wrong in the store it can still be stopped and restarted normally.",
         "sizeEstimate": "M",
         "localConstraints": [
           {
             "id": "lc1",
-            "text": "This Story absorbs ISSUE-0d577569 in full; that issue is already approved and its statement of the defect stands.",
+            "text": "This Story absorbs ISSUE-0d577569 in full; that issue is already approved and its statement of the symptoms stands. Its cause, which the issue records as not established, was reproduced on 2026-10-11: not the system's semaphore limit, which the library's message names, but the loss of the daemon's own file lock on the store's lock file, after which another process that opens and closes the store removes the store's semaphores.",
             "type": "stakeholder",
             "source": "c12"
           }
         ],
         "functionalRequirements": [
           {
-            "statement": "The daemon does not exhaust the system's limit on store locks in normal operation."
+            "statement": "No other process's opening or closing of a store takes the daemon's locks away: the live store is opened by the daemon alone."
           },
           {
             "statement": "When a store operation fails, the daemon still stops when asked."
@@ -957,9 +957,9 @@
         "acceptanceCriteria": [
           {
             "id": "ac1",
-            "given": "a daemon that has indexed and served requests for long enough to reach the limit today",
-            "when": "it continues to index and serve",
-            "then": "no store operation fails for lack of a lock",
+            "given": "a running daemon, and another process that tries to open the live store",
+            "when": "that process opens and closes a store and the daemon then writes",
+            "then": "the other process is refused the live store, and the daemon's write succeeds",
             "operationalizes": [
               "k1",
               "k2"
@@ -976,9 +976,9 @@
           },
           {
             "id": "ac3",
-            "given": "a store operation that fails for lack of a lock",
+            "given": "a store operation that fails because the store's locks were taken away",
             "when": "the daemon's status is read",
-            "then": "the failure and its cause are stated",
+            "then": "the failure and its true cause are stated, not the library's message about a system limit",
             "operationalizes": [
               "k1"
             ]
@@ -1552,7 +1552,7 @@
         },
         {
           "id": "E20261011c2ba6fa6:FR006",
-          "statement": "The daemon stays within the system's limit on store locks and stops cleanly when a store operation fails.",
+          "statement": "The daemon's store is not broken by another process, and the daemon always stops when asked, a failed store included.",
           "scope": "doc",
           "rationale": "ISSUE-0d577569."
         },
@@ -1654,7 +1654,7 @@
         },
         {
           "id": "E20261011c2ba6fa6:S004:FR001",
-          "statement": "The daemon does not exhaust the system's limit on store locks in normal operation.",
+          "statement": "No other process's opening or closing of a store takes the daemon's locks away: the live store is opened by the daemon alone.",
           "scope": "item",
           "itemRef": "s4"
         },
@@ -1899,6 +1899,16 @@
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
         },
         "comment": "Stakeholder decision, 2026-10-11: a reindex is queued at once, for a request and for the migration alike; only the repository being reindexed is offline, from the start of its own run until that run completes, and other repositories are answered as usual. Not re-reviewed.",
+        "kind": "comment"
+      },
+      {
+        "id": "1ee8d3e4",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-11T08:16:16.230Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
+        },
+        "comment": "Amended after approval, 2026-10-11, on the stakeholder's decision: Story s4 is reworded to the cause reproduced that day. The failure is not the semaphore limit: the daemon loses its file lock on the lock file when another descriptor on it is closed in-process, and another process that opens and closes the store then removes the semaphores. The title, the first and third criteria and the first requirement of s4 now speak of the store not being broken by another process. Not re-reviewed.",
         "kind": "comment"
       }
     ]

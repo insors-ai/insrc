@@ -32,7 +32,7 @@ import { loadLinkmlMetamodelSchema } from './metamodel.js';
 
 /** One slot of an ER class — a LinkML SlotDefinition subset. */
 export interface ErSlot {
-	/** What this slot holds is, shown in the companion page's description table. Optional. */
+	/** What this slot holds, shown in the companion page's description table. Optional. */
 	readonly description?:         string | undefined;
 	/** The slot type: a scalar type name (attribute) or a class name (relationship). */
 	readonly range?:               string | undefined;
@@ -46,7 +46,7 @@ export interface ErSlot {
 
 /** One ER class (entity) — a LinkML ClassDefinition subset. */
 export interface ErClass {
-	/** What this entity represents is, shown in the companion page's description table. Optional. */
+	/** What this entity represents, shown in the companion page's description table. Optional. */
 	readonly description?: string | undefined;
 	readonly attributes?: Record<string, ErSlot> | undefined;
 }

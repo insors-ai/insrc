@@ -32,7 +32,7 @@ import type { DimensionFinding } from '../../code-review/types.js';
 export interface SequenceParticipant {
 	readonly id:           string;
 	readonly label?:       string | undefined;
-	/** What this participant is is, shown in the companion page's description table. Optional. */
+	/** Who or what this participant is, shown in the companion page's description table. Optional. */
 	readonly description?: string | undefined;
 }
 
@@ -44,7 +44,7 @@ export interface SequenceMessage {
 	/** 'recurse' marks a self/cycle repeat (rendered as a recursion note). */
 	readonly kind?: 'call' | 'return' | 'recurse' | undefined;
 	readonly note?: string | undefined;
-	/** What this step does is, shown in the companion page's description table. Optional. */
+	/** What this step does, shown in the companion page's description table. Optional. */
 	readonly description?: string | undefined;
 }
 

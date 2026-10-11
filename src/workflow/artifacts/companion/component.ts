@@ -31,7 +31,7 @@ import type { DimensionFinding } from '../../code-review/types.js';
 export interface Component {
 	readonly id:           string;
 	readonly label?:       string | undefined;
-	/** What this component is responsible for is, shown in the companion page's description table. Optional. */
+	/** What this component is responsible for, shown in the companion page's description table. Optional. */
 	readonly description?: string | undefined;
 	/** The repo path the component lives at, shown beside it in the description table. Optional. */
 	readonly path?:        string | undefined;

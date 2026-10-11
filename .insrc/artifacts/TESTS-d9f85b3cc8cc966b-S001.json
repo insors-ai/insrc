@@ -4,7 +4,7 @@
     "epicHash": "d9f85b3cc8cc966b",
     "storyId": "S001",
     "createdAt": "2026-10-11T15:39:50.029Z",
-    "updatedAt": "2026-10-11T15:49:07.959Z",
+    "updatedAt": "2026-10-11T15:52:05.210Z",
     "standalone": true
   },
   "body": {
@@ -604,6 +604,112 @@
               },
               {
                 "title": "d9f85b3c t4 — with nothing to say, the context line is placement only",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "0a781b6e",
+        "ranAt": "2026-10-11T15:52:05.210Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "er page builder: erDiagram, PK, cardinality, self-loop (Delivery read-model fixture)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — the visual is a Mermaid erDiagram, never a classDiagram, and the fixture is a valid definition",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — entity boxes carry typed scalar columns, list types for multi-valued, PK for identifiers, and no class-ranged slots",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — relationship lines carry the slot name and the cardinality: many, required one, optional one, and a self-loop",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "er page builder: entities + columns tables, null descriptions, no-columns row",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — the entities table lists each entity with its description, key and relationships",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — one columns table per entity, with keys tagged and missing descriptions as null cells",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — an attribute-less entity's columns table has a single 'No columns' row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "er page builder: hostile characters sanitised",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+                "title": "d9f85b3c t5 — names with quotes, angle brackets, colons or non-ASCII give safe erDiagram source and escaped tables",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/er-page.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 470,
+            "titles": [
+              {
+                "title": "d9f85b3c t5 — the visual is a Mermaid erDiagram, never a classDiagram, and the fixture is a valid definition",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — entity boxes carry typed scalar columns, list types for multi-valued, PK for identifiers, and no class-ranged slots",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — relationship lines carry the slot name and the cardinality: many, required one, optional one, and a self-loop",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — the entities table lists each entity with its description, key and relationships",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — one columns table per entity, with keys tagged and missing descriptions as null cells",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — an attribute-less entity's columns table has a single 'No columns' row",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t5 — names with quotes, angle brackets, colons or non-ASCII give safe erDiagram source and escaped tables",
                 "result": "pass"
               }
             ],

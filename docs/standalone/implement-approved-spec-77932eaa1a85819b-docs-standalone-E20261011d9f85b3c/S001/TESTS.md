@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 48 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -152,3 +152,35 @@ Run at 2026-10-11T15:49:07.959Z on commit `1a0b7703`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/artifacts/companion/__tests__/header.test.ts` | 0 | 13 | 0.4 s |  |
+
+## t5
+
+Run at 2026-10-11T15:52:05.210Z on commit `0a781b6e`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: er page builder: erDiagram, PK, cardinality, self-loop (Delivery read-model fixture)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t5 — the visual is a Mermaid erDiagram, never a classDiagram, and the fixture is a valid definition | `src/workflow/artifacts/companion/__tests__/er-page.test.ts` |
+| pass | d9f85b3c t5 — entity boxes carry typed scalar columns, list types for multi-valued, PK for identifiers, and no class-ranged slots | `src/workflow/artifacts/companion/__tests__/er-page.test.ts` |
+| pass | d9f85b3c t5 — relationship lines carry the slot name and the cardinality: many, required one, optional one, and a self-loop | `src/workflow/artifacts/companion/__tests__/er-page.test.ts` |
+
+**unit: er page builder: entities + columns tables, null descriptions, no-columns row**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t5 — the entities table lists each entity with its description, key and relationships | `src/workflow/artifacts/companion/__tests__/er-page.test.ts` |
+| pass | d9f85b3c t5 — one columns table per entity, with keys tagged and missing descriptions as null cells | `src/workflow/artifacts/companion/__tests__/er-page.test.ts` |
+| pass | d9f85b3c t5 — an attribute-less entity's columns table has a single 'No columns' row | `src/workflow/artifacts/companion/__tests__/er-page.test.ts` |
+
+**unit: er page builder: hostile characters sanitised**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t5 — names with quotes, angle brackets, colons or non-ASCII give safe erDiagram source and escaped tables | `src/workflow/artifacts/companion/__tests__/er-page.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/artifacts/companion/__tests__/er-page.test.ts` | 0 | 7 | 0.5 s |  |

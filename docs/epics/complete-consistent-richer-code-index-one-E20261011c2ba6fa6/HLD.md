@@ -265,9 +265,9 @@ The reading of links and references between documents, and from a document to co
 
 **Phase A — a daemon that stays up and reads that tell the truth**
 
-**Stories:** `s4`, `s5`
+**Stories:** `s4`, `s11`, `s5`
 
-Neither Story depends on another, and both remove failures that get in the way of everything after them: a daemon whose store has been broken by another process aborts whole test files and cannot be stopped, and the later phases index this repository repeatedly. s4 starts with finding the cause, so it should start first.
+Neither Story depends on another, and both remove failures that get in the way of everything after them: a daemon whose store has been broken by another process aborts whole test files and cannot be stopped, and the later phases index this repository repeatedly. s4 starts with finding the cause, so it should start first. Story s11 was added to the Epic on 2026-10-11 and belongs here. The order inside the phase is: first the parts of s4 that stand alone (the stop paths, the store-failure status, the diagnostic, and the refusal of the live store to tests and scripts, with a temporary allowance for the MCP server's process); then s11, which moves the step tools into the daemon and deletes that allowance; s5 is independent of both and may go before, between or after them.
 
 **Backward compat:** A refused request keeps the error code and message it has today. The daemon's stop and start commands keep their behaviour; only the bound on shutdown is new.
 
@@ -415,6 +415,7 @@ Everything new is an overlay: evidence, subsystem groups and document relationsh
 - **Subho Ghosh** (2026-10-11T07:53:00.827Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md`: Amended after approval, 2026-10-11, on the stakeholder's decision: while a repository is being indexed or reindexed, search and analyze requests about it return a named error that states the indexing state, and no partial answer. Carried by Story s5 (a new requirement and acceptance criterion ac4 in the definition). Not re-reviewed.
 - **Subho Ghosh** (2026-10-11T07:56:39.212Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md`: Stakeholder decision, 2026-10-11: a reindex is queued at once, for a request and for the migration alike; only the repository being reindexed is offline, from the start of its own run until that run completes, and other repositories are answered as usual. Not re-reviewed.
 - **Subho Ghosh** (2026-10-11T08:16:16.235Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md`: Amended after approval, 2026-10-11, on the stakeholder's decision: Story s4 is reworded to the cause reproduced that day. The failure is not the semaphore limit: the daemon loses its file lock on the lock file when another descriptor on it is closed in-process, and another process that opens and closes the store then removes the semaphores. The title, the first and third criteria and the first requirement of s4 now speak of the store not being broken by another process. Not re-reviewed.
+- **Subho Ghosh** (2026-10-11T09:27:55.718Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md`: Stakeholder decision, 2026-10-11: the temporary allowance that lets the MCP server open the live store until Story s11 is kept, and its removal is a required part of Story s11 (a new acceptance criterion ac6, requirement and local constraint on s11 in the definition).
 
 <!-- insrc:review -->
 

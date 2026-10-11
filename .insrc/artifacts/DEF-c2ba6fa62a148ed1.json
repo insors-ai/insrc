@@ -1556,6 +1556,28 @@
             "when": "the daemon returns that prompt",
             "then": "the prompt, the schema and the state token reach the client unchanged, and the reasoning still happens in the session, as it does today",
             "operationalizes": []
+          },
+          {
+            "id": "ac6",
+            "given": "the temporary allowance that Story s4 gives the MCP server's process to open the live store (the permitted-reader declaration and its one call)",
+            "when": "this Story is delivered",
+            "then": "the declaration and its call are deleted from the source, the MCP server's process is refused the live store like any other process that is not the daemon, and a test fails if the declaration is found anywhere in the source",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Removing the temporary allowance is part of this Story and not optional: by the stakeholder's decision of 2026-10-11 the allowance exists only until this Story lands, and Story s4's first acceptance criterion is met in full only when it is gone.",
+            "type": "stakeholder",
+            "source": "c11"
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The temporary allowance for the MCP server's process to open the live store is removed with this Story."
           }
         ]
       }
@@ -1879,6 +1901,12 @@
           "statement": "Only new or changed documents are sent to the model.",
           "scope": "item",
           "itemRef": "s10"
+        },
+        {
+          "id": "E20261011c2ba6fa6:S011:FR001",
+          "statement": "The temporary allowance for the MCP server's process to open the live store is removed with this Story.",
+          "scope": "item",
+          "itemRef": "s11"
         }
       ]
     },
@@ -1951,6 +1979,16 @@
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
         },
         "comment": "Amended after approval, 2026-10-11, on the stakeholder's decision: Story s4 is reworded to the cause reproduced that day. The failure is not the semaphore limit: the daemon loses its file lock on the lock file when another descriptor on it is closed in-process, and another process that opens and closes the store then removes the semaphores. The title, the first and third criteria and the first requirement of s4 now speak of the store not being broken by another process. Not re-reviewed.",
+        "kind": "comment"
+      },
+      {
+        "id": "6a590cf7",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-11T09:27:55.689Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
+        },
+        "comment": "Stakeholder decision, 2026-10-11: the temporary allowance that lets the MCP server open the live store until Story s11 is kept, and its removal is a required part of Story s11 (a new acceptance criterion ac6, requirement and local constraint on s11 in the definition).",
         "kind": "comment"
       }
     ]

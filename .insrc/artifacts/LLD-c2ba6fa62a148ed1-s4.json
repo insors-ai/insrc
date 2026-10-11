@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each of Story s4's three acceptance criteria (ac1 refusal of the live store, ac2 a stop that always ends, ac3 status states the true cause) and its local constraint lc1 (reproduced cause, not the semaphore limit) has a designed mechanism, and no non-goal is built.",
-          "evidence": "DEF.md:217-223 states ac1-ac3 and lc1. The design answers ac1 with the owner declaration in getGraphStore (2.1, 3.1), ac2 with the self-kill on locks-lost plus the forced kill in stopDaemon and daemon-ctl.sh (2.5, 2.6, 3.4), and ac3 with StoreHealth and DaemonStatus.storeFailure (3.2, 3.3). The error text follows lc1 and drops the library's 'semume' advice. Whether those mechanisms work as written is judged under the other items.",
-          "action": "None.",
+          "premise": "The three acceptance criteria of Story s4 in the DEF (ac1 refusal of the live store, ac2 a stop that always ends, ac3 the true cause in status) are each designed, and ac1's remaining gap (the MCP server's process) is handed to Story s11 rather than dropped.",
+          "evidence": "DEF.md:217-219 states ac1-ac3 as the design reads them. The design covers ac1 by the owner check in getGraphStore, ac2 by the self-kill plus the forced kill in stopDaemon and daemon-ctl.sh, ac3 by StoreHealth and DaemonStatus.storeFailure. DEF.md:358 (s11 ac1) requires that 'the MCP server's process holds no descriptor on the live store', which matches the hand-over. src/mcp/server.ts:402 does run handleAnalyzeStep in the MCP process, so the temporary allowance is needed. Note: ac1 as written in the DEF is not met in full by this Story alone; the design says so openly. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md, src/mcp/server.ts]",
+          "action": "None for the design. When approving, accept that ac1 is complete only after s11.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -47,12 +47,12 @@
           "ref": "current-behaviour",
           "item": "current-behaviour",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The MCP server's lookup cache is the one production use of the live store from a process other than the daemon, so moving the cache behind two daemon requests leaves the MCP server with no open of the store.",
-          "evidence": "The whole analyze step runs inside the MCP server's process (src/mcp/server.ts:402 `async (rawArgs, _extra) => handleAnalyzeStep(rawArgs)`), and it reads the store directly in many places besides the cache. start.ts:64 `await stepScope(unsized)`, plan.ts:112 and narrow.ts:205 call stepScope with no deps, so the defaults in src/analyze/context/scope.ts:77-79 run (`listRepos: () => listRepos(null)`, `findEntitiesByFile(null, file)`, `listEntitiesForRepo(null, repoPath)`). start.ts:74 calls resolveRepoLastIndexedAt, which is `repos = await listRepos(null)` (driver.ts:1163). stepPlan runs every deterministic lookup in the same process (executor.ts:590 `output = await runner(exp, ctx)`), and the runners read entities directly, for example symbol-locate.ts:99 `findEntitiesByName(db, ...)` and :109 `listEntitiesForRepo(db, ctx.repoPath)`. Each of those opens the store: repos.ts:214 and entities.ts:586 are `const store = await getGraphStore();`. About 40 files under src/analyze import src/db read functions this way. Once step 7 switches the refusal on, every insrc_analyze_step call from a client is refused with LmdbStoreNotOwnerError, and with it triage, the workflow steps and code review that rest on the analyzer. The smoke check 'the MCP server's process has no descriptor on graph.lmdb' cannot pass either. Not checked: whether src/workflow/review/source-roots.ts:59 (`listEntitiesForRepo(db, repoPath)`, reached from review/probe.ts:195) also runs in the MCP server's process. [files: src/mcp/server.ts, src/mcp/analyze-step/phases/start.ts, src/mcp/analyze-step/phases/plan.ts, src/mcp/analyze-step/phases/narrow.ts, src/analyze/context/scope.ts, src/analyze/context/driver.ts, src/analyze/explore/executor.ts, src/analyze/explore/symbol-locate.ts, src/db/repos.ts, src/db/entities.ts]",
-          "action": "Redo the inventory of what the MCP server's process reads from the store (scope resolution, last-indexed time, measurement, every lookup runner, the review probe) and design how each reaches the daemon: either the lookups themselves run in the daemon behind a request, or each read becomes a daemon request. Do not switch on the refusal (step 7) until that is done. Re-check the Story's size, which the DEF gives as M.",
+          "severity": "LOW",
+          "premise": "The daemon's shutdown ends in process.exit on both of its paths, with a 20-second backstop, and closes the store inside the queue-drain continuation.",
+          "evidence": "src/daemon/index.ts:1981 'const HARD_EXIT_MS = 20_000;'; the backstop at 2006-2010 calls clearPid() then process.exit(0); the drain path at 2012-2028 awaits closeGraphStore() (2022), clearPid(), then process.exit(0). The re-entrance guard 'shutdownStarted' is at 1986. daemon.shutdown (1575-1579) calls shutdown() and returns { ok: true }. [files: src/daemon/index.ts]",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "current-behaviour.2",
@@ -60,9 +60,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The daemon's shutdown ends in process.exit on both of its paths, with a 20-second backstop, and the control paths give up after 30 seconds.",
-          "evidence": "src/daemon/index.ts:1981 `const HARD_EXIT_MS = 20_000;`, :2009 `process.exit(0)` in the backstop and :2027 `process.exit(0)` after `await closeGraphStore()` (:2022). src/cli/services/daemon.ts:81 `throw new Error('daemon did not stop within 30 s')`. scripts/daemon-ctl.sh:235 `die \"daemon did not shut down within 30 s ...\" 4`. That the library's exit hook hangs once the semaphores are gone was not reproduced here; the design rests on its own measurement for that.",
-          "action": "None.",
+          "premise": "The stop paths give up after 30 seconds today, the request client has no time-out, and the status handler reads the repository list outside any guard.",
+          "evidence": "src/cli/services/daemon.ts:78-83: 'await rpc('daemon.shutdown'); if (!(await waitForStop())) { throw new Error('daemon did not stop within 30 s'); }'. src/shared/ipc-client.ts:46-84 has no timer; it settles only on data or on a socket error. scripts/daemon-ctl.sh:220 and :235 both 'die ... 4' after wait_for_daemon_stop. src/daemon/index.ts:1026 'repos: await listRepos(db),' sits outside the only try block of the handler (1036-1041). restart (maintenance.ts:276-288) returns ok:false with steps ['stop'] when stopDaemon throws. [files: src/cli/services/daemon.ts, src/shared/ipc-client.ts, scripts/daemon-ctl.sh, src/daemon/index.ts, src/cli/services/maintenance.ts]",
+          "action": "None. One detail for the build: rpc() maps both ENOENT and ECONNREFUSED to the same 'daemon is not running' message (ipc-client.ts:77-78), so stopDaemon must tell the two cases apart by the pid (pidFromFile / isRunning in src/cli/services/lifecycle.ts), not by the error text.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -71,12 +71,12 @@
           "ref": "current-behaviour",
           "item": "current-behaviour",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "A stop of a daemon that is not running, with no pid file, returns normally today, so returning { stopped: true, forced: false } is 'as today'.",
-          "evidence": "stopDaemon is `await rpc('daemon.shutdown'); if (!(await waitForStop())) { throw ... }` (daemon.ts:78-83). With no socket the request rejects before any wait; the same file documents the rejection for the sibling call: 'Rejects with a friendly \"daemon is not running\" error when the socket is absent' (daemon.ts:49-50). So today the stop of a stopped daemon is an error, not a success. The design changes this silently: src/cli/command.ts:84 and src/cli/panes/DaemonPane.tsx:53 would then print 'daemon stopped' when nothing was running. [files: src/cli/services/daemon.ts]",
-          "action": "State this as a behaviour change, decide whether 'not running' stays an error or becomes its own outcome (for example stopped: false, or a third field), and say what the CLI's two callers print.",
+          "severity": "LOW",
+          "premise": "getGraphStore opens whatever path is set, defaulting to the live store; nothing handles the lock failure; most writes go through withWriteTxn; 80 test files set a temporary path and the two named test files do not.",
+          "evidence": "src/db/graph/store.ts:265 'let _path: string = PATHS.lmdb;', 280-430 has no ownership or health check, and closeGraphStore (606-616) always awaits inst.root.close(). withWriteTxn is 'store.root.transaction(() => fn(store))' (631) and withWriteTxnSync is 'store.root.transactionSync(fn)' (643), neither with a catch. A search of non-test source finds 50 withWriteTxn call sites in 9 files and no withWriteTxnSync caller outside store.ts. setGraphStorePath appears in exactly 80 test files; freeform-probe-scope.test.ts and phase5-explorations-params.test.ts have no call to it (the latter's line 77 comment says the read goes to listEntitiesForRepo). [files: src/db/graph/store.ts, src/db/graph/migrations.ts, src/analyze/explore/__tests__/freeform-probe-scope.test.ts, src/analyze/explore/__tests__/phase5-explorations-params.test.ts]",
+          "action": "Note for the build: two asynchronous transactions bypass the wrapper and so get no bounded wait: store.ts:386 (first-boot write) and src/db/graph/migrations.ts:442. Both run during open, before the daemon serves, so the risk is small; say so in the design or route them through the bounded wrapper.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "new-versus-reuse.1",
@@ -84,21 +84,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The library's lock failure can be recognised by a numeric code of -30775 on the thrown error, and nothing in src handles it today, so LmdbStoreLocksLostError and StoreHealth are new.",
-          "evidence": "node_modules/lmdb/dependencies/lmdb/libraries/liblmdb/lmdb.h:539 `#define MDB_LOCK_FAILURE    (-30775)`. node_modules/lmdb/src/misc.cpp:419-423 keeps codes in the -30700..-30800 range negative and sets `error.Set(\"code\", Number::New(env, rc));`. src/db/graph/store.ts has LmdbStoreError and four subclasses (lines 136-190), none for a lost lock, and no file under src mentions the code or the constant. Not checked: whether an error raised from the library's asynchronous commit thread carries the same code property; the design's unit test on a write would show it.",
-          "action": "None; let the health-record unit test cover the asynchronous write as well as the synchronous one.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "setGraphStorePath is the existing way a test gets a temporary store, about 80 test files use it, and the two named test files do not.",
-          "evidence": "src/db/graph/store.ts:273 `export function setGraphStorePath(path: string): void { _path = path; }`. A search for `setGraphStorePath(` finds 80 test files. Neither src/analyze/explore/__tests__/freeform-probe-scope.test.ts nor phase5-explorations-params.test.ts contains setGraphStorePath.",
-          "action": "None.",
+          "premise": "The new names do not exist yet, and the reused pieces exist with the stated shape: LmdbStoreError as a base class, an injectable reader on resolveSourceRoots, and the pid helpers the stop needs.",
+          "evidence": "src/db/graph/store.ts:136 'export class LmdbStoreError extends Error' with four existing subclasses; the file has no declareLiveStoreOwner, StoreHealth, LmdbStoreNotOwnerError or LmdbStoreLocksLostError. src/workflow/review/source-roots.ts:47-54 already has 'SourceRootsOpts { readonly listEntities?: (repoPath: string) => Promise<readonly Entity[]> }' and returns fallbackUsed. src/cli/services/lifecycle.ts exports pidFromFile, isRunning and waitForStop. src/cli/services/daemon.ts:26 exports DAEMON_ENTRY as the design says, and both launchers put the entry last on the command line (daemon.ts:65, daemon-ctl.sh:138), so the 'ends in daemon/index.js' rule matches both. [files: src/db/graph/store.ts, src/workflow/review/source-roots.ts, src/cli/services/lifecycle.ts, src/cli/services/daemon.ts]",
+          "action": "None. The feedback note at the end of the design ('The pid check reuses DAEMON_ENTRY') contradicts section 2.4, which says it does not; delete the stale sentence.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -107,10 +95,10 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "The store has a read path where the lock failure can be caught and where later calls can fail fast without calling the library, alongside the two write wrappers.",
-          "evidence": "Writes do go through one place: 54 call sites use withWriteTxn / withWriteTxnSync and only three raw `.root.transaction` calls exist (two in store.ts, one in migrations.ts). Reads have no such place. store.ts exports getGraphStore, which returns the raw handle (`if (_instance !== null) return _instance;`, line 281), and each module then calls the library directly on a sub-database, for example `const store = await getGraphStore();` followed by direct gets and range reads in entities.ts:586 and repos.ts:214. There is no read wrapper to put a catch in, and a caller that already holds the handle never passes through the store module again. [files: src/db/graph/store.ts, src/db/entities.ts, src/db/repos.ts]",
-          "action": "Name the read-side site. The simplest is to make getGraphStore itself throw LmdbStoreLocksLostError once the record is locks-lost (every read begins with it), and to say plainly that a lock failure first seen on a read is recorded only if that is added, or is recorded on the next write.",
+          "severity": "HIGH",
+          "premise": "A refusal placed in resolvePath (src/daemon/tools/builtins/file/helpers.ts) covers every file tool, including copy and move.",
+          "evidence": "file_copy and file_move never call resolvePath when they run. copy.ts:8 imports only 'str, fail, FS_MOVE_ACCESS' and its execute does 'const src = resolve(from); const dst = resolve(to);' (57-58) then 'await fs.cp(src, dst, ...)' (75); move.ts:56-57 does the same and falls back to fs.cp at 79. Their only link to resolvePath is FS_MOVE_ACCESS.extractKey (helpers.ts:59-64), and a search of src for 'extractKey' finds no caller at all: only the declarations in the tools and the interface in src/shared/access.ts. So with the refusal built where the design puts it, file_copy still reads the lock file in the daemon's process, which the design itself names as the one known way to drop the lock. fs.cp is also not among the functions the diagnostic wraps, so the copy would not be logged either. The design's own test ('checked through the shared path helper for ... copy ... and move') would pass against the helper while the two tools stay open. [files: src/daemon/tools/builtins/file/copy.ts, src/daemon/tools/builtins/file/move.ts, src/daemon/tools/builtins/file/helpers.ts, src/shared/access.ts]",
+          "action": "Put the refusal in a helper that copy.ts and move.ts call in execute (for both 'from' and 'to') and in buildApprovalGate, or make the two tools use resolvePath. Add fs.cp and its promise form to the wrapped functions. Test the refusal by calling each tool's execute, not the helper. Also decide whether the check resolves symbolic links: resolvePath uses path.resolve, which does not.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -120,9 +108,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "The inventory of stop paths that give up after the wait is complete: stopDaemon, restart and the control script's cmd_stop.",
-          "evidence": "cmd_start has its own stop of a running daemon with the same give-up: `signal_stop` then `wait_for_daemon_stop || die \"stale daemon did not shut down within 30 s (see $DAEMON_LOG)\" 4` (daemon-ctl.sh:217-221). The design changes only cmd_stop (line 235). `daemon-ctl.sh start` against a hung daemon, the path an update followed by a start takes, still dies with the daemon half down. The TypeScript side is complete: stopDaemon's callers are command.ts:84, panes/DaemonPane.tsx:53, maintenance.ts:279 and the type at services/index.ts:39 (`stopDaemon(): Promise<void>`), which the design covers as 'its callers in the CLI'. [files: scripts/daemon-ctl.sh]",
-          "action": "Put the forced kill in one shell function used by both cmd_stop and cmd_start's stale-daemon branch, and list services/index.ts:39 among the signature changes.",
+          "premise": "The shutdown's two ends are the only places where the daemon calls process.exit after its store has failed, so changing them establishes the invariant 'once locks-lost, the daemon never calls process.exit'.",
+          "evidence": "src/daemon/index.ts:49-65: reportFatal, registered for both 'uncaughtException' and 'unhandledRejection', ends with 'setTimeout(() => { process.exit(1); }, 50).unref();' (line 61). The design makes the write wrapper and getGraphStore reject with LmdbStoreLocksLostError; any such rejection that is not awaited (the shutdown itself uses 'void disposeChatHandlers()', 'void watcher.close()', and timers call asynchronous code) reaches this handler, which calls process.exit, whose exit hook the design says never returns. The daemon is then hung with its pid file in place and health recorded, which is the state the invariant exists to prevent. The section lists only the shutdown as a call site. [files: src/daemon/index.ts]",
+          "action": "Add reportFatal to section 3.4: when StoreHealth is locks-lost it removes the pid file and socket, writes its line synchronously (it already does, lines 52-56) and ends by SIGKILL to itself. Add a test: an unhandled rejection after locks-lost ends the process.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -132,11 +120,35 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The owner flag set by the daemon's entry point stays valid through a compaction's close and reopen, and getGraphStore, closeGraphStore and setGraphStorePath keep their signatures.",
-          "evidence": "compactGraphStore closes the handle and calls `await getGraphStore();` again in the same process (store.ts:526-554), so a module-level flag set once still holds. The daemon opens the store at src/daemon/index.ts:264 `await getGraphStore();   // ensure env is open`, so a declaration before that line precedes the first open. The three signatures in the design match store.ts:273, :280 and :606. No worker thread or fork exists under src that would import the store without the flag.",
-          "action": "None.",
+          "premise": "The change of stopDaemon's return type reaches the service type and exactly three callers.",
+          "evidence": "A search for stopDaemon finds: the definition (src/cli/services/daemon.ts:78), the service type 'stopDaemon(): Promise<void>;' (src/cli/services/index.ts:39) and its binding (:92), and the callers src/cli/command.ts:84, src/cli/panes/DaemonPane.tsx:53 and src/cli/services/maintenance.ts:279. No plugin calls it. [files: src/cli/services/index.ts, src/cli/command.ts, src/cli/panes/DaemonPane.tsx, src/cli/services/maintenance.ts, src/cli/__tests__/command.test.ts, src/cli/__tests__/tui.test.ts]",
+          "action": "Two test doubles also declare it and are not in the design: src/cli/__tests__/command.test.ts:34 and src/cli/__tests__/tui.test.ts:56 ('stopDaemon: async () => {}'). Update them in the same change; tsc does not check test files here, so nothing will flag them.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.4",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The daemon's request dispatcher and its queue's job runner are the two places every store-using call passes through, so catching the read failure there records it.",
+          "evidence": "src/daemon/server.ts has three separate catch sites, not one: the standard request (177-183), the standard handler reached through a stream request (192-198), and the stream handler (226-233). All three reduce the error to its message ('const msg = err instanceof Error ? err.message : String(err)'), so the code must be read before that line at each. The queue runner is one site (src/daemon/queue.ts:178-181, 'log.error({ err }, 'job failed')'). Store reads also run outside both: the timers in src/daemon/index.ts (readerCheckTimer at 1959, pruneTimer) and the boot sequence (263-273). And a handler that swallows its own failures never lets the error reach the dispatcher: resolveSourceRoots (src/workflow/review/source-roots.ts:93-99) catches every read failure and falls back. In those cases the failure is recorded only by a later write's 10-second probe. [files: src/daemon/server.ts, src/daemon/queue.ts, src/daemon/index.ts, src/workflow/review/source-roots.ts]",
+          "action": "Name the three catch sites in server.ts in the design. State that a read outside the dispatcher and the queue, or inside a handler that swallows errors, is detected by the next write or the next dispatched read, and that this is accepted. Consider one cheap alternative: have the periodic reader check (already every 5 minutes) do the probe read and record the failure.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.5",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The CLI's in-process review can be given an injected source-root reader by changing the CLI's call alone.",
+          "evidence": "The reader cannot be passed from the CLI today. src/cli/services/workflow.ts:248 calls reviewArtifactFile({ mdPath, jsonPath, repo, provider, model, reviewedAt }); the chain is reviewArtifactFile (src/workflow/review/run-artifact.ts:69) -> review (src/workflow/review/review.ts:85 'await gatherEvidence(claims, repo)') -> gatherEvidence(claims: Claim[], repoPath: string) (probe.ts:190) -> 'await resolveSourceRoots(repoPath)' with no options (probe.ts:195). Three signatures between the CLI and the seam need a new optional parameter, and the same functions run in the daemon (src/daemon/workflow-review-rpc.ts:100) and in the MCP server's review step, where the default reader must stay. None of these files, nor the new daemon request and its handler, appears in any call-site list of the design. The claim about the read path itself is true: source-roots.ts:57-60 reads through getDb and listEntitiesForRepo, and no file under src/cli or src/bin imports the store layer directly. [files: src/cli/services/workflow.ts, src/workflow/review/run-artifact.ts, src/workflow/review/review.ts, src/workflow/review/probe.ts, src/daemon/workflow-review-rpc.ts]",
+          "action": "Add a contract entry for the threaded option (ReviewArtifactOpts, the review options, gatherEvidence) and for the new read-only daemon request with its name, parameters and result. State that the option is optional so the daemon and MCP callers are unchanged.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "data-compatibility.1",
@@ -144,9 +156,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "No stored shape changes, and the optional storeFailure field can be added to DaemonStatus and its mirrored types without breaking a consumer.",
-          "evidence": "StoreHealth and the owner flag are module variables, not stored rows; SCHEMA_VERSION (store.ts:128) is untouched. DaemonStatus is built field by field in src/daemon/index.ts:1024-1042 and already carries optional fields added the same way (`status.lmdbFileSizeMb`). The mirrors the design mentions exist: vscode-plugin/src/panels/types.ts and jetbrains-plugin/.../daemon/DaemonGateway.kt both carry the status type. The design also states the mixed-version case (a newer MCP server against an older daemon reads an unknown request as a cache miss).",
-          "action": "None.",
+          "premise": "No stored shape changes; DaemonStatus gains one optional field that existing consumers ignore, and the store's default path follows the home directory so a test with a temporary home never touches the real store.",
+          "evidence": "The status object is built in one place (src/daemon/index.ts:1024-1034) with spread-in optional fields already, so an absent field is the existing pattern. The VS Code side takes the type from src/shared/ipc-client.ts:14 ('export type { ... DaemonStatus } from './types.js''), so it has no second copy; JetBrains reads status in DaemonGateway.kt. src/shared/paths.ts:4 'const INSRC_DIR = join(homedir(), '.insrc');' is evaluated once at import, and store.ts:265 copies PATHS.lmdb at import. [files: src/daemon/index.ts, src/shared/ipc-client.ts, src/shared/paths.ts, src/db/graph/store.ts]",
+          "action": "Two build notes. (1) Because PATHS is fixed at import, a test that 'points the home directory at a temporary one' must set HOME before the first import of the store (a child process, or a dynamic import after setting it); say so in the fixtures. (2) The repository's convention is explicit '| undefined' on optional properties (exactOptionalPropertyTypes); write 'storeFailure?: {...} | undefined'.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -156,9 +168,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design stays inside Story s4 and does not redesign what s1, s2, s3, s5 or s6 own.",
-          "evidence": "The design changes the store's open, close and transaction wrappers, the daemon's shutdown and status, the stop paths and the exploration cache's access. It does not touch entity-row writes (s3), the file commit (s2), pending relationships or IndexState (s1), or the ignore filter (s6). Two edges to keep in view: the path refusal added to the daemon's file tools sits in the same files s6 names and leaves alone for ignore lists (a different concern, no conflict), and the executor's cache injection sits beside s5's work on named lookup errors. Fixing the HIGH finding under current-behaviour may move lookups into the daemon, which would touch the analyzer's scope check that s5 and s3 also change.",
-          "action": "When the MCP-side reads are redesigned, check the new request surface against s5's refusal at the analyzer's scope check so the two Stories do not define it twice.",
+          "premise": "The design does not redesign what Story s11 or another Story owns: it leaves the MCP server's reads in place and only adds a temporary allowance that s11 deletes.",
+          "evidence": "DEF.md:358-360 gives s11 the move of every step tool into the daemon and the criterion that the MCP process holds no descriptor on the live store. The design keeps src/mcp/analyze-step/phases/narrow.ts:30 ('import { putCachedExploration } from '../../../db/exploration-cache.js'') and handleAnalyzeStep (src/mcp/server.ts:402) as they are. The refusal it adds to the search tools is about two named files, not the ignore lists that Story s6 says it leaves alone in those tools, so the two do not collide. The by-file index (s3), IndexState (s1) and the file commit (s2) are not touched. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md, src/mcp/server.ts, src/mcp/analyze-step/phases/narrow.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -167,12 +179,12 @@
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "After the store has failed, the daemon's status request still answers and carries storeFailure, 'inside its never-throw contract'.",
-          "evidence": "The status handler reads the store first, outside any guard: `repos: await listRepos(db),` (src/daemon/index.ts:1026); only the file-size read below it is wrapped (`try { ... } catch { /* best-effort; status should never throw */ }`, :1036-1041). listRepos opens with `const store = await getGraphStore();` (repos.ts:214). By the design's own rule, 'Later store calls fail fast with the same named error', so after locks-lost this line throws and the status request returns an error before storeFailure is ever attached. That is the one moment ac3 needs the field. The design names no change to this line. [files: src/daemon/index.ts, src/db/repos.ts]",
-          "action": "State that the status handler guards its store read: on a store failure it returns the status with repos empty (or the last known list) and storeFailure set. Keep the 'status after failure' integration test as the proof.",
+          "severity": "LOW",
+          "premise": "A daemon that knows its store has failed stops within its normal stop time: the shutdown reads StoreHealth, skips the close, clears the pid file and socket and kills itself.",
+          "evidence": "The self-kill sits after the queue drain in today's structure: the close and the exit are inside 'void queueDone.finally(async () => {...})' (src/daemon/index.ts:2012-2028), and queue.stop() (src/daemon/queue.ts:189-192) only stops the loop 'after the current job finishes'. The design does not say whether, with locks-lost, the daemon waits for queueDone or ends at once. If it waits, a job hung in a store call ends only at the 20-second backstop (and the design's test expects an exit within 5 seconds); the summary says 'ends itself at once', section 3.4 says it 'stops the queue ... as today'. I could not settle which is meant from the text, and I did not run a daemon with broken locks. [files: src/daemon/index.ts, src/daemon/queue.ts]",
+          "action": "State in section 3.4 that with locks-lost the shutdown does not wait for queueDone: it runs the clean-up and the self-kill directly from shutdown(). Keep the 5-second test as the proof.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "could-not-verify"
         },
         {
           "claimId": "error-paths.2",
@@ -180,9 +192,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "A forced kill is safe against pid reuse because the control path checks that the pid's command line names the daemon's entry file before SIGKILL.",
-          "evidence": "The design states the check but not how it is done. Existing pieces it could reuse: src/cli/services/daemon.ts:26 exports DAEMON_ENTRY 'so the debug service matches orphan daemon processes against the SAME resolved absolute entry path', and the script starts the daemon as `node --import tsx/esm \"$DAEMON_ENTRY\"` (daemon-ctl.sh:138). I did not read src/cli/services/debug.ts to confirm its process-matching function has a shape stopDaemon can call, and the shell side has no such check today (signal_stop only tests `ps -p`).",
-          "action": "Name the function reused from the debug service for the TypeScript path and write out the shell check (for example `ps -o command= -p \"$pid\"` matched against $DAEMON_ENTRY) so the two paths agree.",
+          "premise": "The three measured behaviours the detection rests on (a read throws code -30775, a synchronous transaction throws code 22, an asynchronous transaction never settles) and the claim that process.exit and the library's close hang once the locks are gone.",
+          "evidence": "These come from the design's own measurement of 2026-10-11 (reference c13). The source confirms only that nothing in src handles them: store.ts has no catch around transaction or transactionSync and classifyOpenError (669-695) covers open failures only. I did not run the two-process sequence against the installed lmdb-js, so the codes, and the choice of code 22 as a lock-failure signal, are unconfirmed here. Code 22 is the general 'Invalid argument'; treating every code-22 failure of a synchronous transaction as locks-lost could record a terminal failure for another cause. [files: src/db/graph/store.ts]",
+          "action": "Keep the reproduction test as the first thing built, as the design plans, and have withWriteTxnSync confirm a code-22 failure with the same probe read before it records locks-lost, since the record cannot be cleared without a restart.",
           "fixability": "manual",
           "outcome": "could-not-verify"
         },
@@ -192,29 +204,34 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each acceptance criterion maps to at least one test that would fail without the change.",
-          "evidence": "Section 5's acceptance mapping gives ac1 the two-process refusal test and the owner-check unit cases, ac2 the store-failure-to-stop, forced-stop and control-script tests, and ac3 the status-after-failure test with the 'no semume' assertion. The framework named (node:test through tsx, *.test.ts under __tests__) matches the repository's CLAUDE.md. Two of these tests would expose the HIGH findings above rather than pass: 'cache through the daemon ... the MCP side's process holds no descriptor on the store file' fails while lookups still read the store in that process, and 'status after failure' fails while the handler's listRepos is unguarded.",
-          "action": "Keep both tests as written. Add one for the script's start against a stubborn daemon, and one that runs a full analyze step from the MCP phase code with the refusal on, since the import scan of src/mcp only sees direct imports and the store is reached through src/analyze.",
+          "premise": "Each of ac1, ac2 and ac3 maps to at least one test that would fail if the criterion were not met.",
+          "evidence": "The acceptance mapping names, for ac1, the two-process refusal test and the owner-check unit tests; for ac2, the store-failure-to-stop test, the forced stop through stopDaemon, and the control script's stop and start; for ac3, the status-after-failure test (cause names another process, no 'semume') and the detection tests through the real wrappers. The repository's suites are node:test files under __tests__ run with tsx, as the design says. The control-script tests need an override for the 30-second wait, which does not exist today: wait_for_daemon_stop hard-codes 'local deadline=$(( $(date +%s) + 30 ))' (scripts/daemon-ctl.sh:157), and the script reads the pid file and socket from $HOME, so the test must run it with a temporary HOME. [files: scripts/daemon-ctl.sh]",
+          "action": "Add the wait override to the script's change list in section 2.5. Add the tests asked for above: file_copy and file_move refused through their execute, and an unhandled rejection after locks-lost. Update the two CLI test doubles of stopDaemon.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 2,
+        "high": 1,
         "med": 3,
-        "low": 9,
-        "unverified": 1
+        "low": 11,
+        "unverified": 2
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-11T08:24:25.218Z",
+      "reviewedAt": "2026-10-11T08:42:31.181Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-11T09:28:45.007Z",
+    "reviewOverride": {
+      "reason": "Stakeholder override, 2026-10-11: three daemon review rounds were run on this design, with blocking findings of 5, 5 and 4. Every finding was corrected in the design. The corrections for the third round (one HIGH, three MED, and two points the reviewer could not verify) were made after the last review and were not re-reviewed, so the recorded verdict is a block. The findings had reached the level of individual call sites, and the build stage has its own code review. Details are in the design's feedback record.",
+      "at": "2026-10-11T09:28:45.006Z"
     }
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "The daemon's store failed, and the daemon then could not be stopped, because another process that had the live store open closed it and removed the store's locks. This Story makes the store refuse the live path to every process but the daemon, moves the one production use from another process (the MCP server's lookup cache) behind daemon requests, and gives the two tests that reached the live store a temporary one. A store failure is recorded once with its true cause and shown in the daemon's status, and a stop always ends: the daemon ends itself at once when it knows its store has failed, and the control script and the CLI's stop force the end when a stop overruns."
+      "prose": "The daemon's store failed, and the daemon then could not be stopped, because another process that had the live store open closed it and removed the store's locks. This Story makes the store refuse the live path to every process but the daemon, and gives the two tests that reached the live store a temporary one. The MCP server's process also opens the live store today, for every analyze step and not only for its cache; that use is removed by Story s11, so until s11 lands the MCP server is let in by an explicit, temporary allowance, and the refusal is complete only once s11 has removed it. A store failure is recorded once with its true cause and shown in the daemon's status, and a stop always ends: the daemon ends itself at once when it knows its store has failed, and the control script and the CLI's stop force the end when a stop overruns."
     },
     "hldContextSlice": {
       "frameworkSummary": "Three layers, each depending only on the one below. Layer 1, the file commit: the store has one write operation for a file, which in a single LMDB transaction replaces the file's entities, replaces its relationships and its pending relationships, and advances the repository's generation and completeness counters. It grows out of the existing whole-file replacement (reindexFile), which already replaces a file's entities in one transaction but removes relationships only for entities that disappeared from the file; the commit goes further and replaces the outgoing relationships of every entity of the file. The indexer's refresh, the delete event and the repair all call it; a file is selected for it by one filter built from the repository's ignore files. A relationship is never dropped in the commit: when its target is not stored it becomes a pending row, and pending rows are completed only by the passes that own them: the cross-file pass for code symbols, and the two endpoint passes of the external-services Epic for theirs. Layer 2, the recorded state: one row per repository holds the generation and what is known to be incomplete (relationships awaiting a target that is in an indexed repository, relationships that could not be written, entities without vectors). The four repository status values keep their meaning; completeness is a separate field read from this row and shown wherever status is shown, so a repository with anything outstanding does not read as fully ready. Layer 3, derived data: evidence is a one-byte value on the relationship row, written in the commit, by the cross-file pass and by every other writer of a stored relationship; subsystem grouping, subsystem summaries and model-proposed document relationships are queued passes that start only from a repository whose state is complete, write their own tables, and stamp what they wrote with the generation it was computed from. All new stored data arrives as steps on the existing migration chain (SCHEMA_VERSION 4 onward); no existing edge key or kind byte changes.",
@@ -329,17 +346,23 @@
               "condition": "The path to open is the live path (PATHS.lmdb) and this process has not declared itself the store's owner. The message names the path, says that only the daemon may open the live store, and tells a test to set a temporary path with setGraphStorePath."
             },
             {
+              "type": "LmdbStoreLocksLostError (new, a subclass of LmdbStoreError)",
+              "condition": "The store's health record is locks-lost. Every read and write in the code begins with getGraphStore, so this is the one read-side place the failure is raised; no single wrapper for reads exists (modules take the handle and call the library on a sub-database directly)."
+            },
+            {
               "type": "LmdbStoreError and its existing subclasses",
               "condition": "As today: a failed open, a schema version newer than the code, a failed migration."
             }
           ],
           "preconditions": [
-            "For the live path only: the process has called the new owner declaration (see the data model, 'store owner declaration') before the first open. The daemon's entry point (src/daemon/index.ts) is the one caller.",
+            "For the live path only: the process has called one of the two new declarations before the first open. The daemon's entry point (src/daemon/index.ts) declares itself the owner. The MCP server's entry point declares itself a permitted reader: a temporary allowance, because the analyze step runs in that process today and reads the store directly (src/mcp/server.ts:402; 35 files under src/analyze import the store layer). Story s11 moves that work into the daemon and removes the allowance and its declaration.",
             "For any other path (a test's temporary store set through setGraphStorePath): none, as today."
           ],
           "postconditions": [
-            "A process that is not the declared owner never holds a descriptor on the live store or its lock file: the check runs before the library's open is called.",
-            "The check compares resolved paths, so a relative path or a symbolic link to the live store is refused as well."
+            "A process that has made neither declaration never holds a descriptor on the live store or its lock file: the check runs before the library's open is called. Until Story s11 lands, the MCP server's process is the one exception, and acceptance criterion ac1 is met for every other process; it is met in full when s11 removes the allowance.",
+            "The check compares resolved paths, so a relative path or a symbolic link to the live store is refused as well.",
+            "A lock failure first met on a read through a handle a module already holds is not caught at that read; it is recorded by the next write or raised by the next getGraphStore call, whichever comes first.",
+            "One more process opens the live store today and is not let in: the CLI's own process, through its in-process review of an artifact (src/cli/services/workflow.ts calls reviewArtifactFile, whose probe calls resolveSourceRoots in src/workflow/review/source-roots.ts with no injected reader, which reads the repository's entities through the store). That read swallows every failure by contract and falls back to the repository root, so a refusal there would degrade the CLI's review silently. It is given an injected reader that asks the daemon (see the data model, 'source-root reader for a review outside the daemon'), and the fallback, when it is taken, is stated in the review's output. The search for openers behind this design covered direct imports of the store layer; before the refusal is switched on it is repeated over everything the CLI's and the MCP server's entry points import, and any further opener found is handled the same way or raised."
           ]
         },
         {
@@ -382,49 +405,6 @@
           ]
         },
         {
-          "name": "putCachedExploration",
-          "signature": "putCachedExploration(repo: string, lastIndexedAtMs: bigint, exp: Exploration, output: ExplorationOutput): Promise<void>",
-          "parameters": [
-            {
-              "name": "repo",
-              "type": "string",
-              "purpose": "Repository the lookup ran on.",
-              "optional": false
-            },
-            {
-              "name": "lastIndexedAtMs",
-              "type": "bigint",
-              "purpose": "The repository's index time the result belongs to.",
-              "optional": false
-            },
-            {
-              "name": "exp",
-              "type": "Exploration",
-              "purpose": "The lookup.",
-              "optional": false
-            },
-            {
-              "name": "output",
-              "type": "ExplorationOutput",
-              "purpose": "Its result.",
-              "optional": false
-            }
-          ],
-          "returns": {
-            "type": "Promise<void>",
-            "meaning": "Resolves when the result is stored."
-          },
-          "errors": [],
-          "preconditions": [
-            "Called only inside the daemon. Its callers in src/analyze/explore/executor.ts (executePlan, stepPlan) keep calling it and its read counterpart directly when they run in the daemon."
-          ],
-          "postconditions": [
-            "The cache access of stepPlan and handleNarrow no longer opens the store in the MCP server's process. The executor takes the cache as two injected functions, a read and a write; in the daemon they are the store functions as today; in the MCP server (src/mcp/analyze-step/phases/plan.ts and narrow.ts) they are two new daemon requests, 'analyze.cache.get' and 'analyze.cache.put', which carry the same four values and call the store functions inside the daemon.",
-            "A failed cache request is treated as a cache miss on read and is logged and ignored on write, as a failed write is today in handleNarrow; a lookup never fails because the cache could not be reached.",
-            "After this change nothing under src/mcp imports from src/db; a test asserts it."
-          ]
-        },
-        {
           "name": "stopDaemon",
           "signature": "stopDaemon(): Promise<StopOutcome>",
           "parameters": [],
@@ -434,15 +414,24 @@
           },
           "errors": [
             {
+              "type": "Error ('daemon is not running')",
+              "condition": "No socket and no live daemon pid, as today: the shutdown request rejects before any wait. Unchanged; a stop of a stopped daemon stays an error and the CLI's two callers (src/cli/command.ts and the daemon pane) print it as they do now."
+            },
+            {
               "type": "Error",
               "condition": "Only when the forced kill itself fails (the process is still alive after it, or the pid file names a process this user cannot signal). The message names the pid and says what was tried. The present 'daemon did not stop within 30 s' is no longer a final outcome."
+            },
+            {
+              "type": "Error",
+              "condition": "The pid in the pid file is alive but its command line is not a daemon's. The message names the pid and the command line; the pid file and the socket are left in place."
             }
           ],
           "preconditions": [],
           "postconditions": [
-            "Sends the daemon.shutdown request and waits through waitForStop as today. If the daemon is unreachable but its pid is alive (the state the issue describes: socket gone, process alive), or the wait ends without a stop, it sends SIGKILL to the pid in the pid file, waits for the process to be gone, removes the pid file and the socket file, and returns forced true.",
-            "The pid is checked to be a daemon process before it is killed (its command line names the daemon's entry file), so a pid reused by another program is never killed; if the check fails the pid file is treated as stale and removed.",
-            "restart (src/cli/services/maintenance.ts) reports a forced stop in its log lines and goes on to start."
+            "Sends the daemon.shutdown request with a bound of 5 seconds on the reply: the request client has no time-out today, and a daemon whose main thread is blocked while its socket still listens accepts the connection and never answers, so an unbounded await would never reach the wait or the kill. On a reply, a refused connection with a live daemon pid, or the bound passing, it waits through waitForStop as today. If the wait ends without a stop it sends SIGKILL to the pid in the pid file, waits for the process to be gone, removes the pid file and the socket file, and returns forced true.",
+            "The pid is checked to be a daemon process before it is killed: its command line must end in the daemon's entry file (the path suffix daemon/index.js). The check does not compare against DAEMON_ENTRY as exported by src/cli/services/daemon.ts, because that is the entry of the CLI's own checkout, while the control script starts the daemon from the installed one ($HOME/.insrc/daemon or INSRC_DAEMON_ROOT), so a CLI run from a development checkout would not match a live installed daemon. When the pid is alive and its command line does not match, nothing is killed and nothing is removed: the stop fails with an error naming the pid and its command line, since removing the pid file and socket of a live daemon would let a second one start on the same store.",
+            "restart (src/cli/services/maintenance.ts) reports a forced stop in its log lines and goes on to start.",
+            "The signature change reaches the service type at src/cli/services/index.ts (stopDaemon(): Promise<void> today) and the three callers: src/cli/command.ts, src/cli/panes/DaemonPane.tsx and restart in src/cli/services/maintenance.ts."
           ]
         },
         {
@@ -464,7 +453,7 @@
           "preconditions": [],
           "postconditions": [
             "A daemon that did not stop by itself no longer ends the restart with an error and a daemon left half down: the stop is forced, the fact is logged through onLog, and the start follows.",
-            "scripts/daemon-ctl.sh behaves the same way: cmd_stop, after wait_for_daemon_stop fails, sends SIGKILL to the recorded pid, waits for it to be gone, removes the pid file and the socket, and logs 'daemon did not stop within 30 s; killed (pid N)'; it dies only if the process survives the kill."
+            "scripts/daemon-ctl.sh behaves the same way, through one shell function used at both places where the script stops a daemon and gives up today: cmd_stop, and the stale-daemon branch of cmd_start ('stale daemon did not shut down within 30 s'). After wait_for_daemon_stop fails, the function checks that the pid's command line (ps -o command= -p \"$pid\") ends in daemon/index.js, the same rule as the CLI's; on a match it sends SIGKILL, waits for the process to be gone, removes the pid file and the socket, and logs 'daemon did not stop within 30 s; killed (pid N)'; it dies only if the process survives the kill. A live pid whose command line does not match is not killed and its pid file is not removed; the script dies naming the pid and the command line."
           ]
         }
       ]
@@ -473,27 +462,30 @@
       {
         "entity": "store owner declaration (new, in src/db/graph/store.ts)",
         "change": "new",
-        "details": "A module-level flag, false by default, set by one new exported function that takes no argument and can only set it. The daemon's entry point calls it before anything opens the store. It is deliberately not an environment variable and not read from a file: child processes inherit neither a call nor a module variable, so a test run or a CLI provider started by the daemon is not an owner. getGraphStore reads it only when the resolved path equals the live path.",
-        "schemaDiff": "+ let _ownsLiveStore = false;\n+ export function declareLiveStoreOwner(): void;",
+        "details": "Two module-level flags, false by default, each set by one new exported function that takes no argument and can only set it: an owner declaration, called by the daemon's entry point before anything opens the store, and a permitted-reader declaration, called by the MCP server's entry point. They are deliberately not environment variables and not read from a file: child processes inherit neither a call nor a module variable, so a test run or a CLI provider started by the daemon is neither. getGraphStore reads them only when the resolved path equals the live path. The permitted-reader declaration is temporary: it exists because the MCP server runs the analyze step in its own process today, and Story s11 removes the function and its one call when that work has moved into the daemon. It is named so that a search for it finds exactly what s11 must delete.",
+        "schemaDiff": "+ let _ownsLiveStore = false;\n+ let _mayReadLiveStore = false;          // temporary; removed by Story s11\n+ export function declareLiveStoreOwner(): void;\n+ export function declareLiveStoreReaderUntilS11(): void;",
         "callSites": [
           "src/db/graph/store.ts",
-          "src/daemon/index.ts"
+          "src/daemon/index.ts",
+          "src/mcp/server.ts"
         ]
       },
       {
         "entity": "StoreHealth (new, in src/db/graph/store.ts)",
         "change": "new",
-        "details": "The one record of whether this process's store can still be used. It starts as ok. The store's write wrappers (withWriteTxn and withWriteTxnSync) and its read path catch an error whose code is the library's lock failure (-30775, MDB_LOCK_FAILURE) and set it to locks-lost with the time, the operation that failed and the library's own text kept for the log; they then throw a named error, LmdbStoreLocksLostError, whose message states the true cause: the store's locks were removed by another process that opened and closed it after this process lost its file lock on the lock file; it does not repeat the library's advice about a system limit. The record is set once and never returns to ok in the same process; only a restart clears it. It is read by the daemon's status, by closeGraphStore and by the shutdown.",
-        "schemaDiff": "+ type StoreHealth =\n+   | { state: 'ok' }\n+   | { state: 'locks-lost'; at: string; operation: string; libraryMessage: string };\n+ export function getStoreHealth(): StoreHealth;\n+ export class LmdbStoreLocksLostError extends LmdbStoreError {}",
+        "details": "The one record of whether this process's store can still be used. It starts as ok, is set once, and never returns to ok in the same process; only a restart clears it. How the failure shows itself was measured on 2026-10-11 by breaking a temporary store's locks and then using it, and the three kinds of call behave differently: a read (a get) throws at once with the library's code -30775 (MDB_LOCK_FAILURE); a synchronous transaction throws at once with code 22 ('Invalid argument'), not -30775; and an asynchronous transaction, which is what withWriteTxn uses and most writes go through, never settles: it neither resolves nor rejects, and a synchronous transaction attempted after it hung. Detection is therefore in three places. (1) withWriteTxnSync catches an error with either code. Code 22 is the general 'Invalid argument' and the record cannot be cleared without a restart, so before recording it confirms with the same probe read as below: only if the probe throws -30775 is locks-lost recorded; otherwise the original error is rethrown unchanged. (2) withWriteTxn bounds its wait: when an asynchronous transaction has not settled within a fixed time (10 seconds; an ordinary write here takes milliseconds) it probes the store with one read of a fixed key. If the probe throws -30775 the record becomes locks-lost and the wrapper rejects; if the probe returns, the write is only slow and the wrapper goes on waiting. The probe is a read because a read is the one call measured to fail fast and cleanly in this state. (3) Reads have no wrapper (modules take the handle and call the library on a sub-database directly), so a -30775 thrown by a read surfaces in the caller. The daemon's request server has three catch sites (the standard request, the standard handler reached through a stream request, and the stream handler, all in src/daemon/server.ts) and its queue has one (the job runner in src/daemon/queue.ts); each reduces an error to its message today, and each reads the error's code first, records locks-lost for -30775 and answers with the named error. A read that fails outside those four sites (a timer, the boot sequence) or inside a handler that swallows its own failures (the review's source-root read does) is not recorded there. Two things cover it: the daemon's periodic reader check, which already runs every five minutes, also makes the probe read and records a failure; and the next write records it through its bound. A failure can therefore go unrecorded for up to that interval, which is accepted. In every case the error raised to the caller is LmdbStoreLocksLostError, whose message states the true cause (the store's locks were removed by another process that opened and closed it after this process lost its file lock on the lock file) and does not repeat the library's advice about a system limit; the library's own text is kept in the record for the log. Once the record is locks-lost, getGraphStore throws the named error to every caller, so no later call reaches the library. The record is read by the daemon's status, by getGraphStore, by closeGraphStore and by the shutdown.",
+        "schemaDiff": "+ type StoreHealth =\n+   | { state: 'ok' }\n+   | { state: 'locks-lost'; at: string; operation: string; detectedBy: 'sync-write' | 'write-timeout-probe' | 'read'; libraryMessage: string };\n+ export function getStoreHealth(): StoreHealth;\n+ export function recordStoreFailureIfLockError(err: unknown, operation: string): boolean;   // used by the dispatcher and the queue runner\n+ export class LmdbStoreLocksLostError extends LmdbStoreError {}",
         "callSites": [
           "src/db/graph/store.ts",
-          "src/daemon/index.ts"
+          "src/daemon/index.ts",
+          "src/daemon/server.ts",
+          "src/daemon/queue.ts"
         ]
       },
       {
         "entity": "DaemonStatus",
         "change": "field-add",
-        "details": "One optional field carrying the store's health, absent when it is ok so that today's consumers see no change. The daemon.status request fills it from getStoreHealth inside its never-throw contract. The CLI's daemon pane and both editor plugins show the cause line when it is present; the mirrored type in the plugins gains the same optional field.",
+        "details": "One optional field carrying the store's health, absent when it is ok so that today's consumers see no change. The daemon.status request fills it from getStoreHealth. The request reads the repository list from the store first, outside any guard today (`repos: await listRepos(db)` in src/daemon/index.ts), and by this design that read throws once the store has failed; the handler therefore guards it and, on a store failure, returns the status with an empty repository list and storeFailure set, which is the one moment the field is needed. The CLI's daemon pane and both editor plugins show the cause line when it is present; the mirrored type in the plugins gains the same optional field.",
         "schemaDiff": "  export interface DaemonStatus {\n    ...\n+   /** Present only when the store has failed in this process. */\n+   storeFailure?: { kind: 'locks-lost'; at: string; operation: string; cause: string };\n  }",
         "callSites": [
           "src/shared/types.ts",
@@ -504,7 +496,7 @@
       {
         "entity": "daemon shutdown sequence (src/daemon/index.ts)",
         "change": "invariant-change",
-        "details": "Today both ends of the shutdown call process.exit, which runs the library's exit hook; with the locks lost that hook never returns, on the main thread, so the 20-second backstop timer cannot fire either. New invariant: once StoreHealth is locks-lost the daemon never calls process.exit. The shutdown stops the queue, the watcher and the server as today, skips the store's close, removes the pid file and the socket file, writes its last log line synchronously to the daemon's log file, and ends the process with SIGKILL to itself, which runs no exit hook. With StoreHealth ok the sequence is unchanged. A hang that the daemon did not foresee is ended by the control paths (stopDaemon and scripts/daemon-ctl.sh).",
+        "details": "Today both ends of the shutdown call process.exit, which runs the library's exit hook; with the locks lost that hook never returns, on the main thread, so the 20-second backstop timer cannot fire either. A third call exists outside the shutdown: reportFatal, registered for uncaught exceptions and unhandled rejections, ends with process.exit after 50 milliseconds, and a rejection with the new named error that nothing awaits would reach it. New invariant: once StoreHealth is locks-lost the daemon never calls process.exit, at any of the three places. When a stop is asked for with the store failed, the shutdown does not wait for the queue to drain, since a job held in a store call would never finish: directly from the shutdown function it stops the queue, the watcher and the server, skips the store's close, removes the pid file and the socket file, writes its last log line synchronously to the daemon's log file, and ends the process with SIGKILL to itself, which runs no exit hook. reportFatal does the same when the store has failed: it already writes its line synchronously, and it then removes the pid file and the socket and ends by SIGKILL in place of process.exit. With StoreHealth ok all three are unchanged. A hang that the daemon did not foresee is ended by the control paths (stopDaemon and scripts/daemon-ctl.sh).",
         "callSites": [
           "src/daemon/index.ts"
         ]
@@ -512,8 +504,27 @@
       {
         "entity": "lock-file open diagnostic (new, in the daemon)",
         "change": "new",
-        "details": "What in the daemon closes a second descriptor on the lock file is not identified. So that the next occurrence names it, the daemon wraps the file-open functions of Node's fs module at start-up, only for a path that resolves to the live store's lock file, and logs at warn the call stack of any such open. It changes no behaviour and costs one path comparison per open. The daemon's in-process file tools (read, grep, glob, list-dir, recent under src/daemon/tools/builtins) also refuse the store's two files by path, with a named error, since reading them is never useful and is the one known way to drop the lock.",
+        "details": "What in the daemon closes a second descriptor on the lock file is not identified. So that the next occurrence names it, the daemon wraps, at start-up, the functions of Node's fs module and of fs/promises that open a file by path (open, openSync, readFile, readFileSync, copyFile, copyFileSync, cp, cpSync, createReadStream and the promise forms of open, readFile, copyFile and cp), and re-syncs the built-in module's exports so that code which imported them by name sees the wrap. For a path that resolves to the live store's lock file or data file the wrap logs the call stack at warn, once per distinct stack, and lets the call proceed. It is a diagnostic and is best effort: a route into the file system that goes around these functions is not seen, and its test opens the lock file through fs.promises.readFile, the route the daemon's own tools use. The daemon's file tools also refuse the store's two files by path, with a named error, since reading them is never useful and is the one known way to drop the lock. The refusal is one small check function, called with the path after symbolic links are resolved (the tools' shared helper resolves a path without following links, which is not enough). It is called from the shared path helper of the file tools (resolvePath in src/daemon/tools/builtins/file/helpers.ts) and, because the copy and move tools resolve their two paths themselves and never call that helper when they run, also from the execute step and the approval gate of copy and move, for both the source and the target, and from the search tools' own path handling. Every tool is thereby covered: read, edit, multi-edit, copy, delete, write and move among the file tools, and grep, glob, list-dir and recent among the search tools. Its test calls each tool's own execute, not the helper. Of these, read, edit, multi-edit, copy, delete and grep read a file's content in the daemon's process today.",
         "callSites": [
+          "src/daemon/index.ts",
+          "src/daemon/tools/builtins/file/helpers.ts",
+          "src/daemon/tools/builtins/file/copy.ts",
+          "src/daemon/tools/builtins/file/move.ts",
+          "src/daemon/tools/builtins/search/grep.ts"
+        ]
+      },
+      {
+        "entity": "source-root reader for a review outside the daemon (new option and new daemon request)",
+        "change": "new",
+        "details": "The CLI's in-process review cannot be handed a reader today: the chain from the CLI is reviewArtifactFile (src/workflow/review/run-artifact.ts), review (src/workflow/review/review.ts), gatherEvidence (src/workflow/review/probe.ts) and resolveSourceRoots (src/workflow/review/source-roots.ts), and only the last takes a reader. One optional field, the reader, is added to the options of the first three and passed down. It is optional, so the daemon's own review (src/daemon/workflow-review-rpc.ts) and the MCP server's review step keep the default reader and are unchanged. The CLI (src/cli/services/workflow.ts) passes a reader that calls one new read-only daemon request, which takes a repository path and returns what the default reader returns: that repository's entities as resolveSourceRoots needs them. When the request fails the review falls back to the repository root, as it does today on any read failure, and its output now says that it did and why.",
+        "schemaDiff": "+ // daemon request\n+ 'repo.entitiesForSourceRoots': (params: { repoPath: string }) => Promise<Entity[] | { error: string }>;\n+ // threaded option, optional at every level\n+ interface ReviewArtifactOpts { ...; readEntitiesForRepo?: (repoPath: string) => Promise<Entity[]>; }",
+        "callSites": [
+          "src/cli/services/workflow.ts",
+          "src/workflow/review/run-artifact.ts",
+          "src/workflow/review/review.ts",
+          "src/workflow/review/probe.ts",
+          "src/workflow/review/source-roots.ts",
+          "src/daemon/workflow-review-rpc.ts",
           "src/daemon/index.ts"
         ]
       }
@@ -522,23 +533,30 @@
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "A process that is not the daemon reaches for the live store: a test that set no temporary path, a script, or new code in the MCP server or the CLI.",
-          "detection": "getGraphStore compares the resolved path it is about to open with the resolved live path and finds the owner flag unset, before the library's open is called.",
+          "scenario": "A process that is neither the daemon nor, until Story s11, the MCP server reaches for the live store: a test that set no temporary path, a script, or new code in the CLI.",
+          "detection": "getGraphStore compares the resolved path it is about to open with the resolved live path and finds neither declaration made, before the library's open is called.",
           "response": "Throws LmdbStoreNotOwnerError naming the path and the remedy (a temporary path for a test; a daemon request for anything else). No descriptor on the store or its lock file is ever opened.",
           "userImpact": "The offending test or tool fails at once with a clear message. The daemon is unaffected.",
           "recoverable": true
         },
         {
           "scenario": "The store's locks are taken away while the daemon runs (the failure of the issue), by a route this Story did not close.",
-          "detection": "A store read or write throws an error whose code is the library's lock failure (-30775); the store's transaction wrappers check the code, not the message text.",
-          "response": "StoreHealth becomes locks-lost with the time and the operation; the wrapper throws LmdbStoreLocksLostError with the true cause; the daemon logs it once at error with the library's own text beside it. Later store calls fail fast with the same named error without calling the library. The daemon keeps serving what does not need the store (status, shutdown).",
+          "detection": "Three ways, by what was measured: a synchronous transaction throws with code 22 or -30775 and withWriteTxnSync catches it; an asynchronous transaction does not settle, and withWriteTxn, after 10 seconds, probes the store with a read that throws -30775; a read throws -30775 into its caller, and the daemon's request dispatcher or queue runner catches it.",
+          "response": "StoreHealth becomes locks-lost with the time, the operation and how it was detected; the named error LmdbStoreLocksLostError is raised with the true cause; the daemon logs it once at error with the library's own text beside it. From then on getGraphStore throws the same named error, so later calls fail fast without reaching the library. The daemon keeps serving what does not need the store (status, shutdown).",
           "userImpact": "Requests that need the store fail with a message that says the store's locks were removed by another process and that the daemon must be restarted. Status shows the same line.",
           "recoverable": false
         },
         {
+          "scenario": "The daemon's status is asked for after the store has failed.",
+          "detection": "The status handler's read of the repository list throws LmdbStoreLocksLostError, raised by getGraphStore.",
+          "response": "The handler catches it, returns the status with an empty repository list and with storeFailure filled from the health record, and does not throw.",
+          "userImpact": "Status still answers and says why the store is unusable.",
+          "recoverable": true
+        },
+        {
           "scenario": "The daemon is asked to stop after its store has failed.",
           "detection": "The shutdown reads StoreHealth and finds locks-lost.",
-          "response": "It skips the store's close, removes the pid file and the socket file, writes a last line to the daemon's log synchronously, and sends itself SIGKILL. process.exit is not called, because the library's exit hook would hang.",
+          "response": "Without waiting for the queue to drain, it stops the queue, the watcher and the server, skips the store's close, removes the pid file and the socket file, writes a last line to the daemon's log synchronously, and sends itself SIGKILL. process.exit is not called, because the library's exit hook would hang.",
           "userImpact": "The daemon is gone within its normal stop time and a start works with no manual clean-up. In-flight queue work is abandoned, as it would be on any kill; the next start resumes from the stored state.",
           "recoverable": true
         },
@@ -550,8 +568,8 @@
           "recoverable": true
         },
         {
-          "scenario": "The daemon is unreachable (socket gone) but its process is alive, the state the issue found.",
-          "detection": "stopDaemon's shutdown request fails with a connection error while the pid in the pid file is alive and is a daemon process.",
+          "scenario": "The daemon cannot answer: its socket is gone while its process is alive (the state the issue found), or its main thread is blocked and it accepts the connection but never replies.",
+          "detection": "stopDaemon's shutdown request fails with a connection error, or gets no reply within 5 seconds, while the pid in the pid file is alive.",
           "response": "It does not treat the failed request as 'already stopped': it goes straight to the wait and the forced kill.",
           "userImpact": "The half-down daemon is cleared by an ordinary stop or restart.",
           "recoverable": true
@@ -564,17 +582,31 @@
           "recoverable": false
         },
         {
-          "scenario": "A cache request from the MCP server fails: the daemon is down, restarting, or its store has failed.",
-          "detection": "The injected cache read or write rejects.",
-          "response": "A failed read is treated as a miss and the lookup runs; a failed write is logged at warn and ignored.",
-          "userImpact": "The lookup is slower once; its result is the same.",
-          "recoverable": true
-        },
-        {
           "scenario": "Something in the daemon opens the store's lock file.",
           "detection": "The wrapped file-open functions see a path that resolves to the live lock file.",
           "response": "The open proceeds unchanged and its call stack is logged at warn, once per distinct stack. The daemon's own file tools refuse the path with a named error before any open.",
           "userImpact": "None at the time. The log names the code to fix, which is the part of the cause that is still unknown.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A write is slow but the store is healthy (a large transaction, a busy disk).",
+          "detection": "withWriteTxn's 10-second bound passes and its probe read returns normally.",
+          "response": "Nothing is recorded; the wrapper goes on waiting for the write and probes again at the same interval.",
+          "userImpact": "None beyond the slow write.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The pid file names a live process whose command line is not a daemon's.",
+          "detection": "The command-line check before the forced kill fails for a pid that is alive.",
+          "response": "Nothing is killed and nothing is removed; the stop fails with the pid and its command line in the message.",
+          "userImpact": "The user sees which process holds the pid and decides; no second daemon can start on the same store.",
+          "recoverable": false
+        },
+        {
+          "scenario": "An error escapes every handler after the store has failed (an unhandled rejection or an uncaught exception).",
+          "detection": "reportFatal runs and reads StoreHealth as locks-lost.",
+          "response": "It writes its line synchronously, removes the pid file and the socket, and ends the process by SIGKILL to itself; it does not call process.exit.",
+          "userImpact": "The daemon is gone and can be started again, where it would otherwise hang with its pid file in place.",
           "recoverable": true
         }
       ],
@@ -597,11 +629,7 @@
         },
         {
           "input": "stopDaemon is called when no daemon is running and no pid file exists.",
-          "expected": "Returns stopped with forced false, as a stop of a stopped daemon does today; nothing is killed."
-        },
-        {
-          "input": "The pid file names a pid that is alive but is not a daemon (the pid was reused).",
-          "expected": "Nothing is killed; the pid file and the socket are removed as stale and the stop returns."
+          "expected": "Rejects with 'daemon is not running', as today; nothing is killed and no outcome object is returned."
         },
         {
           "input": "A stop is requested twice while the first is in progress.",
@@ -614,6 +642,22 @@
         {
           "input": "A store compaction closes and reopens the store inside the daemon.",
           "expected": "Unchanged: the owner flag stays set for the life of the process and the reopen passes the check."
+        },
+        {
+          "input": "The MCP server's process, which has made the permitted-reader declaration, opens the live store.",
+          "expected": "Allowed until Story s11. This is the one remaining process whose close could remove the daemon's locks; the stop and status parts of this Story are what contain the damage meanwhile."
+        },
+        {
+          "input": "The control script's start finds a daemon already running and hung.",
+          "expected": "The same forced-stop function as cmd_stop ends it, and the start goes on."
+        },
+        {
+          "input": "The CLI reviews an artifact while no daemon is running.",
+          "expected": "The source-root request fails, the review falls back to the repository root as it does today, and its output says that the fallback was used and why."
+        },
+        {
+          "input": "A synchronous transaction fails with code 22 for a reason other than lost locks.",
+          "expected": "The confirming probe read returns normally, nothing is recorded, and the original error is rethrown."
         }
       ],
       "invariantsToPreserve": [
@@ -623,10 +667,6 @@
         },
         {
           "text": "getGraphStore returns one store per process and opens it lazily on first call; closeGraphStore closes it. Neither signature changes.",
-          "source": "c1"
-        },
-        {
-          "text": "The exploration cache is an optimisation: a lookup's result is the same with or without it, and a failed cache write never fails the lookup, as in handleNarrow today.",
           "source": "c1"
         },
         {
@@ -640,6 +680,10 @@
         {
           "text": "A stop of a daemon that stops by itself reports and behaves as today; the forced kill happens only after the existing wait has ended without a stop.",
           "source": "c1"
+        },
+        {
+          "text": "A client session's step tools keep working throughout this Story: the MCP server's process is not refused the store until Story s11 has moved its reads into the daemon.",
+          "source": "c2"
         }
       ]
     },
@@ -654,12 +698,17 @@
             "owner check: after the declaration the same open succeeds",
             "owner check: a temporary path set through setGraphStorePath opens without a declaration",
             "owner check: the live path spelled as a relative path and through a symbolic link is refused",
-            "health record: a write that throws an error with code -30775 sets StoreHealth to locks-lost, and the thrown error is LmdbStoreLocksLostError whose message does not contain 'semume'",
             "health record: after locks-lost, a further store call throws the named error without calling the library, and closeGraphStore resolves without calling the library's close",
             "daemon status: the status payload has no storeFailure field when healthy and carries kind, time, operation and cause when the record is locks-lost",
             "stop outcome: stopDaemon with an injected process table returns forced false when the daemon stops by itself, forced true after the wait when it does not, kills nothing when the pid is not a daemon, and throws when the pid survives the kill",
-            "cache injection: the executor with an injected cache whose read rejects runs the lookup and returns its result; with a write that rejects it still returns the result",
-            "import rule: no file under src/mcp imports from src/db (a scan of import statements, excluding type-only imports)"
+            "owner check: a process that has made only the permitted-reader declaration opens the live path, and a process that has made neither is refused",
+            "health record: after locks-lost, getGraphStore itself rejects with the named error",
+            "daemon status: with the store failed, the handler returns an empty repository list and storeFailure, and does not throw",
+            "stop outcome: with no socket and no live pid, stopDaemon rejects with 'daemon is not running', as today",
+            "stop outcome: a live pid whose command line does not end in daemon/index.js is not killed, its pid file is kept, and the stop fails naming it",
+            "dispatcher: a handler that throws an error with code -30775 leaves StoreHealth locks-lost and the caller receives the named error",
+            "CLI review: with an injected source-root reader that rejects, the review falls back to the repository root and its output says so",
+            "sync wrapper: an error with code 22 whose confirming probe read succeeds is rethrown and leaves StoreHealth ok"
           ],
           "fixturesNeeded": [
             "a temporary home directory per test, so that the default store path is never the user's real one",
@@ -670,15 +719,20 @@
           "level": "integration",
           "purpose": "The two-process sequences that reproduce the failure and prove each remedy, on a temporary store. These are the tests that would have caught the issue.",
           "subjects": [
-            "reproduction, kept as a test of the mechanism: process A opens a temporary store through the library directly; A opens and closes a second descriptor on the lock file; process B opens, writes and closes; A's next write fails with code -30775. This pins the behaviour of the bundled library that the design rests on, and fails if a library upgrade changes it.",
+            "reproduction, kept as a test of the mechanism and run against the real library, not a hand-made error: process A opens a temporary store; A opens and closes a second descriptor on the lock file; process B opens, writes and closes; then in A a read throws code -30775, a synchronous transaction throws code 22, and an asynchronous transaction has not settled after 3 seconds. This pins the three behaviours the detection rests on and fails if a library upgrade changes any of them.",
+            "detection through the real wrappers: the same broken store used through withWriteTxn records locks-lost by its probe within the bound (shortened for the test) and rejects with the named error; through withWriteTxnSync it records at once; a read through the dispatcher records at once",
             "refusal: with a temporary home, process A declares ownership and opens the store; process B, not declared, calls getGraphStore and is refused with LmdbStoreNotOwnerError; A then writes successfully; the lock file was never opened by B",
             "store failure to stop: a child process that runs the daemon's shutdown routine with its store brought to locks-lost by the reproduction sequence exits within 5 seconds of the stop request, the pid file and the socket file are gone, and a second start in the same home succeeds",
             "status after failure: the same child, before the stop, answers the status request with storeFailure whose cause names another process and does not contain 'semume'",
             "forced stop: a child process that ignores the shutdown request and SIGTERM is ended by stopDaemon after a shortened wait; the outcome is forced true with its pid; the pid file and socket are removed",
             "control script: scripts/daemon-ctl.sh stop against the same stubborn child, with the wait shortened through an environment override, kills it, removes the pid file and the socket, and exits 0 with the 'killed' line in its log",
-            "cache through the daemon: an analysis step run from the MCP server's phase code against a daemon in a temporary home stores its lookup result through the cache request and reads it back on the next run, and the MCP side's process holds no descriptor on the store file",
-            "diagnostic: opening the lock file inside the daemon process writes one warn line with a call stack, and a second open from the same stack writes none",
-            "file tools: the daemon's read and grep tools refuse the store file and its lock file by path with the named error"
+            "control script start: scripts/daemon-ctl.sh start against a stubborn running child kills it through the shared function and starts a new daemon",
+            "forced stop, silent daemon: a child that accepts the connection and never replies is ended by stopDaemon after the 5-second bound and the wait",
+            "diagnostic through the tools' route: fs.promises.readFile of the lock file inside the daemon process writes the warn line with a call stack",
+            "file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link: read, edit, multi-edit, copy (as source and as target), move (as source and as target), delete and write, and grep among the search tools",
+            "fatal after failure: a child with its store brought to locks-lost that then raises an unhandled rejection exits within 5 seconds with its pid file and socket gone",
+            "periodic check: with the store's locks removed and no request or write made, the reader check's probe records locks-lost at its next run (interval shortened for the test)",
+            "CLI review through the daemon: a review run from the CLI's service against a daemon in a temporary home obtains its source roots through the request, and the CLI's process holds no descriptor on the store file"
           ],
           "fixturesNeeded": [
             "a child-process helper that opens a store at a given path, optionally declares ownership, and reports over standard output",
@@ -691,7 +745,6 @@
           "purpose": "The installed daemon, once, after the change is deployed. Not automated; recorded beside the build.",
           "subjects": [
             "with the installed daemon running, a script outside it that imports the store is refused, and a daemon write afterwards succeeds",
-            "an analysis run from a client session leaves the MCP server's process with no descriptor on ~/.insrc/graph.lmdb (checked with lsof), where one run on 2026-10-11 left five",
             "daemon-ctl.sh restart on a healthy daemon behaves as before",
             "the two formerly live-store test files pass while the installed daemon runs, and the daemon's log shows no lock-file open from them"
           ]
@@ -701,10 +754,10 @@
         {
           "criterionId": "ac1",
           "provingTests": [
-            "integration: refusal (process B is refused the live store, process A then writes successfully)",
-            "unit: owner check, the four cases",
-            "integration: cache through the daemon (the one production opener no longer opens the store)",
-            "unit: import rule for src/mcp"
+            "integration: refusal (process B, with neither declaration, is refused the live store; process A then writes successfully)",
+            "unit: owner check, including the permitted-reader case",
+            "integration: CLI review through the daemon (the CLI's process opens no store)",
+            "note: the MCP server's process is exempt until Story s11, whose own tests prove that it opens no store"
           ]
         },
         {
@@ -713,70 +766,71 @@
             "integration: store failure to stop (exit within 5 seconds, pid file and socket gone, second start succeeds)",
             "integration: forced stop through stopDaemon",
             "integration: control script stop",
-            "unit: stop outcome, the four cases"
+            "unit: stop outcome, the four cases",
+            "integration: control script start against a hung daemon",
+            "integration: forced stop, silent daemon",
+            "integration: fatal after failure"
           ]
         },
         {
           "criterionId": "ac3",
           "provingTests": [
             "integration: status after failure (cause names another process, no 'semume')",
-            "unit: health record sets locks-lost and throws the named error",
-            "unit: daemon status payload with and without the field"
+            "unit: daemon status payload with and without the field",
+            "unit: status handler with the store failed returns an empty repository list and storeFailure",
+            "integration: detection through the real wrappers (asynchronous write, synchronous write, read)",
+            "integration: reproduction against the real library (the three measured behaviours)",
+            "integration: periodic check records a failure no request has met"
           ]
         }
       ]
     },
     "migration": {
-      "stateBefore": "Per the s1 bundle on the store and the stop, and the direct reads recorded with it: getGraphStore opens whatever path is set, and the path defaults to the live store, so any process that imports the store layer opens the live store; the MCP server does so for the exploration cache (stepPlan and handleNarrow call the cache functions in its own process), and two test files do so because they set no temporary path. Nothing in src handles the library's lock failure: it reaches the log as the library's text about a system limit. The daemon's shutdown ends in process.exit on both of its paths, and stopDaemon and the control script give up after 30 seconds with the daemon left half down. DaemonStatus has no field for a store failure.",
-      "stateAfter": "The live store opens only in a process that has declared itself its owner, which the daemon's entry point does; every other process is refused before any file is opened. The MCP server reaches the exploration cache through two daemon requests and imports nothing from the store layer. A lock failure is recorded once as locks-lost with its true cause, raised as a named error, and shown in the daemon's status. A daemon whose store has failed ends itself without calling process.exit; a stop that overruns is finished by a forced kill from stopDaemon or the control script, which clean the pid file and the socket and say what they did. Any open of the store's lock file inside the daemon is logged with its call stack.",
+      "stateBefore": "Per the s1 bundle on the store and the stop, and the direct reads recorded with it: getGraphStore opens whatever path is set, and the path defaults to the live store, so any process that imports the store layer opens the live store; the MCP server does so for every analyze step, which runs in its own process and reads the store directly for scope resolution, the last-indexed time, every lookup and the cache, and two test files do so because they set no temporary path. Nothing in src handles the library's lock failure: it reaches the log as the library's text about a system limit. The daemon's shutdown ends in process.exit on both of its paths, and stopDaemon and the control script give up after 30 seconds with the daemon left half down. DaemonStatus has no field for a store failure.",
+      "stateAfter": "The live store opens only in a process that has declared itself its owner (the daemon) or, until Story s11, a permitted reader (the MCP server); every other process is refused before any file is opened. A lock failure is recorded once as locks-lost with its true cause, raised as a named error by the write wrappers and by getGraphStore, and shown in the daemon's status, whose handler answers even when the store has failed. A daemon whose store has failed ends itself without calling process.exit; a stop that overruns is finished by a forced kill from stopDaemon or from the control script's stop and start, which clean the pid file and the socket and say what they did. Any open of the store's lock file inside the daemon is logged with its call stack. Story s11 then moves the step tools into the daemon and removes the permitted-reader declaration, which completes acceptance criterion ac1.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Add the health record, the two named errors and the recognition of the library's lock failure in the store's transaction wrappers; add the optional storeFailure field to the daemon's status and its mirrored types. Nothing reads the record yet except status.",
+          "action": "Add the health record and the two named errors, with detection at the three measured places: the synchronous write wrapper (codes 22 and -30775), the asynchronous write wrapper's bounded wait and read probe, the three catch sites of the daemon's request server and the queue's job runner for a failing read, and the probe in the periodic reader check. Add the optional storeFailure field to the daemon's status and its mirrored types; the status handler guards its read of the repository list. Nothing else reads the record yet.",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Change the stop paths: stopDaemon returns an outcome and forces the stop after its wait; restart reports a forced stop and goes on; the control script's stop kills after its wait and cleans up. Independent of every other step, and useful by itself against the hang as it occurs today.",
+          "action": "Change the stop paths: stopDaemon bounds its shutdown request, returns an outcome and forces the stop after its wait, killing only a pid whose command line ends in daemon/index.js; restart reports a forced stop and goes on; the control script gets one forced-stop function used by its stop and by the stale-daemon branch of its start. Independent of every other step, and useful by itself against the hang as it occurs today.",
           "rollbackable": true
         },
         {
           "order": 3,
-          "action": "Change the daemon's shutdown and closeGraphStore to read the health record: skip the store's close and end by a kill signal to itself when the record is locks-lost. Requires step 1.",
+          "action": "Change the daemon's shutdown, closeGraphStore and getGraphStore to read the health record: getGraphStore throws the named error once the store has failed, and the shutdown and the close skip the store's close and end by a kill signal to itself when the record is locks-lost. Requires step 1. The shutdown does not wait for the queue when the store has failed, and reportFatal ends the same way.",
           "rollbackable": true
         },
         {
           "order": 4,
-          "action": "Add the two daemon requests for the exploration cache and make the executor take the cache as injected functions, with the store functions as the default inside the daemon. The MCP server is not yet switched over, so behaviour is unchanged.",
+          "action": "Give the two test files that reach the live store a temporary one, and thread the optional reader through the three review functions, add the read-only daemon request, and have the CLI's review pass a reader that calls it, with its fallback stated in the review's output. Repeat the search for openers over everything the CLI's and the MCP server's entry points import.",
           "rollbackable": true
         },
         {
           "order": 5,
-          "action": "Switch the MCP server's two phases to the cache requests and remove its import of the store layer; add the test that nothing under src/mcp imports from src/db. From here the MCP server no longer opens the store. Requires step 4 to be running in the daemon: a newer MCP server against an older daemon gets an unknown-request error, which the cache treats as a miss.",
+          "action": "Add the two declarations, call the owner one from the daemon's entry point and the permitted-reader one from the MCP server's entry point, and switch on the refusal in getGraphStore. This is the step that can break a caller, so it comes after the two test files have been moved; the full test sweep is run with it before it is committed, and any test it newly fails is a test that was opening the live store.",
           "rollbackable": true
         },
         {
           "order": 6,
-          "action": "Give the two test files that reach the live store a temporary one.",
+          "action": "Add the lock-file open diagnostic in the daemon and the refusal of the store's two files, called from the file tools' shared path helper, from the copy and move tools themselves, and from the search tools.",
           "rollbackable": true
         },
         {
           "order": 7,
-          "action": "Add the owner declaration, call it from the daemon's entry point, and switch on the refusal in getGraphStore. This is the step that can break a caller, so it comes after steps 5 and 6 have removed the known ones; the full test sweep is run with it before it is committed, and any test it newly fails is a test that was opening the live store.",
+          "action": "Deploy: update the installed daemon, then restart client sessions so that their MCP server processes run the new code. Run the smoke checks (an outside script is refused; a restart of a healthy daemon behaves as before; an analysis from a client session still works).",
           "rollbackable": true
         },
         {
           "order": 8,
-          "action": "Add the lock-file open diagnostic in the daemon and the refusal of the store's two files in the daemon's file tools.",
-          "rollbackable": true
-        },
-        {
-          "order": 9,
-          "action": "Deploy: update the installed daemon, then restart client sessions so that their MCP server processes run the new code. Run the smoke checks (an outside script is refused; an analysis leaves the MCP server with no descriptor on the store; a restart of a healthy daemon behaves as before).",
+          "action": "Hand-over to Story s11: when s11 has moved the step tools into the daemon it deletes the permitted-reader declaration and its call, after which the MCP server's process is refused like any other. Not part of this Story's delivery.",
           "rollbackable": true
         }
       ],
-      "backwardCompat": "No stored data changes and no migration of the store is involved. DaemonStatus gains one optional field, absent when the store is healthy, so a consumer that does not know it is unaffected. stopDaemon's return changes from nothing to an outcome object and it no longer rejects on a time-out; its callers in the CLI are updated in the same change. MaintenanceResult's steps list may contain a new value, 'force-stop'. The control script's stop now exits 0 after a forced kill where it exited 4. The one behaviour that can break an existing caller is the refusal of the live store to a process that is not the daemon: by design it breaks any test or script that opened the live store without setting a temporary path. During the deploy an MCP server process started before the update keeps its old code and can still open the live store until its client session is restarted; the refusal protects fully only once those processes are gone.",
+      "backwardCompat": "No stored data changes and no migration of the store is involved. DaemonStatus gains one optional field, absent when the store is healthy, so a consumer that does not know it is unaffected. stopDaemon's return changes from nothing to an outcome object and it no longer rejects on a time-out, though it still rejects when no daemon is running; its service type and its three callers in the CLI are updated in the same change. MaintenanceResult's steps list may contain a new value, 'force-stop'. The control script's stop now exits 0 after a forced kill where it exited 4. The one behaviour that can break an existing caller is the refusal of the live store to a process that is not the daemon: by design it breaks any test or script that opened the live store without setting a temporary path. The MCP server's process keeps its access through the temporary declaration until Story s11, so client sessions are unaffected by this Story.",
       "zeroDowntime": false,
       "dataRewriteRequired": false
     },
@@ -785,7 +839,7 @@
         "id": "a1",
         "name": "An explicit owner declaration in the store, a recorded store health, and a stop that ends from outside the main thread",
         "oneLineSummary": "The daemon declares itself the store's owner before it opens it; the store refuses the live path to anyone else; a store failure is recorded once and read by status and by shutdown; the stop is finished by a forced kill, from the daemon itself when it knows the store has failed and from the control paths otherwise.",
-        "approach": "The store module gains an explicit declaration of who may open the live path. The daemon's entry point makes it before its first open; the store's open checks it whenever the path is the live one and throws a named error otherwise, so a temporary path set by a test stays open to anyone. The MCP server's reads and writes of the exploration cache, the one known production use from another process, become two daemon requests, and the two test files that reach the live store get a temporary one. A store failure is recorded in one place: the store's write wrapper recognises the library's lock failure, records it with a true description of the cause, and raises a named error in place of the library's text. The daemon's status reads that record.\n\nStopping uses the same record. The library's exit hook hangs on the main thread once the store's semaphores are gone, so no timer in the daemon can end it. When the record says the store has failed, the shutdown skips the store's close, clears the pid file and the socket, and ends the process with a kill signal to itself, which runs no exit hook. For a hang that was not foreseen, the two control paths (the control script and the CLI's stop) escalate after their wait to a forced kill of the recorded pid, remove the pid file and the socket, and say that they did so.",
+        "approach": "The store module gains an explicit declaration of who may open the live path. The daemon's entry point makes it before its first open; the store's open checks it whenever the path is the live one and throws a named error otherwise, so a temporary path set by a test stays open to anyone. The MCP server's process, which runs the analyze step itself and reads the store directly, is let in by a second, temporary declaration until Story s11 has moved that work into the daemon; the two test files that reach the live store get a temporary one. A store failure is recorded in one place: the store's write wrapper recognises the library's lock failure, records it with a true description of the cause, and raises a named error in place of the library's text. The daemon's status reads that record.\n\nStopping uses the same record. The library's exit hook hangs on the main thread once the store's semaphores are gone, so no timer in the daemon can end it. When the record says the store has failed, the shutdown skips the store's close, clears the pid file and the socket, and ends the process with a kill signal to itself, which runs no exit hook. For a hang that was not foreseen, the two control paths (the control script and the CLI's stop) escalate after their wait to a forced kill of the recorded pid, remove the pid file and the socket, and say that they did so.",
         "pros": [
           "The refusal is decided by a call the daemon makes on purpose, so it cannot be satisfied by accident: a test or a tool that imports the store and forgets a temporary path fails at once with a named error, in place of breaking the daemon hours later.",
           "It removes the second ingredient of the failure (another process closing the live store) without needing to know which daemon code drops the lock, which is not yet identified.",
@@ -793,9 +847,9 @@
           "The self-kill and the control-path escalation cover the two cases separately: a failure the daemon has seen, and a hang it has not."
         ],
         "cons": [
-          "Two new daemon requests for the exploration cache add a round trip to every cached lookup made from the MCP server, where today it reads the store directly.",
           "Ending the process with a kill signal skips every exit hook, the logger's flush included, so the last log lines must be written synchronously before it.",
-          "The declaration is one more thing a new entry point that legitimately owns a store would have to call; today there is one such entry point."
+          "The declaration is one more thing a new entry point that legitimately owns a store would have to call; today there is one such entry point.",
+          "Until Story s11 lands, one other process (the MCP server) still opens and closes the live store, so the original failure stays possible through it; this Story bounds the damage (the daemon reports the failure and stops cleanly) but does not yet remove that route."
         ],
         "costEstimate": "M"
       },
@@ -835,7 +889,29 @@
       }
     ],
     "chosenAlternative": "a1",
-    "openQuestions": []
+    "openQuestions": [],
+    "feedback": [
+      {
+        "id": "7aeb3a3e",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-11T08:36:26.977Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/LLD.md"
+        },
+        "comment": "Revised 2026-10-11 after the first daemon review (block: 2 HIGH, 3 MED) and the stakeholder's decision to run the step tools inside the daemon (Story s11). (1) The analyze step runs in the MCP server's process and reads the live store directly, far beyond its cache; the cache move is taken out of this Story and the whole move belongs to s11. Until s11 lands the MCP server is let in by a temporary permitted-reader declaration, which s11 deletes; acceptance criterion ac1 is met in full only then. (2) The status handler guards its store read so that it answers after a store failure. (3) Reads have no wrapper; getGraphStore raises the failure. (4) A stop of a stopped daemon stays an error, as today. (5) The control script's start shares the forced-stop function with its stop. The pid check reuses DAEMON_ENTRY.",
+        "kind": "comment"
+      },
+      {
+        "id": "a0bc4efc",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-11T08:47:09.017Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/LLD.md"
+        },
+        "comment": "Revised twice more on 2026-10-11, after the second and third daemon reviews (blocks of 5 and 4). Detection now follows a measurement of the failed store: a read throws -30775, a synchronous transaction throws 22, an asynchronous transaction never settles; so the asynchronous wrapper bounds its wait and probes with a read, the synchronous wrapper confirms code 22 with the same probe, the request server and queue catch a failing read, and the periodic reader check probes too. Also: the CLI review reaches source roots through a daemon request; stopDaemon bounds its request and never removes the pid file of a live non-matching process; the refusal of the store files is called from the copy and move tools themselves; reportFatal and a stop with the store failed end by self-kill without waiting for the queue. The third round's fixes are NOT re-reviewed.",
+        "kind": "comment"
+      }
+    ]
   },
   "citations": [
     {
@@ -892,6 +968,28 @@
       "id": "c10",
       "kind": "stakeholder",
       "ref": "Stakeholder decisions of 2026-10-11 for Story s4: the Story is reworded to the reproduced cause; a hard rule in the store refuses the live path to any process that has not declared itself the daemon, and the known openers are fixed."
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/mcp/server.ts",
+      "quotedText": "async (rawArgs, _extra) => handleAnalyzeStep(rawArgs),"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/EXT.md"
+    },
+    {
+      "id": "c13",
+      "kind": "step-output",
+      "ref": "Measurement of 2026-10-11 on a temporary store whose locks had been removed: a read threw code -30775; a synchronous transaction threw code 22 'Invalid argument'; an asynchronous transaction had not settled after 3 seconds, and a synchronous transaction attempted after it hung."
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/cli/services/daemon.ts",
+      "quotedText": "export const DAEMON_ENTRY = join(__dirname, '../../daemon/index.js');"
     }
   ]
 }

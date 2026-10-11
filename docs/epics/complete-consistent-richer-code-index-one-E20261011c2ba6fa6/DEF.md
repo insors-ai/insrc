@@ -110,6 +110,10 @@ The code index cannot be trusted to be complete or consistent, and it records le
 - **E20261011c2ba6fa6:S010:FR004** — Model-proposed relationships are used only when at least 95% of those proposed are right and at least 60% of the real ones are found, on at least 100 hand-checked links.
 - **E20261011c2ba6fa6:S010:FR005** — Only new or changed documents are sent to the model.
 
+**s11:**
+
+- **E20261011c2ba6fa6:S011:FR001** — The temporary allowance for the MCP server's process to open the live store is removed with this Story.
+
 ## 3. Non-goals
 
 - **Replacing LMDB or LanceDB, or adopting Graphify as a dependency or as the index.** — The comparison found additions to the ingestion and context layers; none requires a different store.
@@ -360,6 +364,11 @@ An analysis, a workflow step, a review or a triage asked for from a client sessi
 - **ac3:** Given a client session and no running daemon, or a daemon that does not know the request, when a step tool is called, then the call returns a named error that says the daemon is not reachable or is too old, and nothing is read from the store by the MCP server's process.
 - **ac4:** Given the source tree after this change, when the files under the MCP server's directory and everything they import outside the daemon's request client are scanned, then none of them opens the graph store or the vector store.
 - **ac5:** Given a step that needs the client's own model to answer a prompt, when the daemon returns that prompt, then the prompt, the schema and the state token reach the client unchanged, and the reasoning still happens in the session, as it does today.
+- **ac6:** Given the temporary allowance that Story s4 gives the MCP server's process to open the live store (the permitted-reader declaration and its one call), when this Story is delivered, then the declaration and its call are deleted from the source, the MCP server's process is refused the live store like any other process that is not the daemon, and a test fails if the declaration is found anywhere in the source. _(operationalizes `k2`)_
+
+**Local constraints:**
+
+- `lc1` (stakeholder) Removing the temporary allowance is part of this Story and not optional: by the stakeholder's decision of 2026-10-11 the allowance exists only until this Story lands, and Story s4's first acceptance criterion is met in full only when it is gone. [[c11]]
 
 ## 7. References
 
@@ -392,3 +401,4 @@ An analysis, a workflow step, a review or a triage asked for from a client sessi
 - **Subho Ghosh** (2026-10-11T07:53:00.814Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Amended after approval, 2026-10-11, on the stakeholder's decision: while a repository is being indexed or reindexed, search and analyze requests about it return a named error that states the indexing state, and no partial answer. Carried by Story s5 (a new requirement and acceptance criterion ac4 in the definition). Not re-reviewed.
 - **Subho Ghosh** (2026-10-11T07:56:39.209Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Stakeholder decision, 2026-10-11: a reindex is queued at once, for a request and for the migration alike; only the repository being reindexed is offline, from the start of its own run until that run completes, and other repositories are answered as usual. Not re-reviewed.
 - **Subho Ghosh** (2026-10-11T08:16:16.230Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Amended after approval, 2026-10-11, on the stakeholder's decision: Story s4 is reworded to the cause reproduced that day. The failure is not the semaphore limit: the daemon loses its file lock on the lock file when another descriptor on it is closed in-process, and another process that opens and closes the store then removes the semaphores. The title, the first and third criteria and the first requirement of s4 now speak of the store not being broken by another process. Not re-reviewed.
+- **Subho Ghosh** (2026-10-11T09:27:55.689Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Stakeholder decision, 2026-10-11: the temporary allowance that lets the MCP server open the live store until Story s11 is kept, and its removal is a required part of Story s11 (a new acceptance criterion ac6, requirement and local constraint on s11 in the definition).

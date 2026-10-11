@@ -169,7 +169,8 @@
         "note": "Corrected the malformed coverage error case to preserve reference.missing for zero matches (validate.ts:199) and inventory.invalid for duplicates (validate.ts:184). No new redundant issue code, override or deferral; noncomputable identity and stale-assessment behavior remain as approved in the HLD.",
         "resolvedAt": "2026-10-11T18:05:41.919Z"
       }
-    }
+    },
+    "approvedAt": "2026-10-11T18:22:25.461Z"
   },
   "body": {
     "summary": {

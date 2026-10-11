@@ -31,7 +31,7 @@ test('ac2 exact evidence preserves complete records and pins independently calcu
   const record = JSON.parse(Buffer.from(candidate.files.find(f => f.path === 'records/0.json')!.bytes).toString());
   const envelope = JSON.parse(Buffer.from(candidate.files.find(f => f.path === 'coverage.json')!.bytes).toString());
   assert.equal(recordContentDigest(record), '01113944fa814efa913e8f0025616eb9a69bb0ae7a9ab66f5d89a3b5c9225dd3');
-  assert.equal(candidateContentDigest(candidate.manifest), '3924cd36440385e5bf5bca1522f6d3ac909e8ff12b93cc834d1c4539dd0bdcbc');
-  assert.equal(reviewContentDigest(envelope), 'e92afaa6f7a5f06c1b6e6f0339e260f40b9927333ed4cef6de7205b5aee747c6');
-  assert.equal(releaseContentDigest(candidate.manifest), '07cbadefe74c827d64405594877af0806f06e7d9fa8606738c2d1354c96742a1');
+  assert.equal(candidateContentDigest(candidate.manifest), '5691f92a44d349401cadc1627ad74e4abd71488a0e288f0eb1636ca6ab627571');
+  assert.equal(reviewContentDigest(envelope), 'd14f50250c702486cdef9238d977a33b4dc3c0ddb7fb35b4772d630d7dffaeab');
+  assert.equal(releaseContentDigest(candidate.manifest), '9bfd98dbd4d2db3c4a4f197d1212ed90d432067d528a755a206ae6acb581acc3');
 });

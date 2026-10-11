@@ -5,10 +5,10 @@
 ## Summary
 
 **Epic:** `di1-open-source-design-corpus-retrieval`
-**LLD run:** `wf-1791734517458-d81b91`
-**LLD effective hash:** `335cb7e3dd53...`
+**LLD run:** `wf-1791741779633-uhhxjy`
+**LLD effective hash:** `a20e4da9408d...`
 
-Build the corpus's foundational schemas, deterministic identities and pure validation pipeline. Tests will prove incomplete or stale content cannot pass preflight and that valid records retain their full design rationale and provenance. Ingestion, curation and runtime services remain later stories.
+Correct candidate identity so manifest metadata changes invalidate prior assessments. Preserve the pure corpus contracts, define missing/duplicate coverage behavior, and prove the digest chain with independent vectors and stale-assessment regressions before fresh daemon code review.
 
 ## Contents
 
@@ -38,12 +38,13 @@ Add proposed src/design/corpus/contracts.ts with closed TypeBox schemas and Stat
 
 ### 1.2 E202610117e0ae92e:S001:T002 — Implement canonical bytes and digest chain
 
-Add canonical.ts with bounded pure canonical serialization and record/candidate/review/release hashes in the exact approved order. Pin golden fixtures from explicit canonical bytes and independently computed SHA-256 values. Keep raw-file hashes distinct from canonical semantic digests.
+Update canonical.ts to hash the complete validated manifest snapshot except the three cyclic digest slots; preserve canonical JSON, record identity and raw byte rules. Stage coverage path/mediaType before hashing, independently regenerate candidate/review/release vectors and update digest documentation.
 
 **Acceptance checks:**
 - Key order and manifest inventory order do not affect identity; meaningful record-array order does.
-- recordVersion excludes only recordVersion/review; candidate excludes manifest and coverage envelope; release hashes manifest without releaseId.
+- recordVersion excludes recordVersion/review; candidate excludes only releaseId, reviewDigest and the unique coverage file digest. All other fields, including coverage path/mediaType, bind assessments; records/files sort by ID/version and path. Release hashes manifest without releaseId.
 - Invalid Unicode, non-JSON values, accessors, cycles, oversized input and non-finite/unsafe numbers are rejected before unbounded traversal or content hashing.
+- Zero/multiple coverage matches yield empty candidate identity; never omit all matches or choose arbitrarily. Tests cover every non-cyclic metadata field and all three exclusions.
 
 ### 1.3 E202610117e0ae92e:S001:T003 — Validate guidance completeness and review binding
 
@@ -65,6 +66,7 @@ Extend validate.ts with pure in-memory manifest/inventory validation: closed mem
 - Verify file, record, candidate, review and release digests; no manifest self hash or final releaseId in coverage.
 - Format limits return explicit issues instead of silently truncating records or inventory.
 - Coverage is inspected only as canonical JSON for digest/candidate binding; no licensing allowlist or editorial coverage algorithm is implemented.
+- Malformed coverage membership remains ineligible: zero matches preserves reference.missing, duplicates inventory.invalid, and no computable candidate is invented.
 
 ### 1.5 E202610117e0ae92e:S001:T005 — Compose publication preflight and expose the pure module
 
@@ -75,10 +77,11 @@ Add digest-bound eligibility/coverage assessment composition and public barrel i
 - PublicationCheck.manifestDigest is canonical manifest hash when computable, otherwise empty; errors do not fabricate hashes.
 - Imports and calls perform no file/DB/network/provider access or catalog writes; no runtime approval claims are made.
 - Only sc1/sc2 foundational surfaces are exported; no ingestion, retrieval, settings or publication mutations are added.
+- Changing source/notices roles without changing bytes and resealing releaseId rejects old coverage and both assessments. Missing/duplicate coverage entries mark every supplied assessment stale while preserving independently computable manifestDigest.
 
 ### 1.6 E202610117e0ae92e:S001:T006 — Verify contract coverage and strict build integration
 
-Complete the LLD acceptance matrix with cross-module contract tests, run the focused corpus suite and TypeScript build, and smoke-import compiled out/design/corpus/index.js without daemon/DB/provider setup. Record results for independent post-build review; preserve unrelated changes.
+Run current-source isolated import and preflight, corpus regressions, strict build and affected insrc gates. Independently recompute development goldens, retaining the record golden, and obtain fresh daemon code review before S001 completion.
 
 **Acceptance checks:**
 - ac1 and ac2 each have passing proving tests; expected digest bytes/values are independent of the helper under test.
@@ -86,6 +89,7 @@ Complete the LLD acceptance matrix with cross-module contract tests, run the foc
 - Compiled import has no live-store/provider requirements; no test touches live ~/.insrc data.
 - Diff remains within S001 modules/tests and tracked artifacts; no completion is claimed before build validation and independent code review.
 - An isolated process exercises valid and invalid preflight with external I/O instrumented or forbidden; asserts no filesystem writes, network/provider calls or live-store creation.
+- Rerun t2/t4/t5/t6 gates against corrected source; include t1/t3 tests in focused suite. Fresh daemon review covers final corpus commit range, with no dirty-ledger scope substitution.
 
 ## 2. Test-strategy coverage
 
@@ -98,17 +102,20 @@ Complete the LLD acceptance matrix with cross-module contract tests, run the foc
 | canonical-golden: key reorder, numeric/string edge cases, manifest sort and meaningful array order | `t2` |
 | digest-chain: record→candidate→review→release no self reference, changed-content invalidation | `t2`, `t4` |
 | invalid-input: accessors, cyclic objects, unicode/numeric/size limits | `t2`, `t4` |
+| candidate-metadata-binding: role paths, attribution, timestamp, schema and all record/file metadata affect candidate identity; only three cyclic digest positions are excluded | `t2`, `t6` |
 | record-roundtrip: all identity/version/relation/rationale/provenance fields retained | `t3`, `t6` |
 | manifest-inventory: exact bytes/path/membership, digest tamper, duplicate/case collision, missing target and relation-cycle rejection | `t4` |
 | publication-composition: missing/duplicate/failed/stale assessments always block; valid fixed assessments pass | `t5` |
+| stale-role-assessment: swap sourceManifestPath/noticesPath with unchanged bytes, reseal only releaseId, and prove preflight rejects the old envelope and assessments | `t5`, `t6` |
+| noncomputable-candidate: zero and duplicate coverage entries produce empty candidate identity, ineligible preflight and assessment.stale for every supplied assessment; independently recomputed manifestDigest remains available | `t2`, `t4`, `t5` |
 | npm run build | `t6` |
 | Import compiled corpus barrel in a fresh process with no daemon/DB/provider setup | `t6` |
 
 ## 3. References
 
-- **[[c1]]** `prior-artifact` `LLD s1 contractDetails GuidanceRecord and dataModelChanges GuidanceRecord/EvidenceRef (LLD.md:41,112,122)`
-- **[[c2]]** `prior-artifact` `LLD s1 contractDetails ReleaseManifest/PublicationCheck and interactionWithShared sc2 (LLD.md:65,87,137)`
-- **[[c3]]** `prior-artifact` `LLD s1 dataModelChanges Canonical digest format v1 (LLD.md:132)`
-- **[[c4]]** `prior-artifact` `LLD s1 errorPaths and dataModelChanges ValidationIssue (LLD.md:127,144)`
-- **[[c5]]** `prior-artifact` `LLD s1 testStrategy acceptanceMapping and testLevels (LLD.md:190)`
-- **[[c6]]** `prior-artifact` `LLD s1 hldContextSlice boundary and adjacentBoundaries; testStrategy smoke integration (LLD.md:24,190)`
+- **[[c1]]** `prior-artifact` `LLD s1 contractDetails GuidanceRecord and dataModelChanges GuidanceRecord/EvidenceRef`
+- **[[c2]]** `prior-artifact` `LLD s1 contractDetails ReleaseManifest/PublicationCheck and interactionWithShared sc2`
+- **[[c3]]** `prior-artifact` `LLD s1 dataModelChanges Canonical digest format v1`
+- **[[c4]]** `prior-artifact` `LLD s1 errorPaths and dataModelChanges ValidationIssue`
+- **[[c5]]** `prior-artifact` `LLD s1 testStrategy acceptanceMapping and testLevels`
+- **[[c6]]** `prior-artifact` `LLD s1 hldContextSlice boundary and adjacentBoundaries; testStrategy smoke integration`

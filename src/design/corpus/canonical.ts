@@ -92,14 +92,17 @@ export function recordContentDigest(record: GuidanceRecord): string {
   delete copy['recordVersion']; delete copy['review'];
   return hashCanonical(copy);
 }
+/** Empty means the coverage entry is missing or ambiguous; no assessment can bind it. */
 export function candidateContentDigest(manifest: ReleaseManifest): string {
   const copy = JSON.parse(canonicalJson(manifest, CORPUS_LIMITS.packageBytes)) as ReleaseManifest;
-  return hashCanonical({
-    records: copy.records.map(({ recordId, recordVersion }) => ({ recordId, recordVersion }))
-      .sort((a, b) => compare(a.recordId, b.recordId) || compare(a.recordVersion, b.recordVersion)),
-    files: copy.files.filter(f => f.path !== copy.coveragePath).map(({ path, digest }) => ({ path, digest }))
-      .sort((a, b) => compare(a.path, b.path)),
-  }, CORPUS_LIMITS.packageBytes);
+  const coverage = copy.files.filter(file => file.path === copy.coveragePath);
+  if (coverage.length !== 1) return '';
+  delete (copy as unknown as Record<string, unknown>)['releaseId'];
+  delete (copy as unknown as Record<string, unknown>)['reviewDigest'];
+  delete (coverage[0] as unknown as Record<string, unknown>)['digest'];
+  copy.records.sort((a, b) => compare(a.recordId, b.recordId) || compare(a.recordVersion, b.recordVersion));
+  copy.files.sort((a, b) => compare(a.path, b.path));
+  return hashCanonical(copy, CORPUS_LIMITS.packageBytes);
 }
 export const reviewContentDigest = (envelope: unknown): string => hashCanonical(envelope, CORPUS_LIMITS.packageBytes);
 export function releaseContentDigest(manifest: ReleaseManifest): string {

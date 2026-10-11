@@ -253,6 +253,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         // host, so a reloaded window can follow it from there.
         if (proc.cursor !== undefined) {
           const { turnId, generation: gen, offset } = proc.cursor;
+          cursorTurnId = turnId;
           runningTurns.add(turnId);
           proc.exit.then(
             () => runningTurns.delete(turnId),
@@ -269,6 +270,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       let detached = false;
       let detachThis: (() => void) | undefined;
       let iterator: AsyncIterator<TurnEvent> | undefined;
+      // The turn whose segment of the session file the process writes (set at spawn).
+      let cursorTurnId: string | undefined;
       /** At the turn's terminal event its output has been fully handled: forget its cursor, keep its native session, finish the generator. */
       const endTurn = (ev: TurnEvent, it: AsyncIterator<TurnEvent>): void => {
         clearCursor(s, ev.turnId);
@@ -303,7 +306,27 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         if (myGen === generation) detachLive = detachThis;
         for (;;) {
           const next = await it.next();
-          if (next.done === true || detached) break;
+          if (detached) break;
+          if (next.done === true) {
+            // The output ended without a done/error event (the adapter normally ends every turn
+            // with one): end the turn as an error, so its cursor is not left for a reload to
+            // follow and the panel does not stay running.
+            const turnId = activeTurnId ?? cursorTurnId ?? 'none';
+            if (cursorTurnId !== undefined) clearCursor(s, cursorTurnId);
+            if (isCurrent(myGen)) {
+              const ev: TurnEvent = { kind: 'error', turnId, message: 'the CLI ended without finishing the turn' };
+              activeTurnId = turnId;
+              sink.onEvent(ev);
+              try {
+                sink.onTerminal(ev);
+              } catch (err) {
+                log.warn(`[chat] session ${s.id}: after turn ${turnId} ended: ${err instanceof Error ? err.message : String(err)}`);
+              }
+            } else {
+              trySave(s);
+            }
+            break;
+          }
           const ev = next.value;
           // Superseded/closed: report nothing more, but keep reading so the superseded turn's CLI
           // never stalls on a full pipe; its process (and the lease) end when it exits. Newest

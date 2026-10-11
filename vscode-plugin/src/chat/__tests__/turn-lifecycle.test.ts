@@ -942,3 +942,37 @@ test('a failing follow onEvent is logged and the follow still ends the turn', as
   assert.equal(h.session.liveTurn, undefined, 'the cursor is cleared, so the turn is never replayed');
   assert.match(warnings.join('\n'), /turn old: an event was not handled: append failed/);
 });
+
+test('a turn whose output ends without a done or error event ends as an error', async () => {
+  const { adapter, runs } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter) });
+  const a = recSink();
+  const p = h.lc.start(h.session, REQ, a.sink);
+  await waitFor(() => runs.length === 1);
+  runs[0]!.feed.push(delta('t1'));
+  await waitFor(() => a.calls.includes('event:assistant-delta'));
+  runs[0]!.proc.exitNow(); // the output ends with no terminal event
+  await p;
+  assert.deepEqual(a.calls, ['beforeRun', 'event:assistant-delta', 'event:error', 'terminal:error'], 'the panel is told the turn ended');
+  assert.equal(h.session.liveTurn, undefined, 'its cursor is cleared, so a reload does not follow it');
+
+  // A superseded turn whose output ends that way: its cursor is cleared and saved, nothing reported.
+  const s2 = scriptedAdapter();
+  const h2 = harness({ providers: registry(s2.adapter) });
+  const b = recSink();
+  const pb = h2.lc.start(h2.session, REQ, b.sink);
+  await waitFor(() => s2.runs.length === 1);
+  s2.runs[0]!.feed.push(delta('t1'));
+  await waitFor(() => h2.session.liveTurn?.cursor.offset === 10);
+  const c = recSink();
+  const pc = h2.lc.start(h2.session, REQ, c.sink);
+  await waitFor(() => c.calls.includes('waiting'));
+  s2.runs[0]!.proc.exitNow();
+  await pb;
+  assert.deepEqual(b.calls, ['beforeRun', 'event:assistant-delta']);
+  assert.ok(h2.saves.includes(undefined), 'the cleared cursor is saved');
+  await waitFor(() => s2.runs.length === 2);
+  s2.runs[1]!.feed.push(done('t2'));
+  await pc;
+  s2.runs[1]!.proc.exitNow();
+});

@@ -18,12 +18,11 @@ import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from './render-reg
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, CHAT_MARKDOWN_TOKENS } from './markdown-style.js';
 import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
-import type { ProviderRegistry, ProviderId } from './cli-adapter.js';
+// S001 (bugfix): classifyPermissionDenial is the pure classifier that tells a tool-permission gate
+// apart from a working-directory / sandbox-allowlist block (the two must not share an Approve path).
+import { classifyPermissionDenial, type ProviderRegistry, type ProviderId } from './cli-adapter.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type TurnSink } from './turn-lifecycle.js';
-// S001 (bugfix): a value import — the pure classifier that tells a tool-permission gate apart from
-// a working-directory / sandbox-allowlist block (the two must not share an Approve path).
-import { classifyPermissionDenial } from './cli-adapter.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import {
@@ -200,6 +199,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       ...(eg.notify !== undefined ? { notify: eg.notify } : {}),
     });
   }
+
+  /** The governor's calls are fired and forgotten: a failure is logged, never an unhandled rejection. */
+  const warnGovernor = (step: string, err: unknown): void =>
+    log.warn(`[chat] edit governor ${step} failed: ${err instanceof Error ? err.message : String(err)}`);
 
   // S005: (re)post the extension-local chat history so the webview history-dropdown stays current.
   const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
@@ -662,11 +665,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // S006: an observed file-edit -> the governor computes + renders its own diff
         // (auto: visualize-only; review: track for accept/reject). Fire-and-forget so
         // the incremental turn loop never blocks on git/fs IO.
-        if (governor !== undefined && ev.kind === 'file-edit') void governor.observe(ev.path);
+        if (governor !== undefined && ev.kind === 'file-edit') governor.observe(ev.path).catch((err: unknown) => warnGovernor('observe', err));
       },
       onTerminal: () => {
         trySave(s); // persist the turn's transcript rows (an errored turn's too); a failing save never breaks the turn
-        if (governor !== undefined) void governor.resolveTurn();
+        if (governor !== undefined) governor.resolveTurn().catch((err: unknown) => warnGovernor('resolveTurn', err));
         postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
       },
       onError: (message, turnId) => post({ type: 'turn-event', event: { kind: 'error', turnId, message } }),
@@ -785,7 +788,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // S006: accept keeps the on-disk change; reject reverts to the pre-turn baseline.
         // An unknown/decided path is a no-op inside the governor.
         if (typeof msg.path !== 'string' || typeof msg.accept !== 'boolean') return;
-        if (governor !== undefined) void governor.decide(msg.path, msg.accept);
+        if (governor !== undefined) governor.decide(msg.path, msg.accept).catch((err: unknown) => warnGovernor('decide', err));
         return;
       }
       case 'permission-decision': {

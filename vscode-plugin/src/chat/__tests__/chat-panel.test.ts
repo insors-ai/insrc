@@ -2754,3 +2754,41 @@ test('a failing save of a selection or permission outcome is logged and the run 
   assert.match(seen[1]!.prompt, /Alpha/, 'the follow-on run still starts');
   assert.match(warns.join('\n'), /not saved: disk full/);
 });
+
+test('a failing edit-governor call is logged, never an unhandled rejection', async () => {
+  const unhandled: unknown[] = [];
+  const onUnhandled = (r: unknown): void => void unhandled.push(r);
+  process.on('unhandledRejection', onUnhandled);
+  try {
+    const fc = fakeChannel();
+    const warns: string[] = [];
+    const gov = fakeGovernance();
+    gov.baseline.set('src/a.ts', 'old\n');
+    gov.disk.set('src/a.ts', 'NEW\n');
+    const deps: ChatEditGovernanceDeps = {
+      ...gov.deps,
+      diffView: () => {
+        throw new Error('config unreadable');
+      },
+    };
+    const evs: TurnEvent[] = [
+      { kind: 'file-edit', turnId: 't1', path: 'src/a.ts', diff: { path: 'src/a.ts', hunks: [] } },
+      { kind: 'done', turnId: 't1', ok: true },
+    ];
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+      store: createInMemoryChatSessionStore(),
+      cwd: () => '/repo',
+      editGovernance: deps,
+      logger: { warn: (m) => warns.push(m), error: () => {} },
+    });
+    host.open();
+    fc.send(env('submit-turn', { text: 'go' }));
+    await waitFor(() => warns.some((m) => /edit governor observe failed: config unreadable/.test(m)));
+    await new Promise((r) => setTimeout(r, 20));
+    assert.deepEqual(unhandled, [], 'the rejected observe is handled');
+  } finally {
+    process.off('unhandledRejection', onUnhandled);
+  }
+});

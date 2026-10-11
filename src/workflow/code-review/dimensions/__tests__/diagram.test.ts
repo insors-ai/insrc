@@ -65,10 +65,11 @@ test('registry: S003 registers the ER handler; a duplicate registration throws (
 
 // ── judgeDiagram dispatch ───────────────────────────────────────────────────────
 
-test('judgeDiagram: dispatches an erDefinition-bearing body to the ER handler (sound → no findings)', async () => {
+test('judgeDiagram: dispatches an erDefinition-bearing body to the ER handler (sound → only completeness LOWs)', async () => {
 	const res = await judgeDiagram(subject({ erDefinition: validEr }), grounding, provider);
 	assert.equal(res.dimension, 'diagram');
-	assert.deepEqual(res.findings, []);
+	// LLD-d9f85b3c t9: an undescribed model draws only LOW completeness findings.
+	assert.deepEqual(res.findings.map(f => [f.severity, f.location]), [['LOW', 'erDefinition:narrative'], ['LOW', 'erDefinition:description']]);
 });
 
 test('judgeDiagram: a dangling erDefinition folds a HIGH breach through the dimension', async () => {

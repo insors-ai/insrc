@@ -100,7 +100,8 @@ test('runCodeReview: a sound erDefinition runs the diagram dimension + folds to 
 	assert.deepEqual(out.artifact.body.dimensions.map(d => d.dimension),
 		['adherence', 'conventions', 'coverage', 'quality', 'diagram']);
 	const diagram = out.artifact.body.dimensions.find(d => d.dimension === 'diagram')!;
-	assert.deepEqual(diagram.findings, []);
+	// LLD-d9f85b3c t9: the completeness LOWs are recorded, and a LOW never moves the verdict.
+	assert.deepEqual(diagram.findings.map(f => [f.severity, f.location]), [['LOW', 'erDefinition:narrative'], ['LOW', 'erDefinition:description']]);
 	assert.equal(out.artifact.body.verdict, 'pass');
 });
 

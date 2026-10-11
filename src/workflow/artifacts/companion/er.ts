@@ -27,6 +27,7 @@ import { validateAgainstSchema } from '../../../agent/providers/structured-outpu
 import { loadLinkmlMetamodelSchema } from './metamodel.js';
 import { MermaidIds, mermaidLabel, mermaidToken } from './mermaid-text.js';
 import type { CompanionPageContent, DescriptionBlock, DescriptionCell } from './shell.js';
+import { completenessFindings, described } from './completeness.js';
 
 // ---------------------------------------------------------------------------
 // t1 — ErDefinition (LinkML subset) types
@@ -416,4 +417,17 @@ export function erDefinitionToPage(erDef: ErDefinition, title: string): Companio
 			...columnBlocks,
 		],
 	};
+}
+
+/** LLD-d9f85b3c S001/t9: LOW findings for a missing narrative and for entities
+ *  and columns with no description. Never part of validateErDefinition. */
+export function erCompletenessFindings(erDef: ErDefinition): readonly DimensionFinding[] {
+	const undescribed: string[] = [];
+	for (const [name, cls] of Object.entries(erDef.classes ?? {})) {
+		if (!described(cls.description)) undescribed.push(`entity ${name}`);
+		for (const [slot, s] of Object.entries(cls.attributes ?? {})) {
+			if (!described(s.description)) undescribed.push(`${name}.${slot}`);
+		}
+	}
+	return completenessFindings('diagram', 'erDefinition', described(erDef.narrative), undescribed);
 }

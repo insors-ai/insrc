@@ -25,6 +25,7 @@ import type { FunctionalDefinition } from '../functional-definition.js';
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
 import { loadAdaptiveCardsSchema, AdaptiveCardsAssetError } from './adaptive-cards.js';
 import type { CompanionPageContent } from './shell.js';
+import { completenessFindings, described } from './completeness.js';
 
 // ---------------------------------------------------------------------------
 // t1 — UxDefinition (Adaptive Cards subset) types
@@ -653,4 +654,13 @@ export function uxDefinitionToPage(uxDef: UxDefinition, title: string): Companio
 			rows: rows.map(r => [{ tag: 'marker', text: String(r.n) }, r.name, r.type, r.target, r.description]),
 		}],
 	};
+}
+
+/** LLD-d9f85b3c S001/t9: LOW findings for a missing narrative and for key elements
+ *  (the ones the page numbers) with no description. Never part of
+ *  validateUxDefinition. */
+export function uxCompletenessFindings(uxDef: UxDefinition): readonly DimensionFinding[] {
+	const { rows } = numberKeyElements(Array.isArray(uxDef.body) ? uxDef.body : []);
+	const undescribed = rows.filter(r => r.description === null || !described(r.description)).map(r => `#${r.n} ${r.name}`);
+	return completenessFindings('ux', 'uxDefinition', described(uxDef.narrative), undescribed);
 }

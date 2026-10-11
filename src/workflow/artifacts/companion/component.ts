@@ -24,6 +24,7 @@ import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/type
 import type { DimensionFinding } from '../../code-review/types.js';
 import { MermaidIds, mermaidFlowText } from './mermaid-text.js';
 import type { CompanionPageContent, DescriptionCell } from './shell.js';
+import { completenessFindings, described } from './completeness.js';
 
 // ---------------------------------------------------------------------------
 // t2 — ComponentDependencyDefinition types
@@ -298,4 +299,11 @@ export function componentDependencyDefinitionToPage(compDef: ComponentDependency
 			rows,
 		}],
 	};
+}
+
+/** LLD-d9f85b3c S001/t9: LOW findings for a missing narrative and for components
+ *  with no description. Never part of validateComponentDependencyDefinition. */
+export function componentCompletenessFindings(compDef: ComponentDependencyDefinition): readonly DimensionFinding[] {
+	const undescribed = (compDef.components ?? []).filter(c => !described(c.description)).map(c => `component ${c.id}`);
+	return completenessFindings('diagram', 'componentDependencyDefinition', described(compDef.narrative), undescribed);
 }

@@ -34,7 +34,7 @@ import type { LLMMessage, LLMProvider } from '../../../../shared/types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, DimensionResult } from '../../types.js';
 import type { CompanionArtifactRef } from '../../../artifacts/companion/types.js';
 import type { UxDefinition } from '../../../artifacts/companion/ux.js';
-import { validateUxDefinition } from '../../../artifacts/companion/ux.js';
+import { uxCompletenessFindings, validateUxDefinition } from '../../../artifacts/companion/ux.js';
 import type { AdherenceSelection } from '../../../artifacts/companion/adherence.js';
 import { unknownAdherenceMembers } from '../../../artifacts/companion/adherence.js';
 import type { FunctionalDefinition } from '../../../artifacts/functional-definition.js';
@@ -117,6 +117,8 @@ export async function judgeUx(
 	// (2) Validate the authored uxDefinition JSON element (never the rendered mock).
 	if (hasUxDef) {
 		findings.push(...validateUxDefinition(body.uxDefinition, body.functionalDefinition));
+		// LLD-d9f85b3c S001/t9: completeness (narrative / descriptions) is LOW and never blocks.
+		findings.push(...uxCompletenessFindings(body.uxDefinition));
 	}
 
 	// (3) A referenced-but-absent ux-mock companion file — a doc claiming a UX mock

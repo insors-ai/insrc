@@ -25,6 +25,7 @@ import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/type
 import type { DimensionFinding } from '../../code-review/types.js';
 import { MermaidIds, mermaidLineText } from './mermaid-text.js';
 import type { CompanionPageContent, DescriptionBlock, TaggedCell } from './shell.js';
+import { completenessFindings, described } from './completeness.js';
 
 // ---------------------------------------------------------------------------
 // t1 — SequenceDefinition types
@@ -360,4 +361,15 @@ export function sequenceDefinitionToPage(seqDef: SequenceDefinition, title: stri
 		visual: { kind: 'mermaid', source: lines.join('\n') },
 		description,
 	};
+}
+
+/** LLD-d9f85b3c S001/t9: LOW findings for a missing narrative and for participants
+ *  and messages with no description. Never part of validateSequenceDefinition. */
+export function sequenceCompletenessFindings(seqDef: SequenceDefinition): readonly DimensionFinding[] {
+	const undescribed = [
+		...(seqDef.participants ?? []).filter(p => !described(p.description)).map(p => `participant ${p.id}`),
+		...(seqDef.messages ?? []).map((m, i) => [m, i] as const).filter(([m]) => !described(m.description) && !described(m.note))
+			.map(([m, i]) => `message ${i + 1} (${m.label})`),
+	];
+	return completenessFindings('diagram', 'sequenceDefinition', described(seqDef.narrative), undescribed);
 }

@@ -314,8 +314,8 @@ export function checkPublication(candidate: unknown, assessments: unknown): Publ
     const descriptor = dataProperties(candidate, ['manifest', 'files', 'manifestPath']);
     const input: unknown = descriptor?.['manifest']?.value;
     try {
-      canonicalJson(input, CORPUS_LIMITS.packageBytes);
-      const decoded = decodeReleaseManifest(input);
+      const snapshot: unknown = JSON.parse(canonicalJson(input, CORPUS_LIMITS.packageBytes));
+      const decoded = decodeReleaseManifest(snapshot);
       if (decoded.ok) {
         manifestDigest = releaseContentDigest(decoded.value);
         contentDigest = candidateContentDigest(decoded.value);

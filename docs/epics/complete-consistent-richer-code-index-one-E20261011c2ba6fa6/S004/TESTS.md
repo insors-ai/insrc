@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -46,3 +46,31 @@ Run at 2026-10-11T09:49:16.267Z on commit `8a26a499`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `src/cli/services/__tests__/daemon-stop-forced.test.ts` | 0 | 2 | 8.3 s |  |
 | `src/cli/services/__tests__/daemon-stop.test.ts` | 0 | 8 | 0.6 s |  |
+
+## t2
+
+Run at 2026-10-11T09:53:01.556Z on commit `f48863cf`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: control script stop against a stubborn child**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | control script stop against a stubborn child | `src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts` |
+
+**integration: control script start against a stubborn running child**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | control script start against a stubborn running child | `src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts` |
+
+**integration: control script leaves a live non-matching pid alone and exits non-zero**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | control script leaves a live non-matching pid alone and exits non-zero | `src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts` | 0 | 4 | 6.6 s |  |

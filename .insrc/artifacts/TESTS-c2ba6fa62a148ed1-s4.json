@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-11T09:49:16.267Z"
+    "updatedAt": "2026-10-11T09:53:01.556Z"
   },
   "body": {
     "tasks": [
@@ -134,6 +134,80 @@
               },
               {
                 "title": "describeStop: says when the daemon was killed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "f48863cf",
+        "ranAt": "2026-10-11T09:53:01.556Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "control script stop against a stubborn child",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "control script stop against a stubborn child",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "control script start against a stubborn running child",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "control script start against a stubborn running child",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "control script leaves a live non-matching pid alone and exits non-zero",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "control script leaves a live non-matching pid alone and exits non-zero",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6606,
+            "titles": [
+              {
+                "title": "control script stop against a stubborn child",
+                "result": "pass"
+              },
+              {
+                "title": "control script start against a stubborn running child",
+                "result": "pass"
+              },
+              {
+                "title": "control script leaves a live non-matching pid alone and exits non-zero",
+                "result": "pass"
+              },
+              {
+                "title": "control script stop of a healthy daemon behaves and exits as before",
                 "result": "pass"
               }
             ],

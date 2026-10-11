@@ -2725,3 +2725,32 @@ test('a save failing at the end of a turn is logged; the turn still ends cleanly
   assert.match(warns.join('\n'), /not saved: disk full/);
   procs[0]!.exitNow();
 });
+
+test('a failing save of a selection or permission outcome is logged and the run still continues', async () => {
+  const fc = fakeChannel();
+  const warns: string[] = [];
+  const seen: TurnRequest[] = [];
+  const evs: TurnEvent[] = [
+    { kind: 'selection-request', turnId: 'ts', requestId: 'sel-x', prompt: 'Pick', options: [{ id: 'a', label: 'Alpha' }] },
+    { kind: 'done', turnId: 'ts', ok: true },
+  ];
+  const adapter = scriptedAdapter(evs, { onRun: (r) => seen.push(r) });
+  const base = createInMemoryChatSessionStore();
+  let failSaves = false;
+  const store = {
+    ...base,
+    save: (s: Parameters<typeof base.save>[0]) => {
+      if (failSaves) throw new Error('disk full');
+      base.save(s);
+    },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', logger: { warn: (m) => warns.push(m), error: () => {} } });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  failSaves = true;
+  assert.doesNotThrow(() => fc.send(env('selection-decision', { requestId: 'sel-x', selected: ['a'] })));
+  await waitFor(() => seen.length >= 2, 2000);
+  assert.match(seen[1]!.prompt, /Alpha/, 'the follow-on run still starts');
+  assert.match(warns.join('\n'), /not saved: disk full/);
+});

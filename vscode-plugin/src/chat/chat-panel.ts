@@ -213,7 +213,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     post({ type: 'turn-event', event: { kind: 'permission-outcome', turnId: `perm-${requestId}`, toolName, decision } });
     if (session !== undefined) {
       session.transcript.push({ role: 'permission-outcome', toolName, decision, at: now() });
-      deps.store.save(session);
+      trySave(session);
     }
   };
 
@@ -225,7 +225,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     post({ type: 'turn-event', event: { kind: 'selection-outcome', turnId: `sel-${requestId}`, chosen } });
     if (session !== undefined) {
       session.transcript.push({ role: 'selection-outcome', chosen: [...chosen], at: now() });
-      deps.store.save(session);
+      trySave(session);
     }
   };
 

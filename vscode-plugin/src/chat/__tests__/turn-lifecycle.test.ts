@@ -857,3 +857,40 @@ test("an aborted follow unwinding late does not drop the next follow's process, 
   assert.deepEqual(procA.signals, [], "the detached session's process is left running");
   procA.exitNow();
 });
+
+test("a throwing onEvent is reported and the turn's generator is finished", async () => {
+  const proc = fakeLiveProc(3201);
+  const f = feed();
+  let cleanedUp = false;
+  const adapter: StreamAdapter = {
+    async *run(_req, o): AsyncIterable<TurnEvent> {
+      o?.onSpawn?.(proc);
+      try {
+        for (;;) {
+          const r = await f.next();
+          if (r.done === true) return;
+          yield r.value;
+        }
+      } finally {
+        cleanedUp = true;
+      }
+    },
+    async *resume(): AsyncIterable<TurnEvent> {},
+    cancel: async () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const h = harness({ providers: registry(adapter) });
+  const a = recSink({
+    onEvent: () => {
+      throw new Error('post failed');
+    },
+  });
+  const p = h.lc.start(h.session, REQ, a.sink);
+  f.push(delta('t1'));
+  await p;
+  await tick(10);
+  assert.deepEqual(a.calls, ['beforeRun', 'error:post failed|t1'], 'the failure is reported against the turn');
+  assert.equal(cleanedUp, true, 'the abandoned turn has its generator finished');
+  proc.exitNow();
+});

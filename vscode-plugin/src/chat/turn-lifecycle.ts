@@ -260,6 +260,13 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       };
       let detached = false;
       let detachThis: (() => void) | undefined;
+      let iterator: AsyncIterator<TurnEvent> | undefined;
+      /** At the turn's terminal event its output has been fully handled: forget its cursor, keep its native session, finish the generator. */
+      const endTurn = (ev: TurnEvent, it: AsyncIterator<TurnEvent>): void => {
+        clearCursor(s, ev.turnId);
+        keepNativeSession(s, ev);
+        finishIterator(it); // the process is left to exit
+      };
       try {
         // Inside the try, so a failed beforeRun or adapter start is a turn error and the lease is
         // still released.
@@ -275,28 +282,27 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         // Hold the iterator explicitly so a stop or detach can .return() it. A return() made while
         // a next() is pending only takes effect once that next() settles (the next line, or the
         // end of the output when the process exits).
-        const iterator = adapter.run(req, { onSpawn, onProgress: cursor.progress, sessionId: s.id })[Symbol.asyncIterator]();
-        activeIterator = iterator;
+        const it = adapter.run(req, { onSpawn, onProgress: cursor.progress, sessionId: s.id })[Symbol.asyncIterator]();
+        iterator = it;
+        activeIterator = it;
         activeProvider = s.provider;
         detachThis = (): void => {
           detached = true;
           if (s.liveTurn !== undefined) runningTurns.delete(s.liveTurn.cursor.turnId); // resumable now
           trySave(s); // the cursor and the rows handled so far
-          finishIterator(iterator); // stop reading; the CLI keeps writing to the session file
+          finishIterator(it); // stop reading; the CLI keeps writing to the session file
         };
         if (myGen === generation) detachLive = detachThis;
         for (;;) {
-          const next = await iterator.next();
+          const next = await it.next();
           if (next.done === true || detached) break;
           const ev = next.value;
           // Superseded/closed: report nothing more, but keep reading so the superseded turn's CLI
           // never stalls on a full pipe; its process (and the lease) end when it exits.
           if (!isCurrent(myGen)) {
             if (isTerminal(ev)) {
-              clearCursor(s, ev.turnId);
-              keepNativeSession(s, ev);
+              endTurn(ev, it);
               trySave(s); // a reload must not follow a turn that has ended
-              finishIterator(iterator); // as on the live path: finish the generator
               break;
             }
             continue;
@@ -304,9 +310,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           activeTurnId = ev.turnId;
           sink.onEvent(ev);
           if (isTerminal(ev)) {
-            clearCursor(s, ev.turnId);
-            keepNativeSession(s, ev);
-            finishIterator(iterator); // finish the generator; the process is left to exit
+            endTurn(ev, it);
             try {
               sink.onTerminal(ev);
             } catch (err) {
@@ -316,6 +320,9 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           }
         }
       } catch (err) {
+        // A failing sink or adapter: nothing reads the turn any more, so finish its generator (an
+        // unread CLI could block on a full pipe and hold the lease until the lock timeout).
+        if (iterator !== undefined) finishIterator(iterator);
         if (isCurrent(myGen)) {
           sink.onError(err instanceof Error ? err.message : String(err), activeTurnId ?? 'none');
           trySave(s);

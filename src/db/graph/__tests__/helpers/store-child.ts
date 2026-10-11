@@ -31,7 +31,7 @@ import type { Database, RootDatabase } from 'lmdb';
 
 import {
 	closeGraphStore, getGraphStore, getStoreHealth, setGraphStorePath, setWriteProbeAfterMsForTests,
-	withWriteTxn, withWriteTxnSync,
+	startPeriodicReaderCheck, withWriteTxn, withWriteTxnSync,
 } from '../../store.js';
 
 export const REPLY_PREFIX = '@@store-child ';
@@ -56,7 +56,13 @@ export type StoreChildCommand =
 	| { op: 'get-store' }
 	/** `closeGraphStore()`, reporting whether the library's close was called. */
 	| { op: 'wrapper-close' }
-	| { op: 'health' };
+	| { op: 'health' }
+	/** Start the daemon's request server (on the socket of this process's
+	 *  home) with handlers that READ the store: `test.read` as a standard
+	 *  handler, `test.stream` as a stream handler. Answers with the socket path. */
+	| { op: 'serve' }
+	/** Start the daemon's periodic reader check with a shortened interval. */
+	| { op: 'reader-check-every'; ms: number };
 
 export type StoreChildReply =
 	| { ok: true; value?: unknown; settled?: boolean }
@@ -145,6 +151,19 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 		}
 		case 'health':
 			return { ok: true, value: getStoreHealth() };
+		case 'serve': {
+			const { IpcServer } = await import('../../../../daemon/server.js');
+			const { PATHS } = await import('../../../../shared/paths.js');
+			const server = new IpcServer(
+				{ 'test.read': async () => opened().meta.get('a') ?? null },
+				{ 'test.stream': async (_params, send) => { send({ id: 0, stream: 'done', data: opened().meta.get('a') ?? null }); } },
+			);
+			await server.listen();
+			return { ok: true, value: PATHS.sockFile };
+		}
+		case 'reader-check-every':
+			startPeriodicReaderCheck(cmd.ms);
+			return { ok: true };
 		case 'close':
 			if (raw) await opened().root.close(); else await closeGraphStore();
 			store = undefined;

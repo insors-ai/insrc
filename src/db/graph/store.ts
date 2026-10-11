@@ -587,6 +587,16 @@ export async function getGraphStore(): Promise<GraphStore> {
 export function runReaderCheck(reason: string): number {
 	const inst = _instance;
 	if (inst === null) return 0;
+	if (_health.state === 'locks-lost') return 0;
+	// A read that failed outside a request or a job (a timer, the boot
+	// sequence, a handler that swallows its own failures) is recorded by
+	// nobody. This check runs anyway, so it also asks whether the store can
+	// still be read.
+	const lost = probeForLockLoss(inst);
+	if (lost !== undefined) {
+		recordLocksLost(`the reader check (${reason})`, 'read', lost);
+		return 0;
+	}
 	try {
 		const cleared = inst.root.readerCheck();
 		if (cleared > 0) {
@@ -602,6 +612,14 @@ export function runReaderCheck(reason: string): number {
 		log.warn({ err: errMessage(e), reason }, 'lmdb readerCheck failed');
 		return 0;
 	}
+}
+
+/** How often the daemon re-checks the reader table (and probes the store). */
+export const READER_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+
+/** Run `runReaderCheck('periodic')` on a timer. The caller clears the timer. */
+export function startPeriodicReaderCheck(intervalMs: number = READER_CHECK_INTERVAL_MS): NodeJS.Timeout {
+	return setInterval(() => { runReaderCheck('periodic'); }, intervalMs);
 }
 
 export interface CompactResult {

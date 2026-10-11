@@ -3,6 +3,7 @@ import { rmSync } from 'node:fs';
 import type { AttachedClient, IpcRequest, IpcResponse, IpcStreamMessage } from '../shared/types.js';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
+import { LmdbStoreLocksLostError, recordStoreFailureIfLockError } from '../db/graph/store.js';
 
 const log = getLogger('ipc');
 
@@ -60,6 +61,21 @@ export type StreamHandlers = Record<string, StreamHandler>;
  *                until the handler resolves (stream:done) or throws (stream:error).
  *                Socket stays open for the duration.
  */
+/**
+ * Reduce a handler's error to the message sent to the client. Reads have no
+ * wrapper in the store layer, so a read that fails because the store lost its
+ * locks surfaces here as the library's raw error: it is recorded in the
+ * store's health before it is reduced to text, and the client is answered
+ * with the named error, whose message states the true cause.
+ */
+export function failureMessage(err: unknown, method: string): string {
+  if (recordStoreFailureIfLockError(err, `request ${method}`)) {
+    const named = err instanceof LmdbStoreLocksLostError ? err : new LmdbStoreLocksLostError(`request ${method}`, err);
+    return `${named.name}: ${named.message}`;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
 export class IpcServer {
   private readonly handlers: RpcHandlers;
   private readonly streamHandlers: StreamHandlers;
@@ -178,8 +194,7 @@ export class IpcServer {
       const result = await handler(request.params);
       this.send(socket, { id: request.id, result });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      this.send(socket, { id: request.id, error: msg });
+      this.send(socket, { id: request.id, error: failureMessage(err, request.method) });
     }
   }
 
@@ -193,8 +208,7 @@ export class IpcServer {
           const result = await stdHandler(request.params);
           this.send(socket, { id: request.id, result });
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          this.send(socket, { id: request.id, error: msg });
+          this.send(socket, { id: request.id, error: failureMessage(err, request.method) });
         }
         return;
       }
@@ -228,7 +242,7 @@ export class IpcServer {
     } catch (err) {
       // Handler threw — send error stream message if socket is still writable
       if (!abortController.signal.aborted) {
-        const msg = err instanceof Error ? err.message : String(err);
+        const msg = failureMessage(err, request.method);
         sendStream({ id: request.id, stream: 'error', data: { error: msg, recoverable: true } });
       }
     } finally {

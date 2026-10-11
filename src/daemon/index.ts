@@ -260,7 +260,7 @@ async function main(): Promise<void> {
 	//     bloats the file until the slot is released. mdb_reader_check
 	//     drops slots whose PID no longer exists. Cheap; non-fatal if
 	//     it finds anything.
-	const { getGraphStore, runReaderCheck } = await import('../db/graph/store.js');
+	const { getGraphStore, runReaderCheck, startPeriodicReaderCheck } = await import('../db/graph/store.js');
 	await getGraphStore();   // ensure env is open
 	runReaderCheck('startup');
 
@@ -1954,11 +1954,10 @@ async function main(): Promise<void> {
 	//     5 minutes for slots left over from a daemon process that
 	//     died between boots without graceful shutdown. Cheap (a
 	//     lock-file scan); see docs/plans/storage-migration-lmdb-lance.md
-	//     Phase 5.5.
-	const READER_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
-	const readerCheckTimer = setInterval(() => {
-		runReaderCheck('periodic');
-	}, READER_CHECK_INTERVAL);
+	//     Phase 5.5. The same check probes the store with one read, so a
+	//     store that lost its locks is recorded even when no request or
+	//     write has met the failure.
+	const readerCheckTimer = startPeriodicReaderCheck();
 
 	// 9. Graceful shutdown on signals
 	// Shutdown handler. Race between two timelines:

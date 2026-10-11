@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s4",
+    "createdAt": "2026-10-11T09:49:16.267Z",
+    "updatedAt": "2026-10-11T09:49:16.267Z",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "stopDaemon now bounds its shutdown request at 5 seconds, waits as before, and ends a daemon that overruns the wait by SIGKILL, but only a pid whose command line ends in daemon/index.js; it removes the pid file and socket after a kill and returns how the stop ended. restart reports a forced stop ('force-stop') and goes on to start. The service type and the three callers are updated.",
+    "testRecord": {
+      "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-c2ba6fa62a148ed1-s4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-c2ba6fa62a148ed1-s4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/command.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/tui.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/command.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/DaemonPane.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/daemon-stop.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/daemon.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/maintenance.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T09:49:16.267Z"
+      }
+    ],
+    "commit": "8a26a499"
+  }
+}

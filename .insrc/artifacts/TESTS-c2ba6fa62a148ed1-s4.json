@@ -1,0 +1,146 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s4",
+    "createdAt": "2026-10-11T09:49:16.267Z",
+    "updatedAt": "2026-10-11T09:49:16.267Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "8a26a499",
+        "ranAt": "2026-10-11T09:49:16.267Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "stop outcome with an injected process table: stops by itself, forced after the wait, pid not a daemon, pid survives the kill",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+                "title": "stop outcome with an injected process table: stops by itself, forced after the wait, pid not a daemon, pid survives the kill",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "stop outcome: no socket and no live pid rejects with 'daemon is not running'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+                "title": "stop outcome: no socket and no live pid rejects with 'daemon is not running'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "stop outcome: a live pid whose command line does not match is not killed and its pid file is kept",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+                "title": "stop outcome: a live pid whose command line does not match is not killed and its pid file is kept",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "forced stop: a child that ignores the request and SIGTERM is ended by stopDaemon",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "forced stop: a child that ignores the request and SIGTERM is ended by stopDaemon",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "forced stop, silent daemon: a child that accepts the connection and never replies is ended",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "forced stop, silent daemon: a child that accepts the connection and never replies is ended",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8311,
+            "titles": [
+              {
+                "title": "forced stop: a child that ignores the request and SIGTERM is ended by stopDaemon",
+                "result": "pass"
+              },
+              {
+                "title": "forced stop, silent daemon: a child that accepts the connection and never replies is ended",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 567,
+            "titles": [
+              {
+                "title": "stop outcome with an injected process table: stops by itself, forced after the wait, pid not a daemon, pid survives the kill",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: no socket and no live pid rejects with 'daemon is not running'",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: a live pid whose command line does not match is not killed and its pid file is kept",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: a refused connection with a LIVE daemon pid goes on to the wait and the kill",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: no reply within the bound goes on to the wait and the kill",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: a kill that throws for a live process fails naming the pid and removes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "restart: steps include 'force-stop' after a forced stop and the start follows",
+                "result": "pass"
+              },
+              {
+                "title": "describeStop: says when the daemon was killed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

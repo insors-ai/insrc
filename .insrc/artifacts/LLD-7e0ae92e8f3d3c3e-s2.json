@@ -1,0 +1,525 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791745544219-m4dk9n",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-11T19:08:36.635Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 172408,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "epicSlug": "di1-open-source-design-corpus-retrieval",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1791738717329-ylatwv",
+    "hldEffectiveHash": "a20e4da9408dfea954d2ef18bb08b0d7eaad28b1155c8f8eead228779aaf2088",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "Admit reviewed material from exact local source revisions and preserve its attribution through release packaging. S002 adds file-level eligibility, traceable source-to-output bindings and reproducible notices, with a separate bounded Git reader. It consumes S001 identities and leaves editorial coverage and publication to later stories.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose immutable release packages with a daemon-owned catalog and rebuildable retrieval indexes. Shared contracts below are proposed additions, not existing APIs. Corpus data is global public knowledge, independent of registered source repositories; DI2 owns project-private guideline storage and DI3 owns authoring workflows.",
+      "ownedContracts": [
+        {
+          "id": "sc3",
+          "name": "File-level source eligibility and attribution",
+          "purpose": "Keep file licenses, exact upstream revisions and notices with every derived asset; repository license alone never admits content.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "interfaceSketch": "interface SourceFile { sourceId: string; repositoryUrl: string; revision: string; path: string; digest: string; licenseIds: string[]; licenseTextRefs: string[]; noticeRefs: string[]; attribution: string[]; modifications: string[]; retrievedAt: string; eligibility: 'eligible' | 'excluded' | 'unresolved'; eligibilityReason: string; reviewedBy: string; }\ninterface SourceManifest { schemaVersion: 1; policyVersion: string; files: SourceFile[]; }\ninterface ImportReport { admitted: string[]; excluded: { path: string; reason: string }[]; unresolved: string[]; }",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Corpus record and pinned evidence identity",
+          "purpose": "Common immutable record, provenance and release identity across all stories and DI2/DI3.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "interfaceSketch": "type UiType = 'web' | 'mobile-ios' | 'mobile-android';\ntype GuidanceKind = 'foundation' | 'pattern' | 'style-recipe';\ninterface EvidenceRef { releaseId: string; recordId: string; recordVersion: string; }\ninterface Provenance { authorship: 'original' | 'derived' | 'imported' | 'inferred'; author: string; sourceRefs: string[]; modificationNotes: string[]; }\ninterface Applicability { uiTypes: UiType[]; suitableConditions: string[]; contraindications: string[]; units: string[]; }\ninterface GuidanceRecord { schemaVersion: 1; recordId: string; recordVersion: string; title: string; domains: string[]; kind: GuidanceKind; guidanceClass: 'requirement' | 'convention' | 'heuristic' | 'preference'; explanation: string; rationale: string; problem: string; tradeoffs: string[]; checks: { check: string; requiredInputs: string[]; exceptions: string[]; limits: string[] }[]; noMeasurableChecksRationale?: string | undefined; domainPayload: { color?: { roles: { name: string; value: string }[]; pairings: { foregroundRole: string; backgroundRole: string; usage: string }[] } | undefined; layout?: { contentPriority: string[]; adaptationRules: { condition: string; rule: string }[] } | undefined; style?: { composition: string; typography: string; color: string; interaction: string } | undefined; }; applicability: Applicability; examples: { kind: 'example' | 'misuse'; contentRef: string; uiType: UiType }[]; relations: { kind: 'compatible' | 'conflicting' | 'prerequisite' | 'alternative'; recordId: string; recordVersion: string }[]; provenance: Provenance; review: { status: 'draft' | 'reviewed'; reviewer: string; contentDigest: string; reviewedAt: string }; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Release manifest and publication gate",
+          "purpose": "s1 establishes envelopes and gates used by import, curation, query and maintenance; s2 implements ingestion. Publication requires nonempty problem/tradeoffs, checks with explicit limits (or an explicit no-measurable-check rationale), and domainPayload.color/layout/style for corresponding color/layout/style records. Semantic roles and pairings must reference declared roles; examples and misuse examples must be present for every declared platform. Domain validation rejects an empty placeholder.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "interfaceSketch": "interface ReleaseManifest { schemaVersion: 1; releaseId: string; label: string; createdAt: string; maintainer: string; records: { recordId: string; recordVersion: string; path: string; digest: string }[]; files: { path: string; digest: string; mediaType: string }[]; sourceManifestPath: string; noticesPath: string; coveragePath: string; reviewDigest: string; }\ninterface ValidationIssue { code: string; path: string; message: string; }\ninterface PublicationCheck { eligible: boolean; issues: ValidationIssue[]; manifestDigest: string; }\ninterface ReleaseAvailability { releaseId: string; state: 'published' | 'deprecated' | 'withdrawn'; reason?: string | undefined; catalogGeneration: number; }",
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "Own source adapters, local staging extraction, allowlist policy implementation and reproducible notices. Adapter specifics stay private; no unreviewed source contents enter published assets."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Own canonical schema, version/hash specification, publication validation interfaces and fixtures. This is the nearest ancestor for all shared identity/release contracts; storage and curator UI are not implied."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own authored seed records, declarative specimens and reviewed coverage across ten domains and three UI types. A release names its maintainer/reviewer; unknown source sufficiency cannot be counted as coverage."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5",
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Own daemon package reader, catalog read adapter, deterministic filtering/ranking, local embedding cache, cursor implementation and thin MCP read tools. Keep ranking weights and cache format private and versioned. Basic validated bundled-package installation is included so retrieval is independently testable. Includes the single-sourced config-catalog entry, typed config exposure, settings/reconciliation verification and catalog contract-test update. Owns vscode-plugin/package.json setting mirror and verification of the unchanged catalog-driven JetBrains SettingsView.kt, validated by manifest/catalog parity and settings render/round-trip checks. Sole owner of catalog file layout, serialized atomic commit, receipts and recovery via sc7. Basic installation and maintenance use exactly this writer."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc7"
+          ],
+          "internal": "Own update staging, atomic publish/default switch, withdrawal overlays, recovery, release diffs and cross-release regression evaluation. Consume existing reader contracts; never change DI2 guideline state. Uses sc7 for all catalog/default/availability changes; owns upstream update policy and diff orchestration only, not a second writer or recovery implementation."
+        }
+      ],
+      "rolloutPhase": "B — Eligible source ingestion",
+      "nonFunctional": {
+        "performance": "For a representative 1,000-record seed fixture, measure warm query p95 <=500 ms excluding local embedding inference; report embedding latency separately. This is a target, not a benchmark claim. If exceeded, optimize indexing without dropping eligible candidates; complete-result quality takes precedence. Cold index building is resumable and serial.",
+        "security": "Only eligible reviewed material is distributed. Validate all package paths and sizes, reject executable specimen content and remote includes; escape rendering. No arbitrary URL fetching at query time. Unknown hard constraints return gaps. Do not mix project-private data into the public corpus or embedding index.",
+        "observability": "Log release ID, query mode, eligible/matched counts, filter/gap reasons, index fingerprint and validation codes; avoid storing user query/brief text by default. Expose install/index health and explicit degraded retrieval, rather than silent fallback.",
+        "durability": "Immutable package bytes plus atomic catalog and append-only availability events. Rebuild derived indexes on checksum/model mismatch. Inject crashes between each publication boundary; old release remains readable or a newly complete release becomes visible, never partial content. Retain pinned references across rollback; policy withdrawal returns tombstones."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "SourceManifest",
+          "signature": "interface SourceFile { sourceId: string; repositoryUrl: string; revision: string; path: string; digest: string; licenseIds: string[]; licenseTextRefs: string[]; noticeRefs: string[]; attribution: string[]; modifications: string[]; retrievedAt: string; eligibility: 'eligible' | 'excluded' | 'unresolved'; eligibilityReason: string; reviewedBy: string; }\ninterface SourceManifest { schemaVersion: 1; policyVersion: string; files: SourceFile[]; }\ninterface ImportReport { admitted: string[]; excluded: { path: string; reason: string }[]; unresolved: string[]; }",
+          "parameters": [],
+          "returns": {
+            "type": "SourceManifest",
+            "meaning": "Closed, versioned sc3 source metadata for material actually included in a candidate; review decisions and exact upstream identity remain inspectable."
+          },
+          "errors": [
+            {
+              "type": "ValidationIssue[]",
+              "condition": "Invalid structure, duplicate source identity, unpinned revision, unresolved evidence or inconsistent eligibility."
+            }
+          ],
+          "preconditions": [
+            "Decode unknown inputs from detached canonical JSON; never trust TypeScript types or an eligible label as proof.",
+            "Review descriptors and policy are maintainer-controlled local inputs; incoming repository content cannot set or amend policy."
+          ],
+          "postconditions": [
+            "Exact sc3 fields retained without coercion, stripping, inferred authorship or dropped modifications.",
+            "Published source metadata contains only included eligible material and its complete required evidence closure; rejected inputs stay in the staging report. [[c2]]"
+          ]
+        },
+        {
+          "name": "ImportReport",
+          "signature": "interface ImportReport { admitted: string[]; excluded: { path: string; reason: string }[]; unresolved: string[]; }",
+          "parameters": [],
+          "returns": {
+            "type": "ImportReport",
+            "meaning": "Deterministically sorted per-file outcomes for one repository/revision import. Entries use upstream relative paths within that request; reports for multiple sources remain separate."
+          },
+          "errors": [
+            {
+              "type": "ValidationIssue[]",
+              "condition": "Request-wide safety/integrity failure prevents returning any admitted bytes."
+            }
+          ],
+          "preconditions": [
+            "A request binds one allowlisted repository URL, an existing local repository and one full commit object ID.",
+            "Only exact listed paths may be acquired; no mutable branch/tag expansion, recursive checkout, network or subprocess hooks."
+          ],
+          "postconditions": [
+            "Eligible files alone produce staged bytes; unknown decisions appear in unresolved and ship no bytes; excluded entries carry reasons.",
+            "No publication, catalog mutation, project-guideline change or user-facing IPC/MCP surface is introduced. [[c2]]"
+          ]
+        },
+        {
+          "name": "StageAssessment",
+          "signature": "interface StageAssessment { stage: 'eligibility' | 'coverage'; candidateContentDigest: string; passed: boolean; issues: ValidationIssue[]; }",
+          "parameters": [],
+          "returns": {
+            "type": "StageAssessment",
+            "meaning": "Consumed S001 envelope. S002 produces only stage='eligibility' after checking complete candidate lineage and notices; downstream supplies coverage."
+          },
+          "errors": [
+            {
+              "type": "ValidationIssue[]",
+              "condition": "Unknown policy, missing lineage, omitted obligations, changed source/output bytes or noncomputable identity prevents a passing assessment."
+            }
+          ],
+          "preconditions": [
+            "Candidate inventory is snapshotted and checked with sc1/sc2 helpers; candidate digest must be nonempty.",
+            "Full editorial coverage review is not required to compute eligibility: verify structural/source/notice/record invariants without requiring the future coverage envelope's finalized bytes."
+          ],
+          "postconditions": [
+            "The assessment binds corrected candidateContentDigest and all source/notices role metadata.",
+            "Failure with noncomputable digest returns ValidationResult failure rather than constructing a StageAssessment with an invalid empty digest. No changes to S001 public schema. [[c3]]"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "sc3 closed schemas and source identities",
+        "change": "new",
+        "callSites": [],
+        "details": "Proposed src/design/corpus/sources/contracts.ts defines exact sc3 runtime TypeBox schemas with Static-derived types, reusing S001 digest/issue primitives. SourceFile.sourceId uniquely names one repositoryUrl/revision/path tuple within a release; use a stable namespaced lowercase identifier derived from SHA-256 of canonical tuple, and reject duplicate IDs or inconsistent tuples. revision is a full Git commit OID (40 or 64 lowercase hex), digest is raw blob SHA-256; retrievedAt is validated UTC ISO supplied by the caller, not wall-clock-generated. path and all distributed evidence refs use S001 portable path rules and NFC/case collision comparisons. Reference-only source links are not SourceFile admission records. GuidanceRecord.provenance.sourceRefs resolves exactly to sourceId entries for imported/derived material; no URL guessing or source-ID aliases. [[c2]] [[c3]]"
+      },
+      {
+        "entity": "Reviewed source policy v1",
+        "change": "new",
+        "callSites": [],
+        "details": "Proposed sources/policy.ts carries a closed versioned policy of exact canonical repository URLs plus explicitly reviewed file profiles. A profile binds repository, full commit, exact paths, SHA-256 bytes, reviewedBy, eligibilityReason, resolved license identifiers, license/notice evidence paths and their digests, attribution, required modification notices and relevant redistribution conditions. The initial license categories follow PRD preferences MIT, Apache-2.0 and CC0-1.0, but an ID alone never admits a file; the reviewed profile must resolve actual file terms and exceptions. Open-font categories require an explicit reviewed category/profile with reserved-name/other conditions recorded before admission; no generic font allowance. Unknown license, unsupported expression, conflicting IDs/terms or a missing file-specific review yields unresolved. Explicit disallowed terms yield excluded. Multiple IDs do not mean automatically choosing the most permissive; unresolved OR/AND/exception expressions require a maintainer to supply an unambiguous reviewed profile under a versioned policy. Repository code licenses never cover external sites/assets automatically. Checks implement recorded decisions, not automated legal interpretation. No network lookup, model inference or source-controlled policy modification. [[c1]] [[c4]]"
+      },
+      {
+        "entity": "Bounded pinned local source adapter",
+        "change": "new",
+        "callSites": [],
+        "details": "Proposed sources/git-reader.ts is a separate I/O entry, never re-exported by the pure src/design/corpus/index.ts. Acquire only from a caller-supplied existing local Git repository; no clone/fetch or worktree reads. Verify full supplied OID identifies a commit, enumerate exact literal selected tree paths, reject symlink/submodule/non-blob entries, then read blobs at that commit. Dirty worktree changes cannot affect bytes. Use shell:false argv, literal path matching, fixed read-only Git subcommands, disable replacement objects and lazy fetching, exclude inherited Git command/config overrides, and bound stdout/stderr/time and abort children; never silently truncate. Existing shell-helper emits decoded text and git revParse emits short hashes, so do not use them for byte preservation/pinning. The internal injectable reader returns copied Uint8Array blobs plus verified object kind/path/commit for pure tests. Enforce <=10,000 selected files and <=64 MiB aggregate staged bytes using S001 safety limits, <=30 seconds per child, and fail the request without admitted bytes on truncation, timeout, absent OID/path, digest mismatch, malformed output or cancellation. Git LFS pointers and submodules stay unresolved unless a future approved adapter supplies verified content; never follow them or trigger filters. Staging is an in-memory result; durable catalog/package installation remains S004. [[c3]] [[c5]]"
+      },
+      {
+        "entity": "Eligibility and source-to-output lineage",
+        "change": "new",
+        "callSites": [],
+        "details": "Proposed sources/eligibility.ts accepts detached reviewed descriptors, policy, acquired blobs and the candidate's records/file inventory. Separate staging decisions from candidate assessment: evaluate every exact requested file against the profile and evidence digests, return mixed ImportReport plus only admitted copied bytes. A rejected/unresolved source cannot be referenced by included records or outputs. Internal output bindings map each included third-party package path and digest to nonempty sourceIds, transformation identifier and explicit modification notes; imported byte copies require equality to upstream digest, derived bytes require their own digest and recorded transformations/reviewer rather than a false equality assertion. Bindings are serialized within a separate deterministic lineage JSON file listed in the manifest, so candidate hashing covers them without changing sc3; its fixed package path is sources/lineage.json and schema version 1. Records' sourceRefs and modificationNotes must agree with bindings; shared specimens union all contributing sources. Original and independently inferred records identify author/rationale and cannot silently wrap unbound third-party assets. A missing binding for any non-original specimen/output fails provenance.incomplete. Require explicit original-output declarations with author and rationale in the same lineage file for package content with no upstream sources; metadata/evidence files use their own explicit categories. Closure includes license and notice evidence, their raw digests and attribution; no dependency is admitted on repository reputation. [[c2]] [[c3]]"
+      },
+      {
+        "entity": "Deterministic notices and eligibility composition",
+        "change": "new",
+        "callSites": [],
+        "details": "Proposed sources/notices.ts emits deterministic UTF-8 NOTICE text plus unchanged license/notice evidence bytes under portable package paths. Sort by sourceId/path using code-unit order, deduplicate identical evidence bytes by digest while retaining every source association, preserve original text exactly in evidence files, and include exact repository/commit/path/digest, license IDs, attribution, modifications and reviewed provenance. No current time, absolute machine paths or locale-dependent sorting. Binary assets are not interpreted as text; evidence text decoding is strict and bounded. Before returning passing eligibility, independently reconstruct expected source manifest/lineage/notices from included bindings and reviewed profiles and compare exact candidate metadata bytes and evidence inventory: a formatter invocation is not proof that all obligations were included. Missing evidence, modified notice bytes, omitted contributor, stale profile or source-reference mismatch blocks. Required notice/license refs must resolve to included immutable evidence files, not remote URLs or local absolute paths. SourceManifest contains admitted source/evidence entries; staging rejects stay in ImportReport outside distributed bytes. Candidate assembly order: admitted source/output bytes → source manifest/lineage/notices → manifest with coverage path/mediaType placeholder → nonempty candidate digest → eligibility assessment → S003 coverage envelope → final release digest → S001 complete preflight. This avoids requiring a finalized coverage envelope to compute eligibility, and no SourceManifest or lineage file embeds candidate/final release digests. [[c2]] [[c3]]"
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "Exact SourceFile/SourceManifest/ImportReport shapes, reviewed eligibility, pinned local extraction and deterministic obligation closure. Internal profiles, bindings and adapter seams remain S002-owned. [[c2]]"
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Resolve sourceRefs and preserve original/derived/imported/inferred labels, source identity and modification lineage; do not change record schemas. [[c3]]"
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Use raw byte and corrected manifest hashes, portable inventory validation and candidate-bound eligibility assessments. No publication/catalog write; no coverage algorithm. [[c3]]"
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Unknown, absent or conflicting file terms",
+          "detection": "Resolve exact file profile and policy category; detect absent review, unsupported expressions and mismatched evidence digests.",
+          "response": "Mark path unresolved, stage no affected bytes; provenance.incomplete for candidate references.",
+          "userImpact": "Maintainer must supply a reviewed file-specific decision.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Explicitly excluded source or non-allowlisted repository",
+          "detection": "Compare exact repository URL and selected path/profile against versioned policy.",
+          "response": "Exclude with stable reason; no bytes admitted.",
+          "userImpact": "A blocked file cannot enter a distributed candidate.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Missing or moving revision, mismatched source bytes",
+          "detection": "Verify full commit type, tree/blob identity and SHA-256 against reviewed descriptor before staging.",
+          "response": "Request-level ValidationResult failure with digest.mismatch or reference.missing; no partial admitted result.",
+          "userImpact": "Re-pin and review the intended revision.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unsafe paths, duplicate IDs, symlinks/submodules or limit excess",
+          "detection": "Apply portable path and NFC/case collision checks, unique sourceId tuple checks, tree modes and incremental byte/time bounds.",
+          "response": "path.invalid, inventory.invalid, reference.missing or limit.exceeded; abort request and release subprocess/resources.",
+          "userImpact": "Correct the input; no traversal, lazy fetch, filters or truncated output.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Omitted or altered notice/license/lineage data",
+          "detection": "Reconstruct exact expected metadata/evidence closure from admitted profiles and output bindings; compare candidate inventory hashes and bytes.",
+          "response": "provenance.incomplete, reference.missing or digest.mismatch; passing eligibility is withheld.",
+          "userImpact": "Regenerate complete notices and assessments.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unbound third-party specimen or inconsistent record sourceRefs",
+          "detection": "Join each package output to source bindings or explicit original declarations; compare record provenance source IDs and modification notes.",
+          "response": "provenance.incomplete; output cannot be admitted based on an original record label alone.",
+          "userImpact": "Record the actual contributors and transformations.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Candidate identity cannot be computed",
+          "detection": "Count coverage-path membership and call corrected candidateContentDigest; empty digest is not a valid assessment binding.",
+          "response": "ValidationResult failure; do not emit a malformed StageAssessment. Preserve sc1/sc2 diagnostics.",
+          "userImpact": "Repair inventory before producing assessments.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Git unavailable, timeout, cancellation or malformed binary stream",
+          "detection": "Observe subprocess exit/signal, abort state, bounded stderr/stdout and object framing.",
+          "response": "Request-level failure with no admitted bytes; release buffers and child handles; sanitized error includes stable category, not raw source content.",
+          "userImpact": "Retry after fixing local checkout or environment.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Mixed eligible and unknown-license files at one pinned commit",
+          "expected": "A successful staging report admits only eligible files with complete evidence; unresolved bytes are absent. A candidate that references unresolved sources still fails."
+        },
+        {
+          "input": "Two source files share an identical license text",
+          "expected": "Deduplicate stored evidence by digest while retaining both source associations and all attributions."
+        },
+        {
+          "input": "Dirty worktree or branch moves after the request",
+          "expected": "Read only the verified full commit object; pinned bytes and notices stay unchanged."
+        },
+        {
+          "input": "Original guidance with no upstream sources",
+          "expected": "Explicit original-output declarations and record author/rationale remain required; do not fabricate third-party attribution."
+        },
+        {
+          "input": "Derived asset combines multiple sources",
+          "expected": "Bindings contain the union of sourceIds and modification records; notices cover all contributors."
+        },
+        {
+          "input": "Font or dual-license file lacks an explicit policy decision",
+          "expected": "Unresolved and absent from admitted bytes; no permissive license guessed."
+        },
+        {
+          "input": "Coverage envelope not yet finalized",
+          "expected": "The manifest already declares coverage path/mediaType; eligibility binds non-cyclic content and does not require S003 editorial completion."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "sc3 public interfaces and adjacent story boundaries stay as approved; no catalog writer or guidelines workflow here.",
+          "source": "c2"
+        },
+        {
+          "text": "Candidate hash covers all non-cyclic manifest metadata; eligibility output is a trusted internal result, not caller authorization.",
+          "source": "c3"
+        },
+        {
+          "text": "Pure sc1/sc2 barrel imports remain free of file/network/provider side effects; Git reader is a separate entry point.",
+          "source": "c3"
+        },
+        {
+          "text": "Accuracy and retained provenance take precedence over automatic guesses; no direct cloud calls or provider use.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict via tsx, matching direct reads of existing corpus tests after empty graph test/convention probes.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove sc3 schema and file-level reviewed policy without Git or real third-party content.",
+          "subjects": [
+            "source-schema: exact sc3 round-trip, strict unknown fields, unique IDs, full revisions and portable evidence refs",
+            "mixed-eligibility: eligible/unknown/conflicting/excluded files, expression and font-profile handling, no label-only admission",
+            "lineage-closure: multi-source derived outputs, original declarations, record sourceRefs and modifications, no unbound specimens"
+          ],
+          "fixturesNeeded": [
+            "Independently authored text/binary files with synthetic reviewed policy descriptors; labels represent test decisions, not legal assertions."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove complete deterministic notices and candidate binding.",
+          "subjects": [
+            "notice-closure: every included source and obligation retained, byte-exact evidence, deterministic ordering and shared evidence deduplication",
+            "eligibility-binding: swapped source/notices roles, changed attribution/output/evidence bytes and stale profiles invalidate assessments",
+            "acyclic-staging: coverage placeholder enables eligibility before coverage finalization; zero/duplicate coverage membership yields failure rather than an empty StageAssessment"
+          ],
+          "fixturesNeeded": [
+            "Complete synthetic source/lineage/NOTICE manifest plus S001 record and package fixtures; independently specified expected notice bytes."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove pinned extraction with temporary local repositories and a controlled process seam.",
+          "subjects": [
+            "pinned-reader: exact commit bytes despite dirty worktree/branch movement; binary round-trip and missing revision/path",
+            "reader-safety: symlink/submodule/LFS rejection, unsafe paths, collisions, byte/count/time limits, cancellation and subprocess failure with no admitted bytes",
+            "candidate-roundtrip: mixed source staging through source manifest/notices/lineage and S001 preflight, with complete exported inventory"
+          ],
+          "fixturesNeeded": [
+            "Temporary repositories under OS temp dirs, fixed authored commit contents and explicit input timestamps; injected failures for bounded process behavior."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Preserve runtime boundaries and strict compilation.",
+          "subjects": [
+            "pure-boundary: sc1/sc2 import and pure eligibility/notices run with I/O forbidden; Git adapter imported separately",
+            "strict-build: npm run build and all corpus tests under supported Node"
+          ],
+          "fixturesNeeded": [
+            "Fresh private compilation output; no daemon store, live network, installed source assets or provider."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "source-schema",
+            "mixed-eligibility",
+            "lineage-closure",
+            "pinned-reader",
+            "reader-safety",
+            "eligibility-binding",
+            "acyclic-staging",
+            "candidate-roundtrip"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "notice-closure",
+            "lineage-closure",
+            "candidate-roundtrip",
+            "eligibility-binding",
+            "pure-boundary",
+            "strict-build"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Pure eligibility core with separate pinned Git reader",
+        "oneLineSummary": "Keep policy and notices deterministic; isolate local Git access behind a binary reader.",
+        "approach": "Implement sc3 schemas and pure file-level eligibility/notice composition in a sources module. A separate local Git adapter reads exact commit blobs into bounded memory with an injectable byte-reader; both consume sc1/sc2 identities. Human-reviewed source descriptors select exact files and obligations, never infer eligibility from repository labels.",
+        "pros": [
+          "Directly test mixed-license and notice closure with no live dependencies.",
+          "Preserves pure sc1/sc2 barrel and exact upstream bytes.",
+          "Local adapter is separately testable with temporary repositories."
+        ],
+        "cons": [
+          "Requires a binary-safe Git reader because existing runShell exposes text.",
+          "Maintainers supply reviewed exact-file descriptors rather than automatic license guesses."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": ""
+      },
+      {
+        "id": "a2",
+        "name": "Single filesystem importer with policy and notice generation",
+        "oneLineSummary": "Combine pinned extraction, eligibility and output generation into one import service.",
+        "approach": "Implement sc3 in a local staging service which reads exact commit blobs, performs reviewed file-level policy checks and emits notices. Keep the same sc1/sc2 shapes and no catalog writes, with integration tests around temporary repositories.",
+        "pros": [
+          "One orchestration surface for callers."
+        ],
+        "cons": [
+          "Harder to isolate policy determinism and malformed-input behavior.",
+          "Combines filesystem/subprocess concerns with reusable publication assessment logic."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Meets outputs but entangles pure eligibility with I/O and weakens fault isolation."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]: six bounded probes, empty/off-topic corpus graph, direct fallback source reads"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/HLD-7e0ae92e8f3d3c3e.json: sc3 and S002 boundary; .insrc/artifacts/DEF-7e0ae92e8f3d3c3e.json: s2 ac1/ac2"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/LLD-7e0ae92e8f3d3c3e-s1.json; src/design/corpus/contracts.ts; src/design/corpus/canonical.ts; src/design/corpus/validate.ts; corpus tests"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/plans/design-intelligence-prd.md:105,157-173,258,269; CLAUDE.md architectural rules"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/git/helpers.ts:40; src/daemon/tools/shell-helper.ts:52-102 (short OID and UTF-8 text capture are not suitable for pinned binary corpus bytes)"
+    }
+  ]
+}

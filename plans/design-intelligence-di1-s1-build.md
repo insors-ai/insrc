@@ -78,3 +78,19 @@ Final focused rerun under Node 22: 27 passed, zero failed. Shared contract shape
 The user's explicit approval was recorded on the corrected HLD at 2026-10-11T18:02:53.157Z. No artifacts were skipped. The eight-step design.story workflow regenerated S001's LLD against that approved HLD, retaining sc1/sc2 interfaces and adjacent boundaries. It now defines empty internal candidate identity for zero/multiple coverage entries, stale results for every supplied assessment, and independently computable manifestDigest. The test strategy adds those regressions and requires a staged coverage path/mediaType entry before candidate hashing. Independent LLD review is running; LLD approval, PLAN refresh, implementation and final code review remain outstanding.
 
 The independent LLD review completed with one MED finding: the missing coverage entry already reports reference.missing, whereas duplicates report inventory.invalid. The LLD now preserves those distinct existing diagnostics. The framework recorded this actual correction as resolved (no override/deferral); effective review PASS with zero remaining blocking findings. The LLD's base run matches the newly approved HLD. The revised LLD is ready for explicit approval; implementation still uses the old digest formula and BUILD remains incomplete.
+
+### Digest correction implemented — 12 October 2026 (Kolkata)
+
+The user approved the revised LLD and refreshed PLAN. Implementation commits:
+
+- `cb78619d`: complete-manifest candidate identity with exactly three cyclic exclusions; staged coverage entry, metadata regressions and independently recomputed golden vectors.
+- `839b36d5`: a noncomputable candidate cannot match an empty coverage binding; missing/duplicate inventory diagnostics retained.
+- `4f03c64e`: stale role/metadata assessment regressions, missing/duplicate coverage preflight, and detached manifest fallback.
+
+The daemon passed the revised t2, t4, t5 and t6 gates. Final focused suite: 33 passed, zero failed (`/tmp/di1-digest-final.log`); strict build passed (`/tmp/di1-digest-final-build.log`). The full suite at the digest correction ran 5,450 tests: 5,321 passed, one failed, 125 skipped, three todo. Its sole failure is the already observed SQLite temporalTrend integer overflow at sqlite.ts:344/rdbms-common.ts:1937 (`/tmp/di1-digest-full.log`). Subsequent release/preflight changes passed their daemon gates and the final full corpus suite.
+
+Independent Python canonicalization/hash recomputation preserved the record golden and produced candidate `5691f92a44d349401cadc1627ad74e4abd71488a0e288f0eb1636ca6ab627571`, review `d14f50250c702486cdef9238d977a33b4dc3c0ddb7fb35b4772d630d7dffaeab`, and release `9bfd98dbd4d2db3c4a4f197d1212ed90d432067d528a755a206ae6acb581acc3`.
+
+Fresh code review was requested through insrc, with the committed change range and no dirty-source substitution. The daemon waited for its stale index, then failed because its Claude CLI session quota was exhausted (reported reset: 1:40 a.m. Kolkata). No fresh review was recorded. The previous CR does not certify these corrections, and BUILD is not approved or complete. A Codex-provider alternative was offered to the user; no provider settings have been changed.
+
+S002 design has started through the eight-step design.story workflow. Its draft LLD covers reviewed file-level policy, bounded local pinned Git extraction, source-to-output lineage and deterministic notices. It remains unreviewed/unapproved, with no S002 implementation or real source imports.

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 28 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -109,3 +109,46 @@ Run at 2026-10-11T15:47:04.734Z on commit `521e35c2`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/artifacts/companion/__tests__/shell.test.ts` | 0 | 12 | 0.4 s |  |
+
+## t4
+
+Run at 2026-10-11T15:49:07.959Z on commit `1a0b7703`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: header: projectName override / basename fallback / malformed config ignored**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t4 — projectName comes from .insrc/config.json when set | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+| pass | d9f85b3c t4 — projectName falls back to the repo folder name with no config, or no / an empty / a non-string projectName | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+| pass | d9f85b3c t4 — a malformed config is ignored, not thrown | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+
+**unit: header: git user / OS fallback / 'unknown'; injected clock format**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t4 — user is git user.name, else the OS login, else unknown | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+| pass | d9f85b3c t4 — the real lookups do not throw outside a git repo | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+| pass | d9f85b3c t4 — the date comes from the injected clock as YYYY-MM-DD HH:mm local time | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+| pass | d9f85b3c t4 — the source doc is the artifact id linked to its markdown beside the companion | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+
+**unit: header: malformed createdAt/epicHash/storyId -> plain id fallback, no throw**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t4 — a well-formed source gets the hierarchical story or epic id | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+| pass | d9f85b3c t4 — a malformed createdAt, epicHash or storyId falls back to the plain id without throwing | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+
+**unit: header contextLine: HLD / epic-Story LLD / standalone LLD / placement-only**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t4 — an HLD context line is the Epic plus the first sentence of its summary | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+| pass | d9f85b3c t4 — an epic Story's LLD context line is its placement, title and value | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+| pass | d9f85b3c t4 — a standalone LLD's context line is the story title and the LLD summary's first sentence | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+| pass | d9f85b3c t4 — with nothing to say, the context line is placement only | `src/workflow/artifacts/companion/__tests__/header.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/artifacts/companion/__tests__/header.test.ts` | 0 | 13 | 0.4 s |  |

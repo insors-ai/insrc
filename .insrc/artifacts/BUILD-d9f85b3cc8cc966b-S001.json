@@ -4,7 +4,7 @@
     "epicHash": "d9f85b3cc8cc966b",
     "storyId": "S001",
     "createdAt": "2026-10-11T15:39:50.029Z",
-    "updatedAt": "2026-10-11T15:47:04.734Z",
+    "updatedAt": "2026-10-11T15:49:07.959Z",
     "authoredBy": "controller",
     "standalone": true
   },
@@ -21,9 +21,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "Added shell.ts: CompanionPageContent / DescriptionBlock / DescriptionCell types and renderCompanionPage(header, page, runtime) producing Header, Narrative, a pan/zoom View panel and escaped Description tables, plus loadCompanionRuntime, which inlines panzoom.js (and Mermaid for Mermaid visuals) and raises DiagramGenerationError on a missing asset. Adds the CompanionHeader type.",
+    "summary": "Added header.ts: resolveCompanionHeader resolves project name, work-item id (with plain-id fallback), source-doc link, injectable-clock date, user (git, OS, 'unknown') and a per-source-kind context line, without ever throwing. The CompanionHeader type was added to types.ts in t3.",
     "testRecord": {
       "md": "docs/standalone/implement-approved-spec-77932eaa1a85819b-docs-standalone-E20261011d9f85b3c/S001/TESTS.md"
     },
@@ -33,128 +37,142 @@
           "file": "src/assets/artifacts/companion/panzoom.js"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/assets/artifacts/schemas/adaptive-cards.schema.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/assets/artifacts/schemas/linkml-metamodel.schema.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/body-fields.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/header.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/panzoom.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/ux-body-fields.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/component-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/component.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/er-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/er.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/header.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/sequence-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/sequence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/shell.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/ux-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/ux.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T15:47:04.734Z"
+        "timestamp": "2026-10-11T15:49:07.959Z"
       }
     ],
-    "commit": "521e35c2"
+    "commit": "1a0b7703"
   }
 }

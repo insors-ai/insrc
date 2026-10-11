@@ -40,7 +40,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renam
 import { dirname, join } from 'node:path';
 
 import { PATHS } from '../shared/paths.js';
-import { deriveWorkItemIdentity } from './id.js';
+import { deriveWorkItemIdentity, storyIdToOrdinal } from './id.js';
 import { fileSeg, resolveArtifactMdPath, type WorkItemKind } from './path-scheme.js';
 
 // ---------------------------------------------------------------------------
@@ -448,9 +448,10 @@ function lowestOrdinalLldId(repoPath: string, epicHash: string): string | undefi
  *  LLD heads a work item: the docs migrator sorts with it too, so the migrated
  *  folder and the runtime head can never disagree. */
 export function compareStoryOrdinal(a: string, b: string): number {
+	// The canonical parse (id.ts), so `s1`, `S1` and `S001` are one ordinal here
+	// exactly as in a hierarchical id. An id it rejects sorts last.
 	const ordinal = (id: string): number => {
-		const m = /(\d+)$/.exec(id);
-		return m === null ? Number.MAX_SAFE_INTEGER : Number(m[1]);
+		try { return storyIdToOrdinal(id); } catch { return Number.MAX_SAFE_INTEGER; }
 	};
 	return ordinal(a) - ordinal(b) || a.localeCompare(b);
 }

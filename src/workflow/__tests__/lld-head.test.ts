@@ -167,3 +167,7 @@ test('c00559b7 — a legacy unflagged LLD-only item files its BUILD and TESTS re
 test('c00559b7 — compareStoryOrdinal orders by ordinal, then by id, for both id spellings', () => {
 	assert.deepEqual(['S010', 's2', 'S002', 'S001', 's10'].sort(compareStoryOrdinal), ['S001', 'S002', 's2', 'S010', 's10']);
 });
+
+test('c00559b7 — compareStoryOrdinal uses the canonical story-id parse: a non-story id sorts last', () => {
+	assert.deepEqual(['S002', 'draft', 'S001x', 's1'].sort(compareStoryOrdinal), ['s1', 'S002', 'draft', 'S001x']);
+});

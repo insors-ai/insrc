@@ -398,6 +398,13 @@ data class DaemonStatusDto(
      * flow compares it against the upstream default-branch commit (k1). Additive.
      */
     val installedCommit: String = "",
+    /**
+     * Present only when the graph store has failed in the daemon's process (Epic
+     * c2ba6fa6, Story s4): the `cause` sentence of the payload's optional
+     * `storeFailure` object. Null while the store is healthy, and on a daemon that
+     * does not send the field. Additive.
+     */
+    val storeFailureCause: String? = null,
 )
 
 /**
@@ -1416,6 +1423,8 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             repoCount = (data["repos"] as? Collection<*>)?.size ?: 0,
             // sc2 (S004): the daemon's installed commit; absent on a pre-S002 daemon -> "".
             installedCommit = (data["installedCommit"] as? String) ?: "",
+            // s4: optional; absent while the store is healthy -> null.
+            storeFailureCause = (data["storeFailure"] as? Map<*, *>)?.get("cause") as? String,
         )
 
         /**

@@ -1,0 +1,240 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791737398330-jwpovw",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-11T16:49:58.399Z",
+    "model": "claude:opus",
+    "elapsedMs": 147658,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s1",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/design/corpus/__tests__/acceptance-coverage.test.ts",
+        "src/design/corpus/__tests__/canonical.test.ts",
+        "src/design/corpus/__tests__/contracts.test.ts",
+        "src/design/corpus/__tests__/digest-chain.test.ts",
+        "src/design/corpus/__tests__/fixtures.ts",
+        "src/design/corpus/__tests__/manifest-validation.test.ts",
+        "src/design/corpus/__tests__/module-isolation.test.ts",
+        "src/design/corpus/__tests__/package-fixtures.ts",
+        "src/design/corpus/__tests__/publication-check.test.ts",
+        "src/design/corpus/__tests__/record-roundtrip.test.ts",
+        "src/design/corpus/__tests__/record-validation.test.ts",
+        "src/design/corpus/canonical.ts",
+        "src/design/corpus/contracts.ts",
+        "src/design/corpus/index.ts",
+        "src/design/corpus/validate.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/design/corpus/validate.ts:206",
+            "message": "Index-access results are force-unwrapped with `!` rather than handled for the undefined case (`manifest.records[index]!.path`, `fileIndices.get(...)!`, `indegrees.get(target)!`, and `descriptors[String(i)]!.value` in canonical.ts:68). Each one is guarded by an invariant established earlier, so none is a live defect today. But noUncheckedIndexedAccess is there to make that handling explicit, and a `!` skips it silently if the invariant is ever broken. Nearby code handles the case explicitly (`fileIndices.get(entry.path) ?? 0`, `indegrees.get(target); if (n === undefined) continue`), so the module is inconsistent about it.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/design/corpus/__tests__/contracts.test.ts:37",
+            "message": "The release-availability test fetches `decodeReleaseAvailability` with `await import('../contracts.js')`, while every other symbol from the same module comes through the static import at line 3. No other corpus test does this. It reads like a later addition that was never folded into the top-level import list.",
+            "expectationRef": "module-idiom: static imports",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/design/corpus/__tests__/module-isolation.test.ts:21",
+            "message": "Inside the `try` block, the body starting at `const fixture = packageFixture();` up to the closing `finally` is indented at the outer level, not one level deeper like the lines above it. The block structure is therefore misleading to read. The rest of the module is indented consistently.",
+            "expectationRef": "module-idiom: formatting",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/design/corpus/__tests__/fixtures.ts:1",
+            "message": "None of the 11 new corpus test and fixture files has the `/* Copyright (c) Procix Software India. Licensed under the MIT License. */` header that all 4 corpus source files carry. In the repo, about 358 test files have it and 151 do not, so this is a weak idiom, not a rule.",
+            "expectationRef": "module-idiom: license header",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/validate.ts:1",
+            "message": "All 4 production files (canonical.ts, contracts.ts, index.ts, validate.ts) show EMPTY testsReaching, but this contradicts the diff: the new tests import them directly. canonical.test and digest-chain import ../canonical.js; contracts.test imports ../contracts.js; record-validation, record-roundtrip and manifest-validation import ../validate.js; acceptance-coverage and publication-check import ../index.js. The graph grounding is hollow because these files are new, so this is not a real 'not-exercised' gap and I am not reporting it as a HIGH breach. A recorded test run is still needed to confirm coverage.",
+            "expectationRef": "canonical.ts / contracts.ts / index.ts / validate.ts testsReaching",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/contracts.test.ts:1",
+            "message": "Promised test is present (closed schemas, version, enums, fixture acceptance, plus release availability). Its pass-state is unverified because there is no build record.",
+            "expectationRef": "contracts.test.ts — closed schema, version, ID/domain/UI enums and original fixture acceptance",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/canonical.test.ts:1",
+            "message": "Promised test is present (golden bytes and SHA256 vectors, unsafe-JSON rejection, depth and byte limits). Its pass-state is unverified because there is no build record.",
+            "expectationRef": "canonical.test.ts — independent byte/digest vectors and invalid JSON/limit boundaries",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/digest-chain.test.ts:1",
+            "message": "Promised test is present (self-field exclusion, review/release binding, order independence). Its pass-state is unverified because there is no build record.",
+            "expectationRef": "digest-chain.test.ts — content/review/release binding and ordering",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/record-validation.test.ts:1",
+            "message": "Promised test is present (completeness, authorship branches, conditional domain payloads, mobile platform examples). Its pass-state is unverified because there is no build record.",
+            "expectationRef": "record-validation.test.ts — completeness, authorship, conditional payloads and platform examples",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/record-roundtrip.test.ts:1",
+            "message": "Promised test is present (full-field round trip, rejection of stale, draft or incomplete reviews). Its pass-state is unverified because there is no build record.",
+            "expectationRef": "record-roundtrip.test.ts — all sc1 fields preserved and review-staleness rejection",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/manifest-validation.test.ts:1",
+            "message": "Promised test is present (exact inventory, portable paths, relations DAG/cycle, tamper cases, limits, diagnostic pointers). Its pass-state is unverified because there is no build record.",
+            "expectationRef": "manifest-validation.test.ts — in-memory exact inventory, portable paths, relations DAG and tamper cases",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/publication-check.test.ts:1",
+            "message": "Promised test is present (exactly-one-per-stage, fails closed, preserves and sorts diagnostics, computable manifest identity). Its pass-state is unverified because there is no build record.",
+            "expectationRef": "publication-check.test.ts — downstream assessment composition fails closed and preserves issue diagnostics",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/module-isolation.test.ts:1",
+            "message": "Promised smoke test is present. It compiles into a private temp dir and runs checkPublication with IO stubbed to throw. Its pass-state is unverified because there is no build record. It also depends on a tsc subprocess and symlinked node_modules, so it is the test most likely to fail for environmental reasons.",
+            "expectationRef": "module-isolation.test.ts — compiled import and valid/invalid preflight without external I/O",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/acceptance-coverage.test.ts:1",
+            "message": "Promised test is present (ac1 incomplete or stale guidance fails preflight for all 3 kinds; ac2 exact evidence plus pinned digest vectors). Its pass-state is unverified because there is no build record.",
+            "expectationRef": "acceptance-coverage.test.ts — ac1/ac2 across record-to-manifest pipeline",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/index.ts:1",
+            "message": "The promised 'npm run build' smoke check is a command, not a test file, so nothing in the changed set reflects it. With no build record, the strict NodeNext compilation is unverified. module-isolation.test.ts partially covers it by compiling only src/design/corpus/*.ts.",
+            "expectationRef": "npm run build — strict NodeNext compilation",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/design/corpus/validate.ts:1",
+            "message": "In validateRelease, the coverage-envelope decode-failure branch (catch around parsedBytes for coverage bytes, e.g. invalid UTF-8 or non-JSON coverage.json) has no test that reaches it. Malformed bytes are tested only for records/0.json.",
+            "expectationRef": "validateRelease coverage decode-failure branch",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/design/corpus/validate.ts:233",
+            "message": "Correctness: record examples are checked against `contentPaths = new Set(files.keys())`, which includes reserved metadata (coverage.json, sources.json, NOTICE.txt) and other record files. An example whose contentRef is the coveragePath passes validation, but `candidateContentDigest` excludes the coverage file. That specimen's bytes are then not bound by the digest the eligibility and coverage assessments sign. Exclude reserved paths and record paths from the example inventory, or reject an example contentRef that names one of them.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/design/corpus/validate.ts:217",
+            "message": "Avoidable complexity: `validateRelease` is a single routine of about 150 lines. It does several separate jobs inline: descriptor checks, the inventory walk, manifest file checks, reserved paths, record decoding, the relation graph, the topological cycle check, the coverage-envelope walk and the release digest. Each pass shares mutable `issues`, `files`, `fileIndices` and `recordEntries`. This makes it hard to see which error paths return early and which ones accumulate. Moving each pass into its own helper would make the early-return and accumulate behaviour explicit.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/validate.ts:278",
+            "message": "Duplication: when `validateRelease` fails, `checkPublication` re-runs descriptor inspection, `canonicalJson`, `decodeReleaseManifest` and both digests on the manifest. `validateRelease` has already done this work but discards the result on failure. Returning the decoded manifest or digests alongside the failure would remove the second path, which can drift from the first.",
+            "counterpartRef": "validateRelease",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/validate.ts:150",
+            "message": "Duplication: the dense-array check (`ownKeys.length === length + 1` plus the `/^(0|[1-9]\\d*)$/` index regex) is reimplemented here. It is the same logic as the sparse-array guard inside `canonicalJson`. Extract a shared helper so the two boundary checks cannot diverge.",
+            "counterpartRef": "canonicalJson",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/contracts.ts:87",
+            "message": "Duplication: `sortIssues` defines its own local `compare` that is identical to the module-level `compare` in canonical.ts. This is minor, but the module could share one ordinal comparator.",
+            "counterpartRef": "compare (src/design/corpus/canonical.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/validate.ts:165",
+            "message": "Correctness, minor: the case-collision check uses `toLowerCase()` only. It does not normalise Unicode, so the composed and decomposed forms of the same name (for example NFC vs NFD 'é') pass as distinct inventory paths. They would collide on a normalisation-insensitive filesystem such as APFS when the package is installed. `isPortablePath` does not restrict non-ASCII characters either.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 13,
+      "low": 9
+    }
+  }
+}

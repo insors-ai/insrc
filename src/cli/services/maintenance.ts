@@ -25,7 +25,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-import { startDaemon, stopDaemon } from './daemon.js';
+import { rpc } from '../client.js';
+import type { RegisteredRepo } from '../../shared/types.js';
+import { describeStop, startDaemon, stopDaemon } from './daemon.js';
+import type { StartResult, StopOutcome } from './daemon.js';
 import { loadBuiltCatalog } from '../../config/config-catalog-loader.js';
 import { reconcileConfigFile, type ConfigIoOutcome } from '../../config/reconcile-io.js';
 import { refreshSteeringAcrossRepos, type SteeringRefreshDeps, type SteeringRefreshReport } from '../../daemon/steering-inject.js';
@@ -208,9 +211,14 @@ export async function runUpdateReconcile(root: string, onLog: LogFn, configPath?
  *  this CLI process's own build) — mirroring `runUpdateReconcile`, which loads
  *  the freshly built catalog from `root/out` rather than the resident module.
  *
- *  `deps` is a test seam (prod walks the real registry + fs): overrides are
- *  merged AFTER the root-derived `readBlock`, so a test can inject
- *  `listRepos`/`readFile`/`writeFile` without opening LMDB or touching disk. */
+ *  The registered repositories are ASKED OF THE DAEMON (`repo.list`): this runs
+ *  in the CLI's process, and only the daemon may open the store. With no
+ *  daemon running the refresh fails here, is logged, and is left to the
+ *  daemon's own refresh at its next start.
+ *
+ *  `deps` is a test seam (prod asks the daemon + walks the real fs): overrides
+ *  are merged AFTER the defaults, so a test can inject
+ *  `listRepos`/`readFile`/`writeFile` without a daemon or touching disk. */
 export async function runUpdateSteeringRefresh(
 	root: string,
 	onLog: LogFn,
@@ -221,7 +229,7 @@ export async function runUpdateSteeringRefresh(
 		const block = readFileSync(blockPath, 'utf8').trim();
 		if (block.length === 0) throw new Error(`steering block asset is empty: ${blockPath}`);
 
-		const report = await refreshSteeringAcrossRepos({ readBlock: () => block, ...deps });
+		const report = await refreshSteeringAcrossRepos({ readBlock: () => block, listRepos: listReposFromDaemon, ...deps });
 		const refreshed = report.filter(o => o.action === 'replaced').length;
 		const skipped   = report.filter(o => o.action === 'skipped').length;
 		onLog(`steering refresh: ${refreshed} refreshed, ${skipped} skipped across ${report.length} file(s)`);
@@ -273,18 +281,38 @@ export function summarizeReconcile(outcome: ConfigIoOutcome, onLog: LogFn): Reco
 }
 
 /** Drained stop then start. Faithful to `daemon-ctl.sh cmd_restart`. */
-export async function restart(onLog: LogFn): Promise<MaintenanceResult> {
+export async function restart(onLog: LogFn, deps: RestartDeps = { stopDaemon, startDaemon }): Promise<MaintenanceResult> {
 	onLog('stopping daemon');
+	const steps = ['stop'];
 	try {
-		await stopDaemon();
+		const outcome = await deps.stopDaemon();
+		if (outcome.forced) {
+			// A daemon that would not stop no longer ends the restart half down.
+			steps.push('force-stop');
+			onLog(`${describeStop(outcome)}; starting`);
+		} else {
+			onLog('daemon stopped; starting');
+		}
 	} catch (err) {
-		return { ok: false, steps: ['stop'], error: err instanceof Error ? err.message : String(err) };
+		return { ok: false, steps, error: err instanceof Error ? err.message : String(err) };
 	}
-	onLog('daemon stopped; starting');
-	const r = await startDaemon();
+	const r = await deps.startDaemon();
+	steps.push('start');
 	return r.started
-		? { ok: true, steps: ['stop', 'start'] }
-		: { ok: false, steps: ['stop', 'start'], error: 'daemon did not become ready within 60 s' };
+		? { ok: true, steps }
+		: { ok: false, steps, error: 'daemon did not become ready within 60 s' };
+}
+
+/** Test seam for `restart`: the stop and the start it drives. */
+export interface RestartDeps {
+	readonly stopDaemon:  () => Promise<StopOutcome>;
+	readonly startDaemon: () => Promise<StartResult>;
+}
+
+/** The registered repositories, asked of the daemon. Exported so a test can
+ *  tell that the refresh uses it. */
+export function listReposFromDaemon(): Promise<readonly RegisteredRepo[]> {
+	return rpc<RegisteredRepo[]>('repo.list');
 }
 
 // ---------------------------------------------------------------------------

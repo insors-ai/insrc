@@ -18,6 +18,7 @@ import { useServices, useUi, useCaptured } from '../ui/context.js';
 import type { UiTask } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 import { formatBytes, formatUptime } from '../ui/format.js';
+import { describeStop } from '../services/daemon.js';
 
 type Modal = 'none' | 'busy' | 'backup';
 
@@ -50,7 +51,7 @@ export function DaemonPane(props: { daemon: DaemonState; nonce: number }): React
 			const r = await svc.daemon.startDaemon();
 			return r.started ? `daemon running${r.pid !== undefined ? ` (pid ${r.pid})` : ''}` : 'daemon did not become ready within 60 s';
 		});
-		else if (input === 'x') void run('stopping daemon…', async () => { await svc.daemon.stopDaemon(); return 'daemon stopped'; });
+		else if (input === 'x') void run('stopping daemon…', async () => describeStop(await svc.daemon.stopDaemon()));
 		else if (input === 'R') void run('restarting daemon…', async (task) => {
 			const r = await svc.daemon.restart(task.push);
 			if (!r.ok) throw new Error(r.error ?? 'restart failed');
@@ -111,6 +112,13 @@ function Health(props: { daemon: DaemonState }): ReactElement {
 			<Text>model     {s.modelPullStatus === 'pulling' ? <Text color="yellow">pulling {s.modelPullPct ?? 0}%</Text> : <Text color="green">ready</Text>}</Text>
 			{s.lmdbFileSizeMb !== undefined && <Text>lmdb      <Text bold>{s.lmdbFileSizeMb}</Text> MiB on disk</Text>}
 			<Text>repos     <Text bold>{s.repos.length}</Text> registered</Text>
+			{s.storeFailure !== undefined && (
+				<Box flexDirection="column">
+					<Text color="red">store     FAILED since {s.storeFailure.at} (during: {s.storeFailure.operation})</Text>
+					<Text color="red">{s.storeFailure.cause}</Text>
+					<Text>Press <Text color="yellow">R</Text> to restart the daemon.</Text>
+				</Box>
+			)}
 		</Box>
 	);
 }

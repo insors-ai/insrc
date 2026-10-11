@@ -12,7 +12,7 @@
  *  8. Handle SIGTERM / SIGINT for graceful shutdown
  */
 
-import { mkdirSync, readFileSync, writeFileSync, existsSync, appendFileSync, rmSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { injectSteeringBlock, readSteeringBlock, runBootSteeringRefresh, type SteeringSelection } from './steering-inject.js';
 import { guideGetResult, guideListResult } from './guide-sections.js';
 import { registerMcpClients, daemonInstallRoot } from './mcp-register.js';
@@ -26,43 +26,11 @@ const log = getLogger('daemon');
 // Top-level crash handlers
 // ---------------------------------------------------------------------------
 //
-// Node 20+ kills the process by default on an unhandled rejection /
-// uncaught exception. The daemon's pino-roll transport runs in a
-// worker thread (async) so any pending log line is lost on
-// process.exit -- previously a daemon crash left agent.*.log silent
-// past the last successful flush, with no trace of WHY we died.
-//
-// Capture both shapes here. We log THREE places, each as resilient as
-// we can manage given the imminent exit:
-//
-//   1. stderr (sync fd write) -- captured by the IDE's spawn redirect
-//      to /tmp/.insrc/daemon.stderr.log (electron-main side).
-//   2. /tmp/.insrc/daemon.crash.log (sync appendFileSync) -- always
-//      lands even when stderr isn't redirected (manual launches /
-//      tests / detached invocations).
-//   3. pino fatal -- best-effort. setImmediate before process.exit
-//      gives the worker-thread transport a chance to drain.
-//
-// All three log the kind (uncaughtException | unhandledRejection)
-// + the error message + stack, prefixed with an ISO timestamp so
-// post-mortem readers can correlate against agent.*.log lines.
-function reportFatal(kind: 'uncaughtException' | 'unhandledRejection', reason: unknown): void {
-	const err = reason instanceof Error ? reason : new Error(String(reason));
-	const traceText = `[insrc-daemon][${new Date().toISOString()}][${kind}] ${err.message}\n${err.stack ?? '(no stack)'}\n`;
-	try { process.stderr.write(traceText); } catch { /* stderr closed */ }
-	try {
-		mkdirSync(PATHS.logDir, { recursive: true });
-		appendFileSync(`${PATHS.logDir}/daemon.crash.log`, traceText);
-	} catch { /* fs unavailable */ }
-	try { log.fatal({ kind, err: err.message, stack: err.stack }, 'daemon fatal'); } catch { /* logger broken */ }
-	// Hard exit on next tick so async writes have a chance to flush.
-	// Using setTimeout(0) instead of setImmediate so pino's worker has
-	// at least one event-loop turn -- empirically reliable on Node 20.
-	setTimeout(() => { process.exit(1); }, 50).unref();
-}
-
-process.on('uncaughtException',  (err) =>    reportFatal('uncaughtException',  err));
-process.on('unhandledRejection', (reason) => reportFatal('unhandledRejection', reason));
+// See ./fatal.ts for what is logged and where. The handler ends the process;
+// with the graph store's locks lost it does so without process.exit.
+const fatalDeps = { logFatal: (o: object, m: string) => { log.fatal(o, m); } };
+process.on('uncaughtException',  (err) =>    reportFatal('uncaughtException',  err, fatalDeps));
+process.on('unhandledRejection', (reason) => reportFatal('unhandledRejection', reason, fatalDeps));
 
 import { getDb, initDb, closeDb } from '../db/client.js';
 import { closeDuckDB } from './db/duckdb-pool.js';
@@ -77,6 +45,10 @@ import { IndexQueue } from './queue.js';
 import { collectRepoStats } from './repo-stats.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer } from './server.js';
+import { buildDaemonStatus } from './status.js';
+import { entitiesForSourceRoots, METHOD_ENTITIES_FOR_SOURCE_ROOTS } from './source-roots-rpc.js';
+import { reportFatal } from './fatal.js';
+import { createShutdown, exitRespectingStoreHealth } from './shutdown.js';
 import {
 	initChatHandlers, disposeChatHandlers, reloadChatConfig,
 	chatStart, chatCancel, chatInject, chatClose, chatList, chatStatus, chatRestore,
@@ -108,7 +80,7 @@ function offlineStream(method: string): StreamHandler {
 		send({ id: 0, stream: 'error', data: { error: `${BACKEND_OFFLINE_REASON} (method=${method})`, recoverable: false } });
 	};
 }
-import { writePid, clearPid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
+import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
 import { resolveClosure, searchEntities, findCallers, findCallees, closureEntities, unreachableEntities } from '../db/search.js';
 import { embedQuery } from '../indexer/embedder.js';
 import { getArtifactById, queryArtifactVec } from '../db/lance/artifact-vec.js';
@@ -260,7 +232,7 @@ async function main(): Promise<void> {
 	//     bloats the file until the slot is released. mdb_reader_check
 	//     drops slots whose PID no longer exists. Cheap; non-fatal if
 	//     it finds anything.
-	const { getGraphStore, runReaderCheck } = await import('../db/graph/store.js');
+	const { getGraphStore, runReaderCheck, startPeriodicReaderCheck } = await import('../db/graph/store.js');
 	await getGraphStore();   // ensure env is open
 	runReaderCheck('startup');
 
@@ -605,6 +577,10 @@ async function main(): Promise<void> {
 			}
 			return all;
 		},
+
+		// Read-only: a repository's file entities, for a review that runs
+		// outside the daemon and may not open the store (Epic c2ba6fa6, Story s4).
+		[METHOD_ENTITIES_FOR_SOURCE_ROOTS]: async (params) => entitiesForSourceRoots(params),
 
 		// Append one post-hoc, human-authored feedback entry to a workflow
 		// artifact JSON (Story S001 — provenance/feedback). Delegates to the
@@ -1020,25 +996,27 @@ async function main(): Promise<void> {
 		},
 
 		'daemon.status': async () => {
-			const modelState = getModelState();
-			const status: DaemonStatus = {
-				uptime: Math.floor((Date.now() - startedAt) / 1000),
-				repos: await listRepos(db),
-				queueDepth: queue.depth,
-				embeddingsPending: queue.depth, // approximate
-				modelPullStatus: modelState.status === 'pulling' ? 'pulling' : 'ready',
-				...(modelState.pct !== undefined && { modelPullPct: modelState.pct }),
-				// Story S002 (sc2): the daemon's installed source commit for freshness
-				// checks. Best-effort git read; '' when undeterminable, never throws.
-				installedCommit: readInstalledCommit(),
-			};
 			// LMDB env file size for compact-when-needed surfacing.
+			let lmdbFileSizeMb: number | undefined;
 			try {
 				const { existsSync, statSync } = await import('node:fs');
 				if (existsSync(PATHS.lmdb)) {
-					status.lmdbFileSizeMb = Math.round(statSync(PATHS.lmdb).size / 1024 / 1024);
+					lmdbFileSizeMb = Math.round(statSync(PATHS.lmdb).size / 1024 / 1024);
 				}
 			} catch { /* best-effort; status should never throw */ }
+			// The repository list is read from the store; buildDaemonStatus guards
+			// that read so the status still answers, with `storeFailure`, once the
+			// store has failed (Epic c2ba6fa6, Story s4).
+			const status: DaemonStatus = await buildDaemonStatus({
+				uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
+				listRepos: () => listRepos(db),
+				queueDepth: queue.depth,
+				modelState: getModelState(),
+				// Story S002 (sc2): the daemon's installed source commit for freshness
+				// checks. Best-effort git read; '' when undeterminable, never throws.
+				installedCommit: readInstalledCommit(),
+				lmdbFileSizeMb,
+			});
 			return status;
 		},
 
@@ -1954,11 +1932,10 @@ async function main(): Promise<void> {
 	//     5 minutes for slots left over from a daemon process that
 	//     died between boots without graceful shutdown. Cheap (a
 	//     lock-file scan); see docs/plans/storage-migration-lmdb-lance.md
-	//     Phase 5.5.
-	const READER_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
-	const readerCheckTimer = setInterval(() => {
-		runReaderCheck('periodic');
-	}, READER_CHECK_INTERVAL);
+	//     Phase 5.5. The same check probes the store with one read, so a
+	//     store that lost its locks is recorded even when no request or
+	//     write has met the failure.
+	const readerCheckTimer = startPeriodicReaderCheck();
 
 	// 9. Graceful shutdown on signals
 	// Shutdown handler. Race between two timelines:
@@ -1978,38 +1955,22 @@ async function main(): Promise<void> {
 	// TERMINATE_GRACE_MS (30 s) so the backstop fires first whenever
 	// possible -- the daemon flushes pino + clears its PID before
 	// the IDE escalates to SIGKILL.
-	const HARD_EXIT_MS = 20_000;
-	let shutdownStarted = false;
-	function shutdown(signal: string): void {
-		// Re-entrant safety: SIGINT followed by SIGTERM (or vice
-		// versa) shouldn't restart the timers / double-emit "bye".
-		if (shutdownStarted) {
-			log.warn({ signal }, 'shutdown signal received again; already in progress');
-			return;
-		}
-		shutdownStarted = true;
-		// Log synchronously at the top so even a SIGKILL race leaves
-		// at least the receipt line in agent.*.log. pino's worker-
-		// thread transport may not flush this in time, but it's the
-		// best-effort bookend matching the daemon-crash handler.
-		log.info({ signal }, 'shutdown signal received; draining...');
-		clearInterval(pruneTimer);
-		clearInterval(readerCheckTimer);
-		stopTodosRetention();
-		queue.stop();
-		void disposeChatHandlers();
-		void watcher.close();
-		void server.close();
-		// Hard-exit backstop -- fires whether or not queueDone resolved.
-		// `unref()` so the timer doesn't keep the event loop alive on
-		// its own; queue drain finishing first lets us exit early.
-		const backstop = setTimeout(() => {
-			log.warn({ ms: HARD_EXIT_MS }, 'shutdown: hard-exit backstop fired (queue drain stalled)');
-			try { clearPid(); } catch { /* nothing */ }
-			process.exit(0);
-		}, HARD_EXIT_MS);
-		backstop.unref();
-		void queueDone.finally(async () => {
+	//
+	// With the graph store's locks lost none of this applies: see
+	// ./shutdown.ts, which holds the sequence.
+	const shutdown = createShutdown({
+		log,
+		stopBackgroundWork: () => {
+			clearInterval(pruneTimer);
+			clearInterval(readerCheckTimer);
+			stopTodosRetention();
+			queue.stop();
+			void disposeChatHandlers();
+			void watcher.close();
+			void server.close();
+		},
+		queueDone,
+		closeStores: async () => {
 			// closeDb() is a no-op post-LMDB migration (kept for
 			// caller back-compat). The in-memory DuckDB pool +
 			// per-source analyzer pools still hold connections that
@@ -2021,12 +1982,8 @@ async function main(): Promise<void> {
 			await closeDuckDB();
 			await closeGraphStore();
 			await closeLanceConn();
-			clearPid();
-			log.info('bye');
-			clearTimeout(backstop);
-			process.exit(0);
-		});
-	}
+		},
+	});
 
 	process.on('SIGTERM', () => shutdown('SIGTERM'));
 	process.on('SIGINT',  () => shutdown('SIGINT'));
@@ -2034,5 +1991,5 @@ async function main(): Promise<void> {
 
 main().catch(err => {
 	log.fatal({ err }, 'fatal error');
-	process.exit(1);
+	exitRespectingStoreHealth(1, 'a failed start');
 });

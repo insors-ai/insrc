@@ -59,6 +59,11 @@ export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonData
         const parts: string[] = [`uptime ${raw.uptime}s`, `${raw.repos.length} repos`, `queue ${raw.queueDepth}`];
         if (raw.embeddingsPending > 0) parts.push(`${raw.embeddingsPending} embeds pending`);
         if (raw.modelPullStatus !== undefined) parts.push(`model ${raw.modelPullStatus}`);
+        // The graph store has failed in the daemon's process: say so, with the
+        // cause, in place of a plain "running" (Epic c2ba6fa6, Story s4).
+        if (raw.storeFailure !== undefined) {
+          return { state: 'store failed', detail: `${raw.storeFailure.cause} (since ${raw.storeFailure.at}) · ${parts.join(' · ')}` };
+        }
         return { state: 'running', detail: parts.join(' · ') };
       } catch (err) {
         throw asReadError('daemon.status failed', err);

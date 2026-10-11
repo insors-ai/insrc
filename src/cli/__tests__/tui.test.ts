@@ -53,7 +53,7 @@ function fakeServices(): Services {
 			isRunning:   () => true,
 			getStatus:   async () => status(),
 			startDaemon: async () => ({ started: true, logPath: '/tmp/.insrc/daemon.log', alreadyRunning: false }),
-			stopDaemon:  async () => {},
+			stopDaemon:  async () => ({ stopped: true as const, forced: false }),
 			restart:     async () => ({ ok: true, steps: ['stop', 'start'] }),
 			update:      async () => ({ ok: true, steps: ['sync', 'build'] }),
 			backup:      async () => ({ targetDir: '/b', lmdbBytes: 0, lanceBytes: 0, elapsedMs: 0 }),
@@ -114,6 +114,23 @@ test('Daemon pane shows running status + uptime', async () => {
 	assert.match(frame, /running/);
 	assert.match(frame, /1h 1m/);   // uptime 3661s
 	unmount();
+});
+
+test('Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise', async () => {
+	const cause = 'Another process opened and closed the graph store. Restart the daemon.';
+	const svc = fakeServices();
+	svc.daemon.getStatus = async () => status({ storeFailure: { kind: 'locks-lost', at: '2026-10-11T10:00:00.000Z', operation: 'request search', cause } });
+	const failed = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	const frame = (failed.lastFrame() ?? '').replace(/\s+/g, ' ');
+	assert.match(frame, /store FAILED since 2026-10-11T10:00:00\.000Z \(during: request search\)/);
+	assert.ok(frame.includes('Another process opened and closed the graph store'), 'the cause line is printed');
+	failed.unmount();
+
+	const healthy = render(createElement(App, { services: fakeServices(), pollMs: 0 }));
+	await settle();
+	assert.doesNotMatch(healthy.lastFrame() ?? '', /FAILED|Another process/);
+	healthy.unmount();
 });
 
 test('Daemon pane renders the down state when the daemon is unreachable', async () => {

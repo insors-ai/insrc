@@ -18,7 +18,7 @@ import { isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
 import { getLogger } from '../../shared/logger.js';
-import { resolveSourceRoots, rootPrefix, type SourceRoot } from './source-roots.js';
+import { resolveSourceRoots, rootPrefix, type EntitiesForRepoReader, type SourceRoot } from './source-roots.js';
 import type { Claim, Evidence, GrepResult, ReadResult } from './types.js';
 
 const log = getLogger('review');
@@ -187,14 +187,28 @@ function runRead(anchor: string, repoPath: string): ReadResult {
  * (nothing here reaches an LLM). Ordering of claims in the output matches
  * the input.
  */
-export async function gatherEvidence(claims: Claim[], repoPath: string): Promise<Evidence[]> {
+export interface GatherEvidenceOpts {
+	/** Reads the repository's indexed entities for the source roots. Omitted by
+	 *  a review inside the daemon and by the MCP server's review step, which
+	 *  keep the default reader (the store). */
+	readonly readEntitiesForRepo?: EntitiesForRepoReader | undefined;
+	/** Told why, when the source roots could not be derived and the whole
+	 *  repository root is searched in their place. */
+	readonly onSourceRootFallback?: ((reason: string) => void) | undefined;
+}
+
+export async function gatherEvidence(claims: Claim[], repoPath: string, opts?: GatherEvidenceOpts): Promise<Evidence[]> {
 	// Derive the repo's REAL source roots ONCE from the indexed graph (not
 	// per-pattern) — replaces the old hardcoded `join(repoPath, 'src')`. A
 	// degraded/unindexed repo falls back to the repo root (observable), so a
 	// probe always has a real target and can never manufacture a false BLOCK.
-	const { roots, fallbackUsed } = await resolveSourceRoots(repoPath);
+	const { roots, fallbackUsed, fallbackReason } = await resolveSourceRoots(
+		repoPath,
+		opts?.readEntitiesForRepo !== undefined ? { listEntities: opts.readEntitiesForRepo } : undefined,
+	);
 	if (fallbackUsed) {
-		log.warn({ repoPath }, 'review:probe: source-root graph read empty/failed; grepping repo root (degraded run)');
+		log.warn({ repoPath, reason: fallbackReason }, 'review:probe: source-root graph read empty/failed; grepping repo root (degraded run)');
+		opts?.onSourceRootFallback?.(fallbackReason ?? 'the source roots could not be derived');
 	}
 	const out: Evidence[] = [];
 	for (const claim of claims) {

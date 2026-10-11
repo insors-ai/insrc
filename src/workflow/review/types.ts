@@ -158,4 +158,9 @@ export interface ReviewReport {
 	 *  field existed — read it through `reviewerPartyOf` in `party.ts`, which
 	 *  falls back to `model`. */
 	readonly reviewedBy?: 'controller' | 'daemon' | undefined;
+	/** Present only when the repository's source roots could not be derived
+	 *  from the index and the whole repository root was searched in their
+	 *  place: the reason. The evidence of such a review is broader and slower
+	 *  to gather, not wrong. */
+	readonly sourceRootFallback?: string | undefined;
 }

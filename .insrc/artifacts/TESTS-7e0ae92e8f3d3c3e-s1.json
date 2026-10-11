@@ -1,0 +1,461 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s1",
+    "createdAt": "2026-10-11T16:19:17.663Z",
+    "updatedAt": "2026-10-11T17:05:06.349Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "5d835fcb",
+        "ranAt": "2026-10-11T16:45:20.708Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "contracts.test.ts — closed schema, version, ID/domain/UI enums and original fixture acceptance",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/__tests__/contracts.test.ts",
+                "title": "closed schemas preserve original fixtures for every guidance kind",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/contracts.test.ts",
+                "title": "closed schemas reject missing fields unknown nested fields and invalid enums",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/contracts.test.ts",
+                "title": "evidence and manifest schemas require pinned identities without coercion",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/contracts.test.ts",
+                "title": "release availability is closed and validates every lifecycle state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 461,
+            "titles": [
+              {
+                "title": "closed schemas preserve original fixtures for every guidance kind",
+                "result": "pass"
+              },
+              {
+                "title": "closed schemas reject missing fields unknown nested fields and invalid enums",
+                "result": "pass"
+              },
+              {
+                "title": "evidence and manifest schemas require pinned identities without coercion",
+                "result": "pass"
+              },
+              {
+                "title": "release availability is closed and validates every lifecycle state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "a8fbd5b8",
+        "ranAt": "2026-10-11T16:23:41.898Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "canonical.test.ts — independent byte/digest vectors and invalid JSON/limit boundaries",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/__tests__/canonical.test.ts",
+                "title": "canonical golden bytes and SHA256 match independent vectors",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/canonical.test.ts",
+                "title": "canonical input rejects unsafe JSON without invoking accessors",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/canonical.test.ts",
+                "title": "canonical depth and byte limits fail explicitly",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "digest-chain.test.ts — content/review/release binding and ordering",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/__tests__/digest-chain.test.ts",
+                "title": "digest chain excludes self fields and binds content and review separately",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/__tests__/canonical.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 441,
+            "titles": [
+              {
+                "title": "canonical golden bytes and SHA256 match independent vectors",
+                "result": "pass"
+              },
+              {
+                "title": "canonical input rejects unsafe JSON without invoking accessors",
+                "result": "pass"
+              },
+              {
+                "title": "canonical depth and byte limits fail explicitly",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/design/corpus/__tests__/digest-chain.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 375,
+            "titles": [
+              {
+                "title": "digest chain excludes self fields and binds content and review separately",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "2477a0c8",
+        "ranAt": "2026-10-11T17:04:13.843Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "record-validation.test.ts — completeness, authorship, conditional payloads and platform examples",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/__tests__/record-validation.test.ts",
+                "title": "record completeness and platform examples fail closed",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/record-validation.test.ts",
+                "title": "authorship branches preserve attribution and require justified provenance",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/record-validation.test.ts",
+                "title": "conditional domain payloads compose and color references must resolve",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "record-roundtrip.test.ts — all sc1 fields preserved and review-staleness rejection",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/__tests__/record-roundtrip.test.ts",
+                "title": "record roundtrip preserves all fields and rejects stale incomplete or draft reviews",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/__tests__/record-roundtrip.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 463,
+            "titles": [
+              {
+                "title": "record roundtrip preserves all fields and rejects stale incomplete or draft reviews",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/design/corpus/__tests__/record-validation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 420,
+            "titles": [
+              {
+                "title": "record completeness and platform examples fail closed",
+                "result": "pass"
+              },
+              {
+                "title": "authorship branches preserve attribution and require justified provenance",
+                "result": "pass"
+              },
+              {
+                "title": "conditional domain payloads compose and color references must resolve",
+                "result": "pass"
+              },
+              {
+                "title": "record validation uses an independent descriptor snapshot and checks reviewed drafts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "2477a0c8",
+        "ranAt": "2026-10-11T17:05:06.349Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "manifest-validation.test.ts — in-memory exact inventory, portable paths, relations DAG and tamper cases",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
+                "title": "manifest requires exact inventory portable paths and regular files",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
+                "title": "manifest validates exact record references and rejects duplicate self and cyclic relations",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
+                "title": "manifest detects tampering across raw record candidate review and release hashes",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
+                "title": "manifest format limits and accessor boundaries fail explicitly",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
+                "title": "manifest overrides and diagnostic pointers identify actual candidate fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
+                "title": "specimens cannot reference metadata records or unbound coverage bytes",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
+                "title": "coverage decode errors and Unicode-equivalent inventory paths are rejected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 514,
+            "titles": [
+              {
+                "title": "manifest requires exact inventory portable paths and regular files",
+                "result": "pass"
+              },
+              {
+                "title": "manifest validates exact record references and rejects duplicate self and cyclic relations",
+                "result": "pass"
+              },
+              {
+                "title": "manifest detects tampering across raw record candidate review and release hashes",
+                "result": "pass"
+              },
+              {
+                "title": "manifest format limits and accessor boundaries fail explicitly",
+                "result": "pass"
+              },
+              {
+                "title": "manifest overrides and diagnostic pointers identify actual candidate fields",
+                "result": "pass"
+              },
+              {
+                "title": "specimens cannot reference metadata records or unbound coverage bytes",
+                "result": "pass"
+              },
+              {
+                "title": "coverage decode errors and Unicode-equivalent inventory paths are rejected",
+                "result": "pass"
+              },
+              {
+                "title": "release validation snapshots manifest and bytes and rejects C1 controls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "25c394f9",
+        "ranAt": "2026-10-11T16:30:23.311Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "publication-check.test.ts — downstream assessment composition fails closed and preserves issue diagnostics",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/__tests__/publication-check.test.ts",
+                "title": "publication requires exactly one successful current assessment per downstream stage",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/publication-check.test.ts",
+                "title": "publication preserves deterministic diagnostics and reports only computable manifest identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/__tests__/publication-check.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 470,
+            "titles": [
+              {
+                "title": "publication requires exactly one successful current assessment per downstream stage",
+                "result": "pass"
+              },
+              {
+                "title": "publication preserves deterministic diagnostics and reports only computable manifest identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "b58f5240",
+        "ranAt": "2026-10-11T16:55:01.488Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "module-isolation.test.ts — compiled import and valid/invalid preflight without external I/O",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/__tests__/module-isolation.test.ts",
+                "title": "compiled corpus imports and checks valid and invalid candidates without external IO",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "npm run build — strict NodeNext compilation",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/di1-s1-build.log; npm run build completed tsc and copy-assets successfully on 2026-10-11."
+            }
+          },
+          {
+            "name": "acceptance-coverage.test.ts — ac1/ac2 across record-to-manifest pipeline",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/__tests__/acceptance-coverage.test.ts",
+                "title": "ac1 incomplete or stale guidance cannot pass the record to manifest preflight",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/acceptance-coverage.test.ts",
+                "title": "ac2 exact evidence preserves complete records and pins independently calculated digest vectors",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/__tests__/acceptance-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 497,
+            "titles": [
+              {
+                "title": "ac1 incomplete or stale guidance cannot pass the record to manifest preflight",
+                "result": "pass"
+              },
+              {
+                "title": "ac2 exact evidence preserves complete records and pins independently calculated digest vectors",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/design/corpus/__tests__/module-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1030,
+            "titles": [
+              {
+                "title": "compiled corpus imports and checks valid and invalid candidates without external IO",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

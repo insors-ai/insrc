@@ -1,0 +1,1077 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s4",
+    "createdAt": "2026-10-11T09:49:16.267Z",
+    "updatedAt": "2026-10-11T10:38:18.205Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "8a26a499",
+        "ranAt": "2026-10-11T09:49:16.267Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "stop outcome with an injected process table: stops by itself, forced after the wait, pid not a daemon, pid survives the kill",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+                "title": "stop outcome with an injected process table: stops by itself, forced after the wait, pid not a daemon, pid survives the kill",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "stop outcome: no socket and no live pid rejects with 'daemon is not running'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+                "title": "stop outcome: no socket and no live pid rejects with 'daemon is not running'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "stop outcome: a live pid whose command line does not match is not killed and its pid file is kept",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+                "title": "stop outcome: a live pid whose command line does not match is not killed and its pid file is kept",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "forced stop: a child that ignores the request and SIGTERM is ended by stopDaemon",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "forced stop: a child that ignores the request and SIGTERM is ended by stopDaemon",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "forced stop, silent daemon: a child that accepts the connection and never replies is ended",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+                "title": "forced stop, silent daemon: a child that accepts the connection and never replies is ended",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8311,
+            "titles": [
+              {
+                "title": "forced stop: a child that ignores the request and SIGTERM is ended by stopDaemon",
+                "result": "pass"
+              },
+              {
+                "title": "forced stop, silent daemon: a child that accepts the connection and never replies is ended",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/daemon-stop.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 567,
+            "titles": [
+              {
+                "title": "stop outcome with an injected process table: stops by itself, forced after the wait, pid not a daemon, pid survives the kill",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: no socket and no live pid rejects with 'daemon is not running'",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: a live pid whose command line does not match is not killed and its pid file is kept",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: a refused connection with a LIVE daemon pid goes on to the wait and the kill",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: no reply within the bound goes on to the wait and the kill",
+                "result": "pass"
+              },
+              {
+                "title": "stop outcome: a kill that throws for a live process fails naming the pid and removes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "restart: steps include 'force-stop' after a forced stop and the start follows",
+                "result": "pass"
+              },
+              {
+                "title": "describeStop: says when the daemon was killed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "f48863cf",
+        "ranAt": "2026-10-11T09:53:01.556Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "control script stop against a stubborn child",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "control script stop against a stubborn child",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "control script start against a stubborn running child",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "control script start against a stubborn running child",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "control script leaves a live non-matching pid alone and exits non-zero",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+                "title": "control script leaves a live non-matching pid alone and exits non-zero",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6606,
+            "titles": [
+              {
+                "title": "control script stop against a stubborn child",
+                "result": "pass"
+              },
+              {
+                "title": "control script start against a stubborn running child",
+                "result": "pass"
+              },
+              {
+                "title": "control script leaves a live non-matching pid alone and exits non-zero",
+                "result": "pass"
+              },
+              {
+                "title": "control script stop of a healthy daemon behaves and exits as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "2495f8ab",
+        "ranAt": "2026-10-11T09:57:20.461Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "reproduction against the real library: read throws -30775, synchronous transaction throws 22, asynchronous transaction does not settle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+                "title": "reproduction against the real library: read throws -30775, synchronous transaction throws 22, asynchronous transaction does not settle",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+                "title": "reproduction through the store module: a process that has read before gets code 22 with MDB_BAD_RSLOT on a read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "control case: without the second descriptor, the other process's close leaves the first process's write working",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+                "title": "control case: without the second descriptor, the other process's close leaves the first process's write working",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7478,
+            "titles": [
+              {
+                "title": "reproduction against the real library: read throws -30775, synchronous transaction throws 22, asynchronous transaction does not settle",
+                "result": "pass"
+              },
+              {
+                "title": "reproduction through the store module: a process that has read before gets code 22 with MDB_BAD_RSLOT on a read",
+                "result": "pass"
+              },
+              {
+                "title": "control case: without the second descriptor, the other process's close leaves the first process's write working",
+                "result": "pass"
+              },
+              {
+                "title": "store library after another process removed its locks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "fa7c3218",
+        "ranAt": "2026-10-11T10:02:56.088Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "detection through the real wrappers: asynchronous write by probe, synchronous write at once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/lock-loss-detection.test.ts",
+                "title": "detection through the real wrappers: asynchronous write by probe, synchronous write at once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health.test.ts",
+                "title": "health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "health record: after locks-lost getGraphStore itself rejects with the named error",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health.test.ts",
+                "title": "health record: after locks-lost getGraphStore itself rejects with the named error",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sync wrapper: code 22 with a succeeding probe read is rethrown and leaves the record ok",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health.test.ts",
+                "title": "sync wrapper: code 22 with a succeeding probe read is rethrown and leaves the record ok",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "slow healthy write: the probe runs and returns, nothing is recorded, the write completes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health.test.ts",
+                "title": "slow healthy write: the probe runs and returns, nothing is recorded, the write completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/lock-loss-detection.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1723,
+            "titles": [
+              {
+                "title": "detection through the real wrappers: asynchronous write by probe, synchronous write at once",
+                "result": "pass"
+              },
+              {
+                "title": "control: the same wrappers on a store that was not broken write and record nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/store-health.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1211,
+            "titles": [
+              {
+                "title": "recordStoreFailureIfLockError: records both read failures once, and nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "the named error's message names another process and does not repeat the library's advice",
+                "result": "pass"
+              },
+              {
+                "title": "health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close",
+                "result": "pass"
+              },
+              {
+                "title": "health record: after locks-lost getGraphStore itself rejects with the named error",
+                "result": "pass"
+              },
+              {
+                "title": "sync wrapper: code 22 with a succeeding probe read is rethrown and leaves the record ok",
+                "result": "pass"
+              },
+              {
+                "title": "slow healthy write: the probe runs and returns, nothing is recorded, the write completes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "b5e5dfcf",
+        "ranAt": "2026-10-11T10:06:37.979Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+                "title": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "detection through the real wrappers: a read through the dispatcher records at once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+                "title": "detection through the real wrappers: a read through the dispatcher records at once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "periodic check records locks-lost when no request or write has met the failure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+                "title": "periodic check records locks-lost when no request or write has met the failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2751,
+            "titles": [
+              {
+                "title": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner",
+                "result": "pass"
+              },
+              {
+                "title": "detection through the real wrappers: a read through the dispatcher records at once",
+                "result": "pass"
+              },
+              {
+                "title": "periodic check records locks-lost when no request or write has met the failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "7d18c49e",
+        "ranAt": "2026-10-11T10:11:32.404Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/status-store-failure.test.ts",
+                "title": "daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "status handler with the store failed returns an empty repository list and storeFailure and does not throw",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/status-store-failure.test.ts",
+                "title": "status handler with the store failed returns an empty repository list and storeFailure and does not throw",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "daemon pane and both plugins: the cause line is shown when the field is present, and a status without it is accepted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "daemon status adds the store failure line when the status carries it",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts",
+                "title": "status() shows the store failure cause when the payload carries storeFailure, and accepts a status without it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/command.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 427,
+            "titles": [
+              {
+                "title": "help lists the command reference",
+                "result": "pass"
+              },
+              {
+                "title": "repo add without --steering passes no steering (no silent write)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering installs both CLAUDE.md + AGENTS.md",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add dispatches to repo.add with the path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status renders a one-line summary",
+                "result": "pass"
+              },
+              {
+                "title": "config list shows known options (default) merged with set values",
+                "result": "pass"
+              },
+              {
+                "title": "config list <search> filters options by substring",
+                "result": "pass"
+              },
+              {
+                "title": "config get navigates a dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set parses JSON values (number) and writes the dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set keeps a non-JSON token as a string",
+                "result": "pass"
+              },
+              {
+                "title": "pane switches the active pane",
+                "result": "pass"
+              },
+              {
+                "title": "quit calls exit",
+                "result": "pass"
+              },
+              {
+                "title": "unknown command is reported, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "service errors surface as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review renders verdict, counts, auto-fixes, and pending findings",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve --override threads the reason to approve",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve surfaces a review block as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow run streams progress via onLog and reports path + review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "workflow findings lists pending, workflow resolve resolves one (R3)",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status adds the store failure line when the status carries it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2330,
+            "titles": [
+              {
+                "title": "Daemon pane shows running status + uptime",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane renders the down state when the daemon is unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "number keys switch panes (Daemon → Repos)",
+                "result": "pass"
+              },
+              {
+                "title": "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+                "result": "pass"
+              },
+              {
+                "title": "Workflows pane lists epics and opens the chain detail",
+                "result": "pass"
+              },
+              {
+                "title": "Setup pane renders system + recommendation without crashing",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: Setup model-pull streams ollama progress into the message box",
+                "result": "pass"
+              },
+              {
+                "title": "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` runs tracker setup for the selected repo and shows the report",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: a throwing tracker setup renders a failed row instead of crashing",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` with no repos registered is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: the tracker modal dismisses on any key back to the list",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a daemon op streams into the message box; DaemonPane body stays stable",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a failing daemon op surfaces its error line; pane body untouched",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: ui.toast (r refresh) lands in the message box",
+                "result": "pass"
+              },
+              {
+                "title": "':' opens the command bar and runs a typed command",
+                "result": "pass"
+              },
+              {
+                "title": "the tab bar renders a 6th 6:Debug peer tab",
+                "result": "pass"
+              },
+              {
+                "title": "pressing '6' opens the Debug pane and hides the previously active pane",
+                "result": "pass"
+              },
+              {
+                "title": "Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/status-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 579,
+            "titles": [
+              {
+                "title": "daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost",
+                "result": "pass"
+              },
+              {
+                "title": "status handler with the store failed returns an empty repository list and storeFailure and does not throw",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 382,
+            "titles": [
+              {
+                "title": "status() maps a DaemonStatus (incl. missing optionals) to a DaemonStatusView { state, detail }, over daemon.status only (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "status() shows the store failure cause when the payload carries storeFailure, and accepts a status without it",
+                "result": "pass"
+              },
+              {
+                "title": "status() rejects GatewayReadError when daemon.status fails",
+                "result": "pass"
+              },
+              {
+                "title": "registeredRepos() maps repo.list -> RepoRef[]; mcpClients() maps daemon.debug-status clients (attached ⇒ wired)",
+                "result": "pass"
+              },
+              {
+                "title": "mcpClients() tolerates a debug-status payload with no clients (empty view, not an error)",
+                "result": "pass"
+              },
+              {
+                "title": "workflowChain() returns empty rows when artifactsRoot is undefined (valid empty state)",
+                "result": "pass"
+              },
+              {
+                "title": "the VS Code plugin's workflow chain lists no row for a TESTS record and the same rows as without it (mutation: list every json)",
+                "result": "pass"
+              },
+              {
+                "title": "workflowChain() reads the .insrc/artifacts tree into rows, and a malformed artifact rejects GatewayReadError",
+                "result": "pass"
+              },
+              {
+                "title": "scanOrphans() maps the injected scan and rejects GatewayReadError on failure (and never kills)",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: daemon-gateway.ts imports no vscode and uses no cloud/HTTP client (only sc1 + fs/process — ac4/k2)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "0f2dd749",
+        "ranAt": "2026-10-11T10:31:05.314Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "status after failure: storeFailure names another process and does not contain 'semume'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3219,
+            "titles": [
+              {
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              },
+              {
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "ec94718e",
+        "ranAt": "2026-10-11T10:38:18.205Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+                "title": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CLI review: a rejecting reader falls back to the repository root and the output says so",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/source-root-reader.test.ts",
+                "title": "CLI review: a rejecting reader falls back to the repository root and the output says so",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "workflow review says when the source roots could not be read from the index",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "review with no reader passed uses the default reader, as the daemon and the MCP server do",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/source-root-reader.test.ts",
+                "title": "review with no reader passed uses the default reader, as the daemon and the MCP server do",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/command.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 406,
+            "titles": [
+              {
+                "title": "help lists the command reference",
+                "result": "pass"
+              },
+              {
+                "title": "repo add without --steering passes no steering (no silent write)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering installs both CLAUDE.md + AGENTS.md",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add dispatches to repo.add with the path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status renders a one-line summary",
+                "result": "pass"
+              },
+              {
+                "title": "config list shows known options (default) merged with set values",
+                "result": "pass"
+              },
+              {
+                "title": "config list <search> filters options by substring",
+                "result": "pass"
+              },
+              {
+                "title": "config get navigates a dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set parses JSON values (number) and writes the dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set keeps a non-JSON token as a string",
+                "result": "pass"
+              },
+              {
+                "title": "pane switches the active pane",
+                "result": "pass"
+              },
+              {
+                "title": "quit calls exit",
+                "result": "pass"
+              },
+              {
+                "title": "unknown command is reported, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "service errors surface as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review renders verdict, counts, auto-fixes, and pending findings",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve --override threads the reason to approve",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve surfaces a review block as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow run streams progress via onLog and reports path + review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "workflow findings lists pending, workflow resolve resolves one (R3)",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status adds the store failure line when the status carries it",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review says when the source roots could not be read from the index",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 890,
+            "titles": [
+              {
+                "title": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/source-root-reader.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 541,
+            "titles": [
+              {
+                "title": "review with no reader passed uses the default reader, as the daemon and the MCP server do",
+                "result": "pass"
+              },
+              {
+                "title": "a reader that is passed names the source roots, in place of the store",
+                "result": "pass"
+              },
+              {
+                "title": "CLI review: a rejecting reader falls back to the repository root and the output says so",
+                "result": "pass"
+              },
+              {
+                "title": "the reader given to the review of an artifact file reaches the source-root read, and the fallback reaches the written document",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

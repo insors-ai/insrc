@@ -226,7 +226,9 @@
     "reviewOverride": {
       "reason": "Stakeholder override, 2026-10-11: three daemon review rounds were run on this design, with blocking findings of 5, 5 and 4. Every finding was corrected in the design. The corrections for the third round (one HIGH, three MED, and two points the reviewer could not verify) were made after the last review and were not re-reviewed, so the recorded verdict is a block. The findings had reached the level of individual call sites, and the build stage has its own code review. Details are in the design's feedback record.",
       "at": "2026-10-11T09:28:45.006Z"
-    }
+    },
+    "staleAckedAt": "2026-10-11T09:31:20.776Z",
+    "staleAckedReason": "The high-level design changed after this design was first written in three ways, none of which touches Story s4's boundary or any shared contract (s4 owns and consumes none): amendment AMD-c2ba6fa62a148ed1-1 added the boundary of the new Story s11; rollout Phase A now lists s11 with the order inside the phase; and decision notes were added to the feedback record. This design was revised after s11 was added and already accounts for it (the temporary allowance that s11 removes)."
   },
   "body": {
     "summary": {
@@ -909,6 +911,16 @@
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/LLD.md"
         },
         "comment": "Revised twice more on 2026-10-11, after the second and third daemon reviews (blocks of 5 and 4). Detection now follows a measurement of the failed store: a read throws -30775, a synchronous transaction throws 22, an asynchronous transaction never settles; so the asynchronous wrapper bounds its wait and probes with a read, the synchronous wrapper confirms code 22 with the same probe, the request server and queue catch a failing read, and the periodic reader check probes too. Also: the CLI review reaches source roots through a daemon request; stopDaemon bounds its request and never removes the pid file of a live non-matching process; the refusal of the store files is called from the copy and move tools themselves; reportFatal and a stop with the store failed end by self-kill without waiting for the queue. The third round's fixes are NOT re-reviewed.",
+        "kind": "comment"
+      },
+      {
+        "id": "1d73c638",
+        "author": "Claude (builder)",
+        "timestamp": "2026-10-11T09:58:16.728Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/LLD.md"
+        },
+        "comment": "Correction found while building Task t3 on 2026-10-11 (src/db/graph/__tests__/lock-loss-reproduction.test.ts). This design says a read on a store whose locks were removed throws code -30775. That holds only for a process that has never read from the store. A process that has read before, which the daemon always has because the store module reads while opening, fails a read with code 22 and a message containing MDB_BAD_RSLOT (\"Invalid reuse of reader locktable slot: The reader lock pid 0 ... does not match env pid\"). The earlier measurement used a process that had not read. Consequence for Tasks t4 and t5: wherever this design says a read or probe \"throws -30775\", the rule is \"throws -30775, or throws code 22 with MDB_BAD_RSLOT in its message\". A bare code 22 from a synchronous transaction is still only confirmed by the probe read. The asynchronous and synchronous write behaviours are as designed.",
         "kind": "comment"
       }
     ]

@@ -1,6 +1,7 @@
 import { sep } from 'node:path';
 import type { IndexJob } from '../shared/types.js';
 import { getLogger } from '../shared/logger.js';
+import { LmdbStoreLocksLostError, recordStoreFailureIfLockError } from '../db/graph/store.js';
 
 const log = getLogger('queue');
 
@@ -178,7 +179,16 @@ export class IndexQueue {
       try {
         await processor(job);
       } catch (err) {
-        log.error({ err }, 'job failed');
+        // A read has no wrapper in the store layer: a store that lost its
+        // locks shows here as the library's raw error. Record it, and log
+        // the named error with the true cause.
+        const operation = `job ${job.kind}`;
+        if (recordStoreFailureIfLockError(err, operation)) {
+          const named = err instanceof LmdbStoreLocksLostError ? err : new LmdbStoreLocksLostError(operation, err);
+          log.error({ err: named }, 'job failed: the graph store lost its locks');
+        } else {
+          log.error({ err }, 'job failed');
+        }
       } finally {
         this.processing = false;
       }

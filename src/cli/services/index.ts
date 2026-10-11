@@ -36,7 +36,7 @@ export interface Services {
 		isRunning(): boolean;
 		getStatus(): Promise<DaemonStatus>;
 		startDaemon(): Promise<daemon.StartResult>;
-		stopDaemon(): Promise<void>;
+		stopDaemon(): Promise<daemon.StopOutcome>;
 		restart(onLog: LogFn): Promise<MaintenanceResult>;
 		update(opts: UpdateOptions, onLog: LogFn): Promise<MaintenanceResult>;
 		backup(path: string): Promise<daemon.BackupResult>;
@@ -89,7 +89,7 @@ export function makeServices(): Services {
 			isRunning,
 			getStatus:   daemon.getStatus,
 			startDaemon: daemon.startDaemon,
-			stopDaemon:  daemon.stopDaemon,
+			stopDaemon:  () => daemon.stopDaemon(),
 			restart:     maintenance.restart,
 			update:      maintenance.update,
 			backup:      daemon.backup,

@@ -15,6 +15,7 @@ import type { SteeringSelection } from '../shared/types.js';
 import type { TrackerSetupStep } from '../workflow/tracker/setup.js';
 import type { ReviewArtifactResult } from '../workflow/review/index.js';
 import { formatMcpOutcome } from './services/repo.js';
+import { describeStop } from './services/daemon.js';
 import { formatBytes, formatUptime } from './ui/format.js';
 import { CONFIG_CATALOG } from './config-catalog.js';
 
@@ -81,7 +82,7 @@ async function runDaemon(sub: string | undefined, rest: readonly string[], svc: 
 			const r = await svc.daemon.startDaemon();
 			return [r.started ? `daemon running${r.pid !== undefined ? ` (pid ${r.pid})` : ''}` : 'daemon did not become ready within 60 s'];
 		}
-		case 'stop': await svc.daemon.stopDaemon(); return ['daemon stopped'];
+		case 'stop': return [describeStop(await svc.daemon.stopDaemon())];
 		case 'restart': {
 			const r = await svc.daemon.restart(ctx.onLog);
 			return [r.ok ? 'daemon restarted' : `✗ restart failed: ${r.error ?? '?'}`];
@@ -101,7 +102,10 @@ async function runDaemon(sub: string | undefined, rest: readonly string[], svc: 
 		}
 		case 'status': {
 			const s = await svc.daemon.getStatus();
-			return [`running · uptime ${formatUptime(s.uptime)} · queue ${s.queueDepth} · repos ${s.repos.length} · model ${s.modelPullStatus ?? 'ready'}`];
+			return [
+				`running · uptime ${formatUptime(s.uptime)} · queue ${s.queueDepth} · repos ${s.repos.length} · model ${s.modelPullStatus ?? 'ready'}`,
+				...(s.storeFailure !== undefined ? [`✗ store FAILED since ${s.storeFailure.at} (during: ${s.storeFailure.operation}): ${s.storeFailure.cause}`] : []),
+			];
 		}
 		default: return ['usage: daemon start|stop|restart|update|backup <dir>|compact|status'];
 	}
@@ -273,6 +277,9 @@ function renderReviewSummary(res: ReviewArtifactResult): string[] {
 		for (const f of res.pendingUser) {
 			lines.push(`    [${f.severity}] ${f.ref ?? '?'} · ${f.fixability} · ${f.kind} — ${f.premise.slice(0, 80)}`);
 		}
+	}
+	if (r.sourceRootFallback !== undefined) {
+		lines.push(`  note: the source roots could not be read from the index (${r.sourceRootFallback}); the whole repository root was searched`);
 	}
 	if (r.verdict === 'block') lines.push(`  → resolve/override before approve`);
 	return lines;

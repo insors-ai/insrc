@@ -1,0 +1,702 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791741779633-uhhxjy",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-11T18:04:16.027Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 76347,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "epicSlug": "di1-open-source-design-corpus-retrieval",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1791738717329-ylatwv",
+    "hldEffectiveHash": "a20e4da9408dfea954d2ef18bb08b0d7eaad28b1155c8f8eead228779aaf2088",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The revised candidate-digest rule (whole manifest minus releaseId, reviewDigest and the coverage entry's digest; empty value when zero or more than one entry matches coveragePath) matches the approved HLD and the amendment, and the LLD builds no non-goal such as sc3/sc4 policy.",
+          "evidence": "HLD-7e0ae92e8f3d3c3e.json:167 gives the rule as 'candidate digest over the whole manifest minus releaseId/reviewDigest/coverage-entry digest; unique coverage entry or not computable'. HLD :406 requires 'role-swap plus missing/duplicate coverage-entry regressions'. plans/design-intelligence-di1-s1-digest-amendment.md steps 1-4 and the 'Malformed coverage membership' section match LLD §3.5 word for word. DEF s1 ac1 says missing provenance, examples, applicability or review blocks publication. ac2 says identity, version, relations, rationale and lineage are visible. LLD §3.1/§6 design both. [files: .insrc/artifacts/HLD-7e0ae92e8f3d3c3e.json, .insrc/artifacts/DEF-7e0ae92e8f3d3c3e.json, plans/design-intelligence-di1-s1-digest-amendment.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today candidateContentDigest uses the 'projected-pairs' formula, which leaves out role paths and attribution metadata. This is the defect the revision fixes.",
+          "evidence": "src/design/corpus/canonical.ts:95-103 hashes only `records.map(({recordId, recordVersion}))` and `files.filter(f => f.path !== copy.coveragePath).map(({path, digest}))`. sourceManifestPath, noticesPath, maintainer, label, createdAt, mediaType and record path/digest are all left out, so swapping the role paths keeps the digest the same. [files: src/design/corpus/canonical.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "checkPublication marks every supplied assessment stale when the candidate identity is empty. When validation fails it still computes manifestDigest separately, so returning '' for bad coverage membership gives the stated behaviour.",
+          "evidence": "validate.ts:342 `if (!contentDigest || assessment.candidateContentDigest !== contentDigest) issues.push(issue('assessment.stale', ...))`. validate.ts:313-323 recomputes `manifestDigest = releaseContentDigest(decoded.value)` and `contentDigest = candidateContentDigest(decoded.value)` from the decoded manifest when validateRelease fails. [files: src/design/corpus/validate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Validation never coerces, injects defaults or strips fields, and objects are closed at every level (reuses the existing TypeBox/Ajv setup).",
+          "evidence": "contracts.ts:5 `Type.Object(properties, { additionalProperties: false })`. contracts.ts:80 `new Ajv({ allErrors: true, strict: true, useDefaults: false, coerceTypes: false, removeAdditional: false })`. [files: src/design/corpus/contracts.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Changing candidateContentDigest covers every place that uses candidate identity: validateRelease, validateCoverageEnvelope, the checkPublication fallback and the fixtures/goldens.",
+          "evidence": "Production callers: validate.ts:231 (validateRelease → validateCoverageEnvelope), validate.ts:321 (checkPublication fallback). Test callers: package-fixtures.ts:22 (envelope binding), digest-chain.test.ts:19-28, publication-check.test.ts:10,23, acceptance-coverage.test.ts:12 and :34 (hard-coded golden '3924cd36…'), module-isolation.test.ts:62. The LLD's instruction to independently regenerate the candidate/review/release goldens covers acceptance-coverage.test.ts:34. [files: src/design/corpus/validate.ts, src/design/corpus/__tests__/acceptance-coverage.test.ts, src/design/corpus/__tests__/package-fixtures.ts]",
+          "action": "Make sure the hard-coded golden at acceptance-coverage.test.ts:34 is recomputed independently, not taken from the new helper's output.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "There are no published corpus releases or stored records to migrate. Only development fixtures and goldens change, and the record-identity goldens stay the same.",
+          "evidence": "The amendment says 'There are no published corpus releases to migrate; existing development fixtures and golden vectors must be regenerated'. recordContentDigest (canonical.ts:90-94) is untouched by the revision, so record goldens stay valid. The schema (contracts.ts) keeps schemaVersion literal 1 and the sc1/sc2 shapes do not change. [files: src/design/corpus/canonical.ts, plans/design-intelligence-di1-s1-digest-amendment.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The s1 code composes the downstream eligibility and coverage assessments only. It does not import or implement any sc3–sc7 behaviour.",
+          "evidence": "validate.ts imports only ./canonical.js, ./contracts.js and node:util. validateCoverageEnvelope treats coverage as opaque ('Coverage is opaque except for canonical bytes, exact binding and prohibited self-reference'), and checkPublication only checks stage count, digest binding and passed/issues consistency. [files: src/design/corpus/validate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "When zero or more than one files entry matches coveragePath, 'inventory.invalid remains' is the detected diagnostic (§5 error case).",
+          "evidence": "This holds for duplicates only. validate.ts:184 emits inventory.invalid for duplicate manifest file paths. For ZERO matching entries the existing check at validate.ts:199 emits `reference.missing` ('/manifest/coveragePath', 'Required package file is missing.'), not inventory.invalid. Building to the LLD's wording could lead an implementer to add a redundant inventory.invalid, or write a test that expects the wrong code for the zero-entry case. [files: src/design/corpus/validate.ts]",
+          "action": "Change §5 so the zero-entry case says reference.missing (existing) and the duplicate case says inventory.invalid, or state that a new inventory.invalid is deliberately added for zero matches.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A role swap with unchanged bytes is detected even before the assessment check, because the coverage envelope binds the candidate digest.",
+          "evidence": "validate.ts:286-287 emits review.stale when the coverage envelope's candidateContentDigest !== the recomputed candidateDigest. With the new formula a sourceManifestPath/noticesPath swap changes candidateDigest, so the old envelope is flagged, and validate.ts:342 marks the old assessments stale. This matches the LLD's 'review.stale and/or assessment.stale'. [files: src/design/corpus/validate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion maps to named tests, and the new regressions (role swap, missing/duplicate coverage entry) are listed as subjects. The test framework is node:test with node:assert/strict.",
+          "evidence": "LLD §6 maps ac1 → record-schema … stale-role-assessment, noncomputable-candidate and ac2 → record-roundtrip, canonical-golden, digest-chain, candidate-metadata-binding. Every corpus test file imports node:test and node:assert (2 imports in each of 9 files). No test today covers a noticesPath/sourceManifestPath swap: grep finds noticesPath only in fixtures, so these tests are correctly called new. [files: src/design/corpus/__tests__/digest-chain.test.ts, src/design/corpus/__tests__/package-fixtures.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 1,
+        "low": 9,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-11T18:04:20.624Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "error-paths.1": {
+        "findingId": "error-paths.1",
+        "status": "resolved",
+        "note": "Corrected the malformed coverage error case to preserve reference.missing for zero matches (validate.ts:199) and inventory.invalid for duplicates (validate.ts:184). No new redundant issue code, override or deferral; noncomputable identity and stale-assessment behavior remain as approved in the HLD.",
+        "resolvedAt": "2026-10-11T18:05:41.919Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Define complete, attributable corpus records and pure release preflight. This revision closes stale-assessment reuse by binding candidate identity to all manifest metadata except the three cyclic digest positions. It preserves sc1/sc2 interfaces and leaves source policy, curation, retrieval and catalog writes to later stories.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose immutable release packages with a daemon-owned catalog and rebuildable retrieval indexes. Shared contracts below are proposed additions, not existing APIs. Corpus data is global public knowledge, independent of registered source repositories; DI2 owns project-private guideline storage and DI3 owns authoring workflows.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "Corpus record and pinned evidence identity",
+          "purpose": "Common immutable record, provenance and release identity across all stories and DI2/DI3.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "interfaceSketch": "type UiType = 'web' | 'mobile-ios' | 'mobile-android';\ntype GuidanceKind = 'foundation' | 'pattern' | 'style-recipe';\ninterface EvidenceRef { releaseId: string; recordId: string; recordVersion: string; }\ninterface Provenance { authorship: 'original' | 'derived' | 'imported' | 'inferred'; author: string; sourceRefs: string[]; modificationNotes: string[]; }\ninterface Applicability { uiTypes: UiType[]; suitableConditions: string[]; contraindications: string[]; units: string[]; }\ninterface GuidanceRecord { schemaVersion: 1; recordId: string; recordVersion: string; title: string; domains: string[]; kind: GuidanceKind; guidanceClass: 'requirement' | 'convention' | 'heuristic' | 'preference'; explanation: string; rationale: string; problem: string; tradeoffs: string[]; checks: { check: string; requiredInputs: string[]; exceptions: string[]; limits: string[] }[]; noMeasurableChecksRationale?: string | undefined; domainPayload: { color?: { roles: { name: string; value: string }[]; pairings: { foregroundRole: string; backgroundRole: string; usage: string }[] } | undefined; layout?: { contentPriority: string[]; adaptationRules: { condition: string; rule: string }[] } | undefined; style?: { composition: string; typography: string; color: string; interaction: string } | undefined; }; applicability: Applicability; examples: { kind: 'example' | 'misuse'; contentRef: string; uiType: UiType }[]; relations: { kind: 'compatible' | 'conflicting' | 'prerequisite' | 'alternative'; recordId: string; recordVersion: string }[]; provenance: Provenance; review: { status: 'draft' | 'reviewed'; reviewer: string; contentDigest: string; reviewedAt: string }; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Release manifest and publication gate",
+          "purpose": "s1 establishes envelopes and gates used by import, curation, query and maintenance; s2 implements ingestion. Publication requires nonempty problem/tradeoffs, checks with explicit limits (or an explicit no-measurable-check rationale), and domainPayload.color/layout/style for corresponding color/layout/style records. Semantic roles and pairings must reference declared roles; examples and misuse examples must be present for every declared platform. Domain validation rejects an empty placeholder.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "interfaceSketch": "interface ReleaseManifest { schemaVersion: 1; releaseId: string; label: string; createdAt: string; maintainer: string; records: { recordId: string; recordVersion: string; path: string; digest: string }[]; files: { path: string; digest: string; mediaType: string }[]; sourceManifestPath: string; noticesPath: string; coveragePath: string; reviewDigest: string; }\ninterface ValidationIssue { code: string; path: string; message: string; }\ninterface PublicationCheck { eligible: boolean; issues: ValidationIssue[]; manifestDigest: string; }\ninterface ReleaseAvailability { releaseId: string; state: 'published' | 'deprecated' | 'withdrawn'; reason?: string | undefined; catalogGeneration: number; }",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "Own canonical schema, version/hash specification, publication validation interfaces and fixtures. This is the nearest ancestor for all shared identity/release contracts; storage and curator UI are not implied."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Own source adapters, local staging extraction, allowlist policy implementation and reproducible notices. Adapter specifics stay private; no unreviewed source contents enter published assets."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own authored seed records, declarative specimens and reviewed coverage across ten domains and three UI types. A release names its maintainer/reviewer; unknown source sufficiency cannot be counted as coverage."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5",
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Own daemon package reader, catalog read adapter, deterministic filtering/ranking, local embedding cache, cursor implementation and thin MCP read tools. Keep ranking weights and cache format private and versioned. Basic validated bundled-package installation is included so retrieval is independently testable. Includes the single-sourced config-catalog entry, typed config exposure, settings/reconciliation verification and catalog contract-test update. Owns vscode-plugin/package.json setting mirror and verification of the unchanged catalog-driven JetBrains SettingsView.kt, validated by manifest/catalog parity and settings render/round-trip checks. Sole owner of catalog file layout, serialized atomic commit, receipts and recovery via sc7. Basic installation and maintenance use exactly this writer."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc7"
+          ],
+          "internal": "Own update staging, atomic publish/default switch, withdrawal overlays, recovery, release diffs and cross-release regression evaluation. Consume existing reader contracts; never change DI2 guideline state. Uses sc7 for all catalog/default/availability changes; owns upstream update policy and diff orchestration only, not a second writer or recovery implementation."
+        }
+      ],
+      "rolloutPhase": "A — Record and release contracts",
+      "nonFunctional": {
+        "performance": "For a representative 1,000-record seed fixture, measure warm query p95 <=500 ms excluding local embedding inference; report embedding latency separately. This is a target, not a benchmark claim. If exceeded, optimize indexing without dropping eligible candidates; complete-result quality takes precedence. Cold index building is resumable and serial.",
+        "security": "Only eligible reviewed material is distributed. Validate all package paths and sizes, reject executable specimen content and remote includes; escape rendering. No arbitrary URL fetching at query time. Unknown hard constraints return gaps. Do not mix project-private data into the public corpus or embedding index.",
+        "observability": "Log release ID, query mode, eligible/matched counts, filter/gap reasons, index fingerprint and validation codes; avoid storing user query/brief text by default. Expose install/index health and explicit degraded retrieval, rather than silent fallback.",
+        "durability": "Immutable package bytes plus atomic catalog and append-only availability events. Rebuild derived indexes on checksum/model mismatch. Inject crashes between each publication boundary; old release remains readable or a newly complete release becomes visible, never partial content. Retain pinned references across rollback; policy withdrawal returns tombstones."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "GuidanceRecord",
+          "signature": "type UiType = 'web' | 'mobile-ios' | 'mobile-android';\ntype GuidanceKind = 'foundation' | 'pattern' | 'style-recipe';\ninterface EvidenceRef { releaseId: string; recordId: string; recordVersion: string; }\ninterface Provenance { authorship: 'original' | 'derived' | 'imported' | 'inferred'; author: string; sourceRefs: string[]; modificationNotes: string[]; }\ninterface Applicability { uiTypes: UiType[]; suitableConditions: string[]; contraindications: string[]; units: string[]; }\ninterface GuidanceRecord { schemaVersion: 1; recordId: string; recordVersion: string; title: string; domains: string[]; kind: GuidanceKind; guidanceClass: 'requirement' | 'convention' | 'heuristic' | 'preference'; explanation: string; rationale: string; problem: string; tradeoffs: string[]; checks: { check: string; requiredInputs: string[]; exceptions: string[]; limits: string[] }[]; noMeasurableChecksRationale?: string | undefined; domainPayload: { color?: { roles: { name: string; value: string }[]; pairings: { foregroundRole: string; backgroundRole: string; usage: string }[] } | undefined; layout?: { contentPriority: string[]; adaptationRules: { condition: string; rule: string }[] } | undefined; style?: { composition: string; typography: string; color: string; interaction: string } | undefined; }; applicability: Applicability; examples: { kind: 'example' | 'misuse'; contentRef: string; uiType: UiType }[]; relations: { kind: 'compatible' | 'conflicting' | 'prerequisite' | 'alternative'; recordId: string; recordVersion: string }[]; provenance: Provenance; review: { status: 'draft' | 'reviewed'; reviewer: string; contentDigest: string; reviewedAt: string }; }",
+          "parameters": [],
+          "returns": {
+            "type": "GuidanceRecord",
+            "meaning": "Complete decoded JSON record; validation preserves every declared field and never coerces, defaults or strips input."
+          },
+          "errors": [
+            {
+              "type": "ValidationIssue[]",
+              "condition": "Wrong schema, missing field, unexpected property, invalid domain data, incomplete provenance, digest mismatch or stale review."
+            }
+          ],
+          "preconditions": [
+            "Accept unknown decoded JSON at validation boundaries; types alone never establish validity.",
+            "Draft records retain the full HLD shape, with empty review reviewer/time/digest allowed only while status is draft."
+          ],
+          "postconditions": [
+            "A record admitted for publication has nonblank required guidance, complete sc1 provenance and an exact content-bound reviewed status.",
+            "Record serialization/decoding preserves identity, version, relations, rationale, authorship and source references; it does not perform retrieval."
+          ]
+        },
+        {
+          "name": "ReleaseManifest",
+          "signature": "interface ReleaseManifest { schemaVersion: 1; releaseId: string; label: string; createdAt: string; maintainer: string; records: { recordId: string; recordVersion: string; path: string; digest: string }[]; files: { path: string; digest: string; mediaType: string }[]; sourceManifestPath: string; noticesPath: string; coveragePath: string; reviewDigest: string; }\ninterface ValidationIssue { code: string; path: string; message: string; }\ninterface PublicationCheck { eligible: boolean; issues: ValidationIssue[]; manifestDigest: string; }\ninterface ReleaseAvailability { releaseId: string; state: 'published' | 'deprecated' | 'withdrawn'; reason?: string | undefined; catalogGeneration: number; }",
+          "parameters": [],
+          "returns": {
+            "type": "ReleaseManifest",
+            "meaning": "Validated manifest referencing a closed, unique package inventory; not an installed or published release."
+          },
+          "errors": [
+            {
+              "type": "ValidationIssue[]",
+              "condition": "Duplicate identity/path, missing referenced file, invalid relative path, unresolved exact record relationship, unknown schema or mismatched digest."
+            }
+          ],
+          "preconditions": [
+            "Caller supplies immutable in-memory file inventory including bytes and file kind; no filesystem, network or DB access in this story.",
+            "The manifest is excluded from its own files list; every referenced data file appears exactly once."
+          ],
+          "postconditions": [
+            "All manifest record pairs and referenced package files are present; digest calculation follows the approved dependency order.",
+            "Validating a manifest does not mutate catalog state, import sources or claim editorial approval."
+          ]
+        },
+        {
+          "name": "PublicationCheck",
+          "signature": "interface PublicationCheck { eligible: boolean; issues: ValidationIssue[]; manifestDigest: string; }",
+          "parameters": [
+            {
+              "name": "candidate",
+              "type": "unknown",
+              "purpose": "Decoded sc1/sc2 content and bounded immutable package inventory to validate.",
+              "optional": false
+            },
+            {
+              "name": "assessments",
+              "type": "readonly { stage: 'eligibility' | 'coverage'; candidateContentDigest: string; passed: boolean; issues: ValidationIssue[] }[]",
+              "purpose": "Digest-bound validation results supplied by downstream adapters. s1 only composes them; it does not implement sc3/sc4 policy.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PublicationCheck",
+            "meaning": "Pure preflight decision; manifestDigest is SHA-256 of canonical manifest excluding releaseId when computable, otherwise empty. eligible implies zero issues and successful exact-digest assessments."
+          },
+          "errors": [
+            {
+              "type": "ValidationIssue[]",
+              "condition": "All expected validation failures are returned with stable code, JSON Pointer path and message; no thrown domain error."
+            }
+          ],
+          "preconditions": [
+            "Exactly one assessment per required stage. Missing, duplicate, stale, failed, or contradictory assessment fails closed.",
+            "Assessment objects are trusted internal composition results, not user-issued authorization tokens; only downstream daemon orchestration produces them."
+          ],
+          "postconditions": [
+            "eligible is true only when record/domain/manifest/hash checks and both supplied stages pass.",
+            "No admission, persistent publication or side effects occur; schema compilation faults are programmer/configuration failures, not user validation failures.",
+            "Candidate identity covers every non-cyclic manifest field, so role or attribution metadata changes invalidate downstream assessments.",
+            "Missing or duplicate coverage membership yields empty internal candidate identity and assessment.stale for every supplied assessment, while independently computable manifestDigest remains available."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "GuidanceRecord",
+        "change": "new",
+        "callSites": [],
+        "details": "Implement the exact approved sc1 type in proposed src/design/corpus/contracts.ts with TypeBox schemas and Static-derived readonly-facing types. Use closed objects at every level. UiType is web/mobile-ios/mobile-android; GuidanceKind is foundation/pattern/style-recipe. domains is a nonempty unique subset of the following exact strings, sourced from PRD:85-94 [[c9]]: \"Visual style\", \"Layout\", \"Color\", \"Typography\", \"Navigation and flows\", \"Components and states\", \"Motion and feedback\", \"Inclusive design\", \"Platform adaptation\", \"Content and trust\". Color requires domainPayload.color, Layout requires domainPayload.layout, and Visual style requires domainPayload.style; multiple matching labels require all corresponding payloads. Other domain labels impose the common sc1 fields without inventing additional payload fields. IDs use namespace:slug (lowercase ASCII letters/digits with internal ._- separators), max 128 bytes; recordVersion/releaseId/digests are lowercase SHA-256 hex-64. Require nonblank problem, title, explanation, rationale, nonempty tradeoffs/suitableConditions, unique uiTypes; empty contraindications, units, relations and modificationNotes are allowed and meaningful. Original authorship needs author and may have no external sourceRefs; imported/derived/inferred entries require sourceRefs except independently inferred originals explicitly described in rationale and author attribution. Publication requires at least one example and one misuse for each declared UI type, each contentRef within inventory. Color domain requires nonempty unique semantic roles and pairings to declared roles; Layout requires content priority/adaptation rules; Visual style requires all style subfields. Checks require nonblank check and limits; requiredInputs/exceptions may be empty. Zero checks requires nonblank noMeasurableChecksRationale. Review is required even in drafts; publication rejects draft, empty reviewer/time/digest, invalid UTC ISO date, or contentDigest unequal to recordVersion. Authorship is never relabeled as imported/source-authored by review."
+      },
+      {
+        "entity": "ReleaseManifest",
+        "change": "new",
+        "callSites": [],
+        "details": "Implement sc2 in the same contracts module. schemaVersion is literal 1; no migrations or permissive unknown fields. Require at least one record and file, unique recordId and path, exact byte digest for each declared file and all referenced entries. Every record path appears in files and its bytes decode to the declared recordId/version. Exactly one sourceManifestPath, noticesPath and coveragePath reference listed files. Keep source and coverage file content opaque to s1 except for hashing; downstream stage assessments validate their semantics. Paths are package-relative POSIX names, case-sensitive but reject case-fold collisions for portability; reject empty, absolute, drive/UNC, backslash, NUL/control, dot and dot-dot segments, percent escapes and symlinks/non-regular inventory entries. Reject undeclared files. Relationship targets resolve to exact record pairs in this package, with no fallback; duplicate/self references and cycles among current record versions are invalid. Symmetric conceptual relations use one directed edge or an explicitly older included version only where unique record IDs permit it; no mutually self-referential current-version hashes. This v1 release therefore uses one directed edge for symmetric relations. Runtime availability overlays remain sc7/S004. Specimens must not reference the source/notices/coverage metadata or any record file. Validators operate on detached canonical JSON snapshots and copied native file bytes; later caller mutation must not alter a validated result. Package collision comparisons use Unicode NFC plus case folding without changing authored path bytes."
+      },
+      {
+        "entity": "EvidenceRef",
+        "change": "new",
+        "callSites": [],
+        "details": "Implement exact sc1 shape, validating all three identifiers. It is an immutable value; no default release lookup, filesystem resolution or project identity is introduced. Pure JSON round-trip fixtures exercise ac2; actual daemon retrieval/lineage hydration remains S004. Return original sourceRefs, never replace them with source excerpts."
+      },
+      {
+        "entity": "ValidationIssue",
+        "change": "new",
+        "callSites": [],
+        "details": "Implement exact sc2 code/path/message shape. Schema and semantic phases return deterministic issues sorted by JSON Pointer path then code and message. Stable categories: schema.unsupported, schema.invalid, guidance.incomplete, provenance.incomplete, domain.invalid, review.required, review.stale, reference.missing, reference.cycle, path.invalid, inventory.invalid, digest.mismatch, assessment.missing, assessment.failed, assessment.stale, limit.exceeded. Diagnostics carry no raw content or local absolute paths. Schema-first failures prevent unsafe deep traversal; valid siblings can still yield independent issues. Candidate size limits are explicit rejections, never truncation: record JSON <=1 MiB, package <=64 MiB, <=10,000 files, nesting depth <=64; these are format safety limits for v1, not search result limits. Release issue pointers distinguish /manifest from /files; errors in decoded JSON point to containing bytes and name the decoded pointer in their message. Missing/duplicate assessment diagnostics name the expected stage."
+      },
+      {
+        "entity": "Canonical digest format v1",
+        "change": "new",
+        "callSites": [],
+        "details": "Proposed src/design/corpus/canonical.ts defines pure canonical serialization and hashes. Accept only finite JSON values, plain data objects/arrays, valid Unicode scalar strings and safe finite numeric values; reject undefined/functions/symbols/BigInt/NaN/Infinity, accessors and non-plain objects at object entry points. Object keys sorted by JS UTF-16 code-unit lexicographic order; arrays preserve order except manifest records/files are explicitly sorted by ID/path for manifest digest. Serialize UTF-8 with no BOM/newline, JSON string escaping and JSON number representation, normalize -0 to 0, preserve other string contents without Unicode normalization. These rules are an insrc format, not a claim of RFC conformance. RecordVersion hashes canonical record excluding only top-level recordVersion and review; order changes in meaningful arrays therefore create a new version. review.contentDigest equals recordVersion. Candidate content digest hashes a canonical snapshot of the COMPLETE validated manifest, omitting ONLY top-level releaseId, top-level reviewDigest, and the digest property of the unique files entry at coveragePath. Preserve that coverage entry's path and mediaType. Preserve schemaVersion, label, createdAt, maintainer, sourceManifestPath, noticesPath, coveragePath, complete record entries and every other complete file entry. Sort records by recordId/version and files by path before serialization. Thus any role reassignment, attribution, timestamp, record-entry metadata or media-type change invalidates previous assessments, while coverage bytes and the two cyclic top-level digest values cannot self-reference. This replaces the original projected-pairs formula; unpublished development golden vectors must be recomputed independently. [[c10]] Coverage lives at coveragePath and is the sole v1 editorial envelope; reviewDigest hashes its canonical decoded JSON, including its supplied candidateContentDigest. All other listed files, including source manifest, notices and specimens, are included in candidate digest. Final releaseId/PublicationCheck.manifestDigest hash the canonical manifest with releaseId omitted, records/files sorted and reviewDigest included; manifest itself is not listed. No final releaseId may appear in coverage payload. Raw file hashes always cover exact file bytes, distinct from semantic canonical hashes. Test vectors pin every stage; content change invalidates review. No existing workflow epic hash helper is reused because its truncated run-ID semantics differ. Candidate identity is not computable unless exactly one files entry matches coveragePath: candidateContentDigest returns the empty string for zero or multiple matches; both validateRelease and checkPublication remain ineligible and all supplied assessments are stale. Never choose an arbitrary match or omit every matching digest. Compute manifestDigest independently when structurally possible, else retain its existing empty fallback. A staged manifest must already contain the coverage path/mediaType entry before hashing; its placeholder digest is ignored until coverage bytes exist. [[c2]]"
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "Own exact runtime/static record, evidence and provenance shapes plus pure content identity/round-trip invariants. New implementation paths are src/design/corpus/contracts.ts, canonical.ts and validate.ts; no existing API is modified."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "Own manifest/issue/preflight envelopes and pure structural/domain/digest validation. Define a dependency-inverted assessment input for downstream eligibility and coverage validators; do not import or implement sc3/sc4. Missing assessments always block. Public barrel src/design/corpus/index.ts exports only these foundational schemas/types and validation/hash helpers; exact helper names are local implementation choices under the owned contracts, not existing code claims."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Required field missing, invalid schema version or unknown property",
+          "detection": "Runtime closed schema validates unknown input before semantic traversal; literal schemaVersion check distinguishes unsupported version.",
+          "response": "Return schema.invalid or schema.unsupported with JSON Pointer; eligible false.",
+          "userImpact": "Curator sees exact field to correct; no publication.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unreviewed content or content changed since review",
+          "detection": "Compare reviewed status, reviewer/time and review.contentDigest against freshly computed recordVersion.",
+          "response": "review.required or review.stale; no trusted record projection.",
+          "userImpact": "Needs editorial review of the corrected content.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Invalid domain payload, platform examples or source attribution",
+          "detection": "Conditional domain validators, declared-platform example/misuse matrix and authorship-specific provenance checks detect omissions.",
+          "response": "domain.invalid, guidance.incomplete or provenance.incomplete; keep authorship unchanged.",
+          "userImpact": "Incomplete guidance cannot be admitted.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Tampered, ambiguous or incomplete package inventory",
+          "detection": "Recompute raw byte hashes; compare manifest membership; validate unique IDs/paths, path grammar, references and relation DAG before final digest checks.",
+          "response": "inventory.invalid, path.invalid, reference.missing/reference.cycle or digest.mismatch.",
+          "userImpact": "Candidate must be rebuilt; no repair or silent normalization.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Missing/failed/stale downstream review assessment",
+          "detection": "Require exactly one eligibility and one coverage result, each bound to current candidateContentDigest; reject passed=true with nonempty issues.",
+          "response": "assessment.missing/failed/stale; eligible false.",
+          "userImpact": "No placeholder source/coverage approval is accepted.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Input exceeds safety bounds or is not canonical JSON data",
+          "detection": "Bounded pre-walk checks byte lengths, file count, nesting, numeric/string validity, object descriptors and cycles before hashing.",
+          "response": "limit.exceeded or schema.invalid without hashing/truncating offending content.",
+          "userImpact": "Split oversized data or correct serialization; cannot silently lose guidance.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Role or attribution metadata changes after downstream assessment",
+          "detection": "Recompute candidate digest over all manifest fields except releaseId/reviewDigest and coverage-file digest. Compare every supplied assessment against this identity, even when package bytes are unchanged.",
+          "response": "review.stale and/or assessment.stale; eligible false until the envelope and both assessments are regenerated.",
+          "userImpact": "Changing source/notices roles, maintainer or other metadata cannot silently reuse old eligibility/coverage results.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Zero or multiple manifest files entries match coveragePath",
+          "detection": "Count exact matching entries before candidate hashing in both release validation and preflight fallback.",
+          "response": "Return empty internal candidate identity. Preserve reference.missing at /manifest/coveragePath for zero matches and inventory.invalid at the duplicate /manifest/files entry for multiple matches. Preflight is ineligible and every supplied assessment receives assessment.stale. Compute manifestDigest independently when structurally possible.",
+          "userImpact": "Correct the inventory and regenerate candidate-bound reviews; no arbitrary hash is accepted.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An original record with no upstream source",
+          "expected": "Author, rationale, version and review remain required; empty sourceRefs is valid and no upstream provenance is fabricated."
+        },
+        {
+          "input": "No measurable checks apply",
+          "expected": "Accept only with explicit noMeasurableChecksRationale; never imply automated accessibility certification."
+        },
+        {
+          "input": "One record applies to all three UI types",
+          "expected": "Requires example and misuse for each; shared example bytes can be referenced more than once without duplicating inventory files."
+        },
+        {
+          "input": "Object key order or manifest inventory order differs",
+          "expected": "Canonical identity remains stable; ordinary guidance-array order remains meaningful."
+        },
+        {
+          "input": "Valid draft with empty review details",
+          "expected": "Draft schema accepts the complete shape; publication preflight rejects it until reviewed."
+        },
+        {
+          "input": "No relations or contraindications",
+          "expected": "Empty arrays are explicit valid declarations, not absent metadata."
+        },
+        {
+          "input": "Only coverage-file bytes, reviewDigest or releaseId are filled in later in the digest chain",
+          "expected": "Candidate digest remains unchanged; coverage review digest and final release hash still bind the exact resulting envelope and manifest."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "No schema coercion, default injection or stripping; preserve every validated lineage field.",
+          "source": "c1"
+        },
+        {
+          "text": "Pure validation/hash routines never access DB, filesystem, network, LLMs or daemon runtime state.",
+          "source": "c2"
+        },
+        {
+          "text": "Follow the newly approved HLD digest order and complete-manifest candidate content rule, including noncomputable coverage membership; no sc3/sc4/sc5/sc6/sc7 implementation in s1.",
+          "source": "c2"
+        },
+        {
+          "text": "Do not reintroduce the projected-pairs candidate formula; preserve all non-cyclic manifest fields without changing sc1/sc2 public shapes.",
+          "source": "c10"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict; TypeScript executed with tsx. Preserve the approved S001 test convention; current graph test.locate was empty, while direct reads of the text-located corpus tests show these imports.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove runtime completeness and domain semantics without providers or I/O.",
+          "subjects": [
+            "record-schema: missing/unknown/wrong-type fields and each authorship branch",
+            "domain-validation: color roles/pairings, layout adaptation, visual style and platform example/misuse matrix",
+            "review-binding: draft exclusion and stale-content rejection",
+            "issue-format: stable codes/pointers, deterministic order, no raw content"
+          ],
+          "fixturesNeeded": [
+            "Independently authored valid foundation, pattern and style-recipe records",
+            "Mutations removing each mandatory field and domain condition"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Pin the canonical identity format with independent expected bytes/digests.",
+          "subjects": [
+            "canonical-golden: key reorder, numeric/string edge cases, manifest sort and meaningful array order",
+            "digest-chain: record→candidate→review→release no self reference, changed-content invalidation",
+            "invalid-input: accessors, cyclic objects, unicode/numeric/size limits",
+            "candidate-metadata-binding: role paths, attribution, timestamp, schema and all record/file metadata affect candidate identity; only three cyclic digest positions are excluded"
+          ],
+          "fixturesNeeded": [
+            "Hand-specified expected canonical byte strings and known SHA-256 outputs, not derived via the helper under test",
+            "Small complete in-memory package inventory with no real third-party assets",
+            "Staged manifest includes coverage path/mediaType and a placeholder digest before candidate hashing. Independently regenerate candidate/review/release goldens; preserve record golden."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Verify sc1/sc2 exact shapes and ac2 complete inspectability.",
+          "subjects": [
+            "record-roundtrip: all identity/version/relation/rationale/provenance fields retained",
+            "manifest-inventory: exact bytes/path/membership, digest tamper, duplicate/case collision, missing target and relation-cycle rejection",
+            "publication-composition: missing/duplicate/failed/stale assessments always block; valid fixed assessments pass",
+            "stale-role-assessment: swap sourceManifestPath/noticesPath with unchanged bytes, reseal only releaseId, and prove preflight rejects the old envelope and assessments",
+            "noncomputable-candidate: zero and duplicate coverage entries produce empty candidate identity, ineligible preflight and assessment.stale for every supplied assessment; independently recomputed manifestDigest remains available"
+          ],
+          "fixturesNeeded": [
+            "Validated record relation DAG and complete package",
+            "Stub downstream assessment results that exercise composition without implementing licensing/coverage engines"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Verify foundational module compiles under repository strict NodeNext and imports without live stores.",
+          "subjects": [
+            "npm run build",
+            "Import compiled corpus barrel in a fresh process with no daemon/DB/provider setup"
+          ],
+          "fixturesNeeded": [
+            "No runtime assets or live services required",
+            "Compile current corpus source into a fresh private temporary output tree before isolated import; never trust stale shared out/"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "record-schema",
+            "domain-validation",
+            "review-binding",
+            "manifest-inventory",
+            "publication-composition",
+            "candidate-metadata-binding",
+            "stale-role-assessment",
+            "noncomputable-candidate"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "record-roundtrip",
+            "canonical-golden",
+            "digest-chain",
+            "candidate-metadata-binding"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Complete manifest snapshot with exact omissions",
+        "oneLineSummary": "Bind every non-cyclic field through canonical snapshot omission.",
+        "approach": "Snapshot the validated complete manifest, omit releaseId/reviewDigest and only the unique coverage entry digest, sort records/files and hash. Return empty candidate identity for zero/multiple coverage entries.",
+        "pros": [
+          "Matches approved HLD exactly.",
+          "Admitted fields are bound without maintaining a second projection."
+        ],
+        "cons": [
+          "Development golden vectors change."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": ""
+      },
+      {
+        "id": "a2",
+        "name": "Explicit complete-field projection",
+        "oneLineSummary": "Enumerate each current manifest field in an equivalent hash input.",
+        "approach": "Build a fresh object listing every admitted v1 manifest property except the approved cyclic slots; require unique coverage membership and sort identical arrays. Produce the same canonical bytes as the complete-snapshot option.",
+        "pros": [
+          "Hash input fields are visible in one literal."
+        ],
+        "cons": [
+          "Future admitted fields can accidentally be omitted unless projection is kept synchronized.",
+          "Duplicates the closed manifest schema."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Equivalent today but field-by-field projection duplicates schema and risks future omissions."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/HLD-7e0ae92e8f3d3c3e.json"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/DEF-7e0ae92e8f3d3c3e.json"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/plans/design-intelligence-prd.md:100"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:28"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/analyze/context/__tests__/schema.test.ts:20"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "package.json:37"
+    },
+    {
+      "id": "c8",
+      "kind": "convention",
+      "ref": "AGENTS.md:135"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/plans/design-intelligence-prd.md:85",
+      "quotedText": "Visual style; Layout; Color; Typography; Navigation and flows; Components and states; Motion and feedback; Inclusive design; Platform adaptation; Content and trust"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "plans/design-intelligence-di1-s1-digest-amendment.md"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "plans/reviews/design-intelligence-di1-s1-original-approved-lld.json"
+    }
+  ]
+}

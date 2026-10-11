@@ -31,7 +31,7 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			isRunning: () => true,
 			getStatus: async () => ({ uptime: 61, repos: [], queueDepth: 3, embeddingsPending: 0, modelPullStatus: 'ready', installedCommit: '' }),
 			startDaemon: async () => ({ started: true, logPath: '', alreadyRunning: false, pid: 42 }),
-			stopDaemon: async () => {},
+			stopDaemon: async () => ({ stopped: true as const, forced: false }),
 			restart: async () => ({ ok: true, steps: [] }),
 			update: async () => ({ ok: true, steps: ['sync', 'build'] }),
 			backup: async () => ({ targetDir: '/b', lmdbBytes: 0, lanceBytes: 0, elapsedMs: 0 }),
@@ -273,4 +273,30 @@ test('workflow findings lists pending, workflow resolve resolves one (R3)', asyn
 	const out2 = await runCommand('workflow resolve docs/plans/PLAN-x.md high1 override non-material', ctx);
 	assert.deepEqual(seen, ['high1', 'override', 'non-material']);
 	assert.match(out2[0] ?? '', /resolved high1 \(overridden\).*review clears/);
+});
+
+test('daemon status adds the store failure line when the status carries it', async () => {
+	const { ctx } = ctxWith();
+	const cause = 'Another process opened and closed the graph store. Restart the daemon.';
+	ctx.services.daemon.getStatus = async () => ({
+		uptime: 61, repos: [], queueDepth: 3, embeddingsPending: 0, modelPullStatus: 'ready', installedCommit: '',
+		storeFailure: { kind: 'locks-lost', at: '2026-10-11T10:00:00.000Z', operation: 'request search', cause },
+	});
+	const out = await runCommand('daemon status', ctx);
+	assert.equal(out.length, 2);
+	assert.match(out[0] ?? '', /^running · /);
+	assert.equal(out[1], `✗ store FAILED since 2026-10-11T10:00:00.000Z (during: request search): ${cause}`);
+});
+
+test('workflow review says when the source roots could not be read from the index', async () => {
+	const { ctx } = ctxWith();
+	const report = { artifact: 'PLAN', stage: 'plan', verdict: 'pass', findings: [], counts: { high: 0, med: 0, low: 1 }, reviewedAt: '', model: 'm' };
+	ctx.services.workflow.reviewArtifact = async () => ({
+		report: { ...report, sourceRootFallback: 'the index could not be read (daemon is not running)' }, applied: [], skipped: [], pendingUser: [],
+	}) as never;
+	const out = await runCommand('workflow review docs/plans/PLAN-x.md', ctx);
+	assert.ok(out.some(l => l.includes('the source roots could not be read from the index (the index could not be read (daemon is not running)); the whole repository root was searched')), out.join('\n'));
+
+	ctx.services.workflow.reviewArtifact = async () => ({ report, applied: [], skipped: [], pendingUser: [] }) as never;
+	assert.equal((await runCommand('workflow review docs/plans/PLAN-x.md', ctx)).some(l => /source roots/.test(l)), false);
 });

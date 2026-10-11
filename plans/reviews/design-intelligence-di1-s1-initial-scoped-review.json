@@ -1,0 +1,159 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791736823058-6r5guh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-11T16:40:23.127Z",
+    "model": "claude:opus",
+    "elapsedMs": 187492,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s1",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/design/corpus/__tests__/acceptance-coverage.test.ts",
+        "src/design/corpus/__tests__/canonical.test.ts",
+        "src/design/corpus/__tests__/contracts.test.ts",
+        "src/design/corpus/__tests__/digest-chain.test.ts",
+        "src/design/corpus/__tests__/fixtures.ts",
+        "src/design/corpus/__tests__/manifest-validation.test.ts",
+        "src/design/corpus/__tests__/module-isolation.test.ts",
+        "src/design/corpus/__tests__/package-fixtures.ts",
+        "src/design/corpus/__tests__/publication-check.test.ts",
+        "src/design/corpus/__tests__/record-roundtrip.test.ts",
+        "src/design/corpus/__tests__/record-validation.test.ts",
+        "src/design/corpus/canonical.ts",
+        "src/design/corpus/contracts.ts",
+        "src/design/corpus/index.ts",
+        "src/design/corpus/validate.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/design/corpus/validate.ts:170",
+            "message": "Issue paths from validateRelease/checkPublication don't reliably point to the field that failed. Manifest file errors (manifest.files[i]) and in-memory inventory errors (candidate.files[i]) both use `/files/${i}/...`. So an issue at `/files/0/path` could mean either the manifest entry or the inventory entry. Several other paths point at nothing in the input: `/inventory/${i}` indexes Map insertion order, not an input array; `/assessments/${stage}` uses a stage name where an index belongs; `/coveragePath` + nested pointer mixes a manifest field name with a location inside the coverage file. A curator can't resolve these to one field.",
+            "expectationRef": "LLD contractDetails PublicationCheck errors: 'All expected validation failures are returned with stable code, JSON Pointer path and message'; errorPaths: 'Curator sees exact field to correct'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/design/corpus/__tests__/digest-chain.test.ts:7",
+            "message": "The test file exports a fixture builder (`export function manifestFixture`), and nothing imports it. Elsewhere in this Story, shared fixtures live in non-test modules (`fixtures.ts`, `package-fixtures.ts`). Across src/, only one other `*.test.ts` file exports a symbol. Make it a local function, or move it into a fixtures module if it is meant to be shared.",
+            "expectationRef": "module-idiom: fixtures live in non-test helper modules; test files do not export",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/acceptance-coverage.test.ts:1",
+            "message": "All 9 promised test files are present: contracts, canonical, digest-chain, record-validation, record-roundtrip, manifest-validation, publication-check, module-isolation and acceptance-coverage. Each one imports and calls the changed modules directly. There is no build record, so whether they pass is unverified. I tried to run the suite under Node 22, but the sandbox did not allow it. Treat these tests as present but unverified, not passing.",
+            "expectationRef": "all promised unit/integration/smoke tests (pass-state)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/module-isolation.test.ts:43",
+            "message": "module-isolation.test.ts imports the compiled out/design/corpus/index.js, so its result depends on running the promised 'npm run build' smoke step first. That step has no test file and no build record, so the strict NodeNext compile and the compiled-module isolation check are both present but unverified. If out/ is missing or stale, this test fails or checks old code.",
+            "expectationRef": "npm run build — strict NodeNext compilation",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/design/corpus/validate.ts:1",
+            "message": "testsReaching is empty for canonical.ts, contracts.ts, validate.ts and index.ts. This looks like hollow graph grounding on newly created files, not a real coverage gap. The diffs show direct test imports and calls: canonical.test and digest-chain.test call canonical.ts; contracts.test calls contracts.ts; the record-*, manifest-validation and publication-check tests call validate.ts; acceptance-coverage and publication-check import through index.ts. I am not reporting a HIGH not-exercised breach for these.",
+            "expectationRef": "canonical.ts / contracts.ts / validate.ts / index.ts testsReaching",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/design/corpus/contracts.ts:63",
+            "message": "RELEASE_AVAILABILITY_SCHEMA and the ReleaseAvailability type have no decoder and no test. Also, validateRelease's caller-supplied ReleaseCandidate.manifestPath override (validate.ts) is only tested with the default 'manifest.json'. No test passes a custom manifestPath or an invalid one, so the /manifestPath path.invalid branch is never run.",
+            "expectationRef": "RELEASE_AVAILABILITY_SCHEMA; validateRelease manifestPath override",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/design/corpus/__tests__/module-isolation.test.ts:43",
+            "message": "The isolation test imports the compiled `out/design/corpus/index.js`, but the documented test sweep (`npx tsx --test ...`) does not build first. If `out/` is missing, the test fails for a reason unrelated to the code. If `out/` is stale, the test exercises old code and can pass while the current `src/` breaks the no-IO guarantee. It needs either a build step beforehand or an existence and freshness guard that skips with a clear reason.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/design/corpus/contracts.ts:17",
+            "message": "`['original','derived','imported','inferred'].map(v => Type.Literal(v))` maps over a plain `string[]`, so each literal widens to `TLiteral<string>`. As a result, `Static` gives `Provenance.authorship: string` instead of the four-value union. The same widening affects `guidanceClass`, `relations[].kind` and `ReleaseAvailability.state`. The exported TS types are therefore looser than the runtime schema, so a typo such as `authorship !== 'orignal'` in validate.ts or in a downstream adapter still compiles. Adding `as const` to these arrays, as is already done for `CORPUS_DOMAINS` and `ISSUE_CODES`, fixes it.",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/validate.ts:201",
+            "message": "`new Set(files.keys())` is rebuilt inside the per-record loop. With the format limits (10,000 files and 10,000 records) that is about 10^8 Set insertions for a single `validateRelease` call. Building the set once before `manifest.records.forEach` gives the same result with linear cost.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/validate.ts:166",
+            "message": "Issues for manifest file entries use the paths `/files/${i}/...`. That is the same pointer namespace used for the candidate's inventory array (`/files/${i}`) in the loop above. A diagnostic at `/files/0/path` can therefore mean either the manifest entry or the package file. Undeclared-file issues also use `/inventory/${i}`, an index into the Map's key order rather than the original array index. Prefixing manifest issues, for example `/manifest/files/${i}`, would make the diagnostics unambiguous.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/contracts.ts:86",
+            "message": "`sortIssues` re-declares a local code-unit string comparator that is identical to the module-level `compare` helper in canonical.ts.",
+            "counterpartRef": "compare (src/design/corpus/canonical.ts:10)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/validate.ts:139",
+            "message": "The dense-array check (own keys length === length+1 and every key a canonical index string) duplicates the same logic in `canonicalJson`'s array branch. The two copies can drift apart: the canonicalJson copy also checks `Number(k) >= length`.",
+            "counterpartRef": "canonicalJson (src/design/corpus/canonical.ts)",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 4,
+      "low": 8
+    }
+  }
+}

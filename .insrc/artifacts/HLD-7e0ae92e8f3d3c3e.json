@@ -1,0 +1,678 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1791738717329-ylatwv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-11T17:13:50.526Z",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 113191,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "epicSlug": "di1-open-source-design-corpus-retrieval",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every DEF acceptance criterion (S001–S005 ac1/ac2) is designed, and no DEF non-goal (DI2 project guideline activation, page/framework generation, copying UI UX Pro Max catalogs) is built.",
+          "evidence": "DEF.md:78-131 lists ten ACs. Each one appears in the HLD's verification matrix and has a contract behind it (sc1/sc2 publication gate, sc3 eligibility, sc4 coverage, sc5 gap/degraded, sc6/sc7 pinning and withdrawal). The DEF non-goals at DEF.md:52-54 are respected: the HLD hands guideline persistence to DI2 and authoring to DI3, and it builds no page generation or catalog copy.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S003/ac1 coverage across ten named PRD domains × three UI types is designed as a publication gate.",
+          "evidence": "DEF.md:104 names the ten domains. The HLD's sc4 CoverageCell{domain,uiType,status:'pass'|'gap'}, the s3 boundary ('ten domains and three UI types') and the matrix line 'publication rejects any missing domain/platform cell, gap cell' cover it.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "src/analyze/docs-retrieval.ts Args require DbClient/closureRepos (repo-scoped), so it is a precedent, not a drop-in.",
+          "evidence": "docs-retrieval.ts:103-113: `interface DocsRetrievalArgs { readonly db: DbClient; ... readonly closureRepos: readonly string[]; ...}`. The cited line 115 is `maxResults`, which is inside the same interface.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "server.ts dispatches through the handlers map and serializes thrown errors as strings, so domain failures must travel as CorpusFailure values inside the result envelope.",
+          "evidence": "server.ts:187 `const handler = this.handlers[request.method]`; server.ts:196-197 `catch (err) { this.send(socket, { id: request.id, error: failureMessage(err, request.method) }) }`; failureMessage (server.ts:71-77) returns `err.message` / `String(err)`. Typed error codes would be lost, so the in-result union is needed.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "copy-assets.mjs copies src/assets recursively to out/assets, so src/assets/design-corpus/ would ship.",
+          "evidence": "copy-assets.mjs:28 `const DIRS = ['prompts', 'assets'];` and :39 `cpSync(src, dst, { recursive: true })`.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "PATHS in src/shared/paths.ts is the existing owner of ~/.insrc paths; PATHS.designCorpus is new.",
+          "evidence": "paths.ts:7 `export const PATHS = {` with insrc/config/lmdb/lance/... entries. There is no designCorpus key.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "JetBrains SettingsView needs no edit: settings-catalog derives groups from first-seen CONFIG_CATALOG order, and groupsOf consumes catalog.groups with a fallback for unlisted groups.",
+          "evidence": "settings-catalog.ts:76-80 builds `groups` from first-seen `opt.group`. SettingsView.kt:73-86 `fun groupsOf(catalog)` iterates `catalog.groups`, and its doc (lines 69-70) says unlisted groups fall into a trailing bucket so no option is dropped. A new 'Design intelligence' group renders without a Kotlin change.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s1 contract/validation code is described as proposed under src/design/corpus/.",
+          "evidence": "src/design/corpus/{contracts,canonical,validate,index}.ts already exist from the s1 build (commits 2477a0c8..bdbb7267). This is consistent with s1 owning them; the HLD's 'proposed' wording is only stale for s1. src/assets/design-corpus/ does not exist yet (Glob returned no files).",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Adding designCorpus.enabled requires updating CONFIG_CATALOG, the catalog row-count assertion in config-catalog-contract.test.ts, and the vscode-plugin package.json mirror checked by manifest-catalog.test.ts.",
+          "evidence": "config-catalog-contract.test.ts:88-89 hard-codes `assert.equal(FROM_CONFIG.length, 37)`. manifest-catalog.test.ts:39-53 requires the declared insrc.* keys to EXACTLY cover CONFIG_CATALOG (it excludes only insrc.models.tasks.* and insrc.chat.*), and :55-69 checks type, default and scope 'machine'. The HLD names all three sites.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "s4 'updates the relevant Config type' for the new flag.",
+          "evidence": "No typed main-config interface exists. A grep for `export (interface|type) (Insrc)?Config\\b` across src/ returns nothing, and shared/types.ts has only provider/agent config types. Existing boolean flags are read ad hoc from raw JSON, e.g. gate.ts:147-148 `JSON.parse(readFileSync(PATHS.config,'utf8')) as { codeReview?: { enforce?: unknown } }; return raw.codeReview?.enforce === true;`. The change site the HLD names does not exist. [files: src/config/config-catalog.ts, src/workflow/code-review/gate.ts, src/shared/types.ts]",
+          "action": "Replace 'updates the relevant Config type' with the real reading pattern: a typed reader for designCorpus.enabled modeled on gate.ts:147, which treats anything other than `true` as disabled. Or state explicitly that s4 introduces the typed accessor.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The candidateContentDigest correction changes no public shapes and needs no migration of published data.",
+          "evidence": "No published corpus exists: src/assets/design-corpus/ is absent and no PATHS.designCorpus exists yet. The amendment (plans/design-intelligence-di1-s1-digest-amendment.md:18) says 'There are no published corpus releases to migrate; existing development fixtures and golden vectors must be regenerated'. ReleaseManifest/CoverageReport shapes are unchanged.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The normative digest order (candidate digest over the whole manifest minus releaseId/reviewDigest/coverage-entry digest; unique coverage entry or not computable) is what s1 implements.",
+          "evidence": "canonical.ts:95-103 still hashes only `records.map(({recordId, recordVersion}))` and `files.filter(f => f.path !== copy.coveragePath).map(({path, digest}))`. It drops label/createdAt/maintainer/role paths/mediaType, removes every coverage match rather than requiring exactly one, and never returns an empty value for zero or duplicate matches. The amendment's status line says 'implementation and BUILD completion are withheld'. The HLD calls this the normative rule but does not state that s1 code, fixtures and golden vectors must be reworked before s3/s4 consume candidate identity. [files: src/design/corpus/canonical.ts, plans/design-intelligence-di1-s1-digest-amendment.md]",
+          "action": "Add an explicit rollout note: s1 must re-implement candidateContentDigest per the amendment, regenerate candidate/review/release golden vectors, and add the missing/duplicate coverage-entry and role-swap regressions. That work has to be done before S001 is completed and before s3 produces CoverageReports bound to candidateContentDigest.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Catalog persistence is single-owned by S004 via sc7; S005 consumes sc7 and never writes catalog files, and DI2/DI3 state is not redesigned.",
+          "evidence": "§6.4 makes S004 the 'Sole owner of catalog file layout, serialized atomic commit, receipts and recovery via sc7'. §6.5 has S005 'Uses sc7 for all catalog/default/availability changes... not a second writer'. sc7 lists Owner s4 and Consumed by s5. DI2/DI3 appear only as consumers, which matches the non-goal at DEF.md:52.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each failure (invalid input, unavailable release, disabled flag, cursor invalidation, unsupported schema, conflict, validation, embedding failure) is detectable through IPC with a stated handling.",
+          "evidence": "sc5 defines a CorpusErrorCode union and a CorpusFailure{ok:false,error{code,message,retryable}} returned inside the result envelope. That is necessary because server.ts:196-197 stringifies thrown errors. Embedding failure gives `mode:'lexical'`/`status:'degraded'`. Withdrawn records return a CorpusReadResult `status:'withdrawn'` tombstone. Install/publish conflicts use 'conflict'/'validation-failed'. Crash recovery is stated in §3 (orphan registration without default, staging discard).",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion maps to a named test in the verification matrix.",
+          "evidence": "The §3 'Verification matrix' names a test for each of S001/ac1, S001/ac2, S002/ac1, S002/ac2, S003/ac1, S003/ac2, S004/ac1 (including the IPC and MCP round-trip), S004/ac2, S005/ac1 and S005/ac2 (N+1 and rollback). It adds crash-injection and idempotency tests. This matches the ten ACs at DEF.md:78-131.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 13,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-11T17:14:07.410Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "change-sites.2": {
+        "findingId": "change-sites.2",
+        "status": "resolved",
+        "note": "Corrected architectureShape: S004 introduces a typed designCorpus.enabled accessor using strict true semantics; no nonexistent main Config type is claimed. Public shapes and ownership remain unchanged.",
+        "resolvedAt": "2026-10-11T17:17:10.806Z"
+      },
+      "data-compatibility.2": {
+        "findingId": "data-compatibility.2",
+        "status": "resolved",
+        "note": "Added explicit Phase A completion gate: current projected-pairs code is incomplete; amended hashing, regenerated independent vectors, role-swap and missing/duplicate coverage-entry regressions, and independent code review are required before S001 completion or S003/S004 consumption.",
+        "resolvedAt": "2026-10-11T17:17:10.808Z"
+      }
+    },
+    "approvedAt": "2026-10-11T18:02:53.157Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "Design knowledge ships as reviewed, versioned releases with traceable sources and reusable examples for Web, iOS and Android. Agents retrieve applicable guidance through insrc and keep exact evidence references. Updating the corpus never changes an approved project's choices."
+    },
+    "frameworkSummary": "Choose immutable release packages with a daemon-owned catalog and rebuildable retrieval indexes. Shared contracts below are proposed additions, not existing APIs. Corpus data is global public knowledge, independent of registered source repositories; DI2 owns project-private guideline storage and DI3 owns authoring workflows.",
+    "architectureShape": "Proposed domain location: src/design/corpus/ for contracts, validation, release installation and retrieval. Proposed adapter src/daemon/design-corpus-rpc.ts is composed into the existing handlers map in src/daemon/index.ts and served by src/daemon/server.ts; MCP adds a thin corpus query/read wrapper through IPC only. These paths except existing daemon files are new. Reuse existing LLMProvider/local embedder abstractions with sequential calls; any optional cloud editorial assistance uses CliProvider and critical role tiering. Normal retrieval needs no cloud generation. Existing src/analyze/docs-retrieval.ts is a ranking precedent, not a drop-in: its Args require DbClient/closureRepos and its results identify repo entities. Do not insert corpus records as fake repo entities or weaken repo.add.\n\nAuthor eligible original/derived records and notices under proposed src/assets/design-corpus/. Existing copy-assets.mjs copies src/assets recursively to out/assets. Ship only a validated reviewed release, never candidate downloads. New PATHS.designCorpus points to ~/.insrc/design-corpus; daemon-owned filesystem packages are the canonical store, avoiding changes to code graph tables. Staging, immutable releases/<releaseId>, derived indexes/<releaseId>/<modelFingerprint>, catalog.json and append-only withdrawal events are distinct. JSON records have canonical sorted serialization and SHA-256 digests. Package digest covers sorted path+content hashes including notices, records, examples and review/coverage evidence, excluding only the self digest; a schema-versioned definition avoids hash ambiguity. Record ID is stable curator-assigned namespaced identity; recordVersion is content digest, not timestamp. Reject duplicate IDs, missing references, symlinks, path traversal, digest mismatch and unsupported schema before install.\n\nInstall verifies a bounded local staged package, fsyncs files and directory, atomically renames into immutable release directory, then updates catalog by temporary-file fsync+atomic rename under a daemon serialized writer. Startup recovers valid orphan packages and discards incomplete staging; catalog never references half-published content. Publish uses expected catalog generation and idempotency key; identical retry returns same release, conflicting retry fails. User-installed packages require explicit maintainer review metadata and local authorized install intent; hash integrity is not trust. No executing imported JS, shell or HTML. Original specimens are declarative data rendered safely; source imports are untrusted data and file-level eligibility remains an editorial gate.\n\nA query resolves the requested release once (or current catalog default once), validates UI type, applies published/eligible/platform and hard structured constraints before scoring, and returns pinned record versions. For the seed corpus score all eligible records lexically; local embeddings may add exact semantic similarity across that same set. Reuse local embedding abstraction only after verifying input/model limits; chunk long records without truncation and aggregate with evidence links. Index keys include release, record digest, embedder model/version, dimensions and normalization version. Persisted indexes are disposable; rebuilding is serial and resumable. Embedding failure reports degraded lexical mode, never claims semantic completeness. Stable ordering uses score then record ID/version. Pagination freezes release and ranking/index version; changed availability invalidates cursor explicitly. A result limit affects presentation, not eligibility scanning, and reports total, truncated and nextCursor. No arbitrary silent corpus truncation. Rationale is a deterministic explanation of matched tags, constraints and source excerpts, not an invented design judgment. Conflicts and unsupported constraints are explicit gaps, not score penalties that allow unsafe recommendations.\n\nExact evidence lookup never falls forward to latest. Deprecated records remain readable with warnings but excluded from new default recommendations. Withdrawn references return a tombstone with reason and provenance identifiers; policy-blocked content is withheld even historically, while historical IDs/hashes/notices permitted to retain are preserved. Never silently rewrite a guideline or substitute newer content. DI2 persists sc1 references and its own approved decision snapshot; DI1 owns evidence availability. DI3 consumes query/read APIs and builds project-level guidelines, never page-specific guideline identities.\n\nDigest dependency order (normative): compute recordVersion from canonical record content excluding recordVersion and review; review.contentDigest must equal that version. Compute candidateContentDigest from a canonical snapshot of the complete validated manifest, omitting ONLY top-level releaseId, top-level reviewDigest, and the digest property of the unique files entry at coveragePath. Keep that coverage entry's path/mediaType and all other manifest fields: schemaVersion, label, createdAt, maintainer, role paths, complete record entries and other complete file entries. Sort records by recordId/version and files by path. The manifest is not included as a file in its own inventory; its non-cyclic metadata is now explicitly bound. If zero or multiple files entries match coveragePath, candidate identity is not computable: internal composition uses an empty value, preflight stays ineligible and every supplied assessment is stale. Do not omit every match or invent a candidate identity for malformed membership. Independently compute manifestDigest when structurally possible; otherwise report its documented empty value. Any role, attribution, record-entry or file-media-type change invalidates assessments. This corrects the earlier projected-pairs rule without changing the record→candidate→review→release order or public shapes. [[c18]] Coverage refers only to recordId/recordVersion pairs, never final releaseId. After editorial review, compute reviewDigest over canonical coverage/review envelopes. Compute releaseId over the canonical manifest with releaseId omitted and all listed file hashes; the files list excludes the manifest itself. This prevents self-referential hashes while binding final release identity to review evidence. Change to content invalidates its review; publication requires exact digest matches and all coverage cells pass. Runtime EvidenceRef combines the resulting releaseId with a record pair.\n\nRetained evidence from the previously approved HLD [[c19]] (not a claim of refreshed graph coverage): earlier analyzer bundles locate daemon/index.ts, daemon/server.ts, db/search.ts and analyze/docs-retrieval.ts. Direct inspection supplements bounded graph discovery: docs-retrieval.ts:115 defines repo-scoped arguments, server.ts:187 dispatches the handlers map, copy-assets.mjs:28 copies assets/prompts, and shared/paths.ts:7 owns filesystem paths. All design/corpus paths, corpus IPC names, config keys and catalog/index layouts above are proposed new surfaces.\n\nReview corrections: s4 adds designCorpus.enabled to src/config/config-catalog.ts as boolean, default false, main config domain, group Design intelligence; introduces a typed accessor for designCorpus.enabled that treats anything other than true as disabled (following the existing raw-config boolean-reader pattern), and updates catalog row-count/shape assertions in src/config/__tests__/config-catalog-contract.test.ts. Existing src/config/reconcile.ts and reconcile-io.ts remain the catalog-driven integration; verify default fill, preservation and config.catalog settings exposure rather than adding a second settings registry. s5 consumes the same flag and does not introduce another. IPC clients receive the CorpusResult discriminated union inside the existing result envelope; the adapter normalizes validation/domain errors there because server.ts serializes thrown errors as strings. Maintainer mutation results use the same union with additional conflict and validation codes; no IPC envelope change is required.\n\nVerification matrix for the approved DEF: S001/ac1 rejects omitted provenance/examples/applicability/review and domain-required payload; S001/ac2 read round-trip asserts stable identity, version, relationships, rationale and every source lineage field. S002/ac1 mixed eligible/unknown-license import admits only eligible bytes with exact revision, attribution and modifications; S002/ac2 release/export notices enumerate every included third-party asset. S003/ac1 publication rejects any missing domain/platform cell, gap cell or failed evaluation; human editorial review assesses quality of every passing cell. S003/ac2 draft generated/inferred records cannot enter published query or exact-read results; a reviewed inferred record remains labelled inferred, never source-authored. S004/ac1 platform/hard-constraint fixtures assert filtered results, caveats, fit and pinned evidence over real IPC serialization; invalid-input/unavailable-release/disabled results retain their codes after IPC and MCP round-trip. S004/ac2 no eligible match yields explicit gap, and unavailable semantic search reports degraded mode. S005/ac1 changed source/license requires a newly reviewed digest and tests deprecation/withdrawal overlays; S005/ac2 publishing N+1 and rollback leave N evidence unchanged, with withdrawal returning explicit tombstones and no substitution. Crash injection and concurrent/idempotent publication test durable visibility at every atomic boundary. All tests use temporary corpus directories and fake providers; opt-in live local embedding evaluation runs serially.\n\nSettings mirrors (s4): add insrc.designCorpus.enabled to vscode-plugin/package.json under a Design intelligence configuration section, type boolean, default false, scope machine, with the same description as the catalog. Verify vscode-plugin/src/config/__tests__/manifest-catalog.test.ts exact key coverage, type/default/scope parity. No SettingsView.kt edit is needed: src/config/settings-catalog.ts derives groups from first-seen CONFIG_CATALOG order and JetBrains groupsOf consumes catalog.groups with fallback for unlisted groups. Verify that the catalog-driven boolean control renders and round-trips there. This is backend capability exposure in existing settings, not a separate project-design UI. Run both backend config contract tests and plugin manifest/settings checks when s4 implements the flag; no new IPC settings envelope is introduced.\n\nCatalog ownership and atomicity (sc7): S004 owns catalog.json and the serialized writer/recovery for both initial install and later changes. Availability events are append-only entries within each atomic catalog snapshot, not a separate authoritative log requiring a cross-file transaction. Optional log exports are derived. S005 supplies validated mutations through sc7; it never edits catalog files. sc7 resolves availability-event precedence, checks release existence/schema and stage verification, rejects invalid defaults and generation conflicts, and atomically commits state plus idempotency receipt. An identical idempotency key/request digest returns its prior receipt before generation checking; a changed request under that key is a conflict. Recovering a complete orphan package registers it without selecting it as default or inferring publication approval; only a valid stored reviewed manifest may be installed. Recovered packages remain unavailable until that verification succeeds. Recovery never replays an uncommitted default or withdrawal intent. Tests inject crashes around rename/catalog commit and assert one authoritative generation, complete receipts, explicit tombstones and no unauthorized default change.",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Corpus record and pinned evidence identity",
+        "purpose": "Common immutable record, provenance and release identity across all stories and DI2/DI3.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "interfaceSketch": "type UiType = 'web' | 'mobile-ios' | 'mobile-android';\ntype GuidanceKind = 'foundation' | 'pattern' | 'style-recipe';\ninterface EvidenceRef { releaseId: string; recordId: string; recordVersion: string; }\ninterface Provenance { authorship: 'original' | 'derived' | 'imported' | 'inferred'; author: string; sourceRefs: string[]; modificationNotes: string[]; }\ninterface Applicability { uiTypes: UiType[]; suitableConditions: string[]; contraindications: string[]; units: string[]; }\ninterface GuidanceRecord { schemaVersion: 1; recordId: string; recordVersion: string; title: string; domains: string[]; kind: GuidanceKind; guidanceClass: 'requirement' | 'convention' | 'heuristic' | 'preference'; explanation: string; rationale: string; problem: string; tradeoffs: string[]; checks: { check: string; requiredInputs: string[]; exceptions: string[]; limits: string[] }[]; noMeasurableChecksRationale?: string | undefined; domainPayload: { color?: { roles: { name: string; value: string }[]; pairings: { foregroundRole: string; backgroundRole: string; usage: string }[] } | undefined; layout?: { contentPriority: string[]; adaptationRules: { condition: string; rule: string }[] } | undefined; style?: { composition: string; typography: string; color: string; interaction: string } | undefined; }; applicability: Applicability; examples: { kind: 'example' | 'misuse'; contentRef: string; uiType: UiType }[]; relations: { kind: 'compatible' | 'conflicting' | 'prerequisite' | 'alternative'; recordId: string; recordVersion: string }[]; provenance: Provenance; review: { status: 'draft' | 'reviewed'; reviewer: string; contentDigest: string; reviewedAt: string }; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc2",
+        "name": "Release manifest and publication gate",
+        "purpose": "s1 establishes envelopes and gates used by import, curation, query and maintenance; s2 implements ingestion. Publication requires nonempty problem/tradeoffs, checks with explicit limits (or an explicit no-measurable-check rationale), and domainPayload.color/layout/style for corresponding color/layout/style records. Semantic roles and pairings must reference declared roles; examples and misuse examples must be present for every declared platform. Domain validation rejects an empty placeholder.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "interfaceSketch": "interface ReleaseManifest { schemaVersion: 1; releaseId: string; label: string; createdAt: string; maintainer: string; records: { recordId: string; recordVersion: string; path: string; digest: string }[]; files: { path: string; digest: string; mediaType: string }[]; sourceManifestPath: string; noticesPath: string; coveragePath: string; reviewDigest: string; }\ninterface ValidationIssue { code: string; path: string; message: string; }\ninterface PublicationCheck { eligible: boolean; issues: ValidationIssue[]; manifestDigest: string; }\ninterface ReleaseAvailability { releaseId: string; state: 'published' | 'deprecated' | 'withdrawn'; reason?: string | undefined; catalogGeneration: number; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc3",
+        "name": "File-level source eligibility and attribution",
+        "purpose": "Keep file licenses, exact upstream revisions and notices with every derived asset; repository license alone never admits content.",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "interfaceSketch": "interface SourceFile { sourceId: string; repositoryUrl: string; revision: string; path: string; digest: string; licenseIds: string[]; licenseTextRefs: string[]; noticeRefs: string[]; attribution: string[]; modifications: string[]; retrievedAt: string; eligibility: 'eligible' | 'excluded' | 'unresolved'; eligibilityReason: string; reviewedBy: string; }\ninterface SourceManifest { schemaVersion: 1; policyVersion: string; files: SourceFile[]; }\ninterface ImportReport { admitted: string[]; excluded: { path: string; reason: string }[]; unresolved: string[]; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc4",
+        "name": "Coverage and editorial review evidence",
+        "purpose": "Publication requires actual reviewed domain/platform combinations and content-bound review, not a record count.",
+        "ownedByStory": "s3",
+        "consumedByStories": [
+          "s4",
+          "s5"
+        ],
+        "interfaceSketch": "interface CoverageCell { domain: string; uiType: UiType; records: { recordId: string; recordVersion: string }[]; evaluationCases: string[]; status: 'pass' | 'gap'; reviewer: string; notes: string; }\ninterface CoverageReport { schemaVersion: 1; candidateContentDigest: string; cells: CoverageCell[]; crossPlatformCases: { id: string; status: 'pass' | 'fail'; evidence: string[] }[]; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc5",
+        "name": "Read-only corpus retrieval IPC",
+        "purpose": "DI3 searches reviewed public knowledge; DI2 resolves exact references. No project identity or guideline mutation is accepted.",
+        "ownedByStory": "s4",
+        "consumedByStories": [
+          "s5"
+        ],
+        "interfaceSketch": "interface CorpusQuery { releaseId?: string | undefined; uiType: UiType; query: string; domains?: string[] | undefined; hardConstraints: { key: string; value: string | number | boolean }[]; limit: number; cursor?: string | undefined; }\ninterface CorpusHit { ref: EvidenceRef; record: GuidanceRecord; fit: { matched: string[]; caveats: string[]; conflicts: EvidenceRef[] }; }\ninterface CorpusQueryResult { releaseId: string; mode: 'hybrid' | 'lexical'; status: 'matched' | 'gap' | 'degraded'; hits: CorpusHit[]; gaps: { code: string; detail: string }[]; totalEligible: number; truncated: boolean; nextCursor?: string | undefined; }\ntype CorpusReadResult = { status: 'found'; ref: EvidenceRef; record: GuidanceRecord; availability: ReleaseAvailability } | { status: 'missing' | 'withdrawn' | 'unsupported-schema'; ref: EvidenceRef; reason: string };\ntype CorpusErrorCode = 'invalid-input' | 'unavailable-release' | 'unsupported-schema' | 'cursor-invalidated' | 'corpus-disabled' | 'internal-error' | 'conflict' | 'validation-failed';\ninterface CorpusFailure { ok: false; error: { code: CorpusErrorCode; message: string; retryable: boolean }; }\ntype CorpusResult<T> = { ok: true; value: T } | CorpusFailure;\ninterface CorpusReadApi { query(request: CorpusQuery): Promise<CorpusResult<CorpusQueryResult>>; read(ref: EvidenceRef): Promise<CorpusResult<CorpusReadResult>>; }\n// Proposed IPC: design.corpus.query, design.corpus.read, design.corpus.releases. Domain failures are serializable CorpusFailure results inside the existing IPC result envelope, never thrown typed errors or empty matches. Unexpected transport failure remains a transport error.",
+        "assumptions": []
+      },
+      {
+        "id": "sc6",
+        "name": "Release maintenance and withdrawal",
+        "purpose": "Stage verified updates with explicit publication, conflict detection and reversible default selection.",
+        "ownedByStory": "s5",
+        "consumedByStories": [],
+        "interfaceSketch": "interface PublishRequest { stagedPackageId: string; expectedCatalogGeneration: number; idempotencyKey: string; reviewDigest: string; }\ninterface PublishResult { releaseId: string; catalogGeneration: number; alreadyPublished: boolean; }\ninterface ReleaseDiff { before: string; after: string; added: string[]; changed: string[]; removed: string[]; licenseChanges: string[]; }\n// Proposed maintenance IPC: design.corpus.stage, validate, publish, diff, setDefault, withdraw. Exposed only as explicit local maintainer actions; read-only MCP cannot invoke these.",
+        "assumptions": []
+      },
+      {
+        "id": "sc7",
+        "name": "Catalog persistence and atomic release writer",
+        "purpose": "S004 owns the sole catalog layout, atomic serialized writer and startup recovery. S005 invokes this contract for maintenance and never writes private catalog/index files.",
+        "ownedByStory": "s4",
+        "consumedByStories": [
+          "s5"
+        ],
+        "assumptions": [],
+        "interfaceSketch": "interface AvailabilityEvent { id: string; releaseId: string; recordRef?: EvidenceRef | undefined; state: 'deprecated' | 'withdrawn'; reason: string; actor: string; timestamp: string; }\ninterface CatalogEntry { releaseId: string; manifestDigest: string; installedAt: string; state: 'published' | 'deprecated' | 'withdrawn'; }\ninterface CorpusCatalog { schemaVersion: 1; generation: number; defaultReleaseId?: string | undefined; releases: CatalogEntry[]; availabilityEvents: AvailabilityEvent[]; receipts: { idempotencyKey: string; requestDigest: string; committedGeneration: number; releaseId?: string | undefined }[]; }\ntype CatalogMutation = { kind: 'install'; verifiedStagingId: string; manifestDigest: string; makeDefault: boolean } | { kind: 'set-default'; releaseId: string } | { kind: 'availability'; event: AvailabilityEvent };\ninterface CatalogCommitRequest { expectedGeneration: number; idempotencyKey: string; mutation: CatalogMutation; }\ninterface CatalogCommitResult { generation: number; releaseId?: string | undefined; replayed: boolean; }\ninterface CorpusCatalogStore { snapshot(): Promise<CorpusCatalog>; commit(request: CatalogCommitRequest): Promise<CorpusResult<CatalogCommitResult>>; recover(): Promise<{ recoveredReleaseIds: string[]; discardedStagingIds: string[] }>; }"
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "Own canonical schema, version/hash specification, publication validation interfaces and fixtures. This is the nearest ancestor for all shared identity/release contracts; storage and curator UI are not implied."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "Own source adapters, local staging extraction, allowlist policy implementation and reproducible notices. Adapter specifics stay private; no unreviewed source contents enter published assets."
+      },
+      {
+        "storyId": "s3",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Own authored seed records, declarative specimens and reviewed coverage across ten domains and three UI types. A release names its maintainer/reviewer; unknown source sufficiency cannot be counted as coverage."
+      },
+      {
+        "storyId": "s4",
+        "owns": [
+          "sc5",
+          "sc7"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "Own daemon package reader, catalog read adapter, deterministic filtering/ranking, local embedding cache, cursor implementation and thin MCP read tools. Keep ranking weights and cache format private and versioned. Basic validated bundled-package installation is included so retrieval is independently testable. Includes the single-sourced config-catalog entry, typed config exposure, settings/reconciliation verification and catalog contract-test update. Owns vscode-plugin/package.json setting mirror and verification of the unchanged catalog-driven JetBrains SettingsView.kt, validated by manifest/catalog parity and settings render/round-trip checks. Sole owner of catalog file layout, serialized atomic commit, receipts and recovery via sc7. Basic installation and maintenance use exactly this writer."
+      },
+      {
+        "storyId": "s5",
+        "owns": [
+          "sc6"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc7"
+        ],
+        "internal": "Own update staging, atomic publish/default switch, withdrawal overlays, recovery, release diffs and cross-release regression evaluation. Consume existing reader contracts; never change DI2 guideline state. Uses sc7 for all catalog/default/availability changes; owns upstream update policy and diff orchestration only, not a second writer or recovery implementation."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "For a representative 1,000-record seed fixture, measure warm query p95 <=500 ms excluding local embedding inference; report embedding latency separately. This is a target, not a benchmark claim. If exceeded, optimize indexing without dropping eligible candidates; complete-result quality takes precedence. Cold index building is resumable and serial.",
+      "security": "Only eligible reviewed material is distributed. Validate all package paths and sizes, reject executable specimen content and remote includes; escape rendering. No arbitrary URL fetching at query time. Unknown hard constraints return gaps. Do not mix project-private data into the public corpus or embedding index.",
+      "observability": "Log release ID, query mode, eligible/matched counts, filter/gap reasons, index fingerprint and validation codes; avoid storing user query/brief text by default. Expose install/index health and explicit degraded retrieval, rather than silent fallback.",
+      "durability": "Immutable package bytes plus atomic catalog and append-only availability events. Rebuild derived indexes on checksum/model mismatch. Inject crashes between each publication boundary; old release remains readable or a newly complete release becomes visible, never partial content. Retain pinned references across rollback; policy withdrawal returns tombstones."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "A — Record and release contracts",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "Establish the shared schema and immutable identity rules first. Verify S001 publication rejection and complete metadata/lineage read round-trip. Completion now requires the implemented candidate identity to match the amended normative formula, independently regenerated candidate/review/release golden vectors, and role-swap plus missing/duplicate coverage-entry regressions. The current projected-pairs implementation is explicitly incomplete against this revision. S001 must not complete, and S003/S004 must not consume candidate identities, until those checks and independent code review pass.",
+          "backwardCompat": "No existing repo entity schema or registry behavior changes.",
+          "featureFlag": null
+        },
+        {
+          "name": "B — Eligible source ingestion",
+          "includesStories": [
+            "s2"
+          ],
+          "rationale": "Prove eligibility, pinned-source extraction and notices against mixed-license fixtures.",
+          "backwardCompat": "Existing assets and build copy remain compatible; candidate downloads are excluded.",
+          "featureFlag": null
+        },
+        {
+          "name": "C — Reviewed seed corpus",
+          "includesStories": [
+            "s3"
+          ],
+          "rationale": "Review each domain/platform cell and content-bound examples before distribution. Verify publication rejects gap/missing cells and draft or unreviewed inferred records are absent from published retrieval.",
+          "backwardCompat": "Existing runtime resources retain their layout; add a separate corpus asset subtree.",
+          "featureFlag": null
+        },
+        {
+          "name": "D — Daemon retrieval pilot",
+          "includesStories": [
+            "s4"
+          ],
+          "rationale": "Expose read-only query, exact lookup and health with explicit gaps and degraded mode.",
+          "backwardCompat": "Additive IPC/MCP methods; existing search and repo registration unchanged. Disabled until a validated seed release is installed.",
+          "featureFlag": "designCorpus.enabled (proposed config key)"
+        },
+        {
+          "name": "E — Release maintenance",
+          "includesStories": [
+            "s5"
+          ],
+          "rationale": "Add update/diff/withdrawal, fault recovery and pinned-reference regression tests before enabling broad use.",
+          "backwardCompat": "Old release references remain resolvable or explicitly withdrawn; no implicit guideline edits.",
+          "featureFlag": "designCorpus.enabled (proposed config key)"
+        }
+      ],
+      "orderingRationale": "Matches approved s1→s2→s3→s4→s5 and every contract owner precedes consumers. DI2/DI3 consume published contracts without becoming DI1 story dependencies.",
+      "riskyBits": [
+        {
+          "area": "Eligibility and coverage",
+          "why": "Repository license labels and record counts do not establish file reuse rights or usable native-mobile guidance.",
+          "mitigation": "Require file-level manifests, named reviewers and all ten-domain/three-platform coverage cells; fill gaps with independently authored eligible guidance before release."
+        },
+        {
+          "area": "Pinned evidence and withdrawal",
+          "why": "Mutable defaults, interrupted publication or license withdrawal can invalidate historical references.",
+          "mitigation": "Immutable hashes, generation checks, atomic publish recovery and explicit tombstones; test N/N+1, rollback and withdrawal with DI2-compatible fixtures."
+        },
+        {
+          "area": "Retrieval quality",
+          "why": "Repo search is not a drop-in corpus API; semantic service availability and platform conflicts affect recommendation quality.",
+          "mitigation": "Use full eligible seed-set filtering/scoring, explicit unsupported constraints/degradation, reviewed positive/negative retrieval fixtures and model-versioned indexes."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Versioned repository documentation",
+        "oneLineSummary": "Represent the corpus as registered repository documents and reuse document retrieval.",
+        "approach": "Maintain curated records and notices as documents in a corpus repository registered through repo.add. Existing document indexing and hybrid retrieval provide discovery.\n\nAdd release pins and eligibility metadata around indexed documents. Historical releases need distinct snapshots and explicit cross-repository access so project dependency closures do not accidentally hide or expose material.",
+        "pros": [
+          "Reuses existing document indexing and search surfaces."
+        ],
+        "cons": [
+          "Repo/entity identity and dependency-closure scoping do not directly represent global immutable corpus versions.",
+          "Document ranking does not enforce provenance or platform eligibility; dedicated gates remain necessary."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [],
+        "reasonRejected": "Retain rejection: generic retrieval is precedent, but repository coupling is unnecessary."
+      },
+      {
+        "id": "a2",
+        "name": "Immutable release packages with daemon-owned catalog",
+        "oneLineSummary": "Publish content-addressed corpus packages and build isolated, disposable search indexes.",
+        "approach": "Curators publish validated immutable packages containing records, source manifest, notices, examples and coverage review. The daemon installs packages and owns their catalog, state overlay and retrieval; packages are independent of code repositories.\n\nUse exact structured filtering and full eligible-record lexical scoring for the seed corpus, with local semantic ranking when available. Indexes are rebuildable derivatives keyed by release and model; every result resolves back to immutable evidence. Reuse daemon IPC and provider abstractions, while leaving repo entity storage unchanged.",
+        "pros": [
+          "Release pins reproduce evidence without depending on repo registration.",
+          "Package validation and publication gates apply equally to records, notices and examples.",
+          "Index failure cannot rewrite source evidence or approved project decisions."
+        ],
+        "cons": [
+          "Requires new corpus contracts, installation lifecycle and search adapter.",
+          "Semantic ranking quality requires evaluation and local embedding availability; degraded mode must be explicit."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [],
+        "reasonRejected": ""
+      },
+      {
+        "id": "a3",
+        "name": "Database-first mutable corpus with revision history",
+        "oneLineSummary": "Author and query records directly in a dedicated daemon database with revision tables.",
+        "approach": "Store drafts, reviews, revisions and published records in a domain database with transactional release membership. Export packages as a secondary distribution surface.\n\nAll reads resolve release membership before ranking; publication snapshots are immutable despite mutable authoring records. The database becomes the authoritative recovery and migration boundary for both content and release history.",
+        "pros": [
+          "Transactional authoring and release metadata share one owner.",
+          "Incremental curator edits do not require rebuilding an entire authoring package."
+        ],
+        "cons": [
+          "Backup and migrations must preserve every historical record and bundled notice.",
+          "Adds a mutable authoring subsystem beyond the first release's curated dataset needs."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [],
+        "reasonRejected": "Retain rejection: adds mutable-authoring and migration complexity beyond the curated first release."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": [],
+    "componentDependencyDefinition": {
+      "components": [
+        {
+          "id": "consumer",
+          "label": "DI2 / DI3 / MCP consumers"
+        },
+        {
+          "id": "daemon",
+          "label": "Daemon corpus service (new)"
+        },
+        {
+          "id": "package",
+          "label": "Immutable corpus release"
+        },
+        {
+          "id": "index",
+          "label": "Disposable local index"
+        },
+        {
+          "id": "curator",
+          "label": "Eligibility and editorial review"
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "consumer",
+          "to": "daemon",
+          "label": "query / pinned read via IPC"
+        },
+        {
+          "from": "daemon",
+          "to": "package",
+          "label": "authoritative evidence"
+        },
+        {
+          "from": "daemon",
+          "to": "index",
+          "label": "derived ranking"
+        },
+        {
+          "from": "index",
+          "to": "package",
+          "label": "release and content hashes"
+        },
+        {
+          "from": "package",
+          "to": "curator",
+          "label": "publication requires approval"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[1]",
+      "quotedText": "Profiles locate daemon RPC modules and src/db graph/lance/search/doc-summaries. The stored DB import graph reports 159 incoming and 13 outgoing edges, with daemon/index.ts among importers; only 12 of 73 importing files are returned, and graph coverage is not established."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/docs-retrieval.ts:115"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "copy-assets.mjs:28"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/server.ts:187"
+    },
+    {
+      "id": "c6",
+      "kind": "convention",
+      "ref": "AGENTS.md:135"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/DEF-7e0ae92e8f3d3c3e.json"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "docs/plans/design-intelligence-prd.md:83"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/shared/paths.ts:7"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/config/config-catalog.ts:77"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/config/__tests__/config-catalog-contract.test.ts:88"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/config/reconcile.ts:330"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts:39"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "vscode-plugin/package.json:163"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt:95"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/config/settings-catalog.ts:77"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt:73"
+    },
+    {
+      "id": "c18",
+      "kind": "doc",
+      "ref": "plans/design-intelligence-di1-s1-digest-amendment.md"
+    },
+    {
+      "id": "c19",
+      "kind": "prior-artifact",
+      "ref": "plans/reviews/design-intelligence-di1-original-approved-hld.json"
+    }
+  ]
+}

@@ -72,6 +72,30 @@ class DaemonStatusGatewayTest {
         assertTrue(s.running)
     }
 
+    // ---- storeFailure (Epic c2ba6fa6, Story s4) ------------------------------
+
+    @Test
+    fun `daemonStatus carries the store failure cause when the payload has storeFailure, and null without it`() {
+        val cause = "Another process opened and closed the graph store. Restart the daemon."
+        val failed = gsonStatus() + mapOf(
+            "repos" to emptyList<Any?>(),
+            "storeFailure" to mapOf("kind" to "locks-lost", "at" to "2026-10-11T10:00:00.000Z", "operation" to "request search", "cause" to cause),
+        )
+        val s = (DaemonGatewayImpl(RecordingRpc { _, _ -> DaemonResult(ok = true, data = failed) }).daemonStatus() as DaemonStatusResult.Loaded).status
+        assertEquals(cause, s.storeFailureCause)
+        assertEquals(0, s.repoCount)
+        assertEquals("Store" to "FAILED — $cause", ai.insors.insrc.jetbrains.ops.storeFailureRow(s))
+
+        // A healthy daemon (and one that predates the field) sends no storeFailure.
+        val healthy = (DaemonGatewayImpl(RecordingRpc { _, _ -> DaemonResult(ok = true, data = gsonStatus()) }).daemonStatus() as DaemonStatusResult.Loaded).status
+        assertNull(healthy.storeFailureCause)
+        assertNull(ai.insors.insrc.jetbrains.ops.storeFailureRow(healthy))
+
+        // A malformed field never throws: it reads as absent.
+        val odd = gsonStatus() + mapOf("storeFailure" to "yes")
+        assertNull((DaemonGatewayImpl(RecordingRpc { _, _ -> DaemonResult(ok = true, data = odd) }).daemonStatus() as DaemonStatusResult.Loaded).status.storeFailureCause)
+    }
+
     // ---- Stopped vs Unavailable ---------------------------------------------
 
     @Test

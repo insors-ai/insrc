@@ -27,6 +27,10 @@ export function renderReviewReport(r: ReviewReport): string {
 		`### ${VERDICT_EMOJI[r.verdict]} Review \`${r.verdict.toUpperCase()}\` — ${r.artifact} (${r.stage})`,
 	);
 	lines.push('');
+	if (r.sourceRootFallback !== undefined) {
+		lines.push(`> The source roots could not be derived from the index: ${r.sourceRootFallback}. The whole repository root was searched in their place.`);
+		lines.push('');
+	}
 	if (r.findings.some(f => f.outcome !== undefined)) return renderTemplateReport(r, lines);
 
 	lines.push(

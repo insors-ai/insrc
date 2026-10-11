@@ -1,0 +1,225 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791736530471-xvi2gd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-11T16:35:30.515Z",
+    "model": "claude:opus",
+    "elapsedMs": 90906,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s1",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/analyze/explore/__tests__/freeform-probe-scope.test.ts",
+        "src/analyze/explore/__tests__/phase5-explorations-params.test.ts",
+        "src/cli/services/maintenance.ts",
+        "src/db/graph/__tests__/helpers/store-child.ts",
+        "src/workflow/review/__tests__/probe-source-roots.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/cli/services/maintenance.ts:1",
+            "message": "I couldn't judge adherence because the review was given the wrong code. None of the five changed files is S001 code. They are uncommitted working-tree edits from Epic c2ba6fa6 Story s4: temporary graph-store paths in tests, and the steering refresh now asking the daemon for the repo list. The S001 corpus code is in commits a8fbd5b8..bdbb7267 under src/design/corpus/, and none of it was presented. These unrelated edits are not an S001 departure, since t6 says to preserve unrelated changes. An empty result here would therefore not mean S001 passed. Re-run the code review grounded on a8fbd5b8^..bdbb7267 (or with the unrelated working-tree changes stashed) to judge contracts.ts, canonical.ts, validate.ts and index.ts against the LLD and PLAN.",
+            "expectationRef": "PLAN t6: 'Diff remains within S001 modules/tests and tracked artifacts; no completion is claimed before build validation and independent code review.'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/review/__tests__/probe-source-roots.test.ts:18",
+            "message": "The added store-isolation block re-imports `node:fs`, `node:os` and `node:path` under aliases (`mkdtempSyncRaw`, `rmSyncForStore`, `tmpdirForStore`, `joinForStore`), but the file already imports `mkdtempSync`, `rmSync`, `tmpdir` and `join` a few lines below. It also imports `after` from `node:test` in a separate statement next to the existing `test` import. This produces duplicate, oddly aliased imports of the same modules, which is not how these test files usually import. Merge the new names into the existing import statements.",
+            "expectationRef": "module-idiom: one import statement per module, no alias duplicates",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/explore/__tests__/freeform-probe-scope.test.ts:12",
+            "message": "The new code adds `after` in a second `node:test` import and gives the `node:fs`/`node:os`/`node:path` names suffixed aliases (`mkdtempSyncRaw`, `joinForStore`, …). There is no name clash in this file that needs those aliases. This looks like mechanically injected boilerplate rather than the file's own import style. Fold `after` into the existing `node:test` import and use the plain names.",
+            "expectationRef": "module-idiom: one import statement per module, no alias duplicates",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/explore/__tests__/phase5-explorations-params.test.ts:8",
+            "message": "The same injected boilerplate appears here as in the other two test files: a second `node:test` import for `after` and aliased fs/os/path imports with no name clash. Fold the imports together.",
+            "expectationRef": "module-idiom: one import statement per module, no alias duplicates",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/explore/__tests__/phase5-explorations-params.test.ts:27",
+            "message": "The same 11-line temp-graph-store setup and teardown (mkdtemp → setGraphStorePath → afterAll closeGraphStore + rm) is copied word for word into three test files, each with the same comment. Test-isolation setup in this repo lives in shared files under `__tests__/helpers/` (e.g. `src/db/graph/__tests__/helpers/`). One shared helper would keep the three copies from drifting apart.",
+            "expectationRef": "module-idiom: shared test fixtures under __tests__/helpers",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/db/graph/__tests__/helpers/store-child.ts:215",
+            "message": "The new `repo.list` handler passes `null as never` to `listRepos` and calls it through an inline dynamic `import()`. The other handlers in this map call statically imported functions with typed params. The `as never` cast turns off type checking of the call, so if `listRepos` starts using its argument, nothing will flag it. Prefer a static import and a typed argument, or document why the argument is unused.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:314",
+            "message": "New exported function listReposFromDaemon (asks the daemon for `repo.list` over RPC) has an EMPTY testsReaching in the grounding, so no test is shown to exercise it. Note: the working tree has an untracked src/cli/services/__tests__/steering-refresh-through-daemon.test.ts that may cover it, but that file is not in the grounding. Its presence and pass-state are unverified.",
+            "expectationRef": "listReposFromDaemon",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:232",
+            "message": "runUpdateSteeringRefresh changed: it now defaults `listRepos` to listReposFromDaemon instead of opening the registry in-process, and it fails, logs and defers when no daemon is running. testsReaching is EMPTY for this change, so neither the default path (daemon RPC) nor the no-daemon failure path is shown as exercised.",
+            "expectationRef": "runUpdateSteeringRefresh (daemon-backed listRepos default + no-daemon failure path)",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/db/graph/__tests__/helpers/store-child.ts:215",
+            "message": "A new 'repo.list' handler was added to the store-child test daemon. testsReaching is EMPTY, so no test is shown driving this handler. It is test infrastructure, but it is new behaviour with no grounded consumer.",
+            "expectationRef": "store-child 'repo.list' handler",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/review/__tests__/probe-source-roots.test.ts:34",
+            "message": "Three existing test files now redirect the graph store to a temporary path with setGraphStorePath plus an afterAll cleanup: probe-source-roots, freeform-probe-scope and phase5-explorations-params. These are test files, so an empty testsReaching is not a gap. However, with no build record, it is unverified that they still pass and that they no longer touch the default store. The guard test that would prove the second point (no-live-store-in-tests.test.ts, untracked) is not in the grounding. Status: present but unverified.",
+            "expectationRef": "temp-store isolation in modified test files",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:1",
+            "message": "Promised test is absent from the grounding. GROUNDING MISMATCH: the changed set is the uncommitted working-tree diff for a store-isolation change (Epic c2ba6fa6 s4), not the corpus Story's build commits (26634ca9..bdbb7267). This promised test may exist in those commits, but nothing here shows it. Re-ground the review on the s1 commits.",
+            "expectationRef": "contracts.test.ts — closed schema, version, ID/domain/UI enums and original fixture acceptance",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:1",
+            "message": "Promised test is absent from the grounding, which is scoped to unrelated working-tree changes. See the grounding-mismatch note above.",
+            "expectationRef": "canonical.test.ts — independent byte/digest vectors and invalid JSON/limit boundaries",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:1",
+            "message": "Promised test is absent from the grounding, which is scoped to unrelated working-tree changes.",
+            "expectationRef": "digest-chain.test.ts — content/review/release binding and ordering",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:1",
+            "message": "Promised test is absent from the grounding, which is scoped to unrelated working-tree changes.",
+            "expectationRef": "record-validation.test.ts — completeness, authorship, conditional payloads and platform examples",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:1",
+            "message": "Promised test is absent from the grounding, which is scoped to unrelated working-tree changes.",
+            "expectationRef": "record-roundtrip.test.ts — all sc1 fields preserved and review-staleness rejection",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:1",
+            "message": "Promised test is absent from the grounding, which is scoped to unrelated working-tree changes.",
+            "expectationRef": "manifest-validation.test.ts — in-memory exact inventory, portable paths, relations DAG and tamper cases",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:1",
+            "message": "Promised test is absent from the grounding, which is scoped to unrelated working-tree changes.",
+            "expectationRef": "publication-check.test.ts — downstream assessment composition fails closed and preserves issue diagnostics",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:1",
+            "message": "Promised test is absent from the grounding, which is scoped to unrelated working-tree changes. Commit bdbb7267 ('verify corpus acceptance and isolated compiled module') suggests it may exist, but that is not verifiable from this grounding.",
+            "expectationRef": "module-isolation.test.ts — compiled import and valid/invalid preflight without external I/O",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:1",
+            "message": "Promised smoke check has no evidence: there is no build record, so strict NodeNext compilation is unverified.",
+            "expectationRef": "npm run build — strict NodeNext compilation",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/maintenance.ts:1",
+            "message": "Promised test is absent from the grounding, which is scoped to unrelated working-tree changes.",
+            "expectationRef": "acceptance-coverage.test.ts — ac1/ac2 across record-to-manifest pipeline",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/review/__tests__/probe-source-roots.test.ts:30",
+            "message": "The same 12-line temporary-store block (mkdtemp, setGraphStorePath, an afterAll that calls closeGraphStore and rmSync, plus four aliased imports) is pasted verbatim into three test files. If the store-isolation rule changes, for example a lance path or an env override, each copy has to be found and edited by hand. A shared helper under src/db/graph/__tests__/helpers/ (e.g. useTemporaryGraphStore()) would keep the rule in one place. The awkward import aliases (mkdtempSyncRaw, joinForStore, tmpdirForStore) also exist only to avoid name clashes in files that already import the same functions.",
+            "counterpartRef": "src/analyze/explore/__tests__/freeform-probe-scope.test.ts (identical STORE_DIR/setGraphStorePath/afterAll block); src/analyze/explore/__tests__/phase5-explorations-params.test.ts (same block)",
+            "confidence": "breach"
+          }
+        ]
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 13,
+      "med": 0,
+      "low": 8
+    }
+  }
+}

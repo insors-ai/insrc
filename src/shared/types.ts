@@ -907,6 +907,14 @@ export interface DaemonStatus {
    *  large delete bursts inflate the file until compact-and-replace). */
   lmdbFileSizeMb?:   number;
   /**
+   * Present ONLY when the graph store has failed in the daemon's process
+   * (Epic c2ba6fa6, Story s4); absent while it is healthy, so a consumer that
+   * does not know the field sees no change. `cause` is a sentence for the user
+   * that states what happened; the daemon must be restarted to clear it. When
+   * it is present, `repos` is empty: the repository list could not be read.
+   */
+  storeFailure?:     { kind: 'locks-lost'; at: string; operation: string; cause: string };
+  /**
    * The daemon's currently-installed source commit (Story S002 / sc2): the full
    * `git rev-parse HEAD` of the daemon checkout root, or `""` when undeterminable
    * (non-git/absent root, or git unavailable). A caller compares it against the

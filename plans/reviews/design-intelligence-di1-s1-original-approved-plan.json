@@ -1,0 +1,326 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791734933958-hfovhm",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-11T16:10:45.216Z",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 111244,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "epicSlug": "di1-open-source-design-corpus-retrieval",
+    "storyId": "s1",
+    "lldRunId": "wf-1791734517458-d81b91",
+    "lldEffectiveHash": "335cb7e3dd53d14964950d1a2d9336c8c8a0cfa28307646a8fd410b62e535262",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-11T16:16:11.482Z",
+    "rangeBase": "9c01ab3577589743de872269013c15fad05f99c4"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build the corpus's foundational schemas, deterministic identities and pure validation pipeline. Tests will prove incomplete or stale content cannot pass preflight and that valid records retain their full design rationale and provenance. Ingestion, curation and runtime services remain later stories."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define sc1/sc2 runtime schemas and types",
+        "summary": "Add proposed src/design/corpus/contracts.ts with closed TypeBox schemas and Static-derived types matching approved sc1/sc2; pin all ten domain labels, UI types, IDs, digest formats, optional field semantics, draft/publication distinctions and ValidationIssue categories. Add shared independently authored test fixtures under __tests__/fixtures.ts.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "All approved sc1/sc2 fields are represented once in runtime/static schemas; no unknown-property stripping, coercion or default injection.",
+          "Known valid foundation/pattern/style-recipe records decode without losing fields; invalid schema versions and structural omissions return stable issues.",
+          "Existing TypeBox/AJV dependencies suffice; no package manifest change."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "contracts.test.ts — closed schema, version, ID/domain/UI enums and original fixture acceptance"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement canonical bytes and digest chain",
+        "summary": "Add canonical.ts with bounded pure canonical serialization and record/candidate/review/release hashes in the exact approved order. Pin golden fixtures from explicit canonical bytes and independently computed SHA-256 values. Keep raw-file hashes distinct from canonical semantic digests.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Key order and manifest inventory order do not affect identity; meaningful record-array order does.",
+          "recordVersion excludes only recordVersion/review; candidate excludes manifest and coverage envelope; release hashes manifest without releaseId.",
+          "Invalid Unicode, non-JSON values, accessors, cycles, oversized input and non-finite/unsafe numbers are rejected before unbounded traversal or content hashing."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "canonical.test.ts — independent byte/digest vectors and invalid JSON/limit boundaries"
+          },
+          {
+            "level": "unit",
+            "name": "digest-chain.test.ts — content/review/release binding and ordering"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Validate guidance completeness and review binding",
+        "summary": "Add record validation in validate.ts using schema-first checks followed by domain, provenance, UI-type specimen and review invariants. Preserve authored values and return deterministic JSON Pointer issues; do not evaluate license policy or generate guidance.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Missing provenance, applicability, required examples, domain payloads, measurable-check limits or explicit no-check rationale prevents admission.",
+          "Each declared UI type has example and misuse references; Color/Layout/Visual style conditional payloads are enforced together when applicable.",
+          "Draft/stale/incomplete review cannot pass publication checks; inferred authorship stays inferred.",
+          "All identity, version, relations, rationale and lineage fields survive validated JSON round-trip."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "record-validation.test.ts — completeness, authorship, conditional payloads and platform examples"
+          },
+          {
+            "level": "unit",
+            "name": "record-roundtrip.test.ts — all sc1 fields preserved and review-staleness rejection"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Validate release inventory and exact references",
+        "summary": "Extend validate.ts with pure in-memory manifest/inventory validation: closed membership, regular files, portable paths, raw-byte digests, unique record identities and exact acyclic relations. Verify the digest sequence and referenced source/notices/coverage files without implementing source or editorial policies.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Reject missing/undeclared/duplicate/case-colliding entries, unsafe paths and nonregular files.",
+          "Manifest record pairs match decoded bytes; relations resolve exactly, with duplicate/self/cyclic references rejected.",
+          "Verify file, record, candidate, review and release digests; no manifest self hash or final releaseId in coverage.",
+          "Format limits return explicit issues instead of silently truncating records or inventory.",
+          "Coverage is inspected only as canonical JSON for digest/candidate binding; no licensing allowlist or editorial coverage algorithm is implemented."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "manifest-validation.test.ts — in-memory exact inventory, portable paths, relations DAG and tamper cases"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Compose publication preflight and expose the pure module",
+        "summary": "Add digest-bound eligibility/coverage assessment composition and public barrel index.ts. Require both downstream stages without importing their future implementations. Export foundational schemas/types and pure validation/hash helpers, documenting distinctions between draft validation, preflight eligibility and actual publication.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Missing, duplicate, failed, stale or contradictory assessments yield eligible=false with stable issues; matching successful fixtures yield eligible=true.",
+          "PublicationCheck.manifestDigest is canonical manifest hash when computable, otherwise empty; errors do not fabricate hashes.",
+          "Imports and calls perform no file/DB/network/provider access or catalog writes; no runtime approval claims are made.",
+          "Only sc1/sc2 foundational surfaces are exported; no ingestion, retrieval, settings or publication mutations are added."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "publication-check.test.ts — downstream assessment composition fails closed and preserves issue diagnostics"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Verify contract coverage and strict build integration",
+        "summary": "Complete the LLD acceptance matrix with cross-module contract tests, run the focused corpus suite and TypeScript build, and smoke-import compiled out/design/corpus/index.js without daemon/DB/provider setup. Record results for independent post-build review; preserve unrelated changes.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "ac1 and ac2 each have passing proving tests; expected digest bytes/values are independent of the helper under test.",
+          "Focused unit/contract tests and npm run build pass, or unrelated pre-existing failures are isolated and reported accurately.",
+          "Compiled import has no live-store/provider requirements; no test touches live ~/.insrc data.",
+          "Diff remains within S001 modules/tests and tracked artifacts; no completion is claimed before build validation and independent code review.",
+          "An isolated process exercises valid and invalid preflight with external I/O instrumented or forbidden; asserts no filesystem writes, network/provider calls or live-store creation."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "module-isolation.test.ts — compiled import and valid/invalid preflight without external I/O"
+          },
+          {
+            "level": "smoke",
+            "name": "npm run build — strict NodeNext compilation"
+          },
+          {
+            "level": "integration",
+            "name": "acceptance-coverage.test.ts — ac1/ac2 across record-to-manifest pipeline"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "record-schema: missing/unknown/wrong-type fields and each authorship branch",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "domain-validation: color roles/pairings, layout adaptation, visual style and platform example/misuse matrix",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-binding: draft exclusion and stale-content rejection",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "issue-format: stable codes/pointers, deterministic order, no raw content",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "canonical-golden: key reorder, numeric/string edge cases, manifest sort and meaningful array order",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "digest-chain: record→candidate→review→release no self reference, changed-content invalidation",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "invalid-input: accessors, cyclic objects, unicode/numeric/size limits",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "record-roundtrip: all identity/version/relation/rationale/provenance fields retained",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "manifest-inventory: exact bytes/path/membership, digest tamper, duplicate/case collision, missing target and relation-cycle rejection",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "publication-composition: missing/duplicate/failed/stale assessments always block; valid fixed assessments pass",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "npm run build",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Import compiled corpus barrel in a fresh process with no daemon/DB/provider setup",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails GuidanceRecord and dataModelChanges GuidanceRecord/EvidenceRef (LLD.md:41,112,122)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails ReleaseManifest/PublicationCheck and interactionWithShared sc2 (LLD.md:65,87,137)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges Canonical digest format v1 (LLD.md:132)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths and dataModelChanges ValidationIssue (LLD.md:127,144)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy acceptanceMapping and testLevels (LLD.md:190)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 hldContextSlice boundary and adjacentBoundaries; testStrategy smoke integration (LLD.md:24,190)"
+    }
+  ]
+}

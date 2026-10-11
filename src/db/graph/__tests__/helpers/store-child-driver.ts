@@ -100,3 +100,29 @@ export async function spawnStoreChild(storePath: string, opts: { raw?: boolean; 
 		},
 	};
 }
+
+/**
+ * The sequence that removes a process's locks: process A opens the store and
+ * writes; A opens and closes a second descriptor on the lock file (unless
+ * `touchLockFile` is false, the control case); process B opens, writes and
+ * closes. `raw` — both open the path with the library directly, so A has never
+ * read. Returns A, still running; B is gone.
+ */
+export async function runLockLossSequence(storePath: string, opts: { touchLockFile?: boolean; raw?: boolean } = {}): Promise<StoreChild> {
+	const raw = opts.raw === true;
+	const must = async (child: StoreChild, cmd: StoreChildCommand): Promise<void> => {
+		const r = await child.send(cmd);
+		if (!r.ok) throw new Error(`${cmd.op} failed: ${r.message}`);
+	};
+	const a = await spawnStoreChild(storePath, { raw });
+	await must(a, { op: 'open' });
+	await must(a, { op: 'put', key: 'a' });
+	if (opts.touchLockFile !== false) await must(a, { op: 'touch-lock-file' });
+
+	const b = await spawnStoreChild(storePath, { raw });
+	await must(b, { op: 'open' });
+	await must(b, { op: 'put', key: 'b' });
+	await must(b, { op: 'close' });
+	await b.kill();
+	return a;
+}

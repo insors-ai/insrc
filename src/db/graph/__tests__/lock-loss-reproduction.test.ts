@@ -39,7 +39,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { killAllStoreChildren, spawnStoreChild } from './helpers/store-child-driver.js';
+import { killAllStoreChildren, runLockLossSequence } from './helpers/store-child-driver.js';
 import type { StoreChild } from './helpers/store-child-driver.js';
 
 const base = mkdtempSync(join(tmpdir(), 'insrc-lock-loss-'));
@@ -54,28 +54,8 @@ const LOCK_FAILURE = -30775;   // MDB_LOCK_FAILURE (lmdb-js)
 const EINVAL       = 22;
 const BAD_RSLOT    = /MDB_BAD_RSLOT/;
 
-async function ok(child: StoreChild, cmd: Parameters<StoreChild['send']>[0]): Promise<void> {
-	const r = await child.send(cmd);
-	assert.ok(r.ok, `${cmd.op} failed: ${r.ok ? '' : r.message}`);
-}
-
-/** Process A opens and writes; then process B opens, writes and closes.
- *  `touchLockFile` — whether A opens and closes a second descriptor on the
- *  lock file in between. `raw` — whether A opens the path with the library
- *  directly, and so has never read (B then opens it the same way). Returns A,
- *  still running. */
-async function sequence(storePath: string, touchLockFile: boolean, raw = false): Promise<StoreChild> {
-	const a = await spawnStoreChild(storePath, { raw });
-	await ok(a, { op: 'open' });
-	await ok(a, { op: 'put', key: 'a' });
-	if (touchLockFile) await ok(a, { op: 'touch-lock-file' });
-
-	const b = await spawnStoreChild(storePath, { raw });
-	await ok(b, { op: 'open' });
-	await ok(b, { op: 'put', key: 'b' });
-	await ok(b, { op: 'close' });
-	await b.kill();
-	return a;
+function sequence(storePath: string, touchLockFile: boolean, raw = false): Promise<StoreChild> {
+	return runLockLossSequence(storePath, { touchLockFile, raw });
 }
 
 describe('store library after another process removed its locks', { skip: process.platform === 'win32' }, () => {

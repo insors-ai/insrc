@@ -29,7 +29,10 @@ import { createInterface } from 'node:readline';
 import { open } from 'lmdb';
 import type { Database, RootDatabase } from 'lmdb';
 
-import { closeGraphStore, getGraphStore, setGraphStorePath } from '../../store.js';
+import {
+	closeGraphStore, getGraphStore, getStoreHealth, setGraphStorePath, setWriteProbeAfterMsForTests,
+	withWriteTxn, withWriteTxnSync,
+} from '../../store.js';
 
 export const REPLY_PREFIX = '@@store-child ';
 
@@ -44,11 +47,20 @@ export type StoreChildCommand =
 	| { op: 'txn-sync'; key: string }
 	/** `transaction` on the root database, raced against `waitMs`. */
 	| { op: 'txn-async'; key: string; waitMs: number }
-	| { op: 'close' };
+	| { op: 'close' }
+	/** `withWriteTxn`, with the wait before the probe shortened to `probeAfterMs`. */
+	| { op: 'wrapper-async'; key: string; probeAfterMs: number }
+	/** `withWriteTxnSync`. */
+	| { op: 'wrapper-sync'; key: string }
+	/** `getGraphStore()` again. */
+	| { op: 'get-store' }
+	/** `closeGraphStore()`, reporting whether the library's close was called. */
+	| { op: 'wrapper-close' }
+	| { op: 'health' };
 
 export type StoreChildReply =
 	| { ok: true; value?: unknown; settled?: boolean }
-	| { ok: false; code?: number | string; message: string };
+	| { ok: false; code?: number | string; name?: string; elapsedMs?: number; message: string };
 
 const storePath = process.argv[2];
 if (storePath === undefined) throw new Error('usage: store-child <store path> [raw]');
@@ -105,6 +117,34 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 			]);
 			return { ok: true, settled: outcome === 'settled' };
 		}
+		case 'wrapper-async': {
+			setWriteProbeAfterMsForTests(cmd.probeAfterMs);
+			const started = Date.now();
+			try {
+				await withWriteTxn(s => { void s.meta.put(cmd.key, '1'); });
+			} catch (e) {
+				throw Object.assign(e as Error, { elapsedMs: Date.now() - started });
+			}
+			return { ok: true };
+		}
+		case 'wrapper-sync': {
+			const s = await getGraphStore();
+			withWriteTxnSync(s, () => { s.meta.putSync(cmd.key, '1'); });
+			return { ok: true };
+		}
+		case 'get-store':
+			await getGraphStore();
+			return { ok: true };
+		case 'wrapper-close': {
+			const root = opened().root;
+			let libraryCloseCalls = 0;
+			const real = root.close.bind(root);
+			root.close = (() => { libraryCloseCalls++; return real(); }) as typeof root.close;
+			await closeGraphStore();
+			return { ok: true, value: { libraryCloseCalls } };
+		}
+		case 'health':
+			return { ok: true, value: getStoreHealth() };
 		case 'close':
 			if (raw) await opened().root.close(); else await closeGraphStore();
 			store = undefined;
@@ -126,8 +166,14 @@ lines.on('line', line => {
 		try {
 			reply(await run(JSON.parse(line) as StoreChildCommand));
 		} catch (e) {
-			const err = e as { code?: number | string; message?: string };
-			reply({ ok: false, ...(err.code !== undefined ? { code: err.code } : {}), message: String(err.message ?? e) });
+			const err = e as { code?: number | string; name?: string; message?: string; elapsedMs?: number };
+			reply({
+				ok: false,
+				...(err.code !== undefined ? { code: err.code } : {}),
+				...(err.name !== undefined ? { name: err.name } : {}),
+				...(err.elapsedMs !== undefined ? { elapsedMs: err.elapsedMs } : {}),
+				message: String(err.message ?? e),
+			});
 		}
 	});
 });

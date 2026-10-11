@@ -140,6 +140,25 @@ export class LmdbStoreError extends Error {
 	}
 }
 
+/**
+ * This process's store can no longer be used: its locks were removed by
+ * another process (see `StoreHealth`). The message states that cause. It does
+ * NOT repeat the library's own text, which blames a system limit that is not
+ * involved; the library's text is kept in the health record for the log.
+ */
+export class LmdbStoreLocksLostError extends LmdbStoreError {
+	constructor(operation: string, cause?: unknown) {
+		super(
+			`The graph store can no longer be used by this process (found during: ${operation}). ` +
+			`Its locks were removed by another process that opened and closed the store ` +
+			`after this process had lost its file lock on the store's lock file. ` +
+			`Nothing more can be read or written until the daemon is restarted.`,
+			cause,
+		);
+		this.name = 'LmdbStoreLocksLostError';
+	}
+}
+
 export class LmdbStoreLockConflict extends LmdbStoreError {
 	constructor(path: string, cause?: unknown) {
 		super(
@@ -274,10 +293,128 @@ export function setGraphStorePath(path: string): void {
 	_path = path;
 }
 
+// ---------------------------------------------------------------------------
+// Store health
+// ---------------------------------------------------------------------------
+
+/**
+ * The one record of whether this process's store can still be used. It
+ * starts as `ok`, is set ONCE, and never returns to `ok` in the same process:
+ * only a restart clears it.
+ *
+ * `locks-lost` is what follows when another process opens and closes the
+ * store after this process lost its file lock on the store's lock file: that
+ * close removes the semaphores this process still uses. How each kind of call
+ * then fails is pinned by `__tests__/lock-loss-reproduction.test.ts`:
+ *
+ *   - a read throws: code -30775 (MDB_LOCK_FAILURE) in a process that never
+ *     read, code 22 with MDB_BAD_RSLOT in one that had (a daemon always has);
+ *   - a synchronous transaction throws a bare code 22 ("Invalid argument");
+ *   - an asynchronous transaction never settles.
+ */
+export type StoreHealth =
+	| { readonly state: 'ok' }
+	| {
+		readonly state:          'locks-lost';
+		readonly at:             string;
+		readonly operation:      string;
+		readonly detectedBy:     'sync-write' | 'write-timeout-probe' | 'read';
+		/** The library's own text, for the log only: it names a system limit
+		 *  that is not the cause. */
+		readonly libraryMessage: string;
+	};
+
+let _health: StoreHealth = { state: 'ok' };
+
+export function getStoreHealth(): StoreHealth {
+	return _health;
+}
+
+const MDB_LOCK_FAILURE = -30775;
+const EINVAL           = 22;
+
+function errCode(e: unknown): unknown {
+	return (e as { code?: unknown } | null)?.code;
+}
+
+/** True for the two ways a READ fails once the locks are gone. A bare code 22
+ *  is not one of them: it is the general "invalid argument". */
+function isLockLossReadError(e: unknown): boolean {
+	const code = errCode(e);
+	return code === MDB_LOCK_FAILURE || (code === EINVAL && errMessage(e).includes('MDB_BAD_RSLOT'));
+}
+
+function recordLocksLost(operation: string, detectedBy: Exclude<StoreHealth, { state: 'ok' }>['detectedBy'], cause: unknown): void {
+	if (_health.state !== 'ok') return;
+	_health = { state: 'locks-lost', at: new Date().toISOString(), operation, detectedBy, libraryMessage: errMessage(cause) };
+	log.error(
+		{ operation, detectedBy, libraryMessage: _health.libraryMessage },
+		'lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted',
+	);
+}
+
+/**
+ * For a caller that catches an error from a store READ (the daemon's request
+ * server and queue runner): when the error is a lock failure, record it and
+ * return true, and the caller answers with `LmdbStoreLocksLostError`. Returns
+ * true as well for that named error itself (already recorded), false otherwise.
+ */
+export function recordStoreFailureIfLockError(err: unknown, operation: string): boolean {
+	if (err instanceof LmdbStoreLocksLostError) return true;
+	if (!isLockLossReadError(err)) return false;
+	recordLocksLost(operation, 'read', err);
+	return true;
+}
+
+/** Fixed key of the probe read. It need not exist. */
+const PROBE_KEY = 'store_health_probe';
+
+let _probeObserver: ((result: 'ok' | 'locks-lost') => void) | null = null;
+
+/**
+ * One read, to tell a store that lost its locks from one that is only slow or
+ * that threw for another reason. A read is the one call that fails fast and
+ * cleanly in that state. Returns the read's error when it is a lock failure.
+ */
+function probeForLockLoss(store: GraphStore): unknown | undefined {
+	let lost: unknown;
+	try {
+		store.meta.get(PROBE_KEY);
+	} catch (e) {
+		if (isLockLossReadError(e)) lost = e;
+	}
+	_probeObserver?.(lost === undefined ? 'ok' : 'locks-lost');
+	return lost;
+}
+
+/** How long `withWriteTxn` waits for a write before it probes the store. An
+ *  ordinary write here takes milliseconds. */
+let _writeProbeAfterMs = 10_000;
+
+/** ONLY for tests: shorten the wait before a write is probed. */
+export function setWriteProbeAfterMsForTests(ms: number): void {
+	_writeProbeAfterMs = ms;
+}
+
+/** ONLY for tests: be told of every probe read and its result. */
+export function setStoreProbeObserverForTests(fn: ((result: 'ok' | 'locks-lost') => void) | null): void {
+	_probeObserver = fn;
+}
+
+/** ONLY for tests: a process's health is never cleared in production. */
+export function resetStoreHealthForTests(): void {
+	_health = { state: 'ok' };
+}
+
 /**
  * Lazy-init the env + all sub-DBs.
+ *
+ * Rejects with `LmdbStoreLocksLostError` once the store's health is
+ * locks-lost. Every read and write begins here, so this is the one read-side
+ * place the failure is raised: no later call reaches the library.
  */
 export async function getGraphStore(): Promise<GraphStore> {
+	if (_health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`opening the store (failed earlier during: ${_health.operation})`);
 	if (_instance !== null) return _instance;
 	if (_initPromise !== null) return _initPromise;
 
@@ -608,6 +745,11 @@ export async function closeGraphStore(): Promise<void> {
 	_instance = null;
 	_initPromise = null;
 	if (inst === null) return;
+	if (_health.state === 'locks-lost') {
+		// The library's close never returns once the semaphores are gone.
+		log.warn({ operation: _health.operation, at: _health.at }, 'lmdb graph store close skipped: the store lost its locks');
+		return;
+	}
 	try {
 		await inst.root.close();
 	} catch (e) {
@@ -623,12 +765,59 @@ export async function closeGraphStore(): Promise<void> {
  * Run `fn` inside an LMDB write transaction. Single-writer at a time
  * (LMDB serializes write txns); concurrent callers queue up. Throws
  * propagate; the txn aborts and partial changes are discarded.
+ *
+ * On a store that lost its locks the library's transaction NEVER settles, so
+ * the wait is bounded: each time the bound passes, the store is probed with
+ * one read. A probe that fails as a lock failure records it and rejects with
+ * `LmdbStoreLocksLostError`; a probe that returns means the write is only
+ * slow, and the wait goes on.
  */
 export async function withWriteTxn<T>(
 	fn: (store: GraphStore) => T | Promise<T>,
 ): Promise<T> {
 	const store = await getGraphStore();
-	return store.root.transaction(() => fn(store));
+	const txn = (store.root.transaction(() => fn(store)) as Promise<T>).then(value => ({ value }));
+
+	for (;;) {
+		let timer: NodeJS.Timeout | undefined;
+		const bound = new Promise<'bound'>(res => { timer = setTimeout(() => res('bound'), _writeProbeAfterMs); });
+		let outcome: { value: T } | 'bound';
+		try {
+			outcome = await Promise.race([txn, bound]);
+		} catch (e) {
+			// A write that does throw on such a store says only "invalid argument".
+			throw confirmLockLoss(store, e, 'a write transaction', 'sync-write') ?? e;
+		} finally {
+			clearTimeout(timer);
+		}
+		if (outcome !== 'bound') return outcome.value;
+
+		const lost = probeForLockLoss(store);
+		if (lost !== undefined) {
+			recordLocksLost('a write transaction', 'write-timeout-probe', lost);
+			txn.catch(() => { /* abandoned: it will never settle */ });
+			throw new LmdbStoreLocksLostError('a write transaction', lost);
+		}
+	}
+}
+
+/** For an error thrown by a WRITE: when it may be a lock failure (its code is
+ *  22 or -30775), confirm with a probe read, since code 22 is the general
+ *  "invalid argument" and the record cannot be cleared. Returns the named
+ *  error when confirmed (and records it), undefined otherwise. */
+function confirmLockLoss(
+	store: GraphStore,
+	e: unknown,
+	operation: string,
+	detectedBy: 'sync-write' | 'write-timeout-probe',
+): LmdbStoreLocksLostError | undefined {
+	if (e instanceof LmdbStoreLocksLostError) return e;
+	const code = errCode(e);
+	if (code !== EINVAL && code !== MDB_LOCK_FAILURE) return undefined;
+	const lost = probeForLockLoss(store);
+	if (lost === undefined) return undefined;
+	recordLocksLost(operation, detectedBy, lost);
+	return new LmdbStoreLocksLostError(operation, e);
 }
 
 /**
@@ -640,7 +829,12 @@ export function withWriteTxnSync<T>(
 	store: GraphStore,
 	fn: () => T,
 ): T {
-	return store.root.transactionSync(fn);
+	if (_health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`a synchronous write (failed earlier during: ${_health.operation})`);
+	try {
+		return store.root.transactionSync(fn);
+	} catch (e) {
+		throw confirmLockLoss(store, e, 'a synchronous write transaction', 'sync-write') ?? e;
+	}
 }
 
 // ---------------------------------------------------------------------------

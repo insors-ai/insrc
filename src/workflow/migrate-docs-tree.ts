@@ -298,6 +298,12 @@ interface Artifact {
 	readonly epicCreatedAt: string | undefined;
 	readonly epicSlug: string | undefined;
 	readonly standalone: boolean;
+	/** The flag exactly as stored, which is what deriveMdPath reads.
+	 *  {@link Artifact.standalone} is forced true for a SPEC, so it cannot tell
+	 *  whether the stored meta needs realigning. */
+	readonly storedStandalone: boolean;
+	/** Absolute path of the artifact's JSON in the store. */
+	readonly jsonPath: string;
 	/** Set only when the md sits in a legacy FLAT dir. Kept separate from
 	 *  {@link Artifact.mdPath} because the slug can be parsed out of a flat
 	 *  FILENAME, which a nested `<KIND>.md` never carries. */
@@ -343,6 +349,43 @@ function lowestOrdinalLld(members: readonly Artifact[]): Artifact | undefined {
 		.sort((a, b) => compareStoryOrdinal(a.storyId ?? '', b.storyId ?? ''))[0];
 }
 
+/** What a work item resolved to, for comparing its members' stored meta. */
+interface GroupResolution {
+	readonly hash: string;
+	/** The label from a real slug source, or undefined when the group fell back
+	 *  to its hash (an absent slug already derives that folder). */
+	readonly slug: string | undefined;
+	readonly anchor: string;
+	/** The folder key the anchor derives, or undefined when it does not parse. */
+	readonly groupSegment: string | undefined;
+	readonly workItemKind: WorkItemKind;
+}
+
+/** The folder segment an anchor derives, or undefined when it does not parse. */
+function segmentOf(hash: string, anchor: string | undefined): string | undefined {
+	if (anchor === undefined) return undefined;
+	try { return deriveWorkItemIdentity(hash, anchor).epicSegment; } catch { return undefined; }
+}
+
+/**
+ * The fields of `m`'s stored meta that disagree with its group, or undefined
+ * when it already matches.
+ *
+ * Anchors are compared by the folder segment they derive, not as raw strings:
+ * the segment uses only the date, so a ledger record written hours after its
+ * LLD, with no stamp of its own, already resolves the right folder.
+ */
+function planMetaRewrite(m: Artifact, g: GroupResolution): MetaRewrite | undefined {
+	const set: { epicSlug?: string; epicCreatedAt?: string; standalone?: true } = {};
+	if (g.slug !== undefined && m.epicSlug !== g.slug) set.epicSlug = g.slug;
+	if (g.groupSegment !== undefined && segmentOf(g.hash, m.epicCreatedAt ?? m.createdAt) !== g.groupSegment) {
+		set.epicCreatedAt = g.anchor;
+	}
+	if (g.workItemKind === 'standalone' && !m.storedStandalone) set.standalone = true;
+	if (Object.keys(set).length === 0) return undefined;
+	return { artifactId: m.id, jsonPath: m.jsonPath, groupHash: g.hash, set, mdEdits: [], companionNotes: [] };
+}
+
 /**
  * Compute the migration plan PURELY — no disk writes, no git. Enumerates the
  * artifact set from `.insrc/artifacts/*.json`, groups by work item, derives one
@@ -371,7 +414,8 @@ export function planMigration(repoPath: string): MigrationPlan {
 		const id = name.slice(0, -5);
 		const parsed = parseArtifactId(id);
 		if (parsed === null) continue;   // AMD-* / non-docs / malformed → not a relocatable artifact
-		const meta = readMeta(join(artifactsDir, id + '.json'));
+		const jsonPath = join(artifactsDir, id + '.json');
+		const meta = readMeta(jsonPath);
 		artifacts.push({
 			id,
 			kind: parsed.kind,
@@ -381,6 +425,8 @@ export function planMigration(repoPath: string): MigrationPlan {
 			epicCreatedAt: meta.epicCreatedAt,
 			epicSlug: meta.epicSlug,
 			standalone: meta.standalone === true || parsed.kind === 'SPEC',
+			storedStandalone: meta.standalone === true,
+			jsonPath,
 			flatPath: flatIndex.get(id),
 			mdPath:   flatIndex.get(id)
 				?? nestedIndex.byId.get(id)
@@ -469,14 +515,24 @@ export function planMigration(repoPath: string): MigrationPlan {
 
 		// The group's resolved work-item FOLDER, recorded so an orphaned companion
 		// can be placed even when no md of its own is moving (see step 2c).
+		let groupSegment: string | undefined;
 		try {
 			const groupIdentity = deriveWorkItemIdentity(hash, anchor);
+			groupSegment = groupIdentity.epicSegment;
 			segmentRoots.set(groupIdentity.epicSegment, {
 				root: dirname(resolveArtifactMdPath(repoPath, groupIdentity, 'DEF', workItemKind, label)),
 				identity: groupIdentity,
 				groupHash: hash,
 			});
 		} catch { /* an unresolvable group simply contributes no companion target */ }
+
+		// ISSUE-7d42920d — the stored meta each member must carry so that
+		// deriveMdPath, and the next live write, resolve the folder the md is moved
+		// into. Only a member that stays mappable gets one.
+		const realign = (m: Artifact): void => {
+			const rewrite = planMetaRewrite(m, { hash, slug, anchor, groupSegment, workItemKind });
+			if (rewrite !== undefined) metaRewrites.push(rewrite);
+		};
 
 		for (const m of members) {
 			let identity: WorkItemIdentity;
@@ -492,11 +548,11 @@ export function planMigration(repoPath: string): MigrationPlan {
 			if (m.mdPath === undefined) {
 				// No md anywhere — neither flat nor nested. Either already at its
 				// destination (idempotent skip) or the file is simply gone.
-				if (existsSync(to)) continue;
+				if (existsSync(to)) { realign(m); continue; }
 				unmappable.push({ artifactId: m.id, reason: `md file not found in a flat or nested docs dir and not at its destination ${relative(repoPath, to)}` });
 				continue;
 			}
-			if (m.mdPath === to) continue;   // already correctly placed
+			if (m.mdPath === to) { realign(m); continue; }   // already correctly placed
 
 			const prior = toSeen.get(to);
 			if (prior !== undefined) {
@@ -521,10 +577,12 @@ export function planMigration(repoPath: string): MigrationPlan {
 					'migrate-docs-tree: duplicate render — the destination already holds a different file for this artifact; ' +
 					'leaving BOTH in place (this folder will not converge until one is removed by hand)',
 				);
+				realign(m);
 				continue;
 			}
 			toSeen.set(to, m.id);
 			moves.push({ from: m.mdPath, to, kind: m.kind, identity, groupHash: hash });
+			realign(m);
 		}
 	}
 

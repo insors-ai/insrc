@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "8ca7382b0952a539",
+    "storyId": "s1",
+    "createdAt": "2026-10-11T05:30:46.538Z",
+    "updatedAt": "2026-10-11T06:38:08.380Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "approvedAt": "2026-10-11T06:38:08.712Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "Switched createChatPanelHost to turn-lifecycle.ts: runTurn keeps the echo, title and request and hands the turn to turns.start with a TurnSink; followLiveTurn uses turns.follow; cancel-turn, chat switches, dispose and adopt use stop/detach/invalidate; decide uses turns.live. The moved turn state and functions left the closure (chat-panel.ts 1220 -> 948 lines). No test file or extension.ts changed.",
+    "testRecord": {
+      "md": "docs/standalone/defect-vscode-plugin-src-chat-chat-E202610108ca7382b/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-8ca7382b0952a539.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T06:38:08.380Z"
+      }
+    ],
+    "commit": "ce7b8ee5"
+  }
+}

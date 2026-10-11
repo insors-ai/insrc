@@ -1,0 +1,38 @@
+<!-- insrc:artifact CR-8ca7382b0952a539-s1 -->
+
+# Code review: 8ca7382b0952a539:s1
+
+⚠️ **WARN** — HIGH 0 · MED 3 · LOW 7 · model `claude:opus`
+
+**Changed files:** 4
+
+## adherence — 1 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| MED | vscode-plugin/src/chat/turn-lifecycle.ts:324 | The design says a throw from onTerminal (its store.save) is a turn error: the module should call sink.onError(message, activeTurnId ?? 'none') and then save the session while the turn is current. The code does something else. start() wraps sink.onTerminal in its own try/catch and only logs a warning (lines 324-328). The panel's onTerminal (chat-panel.ts:667-671) also switched from store.save to trySave, which swallows the failure. So a save that fails at the end of a turn no longer shows an error line in the chat; it only goes to the log. This is a behaviour change, and the LLD's summary says behaviour does not change. |
+
+## conventions — 2 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | vscode-plugin/src/chat/chat-panel.ts:67 | Eight optional properties of ChatPanelHostDeps leave out the explicit `\| undefined`: notify, renderStyle, theme, logger, now, genNonce, editGovernance (lines 67–81) and deriveTitle (line 88). The newer properties in the same interface (sessionLocks, turnLockTimeoutMs, hostPid, processStartTime, isAlive, lines 93–101) do include it. These lines probably predate this Story, since I couldn't run git blame to confirm. They still sit in an interface this change touches and don't follow the documented rule, so add `\| undefined` when you next edit these lines. |
+| LOW | vscode-plugin/src/chat/chat-panel.ts:26 | `./cli-adapter.js` is imported twice: once as a type-only import (line 21: ProviderRegistry, ProviderId) and again as a value import (line 26: classifyPermissionDenial). Elsewhere in the touched modules, value and type names are merged into one import with inline `type` markers (for example the session-lock.js and turn-lifecycle.js imports on lines 22–23). This rests on only a few examples, so it is a minor departure from local style, not a broken rule. |
+
+## coverage — 3 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts:179 | All 17 unit tests the plan promised are in turn-lifecycle.test.ts, with titles matching exactly (lines 179–647). There are also 10 extra tests for the code-review fixes (lines 392, 670–924). With no build record, I can't confirm any of them passes: they are present, but their pass-state is unverified. This is not a missing test. |
+| LOW | vscode-plugin/src/chat/__tests__/chat-panel.test.ts:1 | The two promised integration suites both exist: chat-panel.test.ts and vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts. With no build record, I can't confirm they pass, so their pass-state is unverified. Note that chat-panel.test.ts appears in the changed set, so it was edited, while the plan promised it would pass 'unchanged'. The edits look like added regression tests rather than changed assertions, but I didn't diff the file to confirm that. |
+| LOW | vscode-plugin/src/chat/turn-lifecycle.ts:1 | The graph grounding is hollow for this change. Every production symbol in turn-lifecycle.ts and chat-panel.ts has an empty testsReaching list (for example createTurnLifecycle, start, follow, stop, detach, trySaveSession, runTurn). The only edges present link test helpers to each other, and no test(...) case nodes appear at all. Yet the test file plainly calls these functions: there are named tests for start, follow, stop, detach and trySaveSession. So the empty edges come from incomplete indexing, not from untested code, and I am not reporting them as HIGH coverage breaches. To confirm actual coverage, run `npx tsx --test` over vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts, chat-panel.test.ts and extension-chat-wiring.test.ts. |
+
+## quality — 4 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| MED | vscode-plugin/src/chat/turn-lifecycle.ts:306 | If the adapter's stream ends (next.done) without a terminal 'done'/'error' event, start() just breaks. endTurn never runs, so s.liveTurn is never cleared and the native session is not kept. sink.onTerminal is never called, so the panel never saves the transcript rows, never calls governor.resolveTurn() and never refreshes history. trySave is also skipped, so only the throttled cursor saves have persisted rows. The panel stays in a running state with no error shown, and a later follow() after the process exits can resume a turn that has already ended. Treat a stream that ends without a terminal event as a turn error (report it and save), or clear the cursor and call onTerminal. |
+| MED | vscode-plugin/src/chat/chat-panel.ts:665 | governor.observe(ev.path) (line 665) and governor.resolveTurn() (line 669) are fired with `void` and no .catch. A rejecting git/fs diff becomes an unhandled promise rejection. That is the class of failure this Story hardens everywhere else, e.g. the trySave and finishIterator wrappers. Add a .catch that logs, the same pattern as finishIterator. |
+| LOW | vscode-plugin/src/chat/chat-panel.ts:139 | The panel's local trySave closure is the same one-line wrapper over trySaveSession(deps.store, log, target) as the lifecycle's trySave. The duplication is harmless because both delegate to the shared trySaveSession, but the lifecycle could expose its saver instead of each module rebuilding it. |
+| LOW | vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts | The test helpers scriptedAdapter and registry are defined again here with different signatures. The same-named helpers in chat-panel.test.ts do the same job (a fake StreamAdapter and ProviderRegistry). This is test-only duplication; a shared fixture module would keep the fakes from drifting apart. |
+

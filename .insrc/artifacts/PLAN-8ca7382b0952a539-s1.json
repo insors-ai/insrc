@@ -1,0 +1,327 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791695792269-8kx4f3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-11T05:18:46.297Z",
+    "epicCreatedAt": "2026-10-10T16:38:40.063Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 134025,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ca7382b0952a539",
+    "epicSlug": "defect-vscode-plugin-src-chat-chat",
+    "storyId": "s1",
+    "lldRunId": "wf-1791656474528-tybrj9",
+    "lldEffectiveHash": "6631394079e42c75a699707c94332ffe2d69245170ac6baeda234448385e1897",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-11T05:22:57.217Z",
+    "rangeBase": "aa6006789c108a91eac6bb943cc4e71ae221a165"
+  },
+  "body": {
+    "summary": {
+      "prose": "The build adds turn-lifecycle.ts in three steps: starting a turn, then stopping and detaching, then following a saved turn. Each step comes with unit tests that use memory locks and a fake adapter. The panel is then switched over to the module and the moved code is deleted from it. The existing 111 panel tests and the wiring tests must pass without edits, which shows behaviour is unchanged.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "turn-lifecycle.ts: start, invalidate and live",
+        "summary": "Create vscode-plugin/src/chat/turn-lifecycle.ts with createTurnLifecycle(deps), TurnLifecycleDeps, TurnSink, CURSOR_SAVE_MS and DEFAULT_TURN_LOCK_TIMEOUT_MS. Move into it the turn state (activeTurnId, activeProvider, activeIterator, generation, runningTurns, detachLive, waitCtl, liveProc), acquireSessionLease and the runLeased block of runTurn as start(session, req, sink), plus invalidate() and live, with sink calls only while current. Add turn-lifecycle.test.ts covering these rules. The panel is not changed yet.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "start waits for the lease (onWaiting while current), runs, and the lease is released when the process exits, not at done",
+          "a second start drops a waiting turn; a reading turn is superseded, stops reporting, reads to its end and clears its cursor",
+          "a lease granted after the turn stopped being current is released and nothing runs",
+          "a lock failure gives onError('could not lock chat session: ...', 'none'); a beforeRun throw gives onError and a save, and the lease is released",
+          "no adapter for the provider gives onError('no adapter for provider <p>', 'none'); an adapter that never attaches a process has its lease released on return",
+          "liveTurn is saved on spawn, progress saves are throttled to CURSOR_SAVE_MS, and the cursor is cleared before onTerminal; nativeSessionId is set on done",
+          "invalidate and isOpen()=false suppress all sink calls; live is defined after the first event",
+          "plugin tsc --noEmit is clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "start waits for the session lease, reports waiting, runs, and releases the lease when the process exits"
+          },
+          {
+            "level": "unit",
+            "name": "a second start drops a turn still waiting for its lease"
+          },
+          {
+            "level": "unit",
+            "name": "a superseded turn reports nothing, reads to its end and clears its cursor"
+          },
+          {
+            "level": "unit",
+            "name": "a lease granted after the turn stopped being current is released"
+          },
+          {
+            "level": "unit",
+            "name": "a lock failure and a missing adapter are reported through onError"
+          },
+          {
+            "level": "unit",
+            "name": "a beforeRun failure is reported, the session saved and the lease released"
+          },
+          {
+            "level": "unit",
+            "name": "the cursor is saved on spawn, throttled on progress and cleared before onTerminal"
+          },
+          {
+            "level": "unit",
+            "name": "invalidate and a closed panel suppress all sink calls; live names the turn being read"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "turn-lifecycle.ts: stop and detach",
+        "summary": "Move stopLive, stopActive and detachActive into the module as stop() and detach(): abort the lease wait, return the iterator, cancel the provider turn and stop the live process (stop), or for a session-file turn stop reading and keep the process, lease and saved cursor (detach). A pipe turn is stopped either way. Add unit tests.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "stop cancels the provider turn, stops the live process, resolves once it has exited, and is idempotent with nothing running",
+          "stop or detach while a turn waits for its lease drops that turn silently",
+          "detach keeps a session-file turn running with its lease, saves its cursor and removes it from runningTurns; detach stops a pipe turn",
+          "failures from cancel or proc.stop are swallowed and the remaining steps still run",
+          "live is undefined after stop and after detach"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "stop cancels the provider turn and stops the live process; idempotent with nothing running"
+          },
+          {
+            "level": "unit",
+            "name": "stop and detach drop a turn waiting for its lease"
+          },
+          {
+            "level": "unit",
+            "name": "detach leaves a session-file turn running with its cursor saved and stops a pipe turn"
+          },
+          {
+            "level": "unit",
+            "name": "stop continues past a failing cancel or process stop"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "turn-lifecycle.ts: follow a saved turn",
+        "summary": "Add follow(session, sink) and FollowSink to the module: move followLiveTurn's ownership and skip rules, the resume with the throttled cursor saves, nativeSessionId, the end-of-turn cursor clear and onEnd. Make stop also abort the follow and stop the resumed process, and make detach abort the follow without stopping that process. Add unit tests.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "follow is a no-op with no liveTurn, while already following the session, for a turn running in this host, and when the owner is another live host",
+          "follow takes ownership from a dead owner (ownerHostPid saved), passes every event to onEvent, clears the cursor and saves at the end, then calls onEnd",
+          "a resume that throws is logged and the cursor stays saved",
+          "stop aborts the follow and stops the resumed process; detach aborts the follow and leaves that process running",
+          "after detach of a session-file turn started here, follow resumes it"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "follow skips a running turn, a turn already followed and a turn owned by a live host"
+          },
+          {
+            "level": "unit",
+            "name": "follow takes ownership from a dead host, reports every event, clears the cursor and calls onEnd"
+          },
+          {
+            "level": "unit",
+            "name": "a failing resume keeps the cursor saved"
+          },
+          {
+            "level": "unit",
+            "name": "stop ends a followed turn's process; detach leaves it running"
+          },
+          {
+            "level": "unit",
+            "name": "a detached session-file turn is resumed by follow"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Switch createChatPanelHost to the module",
+        "summary": "In chat-panel.ts, create one lifecycle from the resolved deps (with isOpen = !disposed and the store). runTurn keeps the echo, title and request building, and calls lifecycle.start with a TurnSink (post waiting status, governor.beginTurn, post+appendEvent+pending perms/selections+governor.observe, store.save+resolveTurn+postHistory, error post). followLiveTurn becomes lifecycle.follow with a FollowSink. Map the call sites: cancel-turn to stop; new-chat and open-chat to detach then invalidate; dispose, onDidDispose and adopt to detach; decision to live. Remove the moved state and functions, and re-export DEFAULT_TURN_LOCK_TIMEOUT_MS.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "chat-panel.test.ts and extension-chat-wiring.test.ts pass with no test edits",
+          "the full plugin suite shows no new failures against the known baseline",
+          "plugin tsc --noEmit is clean",
+          "extension.ts is unchanged and still imports DEFAULT_TURN_LOCK_TIMEOUT_MS from chat-panel.js",
+          "runTurn calls lifecycle.start after the echo, title and save, with no await before it",
+          "createChatPanelHost no longer declares the moved turn state or functions"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts passes unchanged"
+          },
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring.test.ts passes unchanged"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "createTurnLifecycle start: waits for the lease, reports waiting, runs, lease released on process exit not at done",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "start supersede: a second start drops a waiting turn; a reading turn stops reporting but reads to its end",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "start not current after grant: lease released, nothing runs",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "start lock failure: onError('could not lock chat session: ...')",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "start throw inside the run (beforeRun rejects): onError with 'none' and the session saved; lease released",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "cursor: liveTurn set and saved on spawn, throttled progress saves, cleared at the terminal event before onTerminal; nativeSessionId set on done",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "stop: cancels the provider turn and stops the live and resumed processes; idempotent with nothing running",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "detach: a session-file turn keeps running, cursor saved, follow then resumes it; a pipe turn is stopped",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "follow: skipped for a running turn and for a live other owner; takes ownership from a dead owner; onEnd after the cursor is cleared",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "invalidate and isOpen=false: no sink calls",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "live: defined after the first event, undefined after stop/detach",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts (111 cases)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges"
+    }
+  ]
+}

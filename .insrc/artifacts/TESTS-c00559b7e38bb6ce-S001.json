@@ -4,7 +4,7 @@
     "epicHash": "c00559b7e38bb6ce",
     "storyId": "S001",
     "createdAt": "2026-10-11T13:52:39.338Z",
-    "updatedAt": "2026-10-11T14:02:44.063Z",
+    "updatedAt": "2026-10-11T14:22:50.855Z",
     "standalone": true
   },
   "body": {
@@ -1729,6 +1729,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "0d865df2",
+        "ranAt": "2026-10-11T14:22:50.855Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "planMigration dry run over this repo lists d9f85b3c's consolidation with no unmappable standalone entries",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Dry run (/tmp/mig-dry/dry.ts) before apply: 'moves: 2 linkRewrites: 1 unmappable: 0', including PLAN docs/standalone/decompose-approved-lld-d9f85b3cc8cc966b-s001-shared-E20261011d9f85b3c/S001/PLAN.md -> docs/standalone/implement-approved-spec-77932eaa1a85819b-docs-standalone-E20261011d9f85b3c/S001/PLAN.md; shown to the user and approved in chat. Applied as commits 1b2284fc and 0d865df2; a re-run dry plan reports 'moves: 0 linkRewrites: 0 unmappable: 0'."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

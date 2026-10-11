@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -184,3 +184,13 @@ Run at 2026-10-11T14:02:44.063Z on commit `36a3b7f1`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/__tests__/migrate-docs-tree.test.ts` | 0 | 30 | 1.1 s |  |
+
+## t6
+
+Run at 2026-10-11T14:22:50.855Z on commit `0d865df2`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: planMigration dry run over this repo lists d9f85b3c's consolidation with no unmappable standalone entries**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Dry run (/tmp/mig-dry/dry.ts) before apply: 'moves: 2 linkRewrites: 1 unmappable: 0', including PLAN docs/standalone/decompose-approved-lld-d9f85b3cc8cc966b-s001-shared-E20261011d9f85b3c/S001/PLAN.md -> docs/standalone/implement-approved-spec-77932eaa1a85819b-docs-standalone-E20261011d9f85b3c/S001/PLAN.md; shown to the user and approved in chat. Applied as commits 1b2284fc and 0d865df2; a re-run dry plan reports 'moves: 0 linkRewrites: 0 unmappable: 0'.

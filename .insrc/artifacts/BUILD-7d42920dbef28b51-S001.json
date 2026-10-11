@@ -4,7 +4,7 @@
     "epicHash": "7d42920dbef28b51",
     "storyId": "S001",
     "createdAt": "2026-10-11T18:07:28.997Z",
-    "updatedAt": "2026-10-11T18:12:15.731Z",
+    "updatedAt": "2026-10-11T18:17:56.606Z",
     "authoredBy": "controller",
     "standalone": true
   },
@@ -21,9 +21,17 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "Relabelled PLAN/LLD/EXT/DEF/HLD members now carry exact label-line edits against their post-move md, built with the renderers' own helpers (epicLabelLine, extendTitleLine/extendBannerLine, epicShortName/hldShortName); HLD and epic-LLD companion pages are listed as notes, never edited.",
+    "summary": "The insrc-migrate-docs dry run now counts metadata rewrites and prints one 'meta' line per rewrite with its changed fields, an indented line per md edit, and notes for unmatched label lines and companion pages; the Applied line reports realigned artifacts.",
     "testRecord": {
       "md": "docs/standalone/docs-migrator-leaves-stale-labels-json-E202610117d42920d/S001/TESTS.md"
     },
@@ -33,93 +41,107 @@
           "file": ".insrc/artifacts/ISSUE-7d42920dbef28b51.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-7d42920dbef28b51-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-7d42920dbef28b51-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": "docs/standalone/docs-migrator-leaves-stale-labels-json-E202610117d42920d/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": "docs/standalone/docs-migrator-leaves-stale-labels-json-E202610117d42920d/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-migrate-docs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/migrate-docs-tree.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/define.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/extend.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/format/bindings.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/hld.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/lld.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/plan.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
       },
       {
         "target": {
           "file": "src/workflow/migrate-docs-tree.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T18:12:15.731Z"
+        "timestamp": "2026-10-11T18:17:56.606Z"
       }
     ],
-    "commit": "6c068e9f"
+    "commit": "62b68e5f"
   }
 }

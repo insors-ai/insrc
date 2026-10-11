@@ -4,7 +4,7 @@
     "epicHash": "7d42920dbef28b51",
     "storyId": "S001",
     "createdAt": "2026-10-11T18:07:28.997Z",
-    "updatedAt": "2026-10-11T18:12:15.731Z",
+    "updatedAt": "2026-10-11T18:17:56.606Z",
     "standalone": true
   },
   "body": {
@@ -307,6 +307,459 @@
               },
               {
                 "title": "t3 — a relabelled HLD with a companion page plans no edit to the page and lists it in companionNotes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "b4e7c227",
+        "ranAt": "2026-10-11T18:16:21.027Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "applyMigration: after apply, deriveMdPath on every member's stored meta equals where its md sits, and PLAN.md shows the head label",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t4 — after apply, deriveMdPath on every member's stored meta is where its md sits, and PLAN.md shows the head label",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "applyMigration: only the planned meta fields change; a consistent member JSON is byte-identical",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t4 — only the planned meta fields change; a consistent member's JSON is byte-identical",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/migrate-docs-tree.test.ts",
+                "title": "applyMigration: git mv relocates each md (history followed), no flat md remains, a consistent member's JSON byte-identical",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "applyMigration: a group's moves, JSON rewrites and md edits land in one commit; a rewrite-only group gets its own realign commit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t4 — a group's moves, JSON rewrites and md edits land in one commit; a rewrite-only group gets its own realign commit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "applyMigration: a rewrite-only plan still applies (no early return)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t4 — a plan with rewrites but no moves still applies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "applyMigration: a committed missing label line / corrupt JSON rolls the whole two-group run back to the start commit with the rewrite-step error",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t4 — a label line broken and committed after planning rolls the whole two-group run back to the start commit",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t4 — a JSON broken and committed after planning rolls the whole two-group run back to the start commit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "applyMigration: a second plan after apply has no moves and no metaRewrites",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t4 — a second plan after apply has no moves and no metaRewrites",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "applyMigration: a SPEC realigned to standalone resolves under docs/standalone via deriveMdPath",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t4 — a SPEC realigned to standalone resolves under docs/standalone via deriveMdPath",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 843,
+            "titles": [
+              {
+                "title": "t1 — a repo with no artifact store plans an empty metaRewrites list",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — epicShortName and hldShortName: the slug when set, else the first sentence / first line",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a moved PLAN whose stored label and anchor differ from its LLD head gets one rewrite setting both",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — an already-placed member with stale metadata (no move) still gets a rewrite",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a hash-fallback group gets no label rewrite; anchor and standalone rewrites are still planned",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a legacy unflagged head LLD in a standalone group gets only standalone: true; false is never planned",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a SPEC with no stored standalone flag in a standalone group gets standalone: true",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a same-day unstamped BUILD plans no anchor rewrite; a later-day unstamped BUILD plans epicCreatedAt = group anchor",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a consistent repo plans no metaRewrites, and planning leaves docs and .insrc byte-identical",
+                "result": "pass"
+              },
+              {
+                "title": "t3 — PLAN and LLD get the '**Epic:**' edit at the post-move path, including an old '`undefined`' line",
+                "result": "pass"
+              },
+              {
+                "title": "t3 — BUILD/CR/TESTS get JSON-only rewrites; EXT gets its two title-line edits; DEF and HLD get their H1 edit",
+                "result": "pass"
+              },
+              {
+                "title": "t3 — a relabelled HLD with a companion page plans no edit to the page and lists it in companionNotes",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — after apply, deriveMdPath on every member's stored meta is where its md sits, and PLAN.md shows the head label",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — only the planned meta fields change; a consistent member's JSON is byte-identical",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a group's moves, JSON rewrites and md edits land in one commit; a rewrite-only group gets its own realign commit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a plan with rewrites but no moves still applies",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a label line broken and committed after planning rolls the whole two-group run back to the start commit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a JSON broken and committed after planning rolls the whole two-group run back to the start commit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a second plan after apply has no moves and no metaRewrites",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a SPEC realigned to standalone resolves under docs/standalone via deriveMdPath",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a label line the md does not hold is reported, not planned, and the JSON is still realigned",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/migrate-docs-tree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1188,
+            "titles": [
+              {
+                "title": "planMigration: every member of the epic resolves to ONE folder; story artifacts under S<nnn>/; DEF-anchored (no split)",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: both locate paths — slug-named md via marker, markerless BUILD via hash filename",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: a hand-written non-artifact doc is never enumerated (not moved, not unmappable)",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: a standalone item resolves under docs/standalone/ with the LLD createdAt as anchor",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: an artifact already at its nested destination is SKIPPED (idempotent)",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: a work item with NO slug source is placed under its HASH, mirroring the writer",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: a work item with no ANCHOR is still fail-loud unmappable",
+                "result": "pass"
+              },
+              {
+                "title": "applyMigration: git mv relocates each md (history followed), no flat md remains, a consistent member's JSON byte-identical",
+                "result": "pass"
+              },
+              {
+                "title": "applyMigration: a plan with a non-empty unmappable[] is REFUSED (throws, names files) before any move",
+                "result": "pass"
+              },
+              {
+                "title": "applyMigration: a commit failing on a LATER epic chunk rolls the WHOLE run back to the pre-run commit (no partial mix)",
+                "result": "pass"
+              },
+              {
+                "title": "applyMigration: a git-mv failure rolls the run back and leaves no partial mix",
+                "result": "pass"
+              },
+              {
+                "title": "t6 — a pre-seeded FOUR-folder work item converges onto ONE",
+                "result": "pass"
+              },
+              {
+                "title": "t6 — the raw-hash-labelled folder and the wrong-top-level folder are both handled",
+                "result": "pass"
+              },
+              {
+                "title": "converging a forked Story folder that holds BUILD.md and TESTS.md moves both to the same folder and leaves the old folder empty (mutation: leave TESTS out of the migration's kind pattern)",
+                "result": "pass"
+              },
+              {
+                "title": "t6 — planMigration is READ-ONLY: planning leaves the docs tree BYTE-IDENTICAL",
+                "result": "pass"
+              },
+              {
+                "title": "t6 — convergence is idempotent: a second plan after applying has nothing left to move",
+                "result": "pass"
+              },
+              {
+                "title": "t6 — an artifact whose md is missing entirely is reported UNMAPPABLE, not guessed at",
+                "result": "pass"
+              },
+              {
+                "title": "t6a — the ISSUE is enumerated as the work item definition head (not discarded as a non-artifact)",
+                "result": "pass"
+              },
+              {
+                "title": "t6a — the definition head WINS the slug vote over a sorted-earlier ledger slug",
+                "result": "pass"
+              },
+              {
+                "title": "t6a — a MARKERLESS nested BUILD md is located by its (kind, hash8, story) shape, not reported missing",
+                "result": "pass"
+              },
+              {
+                "title": "t6a — end to end: the disagreeing work item converges onto exactly ONE folder",
+                "result": "pass"
+              },
+              {
+                "title": "t8 — a link in an UNMOVED file pointing at a moved path is rewritten",
+                "result": "pass"
+              },
+              {
+                "title": "t8 — a file never rewrites a reference to its OWN old path",
+                "result": "pass"
+              },
+              {
+                "title": "t9 — a companion moves WITH its artifact, so no folder survives on an orphaned html",
+                "result": "pass"
+              },
+              {
+                "title": "t9 — a companion is never overwritten at its destination",
+                "result": "pass"
+              },
+              {
+                "title": "t9 — a DUPLICATE render is skipped, not moved and not refused, and neither copy is lost",
+                "result": "pass"
+              },
+              {
+                "title": "t9 — an ORPHANED companion is placed from its work item, with no sibling md move to follow",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — planMigration consolidates an anchorless split item's PLAN/BUILD/CR/TESTS into its LLD's folder",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — planMigration groups an unflagged LLD-headed item as standalone",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — the head LLD's label wins over a downstream member's own; a DEF or ISSUE still outranks any LLD",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "62b68e5f",
+        "ranAt": "2026-10-11T18:17:56.606Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CLI insrc-migrate-docs dry run prints one line per metadata rewrite, its md edits and companion notes, and mutates nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+                "title": "t5 — the insrc-migrate-docs dry run prints each metadata rewrite, its md edits and companion notes, and mutates nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1078,
+            "titles": [
+              {
+                "title": "t1 — a repo with no artifact store plans an empty metaRewrites list",
+                "result": "pass"
+              },
+              {
+                "title": "t1 — epicShortName and hldShortName: the slug when set, else the first sentence / first line",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a moved PLAN whose stored label and anchor differ from its LLD head gets one rewrite setting both",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — an already-placed member with stale metadata (no move) still gets a rewrite",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a hash-fallback group gets no label rewrite; anchor and standalone rewrites are still planned",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a legacy unflagged head LLD in a standalone group gets only standalone: true; false is never planned",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a SPEC with no stored standalone flag in a standalone group gets standalone: true",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a same-day unstamped BUILD plans no anchor rewrite; a later-day unstamped BUILD plans epicCreatedAt = group anchor",
+                "result": "pass"
+              },
+              {
+                "title": "t2 — a consistent repo plans no metaRewrites, and planning leaves docs and .insrc byte-identical",
+                "result": "pass"
+              },
+              {
+                "title": "t3 — PLAN and LLD get the '**Epic:**' edit at the post-move path, including an old '`undefined`' line",
+                "result": "pass"
+              },
+              {
+                "title": "t3 — BUILD/CR/TESTS get JSON-only rewrites; EXT gets its two title-line edits; DEF and HLD get their H1 edit",
+                "result": "pass"
+              },
+              {
+                "title": "t3 — a relabelled HLD with a companion page plans no edit to the page and lists it in companionNotes",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — after apply, deriveMdPath on every member's stored meta is where its md sits, and PLAN.md shows the head label",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — only the planned meta fields change; a consistent member's JSON is byte-identical",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a group's moves, JSON rewrites and md edits land in one commit; a rewrite-only group gets its own realign commit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a plan with rewrites but no moves still applies",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a label line broken and committed after planning rolls the whole two-group run back to the start commit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a JSON broken and committed after planning rolls the whole two-group run back to the start commit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a second plan after apply has no moves and no metaRewrites",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a SPEC realigned to standalone resolves under docs/standalone via deriveMdPath",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a label line the md does not hold is reported, not planned, and the JSON is still realigned",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the insrc-migrate-docs dry run prints each metadata rewrite, its md edits and companion notes, and mutates nothing",
                 "result": "pass"
               }
             ],

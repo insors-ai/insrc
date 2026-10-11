@@ -194,7 +194,7 @@ test('the board receives the review pane when the chat setting creates one, and 
 });
 
 test("the board panel gets the tab icon it is given, and keeps VS Code's default without one", async () => {
-  for (const tabIcon of [{ light: 'light-uri', dark: 'dark-uri' }, undefined]) {
+  for (const tabIcon of [{ light: { fsPath: '/ext/media/insrc-delivery-icon.svg' }, dark: { fsPath: '/ext/media/insrc-delivery-icon-dark.svg' } }, undefined]) {
     const handlers = new Map<string, () => Promise<void>>();
     const panels: FakePanel[] = [];
     registerDeliveryBoard({

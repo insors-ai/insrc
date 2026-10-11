@@ -20,10 +20,15 @@ import type { DisposableSink } from '../surfaces/types.js';
 import { createDeliveryBoardHost, type DeliveryBoardHostDeps } from './board-host.js';
 import { createDeliveryClient, type DeliveryClientDeps } from './delivery-client.js';
 
-/** The board's editor-tab icon: one image per theme kind (vscode.Uri in extension.ts). */
+/** The slice of vscode.Uri the tab icon needs: a file on disk. */
+export interface BoardIconUri {
+  readonly fsPath: string;
+}
+
+/** The board's editor-tab icon: one image per theme kind (vscode.Uri.file in extension.ts). */
 export interface BoardTabIcon {
-  readonly light: unknown;
-  readonly dark: unknown;
+  readonly light: BoardIconUri;
+  readonly dark: BoardIconUri;
 }
 
 /** The slice of vscode.WebviewPanel the board uses. */

@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { canonicalJson, CorpusInputError, recordContentDigest, CORPUS_LIMITS, hashBytes, candidateContentDigest, reviewContentDigest, releaseContentDigest } from './canonical.js';
-import { decodeGuidanceRecord, decodeReleaseManifest, sortIssues } from './contracts.js';
-import type { GuidanceRecord, ReleaseManifest, ValidationIssue, ValidationResult } from './contracts.js';
+import { decodeGuidanceRecord, decodeReleaseManifest, decodeStageAssessments, sortIssues } from './contracts.js';
+import type { GuidanceRecord, ReleaseManifest, PublicationCheck, ValidationIssue, ValidationResult } from './contracts.js';
 
 export interface RecordValidationOptions {
   readonly mode: 'draft' | 'publication';
@@ -255,4 +255,50 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
   const manifestDigest = releaseContentDigest(manifest);
   if (manifest.releaseId !== manifestDigest) add('digest.mismatch', '/releaseId', 'Release identity does not match canonical manifest.');
   return issues.length ? failure(issues) : { ok: true, value: { manifest, records, candidateContentDigest: candidateDigest, manifestDigest } };
+}
+
+/**
+ * Compose trusted internal eligibility/coverage results for this exact candidate.
+ * This is a pure preflight, not approval, installation or publication. Adapters must
+ * produce the assessments; caller-supplied JSON is never an authorization token.
+ */
+export function checkPublication(candidate: unknown, assessments: unknown): PublicationCheck {
+  const checked = validateRelease(candidate);
+  const issues: ValidationIssue[] = checked.ok ? [] : [...checked.issues];
+  let manifestDigest = checked.ok ? checked.value.manifestDigest : '';
+  let contentDigest = checked.ok ? checked.value.candidateContentDigest : '';
+  if (!checked.ok) {
+    const descriptor = dataProperties(candidate, ['manifest', 'files', 'manifestPath']);
+    const input: unknown = descriptor?.['manifest']?.value;
+    try {
+      canonicalJson(input, CORPUS_LIMITS.packageBytes);
+      const decoded = decodeReleaseManifest(input);
+      if (decoded.ok) {
+        manifestDigest = releaseContentDigest(decoded.value);
+        contentDigest = candidateContentDigest(decoded.value);
+      }
+    } catch { /* Invalid JSON has no computable format identity. Keep the diagnostic from validateRelease. */ }
+  }
+  try { canonicalJson(assessments, CORPUS_LIMITS.packageBytes); }
+  catch (error) {
+    const problem = inputIssue(error);
+    issues.push({ ...problem, path: '/assessments' + problem.path });
+    return { eligible: false, manifestDigest, issues: sortIssues(issues) };
+  }
+  const decoded = decodeStageAssessments(assessments);
+  if (!decoded.ok) {
+    issues.push(...decoded.issues.map(problem => ({ ...problem, path: '/assessments' + problem.path })));
+    return { eligible: false, manifestDigest, issues: sortIssues(issues) };
+  }
+  for (const stage of ['eligibility', 'coverage'] as const) {
+    const matches = decoded.value.filter(assessment => assessment.stage === stage);
+    if (matches.length !== 1) issues.push(issue('assessment.missing', `/assessments/${stage}`, 'Exactly one assessment is required for each stage.'));
+  }
+  decoded.value.forEach((assessment, i) => {
+    if (!contentDigest || assessment.candidateContentDigest !== contentDigest) issues.push(issue('assessment.stale', `/assessments/${i}/candidateContentDigest`, 'Assessment does not bind this exact candidate.'));
+    if (!assessment.passed || assessment.issues.length !== 0) issues.push(issue('assessment.failed', `/assessments/${i}`, 'Assessment failed or contradicts its diagnostic issues.'));
+    // Keep downstream codes/pointers/messages verbatim, then sort the combined diagnostics.
+    issues.push(...assessment.issues);
+  });
+  return { eligible: issues.length === 0, manifestDigest, issues: sortIssues(issues) };
 }

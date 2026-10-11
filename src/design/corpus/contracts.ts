@@ -54,6 +54,10 @@ export const ISSUE_CODES = ['schema.unsupported', 'schema.invalid', 'guidance.in
   'domain.invalid', 'review.required', 'review.stale', 'reference.missing', 'reference.cycle', 'path.invalid',
   'inventory.invalid', 'digest.mismatch', 'assessment.missing', 'assessment.failed', 'assessment.stale', 'limit.exceeded'] as const;
 export const VALIDATION_ISSUE_SCHEMA = object({ code: Type.Union(ISSUE_CODES.map(v => Type.Literal(v))), path: Type.String(), message: text() });
+export const STAGE_ASSESSMENT_SCHEMA = object({
+  stage: Type.Union([Type.Literal('eligibility'), Type.Literal('coverage')]), candidateContentDigest: DIGEST_SCHEMA,
+  passed: Type.Boolean(), issues: Type.Array(VALIDATION_ISSUE_SCHEMA),
+});
 export const PUBLICATION_CHECK_SCHEMA = object({ eligible: Type.Boolean(), issues: Type.Array(VALIDATION_ISSUE_SCHEMA),
   manifestDigest: Type.Union([DIGEST_SCHEMA, Type.Literal('')]) });
 export const RELEASE_AVAILABILITY_SCHEMA = object({ releaseId: DIGEST_SCHEMA,
@@ -68,6 +72,7 @@ export type Applicability = Readonly<Static<typeof APPLICABILITY_SCHEMA>>;
 export type GuidanceRecord = Readonly<Static<typeof GUIDANCE_RECORD_SCHEMA>>;
 export type ReleaseManifest = Readonly<Static<typeof RELEASE_MANIFEST_SCHEMA>>;
 export type ValidationIssue = Readonly<Static<typeof VALIDATION_ISSUE_SCHEMA>>;
+export type StageAssessment = Readonly<Static<typeof STAGE_ASSESSMENT_SCHEMA>>;
 export type PublicationCheck = Readonly<Static<typeof PUBLICATION_CHECK_SCHEMA>>;
 export type ReleaseAvailability = Readonly<Static<typeof RELEASE_AVAILABILITY_SCHEMA>>;
 export type ValidationResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly issues: readonly ValidationIssue[] };
@@ -75,6 +80,7 @@ export type ValidationResult<T> = { readonly ok: true; readonly value: T } | { r
 const ajv = new Ajv({ allErrors: true, strict: true, useDefaults: false, coerceTypes: false, removeAdditional: false });
 const recordValidator = ajv.compile<GuidanceRecord>(GUIDANCE_RECORD_SCHEMA);
 const manifestValidator = ajv.compile<ReleaseManifest>(RELEASE_MANIFEST_SCHEMA);
+const assessmentValidator = ajv.compile<StageAssessment[]>(Type.Array(STAGE_ASSESSMENT_SCHEMA));
 const evidenceValidator = ajv.compile<EvidenceRef>(EVIDENCE_REF_SCHEMA);
 
 export function sortIssues(issues: readonly ValidationIssue[]): ValidationIssue[] {
@@ -92,3 +98,5 @@ function decode<T>(validate: ValidateFunction<T>, value: unknown): ValidationRes
 export const decodeGuidanceRecord = (value: unknown): ValidationResult<GuidanceRecord> => decode(recordValidator, value);
 export const decodeReleaseManifest = (value: unknown): ValidationResult<ReleaseManifest> => decode(manifestValidator, value);
 export const decodeEvidenceRef = (value: unknown): ValidationResult<EvidenceRef> => decode(evidenceValidator, value);
+
+export const decodeStageAssessments = (value: unknown): ValidationResult<StageAssessment[]> => decode(assessmentValidator, value);

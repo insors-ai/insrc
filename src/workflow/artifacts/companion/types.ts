@@ -34,3 +34,20 @@ export interface CompanionArtifactRef {
 	/** The document section id this companion visualizes, when it targets one. */
 	readonly ofSectionId?: string | undefined;
 }
+
+/** The header block of a companion page, resolved once per finalize site
+ *  (LLD-d9f85b3c 3.1). Every field is display text: the shell escapes it. */
+export interface CompanionHeader {
+	/** The repo's project name (config `projectName`, else the repo folder name). */
+	readonly projectName: string;
+	/** The hierarchical work-item id (epic or story), else the plain story id / hash. */
+	readonly workItemId:  string;
+	/** The source document: its artifact id and a relative link to its markdown. */
+	readonly sourceDoc:   { readonly id: string; readonly href: string };
+	/** Render time, 'YYYY-MM-DD HH:mm' local. */
+	readonly date:        string;
+	/** git user.name, else the OS login, else 'unknown'. */
+	readonly user:        string;
+	/** Where the visual sits: Epic / Story placement plus a one-line summary. */
+	readonly contextLine: string;
+}

@@ -152,6 +152,14 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   };
   const trySave = (target: ChatSession): void => trySaveSession(deps.store, log, target);
   const isCurrent = (gen: number): boolean => deps.isOpen() && gen === generation;
+  /** Reports a turn error to the panel; a failing report is logged, never thrown (start never rejects). */
+  const reportError = (sink: TurnSink, message: string, turnId: string): void => {
+    try {
+      sink.onError(message, turnId);
+    } catch (err) {
+      log.warn(`[chat] could not report "${message}": ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
 
   /**
    * Keeps a turn's saved cursor (session.liveTurn) current as its lines are handled: progress for
@@ -198,7 +206,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       if (err instanceof LockWaitAborted || err instanceof LockWaitSuperseded) return undefined;
       const message = `could not lock chat session: ${err instanceof Error ? err.message : String(err)}`;
       log.error(`[chat] session ${s.id}: ${message}`);
-      if (isCurrent(myGen)) sink.onError(message, 'none');
+      if (isCurrent(myGen)) reportError(sink, message, 'none');
       return undefined;
     } finally {
       if (waitCtl === ctl) waitCtl = undefined;
@@ -222,7 +230,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     try {
       adapter = deps.providers.get(s.provider);
     } catch {
-      sink.onError(`no adapter for provider ${s.provider}`, 'none');
+      if (isCurrent(myGen)) reportError(sink, `no adapter for provider ${s.provider}`, 'none');
       return;
     }
 
@@ -298,7 +306,9 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           if (next.done === true || detached) break;
           const ev = next.value;
           // Superseded/closed: report nothing more, but keep reading so the superseded turn's CLI
-          // never stalls on a full pipe; its process (and the lease) end when it exits.
+          // never stalls on a full pipe; its process (and the lease) end when it exits. Newest
+          // message wins: the rest of a superseded answer is not added to the transcript, so the
+          // transcript never interleaves two turns (the provider's native session still holds it).
           if (!isCurrent(myGen)) {
             if (isTerminal(ev)) {
               endTurn(ev, it);
@@ -324,7 +334,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         // unread CLI could block on a full pipe and hold the lease until the lock timeout).
         if (iterator !== undefined) finishIterator(iterator);
         if (isCurrent(myGen)) {
-          sink.onError(err instanceof Error ? err.message : String(err), activeTurnId ?? 'none');
+          reportError(sink, err instanceof Error ? err.message : String(err), activeTurnId ?? 'none');
           trySave(s);
         }
       } finally {
@@ -367,7 +377,13 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         );
         for await (const ev of events) {
           if (ctl.signal.aborted) break;
-          sink.onEvent(ev);
+          // A failing panel callback must not strand the follow: the cursor already moved past this
+          // event, so it is logged and the follow goes on to the turn's end (never a replay).
+          try {
+            sink.onEvent(ev);
+          } catch (err) {
+            log.warn(`[chat] session ${s.id}: turn ${turnId}: an event was not handled: ${err instanceof Error ? err.message : String(err)}`);
+          }
           keepNativeSession(s, ev);
           if (isTerminal(ev)) break;
         }

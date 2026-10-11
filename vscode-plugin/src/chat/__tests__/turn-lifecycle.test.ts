@@ -894,3 +894,51 @@ test("a throwing onEvent is reported and the turn's generator is finished", asyn
   assert.equal(cleanedUp, true, 'the abandoned turn has its generator finished');
   proc.exitNow();
 });
+
+test('a failing onError report is logged and start never rejects', async () => {
+  const warnings: string[] = [];
+  const locks: SessionLocks = { acquire: async () => Promise.reject(new Error('disk full')) };
+  const h = harness({ providers: registry(scriptedAdapter().adapter), locks, warnings });
+  const sink = recSink({
+    onError: () => {
+      throw new Error('webview gone');
+    },
+  }).sink;
+  await assert.doesNotReject(h.lc.start(h.session, REQ, sink));
+  assert.match(warnings.join('\n'), /could not report "could not lock chat session: disk full": webview gone/);
+
+  // A missing adapter is not reported to a closed panel.
+  const noAdapter: ProviderRegistry = {
+    get: () => {
+      throw new Error('not installed');
+    },
+    available: [],
+  };
+  const h2 = harness({ providers: noAdapter });
+  h2.open = false;
+  const b = recSink();
+  await h2.lc.start(h2.session, REQ, b.sink);
+  assert.deepEqual(b.calls, [], 'a closed panel is told nothing');
+});
+
+test('a failing follow onEvent is logged and the follow still ends the turn', async () => {
+  const warnings: string[] = [];
+  const { adapter, resumes } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter), isAlive: () => false, warnings });
+  h.session.liveTurn = savedTurn(99);
+  const calls: string[] = [];
+  h.lc.follow(h.session, {
+    onEvent: (ev) => {
+      calls.push(`event:${ev.kind}`);
+      if (ev.kind === 'assistant-delta') throw new Error('append failed');
+    },
+    onEnd: () => calls.push('end'),
+  });
+  await waitFor(() => resumes.length === 1);
+  resumes[0]!.feed.push(delta('old'));
+  resumes[0]!.feed.push(done('old'));
+  await waitFor(() => calls.includes('end'));
+  assert.deepEqual(calls, ['event:assistant-delta', 'event:done', 'end']);
+  assert.equal(h.session.liveTurn, undefined, 'the cursor is cleared, so the turn is never replayed');
+  assert.match(warnings.join('\n'), /turn old: an event was not handled: append failed/);
+});

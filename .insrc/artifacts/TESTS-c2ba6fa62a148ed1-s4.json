@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-11T10:02:56.088Z"
+    "updatedAt": "2026-10-11T10:06:37.979Z"
   },
   "body": {
     "tasks": [
@@ -399,6 +399,76 @@
               },
               {
                 "title": "slow healthy write: the probe runs and returns, nothing is recorded, the write completes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "b5e5dfcf",
+        "ranAt": "2026-10-11T10:06:37.979Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+                "title": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "detection through the real wrappers: a read through the dispatcher records at once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+                "title": "detection through the real wrappers: a read through the dispatcher records at once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "periodic check records locks-lost when no request or write has met the failure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+                "title": "periodic check records locks-lost when no request or write has met the failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2751,
+            "titles": [
+              {
+                "title": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner",
+                "result": "pass"
+              },
+              {
+                "title": "detection through the real wrappers: a read through the dispatcher records at once",
+                "result": "pass"
+              },
+              {
+                "title": "periodic check records locks-lost when no request or write has met the failure",
                 "result": "pass"
               }
             ],

@@ -24,6 +24,7 @@ import type { DimensionFinding } from '../../code-review/types.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
 import { loadAdaptiveCardsSchema, AdaptiveCardsAssetError } from './adaptive-cards.js';
+import type { CompanionPageContent } from './shell.js';
 
 // ---------------------------------------------------------------------------
 // t1 — UxDefinition (Adaptive Cards subset) types
@@ -367,7 +368,9 @@ function safeChildren(el: UxElement): readonly UxElement[] {
 
 /** One element → the markup that denotes it. EXHAUSTIVE over UxElement: the
  *  union is closed at eight variants, so a ninth fails the build here first. */
-function elementHtml(el: UxElement): string {
+function elementHtml(el: UxElement, mk?: UxMarkers): string {
+	const n = mk?.elements.get(el);
+	const pin = n !== undefined ? `<span class="ux-pin">${n}</span>` : '';
 	switch (el.type) {
 		case 'TextBlock': {
 			const cls = ['ux-text'];
@@ -376,32 +379,32 @@ function elementHtml(el: UxElement): string {
 			if (el.isSubtle === true)    cls.push('ux-subtle');
 			if (el.size !== undefined)   cls.push(`ux-size-${el.size}`);
 			if (el.color !== undefined)  cls.push(`ux-color-${el.color}`);
-			return `<p class="${cls.join(' ')}">${esc(el.text)}</p>`;
+			return `<p class="${cls.join(' ')}">${pin}${esc(el.text)}</p>`;
 		}
 		case 'Container':
-			return `<div class="ux-container">${childListHtml(el)}</div>`;
+			return `<div class="ux-container">${n !== undefined ? `<span class="ux-pin ux-pin--abs">${n}</span>` : ''}${childListHtml(el, mk)}</div>`;
 		case 'ColumnSet':
-			return `<div class="ux-columnset">${safeChildren(el).map(elementHtml).join('')}</div>`;
+			return `<div class="ux-columnset">${pin}${safeChildren(el).map(c => elementHtml(c, mk)).join('')}</div>`;
 		case 'Column': {
 			const w = el.width !== undefined ? ` style="flex:${/^\d+$/.test(String(el.width)) ? String(el.width) : '1'} 1 0"` : '';
-			return `<div class="ux-column"${w}>${childListHtml(el)}</div>`;
+			return `<div class="ux-column"${w}>${childListHtml(el, mk)}</div>`;
 		}
 		case 'Image':
 			// A placeholder: the url is SHOWN, never fetched. This is the one element
 			// where a renderer would naturally reach out, and the no-network invariant
 			// is at its sharpest here.
-			return `<div class="ux-image" role="img" aria-label="${esc(el.altText ?? 'image')}">`
+			return `<div class="ux-image" role="img" aria-label="${esc(el.altText ?? 'image')}">${pin}`
 				+ `<span class="ux-image__icon" aria-hidden="true">▣</span>`
 				+ `<span class="ux-image__meta"><span class="ux-image__alt">${esc(el.altText ?? 'image')}</span>`
 				+ `<span class="ux-image__url">${esc(el.url)}</span></span></div>`;
 		case 'Input.Text':
-			return `<label class="ux-field"><span class="ux-label">${esc(el.label ?? el.id)}</span>`
+			return `<label class="ux-field"><span class="ux-label">${pin}${esc(el.label ?? el.id)}</span>`
 				+ (el.isMultiline === true
 					? `<span class="ux-input ux-input--multi">${esc(el.placeholder ?? '')}</span>`
 					: `<span class="ux-input">${esc(el.placeholder ?? '')}</span>`)
 				+ `</label>`;
 		case 'Input.ChoiceSet':
-			return `<div class="ux-field"><span class="ux-label">${esc(el.label ?? el.id)}</span>`
+			return `<div class="ux-field"><span class="ux-label">${pin}${esc(el.label ?? el.id)}</span>`
 				+ `<div class="ux-choices">`
 				+ el.choices.map(c =>
 					`<span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">`
@@ -411,10 +414,14 @@ function elementHtml(el: UxElement): string {
 			// Submit and OpenUrl must be TELLABLE APART — a reviewer needs to know
 			// which control commits and which navigates. The old node label joined
 			// only the titles, so both collapsed into one indistinguishable string.
-			return `<div class="ux-actions">`
-				+ el.actions.map(a => a.type === 'Action.OpenUrl'
-					? `<span class="ux-btn ux-btn--link" title="${esc(a.url ?? '')}">${esc(a.title)}<span class="ux-btn__glyph" aria-hidden="true"> ↗</span></span>`
-					: `<span class="ux-btn ux-btn--submit">${esc(a.title)}</span>`).join('')
+			return `<div class="ux-actions">${pin}`
+				+ el.actions.map(a => {
+					const an = mk?.actions.get(a);
+					const apin = an !== undefined ? `<span class="ux-pin">${an}</span>` : '';
+					return apin + (a.type === 'Action.OpenUrl'
+						? `<span class="ux-btn ux-btn--link" title="${esc(a.url ?? '')}">${esc(a.title)}<span class="ux-btn__glyph" aria-hidden="true"> ↗</span></span>`
+						: `<span class="ux-btn ux-btn--submit">${esc(a.title)}</span>`);
+				}).join('')
 				+ `</div>`;
 		default: {
 			// EXHAUSTIVENESS, enforced HERE rather than borrowed. Assigning `el` to
@@ -436,19 +443,23 @@ function elementHtml(el: UxElement): string {
 }
 
 /** The children of a container element, or an empty string. */
-function childListHtml(el: UxElement): string {
-	return safeChildren(el).map(elementHtml).join('');
+function childListHtml(el: UxElement, mk?: UxMarkers): string {
+	return safeChildren(el).map(c => elementHtml(c, mk)).join('');
 }
 
 /** Inline stylesheet. Self-contained by construction: no @import, no font fetch,
  *  no remote anything. Geometry is what makes the mock read as an interface. */
-const UX_MOCK_STYLE = [
+const UX_PAGE_CHROME_STYLE = [
 	`*{box-sizing:border-box}`,
 	`body{margin:0;padding:24px;background:#eef1f5;color:#1b1f24;`,
 	`font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}`,
 	`.ux-wrap{max-width:720px;margin:0 auto}`,
 	`.ux-title{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;`,
 	`color:#5b6673;margin:0 0 10px}`,
+].join('');
+
+/** The card's own rules, shared by the standalone mock and the companion page. */
+const UX_CARD_STYLE = [
 	`.ux-card{background:#fff;border:1px solid #d6dbe1;border-radius:8px;padding:18px;`,
 	`box-shadow:0 1px 3px rgba(16,22,26,.08)}`,
 	`.ux-card>*+*{margin-top:10px}`,
@@ -491,6 +502,8 @@ const UX_MOCK_STYLE = [
 	`.ux-source{font-size:12px;margin-bottom:14px}.ux-source a{color:#1f6feb}`,
 ].join('');
 
+const UX_MOCK_STYLE = UX_PAGE_CHROME_STYLE + UX_CARD_STYLE;
+
 /**
  * Render a UxDefinition as a self-contained offline HTML document showing the
  * card as an INTERFACE. The narrated prose sections are emitted BESIDE the mock
@@ -505,7 +518,7 @@ export function renderUxMockDocument(
 	opts: { sourceLink?: { label: string; href: string } | undefined } = {},
 ): string {
 	const body = Array.isArray(uxDef.body) ? uxDef.body : [];
-	const cardHtml = body.map(elementHtml).join('');
+	const cardHtml = body.map(el => elementHtml(el)).join('');
 	const notes = uxNarratedSections(uxDef)
 		.map(s => `<section class="ux-note"><h2>${esc(s.title)}</h2><p>${esc(s.narrativeText)}</p></section>`)
 		.join('');
@@ -520,4 +533,124 @@ export function renderUxMockDocument(
 		+ `<div class="ux-card">${cardHtml}</div>`
 		+ `<div class="ux-notes">${link}${notes}</div>`
 		+ `</div></body></html>`;
+}
+
+// ---------------------------------------------------------------------------
+// LLD-d9f85b3c S001/t7 — the UX companion page content
+// ---------------------------------------------------------------------------
+
+/** The kind badge on a UX companion page. */
+export const UX_KIND_LABEL = 'UX mock';
+
+/** The numbered markers on a card: one per key element and per action. */
+interface UxMarkers {
+	readonly elements: Map<UxElement, number>;
+	readonly actions:  Map<UxAction, number>;
+}
+
+/** One key element, in marker order, for the key-elements table. */
+interface UxKeyElement {
+	readonly n:      number;
+	readonly name:   string;
+	readonly type:   string;
+	readonly target: string | null;
+	readonly description: string | null;
+}
+
+function shortText(text: string): string {
+	const t = text.replace(/\s+/g, ' ').trim();
+	return t.length > 60 ? `${t.slice(0, 57)}...` : t;
+}
+
+/** Whether an element is a key element (gets a marker). Inputs, images, top-level
+ *  text and anything described are key; a Column is layout only, and an action
+ *  set is numbered through its actions. */
+function isKeyElement(el: UxElement, topLevel: boolean): boolean {
+	switch (el.type) {
+		case 'Input.Text':
+		case 'Input.ChoiceSet':
+		case 'Image':
+			return true;
+		case 'TextBlock':
+			return topLevel || el.description !== undefined;
+		case 'Column':
+			return false;
+		case 'Container':
+		case 'ColumnSet':
+		case 'ActionSet':
+			return el.description !== undefined;
+		default:
+			return false;
+	}
+}
+
+function keyElementRow(el: UxElement, n: number): UxKeyElement {
+	const description = el.description ?? null;
+	switch (el.type) {
+		case 'TextBlock':        return { n, name: shortText(el.text), type: el.type, target: null, description };
+		case 'Input.Text':       return { n, name: el.label ?? el.id, type: el.type, target: el.id, description };
+		case 'Input.ChoiceSet':  return { n, name: el.label ?? el.id, type: el.type, target: el.id, description };
+		case 'Image':            return { n, name: el.altText ?? 'Image', type: el.type, target: el.url, description };
+		case 'Container':        return { n, name: 'Container', type: el.type, target: null, description };
+		case 'ColumnSet':        return { n, name: 'Column set', type: el.type, target: null, description };
+		case 'ActionSet':        return { n, name: 'Action set', type: el.type, target: null, description };
+		default:                 return { n, name: String((el as { type?: unknown }).type ?? 'element'), type: 'unknown', target: null, description };
+	}
+}
+
+/** Number the key elements depth-first, in document order. The same definition
+ *  always gets the same numbers, and the table rows are built in the same walk,
+ *  so a marker and its row can never disagree. */
+function numberKeyElements(body: readonly UxElement[]): { markers: UxMarkers; rows: UxKeyElement[] } {
+	const markers: UxMarkers = { elements: new Map(), actions: new Map() };
+	const rows: UxKeyElement[] = [];
+	let next = 1;
+	const walk = (el: UxElement, topLevel: boolean): void => {
+		if (isKeyElement(el, topLevel)) {
+			markers.elements.set(el, next);
+			rows.push(keyElementRow(el, next));
+			next += 1;
+		}
+		if (el.type === 'ActionSet') {
+			for (const a of Array.isArray(el.actions) ? el.actions : []) {
+				markers.actions.set(a, next);
+				rows.push({ n: next, name: a.title, type: a.type, target: a.type === 'Action.OpenUrl' ? (a.url ?? null) : null, description: a.description ?? null });
+				next += 1;
+			}
+		}
+		for (const child of safeChildren(el)) walk(child, false);
+	};
+	for (const el of body) walk(el, true);
+	return { markers, rows };
+}
+
+/** Card rules for the page: a fixed card width inside the view panel, and the markers. */
+const UX_PAGE_CARD_STYLE = [
+	`.stage .ux-card{width:640px;margin:24px}`,
+	`.ux-container{position:relative}`,
+	`.ux-pin{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;`,
+	`background:#cf6a00;color:#fff;font-size:10px;font-weight:700;text-align:center;margin-right:6px;vertical-align:middle}`,
+	`.ux-pin--abs{position:absolute;left:-9px;top:-9px;margin:0}`,
+].join('');
+
+/**
+ * Build the UX companion page from its definition: the card as an HTML visual
+ * (the same element emitter as before) with a numbered marker on each key
+ * element, and a key-elements table whose numbers match the markers. Pure.
+ */
+export function uxDefinitionToPage(uxDef: UxDefinition, title: string): CompanionPageContent {
+	const body = Array.isArray(uxDef.body) ? uxDef.body : [];
+	const { markers, rows } = numberKeyElements(body);
+	const card = `<div class="ux-card">${body.map(el => elementHtml(el, markers)).join('')}</div>`;
+	return {
+		title,
+		kindLabel: UX_KIND_LABEL,
+		...(uxDef.narrative !== undefined ? { narrative: uxDef.narrative } : {}),
+		visual: { kind: 'html', html: card, style: UX_CARD_STYLE + UX_PAGE_CARD_STYLE },
+		description: [{
+			lead: `${rows.length} key ${rows.length === 1 ? 'element' : 'elements'}. Numbers match the markers on the mock; layout-only containers are omitted.`,
+			columns: ['#', 'Element', 'Type', 'Id / target', 'Description'],
+			rows: rows.map(r => [{ tag: 'marker', text: String(r.n) }, r.name, r.type, r.target, r.description]),
+		}],
+	};
 }

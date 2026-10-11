@@ -85,6 +85,15 @@ export interface TurnLifecycle {
   readonly live: { readonly provider: ProviderId; readonly turnId: string } | undefined;
 }
 
+/** Persists a session; a persistence failure is logged and never breaks a turn. Shared with the panel. */
+export function trySaveSession(store: Pick<ChatSessionStore, 'save'>, log: ChatPanelLogger, target: ChatSession): void {
+  try {
+    store.save(target);
+  } catch (err) {
+    log.warn(`[chat] session ${target.id} not saved: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 const isTerminal = (ev: TurnEvent): ev is TurnEvent & { kind: 'done' | 'error' } => ev.kind === 'done' || ev.kind === 'error';
 
 export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
@@ -113,14 +122,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     activeProvider = undefined;
     activeTurnId = undefined;
   };
-  /** Persists a session; a persistence failure is logged and never breaks a turn. */
-  const trySave = (target: ChatSession): void => {
-    try {
-      deps.store.save(target);
-    } catch (err) {
-      log.warn(`[chat] session ${target.id} not saved: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  };
+  const trySave = (target: ChatSession): void => trySaveSession(deps.store, log, target);
   const isCurrent = (gen: number): boolean => deps.isOpen() && gen === generation;
 
   /**

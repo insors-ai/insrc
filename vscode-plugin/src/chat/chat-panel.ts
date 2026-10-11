@@ -20,7 +20,7 @@ import { renderMarkdownStyle, CHAT_MARKDOWN_TOKENS } from './markdown-style.js';
 import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
 import type { ProviderRegistry, ProviderId } from './cli-adapter.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
-import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, type TurnSink } from './turn-lifecycle.js';
+import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type TurnSink } from './turn-lifecycle.js';
 // S001 (bugfix): a value import — the pure classifier that tells a tool-permission gate apart from
 // a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial } from './cli-adapter.js';
@@ -136,14 +136,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   let channel: ChatPanelChannel | undefined;
   let disposed = false;
   let session: ChatSession | undefined;
-  /** Persists a session; a persistence failure is logged and never breaks a turn. */
-  const trySave = (target: ChatSession): void => {
-    try {
-      deps.store.save(target);
-    } catch (err) {
-      log.warn(`[chat] session ${target.id} not saved: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  };
+  const trySave = (target: ChatSession): void => trySaveSession(deps.store, log, target);
   // The turn lifecycle: the session lease, the newest-message-wins rule, the running CLI process,
   // the turn's cursor in the session file, following a saved turn, Stop and detach.
   const turns = createTurnLifecycle({

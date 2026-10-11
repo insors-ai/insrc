@@ -4,7 +4,7 @@
     "epicHash": "d9f85b3cc8cc966b",
     "storyId": "S001",
     "createdAt": "2026-10-11T15:39:50.029Z",
-    "updatedAt": "2026-10-11T16:05:55.645Z",
+    "updatedAt": "2026-10-11T16:19:19.702Z",
     "standalone": true
   },
   "body": {
@@ -888,6 +888,171 @@
               },
               {
                 "title": "d9f85b3c t7 — the visual is HTML with its own card CSS, so the page inlines no Mermaid",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "76d4f441",
+        "ranAt": "2026-10-11T16:19:19.702Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "finalize[standalone-LLD]: four companions with header (LLD id + work item), same header values on all",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+                "title": "finalize[standalone-LLD]: all four companions carry the header with the LLD id and work item, identically",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize[design.epic]: HLD id as source doc",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+                "title": "finalize[design.epic]: HLD companions name the HLD as the source doc and the Epic as the work item",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize: missing runtime asset -> companion skipped, artifact written",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+                "title": "finalize: a missing runtime asset skips the companions and still writes the artifact",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize[standalone-LLD]: described definitions pass the HIGH gate and appear in the tables",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+                "title": "finalize[standalone-LLD]: described definitions pass the HIGH gate and their narrative and descriptions reach the page",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docgen shell.test.ts + docgen pipeline tests unchanged and passing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/docgen/render/__tests__/shell.test.ts",
+                "title": "documentIRToMermaid: classDiagram with class decls + inherit/implement arrows",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/render/__tests__/shell.test.ts",
+                "title": "assembleShell: offline self-contained shell — runtime INLINED, no external fetch",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/__tests__/generate.test.ts",
+                "title": "listDocTypes exposes the Phase A type-structure capability (serializable, no extract fn)",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/__tests__/generate.test.ts",
+                "title": "generateDocument with an unknown docType → not-found, without touching the graph",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/docgen/__tests__/generate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 522,
+            "titles": [
+              {
+                "title": "listDocTypes exposes the Phase A type-structure capability (serializable, no extract fn)",
+                "result": "pass"
+              },
+              {
+                "title": "generateDocument with an unknown docType → not-found, without touching the graph",
+                "result": "pass"
+              },
+              {
+                "title": "describeOutcome renders each variant to a human line",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/docgen/render/__tests__/shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 312,
+            "titles": [
+              {
+                "title": "documentIRToMermaid: classDiagram with class decls + inherit/implement arrows",
+                "result": "pass"
+              },
+              {
+                "title": "documentIRToMermaid: an edge to an alias-less node is skipped; labels are escaped",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: offline self-contained shell — runtime INLINED, no external fetch",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: assets absent → sc4 fallbackUnavailable naming copy-assets (UNCHANGED s1 degrade), not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: the s5 fallback backend is ALSO self-contained offline (both backends, ac4)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/companion-context-finalize.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 651,
+            "titles": [
+              {
+                "title": "finalize[standalone-LLD]: all four companions carry the header with the LLD id and work item, identically",
+                "result": "pass"
+              },
+              {
+                "title": "finalize[standalone-LLD]: described definitions pass the HIGH gate and their narrative and descriptions reach the page",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: a missing runtime asset skips the companions and still writes the artifact",
+                "result": "pass"
+              },
+              {
+                "title": "finalize[design.epic]: HLD companions name the HLD as the source doc and the Epic as the work item",
                 "result": "pass"
               }
             ],

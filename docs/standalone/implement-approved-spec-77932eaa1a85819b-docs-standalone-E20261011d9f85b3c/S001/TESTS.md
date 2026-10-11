@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 68 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -236,3 +236,48 @@ Run at 2026-10-11T16:05:55.645Z on commit `04b8d49f`. Tests check: **passed**. 6
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/artifacts/companion/__tests__/ux-page.test.ts` | 0 | 6 | 0.5 s |  |
+
+## t8
+
+Run at 2026-10-11T16:19:19.702Z on commit `76d4f441`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: finalize[standalone-LLD]: four companions with header (LLD id + work item), same header values on all**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | finalize[standalone-LLD]: all four companions carry the header with the LLD id and work item, identically | `src/workflow/__tests__/companion-context-finalize.test.ts` |
+
+**integration: finalize[design.epic]: HLD id as source doc**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | finalize[design.epic]: HLD companions name the HLD as the source doc and the Epic as the work item | `src/workflow/__tests__/companion-context-finalize.test.ts` |
+
+**integration: finalize: missing runtime asset -> companion skipped, artifact written**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | finalize: a missing runtime asset skips the companions and still writes the artifact | `src/workflow/__tests__/companion-context-finalize.test.ts` |
+
+**integration: finalize[standalone-LLD]: described definitions pass the HIGH gate and appear in the tables**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | finalize[standalone-LLD]: described definitions pass the HIGH gate and their narrative and descriptions reach the page | `src/workflow/__tests__/companion-context-finalize.test.ts` |
+
+**integration: docgen shell.test.ts + docgen pipeline tests unchanged and passing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | documentIRToMermaid: classDiagram with class decls + inherit/implement arrows | `src/docgen/render/__tests__/shell.test.ts` |
+| pass | assembleShell: offline self-contained shell — runtime INLINED, no external fetch | `src/docgen/render/__tests__/shell.test.ts` |
+| pass | listDocTypes exposes the Phase A type-structure capability (serializable, no extract fn) | `src/docgen/__tests__/generate.test.ts` |
+| pass | generateDocument with an unknown docType → not-found, without touching the graph | `src/docgen/__tests__/generate.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/docgen/__tests__/generate.test.ts` | 0 | 3 | 0.5 s |  |
+| `src/docgen/render/__tests__/shell.test.ts` | 0 | 5 | 0.3 s |  |
+| `src/workflow/__tests__/companion-context-finalize.test.ts` | 0 | 4 | 0.7 s |  |

@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c00559b7e38bb6ce",
+    "storyId": "S001",
+    "createdAt": "2026-10-11T13:52:39.338Z",
+    "updatedAt": "2026-10-11T14:02:44.063Z",
+    "authoredBy": "controller",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "summary": "planMigration labels and anchors a DEF/ISSUE-less work item from its lowest-ordinal LLD and groups it as standalone even when unflagged, so a split standalone item's downstream records are planned into the LLD's folder.",
+    "testRecord": {
+      "md": "docs/standalone/standalone-features-cannot-built-task-task-E20261011c00559b7/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-b2e05b043846451c.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T14:02:44.063Z"
+      }
+    ],
+    "commit": "36a3b7f1"
+  }
+}

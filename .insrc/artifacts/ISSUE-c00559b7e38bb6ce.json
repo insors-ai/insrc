@@ -1,0 +1,525 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791721273236-8f3dwr",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-11T12:21:57.024Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 43787,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "c00559b7e38bb6ce",
+    "epicSlug": "standalone-features-cannot-built-task-task",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "issue",
+      "stage": "issue",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "LABEL_RE is defined at src/workflow/tracker/resolve.ts:512 as /^([sS]\\d+)(?:\\/(t\\d+))?$/, so both 'S001/t1' and 's1/t1' are accepted label forms.",
+          "evidence": "The read of src/workflow/tracker/resolve.ts:512 returns `const LABEL_RE            = /^([sS]\\d+)(?:\\/(t\\d+))?$/;`. The grep for `LABEL_RE\\s*=` finds this one definition and no other. In the regex, `[sS]\\d+` matches both 'S001' and 's1', and the optional group `(?:\\/(t\\d+))?` matches '/t1'. So both 'S001/t1' and 's1/t1' match the whole pattern. The cited line, the regex and the claim about which forms it accepts are all confirmed. The same `[sS]\\d+` case-insensitive story pattern also appears in LLD_RE and PLAN_RE at resolve.ts:85-86.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The real source confirms the citation, the regex text and the claim about which label forms it accepts. Nothing needs editing."
+          }
+        },
+        {
+          "claimId": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "resolveWorkflowRef is defined at src/workflow/tracker/resolve.ts:526 and is the entry point that resolves a build target to an epic/story/task.",
+          "evidence": "The evidence backs up the premise. grep `/function resolveWorkflowRef/` found exactly one definition in source: `src/workflow/tracker/resolve.ts:526: export function resolveWorkflowRef(repoPath: string, identifier: string, opts?: { readonly epicHash?: string | undefined }): ResolvedRef | null {`. Reading resolve.ts:526 returned the same exported function. The other 3 matches are in LLD docs, not code. One of them (bug-…E2026092999bc81bb LLD.md:251) cites an older anchor at :292 with a 2-argument signature. That doc is out of date, but it does not affect this premise. The single exported resolver that takes (repoPath, identifier, opts?) and returns ResolvedRef | null fits the premise's description of it as the entry point that resolves a target reference.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited file:line is the exact definition of resolveWorkflowRef and it is the only definition in source code, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "c3",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "listEpicHashes (src/workflow/tracker/resolve.ts:150) discovers epic hashes only via DEF_RE (resolve.ts:155, DEF-<hash16>.json) and ISSUE_RE (resolve.ts:159, ISSUE-<hash16>.json); it has no branch matching LLD- or PLAN- files.",
+          "evidence": "The reads match the premise: resolve.ts:150 is `function listEpicHashes(dir: string): readonly string[] {`, resolve.ts:155 is `const m = DEF_RE.exec(f);`, and resolve.ts:159 is `const m = ISSUE_RE.exec(f);`. DEF_RE is defined at resolve.ts:76 as `/^DEF-([0-9a-f]{16})\\.json$/` and ISSUE_RE at resolve.ts:81 as `/^ISSUE-([0-9a-f]{16})\\.json$/`. Those are the DEF-<hash16>.json and ISSUE-<hash16>.json shapes the premise names. In this file, LLD_RE and PLAN_RE (defined at :85 and :86) are only used at :231 (a prefix-selected helper, `prefix === 'LLD' ? LLD_RE : PLAN_RE`), :387 (PLAN_RE.exec) and :399 (LLD_RE.exec). All three are well outside the listEpicHashes body, which starts at :150 and runs its two matching branches at :155 and :159. So the function has no branch that matches LLD- or PLAN- files. One caveat: the evidence doesn't show the function's closing line. But nothing suggests it runs past :231, so the closed set {DEF_RE, ISSUE_RE} holds.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise. listEpicHashes matches only DEF_RE (:155) and ISSUE_RE (:159), and every LLD_RE/PLAN_RE use (:231, :387, :399) is outside that function. No edit needed."
+          }
+        },
+        {
+          "claimId": "c4",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "readEpicIdentity (src/workflow/tracker/resolve.ts:174) reads epicSlug and createdAt only from DEF-<hash>.json then ISSUE-<hash>.json (resolve.ts:175-178) and returns null otherwise (resolve.ts:181).",
+          "evidence": "src/workflow/tracker/resolve.ts:174 is `function readEpicIdentity(dir: string, epicHash: string): EpicIdentity | null {`. Line 175 loops over exactly two candidates, in order: `for (const name of [`DEF-${epicHash}.json`, `ISSUE-${epicHash}.json`]) {`. Line 178 returns `{ epicSlug: meta.epicSlug, createdAt: meta.createdAt, tracker: meta.tracker }`, and line 181 is the fallback `return null;`. So the evidence confirms the closed set (DEF first, then ISSUE, otherwise null). One small inaccuracy: line 178 also returns `tracker`, not just epicSlug and createdAt. This doesn't change what the source set is or what gets built from it.",
+          "action": "none — verified sound. Optional: also mention that `tracker` is returned at resolve.ts:178.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise matches the evidence: two sources in a fixed order with a null fallback. The only gap is that `tracker` is left out of the returned fields, which doesn't affect the work, so no edit is required."
+          }
+        },
+        {
+          "claimId": "c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "finalizeStandaloneLld is defined at src/workflow/orchestrator.ts:2279 and writes LLD-<h>-S001 for a standalone design.story.",
+          "evidence": "The citation holds. Grep for /function finalizeStandaloneLld/ finds exactly one source definition, at src/workflow/orchestrator.ts:2279 (`async function finalizeStandaloneLld(`). Reading src/workflow/orchestrator.ts:2279 returns FOUND with the same line. The other four matches are all in docs/ artifacts: S009 LLD.md:77/208, S009 PLAN.md:77, and the standalone ISSUE.md:40. They cite older line numbers (:1629, :2249), which shows the function has moved as the file grew, but :2279 is where it is now. The second half of the premise, that it \"writes LLD-<h>-S001 for a standalone design.story\", is not covered by the gathered evidence: no read of the function body or the artifact-path construction was supplied. That half is plausible from the function name and from the ISSUE.md note that the function handles the standalone LLD's slug/naming, but it is not directly confirmed.",
+          "action": "None needed; the citation is verified. Optionally, read the body of finalizeStandaloneLld (orchestrator.ts:2279 onward) to confirm the hard-coded `S001` story id in the written LLD path, if a later task depends on that exact filename.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The anchor resolves correctly to the cited function at the cited line, so no artifact edit is needed. Older docs cite stale line numbers (:1629, :2249), but those are other artifacts and outside this premise."
+          }
+        },
+        {
+          "claimId": "c6",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "finalizePlan is defined at src/workflow/orchestrator.ts:2551 and writes PLAN-<h>-S001.",
+          "evidence": "The location half of the premise checks out. `grep /function finalizePlan/` matched `src/workflow/orchestrator.ts:2551: function finalizePlan(`, and reading that line returned `FOUND: function finalizePlan(`. The other three matches are design docs, not source: HLD.md:136, S001/LLD.md:63 and S005/LLD.md:79. So the `file:line` anchor points at the right function. The second half, that it \"writes PLAN-<h>-S001\", is not covered by the evidence. Only the signature line was read, and there is no grep for a `PLAN-` filename pattern or a write call inside the function body. The artifact naming the function writes cannot be confirmed from what was gathered.",
+          "action": "Keep the anchor (src/workflow/orchestrator.ts:2551). Check the output-filename claim by reading the body of finalizePlan, or by grepping orchestrator.ts for the PLAN artifact path, e.g. /PLAN-\\$\\{|`PLAN-/. Confirm it produces PLAN-<epicHash>-<storyId> and that the story segment is per-story (S001 as an example) rather than hard-coded. If the real pattern differs, reword the premise to match the actual filename.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchor is verified sound; only the claim about the written artifact's filename is unverified. Re-probing the function body would settle it. Without that evidence, a find/replace edit to the artifact can't be derived safely.",
+            "options": [
+              "Re-probe: read the body of src/workflow/orchestrator.ts from line 2551 (or grep /PLAN-/ in orchestrator.ts) and keep the premise as written if it confirms PLAN-<h>-<storyId>.",
+              "Narrow the premise to only the verified fact (finalizePlan is defined at src/workflow/orchestrator.ts:2551) and drop the filename claim.",
+              "If the probe shows a different naming pattern, reword the premise to the actual filename the function produces."
+            ]
+          }
+        },
+        {
+          "claimId": "c7",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Triage routes a 'feature' sizing directly to a standalone design.story, so neither finalizeDefine nor finalizeIssue runs for a standalone feature and no DEF-* or ISSUE-* artifact is written for its hash.",
+          "evidence": "Only the routing half of the premise is supported, and only indirectly. Approved design docs say feature routes to a standalone design.story: S001/LLD.md:194 (\"feature->{design.story,true,true,true}\"), and S009/PLAN.md:76 has an earlier CONFIRMED review citing \"classify.ts:36/39 feature/small -> startStage 'design.story'\". The one read of the anchor file, src/mcp/triage-step/phases/classify.ts:42, shows only `const { route, sizeClass, magnitude, rationale, storyTitle } = result;`. It confirms buildNextCall works from route/sizeClass, but it does not show the feature arm's nextCall. Tests show standalone design.story runs taking `params: { standalone: true, ..., sizeClass: 'feature' }` (seed-focus.test.ts:203, companion-*-finalize tests), which fits a direct design.story start. The second half of the premise has no evidence at all. Neither `finalizeDefine` nor `finalizeIssue` turned up in any grep match or read, so nothing shows that they are skipped for a standalone feature. Nothing shows whether some other path (e.g. finalizeArtifact('design.story') with standalone:true) writes a DEF-* or ISSUE-* artifact for the feature's hash.",
+          "action": "Re-ground the second half of the premise. Grep `finalizeDefine` and `finalizeIssue` in src/workflow/orchestrator.ts and confirm their only callers are the define and issue finalize arms. Then read the standalone design.story finalize branch (around the sizeClass stamp near orchestrator.ts:2352) to confirm it writes no DEF-*/ISSUE-* record under the feature's epicHash. Also read classify.ts buildNextCall's feature arm and cite that line, instead of only the destructuring at :42, as direct proof that feature produces a design.story nextCall.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The routing claim is consistent with the design docs and test fixtures. The claim that no DEF-* or ISSUE-* artifact is written rests on finalizeDefine and finalizeIssue, which never appear in the gathered evidence. Without new probes the premise can't be confirmed or refuted, so no automatic text edit is safe.",
+            "options": [
+              "Keep the premise and add citations: the classify.ts line of buildNextCall's feature arm, plus the call sites of finalizeDefine and finalizeIssue (define and issue finalize arms only) in orchestrator.ts.",
+              "Narrow the premise to the part the evidence supports ('triage routes feature to a standalone design.story nextCall'). Move the 'no DEF-*/ISSUE-* written' half into a separate premise with its own probe of the standalone design.story finalize path.",
+              "Reword the premise to say the absence of DEF-*/ISSUE-* records is an assumption to check at build time, and add a test asserting that a standalone feature run writes no DEF-*/ISSUE-* under its hash."
+            ]
+          }
+        },
+        {
+          "claimId": "c8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "resolveByHier is at src/workflow/tracker/resolve.ts:426 and resolveByLabel at resolve.ts:444; both depend on finding the epic via listEpicHashes/readEpicIdentity.",
+          "evidence": "Both cited anchors resolve to the named entities. Reading src/workflow/tracker/resolve.ts:426 gives `function resolveByHier(dir: string, wfid: WorkflowId): ResolvedRef | null {`, and reading resolve.ts:444 gives `function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?: string): ResolvedRef | null {`. The greps each find exactly one source definition, at those lines; every other match is in a docs/standalone LLD. The dependency clause is only partly backed. The earlier LLD's review row cl4 says resolveByHier \"prefix-match[es] hash8 against listEpicHashes + createdAt\", and row cl1 says resolveByLabel gates on `hashes.length !== 1` over the epic hash list. Both point to listEpicHashes-based epic lookup. No gathered line shows the function bodies or any readEpicIdentity call, so the readEpicIdentity half is plausible but not shown by this evidence. That gap does not change the citation's referents.",
+          "action": "None needed: the citation is correct. Optional: when building, check from the function bodies that both functions call readEpicIdentity (the evidence only supports the listEpicHashes dependency).",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both file:line anchors match the named functions exactly, so no edit is needed. The only open point is the readEpicIdentity part of the dependency clause, which this evidence neither confirms nor contradicts, and it does not change what gets built."
+          }
+        },
+        {
+          "claimId": "c9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "resolveTaskRef is defined at src/mcp/build-step/render.ts:54 and builds the 'could not resolve target' message at render.ts:60.",
+          "evidence": "read src/mcp/build-step/render.ts:54 → FOUND: `export function resolveTaskRef(repoPath: string, target: string, epicHash?: string): TaskResolution {`; read src/mcp/build-step/render.ts:60 → FOUND: \"`insrc_build_step: could not resolve target '${target}'. Pass a task issue ` +\". grep /function resolveTaskRef/ matches src/mcp/build-step/render.ts:54 as the only source definition. Both anchors resolve to exactly what the premise claims.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both anchors check out: line 54 is where resolveTaskRef is defined, and line 60 builds the 'could not resolve target' message. Nothing needs changing."
+          }
+        },
+        {
+          "claimId": "c10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The implement phase calls resolveTaskRef at src/mcp/build-step/phases/implement.ts:61 and returns 'unresolved-target' on failure at implement.ts:62.",
+          "evidence": "read src/mcp/build-step/phases/implement.ts:61 → `const resolved = resolveTaskRef(repoPath, input.target, input.epicHash);` and read implement.ts:62 → `if (!resolved.ok) return err('unresolved-target', resolved.message);`. Both grep hits agree: /resolveTaskRef\\(/ matches src/mcp/build-step/phases/implement.ts:61, and /unresolved-target/ matches src/mcp/build-step/phases/implement.ts:62. Both anchors point at the exact code the premise describes. Older docs cite :56–57, which are stale line numbers, but the live source matches this premise's anchors.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The source at both anchors confirms the citation, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "c11",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The validate phase calls resolveTaskRef at src/mcp/build-step/phases/validate.ts:212 and returns 'unresolved-target' at validate.ts:213.",
+          "evidence": "read src/mcp/build-step/phases/validate.ts:212 → `const resolved = resolveTaskRef(repoPath, input.target, input.epicHash);` and validate.ts:213 → `if (!resolved.ok) return err('unresolved-target', resolved.message);`. The grep for /unresolved-target/ also matches src/mcp/build-step/phases/validate.ts:213 as the only source hit in validate.ts. Both anchors point to exactly what the premise says.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms both cited anchors exactly: validate.ts:212 calls resolveTaskRef and validate.ts:213 returns err('unresolved-target'). No edit needed."
+          }
+        },
+        {
+          "claimId": "c12",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "EpicIdentity (src/workflow/tracker/resolve.ts:118-122) carries epicSlug, createdAt and an optional tracker block, and is consumed at resolve.ts:308 and resolve.ts:430.",
+          "evidence": "The anchors match the source. `grep /interface EpicIdentity/` finds exactly one match, at src/workflow/tracker/resolve.ts:118 (`interface EpicIdentity {`), and reading line 122 gives the closing `}`, so the 118-122 span is right. Both consumption sites read as cited. Line 308 is `const dmeta = readEpicIdentity(dir, epicHash);`. Line 430 is `const createdAt = readEpicIdentity(dir, h)?.createdAt;`. Both use the type through `readEpicIdentity` (resolve.ts:174, which returns `EpicIdentity | null`), not by naming the type directly. Nothing directly read lines 119-121, so the field list comes from neighbouring artifacts rather than the source. Those artifacts agree with each other: LLD.md:132 says \"slug, createdAt and optional tracker block\", LLD.md:185 and PLAN.md:163 say it \"returns {epicSlug, createdAt, tracker?}\", and CR.md:14 says \"EpicIdentity carries `tracker`\". Line 430 reading `?.createdAt` is consistent with that.",
+          "action": "None needed; the premise checks out. Optionally, reword \"consumed at\" to \"consumed via readEpicIdentity at\" to show that 308 and 430 get the type through the reader function's return value.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the anchors, and the field list matches several artifacts that agree with each other. No correction is needed."
+          }
+        },
+        {
+          "claimId": "c13",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A work-item folder is named <slug>-E<date><hash8>.",
+          "evidence": "The evidence backs only part of the premise. The single match, src/workflow/__tests__/folder-identity-finalize.test.ts:177, checks `folder.includes(`-E${day}`)` with the message \"the LLD files under its own day\". That supports a `-E<date>` part in the folder name. Nothing supports the `<hash8>` suffix: the probe `/E\\$\\{.*slice\\(0, ?8\\)/` found 0 matches. Nothing supports the leading `<slug>` either. The only match is in a test; no line from the anchored producer, src/workflow/storage.ts, came back to show how the folder name is actually built. So the full pattern `<slug>-E<date><hash8>` can't be checked from this evidence. There's also no sign that it's contradicted, so this doesn't qualify as HIGH.",
+          "action": "Re-ground the premise in the code that builds the folder name in src/workflow/storage.ts. Cite the exact `file:line` where the work-item folder name is put together, and confirm the slug prefix, the `-E` + date part, and the 8-character hash suffix (for example, a `.slice(0, 8)` or similar on the hash). If the hash is cut to a different length, or the parts come in a different order, fix the premise to match the real format.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The test supports the `-E<date>` part, but no evidence supports the slug prefix or the 8-character hash suffix, and the anchored producer in storage.ts was never read. Someone needs to check the producer before the premise is reworded. No find/replace edit can be derived from this evidence alone.",
+            "options": [
+              "Keep the premise as written, add a citation to the folder-name builder in src/workflow/storage.ts after confirming the slug + `-E` + date + 8-char hash format there",
+              "Narrow the premise to what the evidence supports: 'A work-item folder name contains `-E<date>` (e.g. per folder-identity-finalize.test.ts:177)', and drop the unverified hash8 detail",
+              "Fix the format to the producer's actual layout if storage.ts uses a different hash length or a different order of parts"
+            ]
+          }
+        },
+        {
+          "claimId": "c14",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Exactly three finalizers derive the folder slug from their own focus text with no inheritance — finalizeBrainstorm (orchestrator.ts:716), finalizeIssue (orchestrator.ts:888) and finalizeDefine (orchestrator.ts:1182) — each via safeDeriveSlug (orchestrator.ts:1880).",
+          "evidence": "The grep for `safeDeriveSlug(` in src/ finds exactly three bare, non-inheriting calls: orchestrator.ts:716 `const slug     = safeDeriveSlug(intent.focus);`, :888 `const slug      = safeDeriveSlug(intent.focus);` and :1182 `const epicSlug = safeDeriveSlug(intent.focus);`. The `function finalize\\w+` grep shows which function each line sits in:\n- :716 falls between finalizeBrainstorm (:680) and finalizeIssue (:864), so it is in finalizeBrainstorm.\n- :888 falls between finalizeIssue (:864) and finalizeDefine (:1132), so it is in finalizeIssue.\n- :1182 falls between finalizeDefine (:1132) and finalizeDefineExtend (:1246), so it is in finalizeDefine.\n\nEvery other source call site inherits the slug instead:\n- :1781 (finalizeDesignEpic) uses `epic.meta.epicSlug ?? safeDeriveSlug(...)`.\n- :2112 (finalizeDesignStory) uses the same `epic.meta.epicSlug ??` fallback.\n- :2298 (finalizeStandaloneLld) and :2583 (finalizePlan) use `inheritedEpicSlug(...)`.\n\nfinalizeDefineExtend (:1246–:1731) has no call. :1880 is the definition: `export function safeDeriveSlug(focus: string | undefined): string {`. All four anchor reads came back FOUND with the expected text. The 'exactly three' count, the finalizer for each line, and the definition anchor all hold.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise exactly: there are three non-inheriting call sites, each sits in the finalizer it is cited for, and safeDeriveSlug is defined at the cited line. No edit is needed."
+          }
+        },
+        {
+          "claimId": "c15",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "deriveSlug (src/workflow/slug.ts:40) is a mechanical cut keeping the first MAX_TOKENS = 6 non-stopword words (slug.ts:25), with no model call.",
+          "evidence": "The evidence confirms both anchors. Reading `src/workflow/slug.ts:25` returns `const MAX_TOKENS = 6;`, and the grep `/MAX_TOKENS\\s*=\\s*6/` finds that line. Reading `src/workflow/slug.ts:40` returns `export function deriveSlug(focus: string): string {`, which a separate LLD citation (cl3) also verified. The \"no model call\" part is supported by the signature: `deriveSlug` is synchronous and returns `string`, not `Promise<string>`, so it cannot await an `LLMProvider.complete()`/`completeStructured()` call. The grep for `complete\\(|LLMProvider` hit its 50-match cap without returning any `slug.ts` match. Because the list was truncated, this only fails to contradict the premise; it does not rule a call out. The premise is also consistent with ISSUE.md:24, which says \"a mechanical cut keeping the first MAX_TOKENS = 6 non-stopword words (slug.ts:25), with no model involved.\" The evidence does not show the stopword-filtering logic itself, but it does not contradict it.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both anchors resolve to the claimed entities: MAX_TOKENS = 6 at slug.ts:25 and deriveSlug at slug.ts:40. The synchronous string-returning signature rules out an awaited model call, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "c16",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "finalizeDesignEpic (orchestrator.ts:1781) and finalizeDesignStory (orchestrator.ts:2112) use the parent DEF's epicSlug, falling back to focus only when absent.",
+          "evidence": "The reads at both cited lines resolve to exactly the claimed behaviour. src/workflow/orchestrator.ts:1781 is `const epicSlug = epic.meta.epicSlug ?? safeDeriveSlug(intent.focus);`, and src/workflow/orchestrator.ts:2112 is the identical line. Both lines sit inside the named functions: grep places `async function finalizeDesignEpic(` at orchestrator.ts:1731 and `async function finalizeDesignStory(` at orchestrator.ts:2062. In both functions the parent epic's (DEF's) meta.epicSlug is used first, and the code falls back to the focus only when that slug is missing (nullish `??`). Two small imprecisions do not change the claim: the cited lines are the slug-resolution statements inside each function, not where the functions start; and the fallback is `safeDeriveSlug(intent.focus)`, not the raw focus.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is confirmed by the lines read at both anchors. If wanted, a cosmetic clarification could say the fallback is safeDeriveSlug(intent.focus) and that the functions start at :1731 and :2062. Neither changes what gets built, so no edit is required."
+          }
+        },
+        {
+          "claimId": "c17",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "finalizeDefineExtend inherits its slug from the DEF at src/workflow/orchestrator.ts:1291 via define.meta.epicSlug ?? s1.target?.epicSlug ?? epicHash.",
+          "evidence": "The read of src/workflow/orchestrator.ts:1291 returned `const epicSlug = define.meta.epicSlug ?? s1.target?.epicSlug ?? epicHash;`, which matches the premise exactly. The grep for `function finalizeDefineExtend` found its declaration at src/workflow/orchestrator.ts:1246, 45 lines above the cited line, so line 1291 falls inside that function. The only other match for the expression is the ISSUE.md text, which is the artifact quoting the same code.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The anchor resolves to the cited expression inside finalizeDefineExtend, so the slug inheritance chain is confirmed and no edit is needed."
+          }
+        },
+        {
+          "claimId": "c18",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "finalizeStandaloneLld (orchestrator.ts:2298) and finalizePlan (orchestrator.ts:2583) call inheritedEpicSlug (src/workflow/storage.ts:223).",
+          "evidence": "All three anchors resolve exactly. read src/workflow/orchestrator.ts:2298 → `const epicSlug = inheritedEpicSlug(intent.repoPath, epicHash, safeDeriveSlug(intent.focus));`. read src/workflow/orchestrator.ts:2583 → the same call. read src/workflow/storage.ts:223 → `export function inheritedEpicSlug(repoPath: string, epicHash: string, fallback: string): string {`. The grep for /function inheritedEpicSlug/ finds only one source definition, at storage.ts:223. The ISSUE.md cites storage.ts:213, but that is an older doc, not this premise's anchor. The evidence does not show which functions contain lines 2298 and 2583. So the names finalizeStandaloneLld and finalizePlan are not directly confirmed, but nothing contradicts them, and both call sites exist where the premise says.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms both call sites and the definition at the cited lines. No edit is needed."
+          }
+        },
+        {
+          "claimId": "c19",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "inheritedEpicSlug reads the label through readEpicDefinitionCore (src/workflow/storage.ts:367-375), which consults only the DEF then the ISSUE artifact.",
+          "evidence": "The anchors are correct. `read src/workflow/storage.ts:367` returns the signature `export function readEpicDefinitionCore(repoPath: string, epicHash: string): EpicDefinitionCore {`, and `read :375` returns the closing `}`. So the cited 367-375 range covers the whole function.\n\nThe call site `src/workflow/storage.ts:224: const inherited = readEpicDefinitionCore(repoPath, epicHash).epicSlug;` confirms that inheritedEpicSlug reads the label through this function.\n\nThe evidence partly supports DEF-then-ISSUE ordering:\n- Tests `storage.test.ts:224` and `:275` assert `.epicSlug === 'from-the-issue'`, which shows there is an ISSUE fallback.\n- An earlier review record (`ISSUE.md:53`, p4) says it confirmed a \"DEF-then-ISSUE loop\" with first-readable-wins. That record cites older line numbers (:317/:318), though.\n\nThe evidence does not show the function body (lines 368-374). Nothing gathered proves the closed-union part of the premise: that the function consults ONLY DEF and ISSUE and no third source, such as the LLD's own artifact record. So the claim that the set of sources is exhaustive can't be checked here. The anchor and the DEF→ISSUE ordering hold up.",
+          "action": "Add a probe that reads the function body (src/workflow/storage.ts:368-374) or greps for the list of artifact kinds inside it, to confirm it consults exactly DEF then ISSUE and nothing else. Keep the anchors as they are, because they resolve correctly. If a third source turns up, revise the premise and any task that relies on 'DEF/ISSUE only'.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchors and the existence of the ISSUE fallback are verified. Only the 'only DEF then ISSUE' exhaustiveness is unconfirmed because the function body wasn't in the evidence, so a person needs to confirm the source list before the premise is treated as verified.",
+            "options": [
+              "Re-run the review with a read of src/workflow/storage.ts:368-374 to confirm the DEF→ISSUE source list is closed, then mark it verified (LOW).",
+              "Soften the premise to 'consults the DEF first, then falls back to the ISSUE artifact' and drop the exclusive 'only'.",
+              "If the body shows another source, rewrite the premise to list every source and re-check the tasks that depend on it."
+            ]
+          }
+        },
+        {
+          "claimId": "c20",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "Beyond the inheriting and focus-deriving finalizers, the remaining finalize* functions do not name a work-item folder: finalizeArtifact and finalizeByWorkflow are dispatchers, finalizeStub writes under docs/stub, and finalizeTracker takes epicSlug from its step output.",
+          "evidence": "The `function finalize\\w+` grep finds 12 finalize* definitions in src/workflow/orchestrator.ts: finalizeArtifact (:384), finalizeByWorkflow (:421), finalizeStub (:457), finalizeBrainstorm (:680), finalizeIssue (:864), finalizeDefine (:1132), finalizeDefineExtend (:1246), finalizeDesignEpic (:1731), finalizeDesignStory (:2062), finalizeStandaloneLld (:2279), finalizePlan (:2551) and finalizeTracker (:2730).\n\nThe premise names four \"remaining\" functions: finalizeArtifact, finalizeByWorkflow, finalizeStub and finalizeTracker. The other eight split into two groups:\n- **Focus-deriving:** finalizeBrainstorm, finalizeIssue and finalizeDefine. docs/standalone/standalone-features-cannot-built-task-task-E20261011c00559b7/ISSUE.md:24 says these three derive the slug from their own focus text via safeDeriveSlug.\n- **Inheriting:** the five design and plan finalizers. The same ISSUE.md line says \"The other sites inherit and use the focus only as a fallback\".\n\nSo the twelve functions split into 3 + 5 + 4, and the list is complete.\n\nThe stub claim is partly supported. storage.ts:58 has `STUB_DIR = 'docs/stub'`, storage.ts:499 says stub \"writes to `docs/stub/<slug>.{md,json}`\", and stub.ts:7 says the same. Tests also assert that stub artifacts land under /docs/stub/ (workflow-rpc.test.ts:103, storage.test.ts:75). However, the body of finalizeStub at orchestrator.ts:457 was not read, so the link from finalizeStub to stubArtifactPaths is inferred, not shown.\n\nThree claims are not supported by the evidence:\n- finalizeArtifact and finalizeByWorkflow are pure dispatchers. Only their signatures appear (:384, :421); no body was read.\n- finalizeTracker takes epicSlug from its step output. Only the signature line :2730 was matched.\n- finalizeDefineExtend inherits rather than derives from focus. ISSUE.md names only three focus-deriving sites, but it is not cited for finalizeDefineExtend by name.",
+          "action": "Read the bodies to confirm the behaviour claims:\n- orchestrator.ts:384–456: check that finalizeArtifact and finalizeByWorkflow only route to per-workflow finalizers and never call safeDeriveSlug or a folder-naming path themselves.\n- orchestrator.ts:457: check that finalizeStub uses stubArtifactPaths under STUB_DIR, not a work-item folder.\n- orchestrator.ts:2730: check that finalizeTracker reads epicSlug from stepOutputs and never derives it from intent.focus.\n- orchestrator.ts:1246: confirm that finalizeDefineExtend falls in the inheriting group.\n\nIf any of these does derive a slug from focus, add it to the focus-deriving set the task changes.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "All 12 finalize* functions in orchestrator.ts are accounted for, so the list is complete. What the evidence does not show is how the four 'remaining' functions behave: the dispatcher role, how finalizeStub builds its path, and where finalizeTracker gets epicSlug. Citing the lines that prove it, or rewording to state what is known, needs a person to read those bodies. The list itself does not need to change.",
+            "options": [
+              "Keep the premise. After reading the bodies, add citations: orchestrator.ts:384/:421 (dispatch only), :457 → storage.ts stubArtifactPaths/STUB_DIR (storage.ts:58), :2730 (epicSlug from stepOutputs).",
+              "Reword the premise to cite the full 12-function list (orchestrator.ts:384–2730) and state the 3 focus-deriving + 5 inheriting + 4 remaining split explicitly, so the closed set can be checked.",
+              "If reading the body shows finalizeTracker (or finalizeDefineExtend) derives a slug from intent.focus, move it into the focus-deriving set and widen the task's scope to match."
+            ]
+          }
+        },
+        {
+          "claimId": "c21",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "finalizeStandaloneLld stamps meta.standalone: true at src/workflow/orchestrator.ts:2351; epic-story LLDs omit the field.",
+          "evidence": "The read of src/workflow/orchestrator.ts:2351 returned `standalone:           true,`, which is the meta.standalone: true literal at the cited line. Older artifacts back up which function this is. docs/standalone/artifact-docs-folders-fork-per-stage-E20261003e20235c1/ISSUE.md:58 names \"orchestrator.ts:2303 for the standalone LLD\" as one of only two places that write standalone:true into persisted artifact metadata (the other is :872 for the ISSUE). Code has been added since then, which explains the move to :2351. S009/LLD.md:189 likewise places the finalizeStandaloneLld meta, which \"carries standalone:true + sizeClass\", in orchestrator.ts. Two parts are not shown directly by this evidence. First, the read only returned the line itself, not the enclosing function, so it does not prove the line sits inside finalizeStandaloneLld. Second, the claim that \"epic-story LLDs omit the field\" was not probed: the grep stopped at 50 matches, all of them in docs/. Even so, the ISSUE.md:58 inventory supports the second part: the only metadata writes of standalone:true are the ISSUE and the standalone LLD, so the epic-story LLD path does not write it.",
+          "action": "None needed; the premise checks out. If you want stronger proof, read the lines around orchestrator.ts:2351 to confirm the enclosing function is finalizeStandaloneLld, and check that the epic-story LLD finalize path builds its meta without a standalone key.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited anchor resolves to the claimed literal, and other artifacts back up both the function and the claim that the epic-story path omits the field. No edit needed."
+          }
+        },
+        {
+          "claimId": "c22",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "137 of the 200 LLD artifacts on disk carry no standalone flag.",
+          "evidence": "The only probe was grep /\"standalone\":\\s*true/, and it returned 3 matches, all in test fixtures: src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json:348, and src/workflow/runners/build/__tests__/fixtures/build-record-goldens.ts:58 and :162. None of the matches is in .insrc/artifacts/LLD-*.json, the premise's anchor. The evidence does not list or count the LLD artifacts, so it confirms neither the total of 200 nor the 137 without a flag. There are two ways to read the zero hits under .insrc/artifacts. Either no LLD artifact carries standalone:true, which would make the split 200 of 200 and not 137 of 200, or the search never reached the .insrc/ dot-directory, since ripgrep skips hidden directories by default. The evidence cannot tell these apart, and it says nothing about artifacts that carry an explicit standalone:false compared with those that omit the key. The premise is therefore UNVERIFIABLE. A wrong count matters only if the planned change depends on it, and a back-compat default for a missing flag behaves the same at 137 or 200, so the severity is MED, not HIGH.",
+          "action": "Count the artifacts again with probes that reach .insrc/artifacts. Run `ls .insrc/artifacts/LLD-*.json | wc -l` for the total. Run `rg --hidden -L '\"standalone\"' .insrc/artifacts/LLD-*.json | wc -l` for the count with no flag at all. Also count the artifacts that set standalone to true and to false. Then update the premise to the measured numbers. If the design depends on the exact split, for example a migration that is sized or gated on it, confirm that it treats a missing flag the same as standalone:false. If it does not depend on the split, change the premise to a qualitative statement such as \"many existing LLD artifacts predate the standalone flag\".",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The gathered evidence does not support any specific replacement number. The grep found no LLD artifacts, and it may never have searched the hidden .insrc/ directory. Correcting the count means re-running the probe against .insrc/artifacts, or rewording the premise so it does not depend on the count.",
+            "options": [
+              "Re-run the count against .insrc/artifacts with --hidden, then replace '137 of the 200' with the measured values.",
+              "Make the premise qualitative: 'Existing LLD artifacts on disk may lack the standalone flag; absent is treated as standalone:false.'",
+              "Keep the numbers but note they are an unverified snapshot as of authoring time, and that the change does not depend on them."
+            ]
+          }
+        },
+        {
+          "claimId": "c23",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The standalone design.story start phase resolves params.specHash through resolveStageFocus at src/mcp/workflow-step/phases/start.ts:63.",
+          "evidence": "The read of src/mcp/workflow-step/phases/start.ts:63 returns `// Spec-seeded focus (S008/sc4): when the start params carry a `specHash`,`. That line opens the spec-seeding block in handleStart, which is where the premise places the specHash resolution. Supporting evidence: S009/LLD.md:207 (CONFIRMED) says src/workflow/seed-focus.ts:73 exports resolveStageFocus. S009/LLD.md:188 says the helper is \"wired unconditionally into start.ts\", so a standalone start with params.specHash goes through it. S008/PLAN.md:40 (t3) wires the call into start.ts just before the WorkflowIntent is built, at the old :62. Caveat: line 63 is the comment that opens the block, not the call itself. The resolveStageFocus grep stopped at its cap before any src/ match was listed, so the exact line of the call is inferred from the comment rather than shown directly. The anchor still points at the right place and the right concept, so this does not change what gets built.",
+          "action": "None. The premise holds against the evidence. Optionally, move the anchor from the comment line (:63) to the line that actually calls resolveStageFocus a line or two below it.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The anchor resolves to the S008/sc4 spec-seeded focus block in start.ts, which is the seam where resolveStageFocus handles params.specHash. Nothing needs fixing."
+          }
+        },
+        {
+          "claimId": "c24",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "finalizeStandaloneLld stamps meta.seededFromSpec from the spec hash at src/workflow/orchestrator.ts:2320 and :2354.",
+          "evidence": "Both cited anchors resolve to the stamping code the premise describes. `src/workflow/orchestrator.ts:2320` reads `const seededFromSpec = typeof intent.params['specHash'] === 'string' && intent.params['specHash'].length > 0`, which takes the value from the spec hash in intent.params. `src/workflow/orchestrator.ts:2354` reads `...(seededFromSpec !== undefined ? { seededFromSpec } : {}),`, which adds it to the meta literal only when it is set. That matches the S008 contract: when a spec hash is present, meta.seededFromSpec gets that hash; on a plain-focus run it stays unset (S008/LLD.md:91, :97, :165). One gap: the evidence shows only these two lines, not the function they sit in. It does not confirm by name that they are inside finalizeStandaloneLld rather than finalizeDefine. Still, the line numbers (~2320) are far from finalizeDefine (~:817 per S008/PLAN.md:31). The pattern is the same one the S008 design prescribed for the define path, now applied to another finalize function. So the premise is consistent with the evidence. The anchors point at the right code, and building against them would target real, reachable stamping code.",
+          "action": "None needed; the anchors are verified. Optionally, confirm that the function enclosing lines 2320–2354 is finalizeStandaloneLld. The gathered evidence does not show the function header.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified: both anchors resolve to the code that computes seededFromSpec from intent.params.specHash and adds it to meta only when set. No edit needed."
+          }
+        },
+        {
+          "claimId": "c25",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "There are zero specHash references under src/mcp/triage-step and src/workflow/triage.",
+          "evidence": "The engine ran a repo-wide grep for /specHash/ and stopped at its 50-match cap (TRUNCATED). Every one of the 50 matches it returned is under docs/epics/... (for example S002/LLD.md:65, e1-delivery HLD.md:59, frame-epic S006/LLD.md and PLAN.md, S007/LLD.md:23-112). None of them is under src/mcp/triage-step or src/workflow/triage. Because the results were cut off, they cannot show that there are no specHash references in those two directories. A match there could be among the results past the cap. So the evidence neither confirms nor contradicts the claim of zero references.",
+          "action": "Re-run the probe limited to the anchored paths, for example `rg -n specHash src/mcp/triage-step src/workflow/triage`, so the 50-match cap does not hide results. If that returns nothing, the premise holds (LOW). If it returns matches, fix the inventory claim and check whether the task's prescribed change depends on triage having no specHash plumbing yet.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence is a truncated repo-wide grep that only reached docs/ files, so it cannot confirm or deny that the anchored source directories have no specHash references. A grep limited to those directories is needed before the premise can be accepted or corrected.",
+            "options": [
+              "Re-run the grep limited to src/mcp/triage-step and src/workflow/triage. If it is empty, mark the premise verified and keep it unchanged.",
+              "If the scoped grep finds matches, reword the premise to list the actual specHash references and revisit whether the task's change still applies."
+            ]
+          }
+        },
+        {
+          "claimId": "c26",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The design.story nextCall built by triage at src/mcp/triage-step/phases/classify.ts:42-59 forwards storyTitle, storySpec and sizeClass and carries no specHash.",
+          "evidence": "Both anchors resolve. classify.ts:42 reads `const { route, sizeClass, magnitude, rationale, storyTitle } = result;`, and classify.ts:59 reads `storyTitle,` inside the nextCall params literal. The storySpec grep hits classify.ts:60 (`storySpec: focus,`), the next line, so the built design.story call forwards storyTitle and storySpec. sizeClass is destructured at :42 and in scope for the params block. Lines 43–58 were not read, so the evidence does not show the exact line where sizeClass is forwarded. No specHash grep was run on src/mcp/triage-step. The only corroboration for the \"no specHash\" claim is ISSUE.md:26 (\"a grep scoped to src/mcp/triage-step and src/workflow/triage finds zero specHash references\"). Nothing in the gathered matches puts specHash in classify.ts. The second params block at classify.ts:89-90 (storyTitle, storySpec: focus) is a separate route builder and does not contradict the premise.",
+          "action": "None needed; the premise checks out. Optionally, before building, run `rg specHash src/mcp/triage-step` directly to confirm the absence claim instead of relying on the ISSUE's own grep.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified sound: storyTitle (:59) and storySpec (:60) are forwarded in the cited block, sizeClass is destructured at :42, and nothing in the evidence shows a specHash. The cited range :42-59 stops one line before storySpec at :60, but the change it prescribes (thread specHash into this nextCall) is still correct, so no edit is required."
+          }
+        },
+        {
+          "claimId": "c27",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "A 2026-10-11 snapshot of .insrc/artifacts found 28 hashes with a PLAN-* file and no DEF-*/ISSUE-* file, and 15 hashes whose only artifact is a SPEC-* (illustrative; fix does not depend on the counts).",
+          "evidence": "The gathered evidence does not test this premise. The only probe was a grep for /^([A-Z]+)-([0-9a-f]{16})/, and it matched just 2 lines, both in docs/ markdown rather than in .insrc/artifacts: docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/evidence/t8-build-and-transcripts.md:75 (AMD-bfe98ff7f97178cf-1) and docs/standalone/bug-vscode-plugin-dev-chat-each-E2026093011638880/S001/BUILD.md:7 (ISSUE-1163888072faa9f2). No file listing of .insrc/artifacts was gathered. Nothing groups artifacts by hash, finds PLAN-* hashes that have no DEF-*/ISSUE-* file, or finds SPEC-only hashes. So neither the 28 count nor the 15 count is supported or contradicted. The premise itself says the counts are illustrative and that the fix does not depend on them. Even if they are wrong, what gets built does not change, so this cannot be HIGH.",
+          "action": "Optionally re-check the counts against .insrc/artifacts. Group the file names by their 16-hex hash, then count (a) hashes that have a PLAN-* file but no DEF-* or ISSUE-* file, and (b) hashes whose only artifact is a SPEC-*. Then either correct the numbers or drop them and describe the two orphan shapes in words only. The design itself needs no change, because the fix does not depend on the counts.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "This is an illustrative snapshot count that the gathered evidence cannot check. The design does not depend on the numbers, so the choice is between re-measuring them and removing them. No find/replace edit is given because the evidence offers no correct values to put in.",
+            "options": [
+              "Re-run a hash-grouped listing of .insrc/artifacts and update the 28 / 15 counts to what it shows, keeping the snapshot date",
+              "Remove the specific counts and describe the two shapes in words: hashes with a PLAN-* file but no DEF-*/ISSUE-* file, and hashes with only a SPEC-*",
+              "Keep the text as is, since the premise already says it is illustrative, and accept it with a note that it was not verified"
+            ]
+          }
+        },
+        {
+          "claimId": "c28",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "For hash d9f85b3cc8cc966b (an approved 10-task plan), the LLD lives under docs/standalone/implement-approved-spec-77932eaa1a85819b-docs-standalone-E20261011d9f85b3c/ and the PLAN under docs/standalone/decompose-approved-lld-d9f85b3cc8cc966b-s001-shared-E20261011d9f85b3c/.",
+          "evidence": "The grep for /E20261011d9f85b3c/ supports every part of the premise. (1) The LLD exists at docs/standalone/implement-approved-spec-77932eaa1a85819b-docs-standalone-E20261011d9f85b3c/S001/LLD.md:3 (\"# LLD: E20261011d9f85b3c:S001\"). (2) The PLAN exists at docs/standalone/decompose-approved-lld-d9f85b3cc8cc966b-s001-shared-E20261011d9f85b3c/S001/PLAN.md:3 (\"# Plan: E20261011d9f85b3c:S001\"). (3) The plan has exactly 10 tasks, T001 to T010 (PLAN.md lines 34, 43, 51, 61, 71, 81, 90, 99, 109, 117). (4) ISSUE.md:15 in standalone-features-cannot-built-task-task-E20261011c00559b7 states the same split: \"d9f85b3c's LLD is under …implement-approved-spec-77932eaa1a85819b-… and its PLAN under …decompose-approved-lld-d9f85b3cc8cc966b-s001-shared-…\". The approval status of the plan is not shown in this evidence. It does not change what gets built, because the premise is about where the files are.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c29",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The fix implements the approved design SPEC-34d7bb72df47a5e5, which ruled out adding a definition artifact; this issue supersedes ISSUE-b2e05b043846451c.",
+          "evidence": "Both anchors resolve to real artifacts. SPEC-34d7bb72df47a5e5 exists (docs/standalone/anchor-standalone-features-their-lld-name-E2026101134d7bb72/SPEC.md:1), and ISSUE-b2e05b043846451c exists (docs/standalone/standalone-feature-has-no-definition-artifact-E20261005b2e05b04/ISSUE.md:1). The issue under review says it implements the design approved as SPEC-34d7bb72df47a5e5 \"with no new artifact kind\" (ISSUE.md:30). It also says it \"supersedes ISSUE-b2e05b043846451c, which framed the fix as adding a definition artifact; that option was ruled out in SPEC-34d7bb72\" (ISSUE.md:37). The SPEC cites the earlier issue as a `prior-artifact` constraint (SPEC.md:30, [[c2]]), which confirms the SPEC was written against that issue. One caveat: the evidence does not show the SPEC's own nonGoals or ruledOut line that rejects a definition artifact. That rejection is stated only by the issue (ISSUE.md:37). Even so, the links between the artifacts check out, and the fix the issue prescribes (no new artifact kind) matches the SPEC it cites.",
+          "action": "None. The premise checks out. Optionally, cite the exact SPEC nonGoals/ruledOut entry that rejects the definition artifact, so readers don't have to take that point on the issue's word alone.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise checks out against the evidence: both artifacts exist, the issue says it implements the SPEC and supersedes the earlier issue, and the SPEC cites the earlier issue as a prior-artifact constraint. No edit is needed."
+          }
+        },
+        {
+          "claimId": "c30",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An existing docs-tree migrator exists in the codebase and can be extended (with a dry-run mode) to consolidate split documents into the anchor LLD's folder.",
+          "evidence": "The evidence shows the migrator exists and is still in use. `src/workflow/migrate-docs-tree.ts` is the docs-tree migrator, written in Epic 599a9b50 S003 (LLD.md:105, \"new module — the throwaway migration + a bin entry\"). Its CR cites real lines: migrate-docs-tree.ts:1, :60, :216 and :398. It was not deleted after its one-time run. Later stories changed it: the S007 BUILD.md:192 (2026-10-09), and the add-test-record BUILD.md:57 together with CR.md:52, which cites migrate-docs-tree.ts:118. The ISSUE in E20261003b090500b cites migrate-docs-tree.ts:678 (applyMigration commit chunks).\n\nThe migrator already does the kind of consolidation this premise needs. The TESTS.md:205 test \"converging a forked Story folder that holds BUILD.md and TESTS.md moves both to the same folder and leaves the old folder empty\" passes (TESTS.md:211, 27 tests in migrate-docs-tree.test.ts).\n\nA dry-run mode also already exists. S003 LLD.md:34 says planMigration is \"Pure — no filesystem mutation, no git; safe to call as a dry-run/preview\". S003 PLAN.md:15 and :45 say the bin \"prints a readable dry-run (moves + unmappable) without mutating anything by default\", with `--apply` to mutate.\n\nThe SPEC for this work (anchor-standalone-features…/SPEC.md:33) already cites `src/workflow/migrate-docs-tree.ts` as code. One wording issue: the premise says the migrator would be extended \"with a dry-run mode\", but that mode is already there. This does not change what gets built.",
+          "action": "None needed; the premise checks out. Optionally, reword it to say the work extends the existing dry-run, which is the default when `--apply` is not passed (pure planMigration), rather than adding a new mode.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The migrator exists, it already handles converging forked Story folders, and it already has a dry-run path (pure planMigration plus a bin that does not mutate by default). The only difference is wording: the premise says dry-run would be added, but it already exists. The work to be built is the same either way, so no artifact edit is needed."
+          }
+        },
+        {
+          "claimId": "c31",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The build tool currently admits individual plan tasks for a story under an Epic (DEF anchor) or a sized bugfix (ISSUE anchor), and accepts the hierarchical id form 'E<date><hash8>:S001:T001'.",
+          "evidence": "The only read that resolved is src/workflow/tracker/resolve.ts:426, `function resolveByHier(dir: string, wfid: WorkflowId): ResolvedRef | null {`. That shows a hierarchical-id resolver exists in the tracker module. It does not show that the build tool calls it, or which anchors (DEF / ISSUE) the build tool accepts. The grep for /E\\d{8}|:S\\d|HIER_RE/ found 7 matches, all in tests (design-story-e2e, plan-e2e, plan-artifact), delivery/markdown.ts, migrate-docs-tree.ts and vscode-plugin board-model.ts. None of them is in src/mcp/build-step/ (including the cited render.ts). None of them includes a task segment like `:T001`. The closest pattern, `/^E\\d{8}([0-9a-f]{8})(?::(S\\d+))?$/i` in board-model.ts:172, stops at the story segment. No evidence was gathered for resolveByLabel, for render.ts, or for how the build tool handles a DEF-anchored versus ISSUE-anchored story. The premise is therefore UNVERIFIABLE from the evidence provided.",
+          "action": "Re-probe the build-step admission path. Read the code in src/mcp/build-step/ that parses the target id (render.ts and the input/phase handler). Confirm that it calls resolveByHier/resolveByLabel and accepts the full `E<date><hash8>:S001:T001` form, task segment included. Confirm that it admits both a DEF-anchored epic story and an ISSUE-anchored sized bugfix. If no task-segment parser exists, restate the premise to say what the build tool really accepts today.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence confirms only that resolveByHier exists, in src/workflow/tracker/resolve.ts:426. No gathered match shows the build tool accepting a `:T001` task segment or branching on DEF vs ISSUE anchors. A human needs to check build-step before the premise is either kept or reworded.",
+            "options": [
+              "Keep the premise as written once a read of src/mcp/build-step/ confirms that the build tool parses `E<date><hash8>:S001:T001` through resolveByHier and admits both DEF and ISSUE anchors.",
+              "Reword the premise to the narrower verified fact: hierarchical ids resolve through resolveByHier (src/workflow/tracker/resolve.ts:426). Drop the claim about task-level (`:T001`) admission until it is confirmed.",
+              "If build-step does not accept the task segment, turn the premise into a stated gap: the build tool currently admits at story granularity only, and task-id admission is new work this artifact must specify."
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 9,
+        "low": 22
+      },
+      "reviewedAt": "2026-10-11T12:35:57.106Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-11T12:59:02.108Z",
+    "reviewOverride": {
+      "reason": "User-approved override (2026-10-11): 0 HIGH after three daemon review rounds; every remaining MED is 'unverifiable' because of review-probe limits (repo-wide grep capped at 50 matches inside docs/, ripgrep skipping the hidden .insrc/ directory, only cited lines read), none contradicted; each claim was hand-checked against source (resolve.ts:118-181/512, storage.ts:223/367-375, orchestrator.ts:716/888/1182/1291/1781/2112/2298/2320/2351/2354/2583, slug.ts:25/40, scoped grep of src/mcp/triage-step + src/workflow/triage = 0 specHash). The LLD for this fix gets its own daemon review.",
+      "at": "2026-10-11T12:59:02.108Z"
+    },
+    "parentRef": {
+      "slug": "standalone-feature-has-no-definition-artifact"
+    }
+  },
+  "body": {
+    "title": "Anchor standalone features on their LLD so their plans build task by task",
+    "reproduction": "1. Triage a change that sizes as a feature. Triage routes it to a standalone design.story, which mints its own epic hash <h> and writes LLD-<h>-S001. Approve it.\n2. Run plan for that story. It writes PLAN-<h>-S001 with its tasks. Approve it.\n3. Call insrc_build_step with phase 'implement' and target 'S001/t1' or 's1/t1' (both accepted by LABEL_RE, src/workflow/tracker/resolve.ts:512, /^([sS]\\d+)(?:\\/(t\\d+))?$/) with epicHash <h>, or the hierarchical id 'E<date><hash8>:S001:T001'.\n\nExpected: the build tool admits task t1 of the approved plan and returns its prompt, as it does for a story under an Epic or a sized bugfix.\nObserved: every form returns 'unresolved-target: could not resolve target ...'. Seen on 2026-10-11 on d9f85b3cc8cc966b (an approved 10-task plan). A point-in-time snapshot on 2026-10-11 (list .insrc/artifacts/*.json, take the hash from each name with ^([A-Z]+)-([0-9a-f]{16}), group by hash) found 28 hashes with a PLAN-* file and no DEF-* or ISSUE-* file. The counts are illustrative; the fix does not depend on them.\n\nTwo further symptoms share the cause:\n- One story's documents land in different folders: d9f85b3c's LLD is under docs/standalone/implement-approved-spec-77932eaa1a85819b-docs-standalone-E20261011d9f85b3c/ and its PLAN under docs/standalone/decompose-approved-lld-d9f85b3cc8cc966b-s001-shared-E20261011d9f85b3c/, each named from the opening words of that stage's focus text.\n- The SPEC a feature was brainstormed from is never linked: triage has no specHash input, so the LLD is never stamped seededFromSpec and the SPEC looks orphaned (the same snapshot found 15 hashes whose only artifact is a SPEC-*).",
+    "rootCause": "A standalone feature has no epic-level anchor artifact, and three parts of the workflow assume one.\n\n1. Task resolution. resolveWorkflowRef (src/workflow/tracker/resolve.ts:526) finds epics through listEpicHashes (resolve.ts:150), whose only filename filters are DEF_RE and ISSUE_RE (resolve.ts:155 and :159, matching DEF-<hash16>.json and ISSUE-<hash16>.json); it has no branch for LLD- or PLAN- files. It builds a reference through readEpicIdentity (resolve.ts:174), which reads epicSlug and createdAt only from DEF-<hash>.json then ISSUE-<hash>.json (resolve.ts:175-178) and returns null otherwise (resolve.ts:181). The standalone feature route writes neither: finalizeStandaloneLld (src/workflow/orchestrator.ts:2279) writes LLD-<h>-S001 and finalizePlan (orchestrator.ts:2551) writes PLAN-<h>-S001, and triage routes a feature straight to design.story, so finalizeDefine and finalizeIssue never run for it. resolveByHier (resolve.ts:426) and resolveByLabel (resolve.ts:444) therefore find no epic, and resolveTaskRef (src/mcp/build-step/render.ts:54; message built at :60), called from the implement phase (src/mcp/build-step/phases/implement.ts:61, failure returned as 'unresolved-target' at :62) and the validate phase (phases/validate.ts:212, returned at :213), fails. The identity those resolvers consume is EpicIdentity (resolve.ts:118-122): epicSlug, createdAt and an optional tracker block, read at resolve.ts:308 and :430.\n\n2. Folder naming. A folder is named <slug>-E<date><hash8>. Three finalizers derive the slug from their own focus text with no inheritance: finalizeBrainstorm (orchestrator.ts:716), finalizeIssue (:888) and finalizeDefine (:1182), each via safeDeriveSlug (orchestrator.ts:1880), which wraps deriveSlug (src/workflow/slug.ts:40): a mechanical cut keeping the first MAX_TOKENS = 6 non-stopword words (slug.ts:25), with no model involved. The other sites inherit and use the focus only as a fallback: finalizeDesignEpic (:1781) and finalizeDesignStory (:2112) use the parent DEF's epicSlug, finalizeDefineExtend inherits from the DEF (orchestrator.ts:1291, define.meta.epicSlug ?? s1.target?.epicSlug ?? epicHash), and finalizeStandaloneLld (:2298) and finalizePlan (:2583) call inheritedEpicSlug (src/workflow/storage.ts:223), which reads the label through readEpicDefinitionCore (storage.ts:367-375). That second definition reader also consults only the DEF then the ISSUE artifact, so the fix must cover it as well as readEpicIdentity. The remaining finalize* functions do not name a work-item folder: finalizeArtifact and finalizeByWorkflow are dispatchers, finalizeStub writes under docs/stub, and finalizeTracker takes epicSlug from its step output (the DEF). For a standalone feature there is nothing to inherit, so both of those fall back to their own focus text and the LLD and PLAN folders diverge. A SPEC (finalizeBrainstorm) is always named from its focus text. A standalone LLD is recognisable by meta.standalone: true, stamped by finalizeStandaloneLld (orchestrator.ts:2351); epic-story LLDs omit the field (137 of the 200 LLDs on disk carry no flag), so an absent flag means an epic LLD or a legacy standalone one written before the flag existed.\n\n3. SPEC link. Standalone design.story already supports seeding: the start phase resolves params.specHash through resolveStageFocus (src/mcp/workflow-step/phases/start.ts:63) and finalizeStandaloneLld stamps meta.seededFromSpec from it (orchestrator.ts:2320, :2354). But the triage tool never supplies it: a grep scoped to src/mcp/triage-step and src/workflow/triage finds zero specHash references, and the design.story call it builds (src/mcp/triage-step/phases/classify.ts:42-59, forwarding storyTitle/storySpec/sizeClass) carries no specHash.",
+    "fixIntent": "Implement the design approved as SPEC-34d7bb72df47a5e5, with no new artifact kind:\n\n- A standalone feature's LLD serves as its identity anchor, alongside DEF (epic) and ISSUE (bugfix), supplying the same identity a DEF or ISSUE does (label and anchor date), so the build tool can admit its plan's tasks one at a time from both the implement and validate phases. Any LLD for a hash with no DEF or ISSUE qualifies, including items written before the standalone flag existed.\n- Triage accepts an approved SPEC's hash and passes it into the standalone design.story it routes to, so the LLD records the SPEC it came from and shows a reference to it.\n- A work item's folder is named from its head artifact's title (an LLM-written title produced in the same synthesis pass, or triage's storyTitle for a standalone LLD), and every downstream document (PLAN, BUILD, TESTS, CR) inherits that name from the anchor instead of deriving its own. The finalizers that already inherit from a DEF keep doing so.\n- Existing anchorless items become buildable, and their already-split documents are consolidated into the anchor LLD's folder by extending the existing docs-tree migrator (dry run first).\n\nThis supersedes ISSUE-b2e05b043846451c, which framed the fix as adding a definition artifact; that option was ruled out in SPEC-34d7bb72."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/build-step/render.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/slug.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/migrate-docs-tree.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "SPEC-34d7bb72df47a5e5"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-b2e05b043846451c"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/mcp/workflow-step/phases/start.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/mcp/build-step/phases/implement.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/mcp/triage-step/phases/classify.ts"
+    }
+  ]
+}

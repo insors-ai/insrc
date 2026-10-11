@@ -19,7 +19,9 @@
     "schemaVersion": 1,
     "issueHash": "b2e05b043846451c",
     "epicSlug": "standalone-feature-has-no-definition-artifact",
-    "standalone": true
+    "standalone": true,
+    "rejectedAt": "2026-10-11T12:59:20.968Z",
+    "rejectReason": "Superseded by ISSUE-c00559b7e38bb6ce (approved 2026-10-11), which implements SPEC-34d7bb72df47a5e5; the definition-artifact fix framed here was ruled out in that SPEC."
   },
   "body": {
     "title": "Give a standalone feature a definition artifact so its plan can be built task by task",

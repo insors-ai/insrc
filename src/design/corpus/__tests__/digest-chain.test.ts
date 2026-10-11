@@ -4,7 +4,7 @@ import { recordContentDigest, candidateContentDigest, reviewContentDigest, relea
 import type { ReleaseManifest } from '../contracts.js';
 import { recordFixture } from './fixtures.js';
 
-export function manifestFixture(): ReleaseManifest {
+function manifestFixture(): ReleaseManifest {
   return { schemaVersion: 1, releaseId: '0'.repeat(64), label: 'test', createdAt: '2026-10-11T00:00:00.000Z', maintainer: 'test',
     records: [{ recordId: 'test:overview', recordVersion: 'a'.repeat(64), path: 'records/overview.json', digest: 'b'.repeat(64) }],
     files: [{ path: 'records/overview.json', digest: 'b'.repeat(64), mediaType: 'application/json' },

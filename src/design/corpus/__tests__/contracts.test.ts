@@ -34,3 +34,16 @@ test('evidence and manifest schemas require pinned identities without coercion',
   assert.equal(decodeEvidenceRef({ ...ref, releaseId: 5 }).ok, false);
   assert.equal(decodeReleaseManifest({ schemaVersion: '1' }).ok, false);
 });
+
+test('release availability is closed and validates every lifecycle state', async () => {
+  const { decodeReleaseAvailability } = await import('../contracts.js');
+  for (const state of ['published', 'deprecated', 'withdrawn']) {
+    const value = { releaseId: 'a'.repeat(64), state, catalogGeneration: 1 };
+    assert.deepEqual(decodeReleaseAvailability(value), { ok: true, value });
+  }
+  for (const value of [
+    { releaseId: 'a'.repeat(64), state: 'unknown', catalogGeneration: 1 },
+    { releaseId: 'a'.repeat(64), state: 'published', catalogGeneration: -1 },
+    { releaseId: 'a'.repeat(64), state: 'withdrawn', catalogGeneration: 1, unknown: true },
+  ]) assert.equal(decodeReleaseAvailability(value).ok, false);
+});

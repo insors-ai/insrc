@@ -123,25 +123,26 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
   const manifestInput: unknown = candidate['manifest']?.value;
   let manifestBytes: number;
   try { manifestBytes = Buffer.byteLength(canonicalJson(manifestInput, CORPUS_LIMITS.packageBytes)); }
-  catch (error) { return failure([inputIssue(error)]); }
+  catch (error) { const problem = inputIssue(error); return failure([{ ...problem, path: '/manifest' + problem.path }]); }
   const decoded = decodeReleaseManifest(manifestInput);
-  if (!decoded.ok) return decoded;
+  if (!decoded.ok) return failure(decoded.issues.map(problem => ({ ...problem, path: '/manifest' + problem.path })));
   const manifest = decoded.value;
   const issues: ValidationIssue[] = [];
   const add = (code: ValidationIssue['code'], path: string, message: string) => issues.push(issue(code, path, message));
   const manifestPath: unknown = candidate['manifestPath']?.value ?? 'manifest.json';
   if (typeof manifestPath !== 'string' || !isPortablePath(manifestPath)) add('path.invalid', '/manifestPath', 'Expected a portable reserved manifest path.');
-  if (!utcDate(manifest.createdAt)) add('schema.invalid', '/createdAt', 'Expected a valid UTC ISO timestamp.');
+  if (!utcDate(manifest.createdAt)) add('schema.invalid', '/manifest/createdAt', 'Expected a valid UTC ISO timestamp.');
   const rawFiles: unknown = candidate['files']?.value;
   if (!Array.isArray(rawFiles)) return failure([...issues, issue('inventory.invalid', '/files', 'Expected an in-memory file array.')]);
   if (rawFiles.length > CORPUS_LIMITS.files || manifest.files.length > CORPUS_LIMITS.files || manifest.records.length > CORPUS_LIMITS.files) {
     return failure([...issues, issue('limit.exceeded', '/files', 'File count exceeds the format limit.')]);
   }
   const fileArrayKeys = Reflect.ownKeys(rawFiles);
-  if (fileArrayKeys.length !== rawFiles.length + 1 || fileArrayKeys.some(key => key !== 'length' && (typeof key !== 'string' || !/^(0|[1-9]\d*)$/.test(key)))) {
+  if (fileArrayKeys.length !== rawFiles.length + 1 || fileArrayKeys.some(key => key !== 'length' && (typeof key !== 'string' || !/^(0|[1-9]\d*)$/.test(key) || Number(key) >= rawFiles.length))) {
     return failure([...issues, issue('inventory.invalid', '/files', 'Expected a dense file array without extra properties.')]);
   }
   const files = new Map<string, PackageFile>();
+  const fileIndices = new Map<string, number>();
   const folded = new Set<string>();
   let totalBytes = manifestBytes;
   for (let i = 0; i < rawFiles.length; i++) {
@@ -159,37 +160,39 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
     if (typeof manifestPath === 'string' && path.toLowerCase() === manifestPath.toLowerCase()) add('inventory.invalid', `/files/${i}/path`, 'Manifest must not appear in its own data inventory.');
     totalBytes += bytes.byteLength;
     if (totalBytes > CORPUS_LIMITS.packageBytes) return failure([...issues, issue('limit.exceeded', '/files', 'Package bytes exceed the format limit.')]);
-    folded.add(path.toLowerCase());
+    folded.add(path.toLowerCase()); fileIndices.set(path, i);
     files.set(path, { path, kind: 'regular', bytes });
   }
   const listed = new Set<string>(); const listedFolded = new Set<string>();
   const fileDigests = new Map<string, string>();
   manifest.files.forEach((entry, i) => {
-    if (!isPortablePath(entry.path)) add('path.invalid', `/files/${i}/path`, 'Expected a portable package-relative path.');
-    if (listed.has(entry.path) || listedFolded.has(entry.path.toLowerCase())) add('inventory.invalid', `/files/${i}/path`, 'Manifest file paths must be unique without case collisions.');
+    if (!isPortablePath(entry.path)) add('path.invalid', `/manifest/files/${i}/path`, 'Expected a portable package-relative path.');
+    if (listed.has(entry.path) || listedFolded.has(entry.path.toLowerCase())) add('inventory.invalid', `/manifest/files/${i}/path`, 'Manifest file paths must be unique without case collisions.');
     listed.add(entry.path); listedFolded.add(entry.path.toLowerCase());
     const file = files.get(entry.path);
-    if (!file) add('reference.missing', `/files/${i}/path`, 'Declared file is missing from inventory.');
+    if (!file) add('reference.missing', `/manifest/files/${i}/path`, 'Declared file is missing from inventory.');
     else {
       const digest = hashBytes(file.bytes); fileDigests.set(entry.path, digest);
-      if (digest !== entry.digest) add('digest.mismatch', `/files/${i}/digest`, 'File digest does not match exact bytes.');
+      if (digest !== entry.digest) add('digest.mismatch', `/manifest/files/${i}/digest`, 'File digest does not match exact bytes.');
     }
   });
-  for (const [i, path] of [...files.keys()].entries()) {
-    if (!listed.has(path)) add('inventory.invalid', `/inventory/${i}`, 'Inventory contains an undeclared file.');
+  for (const path of files.keys()) {
+    if (!listed.has(path)) add('inventory.invalid', `/files/${fileIndices.get(path)!}`, 'Inventory contains an undeclared file.');
   }
   const reserved = new Set<string>();
   for (const field of ['sourceManifestPath', 'noticesPath', 'coveragePath'] as const) {
-    if (!isPortablePath(manifest[field])) add('path.invalid', `/${field}`, 'Expected a portable package-relative path.');
-    if (!listed.has(manifest[field]) || !files.has(manifest[field])) add('reference.missing', `/${field}`, 'Required package file is missing.');
-    if (reserved.has(manifest[field])) add('inventory.invalid', `/${field}`, 'Source, notices and coverage require distinct files.');
+    if (!isPortablePath(manifest[field])) add('path.invalid', `/manifest/${field}`, 'Expected a portable package-relative path.');
+    if (!listed.has(manifest[field]) || !files.has(manifest[field])) add('reference.missing', `/manifest/${field}`, 'Required package file is missing.');
+    if (reserved.has(manifest[field])) add('inventory.invalid', `/manifest/${field}`, 'Source, notices and coverage require distinct files.');
     reserved.add(manifest[field]);
   }
   const ids = new Set<string>(); const recordPaths = new Set<string>();
   const records: GuidanceRecord[] = [];
   const recordEntries = new Map<string, { record: GuidanceRecord; index: number }>();
+  const contentPaths = new Set(files.keys());
   manifest.records.forEach((entry, i) => {
-    const prefix = `/records/${i}`;
+    const prefix = `/manifest/records/${i}`;
+    const contentPrefix = `/files/${fileIndices.get(entry.path) ?? 0}/bytes`;
     if (ids.has(entry.recordId)) add('inventory.invalid', `${prefix}/recordId`, 'Each record identity may appear once.');
     ids.add(entry.recordId);
     if (!isPortablePath(entry.path)) add('path.invalid', `${prefix}/path`, 'Expected a portable package-relative path.');
@@ -199,9 +202,9 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
     if (fileDigests.get(entry.path) !== entry.digest) add('digest.mismatch', `${prefix}/digest`, 'Record file digest does not match exact bytes.');
     let value: unknown;
     try { value = parsedBytes(files.get(entry.path)!.bytes, CORPUS_LIMITS.recordBytes); }
-    catch (error) { const problem = inputIssue(error); issues.push({ ...problem, path: prefix + problem.path }); return; }
-    const checked = validateGuidanceRecord(value, { mode: 'publication', contentPaths: new Set(files.keys()) });
-    if (!checked.ok) issues.push(...checked.issues.map(problem => ({ ...problem, path: prefix + problem.path })));
+    catch (error) { const problem = inputIssue(error); issues.push({ ...problem, path: contentPrefix, message: `Decoded record ${problem.path || '/'}: ${problem.message}` }); return; }
+    const checked = validateGuidanceRecord(value, { mode: 'publication', contentPaths });
+    if (!checked.ok) issues.push(...checked.issues.map(problem => ({ ...problem, path: contentPrefix, message: `Decoded record ${problem.path || '/'}: ${problem.message}` })));
     // Retain structurally valid siblings for exact relationship diagnostics even if another semantic check failed.
     const structural = decodeGuidanceRecord(value);
     if (!structural.ok) return;
@@ -213,7 +216,7 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
   for (const { record, index } of recordEntries.values()) {
     const targets = new Set<string>(); edges.set(record.recordId, targets);
     record.relations.forEach((relation, i) => {
-      const prefix = `/records/${index}/relations/${i}`;
+      const prefix = `/files/${fileIndices.get(manifest.records[index]!.path)!}/bytes`;
       if (targets.has(relation.recordId)) add('inventory.invalid', prefix, 'Duplicate relationship target is not allowed.');
       targets.add(relation.recordId);
       const target = recordEntries.get(relation.recordId)?.record;
@@ -232,28 +235,28 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
       indegrees.set(target, n - 1); if (n === 1) ready.push(target);
     }
   }
-  if (visited !== edges.size) add('reference.cycle', '/records', 'Included record relationships must form an acyclic graph.');
+  if (visited !== edges.size) add('reference.cycle', '/manifest/records', 'Included record relationships must form an acyclic graph.');
   const candidateDigest = candidateContentDigest(manifest);
   const coverage = files.get(manifest.coveragePath);
   if (coverage) {
     try {
       const envelope = parsedBytes(coverage.bytes, CORPUS_LIMITS.packageBytes);
       if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope) || (envelope as Record<string, unknown>)['candidateContentDigest'] !== candidateDigest) {
-        add('review.stale', '/coveragePath', 'Coverage must bind the exact candidate content digest.');
+        add('review.stale', '/manifest/coveragePath', 'Coverage must bind the exact candidate content digest.');
       }
       const pending: unknown[] = [envelope];
       while (pending.length) {
         const value = pending.pop();
         if (value === manifest.releaseId || (value && typeof value === 'object' && Object.hasOwn(value, 'releaseId'))) {
-          add('inventory.invalid', '/coveragePath', 'Coverage must not reference a final release identity.'); break;
+          add('inventory.invalid', '/manifest/coveragePath', 'Coverage must not reference a final release identity.'); break;
         }
         if (value && typeof value === 'object') for (const child of Object.values(value)) pending.push(child);
       }
-      if (reviewContentDigest(envelope) !== manifest.reviewDigest) add('digest.mismatch', '/reviewDigest', 'Review digest does not match canonical coverage bytes.');
-    } catch (error) { const problem = inputIssue(error); issues.push({ ...problem, path: '/coveragePath' + problem.path }); }
+      if (reviewContentDigest(envelope) !== manifest.reviewDigest) add('digest.mismatch', '/manifest/reviewDigest', 'Review digest does not match canonical coverage bytes.');
+    } catch (error) { const problem = inputIssue(error); issues.push({ ...problem, path: `/files/${fileIndices.get(manifest.coveragePath)!}/bytes`, message: `Decoded coverage ${problem.path || '/'}: ${problem.message}` }); }
   }
   const manifestDigest = releaseContentDigest(manifest);
-  if (manifest.releaseId !== manifestDigest) add('digest.mismatch', '/releaseId', 'Release identity does not match canonical manifest.');
+  if (manifest.releaseId !== manifestDigest) add('digest.mismatch', '/manifest/releaseId', 'Release identity does not match canonical manifest.');
   return issues.length ? failure(issues) : { ok: true, value: { manifest, records, candidateContentDigest: candidateDigest, manifestDigest } };
 }
 
@@ -292,7 +295,7 @@ export function checkPublication(candidate: unknown, assessments: unknown): Publ
   }
   for (const stage of ['eligibility', 'coverage'] as const) {
     const matches = decoded.value.filter(assessment => assessment.stage === stage);
-    if (matches.length !== 1) issues.push(issue('assessment.missing', `/assessments/${stage}`, 'Exactly one assessment is required for each stage.'));
+    if (matches.length !== 1) issues.push(issue('assessment.missing', '/assessments', 'Exactly one assessment is required for each stage.'));
   }
   decoded.value.forEach((assessment, i) => {
     if (!contentDigest || assessment.candidateContentDigest !== contentDigest) issues.push(issue('assessment.stale', `/assessments/${i}/candidateContentDigest`, 'Assessment does not bind this exact candidate.'));

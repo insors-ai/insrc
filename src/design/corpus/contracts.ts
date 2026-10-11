@@ -14,7 +14,7 @@ export const RECORD_ID_SCHEMA = Type.String({ maxLength: 128, pattern: '^[a-z0-9
 export const DIGEST_SCHEMA = Type.String({ pattern: '^[a-f0-9]{64}$' });
 export const EVIDENCE_REF_SCHEMA = object({ releaseId: DIGEST_SCHEMA, recordId: RECORD_ID_SCHEMA, recordVersion: DIGEST_SCHEMA });
 export const PROVENANCE_SCHEMA = object({
-  authorship: Type.Union(['original', 'derived', 'imported', 'inferred'].map(v => Type.Literal(v))),
+  authorship: Type.Union((['original', 'derived', 'imported', 'inferred'] as const).map(v => Type.Literal(v))),
   author: text(), sourceRefs: strings(), modificationNotes: strings(),
 });
 export const APPLICABILITY_SCHEMA = object({
@@ -24,7 +24,7 @@ export const APPLICABILITY_SCHEMA = object({
 export const GUIDANCE_RECORD_SCHEMA = object({
   schemaVersion: Type.Literal(1), recordId: RECORD_ID_SCHEMA, recordVersion: DIGEST_SCHEMA,
   title: text(), domains: Type.Array(domain, { minItems: 1, uniqueItems: true }), kind: GUIDANCE_KIND_SCHEMA,
-  guidanceClass: Type.Union(['requirement', 'convention', 'heuristic', 'preference'].map(v => Type.Literal(v))),
+  guidanceClass: Type.Union((['requirement', 'convention', 'heuristic', 'preference'] as const).map(v => Type.Literal(v))),
   explanation: text(), rationale: text(), problem: text(), tradeoffs: Type.Array(text(), { minItems: 1 }),
   checks: Type.Array(object({ check: text(), requiredInputs: strings(), exceptions: strings(), limits: Type.Array(text(), { minItems: 1 }) })),
   noMeasurableChecksRationale: Type.Optional(text()),
@@ -37,7 +37,7 @@ export const GUIDANCE_RECORD_SCHEMA = object({
   }),
   applicability: APPLICABILITY_SCHEMA,
   examples: Type.Array(object({ kind: Type.Union([Type.Literal('example'), Type.Literal('misuse')]), contentRef: text(), uiType: UI_TYPE_SCHEMA })),
-  relations: Type.Array(object({ kind: Type.Union(['compatible', 'conflicting', 'prerequisite', 'alternative'].map(v => Type.Literal(v))),
+  relations: Type.Array(object({ kind: Type.Union((['compatible', 'conflicting', 'prerequisite', 'alternative'] as const).map(v => Type.Literal(v))),
     recordId: RECORD_ID_SCHEMA, recordVersion: DIGEST_SCHEMA })),
   provenance: PROVENANCE_SCHEMA,
   // Empty review metadata is representable only as a draft; admission checks it separately.
@@ -61,7 +61,7 @@ export const STAGE_ASSESSMENT_SCHEMA = object({
 export const PUBLICATION_CHECK_SCHEMA = object({ eligible: Type.Boolean(), issues: Type.Array(VALIDATION_ISSUE_SCHEMA),
   manifestDigest: Type.Union([DIGEST_SCHEMA, Type.Literal('')]) });
 export const RELEASE_AVAILABILITY_SCHEMA = object({ releaseId: DIGEST_SCHEMA,
-  state: Type.Union(['published', 'deprecated', 'withdrawn'].map(v => Type.Literal(v))), reason: Type.Optional(text()),
+  state: Type.Union((['published', 'deprecated', 'withdrawn'] as const).map(v => Type.Literal(v))), reason: Type.Optional(text()),
   catalogGeneration: Type.Integer({ minimum: 0 }) });
 
 export type UiType = Static<typeof UI_TYPE_SCHEMA>;
@@ -81,6 +81,7 @@ const ajv = new Ajv({ allErrors: true, strict: true, useDefaults: false, coerceT
 const recordValidator = ajv.compile<GuidanceRecord>(GUIDANCE_RECORD_SCHEMA);
 const manifestValidator = ajv.compile<ReleaseManifest>(RELEASE_MANIFEST_SCHEMA);
 const assessmentValidator = ajv.compile<StageAssessment[]>(Type.Array(STAGE_ASSESSMENT_SCHEMA));
+const availabilityValidator = ajv.compile<ReleaseAvailability>(RELEASE_AVAILABILITY_SCHEMA);
 const evidenceValidator = ajv.compile<EvidenceRef>(EVIDENCE_REF_SCHEMA);
 
 export function sortIssues(issues: readonly ValidationIssue[]): ValidationIssue[] {
@@ -100,3 +101,5 @@ export const decodeReleaseManifest = (value: unknown): ValidationResult<ReleaseM
 export const decodeEvidenceRef = (value: unknown): ValidationResult<EvidenceRef> => decode(evidenceValidator, value);
 
 export const decodeStageAssessments = (value: unknown): ValidationResult<StageAssessment[]> => decode(assessmentValidator, value);
+
+export const decodeReleaseAvailability = (value: unknown): ValidationResult<ReleaseAvailability> => decode(availabilityValidator, value);

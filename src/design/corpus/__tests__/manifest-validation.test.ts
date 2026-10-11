@@ -64,3 +64,22 @@ test('manifest format limits and accessor boundaries fail explicitly', () => {
   const files = [...valid.files]; Object.defineProperty(files, '0', { get() { calls++; return valid.files[0]; } });
   fails({ ...valid, files }, 'inventory.invalid'); assert.equal(calls, 0);
 });
+
+test('manifest overrides and diagnostic pointers identify actual candidate fields', () => {
+  const valid = packageFixture();
+  assert.equal(validateRelease({ ...valid, manifestPath: 'release/custom.json' }).ok, true);
+  fails({ ...valid, manifestPath: '../invalid.json' }, 'path.invalid');
+  fails({ ...valid, manifestPath: 'sources.json' }, 'inventory.invalid');
+  const changed = { ...valid, files: [...valid.files, { path: 'extra.json', kind: 'regular', bytes: bytes({}) }],
+    manifest: { ...valid.manifest, files: valid.manifest.files.map((f, i) => i === 0 ? { ...f, digest: 'f'.repeat(64) } : f) } };
+  const result = validateRelease(changed); assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.ok(result.issues.some(i => i.path === '/manifest/files/0/digest'));
+    assert.ok(result.issues.some(i => i.path === `/files/${valid.files.length}`));
+    for (const issue of result.issues) {
+      let target: unknown = changed;
+      for (const part of issue.path.split('/').slice(1)) target = (target as Record<string, unknown>)[part.replaceAll('~1', '/').replaceAll('~0', '~')];
+      assert.notEqual(target, undefined, issue.path);
+    }
+  }
+});

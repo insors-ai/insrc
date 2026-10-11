@@ -2,10 +2,22 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { resolve } from 'node:path';
+import { resolve, join } from 'node:path';
+import { mkdtempSync, writeFileSync, symlinkSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { packageFixture } from './package-fixtures.js';
 
 test('compiled corpus imports and checks valid and invalid candidates without external IO', () => {
+  const temporary = mkdtempSync(join(tmpdir(), 'insrc-corpus-isolation-'));
+  try {
+    // Compile current source into a private output tree, never reuse shared or stale out/.
+    writeFileSync(join(temporary, 'package.json'), JSON.stringify({ type: 'module' }));
+    symlinkSync(resolve('node_modules'), join(temporary, 'node_modules'), 'dir');
+    const config = join(temporary, 'tsconfig.json');
+    writeFileSync(config, JSON.stringify({ extends: resolve('tsconfig.json'),
+      compilerOptions: { rootDir: resolve('src'), outDir: join(temporary, 'out'), declaration: false, declarationMap: false, sourceMap: false },
+      include: [resolve('src/design/corpus/*.ts')], exclude: [resolve('src/design/corpus/__tests__/**')] }));
+    execFileSync(process.execPath, [resolve('node_modules/typescript/bin/tsc'), '--project', config], { encoding: 'utf8', timeout: 30_000 });
   const fixture = packageFixture();
   const payload = { ...fixture, files: fixture.files.map(f => ({ ...f, bytes: Array.from(f.bytes) })) };
   const script = `
@@ -40,7 +52,7 @@ test('compiled corpus imports and checks valid and invalid candidates without ex
     }
     globalThis.fetch = deny('fetch'); process.dlopen = deny('native database/provider load');
     syncBuiltinESMExports();
-    const corpus = await import(${JSON.stringify(pathToFileURL(resolve('out/design/corpus/index.js')).href)});
+    const corpus = await import(${JSON.stringify(pathToFileURL(join(temporary, 'out/design/corpus/index.js')).href)});
     for (const name of ['readFile','readFileSync','open','openSync','readdir','readdirSync','stat','statSync','access','accessSync','createReadStream']) {
       if (typeof fs[name] === 'function') fs[name] = deny('fs.' + name);
       if (typeof fsp[name] === 'function') fsp[name] = deny('fsp.' + name);
@@ -57,4 +69,5 @@ test('compiled corpus imports and checks valid and invalid candidates without ex
     cwd: process.cwd(), input: JSON.stringify(payload), encoding: 'utf8', timeout: 20_000,
     env: { ...process.env, INSRC_LIVE_TESTS: '0' },
   }));
+  } finally { rmSync(temporary, { recursive: true, force: true }); }
 });

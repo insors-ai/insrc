@@ -747,7 +747,7 @@
             "statement": "A relationship whose target has not been indexed yet is kept and completed once the target exists."
           },
           {
-            "statement": "A reindex reads every file again and rebuilds its entities and relationships from scratch, whether or not its content has changed; it is the one command for this, and there is no separate repair."
+            "statement": "A reindex removes everything the index holds for the repository, in the graph store and in the vector store, and builds it again from every file; it is the one command for this, and there is no separate repair."
           },
           {
             "statement": "A call that reaches a function through a re-exporting file is linked to that function."
@@ -1587,7 +1587,7 @@
         },
         {
           "id": "E20261011c2ba6fa6:S001:FR002",
-          "statement": "A reindex reads every file again and rebuilds its entities and relationships from scratch, whether or not its content has changed; it is the one command for this, and there is no separate repair.",
+          "statement": "A reindex removes everything the index holds for the repository, in the graph store and in the vector store, and builds it again from every file; it is the one command for this, and there is no separate repair.",
           "scope": "item",
           "itemRef": "s1"
         },
@@ -1850,6 +1850,16 @@
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
         },
         "comment": "Amended after approval, 2026-10-11, on the stakeholder's decision: reindex is the one command and indexes every file from scratch, whether or not its content has changed; there is no separate repair. Today repo.reindex skips every file whose stored content hash is unchanged (src/indexer/index.ts:628 and :1004-1008). Not re-reviewed. Open for the stakeholder to confirm: unchanged text with an unchanged embedding model keeps its vector.",
+        "kind": "comment"
+      },
+      {
+        "id": "8f6d646b",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-11T07:46:08.673Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
+        },
+        "comment": "Clarified by the stakeholder, 2026-10-11: a reindex calls the delete operations on the graph store and the vector store for the repository and builds everything again, vectors and document summaries included. This supersedes the earlier note that unchanged text keeps its vector. Not re-reviewed.",
         "kind": "comment"
       }
     ]

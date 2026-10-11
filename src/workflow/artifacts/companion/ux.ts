@@ -26,6 +26,7 @@ import { validateAgainstSchema } from '../../../agent/providers/structured-outpu
 import { loadAdaptiveCardsSchema, AdaptiveCardsAssetError } from './adaptive-cards.js';
 import type { CompanionPageContent } from './shell.js';
 import { completenessFindings, described } from './completeness.js';
+import { escapeHtml } from './html-escape.js';
 
 // ---------------------------------------------------------------------------
 // t1 — UxDefinition (Adaptive Cards subset) types
@@ -309,11 +310,7 @@ function uxNarratedSections(uxDef: UxDefinition): IrSection[] {
 /** Escape authored content for embedding as HTML text or an attribute value.
  *  Authored card content is DATA, never markup — a card must not be able to
  *  inject structure into its own mock. */
-function esc(v: string): string {
-	return v
-		.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+const esc = escapeHtml;
 
 /** The container child list, guarded. `childrenOf` trusts the type assertion;
  *  a STORED card body can carry a malformed `items`, so the read is defensive

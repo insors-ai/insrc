@@ -29,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 
 import { docgenAssetDir } from '../../../docgen/render/shell.js';
 import { DiagramGenerationError } from './render.js';
+import { escapeHtml } from './html-escape.js';
 import type { CompanionHeader } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -117,9 +118,7 @@ export function loadCompanionRuntime(visual: CompanionVisual['kind']): Companion
 // HTML
 // ---------------------------------------------------------------------------
 
-function esc(s: string): string {
-	return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+const esc = escapeHtml;
 
 /** A script body is inlined raw; this keeps a stray `</script` inside it from
  *  closing the element early. */

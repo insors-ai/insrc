@@ -607,6 +607,9 @@ function brainstormSynthesizer(
 		'',
 		'HARD RULES:',
 		'- `body.category` MUST equal s1.category verbatim.',
+		'- `body.title`: a short (3-8 words), outcome-phrased name for what this delivers, e.g.',
+		'  "Anchor standalone features on their LLD". It names the folder the work item lives in, so',
+		'  name the SUBJECT — never a preamble about the process ("Fully converged spec ...").',
 		'- Split s1.workingStatement into TWO fields: `body.intent` (what the request IS) and',
 		'  `body.scopeBoundary` (where it stops / what it deliberately does not cover). Both non-empty.',
 		'- `body.decisions` MUST preserve s1.decisions verbatim (same chosen / ruledOut / reason).',
@@ -635,6 +638,7 @@ function brainstormSynthesizer(
 				type: 'object',
 				required: ['category', 'intent', 'scopeBoundary', 'nonGoals', 'decisions', 'openItems'],
 				properties: {
+					title:         { type: 'string', minLength: 1 },
 					category:      { enum: ['requirements', 'design', 'implementation', 'testing', 'general'] },
 					intent:        { type: 'string', minLength: 1 },
 					scopeBoundary: { type: 'string', minLength: 1 },
@@ -713,7 +717,7 @@ function finalizeBrainstorm(
 	}
 	// A SpecArtifact is not Epic-scoped — it mints its OWN run-derived identity.
 	const specHash = computeEpicHash(runId);
-	const slug     = safeDeriveSlug(intent.focus);
+	const slug     = headLabel(body.title, intent.focus);
 	const artifact: SpecArtifact = {
 		meta: {
 			workflow:      'brainstorm',
@@ -885,7 +889,7 @@ function finalizeIssue(
 	// identity (like a SpecArtifact), and is a standalone work item until the
 	// s3 locator stamps meta.parentRef.
 	const issueHash = computeEpicHash(runId);
-	const slug      = safeDeriveSlug(intent.focus);
+	const slug      = headLabel(body.title, intent.focus);
 	const magnitude = intent.params['magnitude'];
 	const artifact: IssueArtifact = {
 		meta: {
@@ -966,6 +970,9 @@ function defineSynthesizer(
 		'- `citations[]` MUST be the UNION of s2.citations + s3.citations, de-duplicated by id. No new citation ids invented at this step.',
 		'- `openQuestions` is populated from s4 verdict: every `missed`/`ambiguous` result (except the sb1/sb2/sb3 hard-fail items — those fail the whole synthesize) becomes an open question phrased as "Item <itemId>: <notes|verdict>".',
 		'- `body.flavor` matches s1.flavor exactly.',
+		'- `body.title`: a short (3-8 words), outcome-phrased name for what this delivers, e.g.',
+		'  "Anchor standalone features on their LLD". It names the folder the work item lives in, so',
+		'  name the SUBJECT — never a preamble about the process ("Fully converged spec ...").',
 		'- `body.summary` MUST be carried verbatim from s2.summary when s2 emitted one (a `{ prose, audience? }` object). Omit `body.summary` when s2 has none — do NOT invent it.',
 		'- Do NOT emit `functionalDefinition` (or any FR ids) in the body: the framework assembles the functional-definition record from the FR statements elicited in s2/s3 and mints its stable ids deterministically after this step.',
 		FEEDBACK_NEVER_AUTHOR_RULE,
@@ -997,6 +1004,7 @@ function defineSynthesizer(
 							audience: { enum: ['business', 'product'] },
 						},
 					},
+					title:        { type: 'string', minLength: 1 },
 					flavor:       { enum: ['enhancement', 'new-capability'] },
 					problem:      { type: 'string', minLength: 20 },
 					nonGoals:     { type: 'array' },
@@ -1179,7 +1187,7 @@ function finalizeDefine(
 	// derived from the focus. Both flow through the meta so downstream
 	// workflows can look up their Epic by hash and display the slug.
 	const epicHash = computeEpicHash(runId);
-	const epicSlug = safeDeriveSlug(intent.focus);
+	const epicSlug = headLabel(body.title, intent.focus);
 	// Provenance (S008/ac3): when this Epic was seeded from an approved spec, the
 	// start params carry its specHash — stamp it so the Epic identifies its
 	// source. Absent on a plain-focus run (ac4).
@@ -1883,6 +1891,21 @@ export function safeDeriveSlug(focus: string | undefined): string {
 	catch { return focus.slice(0, 40).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled'; }
 }
 
+/**
+ * ISSUE-c00559b7 — the label a work item's HEAD artifact (SPEC, DEF, ISSUE, or a
+ * standalone LLD with no head above it) is named by: derived from a short
+ * written title when there is one, so the folder names the subject rather than
+ * the first words of the stage's prompt. A title that is absent, empty, or too
+ * short to make a slug (all stopwords, say) falls back to the focus, as before.
+ * No extra LLM call: the synthesizer writes the title in the same pass.
+ */
+export function headLabel(title: string | undefined, focus: string | undefined): string {
+	if (title !== undefined && title.trim().length > 0) {
+		try { return deriveSlug(title); } catch { /* degenerate title: use the focus */ }
+	}
+	return safeDeriveSlug(focus);
+}
+
 // ---------------------------------------------------------------------------
 // design.story (LLD) workflow
 // ---------------------------------------------------------------------------
@@ -2295,7 +2318,13 @@ async function finalizeStandaloneLld(
 	// and therefore different folders. safeDeriveSlug stays the fallback for a work
 	// item with no definition artifact to inherit from, and an empty-string label
 	// counts as absent so it can never compose a folder name starting with '-'.
-	const epicSlug = inheritedEpicSlug(intent.repoPath, epicHash, safeDeriveSlug(intent.focus));
+	//
+	// ISSUE-c00559b7 — with no head yet (a first-time standalone feature, whose LLD
+	// IS the head), the label comes from the Story title triage passed, not the
+	// focus prose. A re-finalized LLD inherits the label its own earlier version
+	// carries, since that LLD now heads the work item.
+	const storyTitle = typeof intent.params['storyTitle'] === 'string' ? intent.params['storyTitle'] as string : undefined;
+	const epicSlug = inheritedEpicSlug(intent.repoPath, epicHash, headLabel(storyTitle, intent.focus));
 
 	// A standalone LLD has no parent Epic, so there is no EXTERNAL acceptance
 	// contract to validate the test-strategy mapping against — the LLD is

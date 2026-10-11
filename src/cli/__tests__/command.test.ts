@@ -274,3 +274,16 @@ test('workflow findings lists pending, workflow resolve resolves one (R3)', asyn
 	assert.deepEqual(seen, ['high1', 'override', 'non-material']);
 	assert.match(out2[0] ?? '', /resolved high1 \(overridden\).*review clears/);
 });
+
+test('daemon status adds the store failure line when the status carries it', async () => {
+	const { ctx } = ctxWith();
+	const cause = 'Another process opened and closed the graph store. Restart the daemon.';
+	ctx.services.daemon.getStatus = async () => ({
+		uptime: 61, repos: [], queueDepth: 3, embeddingsPending: 0, modelPullStatus: 'ready', installedCommit: '',
+		storeFailure: { kind: 'locks-lost', at: '2026-10-11T10:00:00.000Z', operation: 'request search', cause },
+	});
+	const out = await runCommand('daemon status', ctx);
+	assert.equal(out.length, 2);
+	assert.match(out[0] ?? '', /^running · /);
+	assert.equal(out[1], `✗ store FAILED since 2026-10-11T10:00:00.000Z (during: request search): ${cause}`);
+});

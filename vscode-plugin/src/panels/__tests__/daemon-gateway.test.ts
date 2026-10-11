@@ -46,6 +46,23 @@ test('status() maps a DaemonStatus (incl. missing optionals) to a DaemonStatusVi
   assert.deepEqual(calls, ['daemon.status'], 'reaches only daemon.status');
 });
 
+test('status() shows the store failure cause when the payload carries storeFailure, and accepts a status without it', async () => {
+  const cause = "Another process opened and closed the graph store after the daemon had lost its file lock. Restart the daemon.";
+  const base = { uptime: 12, repos: [], queueDepth: 0, embeddingsPending: 0, installedCommit: '' };
+  const failed = makeGateway({
+    rpc: async () => ({ ...base, storeFailure: { kind: 'locks-lost', at: '2026-10-11T10:00:00.000Z', operation: 'request search', cause } }),
+  });
+  const view = await failed.gateway.status();
+  assert.equal(view.state, 'store failed', 'not reported as plainly running');
+  assert.ok((view.detail ?? '').includes(cause), 'the cause line is shown');
+  assert.match(view.detail ?? '', /2026-10-11T10:00:00\.000Z/);
+  assert.match(view.detail ?? '', /uptime 12s/, 'the usual fields are still there');
+
+  const healthy = await makeGateway({ rpc: async () => base }).gateway.status();
+  assert.equal(healthy.state, 'running');
+  assert.doesNotMatch(healthy.detail ?? '', /store|FAILED|Another process/i);
+});
+
 test('status() rejects GatewayReadError when daemon.status fails', async () => {
   const { gateway } = makeGateway({
     rpc: async () => {

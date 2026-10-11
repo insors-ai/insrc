@@ -102,7 +102,10 @@ async function runDaemon(sub: string | undefined, rest: readonly string[], svc: 
 		}
 		case 'status': {
 			const s = await svc.daemon.getStatus();
-			return [`running · uptime ${formatUptime(s.uptime)} · queue ${s.queueDepth} · repos ${s.repos.length} · model ${s.modelPullStatus ?? 'ready'}`];
+			return [
+				`running · uptime ${formatUptime(s.uptime)} · queue ${s.queueDepth} · repos ${s.repos.length} · model ${s.modelPullStatus ?? 'ready'}`,
+				...(s.storeFailure !== undefined ? [`✗ store FAILED since ${s.storeFailure.at} (during: ${s.storeFailure.operation}): ${s.storeFailure.cause}`] : []),
+			];
 		}
 		default: return ['usage: daemon start|stop|restart|update|backup <dir>|compact|status'];
 	}

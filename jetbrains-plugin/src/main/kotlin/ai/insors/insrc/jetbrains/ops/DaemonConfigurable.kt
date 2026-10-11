@@ -2,6 +2,7 @@ package ai.insors.insrc.jetbrains.ops
 
 import ai.insors.insrc.jetbrains.daemon.DaemonActionResult
 import ai.insors.insrc.jetbrains.daemon.DaemonGatewayService
+import ai.insors.insrc.jetbrains.daemon.DaemonStatusDto
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
 import ai.insors.insrc.jetbrains.daemon.LifecycleCommand
 import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunner
@@ -75,6 +76,7 @@ class DaemonConfigurable : InsrcOpsConfigurable() {
                 holder.add(row("Model", s.modelPullStatus + (s.modelPullPct?.let { " ($it%)" } ?: "")))
                 holder.add(row("Index size", s.lmdbFileSizeMb?.let { "$it MiB" } ?: "—"))
                 holder.add(row("Registered repos", s.repoCount.toString()))
+                storeFailureRow(s)?.let { holder.add(row(it.first, it.second)) }
             }
             DaemonStatusResult.Stopped ->
                 holder.add(row("State", "stopped — use Start to launch the daemon"))
@@ -137,3 +139,11 @@ class DaemonConfigurable : InsrcOpsConfigurable() {
             buttons.forEach { add(it); add(javax.swing.Box.createHorizontalStrut(JBUI.scale(6))) }
         }
 }
+
+/**
+ * The extra status row for a daemon whose graph store has failed (Epic c2ba6fa6,
+ * Story s4): label and text, or null while the store is healthy. Top-level and
+ * pure so the mapping is testable without Swing.
+ */
+internal fun storeFailureRow(status: DaemonStatusDto): Pair<String, String>? =
+    status.storeFailureCause?.let { "Store" to "FAILED — $it" }

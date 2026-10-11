@@ -77,6 +77,7 @@ import { IndexQueue } from './queue.js';
 import { collectRepoStats } from './repo-stats.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer } from './server.js';
+import { buildDaemonStatus } from './status.js';
 import {
 	initChatHandlers, disposeChatHandlers, reloadChatConfig,
 	chatStart, chatCancel, chatInject, chatClose, chatList, chatStatus, chatRestore,
@@ -1020,25 +1021,27 @@ async function main(): Promise<void> {
 		},
 
 		'daemon.status': async () => {
-			const modelState = getModelState();
-			const status: DaemonStatus = {
-				uptime: Math.floor((Date.now() - startedAt) / 1000),
-				repos: await listRepos(db),
-				queueDepth: queue.depth,
-				embeddingsPending: queue.depth, // approximate
-				modelPullStatus: modelState.status === 'pulling' ? 'pulling' : 'ready',
-				...(modelState.pct !== undefined && { modelPullPct: modelState.pct }),
-				// Story S002 (sc2): the daemon's installed source commit for freshness
-				// checks. Best-effort git read; '' when undeterminable, never throws.
-				installedCommit: readInstalledCommit(),
-			};
 			// LMDB env file size for compact-when-needed surfacing.
+			let lmdbFileSizeMb: number | undefined;
 			try {
 				const { existsSync, statSync } = await import('node:fs');
 				if (existsSync(PATHS.lmdb)) {
-					status.lmdbFileSizeMb = Math.round(statSync(PATHS.lmdb).size / 1024 / 1024);
+					lmdbFileSizeMb = Math.round(statSync(PATHS.lmdb).size / 1024 / 1024);
 				}
 			} catch { /* best-effort; status should never throw */ }
+			// The repository list is read from the store; buildDaemonStatus guards
+			// that read so the status still answers, with `storeFailure`, once the
+			// store has failed (Epic c2ba6fa6, Story s4).
+			const status: DaemonStatus = await buildDaemonStatus({
+				uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
+				listRepos: () => listRepos(db),
+				queueDepth: queue.depth,
+				modelState: getModelState(),
+				// Story S002 (sc2): the daemon's installed source commit for freshness
+				// checks. Best-effort git read; '' when undeterminable, never throws.
+				installedCommit: readInstalledCommit(),
+				lmdbFileSizeMb,
+			});
 			return status;
 		},
 

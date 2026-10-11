@@ -112,6 +112,13 @@ function Health(props: { daemon: DaemonState }): ReactElement {
 			<Text>model     {s.modelPullStatus === 'pulling' ? <Text color="yellow">pulling {s.modelPullPct ?? 0}%</Text> : <Text color="green">ready</Text>}</Text>
 			{s.lmdbFileSizeMb !== undefined && <Text>lmdb      <Text bold>{s.lmdbFileSizeMb}</Text> MiB on disk</Text>}
 			<Text>repos     <Text bold>{s.repos.length}</Text> registered</Text>
+			{s.storeFailure !== undefined && (
+				<Box flexDirection="column">
+					<Text color="red">store     FAILED since {s.storeFailure.at} (during: {s.storeFailure.operation})</Text>
+					<Text color="red">{s.storeFailure.cause}</Text>
+					<Text>Press <Text color="yellow">R</Text> to restart the daemon.</Text>
+				</Box>
+			)}
 		</Box>
 	);
 }

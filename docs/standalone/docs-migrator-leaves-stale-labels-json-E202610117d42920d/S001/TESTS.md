@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -178,3 +178,13 @@ Run at 2026-10-11T18:17:56.606Z on commit `62b68e5f`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts` | 0 | 22 | 1.1 s |  |
+
+## t6
+
+Run at 2026-10-11T18:19:06.269Z on commit `141cfc52`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: t6: dry run of insrc-migrate-docs over this repo shown to the user before any apply**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/migcheck/dry-run.txt (full dry-run output); /tmp/migcheck/check.ts run on scratch clone /tmp/mig-scratch: before {ok:500,bad:448}, after apply {ok:948,bad:0}; re-plan: 0 moves, 0 metadata rewrites

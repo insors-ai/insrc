@@ -4,7 +4,7 @@
     "epicHash": "7d42920dbef28b51",
     "storyId": "S001",
     "createdAt": "2026-10-11T18:07:28.997Z",
-    "updatedAt": "2026-10-11T18:17:56.606Z",
+    "updatedAt": "2026-10-11T18:19:06.269Z",
     "standalone": true
   },
   "body": {
@@ -766,6 +766,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "141cfc52",
+        "ranAt": "2026-10-11T18:19:06.269Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "t6: dry run of insrc-migrate-docs over this repo shown to the user before any apply",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/migcheck/dry-run.txt (full dry-run output); /tmp/migcheck/check.ts run on scratch clone /tmp/mig-scratch: before {ok:500,bad:448}, after apply {ok:948,bad:0}; re-plan: 0 moves, 0 metadata rewrites"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

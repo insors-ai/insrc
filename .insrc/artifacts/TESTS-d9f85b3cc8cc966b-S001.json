@@ -4,7 +4,7 @@
     "epicHash": "d9f85b3cc8cc966b",
     "storyId": "S001",
     "createdAt": "2026-10-11T15:39:50.029Z",
-    "updatedAt": "2026-10-11T15:52:05.210Z",
+    "updatedAt": "2026-10-11T16:03:18.447Z",
     "standalone": true
   },
   "body": {
@@ -710,6 +710,95 @@
               },
               {
                 "title": "d9f85b3c t5 — names with quotes, angle brackets, colons or non-ASCII give safe erDiagram source and escaped tables",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "6466a39d",
+        "ranAt": "2026-10-11T16:03:18.447Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sequence page builder: autonumber, labels, dashed returns, notes; participants + messages tables (Delivery-board fixture)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — the sequenceDiagram is autonumbered, labels every message, dashes returns and keeps the notes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — the participants and messages tables, in call order with kind tags",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — awkward participant ids are aliased; no truncations block when there are none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "component page builder: flowchart + components table",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — the component flowchart has one box per component and one arrow per dependency",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — the components table lists path, depends-on and description, null when absent",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+                "title": "d9f85b3c t6 — component labels with quotes, pipes or markup cannot break the flowchart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 298,
+            "titles": [
+              {
+                "title": "d9f85b3c t6 — the sequenceDiagram is autonumbered, labels every message, dashes returns and keeps the notes",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — the participants and messages tables, in call order with kind tags",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — awkward participant ids are aliased; no truncations block when there are none",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — the component flowchart has one box per component and one arrow per dependency",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — the components table lists path, depends-on and description, null when absent",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t6 — component labels with quotes, pipes or markup cannot break the flowchart",
                 "result": "pass"
               }
             ],

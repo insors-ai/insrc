@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 48 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -184,3 +184,29 @@ Run at 2026-10-11T15:52:05.210Z on commit `0a781b6e`. Tests check: **passed**. 7
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/artifacts/companion/__tests__/er-page.test.ts` | 0 | 7 | 0.5 s |  |
+
+## t6
+
+Run at 2026-10-11T16:03:18.447Z on commit `6466a39d`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: sequence page builder: autonumber, labels, dashed returns, notes; participants + messages tables (Delivery-board fixture)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t6 — the sequenceDiagram is autonumbered, labels every message, dashes returns and keeps the notes | `src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts` |
+| pass | d9f85b3c t6 — the participants and messages tables, in call order with kind tags | `src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts` |
+| pass | d9f85b3c t6 — awkward participant ids are aliased; no truncations block when there are none | `src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts` |
+
+**unit: component page builder: flowchart + components table**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t6 — the component flowchart has one box per component and one arrow per dependency | `src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts` |
+| pass | d9f85b3c t6 — the components table lists path, depends-on and description, null when absent | `src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts` |
+| pass | d9f85b3c t6 — component labels with quotes, pipes or markup cannot break the flowchart | `src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/artifacts/companion/__tests__/sequence-component-page.test.ts` | 0 | 6 | 0.3 s |  |

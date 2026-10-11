@@ -297,3 +297,29 @@ test('S006: editMode defaults to auto on create and a review update round-trips 
   // list summaries are unaffected by the editMode field
   assert.equal(store.list().length, 1);
 });
+
+test('liveTurn round-trips through the store, a session without it loads unchanged, and eviction calls onEvict with the evicted id', () => {
+  const f = fakeMemento();
+  const evicted: string[] = [];
+  const store = createMementoChatSessionStore({ ...f, maxSessions: 2, now: () => 't', genId: seqId(), onEvict: (id) => evicted.push(id) });
+
+  // A session stored before liveTurn existed loads unchanged.
+  const legacy = { id: 'old', provider: 'claude', createdAt: 't', title: 'old chat', editMode: 'auto', mode: 'manual', transcript: [] };
+  f.map.set('insrc.chat.session.old', legacy);
+  f.map.set('insrc.chat.index', ['old']);
+  assert.deepEqual(store.get('old'), legacy);
+  assert.equal(store.get('old')?.liveTurn, undefined);
+
+  // liveTurn round-trips.
+  const s = store.create('claude');
+  s.liveTurn = { cursor: { turnId: 'claude-1', generation: 2, offset: 345 }, ownerHostPid: 4242, pid: 777, startedAt: 9 };
+  store.save(s);
+  assert.deepEqual(store.get(s.id)?.liveTurn, { cursor: { turnId: 'claude-1', generation: 2, offset: 345 }, ownerHostPid: 4242, pid: 777, startedAt: 9 });
+  delete s.liveTurn;
+  store.save(s);
+  assert.equal(store.get(s.id)?.liveTurn, undefined, 'cleared');
+
+  // Eviction beyond the cap reports the evicted id.
+  store.create('claude'); // evicts 'old'
+  assert.deepEqual(evicted, ['old']);
+});

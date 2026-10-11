@@ -43,8 +43,8 @@ test('extension.ts constructs createChatPanelHost with the real injected vscode 
   assert.match(channel, /panel\.webview\.onDidReceiveMessage\(/, 'injects the inbound registrar');
   assert.match(channel, /panel\.webview\.postMessage\(message\)\.then\(undefined/, 'injects the fire-and-forget postMessage');
   assert.match(channel, /panel\.onDidDispose\(/, 'injects onDidDispose');
-  assert.match(b, /createMementoChatSessionStore\(\{ memento: context\.globalState, maxSessions: \d+ \}\)/, 'the sc4 store binds over context.globalState (k3) with a bounded history cap (S005)');
-  assert.match(b, /createProviderRegistry\(\{ spawn: nodeSpawner, isInstalled: defaultBinaryProbe \}\)/, 'the sc5 registry over the installed CLIs');
+  assert.match(b, /createMementoChatSessionStore\(\{\s*memento: context\.globalState,\s*maxSessions: \d+,/, 'the sc4 store binds over context.globalState (k3) with a bounded history cap (S005)');
+  assert.match(b, /createProviderRegistry\(\{ spawn: nodeSpawner, isInstalled: defaultBinaryProbe(, sessionOutput: chatOutput)? \}\)/, 'the sc5 registry over the installed CLIs');
 });
 
 test('the chat host + protocol + store modules are vscode-free', () => {
@@ -210,4 +210,49 @@ test('editor-title: extension.ts opens the chat as an editor-tab panel + gates t
   assert.match(b, /createDocsReviewHost\(\{/, 'docs-review host remains registered (untouched)');
   // The sidebar experiment is gone: no webview-view provider wiring remains.
   assert.doesNotMatch(b, /registerWebviewViewProvider/, 'no Activity Bar webview-view provider');
+});
+
+// ---- S001 (E20261010d6a4bc79): one CLI process per session ------------------------------
+
+test('the extension passes a file-backed lock registry and the turnLockTimeoutMs setting', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  const host = /createChatPanelHost\(\{([\s\S]*?)\n    \}\);/.exec(b);
+  assert.ok(host, 'the createChatPanelHost call is present');
+  assert.match(
+    host![1]!,
+    /sessionLocks: createFileSessionLocks\(\{ fs: nodeFsp, lockDir: join\(PATHS\.insrc, 'chat-locks'\), hostPid: process\.pid, logger: panelLog \}\)/,
+    'a file-backed registry on ~/.insrc/chat-locks, owned by this extension host',
+  );
+  assert.match(host![1]!, /turnLockTimeoutMs: \(\) =>[\s\S]*?get<number>\('insrc\.chat\.turnLockTimeoutMs'\)/, 'a live read of the setting');
+  assert.match(src, /import \{ createFileSessionLocks \} from '\.\/chat\/session-lock\.js';/);
+});
+
+test('package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)', () => {
+  const pkg = JSON.parse(read(PKG)) as {
+    contributes: { configuration: Array<{ properties?: Record<string, { type?: string; default?: unknown; minimum?: number }> }> };
+  };
+  const props = Object.assign({}, ...pkg.contributes.configuration.map((c) => c.properties ?? {})) as Record<string, { type?: string; default?: unknown; minimum?: number }>;
+  const setting = props['insrc.chat.turnLockTimeoutMs'];
+  assert.ok(setting, 'insrc.chat.turnLockTimeoutMs is contributed');
+  assert.equal(setting!.type, 'number');
+  assert.equal(setting!.default, 600000);
+  assert.equal(setting!.minimum, 1000);
+});
+
+// ---- S001 (E202610101d04e560): the session output files ---------------------------------
+
+test('the extension builds a session output on ~/.insrc/chat-output, passes it to the provider registry, and wires onEvict and the start-up sweep', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  assert.match(src, /import \{ createSessionOutput \} from '\.\/chat\/session-output\.js';/);
+  assert.match(b, /const chatOutput = createSessionOutput\(\{ root: join\(PATHS\.insrc, 'chat-output'\), logger: panelLog \}\)/, 'one root under ~/.insrc');
+  assert.match(b, /createProviderRegistry\(\{ spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput \}\)/, 'the registry keeps turn output in the session files');
+  assert.match(b, /onEvict: \(id\) => void chatOutput\.remove\(id\)/, "an evicted session's files are removed");
+  assert.match(b, /chatOutput\s*\.sweep\(\{ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: new Set\(chatStore\.list\(\)\.map\(\(c\) => c\.id\)\)\s*\}\)/, 'stale files of sessions not in the store are swept at start');
+  assert.match(src, /const CHAT_OUTPUT_MAX_AGE_MS = 30 \* 24 \* 60 \* 60 \* 1000;/, '30 days');
 });

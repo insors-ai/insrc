@@ -1,0 +1,23 @@
+<!-- insrc:artifact ISSUE-8ca7382b0952a539 -->
+
+# Move the chat turn and session-lease lifecycle out of the chat panel host
+
+## Reproduction
+
+Open vscode-plugin/src/chat/chat-panel.ts. createChatPanelHost is one closure of about 900 lines (roughly 123 to 1051). Inside it, the turn lifecycle (acquireSessionLease, runLeased, runTurn's stream loop, cancelActive, the generation counter, activeIterator/activeTurnId/liveProc) shares mutable state with title derivation (applyTitle), permission and selection recording, history posting and the webview message handlers. To test a lifecycle rule (for example, that Stop releases a waiting turn, or that a superseded turn never posts), a test has to build the whole host with a fake channel and fake providers and observe webview posts. Observed: the ISSUE-d6a4bc79 code review raised this as a MED over seven rounds, and most of that story's review fixes were races in exactly this tangled lifecycle. Expected: the lifecycle is its own unit with a small interface that can be tested and reasoned about on its own.
+
+## Root cause
+
+The panel host grew by accretion: each story added state and branches to the same closure (S002 Stop, S004 approvals, S005 history and resume, S006 edit governance, ISSUE-d6a4bc79 session leases and the generation/supersede rules). Nothing separates the turn lifecycle (acquire a session lease, start the CLI and attach the lease to its process, stream events with the generation guard, return the iterator at done, release on every path, Stop/cancel) from UI concerns, so its invariants are spread across runTurn, cancelActive, acquireSessionLease and six message handlers that read and write the same closure variables.
+
+## Fix intent
+
+Give the turn lifecycle its own vscode-free module with a small interface: start a turn for a session (waiting for its lease), report its events, stop it, and say whether one is running. It owns the lease, the generation and supersede rules, and the running process. The panel host keeps webview wiring, transcript persistence, titles, and permission and selection handling, and consumes the module. The module gets its own unit tests for the lifecycle rules; the panel's existing tests keep passing unchanged in behaviour.
+
+## Citations
+
+- **[[c1]]** `code` `vscode-plugin/src/chat/chat-panel.ts` — "createChatPanelHost / runTurn / cancelActive / acquireSessionLease"
+- **[[c2]]** `code` `vscode-plugin/src/chat/session-lock.ts` — "SessionLocks / runLeased"
+- **[[c3]]** `code` `vscode-plugin/src/chat/cli-adapter.ts` — "StreamAdapter.run(req, { onSpawn }) / cancel"
+- **[[c4]]** `prior-artifact` `docs/standalone/vs-code-plugin-chat-panel-concurrent-E20261010d6a4bc79/S001/CR.md` — "MED: createChatPanelHost is a single closure of about 900 lines ... Consider moving the lease/turn lifecycle into its own module."
+- **[[c5]]** `code` `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — "the panel suite drives runTurn through the whole host"

@@ -49,9 +49,11 @@ import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier } from './models/model-tier-picker.js';
 import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
-import { createChatPanelHost, CHAT_VIEW_TYPE, type ChatPanelChannel } from './chat/chat-panel.js';
+import { createChatPanelHost, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
+import { createFileSessionLocks } from './chat/session-lock.js';
 import { createChatGroupLock } from './chat/group-lock.js';
 import { createMementoChatSessionStore } from './chat/session-store.js';
+import { createSessionOutput } from './chat/session-output.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitle } from './chat/cli-adapter.js';
 import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
 import { createDocsReviewHost, type DocsReviewHost } from './chat/docs-review-panel.js';
@@ -77,6 +79,9 @@ const LAST_SEEN_PLUGIN_VERSION_KEY = 'insrc.daemonSelfUpdate.lastSeenPluginVersi
  * deactivate), and starts the off-UI reachability probe + a first-run Install
  * offer. Never throws / never blocks the editor.
  */
+/** Session output files untouched this long, of sessions no longer in the store, are swept at start. */
+const CHAT_OUTPUT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
 export function activate(context: vscode.ExtensionContext): void {
   const statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
   // The StatusBarItem satisfies the structural StatusBarHandle used by sc2.
@@ -434,8 +439,19 @@ export function activate(context: vscode.ExtensionContext): void {
   if (chatEnabled) {
     // S005: cap extension-local chat history (k3) so globalState does not grow unbounded
     // (the S003 L4 follow-up). save() evicts the oldest non-active sessions beyond this.
-    const chatStore = createMementoChatSessionStore({ memento: context.globalState, maxSessions: 200 });
-    const chatProviders = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe });
+    // Each chat session's CLI output goes to ONE rolling file under ~/.insrc/chat-output (turns
+    // are segments in it), so nothing is lost when a turn runs long or the window reloads. A
+    // session's files go with it when the store evicts it; stale files are swept at start.
+    const chatOutput = createSessionOutput({ root: join(PATHS.insrc, 'chat-output'), logger: panelLog });
+    const chatStore = createMementoChatSessionStore({
+      memento: context.globalState,
+      maxSessions: 200,
+      onEvict: (id) => void chatOutput.remove(id).catch((e: unknown) => panelLog.warn(`chat output of ${id} not removed: ${String(e)}`)),
+    });
+    const chatProviders = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput });
+    void chatOutput
+      .sweep({ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: new Set(chatStore.list().map((c) => c.id)) })
+      .catch((e: unknown) => panelLog.warn(`chat output sweep failed: ${String(e)}`));
 
     // S006: edit-governance seams. All model access stays via the user's CLIs (k2); the
     // baseline shells local git (no new dependency, no cloud REST) and captures the exact
@@ -564,6 +580,12 @@ export function activate(context: vscode.ExtensionContext): void {
       // LLM chat titling: a one-shot over the same CLI (no resume; timeout-bounded) names the
       // chat after its first turn, replacing the truncated-prompt fallback.
       deriveTitle: (input) => deriveChatTitle(chatProviders, input),
+      // One CLI process per chat session, across windows and reloads: each lease is mirrored in a
+      // lock file under ~/.insrc/chat-locks naming the CLI's pid. A new turn waits for it and
+      // stops it only after insrc.chat.turnLockTimeoutMs.
+      sessionLocks: createFileSessionLocks({ fs: nodeFsp, lockDir: join(PATHS.insrc, 'chat-locks'), hostPid: process.pid, logger: panelLog }),
+      turnLockTimeoutMs: () =>
+        Math.max(1000, vscode.workspace.getConfiguration().get<number>('insrc.chat.turnLockTimeoutMs') ?? DEFAULT_TURN_LOCK_TIMEOUT_MS),
     });
     // Gate the editor-title icon (contributes.menus["editor/title"] when:insrc.chat.ready) on an
     // activate-time context key set ONLY here, inside the flag gate \u2014 NOT the live
@@ -613,6 +635,10 @@ export function activate(context: vscode.ExtensionContext): void {
     subscriptions: context.subscriptions,
     createWebviewPanel: (viewType, title) =>
       vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true }),
+    tabIcon: {
+      light: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-delivery-icon.svg')),
+      dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-delivery-icon-dark.svg')),
+    },
     rpc: client.rpc,
     repo: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null,
     logger: panelLog,

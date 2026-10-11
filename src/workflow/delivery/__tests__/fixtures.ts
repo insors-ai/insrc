@@ -381,22 +381,28 @@ function fabricate(kind: DeliveryArtifactKind, hash: string, storyId: string | u
 	return recordFromFile(fileFor(kind, hash, storyId), { meta: fullMeta, body });
 }
 
-/** An epic's Define with the given story ids. */
-export function defRecord(hash: string, stories: readonly string[], meta: Meta = {}): ArtifactRecord {
+/** Extra body fields a fixture merges into the record's body (descriptive values, feedback). */
+type Body = Readonly<Record<string, unknown>>;
+
+/** A story entry of a Define: its id, or its id with extra fields (userValue, sizeEstimate). */
+type StoryEntry = string | ({ readonly id: string } & Body);
+
+/** An epic's Define with the given story ids (or entries), and any extra body fields (problem, summary, feedback). */
+export function defRecord(hash: string, stories: readonly StoryEntry[], meta: Meta = {}, body: Body = {}): ArtifactRecord {
 	return fabricate('DEF', hash, undefined, { epicCreatedAt: CREATED, ...meta },
-		{ epic: { title: `Epic ${hash.slice(0, 8)}` }, stories: stories.map(id => ({ id, title: `Story ${id}` })) });
+		{ epic: { title: `Epic ${hash.slice(0, 8)}` }, stories: stories.map(s => (typeof s === 'string' ? { id: s, title: `Story ${s}` } : { title: `Story ${s.id}`, ...s })), ...body });
 }
 
-export function hldRecord(hash: string, meta: Meta = {}): ArtifactRecord {
-	return fabricate('HLD', hash, undefined, { epicCreatedAt: CREATED, ...meta }, {});
+export function hldRecord(hash: string, meta: Meta = {}, body: Body = {}): ArtifactRecord {
+	return fabricate('HLD', hash, undefined, { epicCreatedAt: CREATED, ...meta }, { ...body });
 }
 
-export function lldRecord(hash: string, storyId: string, meta: Meta = {}): ArtifactRecord {
-	return fabricate('LLD', hash, storyId, meta, {});
+export function lldRecord(hash: string, storyId: string, meta: Meta = {}, body: Body = {}): ArtifactRecord {
+	return fabricate('LLD', hash, storyId, meta, { ...body });
 }
 
-export function planRecord(hash: string, storyId: string, taskIds: readonly string[], meta: Meta = {}): ArtifactRecord {
-	return fabricate('PLAN', hash, storyId, meta, { tasks: taskIds.map(id => ({ id, title: `Task ${id}` })) });
+export function planRecord(hash: string, storyId: string, taskIds: readonly string[], meta: Meta = {}, body: Body = {}): ArtifactRecord {
+	return fabricate('PLAN', hash, storyId, meta, { tasks: taskIds.map(id => ({ id, title: `Task ${id}` })), ...body });
 }
 
 export function buildRecord(hash: string, storyId: string, tasks: readonly { id: string; passed: boolean }[], meta: Meta = {}): ArtifactRecord {
@@ -407,16 +413,18 @@ export function crRecord(hash: string, storyId: string, verdict: 'pass' | 'warn'
 	return fabricate('CR', hash, storyId, meta, { verdict });
 }
 
-export function issueRecord(hash: string, parentRef: unknown, meta: Meta = {}): ArtifactRecord {
-	return fabricate('ISSUE', hash, undefined, { standalone: true, magnitude: 'small', parentRef, ...meta }, { title: `Issue ${hash.slice(0, 8)}` });
+/** An issue record; body adds its reproduction, root cause and fix intent. */
+export function issueRecord(hash: string, parentRef: unknown, meta: Meta = {}, body: Body = {}): ArtifactRecord {
+	return fabricate('ISSUE', hash, undefined, { standalone: true, magnitude: 'small', parentRef, ...meta }, { title: `Issue ${hash.slice(0, 8)}`, ...body });
 }
 
 export function specRecord(hash: string, meta: Meta = {}): ArtifactRecord {
 	return fabricate('SPEC', hash, undefined, meta, { title: `Spec ${hash.slice(0, 8)}` });
 }
 
-export function extRecord(hash: string, storyId: string, meta: Meta = {}): ArtifactRecord {
-	return fabricate('EXT', hash, storyId, meta, { addedStory: { id: storyId, title: `Story ${storyId}` } });
+/** An extension adding a story; added adds fields to the added story (userValue). */
+export function extRecord(hash: string, storyId: string, meta: Meta = {}, added: Body = {}): ArtifactRecord {
+	return fabricate('EXT', hash, storyId, meta, { addedStory: { id: storyId, title: `Story ${storyId}`, ...added } });
 }
 
 /** A flat AMD record (no meta/body), as the store writes amendments. */

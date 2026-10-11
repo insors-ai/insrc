@@ -1,0 +1,329 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791646081992-t48n5w",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-10T15:31:06.195Z",
+    "epicCreatedAt": "2026-10-10T14:57:56.710Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 184200,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d6a4bc79bece9d1f",
+    "epicSlug": "vs-code-plugin-chat-panel-concurrent",
+    "storyId": "s1",
+    "lldRunId": "wf-1791644499139-4w92ry",
+    "lldEffectiveHash": "1000b102d2bed0e7d03eb95abf6b7a1f14aa09c36c39de4ccca90cd5999ccd63",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-10T15:37:42.417Z",
+    "rangeBase": "c076edf7a571371ca007dcd62b61537f2e0a3b3e"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this Story adds a small, vscode-free lock module that hands out one lease per chat session, first in memory and then backed by lock files that every window can see. The chat adapter's process lifecycle changes so a CLI process is no longer killed or forgotten when its answer ends: it runs in its own process group, its exit is tracked, and stopping it is awaited. The panel then takes the lease before every turn, shows a waiting state, and only stops the old process after the timeout, while Stop stays immediate. A new setting and the extension wiring finish it."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the in-memory session lock",
+        "summary": "New vscode-free vscode-plugin/src/chat/session-lock.ts with the SessionLocks / SessionLease types and the in-memory registry: acquire(sessionId, { timeoutMs, onWaiting, signal }) -> SessionLease { attach(proc), release() }. One lease per session; the lease is released when the attached process's exit settles (or by release() when no process was started). A newer waiter replaces an older one (the older rejects as superseded); an aborted wait rejects without stopping anything. Past timeoutMs the holder's stop is escalated: SIGTERM, then SIGKILL after a grace (default 5 s), then the exit is awaited; if it never settles the lease is granted anyway with an error logged. Seams: now/timers, graceMs, logger.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A second acquire for the same session waits until the holder's process exits, then is granted; different sessions do not block each other.",
+          "Past timeoutMs the holder is stopped with SIGTERM, then SIGKILL after the grace, and the lease is granted only after the exit is confirmed (or after the second grace, with an error logged).",
+          "An aborted wait rejects without stopping anything; a newer waiter supersedes an older one; a process that exits by itself grants the waiter at once without any stop."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "session-lock.test.ts: one lease per session; a second acquire waits until the holder's process exits, then is granted"
+          },
+          {
+            "level": "unit",
+            "name": "session-lock.test.ts: past the timeout the holder is stopped (SIGTERM, then SIGKILL after the grace period), its exit is awaited, then the lease is granted"
+          },
+          {
+            "level": "unit",
+            "name": "session-lock.test.ts: an aborted wait is cancelled without stopping anything, and a newer waiter replaces an older one"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the file-backed session lock",
+        "summary": "In session-lock.ts, a file-backed registry layered on the in-memory one: on attach it writes ~/.insrc/chat-locks/<sessionId>.lock { sessionId, cliPid, hostPid, startedAt } (create-exclusive, rename on update) and removes it when the process exits. A waiter honours a file whose pid is alive (polling until it disappears or its pid dies), replaces a stale file (dead pid, or a start time that does not match startedAt) at once with a warning, and on timeout signals the recorded pid's process group only when its start time matches. Any fs failure falls back to the in-memory lock with one logged error. Seams: fs, isAlive, killGroup, processStartTime, lockDir, hostPid, pollMs.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A lock file whose pid is alive blocks a waiter in a second registry instance until the file is removed or the pid dies.",
+          "A file with a dead pid or a mismatched start time is replaced at once, and an unrelated process (start time mismatch) is never signalled.",
+          "On timeout a live cross-window holder's process group gets SIGTERM, then SIGKILL, and the lease is granted after its pid is gone.",
+          "An unwritable lock directory falls back to the in-memory lock with one logged error."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "session-lock.test.ts: a lock file from another window is honoured while its pid is alive, and a stale file (dead pid or mismatched start time) is replaced"
+          },
+          {
+            "level": "unit",
+            "name": "session-lock.test.ts: on timeout a cross-window holder's group is stopped only when its start time matches"
+          },
+          {
+            "level": "unit",
+            "name": "session-lock.test.ts: an unwritable lock directory falls back to memory"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Change the adapter's process lifecycle",
+        "summary": "cli-adapter.ts: SpawnedProcess gains pid and kill(signal); the real spawner starts the CLI detached in its own process group and kill() signals the group (-pid, falling back to the child). run(req, { onSpawn }) hands over { pid, exit, stop } once spawned; returns right after its first done or error event without awaiting the next line or proc.exit and without killing; the live entry and pending permission requests are dropped when proc.exit settles; a consumer that abandons run() before any terminal event still stops the group. cancel() returns a promise that stops the group (SIGTERM, then SIGKILL after a grace) and resolves after the exit. Update the title generator's stop() for the async cancel, and update the adapter tests that assumed kill-after-done.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "run() completes right after a done event while the fake process stays alive; no kill is recorded; onSpawn received pid, exit and stop.",
+          "decide() after run() has returned still writes to the live process; the live entry is gone after the exit settles.",
+          "cancel() sends SIGTERM to the group, escalates to SIGKILL after the grace when the process does not exit, and resolves only after the exit.",
+          "collect()-based adapter tests still yield the same events; tests that asserted a kill after done now assert no kill plus cleanup on exit; the real spawner passes detached: true and kill() targets the negative pid."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "cli-adapter.test.ts: run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop"
+          },
+          {
+            "level": "unit",
+            "name": "cli-adapter.test.ts: cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group"
+          },
+          {
+            "level": "unit",
+            "name": "cli-adapter.test.ts: after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the 'waiting' status phase and its marker",
+        "summary": "stream-events.ts: the status phase union gains 'waiting'. markers.ts: markerFor and markerWebviewSource map it to the pending marker labelled 'Waiting for the previous turn to finish'.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "markerFor({ kind: 'status', phase: 'waiting' }) returns the pending marker with the label 'Waiting for the previous turn to finish', and the webview mirror returns the same.",
+          "The typecheck is clean (the exhaustive switch covers the new phase)."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "markers.test.ts: phase 'waiting' maps to 'Waiting for the previous turn to finish' in both markerFor and the webview mirror"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Take the session lease in the chat panel",
+        "summary": "chat-panel.ts: createChatPanelHost accepts optional sessionLocks (in-memory default) and turnLockTimeoutMs. runTurn acquires the lease keyed by ChatSession.id before adapter.run, posts the waiting status while it waits, attaches the lease to the started process through onSpawn, calls the iterator's return() at done or error, and no longer cancels the previous turn of its own. A newer submit replaces a waiting one. cancelActive (Stop) aborts any pending wait, stops the running process at once and resolves after its exit. The generation guard is kept. The inline webview keeps Stop available while waiting.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A message sent while the previous fake CLI process is still alive after its answer posts the waiting status and starts only after that process exits.",
+          "With a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed.",
+          "Stop while a turn waits cancels it (the adapter never runs) and stops the running process at once; superseded events never reach the transcript.",
+          "Grant re-runs and selection replies go through the same lease; the existing chat-panel tests pass."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: a message sent while the previous CLI process is still alive after its answer waits, shows 'Waiting for the previous turn to finish', and starts only after that process exits"
+          },
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: with a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed"
+          },
+          {
+            "level": "integration",
+            "name": "chat-panel.test.ts: Stop ends the running process at once and cancels a waiting message; the generation guard still keeps superseded events out of the transcript"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Declare the setting and wire the file-backed registry",
+        "summary": "package.json: declare insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000) beside the other insrc.chat.* settings. extension.ts: build the file-backed SessionLocks on ~/.insrc/chat-locks and pass it with a live read of the setting into createChatPanelHost.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "package.json contributes insrc.chat.turnLockTimeoutMs with type number, default 600000 and minimum 1000.",
+          "extension.ts passes a file-backed sessionLocks and a turnLockTimeoutMs reader into createChatPanelHost (wiring test).",
+          "The plugin's full suite and typecheck pass apart from the known manifest-catalog baseline."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring.test.ts: the extension passes a file-backed lock registry and the turnLockTimeoutMs setting"
+          },
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring.test.ts: package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "session-lock.test.ts: one lease per session; a second acquire waits until the holder's process exits, then is granted",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "session-lock.test.ts: past the timeout the holder is stopped (SIGTERM, then SIGKILL after the grace period), its exit is awaited, then the lease is granted",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "session-lock.test.ts: a lock file from another window is honoured while its pid is alive, and a stale file (dead pid or mismatched start time) is replaced",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "session-lock.test.ts: an aborted wait (Stop) is cancelled without stopping anything; a newer waiter replaces an older one; an unwritable lock directory falls back to memory",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "cli-adapter.test.ts: run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "cli-adapter.test.ts: cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "cli-adapter.test.ts: after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "markers.test.ts: phase 'waiting' maps to 'Waiting for the previous turn to finish' in both markerFor and the webview mirror",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: a message sent while the previous CLI process is still alive after its answer waits, shows 'Waiting for the previous turn to finish', and starts only after that process exits",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: with a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: Stop ends the running process at once and cancels a waiting message; the generation guard still keeps superseded events out of the transcript",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension-chat-wiring.test.ts: the extension passes a file-backed lock registry and the turnLockTimeoutMs setting",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: SessionLocks (session-lock.ts) and the chat lock file"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: StreamAdapter / SpawnedProcess lifecycle (cli-adapter.ts)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: createChatPanelHost / runTurn / cancelActive"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: status phase 'waiting', status markers and the chat webview script"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: setting insrc.chat.turnLockTimeoutMs and extension wiring"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths: stuck holder, stale lock, unwritable directory, pid reuse, edge cases"
+    }
+  ]
+}

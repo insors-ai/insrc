@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791649714961-3f283e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-10T16:28:34.961Z",
+    "model": "claude:opus",
+    "elapsedMs": 102973,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d6a4bc79bece9d1f",
+    "storyId": "s1",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "d6a4bc79bece9d1f",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+        "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+        "vscode-plugin/src/chat/__tests__/fixtures.ts",
+        "vscode-plugin/src/chat/__tests__/markers.test.ts",
+        "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts",
+        "vscode-plugin/src/chat/markers.ts",
+        "vscode-plugin/src/chat/session-lock.ts",
+        "vscode-plugin/src/chat/stream-events.ts",
+        "vscode-plugin/src/extension.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/session-lock.ts:1",
+            "message": "Caveat, not a coverage gap. The graph grounding has no test edges for any production symbol in this Story (session-lock.ts, cli-adapter.ts, chat-panel.ts, markers.ts, extension.ts): testsReaching is empty even for symbols the tests clearly exercise, like createMemorySessionLocks, createFileSessionLocks, stopProcess, runLeased, makeStreamAdapter and markerFor. The index has not linked the test files to the code they test, so I judged coverage by running the suite instead. All 15 tests the plan promised are present by exact name: session-lock.test.ts lines 56/92/153/225/280/309, cli-adapter.test.ts 252/277/318, markers.test.ts 164, chat-panel.test.ts 2279/2304/2331, and extension-chat-wiring.test.ts 217/233. The five changed test files ran 209 tests: 209 passed, 0 failed, 0 skipped. There is no build record, so these pass results come from this review's own run, not from the build.",
+            "expectationRef": "testsReaching grounding (empty for all changed production symbols)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:123",
+            "message": "Avoidable complexity: createChatPanelHost is a single closure of about 900 lines (123 to ~1051) that directly calls 25 symbols. Session leasing (acquireSessionLease, runLeased), turn streaming (runTurn, appendEvent), title derivation (applyTitle, sanitizeTitle), permission and selection recording, and webview wiring all share one mutable closure scope. The concurrency-sensitive lease and generation logic (runTurn/acquireSessionLease with myGen) is therefore tangled with UI posting, so it is hard to reason about and to test in isolation. Consider moving the lease/turn lifecycle into its own module.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/session-lock.ts:365",
+            "message": "Complexity: createFileSessionLocks defines about 15 nested helpers (claimFile, stopHolder, fileLease, removeFile, unlinkIfUnchanged, holderAlive, goneWithin, sleep, etc.) inside one factory. It also wraps createMemorySessionLocks. The recent series of code-review fix commits (take-over and lease-token races) suggests this state machine is fragile. Lifting the pure helpers (recordText, parseRecord, sameProcess) to module scope would narrow the stateful core.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/cli-adapter.ts:1",
+            "message": "Taste: cli-adapter.ts and chat-panel.ts each define an inner `forget()`, and deriveChatTitle uses an inner helper named `stop(val)` that calls cancel. stopProcess and stopTurnProcess also exist, so these generic names make call-graph reading ambiguous. This is naming only, not a risk.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 3
+    }
+  }
+}

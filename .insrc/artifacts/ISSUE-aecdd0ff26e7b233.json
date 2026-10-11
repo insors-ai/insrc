@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791701194219-uymj8u",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-11T06:47:30.435Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 56214,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "aecdd0ff26e7b233",
+    "epicSlug": "defect-vscode-plugin-package-json-out",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Bring the VS Code extension's settings in line with the daemon's config catalog",
+    "reproduction": "In vscode-plugin, run `npx tsx --test src/config/__tests__/manifest-catalog.test.ts`. Both tests fail:\n- \"declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths\" fails with \"manifest missing keys: insrc.analyzer.dataSourceListingTimeoutMs\".\n- \"each declared key's type/enum/default matches its ConfigOption\" fails with \"no declared schema for insrc.analyzer.dataSourceListingTimeoutMs\".\n\nThat second test stops at the first problem. Once the missing key is declared, it also fails on the three insrc.designReview.timeLimitMs.* keys. The extension declares defaults of 240000, 360000 and 480000; the catalog has 720000, 1080000 and 1440000.\n\nIn VS Code, the analyzer's data-source listing time limit does not appear in Settings. The three design-review time limits show the old defaults. Expected: the extension declares every catalog key, with the catalog's type, default and machine scope.",
+    "rootCause": "The daemon's config catalog (src/config/config-catalog.ts) is the single source of truth, and vscode-plugin/package.json contributes.configuration must mirror it exactly. Two catalog changes were made without updating the extension manifest:\n- Commit 169e973a (ISSUE-008e146a) added analyzer.dataSourceListingTimeoutMs to the catalog (line 88, default 120000) but not to package.json.\n- Commit 4515ca5d (\"triple every review time limit\") raised the designReview.timeLimitMs.issue/feature/epic defaults (lines 97-99) to 720000, 1080000 and 1440000, but package.json kept 240000, 360000 and 480000.\n\nThe manifest-catalog contract test catches this. Its second test stops at the first missing key, so the stale defaults were hidden behind the missing key.",
+    "fixIntent": "Make the extension manifest mirror the catalog again:\n- Declare insrc.analyzer.dataSourceListingTimeoutMs in package.json with the catalog's type (number), default (120000), description and machine scope.\n- Set the three insrc.designReview.timeLimitMs.* defaults to the catalog's values.\n\nThe catalog is not changed, and no code changes. The existing manifest-catalog contract test passes in full."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/config/config-catalog.ts",
+      "quotedText": "{ path: 'analyzer.dataSourceListingTimeoutMs', type: 'number', default: 120000, desc: 'max ms one live data source is given to be reached and listed when a request is measured; a source that does not answer is reported as a size that could not be determined', group: 'Analysis & memory' },"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/config/config-catalog.ts",
+      "quotedText": "{ path: 'designReview.timeLimitMs.issue',   type: 'number', default: 720000,"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/package.json",
+      "quotedText": "\"default\": 240000,"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+      "quotedText": "assert.deepEqual(missing, [], `manifest missing keys: ${missing.join(', ')}`);"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "commit 169e973a feat(build): S001/t1 a live data source is measured within a time limit (ISSUE-008e146a)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "commit 4515ca5d fix(review): triple every review time limit"
+    }
+  ]
+}

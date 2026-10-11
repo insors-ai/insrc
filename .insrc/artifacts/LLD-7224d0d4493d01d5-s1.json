@@ -1,0 +1,624 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791635476911-jq0q2k",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-10T12:37:12.891Z",
+    "epicCreatedAt": "2026-10-09T16:27:38.957Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 355979,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7224d0d4493d01d5",
+    "epicSlug": "defect-against-epic-e1-2ff0dfda-delivery",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1791635476911-jq0q2k",
+    "hldEffectiveHash": "9e79cdbd89bf712e4d7129cb167beb560ce20a61c3d77b5489505388c81255c6",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design publishes all four value groups the ISSUE's fix intent names (story purpose + size, epic problem/summary, issue reproduction/rootCause/fixIntent, recorded feedback read-only), additively in schemaVersion 1, distinguishing recorded / not-recorded / not-applicable, and updates the plugin mirror — addressing the stated root cause that itemOf (snapshot.ts:112) reads no descriptive body field.",
+          "evidence": "ISSUE.md Fix intent lists exactly these four groups plus three-state distinction and the plugin contract mirror. snapshot.ts itemOf (lines 112-148) builds DeliveryItem only from node/stages/gates/currency and reads no body field; the design adds description (kind-tagged union, not-applicable structural) and feedback in that function. The ISSUE's optional 'reachable through the evidence request if too large' fallback is covered by choosing to inline and pinning the 500 ms budget test. [files: docs/standalone/defect-against-epic-e1-2ff0dfda-delivery-E202610097224d0d4/ISSUE.md, src/workflow/delivery/snapshot.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Source fields exist as the design reads them: DefineBody.problem, DefineBody.summary.prose, DefineStory.userValue / sizeEstimate ('S'|'M'|'L'|'XL'), and body.feedback (FeedbackEntry { id, author, timestamp, comment, target{file, version?, segment?}, kind? }) on DEF/HLD/LLD/PLAN bodies.",
+          "evidence": "define.ts:67-92: userValue: string, sizeEstimate?: 'S'|'M'|'L'|'XL', problem: string, summary?: DocumentSummary (rendered via body.summary.prose at :117), feedback?: FeedbackRecord. lld.ts:185, plan.ts:97, hld.ts:135 also declare feedback?: FeedbackRecord. provenance/types.ts:24-42 matches the DeliveryFeedback field set (kind optional, version/segment optional → null). [files: src/workflow/artifacts/define.ts, src/workflow/artifacts/provenance/types.ts, src/workflow/artifacts/lld.ts, src/workflow/artifacts/plan.ts, src/workflow/artifacts/hld.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Error path 'Two DEF records share a work-item hash': 'The graph already uses the first DEF of the hash as the head and raises identity-ambiguous.'",
+          "evidence": "graph.ts:209 `const def = epicLevel.find(r => r.kind === 'DEF') ?? null;` picks the first DEF silently; the only identity-ambiguous raised for a head (graph.ts:232-236) is when a hash has both a DEF and an ISSUE (\"has both a Define and an issue record\"). Two DEFs under one hash raise no notice. The design's 'the existing notice explains the ambiguity' user-impact is therefore false; values still come from the first DEF (sorted by artifactId), so the snapshot is not broken, but the design should either drop the notice claim or add a notice. [files: src/workflow/delivery/graph.ts]",
+          "action": "Correct the error-path text: the graph picks the first DEF by artifactId with no notice; either state that, or add an identity-ambiguous notice for duplicate DEFs as an explicit (scoped) change.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The plugin mirror DeliveryItemView (vscode-plugin/src/delivery/delivery-contract.ts) pins exactly the 17 fields the design lists and re-exports types by an explicit list, so adding 'description' | 'feedback' to the Pick and the three new types to the import/export lists is the complete plugin-side change.",
+          "evidence": "delivery-contract.ts:59-61 Pick<DeliveryItem, 'id'|'kind'|'title'|'standalone'|'sourceIds'|'parentId'|'childIds'|'stage'|'evidence'|'tasks'|'validation'|'storyLevelResult'|'conflict'|'correctsRef'|'needsAttention'|'attentionReasons'|'notices'> — 17 fields, matching the design's pre-change list; types are imported/re-exported via explicit lists at :16-50. [files: vscode-plugin/src/delivery/delivery-contract.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Feedback-malformation notices can be produced inside assembleSnapshot and attached to the item: the item's notices come from noticesByItem built from allNotices before itemOf runs.",
+          "evidence": "snapshot.ts:80-91 builds allNotices (graph/stages/gates/currency + completenessNotices) and noticesByItem before itemOf (112). A new incomplete-evidence notice must be computed in that pre-pass (like completenessNotices) rather than inside itemOf, or it will miss item.notices and snapshot.notices ordering. The design's step 2 is compatible with this; the implementer must add it to the allNotices list. incomplete-evidence is attention:false (notice.ts:27), so malformed feedback won't flip needsAttention. [files: src/workflow/delivery/snapshot.ts, src/workflow/delivery/notice.ts]",
+          "action": "Make explicit in the LLD that the feedback-notice pass feeds allNotices (alongside completenessNotices) before noticesByItem is built.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The values can be read 'beside' the graph without changing it: an epic node's evidence holds its epic-level records (DEF, HLD) and a story node's evidence holds its own story-keyed records (LLD, PLAN, approved EXT), while a DEF story entry's userValue is reachable through the story's parent head DEF.",
+          "evidence": "graph.ts:229 epic evidenceArtifactIds = epicLevel (records with storyIdRaw null, plus pending/rejected EXT, groupKeyOf:42-50); story evidence = records of `${hash}|${storyKey}` (graph.ts:272,317) which include approved EXT with addedStory (graph.ts:261). Story DEF entries are keyed by storyOrdinalOf(id) (graph.ts:252-256) so the ordinal mapping the design uses matches the graph's. No graph change is needed, preserving invariant c6. [files: src/workflow/delivery/graph.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "ac4's proving test, contract.test.ts 'the VS Code plugin type-checks against the published delivery types', would fail without the fix.",
+          "evidence": "contract.test.ts:56 runs the plugin typecheck. DeliveryItemView is a Pick of DeliveryItem; if the daemon added the fields but the plugin Pick were left unchanged (or the whole fix absent), the typecheck still passes — a Pick of a subset never errors. Only a test that asserts the Pick includes 'description' and 'feedback' (e.g. a type-level assertion in the plugin, or board-fixtures typed as DeliveryItemView requiring those keys) would fail without the fix. Similarly ac5's handlers.test.ts budget test passes today without the fix (regression guard only). [files: src/workflow/delivery/__tests__/contract.test.ts, vscode-plugin/src/delivery/delivery-contract.ts]",
+          "action": "Add a type-level assertion (e.g. an exhaustive key-list check on DeliveryItemView, or fixtures that must supply description/feedback) so ac4 fails when the plugin mirror omits the new fields.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 5,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-10T12:37:20.097Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "current-behaviour.2": {
+        "findingId": "current-behaviour.2",
+        "status": "resolved",
+        "note": "Applied: the duplicate-DEF error path now states that the graph takes the first DEF by artifactId with no notice; no notice is added by this Story.",
+        "resolvedAt": "2026-10-10T12:38:43.525Z"
+      },
+      "tests.1": {
+        "findingId": "tests.1",
+        "status": "resolved",
+        "note": "Applied: the test strategy adds a type-level assertion in delivery-contract.ts that DeliveryItemView includes description and feedback, so ac4 fails when the mirror omits them; the budget test is marked a regression guard.",
+        "resolvedAt": "2026-10-10T12:38:43.527Z"
+      }
+    },
+    "approvedAt": "2026-10-10T12:41:15.197Z",
+    "rangeBase": "19effad1bc25731b2158756ced5c298f0d7e5a9b",
+    "questionResolutions": {
+      "q7fc55c12": {
+        "question": "ep3 (partial): the sole-interpreter invariant cites the PRD (c10) rather than an analyze bundle.",
+        "status": "resolved",
+        "choice": "Ground it with an analyze pass",
+        "rationale": "Grounded in code: vscode-plugin/src/delivery has no filesystem access (no fs import or readFile outside tests) and reads data only through delivery-client.ts's two daemon calls, workflow.delivery and workflow.deliveryEvidence (delivery-client.ts:93,112,124). The invariant holds today; the PRD (c10) stays as the source of intent.",
+        "resolvedAt": "2026-10-10T12:41:57.723Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "The delivery snapshot will carry what each work item is about, read straight from its records: a story's purpose and recorded size, an epic's problem statement and summary, and an issue's observed-vs-expected, root cause and fix intent. It also carries the feedback people have recorded on the item's design records, shown read-only. Every value says whether it was recorded and, if so, which record it came from; a value that does not belong to an item's kind is simply absent from that kind. The VS Code plugin's view of the contract picks up the new fields, so the board can show them later without ever opening a record itself."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Publish purpose, size, issue body and feedback in the delivery snapshot"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "assembleSnapshot",
+          "signature": "function assembleSnapshot(recordSet: ArtifactRecordSet, graph: WorkItemGraph, stages: StagePassResult, gates: GatePassResult, currency: CurrencyPassResult, markdown: DeliveryMarkdownPort): DeliverySnapshot",
+          "parameters": [
+            {
+              "name": "recordSet",
+              "type": "ArtifactRecordSet",
+              "purpose": "Unchanged. Now also the source of each item's descriptive values and feedback, read from the bodies of the records in the item's evidence.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DeliverySnapshot",
+            "meaning": "Unchanged shape at the snapshot level (schemaVersion stays 1). Every DeliveryItem additionally carries `description` and `feedback`."
+          },
+          "errors": [],
+          "preconditions": [
+            "The graph was built from the same recordSet, so each item's evidenceArtifactIds resolve in it."
+          ],
+          "postconditions": [
+            "description.kind equals the item's kind for every item.",
+            "Epic: problem is recorded from the epic's DEF body.problem and summary from its DEF body.summary.prose, each when it is a non-empty string, with that DEF's artifactId; otherwise not-recorded.",
+            "Story: purpose is recorded from the userValue of the DEF story entry with the story's ordinal, else from the userValue of an EXT record's body.addedStory in the story's evidence; size is recorded from that DEF entry's sizeEstimate when it is one of S, M, L, XL; otherwise not-recorded. A standalone story with neither record reads not-recorded for both.",
+            "Issue: reproduction, rootCause and fixIntent are recorded from its ISSUE body when each is a non-empty string; otherwise not-recorded.",
+            "Task: description is { kind: 'task' } with no fields.",
+            "A recorded value is the source string exactly as stored; nothing is generated, summarised or trimmed.",
+            "feedback lists every well-formed entry of body.feedback on the item's own DEF, HLD, LLD and PLAN evidence records (an epic's DEF and HLD, a story's LLD and PLAN), each with its artifactId, sorted by timestamp, then artifactId, then id. Feedback is never inherited from a parent or child.",
+            "A feedback entry missing a string id, author, timestamp or comment is left out and named in an incomplete-evidence notice on the item; the item's other values are unaffected.",
+            "Two snapshots of the same store are identical, including description and feedback."
+          ]
+        },
+        {
+          "name": "DeliveryItemView",
+          "signature": "type DeliveryItemView = Pick<DeliveryItem, 'id' | 'kind' | 'title' | 'standalone' | 'sourceIds' | 'parentId' | 'childIds' | 'stage' | 'evidence' | 'tasks' | 'validation' | 'storyLevelResult' | 'conflict' | 'correctsRef' | 'needsAttention' | 'attentionReasons' | 'notices' | 'description' | 'feedback'>",
+          "parameters": [],
+          "returns": {
+            "type": "type",
+            "meaning": "The plugin's pinned view of a snapshot item (vscode-plugin/src/delivery/delivery-contract.ts) gains description and feedback, and re-exports DeliveryItemDescription, DeliveryRecorded and DeliveryFeedback, so a rename or removal on the daemon side fails the plugin's contract typecheck."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "tsconfig.delivery-contract.json typechecks against the daemon's types.",
+            "The board's own rendering is unchanged by this Story."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DeliveryRecorded<T> (src/workflow/delivery/types.ts)",
+        "change": "new",
+        "details": "{ state: 'recorded'; value: T; artifactId: string } | { state: 'not-recorded' }. One recorded descriptive value and the record it came from, or the fact that no record states it.",
+        "callSites": [
+          "src/workflow/delivery/snapshot.ts",
+          "vscode-plugin/src/delivery/delivery-contract.ts"
+        ]
+      },
+      {
+        "entity": "DeliveryItemDescription (src/workflow/delivery/types.ts)",
+        "change": "new",
+        "details": "{ kind: 'epic'; problem: DeliveryRecorded<string>; summary: DeliveryRecorded<string> } | { kind: 'story'; purpose: DeliveryRecorded<string>; size: DeliveryRecorded<'S' | 'M' | 'L' | 'XL'> } | { kind: 'issue'; reproduction: DeliveryRecorded<string>; rootCause: DeliveryRecorded<string>; fixIntent: DeliveryRecorded<string> } | { kind: 'task' }. A field that does not apply to a kind is not part of that kind's variant (not applicable).",
+        "callSites": [
+          "src/workflow/delivery/snapshot.ts",
+          "vscode-plugin/src/delivery/delivery-contract.ts"
+        ]
+      },
+      {
+        "entity": "DeliveryFeedback (src/workflow/delivery/types.ts)",
+        "change": "new",
+        "details": "{ artifactId: string; id: string; author: string; timestamp: string; kind: 'feedback' | 'suggestion' | 'comment' | null; comment: string; target: { file: string; version: string | null; segment: { startLine: number; endLine: number } | null } }. One read-only feedback entry from a FeedbackRecord (src/workflow/artifacts/provenance/types.ts), with absent optional fields as null so the snapshot stays plain JSON with every key present.",
+        "callSites": [
+          "src/workflow/delivery/snapshot.ts",
+          "vscode-plugin/src/delivery/delivery-contract.ts"
+        ]
+      },
+      {
+        "entity": "DeliveryItem (src/workflow/delivery/types.ts)",
+        "change": "field-add",
+        "details": "Adds description: DeliveryItemDescription and feedback: readonly DeliveryFeedback[] (empty when none). Additive within schemaVersion 1; no existing field changes.",
+        "schemaDiff": "+ readonly description: DeliveryItemDescription;\n+ readonly feedback: readonly DeliveryFeedback[];",
+        "callSites": [
+          "src/workflow/delivery/snapshot.ts",
+          "vscode-plugin/src/delivery/delivery-contract.ts",
+          "vscode-plugin/src/delivery/__tests__/board-fixtures.ts",
+          "src/workflow/delivery/__tests__/contract.test.ts"
+        ]
+      },
+      {
+        "entity": "DeliveryItemView (vscode-plugin/src/delivery/delivery-contract.ts)",
+        "change": "field-add",
+        "details": "Pick list gains 'description' and 'feedback'; the module re-exports the three new types.",
+        "callSites": [
+          "vscode-plugin/src/delivery/delivery-contract.ts",
+          "vscode-plugin/src/delivery/__tests__/board-fixtures.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A record body holds a descriptive field of the wrong type (problem as a number, userValue as an object, sizeEstimate 'XXL').",
+          "detection": "Each value is read through a type check (a non-empty string; for size, membership in S, M, L, XL) before it is published.",
+          "response": "The value reads not-recorded; nothing is coerced or guessed.",
+          "userImpact": "The field shows as not recorded; the rest of the item is unaffected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A body.feedback is not an array, or an entry lacks a string id, author, timestamp or comment, or its target lacks a string file.",
+          "detection": "body.feedback is checked with Array.isArray and each entry field by type before it becomes a DeliveryFeedback.",
+          "response": "The malformed entries (or the whole non-array value) are left out, and an incomplete-evidence notice on the item names the record and how many entries were left out. Well-formed entries on the same record are still published.",
+          "userImpact": "Readable feedback still shows; the notice says some could not be read.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An item's evidence lists an artifactId that is missing from the record set.",
+          "detection": "The lookup by artifactId returns undefined, as it already does for evidence entries.",
+          "response": "That record contributes no value and no feedback; the existing evidence handling is unchanged.",
+          "userImpact": "None beyond the values that record would have supplied.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Two DEF records share a work-item hash (identity-ambiguous).",
+          "detection": "The graph takes the first DEF of the hash, by artifactId, as the head (graph.ts: epicLevel.find(r => r.kind === 'DEF')) and raises no notice for a second DEF; identity-ambiguous is raised only when a hash has both a Define and an issue record.",
+          "response": "The epic's problem and summary and its stories' purpose and size come from that same head DEF, so descriptive values never mix records. This Story adds no notice for duplicate DEFs; that would be a separate identity change.",
+          "userImpact": "Values follow the DEF the graph chose (the first by artifactId); the other DEF's values are not shown, as its titles are not today.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A standalone story (no DEF, no EXT), e.g. an issue's fix story.",
+          "expected": "purpose and size both read not-recorded; its LLD and PLAN feedback is still published."
+        },
+        {
+          "input": "An epic story added by an extension (EXT with addedStory.userValue) and no DEF entry.",
+          "expected": "purpose is recorded from the EXT, with the EXT's artifactId; size reads not-recorded."
+        },
+        {
+          "input": "A DEF story entry with userValue but no sizeEstimate.",
+          "expected": "purpose recorded, size not-recorded."
+        },
+        {
+          "input": "An empty or whitespace-only string (problem: '  ').",
+          "expected": "not-recorded; a recorded value is never blank."
+        },
+        {
+          "input": "A recorded string with leading or trailing spaces or line breaks.",
+          "expected": "Published exactly as stored."
+        },
+        {
+          "input": "A DEF with summary absent but problem present.",
+          "expected": "problem recorded, summary not-recorded."
+        },
+        {
+          "input": "Feedback entries on both the LLD and the PLAN of a story, with equal timestamps.",
+          "expected": "All entries listed, ordered by timestamp, then artifactId, then id."
+        },
+        {
+          "input": "A feedback entry without kind, version or segment.",
+          "expected": "Published with kind, target.version and target.segment as null."
+        },
+        {
+          "input": "Feedback on a BUILD, CR or ISSUE body.",
+          "expected": "Not read: feedback is read only from DEF, HLD, LLD and PLAN bodies, the kinds that carry it."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "schemaVersion stays 1 and every existing DeliveryItem and DeliverySnapshot field keeps its name, type and meaning; the change is additive.",
+          "source": "c1"
+        },
+        {
+          "text": "The snapshot is pure and deterministic: two snapshots of the same store are identical, with items sorted by id and lists sorted.",
+          "source": "c2"
+        },
+        {
+          "text": "The daemon is the only interpreter of the records; clients read the snapshot, never record bodies, for these values.",
+          "source": "c10"
+        },
+        {
+          "text": "The work-item graph's identity, hierarchy and titles are unchanged; descriptive values are read beside it, not by changing it.",
+          "source": "c6"
+        },
+        {
+          "text": "The plugin's contract mirror typechecks against the daemon's types, so drift fails the build.",
+          "source": "c7"
+        },
+        {
+          "text": "The JetBrains sample snapshot equals what the assembler produces, byte for byte.",
+          "source": "c8"
+        },
+        {
+          "text": "A 1,000-record store forming 500 work items is served within 500 ms.",
+          "source": "c9"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via tsx (npx tsx --test 'src/**/__tests__/*.test.ts'), node:assert/strict; record fixtures from src/workflow/delivery/__tests__/fixtures.ts; the plugin side via npx tsx --test in vscode-plugin and its contract typecheck (tsconfig.delivery-contract.json)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Each kind's descriptive values, their three states and their source records, and the feedback list.",
+          "subjects": [
+            "snapshot.test.ts: an epic's problem and summary, a story's purpose and size, and an issue's reproduction, root cause and fix intent are published from their records with the record's artifactId",
+            "snapshot.test.ts: missing, blank or wrongly typed values read not-recorded, values are published exactly as stored, a task's description has no fields, and a field that does not apply to a kind is absent",
+            "snapshot.test.ts: a story added by an extension takes its purpose from the EXT; a standalone story reads not-recorded",
+            "snapshot.test.ts: feedback from an item's own DEF/HLD/LLD/PLAN records is listed read-only in timestamp, artifactId, id order with absent optional fields as null, never inherited, and malformed entries are left out with an incomplete-evidence notice",
+            "snapshot.test.ts: two snapshots of the same store, with descriptions and feedback, are identical"
+          ],
+          "fixturesNeeded": [
+            "fixtures.ts: defRecord/issueRecord/lldRecord/planRecord/extRecord accept body overrides (problem, summary, userValue, sizeEstimate, reproduction, rootCause, fixIntent, feedback)"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The published shape and its client mirrors.",
+          "subjects": [
+            "types.test.ts: the delivery IPC types list exactly the sketched members, including DeliveryItem.description and feedback and the three new types",
+            "contract.test.ts: the VS Code plugin type-checks against the published delivery types (DeliveryItemView picks description and feedback)",
+            "contract.test.ts: the JetBrains sample snapshot, regenerated with descriptions and feedback, equals what the assembler produces",
+            "delivery-contract.ts: a type-level assertion that DeliveryItemView's keys include 'description' and 'feedback', so the contract typecheck (contract.test.ts) fails when the plugin mirror omits either field"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The served snapshot stays within budget with the new fields.",
+          "subjects": [
+            "handlers.test.ts: a 1,000-record store forming 500 work items is served within 500 ms, with descriptions and feedback present (a regression guard: it passes before the fix and must still pass after it)",
+            "vscode-plugin board tests: the board fixtures carry the new fields and every board test still passes unchanged"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "snapshot.test.ts: 'an epic\\'s problem and summary, a story\\'s purpose and size, and an issue\\'s reproduction, root cause and fix intent are published from their records'",
+            "snapshot.test.ts: 'a story added by an extension takes its purpose from the EXT, and a standalone story reads not recorded'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "snapshot.test.ts: 'missing, blank or wrongly typed values read not recorded, and a value that does not apply to a kind is absent'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "snapshot.test.ts: 'feedback from an item\\'s own design records is listed read-only, in order, and malformed entries are noticed'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "contract.test.ts: 'the VS Code plugin type-checks against the published delivery types'",
+            "delivery-contract.ts: the DeliveryItemView key assertion for description and feedback, checked by contract.test.ts 'the VS Code plugin type-checks against the published delivery types'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "snapshot.test.ts: 'two snapshots of the same store, with equal timestamps, are identical in order and counts'",
+            "handlers.test.ts: 'a 1,000-record store forming 500 work items is served within 500 ms'"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "types.test.ts: 'the delivery IPC types list exactly the sketched members'",
+            "contract.test.ts: 'the JetBrains sample snapshot is plain JSON and equals what the assembler produces'"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per s1: DeliveryItem (src/workflow/delivery/types.ts) carries identity, hierarchy, stage, gates, evidence and notices only; assembleSnapshot (snapshot.ts) reads no descriptive body field, and a search of src/workflow/delivery finds no userValue, sizeEstimate, reproduction, rootCause, fixIntent or feedback. The plugin mirror pins 17 DeliveryItem fields.",
+      "stateAfter": "Every DeliveryItem also carries description (a union keyed by kind, each field recorded with its source artifactId or not-recorded) and feedback (the read-only entries recorded on the item's own DEF/HLD/LLD/PLAN records), within schemaVersion 1. The plugin mirror picks both fields, the JetBrains sample is regenerated, and the shape tests pin the new members.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the DeliveryRecorded, DeliveryItemDescription and DeliveryFeedback types and the two DeliveryItem fields to the published types.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Fill description and feedback for every item while the snapshot is assembled, reading the bodies of the item's own records; raise incomplete-evidence for malformed feedback entries.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the two fields to the plugin's DeliveryItemView and its board test fixtures; the board's rendering stays as it is.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Regenerate the JetBrains sample snapshot and extend the type, snapshot, contract and budget tests; run the root and plugin suites.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Additive within schemaVersion 1: no existing field is renamed, removed or re-meant, so a client that ignores unknown fields (the plugin today, and the JetBrains Gson reader, which reads by field name) keeps working. The stored records are read only, never rewritten. Old daemons simply omit the fields; the plugin is released together with the daemon, as before.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "A kind-tagged description plus an item feedback list",
+        "oneLineSummary": "DeliveryItem gains `description`, a union keyed by the item's kind whose fields each say recorded (with value and source record) or not recorded, and `feedback`, the recorded feedback entries of the item's own records.",
+        "approach": "Add DeliveryItem.description: { kind: 'epic', problem: Recorded<string>, summary: Recorded<string> } | { kind: 'story', purpose: Recorded<string>, size: Recorded<'S'|'M'|'L'|'XL'> } | { kind: 'issue', reproduction, rootCause, fixIntent: Recorded<string> } | { kind: 'task' }, where Recorded<T> = { state: 'recorded'; value: T; artifactId: string } | { state: 'not-recorded' }. A field that does not apply to a kind is simply not part of that kind's variant, so 'not applicable' is structural rather than a third value. Add DeliveryItem.feedback: readonly DeliveryFeedback[] = { artifactId, id, author, timestamp, kind, comment, target } for every feedback entry recorded on the item's own evidence records (DEF/HLD for an epic, LLD/PLAN for a story), sorted by timestamp then id. A new pure pass reads the values from the record bodies; the graph stays as it is. The plugin mirror adds both fields to DeliveryItemView.",
+        "pros": [
+          "The three states the issue asks for are explicit and type-checked: a client cannot read a story's fixIntent because the type has none.",
+          "Each recorded value names the record it came from, so it is traceable and never generated.",
+          "Additive: existing fields and their meaning are unchanged within schemaVersion 1."
+        ],
+        "cons": [
+          "Clients switch on description.kind, a little more code than reading flat fields.",
+          "Feedback comments are inlined, so a store with very long comments grows the snapshot."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Flat nullable fields on DeliveryItem",
+        "oneLineSummary": "Add purpose, size, problem, summary, reproduction, rootCause, fixIntent and feedback as nullable fields on every item.",
+        "approach": "Every DeliveryItem carries all the descriptive fields as string | null (size as the enum or null), filled where the item's kind has a source and null otherwise; feedback as an array. The extraction reads the same record bodies.",
+        "pros": [
+          "Simplest to read: one field per value.",
+          "Smallest change to the plugin mirror."
+        ],
+        "cons": [
+          "null cannot tell 'not recorded' from 'does not apply to this kind', which the issue requires; a client would need its own kind table, re-interpreting the read model.",
+          "Every item carries seven nulls it can never use, and no source record is named for a value."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheapest, but violates the three-state requirement the issue states explicitly."
+      },
+      {
+        "id": "a3",
+        "name": "Uniform tri-state fields on every item",
+        "oneLineSummary": "Every item carries every descriptive field as { status: 'recorded' | 'not-recorded' | 'not-applicable', value, artifactId }.",
+        "approach": "Same extraction as a1, but each of the seven fields is present on every item with an explicit status, including 'not-applicable' for kinds without that field. Feedback as in a1.",
+        "pros": [
+          "The three states are explicit and uniform; no union to switch on.",
+          "Each recorded value names its source record."
+        ],
+        "cons": [
+          "Seven fields per item, most of them 'not-applicable' (a task carries all seven), roughly tripling the descriptive payload for no information.",
+          "The type allows a story's fixIntent to be 'recorded', so the kind rule lives only in the code, not the contract."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Same guarantees as a1 at runtime but weaker typing (the kind rule is not in the contract) and a larger payload."
+      },
+      {
+        "id": "a4",
+        "name": "Counts and pointers only; values through the evidence request",
+        "oneLineSummary": "The snapshot publishes only which values are recorded and in which record; clients fetch the text with workflow.deliveryEvidence.",
+        "approach": "DeliveryItem gains a descriptor { purpose: artifactId | null, size, problem: artifactId | null, ... , feedbackCount } and the client reads the actual text from the record body returned by the evidence request.",
+        "pros": [
+          "The snapshot stays small whatever the comment lengths.",
+          "No text is duplicated between the snapshot and the evidence records."
+        ],
+        "cons": [
+          "The client must open and read record bodies to show a purpose or fix intent, which PRD §07 forbids: the daemon must be the only interpreter of the records.",
+          "One request per item to render mock B or D, against the board's 150 ms drill-down target."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Violates the PRD rule that the daemon is the only interpreter of the records."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "ep3 (partial): the sole-interpreter invariant cites the PRD (c10) rather than an analyze bundle."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "DeliveryItem / DeliverySnapshot (schemaVersion 1)"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/delivery/snapshot.ts",
+      "quotedText": "assembleSnapshot / itemOf: pure and deterministic"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/define.ts",
+      "quotedText": "DefineBody.problem, summary, stories[].userValue / sizeEstimate, feedback"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/issue.ts",
+      "quotedText": "IssueArtifactBody { title, reproduction, rootCause, fixIntent }"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/provenance/types.ts",
+      "quotedText": "FeedbackEntry / FeedbackRecord"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/delivery/graph.ts",
+      "quotedText": "buildWorkItemGraph keeps only titles from bodies"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/delivery-contract.ts",
+      "quotedText": "DeliveryItemView = Pick<DeliveryItem, ...>"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/delivery/__tests__/contract.test.ts",
+      "quotedText": "the JetBrains sample snapshot equals what the assembler produces"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/delivery/__tests__/handlers.test.ts",
+      "quotedText": "a 1,000-record store forming 500 work items is served within 500 ms"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/defect-against-epic-e1-2ff0dfda-delivery-E202610097224d0d4/ISSUE.md",
+      "quotedText": "the daemon as the only interpreter (PRD §07)"
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "s1..s8 of this run"
+    }
+  ]
+}

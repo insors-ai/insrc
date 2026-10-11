@@ -28,8 +28,11 @@
  *           Emits JSONL events; mapped best-effort (validated by the opt-in live test).
  */
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
+import { closeSync, openSync } from 'node:fs';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
+import { DEFAULT_GRACE_MS, defaultIsAlive, defaultKillGroup, defaultProcessStartTime, signalGroup, stopProcess } from './session-lock.js';
+import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from './session-output.js';
 
 export type ProviderId = 'claude' | 'codex';
 
@@ -59,11 +62,69 @@ export interface TurnRequest {
   readonly allowedTools?: readonly string[];
 }
 
+/** The started CLI process of a turn, handed to the caller so it can tie a session lease to it. */
+export interface TurnProcess {
+  readonly pid: number | undefined;
+  /** Settles when the process has exited. */
+  readonly exit: Promise<{ code: number | null; signal: string | null }>;
+  /** Signals the process group. */
+  kill(signal: 'SIGTERM' | 'SIGKILL'): void;
+  /** SIGTERM, then SIGKILL after a grace; resolves once the exit is confirmed (or the grace runs out). */
+  stop(): Promise<void>;
+  /** With a session output: where the turn's segment starts (session, turn, generation, offset). */
+  readonly cursor?: SegmentCursor | undefined;
+  /** With a session output: the session file the process writes to. */
+  readonly outPath?: string | undefined;
+}
+
+export type TurnCursor = SegmentCursor;
+
+export interface ResumeRequest {
+  readonly cursor: SegmentCursor;
+  /** The turn's CLI process, as recorded when it started. */
+  readonly pid: number | undefined;
+  /** That process's start time (processStartTime), so a reused pid is never mistaken for it. */
+  readonly startedAt: number | null;
+}
+
+export interface ResumeOptions {
+  readonly onProgress?: ((cursor: TurnCursor) => void) | undefined;
+  /** Aborting it stops following; the process is left running. */
+  readonly signal?: AbortSignal | undefined;
+  /** Hands over the followed turn's process, so Stop can end it. */
+  readonly onAttach?: ((proc: TurnProcess) => void) | undefined;
+}
+
+export interface RunOptions {
+  /** Called once the CLI process has started. */
+  readonly onSpawn?: ((proc: TurnProcess) => void) | undefined;
+  /** Called after the events of each output line have been yielded, with the position after that line. */
+  readonly onProgress?: ((cursor: TurnCursor) => void) | undefined;
+  /**
+   * The chat session the turn belongs to. With AdapterDeps.sessionOutput, the turn's output is
+   * kept in that session's file. Pass it only while holding the session's lease.
+   */
+  readonly sessionId?: string | undefined;
+}
+
 export interface StreamAdapter {
-  /** Spawn + stream one turn, yielding normalized sc2 events. Completes after a terminal done/error event. */
-  run(req: TurnRequest): AsyncIterable<TurnEvent>;
-  /** Abort an in-flight turn by id (idempotent; no-op for unknown/finished). */
-  cancel(turnId: string): void;
+  /**
+   * Spawn + stream one turn, yielding normalized sc2 events. Completes right after the first
+   * terminal done/error event WITHOUT stopping the process: a CLI that keeps running after its
+   * answer keeps running, and its live entry (for decide()) is dropped when it exits.
+   */
+  run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent>;
+  /**
+   * Follow an earlier turn's segment of the session file from a saved cursor (after a reload):
+   * the same events a live run would have yielded for the lines after it, ending at the terminal
+   * event, at the segment's end, or with an error once the recorded process is gone without one.
+   */
+  resume(req: ResumeRequest, opts?: ResumeOptions): AsyncIterable<TurnEvent>;
+  /**
+   * Stop an in-flight turn's process group by id (SIGTERM, then SIGKILL after a grace);
+   * resolves once the exit is confirmed. No-op for unknown/exited turns.
+   */
+  cancel(turnId: string): Promise<void>;
   /**
    * S004: relay a review-mode permission decision back to the live turn's CLI.
    * Looks up the pending request registered for (turnId, requestId); if live, writes
@@ -93,8 +154,10 @@ export interface SpawnedProcess {
   readonly exit: Promise<{ code: number | null; signal: string | null }>;
   /** Reject reason if the process could not be spawned (e.g. ENOENT); undefined once spawned. */
   readonly spawnError: Promise<NodeJS.ErrnoException | undefined>;
-  /** Terminate the process (SIGTERM). Idempotent. */
-  kill(): void;
+  /** The OS pid, when known (the real spawner); fakes may omit it. */
+  readonly pid?: number | undefined;
+  /** Signal the process (its whole group, for the real spawner). Default SIGTERM. Idempotent. */
+  kill(signal?: 'SIGTERM' | 'SIGKILL'): void;
   /**
    * S004 (additive-optional): write a native control line to the process stdin —
    * the review-mode permission-decision relay (host answers the CLI's prompt).
@@ -103,9 +166,24 @@ export interface SpawnedProcess {
    * presence before calling. Only review mode uses it; auto mode never does.
    */
   write?(data: string): void;
+  /** With a session output: the position just after the last line lines() yielded. */
+  readonly cursor?: SegmentCursor | undefined;
 }
 
-export type SpawnFn = (command: string, args: readonly string[], opts: { readonly cwd: string }) => SpawnedProcess;
+/**
+ * Where a turn's output goes when it is kept in the session's output file (session-output.ts):
+ * the CLI's stdout and stderr are appended to these files, and lines() reads the turn's segment.
+ */
+export interface SpawnOutput {
+  readonly outPath: string;
+  readonly errPath: string;
+  /** Just after the turn's turn-start marker. */
+  readonly cursor: SegmentCursor;
+  readonly tail: (cursor: SegmentCursor, finished: () => boolean) => AsyncIterable<{ readonly line: string; readonly cursor: SegmentCursor }>;
+  readonly errTail: () => string;
+}
+
+export type SpawnFn = (command: string, args: readonly string[], opts: { readonly cwd: string; readonly output?: SpawnOutput | undefined }) => SpawnedProcess;
 
 /** Minimal logger seam (the vscode-plugin does not pull the daemon's pino logger; never console.log). */
 export interface AdapterLogger {
@@ -120,6 +198,16 @@ export interface AdapterDeps {
   readonly spawn: SpawnFn;
   readonly isInstalled: BinaryProbe;
   readonly logger?: AdapterLogger;
+  /** cancel()'s wait after SIGTERM, and again after SIGKILL. Default 5000 ms. */
+  readonly stopGraceMs?: number;
+  /** Keeps each turn's output in its session's file; without it every turn uses the pipe. */
+  readonly sessionOutput?: SessionOutput | undefined;
+  /** Process seams for resume() (defaults: the real ones from session-lock.ts). */
+  readonly isAlive?: ((pid: number) => boolean) | undefined;
+  readonly killGroup?: ((pid: number, signal: 'SIGTERM' | 'SIGKILL') => void) | undefined;
+  readonly processStartTime?: ((pid: number) => number | undefined) | undefined;
+  /** How often resume() checks whether the followed process is still alive. Default 200 ms. */
+  readonly livenessPollMs?: number | undefined;
 }
 
 const NOOP_LOGGER: AdapterLogger = { warn: () => {}, error: () => {} };
@@ -664,15 +752,26 @@ function looksLikeAuthError(text: string): boolean {
 
 const BINARY: Record<ProviderId, string> = { claude: 'claude', codex: 'codex' };
 
+/** Reads and discards the rest of a stream (stdout after the terminal event). Never throws. */
+async function drain(it: AsyncIterator<string>): Promise<void> {
+  try {
+    for (;;) if ((await it.next()).done === true) return;
+  } catch {
+    /* stdout closed or errored: nothing left to discard */
+  }
+}
+
 function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAdapter {
   const log = deps.logger ?? NOOP_LOGGER;
+  const stopGraceMs = deps.stopGraceMs ?? DEFAULT_GRACE_MS;
+  let outputFallbackLogged = false;
   const live = new Map<string, SpawnedProcess>();
   // S004: outstanding permission requests per live turn (the a2 pending-request registry).
   // register on an emitted approval-request; decide() consumes; auto-cleaned on cancel()/exit.
   const pendingByTurn = new Map<string, Set<string>>();
   let turnSeq = 0;
 
-  async function* run(req: TurnRequest): AsyncIterable<TurnEvent> {
+  async function* run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
     const turnId = `${mapper.id}-${Date.now()}-${turnSeq++}`;
     // Honor the capability: if this provider can't resume, drop the handle and
     // start a fresh session rather than passing an unsupported flag (never throw).
@@ -681,32 +780,87 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       const { resume: _drop, ...rest } = req;
       effectiveReq = rest;
     }
+    // Keep the turn's output in its session's file when we can; otherwise the pipe, as before.
+    const sessionOutput = deps.sessionOutput;
+    const sessionId = opts?.sessionId;
+    let segment: Awaited<ReturnType<SessionOutput['beginTurn']>> | undefined;
+    if (sessionOutput !== undefined && sessionId !== undefined) {
+      try {
+        segment = await sessionOutput.beginTurn(sessionId, turnId);
+      } catch (err) {
+        if (!outputFallbackLogged) log.error(`[chat:${mapper.id}] session output unavailable (${err instanceof Error ? err.message : String(err)}); reading this turn from the pipe`);
+        outputFallbackLogged = true;
+      }
+    }
+    const output: SpawnOutput | undefined =
+      segment !== undefined && sessionOutput !== undefined && sessionId !== undefined
+        ? {
+            outPath: segment.outPath,
+            errPath: segment.errPath,
+            cursor: segment.cursor,
+            tail: (cursor, finished) => sessionOutput.tail(cursor, { finished }),
+            errTail: () => sessionOutput.errTail(sessionId),
+          }
+        : undefined;
     let proc: SpawnedProcess;
     try {
-      proc = deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), { cwd: effectiveReq.cwd });
+      proc = deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), { cwd: effectiveReq.cwd, ...(output !== undefined ? { output } : {}) });
     } catch (err) {
+      if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
+        void sessionOutput.endTurn(sessionId, turnId, { code: null, signal: null }).catch(() => {});
+      }
       yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       return;
     }
     live.set(turnId, proc);
+    // The live entry (decide()'s route to stdin) and the turn's pending permission requests
+    // last as long as the process, not the stream: a CLI may keep running after its answer.
+    const forget = (): void => {
+      if (live.get(turnId) === proc) live.delete(turnId);
+      pendingByTurn.delete(turnId);
+    };
+    proc.exit.then(forget, forget);
+    if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
+      // Close the turn's segment after the process's real exit (not at its answer). If this host is
+      // gone by then, the next beginTurn closes it instead.
+      const close = (e: { code: number | null; signal: string | null }): void => {
+        void sessionOutput.endTurn(sessionId, turnId, e).catch((err: unknown) => log.warn(`[chat:${mapper.id}] could not close the output segment of ${turnId}: ${String(err)}`));
+      };
+      proc.exit.then(close, () => close({ code: null, signal: null }));
+    }
     const state: TurnState = {};
     let sawError = false;
     let sawDone = false;
+    // Set BEFORE a terminal event is yielded, so a consumer that returns at it (the panel)
+    // does not stop the process in the finally below.
+    let terminal = false;
     // Stamp the captured native session id onto a terminal `done` so the caller
     // (S005) can persist the resume handle; a dead capture would strand resume.
     const doneEvent = (ok: boolean): TurnEvent =>
       state.sessionId !== undefined ? { kind: 'done', turnId, ok, sessionId: state.sessionId } : { kind: 'done', turnId, ok };
+    const stdout = proc.lines()[Symbol.asyncIterator]();
     try {
       const spawnErr = await proc.spawnError;
       if (spawnErr !== undefined) {
+        forget();
+        terminal = true;
         yield { kind: 'error', turnId, message: spawnErr.code === 'ENOENT' ? `${BINARY[mapper.id]} CLI not found — install it or check your PATH` : failureMessage(mapper.id, spawnErr) };
         return;
       }
-      for await (const line of proc.lines()) {
-        if (sawDone || sawError) break; // ignore anything after ANY terminal event
+      opts?.onSpawn?.({
+        pid: proc.pid,
+        exit: proc.exit,
+        kill: (signal) => proc.kill(signal),
+        stop: () => stopTurnProcess(proc),
+        ...(segment !== undefined ? { cursor: segment.cursor, outPath: segment.outPath } : {}),
+      });
+      for (;;) {
+        const next = await stdout.next();
+        if (next.done === true) break;
         let events: TurnEvent[];
         try {
-          events = mapper.mapLine(line, turnId, state);
+          // Host-written marker lines (session output segments) are never CLI events.
+          events = parseMarker(next.value) !== undefined ? [] : mapper.mapLine(next.value, turnId, state);
         } catch {
           log.warn(`[chat:${mapper.id}] skipped unparseable stream line`);
           continue; // non-fatal: skip malformed line, never yield a malformed event
@@ -721,15 +875,25 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             }
             set.add(ev.requestId);
           }
-          // Enrich a mapper-produced done with the session id captured so far.
-          yield ev.kind === 'done' ? doneEvent(ev.ok) : ev;
           if (ev.kind === 'done') sawDone = true;
           if (ev.kind === 'error') sawError = true;
-          if (sawDone || sawError) break;
+          if (sawDone || sawError) {
+            terminal = true;
+            // Keep reading (and discarding) stdout so a CLI that outlives its answer never
+            // blocks on a full pipe; nothing after the terminal event is yielded.
+            void drain(stdout);
+          }
+          // Enrich a mapper-produced done with the session id captured so far.
+          yield ev.kind === 'done' ? doneEvent(ev.ok) : ev;
+          if (sawDone || sawError) return;
         }
+        // Every event of this line has been handed over: report the position after it.
+        const at = proc.cursor;
+        if (at !== undefined) opts?.onProgress?.(at);
       }
+      // stdout closed without a terminal event: the process is ending; report how.
       const { code, signal } = await proc.exit;
-      if (sawDone || sawError) return;
+      terminal = true;
       if (signal !== null) {
         // Killed (e.g. via cancel()) without a terminal event from the stream.
         yield doneEvent(false);
@@ -747,29 +911,35 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     } catch (err) {
       // Any I/O failure (e.g. the stdout stream erroring) surfaces as a terminal
       // error event, never a thrown/rejected generator — unless a terminal event
-      // already went out.
-      if (!sawDone && !sawError) {
+      // already went out. The stream is unusable, so the process is stopped.
+      if (!terminal) {
+        terminal = true;
+        proc.kill('SIGTERM');
         yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       }
     } finally {
-      // Kill on the way out so an early-break/abandoned consumer never orphans the
-      // child (kill is idempotent + safe on an already-exited process).
-      proc.kill();
-      live.delete(turnId);
-      // S004: drop any outstanding permission requests for this turn — the process is
-      // gone, so a later decide() must find nothing (no dangling/unanswerable card).
-      pendingByTurn.delete(turnId);
+      // A consumer that abandons a PIPE turn before any terminal event must never orphan the
+      // child: stop it (kill is idempotent + safe on an already-exited process). A turn writing to
+      // its session file is only detached from: the CLI goes on writing there and the turn can be
+      // resumed from its cursor. After a terminal event the process is left to finish either way.
+      if (!terminal && output === undefined) {
+        proc.kill('SIGTERM');
+        pendingByTurn.delete(turnId);
+      }
     }
   }
 
-  function cancel(turnId: string): void {
-    // Clear outstanding permission requests first: cancel() kills the child, which ends
-    // the stream and runs run()'s finally, but dropping here makes a decide() racing the
-    // teardown a guaranteed no-op.
+  function stopTurnProcess(proc: SpawnedProcess): Promise<void> {
+    return stopProcess({ pid: proc.pid, exit: proc.exit, kill: (signal) => proc.kill(signal) }, stopGraceMs).then(() => {});
+  }
+
+  async function cancel(turnId: string): Promise<void> {
+    // Clear outstanding permission requests first so a decide() racing the teardown is a
+    // guaranteed no-op.
     pendingByTurn.delete(turnId);
     const proc = live.get(turnId);
-    if (proc === undefined) return; // unknown / already finished — no-op
-    proc.kill();
+    if (proc === undefined) return; // unknown / already exited — no-op
+    await stopTurnProcess(proc);
   }
 
   function decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): void {
@@ -789,7 +959,73 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     proc.write(mapper.formatDecision(requestId, decision));
   }
 
-  return { run, cancel, decide, capabilities: { resume: mapper.resume } };
+  async function* resume(req: ResumeRequest, opts?: ResumeOptions): AsyncIterable<TurnEvent> {
+    const turnId = req.cursor.turnId;
+    const sessionOutput = deps.sessionOutput;
+    if (sessionOutput === undefined) {
+      yield { kind: 'error', turnId, message: `${mapper.id} turn output is not kept, so it cannot be resumed` };
+      return;
+    }
+    const isAlive = deps.isAlive ?? defaultIsAlive;
+    const killGroup = deps.killGroup ?? defaultKillGroup;
+    const startTime = deps.processStartTime ?? defaultProcessStartTime;
+    const pid = req.pid;
+    // The recorded process, and only while it is still that process (never a reused pid).
+    const isTheProcess = (): boolean =>
+      pid !== undefined && isAlive(pid) && (req.startedAt === null || startTime(pid) === req.startedAt);
+    const exit = new Promise<{ code: number | null; signal: string | null }>((resolve) => {
+      const check = (): void => {
+        if (isTheProcess()) return;
+        clearInterval(timer);
+        resolve({ code: null, signal: null });
+      };
+      const timer = setInterval(check, deps.livenessPollMs ?? 200);
+      timer.unref?.();
+      check();
+    });
+    const handle: TurnProcess = {
+      pid,
+      exit,
+      cursor: req.cursor,
+      kill: (signal) => {
+        if (pid !== undefined && isTheProcess()) killGroup(pid, signal);
+      },
+      stop: () => stopProcess({ pid, exit, kill: (signal) => handle.kill(signal) }, stopGraceMs).then(() => {}),
+    };
+    opts?.onAttach?.(handle);
+
+    const state: TurnState = {};
+    const doneEvent = (ok: boolean): TurnEvent =>
+      state.sessionId !== undefined ? { kind: 'done', turnId, ok, sessionId: state.sessionId } : { kind: 'done', turnId, ok };
+    try {
+      for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished: () => !isTheProcess(), signal: opts?.signal })) {
+        let events: TurnEvent[];
+        try {
+          events = parseMarker(line) !== undefined ? [] : mapper.mapLine(line, turnId, state);
+        } catch {
+          log.warn(`[chat:${mapper.id}] skipped unparseable stream line`);
+          continue;
+        }
+        for (const ev of events) {
+          yield ev.kind === 'done' ? doneEvent(ev.ok) : ev;
+          if (ev.kind === 'done' || ev.kind === 'error') return;
+        }
+        opts?.onProgress?.(cursor);
+      }
+    } catch (err) {
+      if (err instanceof SegmentGone) {
+        // The file rolled over past this turn: there is nothing left to resume.
+        log.warn(`[chat:${mapper.id}] ${err.message}`);
+        return;
+      }
+      yield { kind: 'error', turnId, message: `the output of this turn could not be read: ${err instanceof Error ? err.message : String(err)}` };
+      return;
+    }
+    if (opts?.signal?.aborted === true) return; // stopped following; the turn goes on
+    yield { kind: 'error', turnId, message: 'the turn ended without a result' };
+  }
+
+  return { run, resume, cancel, decide, capabilities: { resume: mapper.resume } };
 }
 
 function failureMessage(provider: ProviderId, reason: unknown): string {
@@ -831,7 +1067,7 @@ export function createProviderRegistry(deps: AdapterDeps): ProviderRegistry {
 export async function deriveChatTitle(
   providers: ProviderRegistry,
   input: { readonly provider: ProviderId; readonly prompt: string; readonly cwd: string },
-  opts?: { readonly timeoutMs?: number },
+  opts?: { readonly timeoutMs?: number | undefined },
 ): Promise<string | undefined> {
   let adapter: StreamAdapter;
   try {
@@ -854,7 +1090,7 @@ export async function deriveChatTitle(
   const stop = (val: string | undefined): string | undefined => {
     if (turnId !== undefined) {
       try {
-        adapter.cancel(turnId);
+        void adapter.cancel(turnId);
       } catch {
         /* already finished */
       }
@@ -899,7 +1135,29 @@ export async function deriveChatTitle(
 export const nodeSpawner: SpawnFn = (command, args, opts) => {
   // stdin is a pipe (not 'ignore') so the review-mode permission-decision relay can
   // write a control line back to the CLI (S004 write() seam); stdout/stderr piped as before.
-  const child = nodeChildSpawn(command, [...args], { cwd: opts.cwd, stdio: ['pipe', 'pipe', 'pipe'] });
+  // Off Windows the CLI leads its own process group (detached), so a stop reaches every
+  // process it started, not just the direct child.
+  const ownGroup = process.platform !== 'win32';
+  // With a session output the CLI writes its stdout and stderr straight into the session's
+  // files (append mode), so its output survives whatever happens to this extension host.
+  const out = opts.output;
+  const fds = out !== undefined ? [openSync(out.outPath, 'a'), openSync(out.errPath, 'a')] : undefined;
+  let child: ReturnType<typeof nodeChildSpawn>;
+  try {
+    child = nodeChildSpawn(command, [...args], {
+      cwd: opts.cwd,
+      stdio: fds !== undefined ? ['pipe', fds[0]!, fds[1]!] : ['pipe', 'pipe', 'pipe'],
+      detached: ownGroup,
+    });
+  } finally {
+    // The child holds its own copies of the descriptors; ours are not needed after spawn.
+    for (const fd of fds ?? []) closeSync(fd);
+  }
+  let exited = false;
+  child.on('exit', () => {
+    exited = true;
+  });
+  let cursor = out?.cursor;
   let stderrBuf = '';
   child.stderr?.on('data', (d: Buffer) => {
     stderrBuf += d.toString('utf8');
@@ -923,10 +1181,19 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
     resolveExit({ code: null, signal: null });
   });
   child.on('close', (code, signal) => {
+    exited = true;
     resolveExit({ code, signal });
   });
 
   async function* lines(): AsyncIterable<string> {
+    if (out !== undefined) {
+      // Read the turn's segment of the session file, until the process has exited and it is read.
+      for await (const r of out.tail(out.cursor, () => exited)) {
+        cursor = r.cursor;
+        yield r.line;
+      }
+      return;
+    }
     let buf = '';
     const stdout = child.stdout;
     if (stdout === null) return;
@@ -944,11 +1211,20 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
 
   return {
     lines,
-    stderr: () => stderrBuf,
+    stderr: () => (out !== undefined ? out.errTail() : stderrBuf),
     exit,
     spawnError,
-    kill: () => {
-      child.kill('SIGTERM');
+    get pid() {
+      return child.pid;
+    },
+    get cursor() {
+      return cursor;
+    },
+    kill: (signal = 'SIGTERM') => {
+      const pid = child.pid;
+      // The CLI leads its group (detached): signal the group; else, or once it is gone, the child.
+      if (ownGroup && pid !== undefined && signalGroup(pid, signal)) return;
+      child.kill(signal);
     },
     write: (data: string) => {
       // Best-effort: a closed/absent stdin must never crash the stream loop — the

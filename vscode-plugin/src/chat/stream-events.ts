@@ -48,7 +48,8 @@ export type TurnEvent =
       readonly callId?: string;
     }
   | { readonly kind: 'file-edit'; readonly turnId: string; readonly path: string; readonly diff: UnifiedDiff }
-  | { readonly kind: 'status'; readonly turnId: string; readonly phase: 'thinking' | 'streaming' | 'tool' | 'editing' }
+  /** `waiting`: the host holds the turn until the session's previous CLI process has exited (no process started yet). */
+  | { readonly kind: 'status'; readonly turnId: string; readonly phase: 'waiting' | 'thinking' | 'streaming' | 'tool' | 'editing' }
   | {
       readonly kind: 'done';
       readonly turnId: string;

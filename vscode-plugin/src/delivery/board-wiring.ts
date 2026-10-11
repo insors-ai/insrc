@@ -20,14 +20,27 @@ import type { DisposableSink } from '../surfaces/types.js';
 import { createDeliveryBoardHost, type DeliveryBoardHostDeps } from './board-host.js';
 import { createDeliveryClient, type DeliveryClientDeps } from './delivery-client.js';
 
+/** The slice of vscode.Uri the tab icon needs: a file on disk. */
+export interface BoardIconUri {
+  readonly fsPath: string;
+}
+
+/** The board's editor-tab icon: one image per theme kind (vscode.Uri.file in extension.ts). */
+export interface BoardTabIcon {
+  readonly light: BoardIconUri;
+  readonly dark: BoardIconUri;
+}
+
 /** The slice of vscode.WebviewPanel the board uses. */
-export type BoardWebviewPanel = WebviewPanelLike;
+export type BoardWebviewPanel = WebviewPanelLike & { iconPath?: unknown };
 
 export interface DeliveryBoardWiringDeps {
   readonly commands: CommandRegistry;
   readonly subscriptions: DisposableSink;
   /** vscode.window.createWebviewPanel in the active editor column, scripts enabled. */
   readonly createWebviewPanel: (viewType: string, title: string) => BoardWebviewPanel;
+  /** The board panel's tab icon (media/insrc-delivery-icon*.svg); without it the tab keeps VS Code's default. */
+  readonly tabIcon?: BoardTabIcon | undefined;
   readonly rpc: DeliveryClientDeps['rpc'];
   /** The first workspace folder's path at the time of the call, or null without one. */
   readonly repo: () => string | null;
@@ -41,7 +54,11 @@ export const DELIVERY_DEADLINES_MS = { snapshot: 30_000, evidence: 15_000 } as c
 export function registerDeliveryBoard(deps: DeliveryBoardWiringDeps): void {
   const clientNow = () => createDeliveryClient({ rpc: deps.rpc, repo: deps.repo(), deadlinesMs: DELIVERY_DEADLINES_MS });
   const host = createDeliveryBoardHost({
-    createPanel: ({ viewType, title }) => webviewChannel(deps.createWebviewPanel(viewType, title)),
+    createPanel: ({ viewType, title }) => {
+      const panel = deps.createWebviewPanel(viewType, title);
+      if (deps.tabIcon !== undefined) panel.iconPath = deps.tabIcon;
+      return webviewChannel(panel);
+    },
     // A client per call, so each request reads the workspace folder as it is now.
     client: {
       snapshot: () => clientNow().snapshot(),

@@ -10,11 +10,19 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createProviderRegistry, classifyPermissionDenial } from '../cli-adapter.js';
-import type { AdapterDeps, ProviderId, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createSessionOutput, parseMarker } from '../session-output.js';
+import { tick, waitFor } from './fixtures.js';
+import { defaultProcessStartTime } from '../session-lock.js';
+import { appendFileSync } from 'node:fs';
+import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner } from '../cli-adapter.js';
+import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
   makeFakeSpawner,
+  tick,
   CLAUDE_TEXT_TURN,
   CLAUDE_TOOL_TURN,
   CLAUDE_ERROR_TURN,
@@ -236,6 +244,107 @@ test('cancel(): kills the in-flight subprocess and yields a terminal done(ok:fal
   assert.equal((events.at(-1) as { ok: boolean }).ok, false, 'killed turn resolves not-ok');
 });
 
+// ---- S001 (E20261010d6a4bc79): the process outlives its stream ---------------
+
+
+/** Settles with the stream's events, or rejects if it has not completed within `ms`. */
+function collectWithin(stream: AsyncIterable<TurnEvent>, ms: number): Promise<TurnEvent[]> {
+  return Promise.race([
+    collect(stream),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`run() did not complete within ${ms} ms`)), ms)),
+  ]);
+}
+
+test('run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop', async () => {
+  // A CLI that answers, then keeps running with stdout open (a pending background task).
+  const { deps, spawner } = depsFor({ lines: CLAUDE_TEXT_TURN, hangUntilKilled: true, pid: 4242 });
+  const adapter = createProviderRegistry(deps).get('claude');
+  let handed: TurnProcess | undefined;
+  const events = await collectWithin(adapter.run(REQ({ provider: 'claude' }), { onSpawn: (p) => (handed = p) }), 1000);
+
+  assert.equal(events.at(-1)!.kind, 'done', 'the stream completed at done');
+  assert.deepEqual(events.map((e) => e.kind), ['status', 'assistant-delta', 'assistant-delta', 'done'], 'the same events as before');
+  const proc = spawner.procs[0]!;
+  assert.deepEqual(proc.signals(), [], 'no kill after done');
+  assert.equal(proc.exited(), false, 'the process is still running');
+
+  assert.ok(handed, 'onSpawn was called');
+  assert.equal(handed!.pid, 4242);
+  assert.equal(typeof handed!.stop, 'function');
+  let exitSettled = false;
+  void handed!.exit.then(() => (exitSettled = true));
+  await tick();
+  assert.equal(exitSettled, false, 'exit is the live process exit');
+  await handed!.stop();
+  assert.deepEqual(proc.signals(), ['SIGTERM'], 'stop() signals the process');
+  assert.equal(exitSettled, true, 'stop() resolves after the exit');
+});
+
+test('cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group', async (t) => {
+  // Fake: SIGTERM is ignored, so cancel() escalates to SIGKILL after the grace.
+  const spawner = makeFakeSpawner({ lines: [JSON.stringify({ type: 'system', subtype: 'init', session_id: 's' })], hangUntilKilled: true, ignoreSigterm: true });
+  const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true, stopGraceMs: 30 }).get('claude');
+  const it = adapter.run(REQ({ provider: 'claude' }))[Symbol.asyncIterator]();
+  const first = await it.next();
+  const turnId = (first.value as TurnEvent).turnId;
+  let resolved = false;
+  const cancelling = adapter.cancel(turnId).then(() => (resolved = true));
+  await tick(10);
+  assert.deepEqual(spawner.procs[0]!.signals(), ['SIGTERM'], 'SIGTERM first');
+  assert.equal(resolved, false, 'cancel() waits while the process is alive');
+  await cancelling;
+  assert.deepEqual(spawner.procs[0]!.signals(), ['SIGTERM', 'SIGKILL'], 'SIGKILL after the grace');
+  assert.equal(spawner.procs[0]!.exited(), true, 'resolved after the exit');
+  await it.return?.(undefined);
+
+  // Real spawner: the CLI leads its own process group, and kill() reaches the whole group.
+  if (process.platform === 'win32') return t.diagnostic('process groups are POSIX-only');
+  const proc = nodeSpawner('sh', ['-c', 'sleep 30 & wait'], { cwd: process.cwd() });
+  assert.equal(await proc.spawnError, undefined);
+  const pid = proc.pid!;
+  assert.ok(typeof pid === 'number', 'exposes the pid');
+  const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
+  const pgrp = Number(stat.slice(stat.lastIndexOf(')') + 2).split(' ')[2]);
+  assert.equal(pgrp, pid, 'detached: the CLI is its own process group leader');
+  proc.kill('SIGTERM');
+  const result = await proc.exit;
+  assert.equal(result.signal, 'SIGTERM');
+  const groupAlive = (): boolean => {
+    try {
+      process.kill(-pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  for (let i = 0; i < 100 && groupAlive(); i++) await tick(10);
+  assert.equal(groupAlive(), false, 'the background child in the group was stopped too');
+});
+
+test('after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles', async () => {
+  // The permission turn ends with a result (done) while the process stays alive.
+  const { deps, spawner } = depsFor({ lines: CLAUDE_PERMISSION_TURN, hangUntilKilled: true });
+  const adapter = createProviderRegistry(deps).get('claude');
+  const events = await collectWithin(adapter.run(REQ({ provider: 'claude', permissionMode: 'manual' })), 1000);
+  const appr = events.find((e) => e.kind === 'approval-request') as Extract<TurnEvent, { kind: 'approval-request' }> | undefined;
+  assert.ok(appr, 'surfaced an approval-request');
+  assert.equal(events.at(-1)!.kind, 'done');
+  adapter.decide(appr!.turnId, appr!.requestId, 'approve');
+  assert.equal(spawner.procs[0]!.writes().length, 1, 'the decision reached the live process after run() returned');
+
+  // Same again, but the process exits before the decision: the entry is gone.
+  const { deps: deps2, spawner: spawner2 } = depsFor({ lines: CLAUDE_PERMISSION_TURN, hangUntilKilled: true });
+  const adapter2 = createProviderRegistry(deps2).get('claude');
+  const events2 = await collectWithin(adapter2.run(REQ({ provider: 'claude', permissionMode: 'manual' })), 1000);
+  const appr2 = events2.find((e) => e.kind === 'approval-request') as Extract<TurnEvent, { kind: 'approval-request' }>;
+  spawner2.procs[0]!.exitNow();
+  await tick();
+  adapter2.decide(appr2.turnId, appr2.requestId, 'approve');
+  assert.equal(spawner2.procs[0]!.writes().length, 0, 'no write once the process has exited');
+  await adapter2.cancel(appr2.turnId);
+  assert.deepEqual(spawner2.procs[0]!.signals(), [], 'cancel() after the exit finds no live entry and signals nothing');
+});
+
 test('cancel(): unknown/finished turnId is a no-op (idempotent, no throw)', async () => {
   const { deps } = depsFor({ lines: CLAUDE_TEXT_TURN });
   const reg = createProviderRegistry(deps);
@@ -428,9 +537,6 @@ test('codex: a completed command_execution WITHOUT output emits only the tool-ca
 });
 
 // ---- deriveChatTitle (LLM chat titling, option 1) ------------------------------
-
-import { deriveChatTitle } from '../cli-adapter.js';
-import type { StreamAdapter, ProviderRegistry } from '../cli-adapter.js';
 
 function titleReg(adapter: StreamAdapter): ProviderRegistry {
   return { available: ['claude'], get: (id) => { if (id !== 'claude') throw new Error('unknown'); return adapter; } };
@@ -991,4 +1097,196 @@ test('codex: a command item with an id carries it as callId on both events; an i
   ];
   const ev2 = await collect(createProviderRegistry(depsFor({ lines: noId }).deps).get('codex').run(REQ({ provider: 'codex' })));
   assert.ok(!('callId' in (toolCall(ev2) as object)), 'no id -> callId omitted');
+});
+
+// ---- S001 (E202610101d04e560): the CLI's output in the session file ---------------------
+
+test("the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line", async (t) => {
+  if (process.platform === 'win32') return t.diagnostic('uses sh');
+  const out = createSessionOutput({ root: join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output'), pollMs: 5 });
+  const seg = await out.beginTurn('s1', 'turn-1');
+  const script = [
+    `echo '{"type":"system","subtype":"init","session_id":"s"}'`,
+    `echo '{"type":"result","subtype":"success","is_error":false,"session_id":"s"}'`,
+    'echo "warming up" >&2',
+    'sleep 0.2',
+    `echo '{"type":"late","n":1}'`,
+  ].join('; ');
+  const proc = nodeSpawner('sh', ['-c', script], {
+    cwd: process.cwd(),
+    output: { outPath: seg.outPath, errPath: seg.errPath, cursor: seg.cursor, tail: (c, finished) => out.tail(c, { finished }), errTail: () => out.errTail('s1') },
+  });
+  assert.equal(await proc.spawnError, undefined);
+  const lines: string[] = [];
+  for await (const l of proc.lines()) lines.push(l);
+  await proc.exit;
+  assert.equal(lines.length, 3, 'every line, including the one written after the result line');
+  assert.match(lines[2]!, /"late"/);
+  assert.equal(proc.stderr(), 'warming up\n', 'stderr went to the err log');
+  // The file holds the turn's segment: header, turn-start, then the CLI's own lines.
+  const fileLines = readFileSync(seg.outPath, 'utf8').trimEnd().split('\n');
+  assert.deepEqual(fileLines.slice(0, 2).map((l) => parseMarker(l)?.kind), ['file', 'turn-start']);
+  assert.deepEqual(fileLines.slice(2), lines, 'the CLI wrote straight into the session file after the turn-start');
+  assert.equal(proc.cursor?.offset, readFileSync(seg.outPath).length, 'the cursor is just after the last line');
+});
+
+test('marker lines reaching a mapper produce no events', async () => {
+  // A marker that also looks like a claude result line: without the marker check it would map to done.
+  const marker = JSON.stringify({ 'insrc.marker': 'turn-end', turnId: 'x', type: 'result', subtype: 'success', is_error: false });
+  const { deps } = depsFor({ lines: [CLAUDE_TEXT_TURN[0]!, marker, ...CLAUDE_TEXT_TURN.slice(1)] });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+  assert.deepEqual(events.map((e) => e.kind), ['status', 'assistant-delta', 'assistant-delta', 'done'], 'the marker produced nothing');
+});
+
+test('run() yields the same events from the output file as from a pipe, reports progress offsets, and writes the turn-end marker after the process exits', async (t) => {
+  if (process.platform === 'win32') return t.diagnostic('uses sh');
+  const lines = [...CLAUDE_TEXT_TURN];
+  // The CLI answers, then keeps running and writes once more before it exits.
+  const script = `${lines.map((l) => `printf '%s\\n' '${l.replace(/'/g, "'\\''")}'`).join('; ')}; sleep 0.3; echo '{"type":"late"}'`;
+  const shSpawn: SpawnFn = (_cmd, _args, opts) => nodeSpawner('sh', ['-c', script], opts);
+  const root = join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output');
+  const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+
+  const piped = await collect(createProviderRegistry({ spawn: shSpawn, isInstalled: () => true }).get('claude').run(REQ({ provider: 'claude', cwd: process.cwd() })));
+
+  const progress: number[] = [];
+  let spawned: TurnProcess | undefined;
+  const adapter = createProviderRegistry({ spawn: shSpawn, isInstalled: () => true, sessionOutput }).get('claude');
+  const filed = await collect(adapter.run(REQ({ provider: 'claude', cwd: process.cwd() }), { sessionId: 's1', onProgress: (c) => progress.push(c.offset), onSpawn: (p) => (spawned = p) }));
+
+  const strip = (evs: TurnEvent[]) => evs.map((e) => ({ ...e, turnId: '' }));
+  assert.deepEqual(strip(filed), strip(piped), 'the same events from the session file as from the pipe');
+  assert.equal(progress.length, 3, 'a position after each line before the terminal one');
+  assert.ok(progress[0]! < progress[1]! && progress[1]! < progress[2]!, 'positions advance');
+  assert.ok(spawned?.cursor !== undefined && spawned.cursor.sessionId === 's1', 'onSpawn hands over the segment start');
+  assert.equal(spawned?.outPath, join(root, 's1.ndjson'));
+
+  // The process outlives its answer; the turn-end marker follows its real exit.
+  const file = join(root, 's1.ndjson');
+  const turnId = filed[0]!.turnId;
+  assert.doesNotMatch(readFileSync(file, 'utf8'), /"turn-end"/, 'not closed at the answer');
+  await spawned!.exit;
+  await waitFor(() => /"turn-end"/.test(readFileSync(file, 'utf8')));
+  const all = readFileSync(file, 'utf8').trimEnd().split('\n');
+  assert.match(all.at(-2)!, /"late"/, 'the late line is kept in the segment');
+  assert.match(all.at(-1)!, new RegExp(`"insrc.marker":"turn-end","turnId":"${turnId}","code":0`), 'then the turn-end with the real exit code');
+});
+
+test('a beginTurn failure falls back to the pipe with one logged error', async () => {
+  const errors: string[] = [];
+  const outputs: unknown[] = [];
+  const spawner = makeFakeSpawner({ lines: CLAUDE_TEXT_TURN });
+  const spawn: SpawnFn = (cmd, args, opts) => {
+    outputs.push(opts.output);
+    return spawner.spawn(cmd, args, opts);
+  };
+  const broken = {
+    beginTurn: async () => {
+      throw new Error('disk full');
+    },
+    endTurn: async () => {},
+    tail: async function* () {},
+    errTail: () => '',
+    remove: async () => {},
+    sweep: async () => {},
+  };
+  const adapter = createProviderRegistry({ spawn, isInstalled: () => true, sessionOutput: broken, logger: { warn: () => {}, error: (m) => errors.push(m) } }).get('claude');
+  const first = await collect(adapter.run(REQ({ provider: 'claude' }), { sessionId: 's1' }));
+  const second = await collect(adapter.run(REQ({ provider: 'claude' }), { sessionId: 's1' }));
+  assert.equal(first.at(-1)?.kind, 'done', 'the turn still runs, over the pipe');
+  assert.equal(second.at(-1)?.kind, 'done');
+  assert.deepEqual(outputs, [undefined, undefined], 'no session output was passed to the spawner');
+  assert.equal(errors.length, 1, 'logged once');
+  assert.match(errors[0]!, /session output unavailable \(disk full\)/);
+
+  // Without a session id (title generation) or without a session output, the pipe is used silently.
+  const plain = createProviderRegistry({ spawn, isInstalled: () => true, sessionOutput: broken }).get('claude');
+  await collect(plain.run(REQ({ provider: 'claude' })));
+  assert.equal(outputs.at(-1), undefined);
+});
+
+test('resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one', async () => {
+  const root = join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output');
+  const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+  const adapter = createProviderRegistry({ spawn: makeFakeSpawner({ lines: [] }).spawn, isInstalled: () => true, sessionOutput, livenessPollMs: 5 }).get('claude');
+
+  // A turn whose window reloaded after the first two lines were handled.
+  const seg = await sessionOutput.beginTurn('s1', 'turn-1');
+  appendFileSync(seg.outPath, `${CLAUDE_TEXT_TURN[0]}\n${CLAUDE_TEXT_TURN[1]}\n`);
+  let saved = seg.cursor;
+  let n = 0;
+  for await (const { cursor } of sessionOutput.tail(seg.cursor, { finished: () => true })) {
+    saved = cursor;
+    if (++n === 2) break;
+  }
+  // The CLI (still this live process) goes on writing while the new window follows.
+  const progress: number[] = [];
+  const events: TurnEvent[] = [];
+  const following = (async () => {
+    for await (const ev of adapter.resume({ cursor: saved, pid: process.pid, startedAt: defaultProcessStartTime(process.pid) ?? null }, { onProgress: (c) => progress.push(c.offset) })) events.push(ev);
+  })();
+  await tick(20);
+  appendFileSync(seg.outPath, `${CLAUDE_TEXT_TURN[2]}\n${CLAUDE_TEXT_TURN[3]}\n{"type":"after"}\n`);
+  await following;
+  assert.deepEqual(events.map((e) => e.kind), ['assistant-delta', 'done'], 'only the events after the saved cursor, ending at the terminal one');
+  assert.equal((events[0] as { text: string }).text, 'world');
+  assert.equal(events.every((e) => e.turnId === 'turn-1'), true);
+  assert.equal(progress.length, 1, 'a position after the non-terminal line');
+
+  // A turn whose process is gone without a terminal event.
+  const seg2 = await sessionOutput.beginTurn('s1', 'turn-2');
+  appendFileSync(seg2.outPath, `${CLAUDE_TEXT_TURN[0]}\n`);
+  const gone: TurnEvent[] = [];
+  for await (const ev of adapter.resume({ cursor: seg2.cursor, pid: 2 ** 22 + 77, startedAt: null })) gone.push(ev);
+  assert.deepEqual(gone.map((e) => e.kind), ['status', 'error']);
+  assert.match((gone[1] as { message: string }).message, /the turn ended without a result/);
+
+  // A cursor whose generation is gone (rolled over past it) ends at once with nothing to resume.
+  const lost: TurnEvent[] = [];
+  for await (const ev of adapter.resume({ cursor: { ...seg2.cursor, generation: 99 }, pid: process.pid, startedAt: null })) lost.push(ev);
+  assert.deepEqual(lost, [], 'nothing to resume, no hang');
+});
+
+test("resume()'s handed-over process stops the recorded pid's group only while its start time matches", async () => {
+  const root = join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output');
+  const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+  const table = new Map<number, number>([[700, 5]]); // pid -> start time
+  const signals: Array<[number, string]> = [];
+  const deps: AdapterDeps = {
+    spawn: makeFakeSpawner({ lines: [] }).spawn,
+    isInstalled: () => true,
+    sessionOutput,
+    livenessPollMs: 5,
+    stopGraceMs: 30,
+    isAlive: (pid) => table.has(pid),
+    processStartTime: (pid) => table.get(pid),
+    killGroup: (pid, s) => {
+      signals.push([pid, s]);
+      table.delete(pid); // dies on SIGTERM
+    },
+  };
+  const adapter = createProviderRegistry(deps).get('claude');
+  const seg = await sessionOutput.beginTurn('s1', 't');
+  const ctl = new AbortController();
+  let handle: TurnProcess | undefined;
+  const following = (async () => {
+    for await (const _ of adapter.resume({ cursor: seg.cursor, pid: 700, startedAt: 5 }, { signal: ctl.signal, onAttach: (p) => (handle = p) })) void _;
+  })();
+  await waitFor(() => handle !== undefined);
+  await handle!.stop();
+  assert.deepEqual(signals, [[700, 'SIGTERM']], 'the recorded group was stopped');
+  await following;
+
+  // The pid now belongs to an unrelated process (different start time): never signalled.
+  table.set(701, 9);
+  signals.length = 0;
+  let other: TurnProcess | undefined;
+  const second = (async () => {
+    for await (const _ of adapter.resume({ cursor: seg.cursor, pid: 701, startedAt: 5 }, { onAttach: (p) => (other = p) })) void _;
+  })();
+  await waitFor(() => other !== undefined);
+  other!.kill('SIGKILL');
+  await other!.stop();
+  await second;
+  assert.deepEqual(signals, [], 'a reused pid is never signalled');
 });

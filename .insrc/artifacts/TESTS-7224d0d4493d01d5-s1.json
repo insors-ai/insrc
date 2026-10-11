@@ -1,0 +1,343 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "7224d0d4493d01d5",
+    "storyId": "s1",
+    "createdAt": "2026-10-10T14:25:14.014Z",
+    "updatedAt": "2026-10-10T14:36:42.231Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "664caba2",
+        "ranAt": "2026-10-10T14:36:42.231Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "snapshot.test.ts: an epic's problem and summary, a story's purpose and size, and an issue's reproduction, root cause and fix intent are published from their records",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/snapshot.test.ts",
+                "title": "an epic's problem and summary, a story's purpose and size, and an issue's reproduction, root cause and fix intent are published from their records",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "snapshot.test.ts: missing, blank or wrongly typed values read not recorded, and a value that does not apply to a kind is absent",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/snapshot.test.ts",
+                "title": "missing, blank or wrongly typed values read not recorded, and a value that does not apply to a kind is absent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "snapshot.test.ts: a story added by an extension takes its purpose from the EXT, and a standalone story reads not recorded",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/snapshot.test.ts",
+                "title": "a story added by an extension takes its purpose from the EXT, and a standalone story reads not recorded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "types.test.ts: the delivery IPC types list exactly the sketched members",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/types.test.ts",
+                "title": "the delivery IPC types list exactly the sketched members",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/delivery/__tests__/snapshot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 450,
+            "titles": [
+              {
+                "title": "every work item is joined with its stage, evidence, gates, currency and notices",
+                "result": "pass"
+              },
+              {
+                "title": "two snapshots of the same store, with equal timestamps, are identical in order and counts",
+                "result": "pass"
+              },
+              {
+                "title": "needsAttention comes from a gate reason or an attention notice, each reason listed once, and store-level notices stay off items",
+                "result": "pass"
+              },
+              {
+                "title": "a full-chain, feature or sized-bugfix story with a build and no plan gets incomplete-evidence, and small, small-bugfix and trivial stories do not",
+                "result": "pass"
+              },
+              {
+                "title": "an epic's problem and summary, a story's purpose and size, and an issue's reproduction, root cause and fix intent are published from their records",
+                "result": "pass"
+              },
+              {
+                "title": "missing, blank or wrongly typed values read not recorded, and a value that does not apply to a kind is absent",
+                "result": "pass"
+              },
+              {
+                "title": "a story added by an extension takes its purpose from the EXT, and a standalone story reads not recorded",
+                "result": "pass"
+              },
+              {
+                "title": "feedback from an item's own design records is listed read-only, in order, and malformed entries are noticed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/delivery/__tests__/types.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 301,
+            "titles": [
+              {
+                "title": "DeliveryStoreUnreadableError carries the store path and the underlying message",
+                "result": "pass"
+              },
+              {
+                "title": "the stage and route types list exactly the HLD members",
+                "result": "pass"
+              },
+              {
+                "title": "the gate types re-export the review verdict and list exactly the sketched members",
+                "result": "pass"
+              },
+              {
+                "title": "the currency types list exactly the sketched members",
+                "result": "pass"
+              },
+              {
+                "title": "the delivery IPC types list exactly the sketched members",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "db463d44",
+        "ranAt": "2026-10-10T14:30:33.696Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "snapshot.test.ts: feedback from an item's own design records is listed read-only, in order, and malformed entries are noticed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/snapshot.test.ts",
+                "title": "feedback from an item's own design records is listed read-only, in order, and malformed entries are noticed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "snapshot.test.ts: two snapshots of the same store, with equal timestamps, are identical in order and counts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/snapshot.test.ts",
+                "title": "two snapshots of the same store, with equal timestamps, are identical in order and counts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "contract.test.ts: the JetBrains sample snapshot is plain JSON and equals what the assembler produces",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/contract.test.ts",
+                "title": "the JetBrains sample snapshot is plain JSON and equals what the assembler produces",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/delivery/__tests__/contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 932,
+            "titles": [
+              {
+                "title": "the VS Code plugin type-checks against the published delivery types",
+                "result": "pass"
+              },
+              {
+                "title": "the JetBrains sample snapshot is plain JSON and equals what the assembler produces",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/delivery/__tests__/snapshot.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 438,
+            "titles": [
+              {
+                "title": "every work item is joined with its stage, evidence, gates, currency and notices",
+                "result": "pass"
+              },
+              {
+                "title": "two snapshots of the same store, with equal timestamps, are identical in order and counts",
+                "result": "pass"
+              },
+              {
+                "title": "needsAttention comes from a gate reason or an attention notice, each reason listed once, and store-level notices stay off items",
+                "result": "pass"
+              },
+              {
+                "title": "a full-chain, feature or sized-bugfix story with a build and no plan gets incomplete-evidence, and small, small-bugfix and trivial stories do not",
+                "result": "pass"
+              },
+              {
+                "title": "an epic's problem and summary, a story's purpose and size, and an issue's reproduction, root cause and fix intent are published from their records",
+                "result": "pass"
+              },
+              {
+                "title": "missing, blank or wrongly typed values read not recorded, and a value that does not apply to a kind is absent",
+                "result": "pass"
+              },
+              {
+                "title": "a story added by an extension takes its purpose from the EXT, and a standalone story reads not recorded",
+                "result": "pass"
+              },
+              {
+                "title": "feedback from an item's own design records is listed read-only, in order, and malformed entries are noticed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "664caba2",
+        "ranAt": "2026-10-10T14:36:26.836Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "contract.test.ts: the VS Code plugin type-checks against the published delivery types",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/contract.test.ts",
+                "title": "the VS Code plugin type-checks against the published delivery types",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "handlers.test.ts: a 1,000-record store forming 500 work items is served within 500 ms",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/delivery/__tests__/handlers.test.ts",
+                "title": "a 1,000-record store forming 500 work items is served within 500 ms",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/delivery/__tests__/contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 987,
+            "titles": [
+              {
+                "title": "the VS Code plugin type-checks against the published delivery types",
+                "result": "pass"
+              },
+              {
+                "title": "the JetBrains sample snapshot is plain JSON and equals what the assembler produces",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/delivery/__tests__/handlers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 829,
+            "titles": [
+              {
+                "title": "resolveDocsMarkdown keeps workflow.artifactContent's containment errors word for word",
+                "result": "pass"
+              },
+              {
+                "title": "a build record that stamps no epic slug or date is located through its work item's folder",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.delivery returns one timestamped snapshot and leaves the store, docs and git untouched",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.deliveryEvidence reads a marker-less build record through the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.deliveryEvidence refuses an invalid or escaping id and reports a missing one",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved repo or an unreadable store is an error and an absent store is an empty snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "a 1,000-record store forming 500 work items is served within 500 ms",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

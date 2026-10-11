@@ -13,10 +13,13 @@
  * holds a BUILD but no PLAN gets an incomplete-evidence notice; no other route
  * does. An item needs attention when it has a gate attention reason or a notice
  * whose code is marked for attention; each reason is listed once. Notices that
- * name no item are the snapshot's own. Pure and deterministic; plain JSON out.
+ * name no item are the snapshot's own. Each item also carries its description and
+ * the feedback recorded on its own design records, read from its records (describe.ts). Pure and deterministic; plain JSON out.
  */
 
+import { describeItem, feedbackOf } from './describe.js';
 import { makeNotice, sortNotices } from './notice.js';
+import { byText } from './read.js';
 import type {
 	ArtifactRecord,
 	ArtifactRecordSet,
@@ -47,8 +50,6 @@ export const ATTENTION_RULE = 'An item needs attention when it has a gate attent
 	+ 'a blocking review, a failed validation or a validation conflict; a pending record stops counting once a later gate on '
 	+ 'its item is approved) or a notice whose code is marked for attention.';
 
-/** Code-unit order, independent of locale. */
-const byText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
 /** The build-without-plan notices for stories whose route requires a plan. */
 function completenessNotices(graph: WorkItemGraph, byId: ReadonlyMap<string, ArtifactRecord>, stages: StagePassResult): DeliveryNotice[] {
@@ -77,9 +78,11 @@ export function assembleSnapshot(
 	markdown: DeliveryMarkdownPort,
 ): DeliverySnapshot {
 	const byId = new Map(recordSet.records.map(r => [r.artifactId, r] as const));
+	const feedback = new Map([...graph.items.values()].map(node => [node.id, feedbackOf(node, byId)] as const));
 	const allNotices = sortNotices([
 		...graph.notices, ...stages.notices, ...gates.notices, ...currency.notices,
 		...completenessNotices(graph, byId, stages),
+		...[...feedback.values()].flatMap(f => f.notices),
 	]);
 	const noticesByItem = new Map<string, DeliveryNotice[]>();
 	for (const n of allNotices) {
@@ -144,6 +147,8 @@ export function assembleSnapshot(
 			notices,
 			needsAttention:   reasons.length > 0,
 			attentionReasons: reasons,
+			description:      describeItem(node, graph, byId),
+			feedback:         [...(feedback.get(node.id)?.feedback ?? [])],
 		};
 	};
 

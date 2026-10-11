@@ -21,7 +21,11 @@ import type {
 	DeliveryEvidenceRecord,
 	DeliveryEvidenceRequest,
 	DeliveryEvidenceResponse,
+	DeliveryFeedback,
 	DeliveryItem,
+	DeliveryItemDescription,
+	DeliveryRecorded,
+	DeliverySize,
 	DeliverySnapshot,
 	DeliverySnapshotRequest,
 	DeliverySnapshotResponse,
@@ -39,7 +43,11 @@ export type {
 	DeliveryEvidenceRecord,
 	DeliveryEvidenceRequest,
 	DeliveryEvidenceResponse,
+	DeliveryFeedback,
 	DeliveryItem,
+	DeliveryItemDescription,
+	DeliveryRecorded,
+	DeliverySize,
 	DeliverySnapshot,
 	DeliverySnapshotRequest,
 	DeliverySnapshotResponse,
@@ -58,7 +66,15 @@ export interface DeliveryMethods {
 /** The fields the plugin reads from a snapshot item; a renamed or removed field fails here. */
 export type DeliveryItemView = Pick<DeliveryItem,
 	'id' | 'kind' | 'title' | 'standalone' | 'sourceIds' | 'parentId' | 'childIds' | 'stage' | 'evidence' |
-	'tasks' | 'validation' | 'storyLevelResult' | 'conflict' | 'correctsRef' | 'needsAttention' | 'attentionReasons' | 'notices'>;
+	'tasks' | 'validation' | 'storyLevelResult' | 'conflict' | 'correctsRef' | 'needsAttention' | 'attentionReasons' | 'notices' |
+	'description' | 'feedback'>;
+
+/**
+ * Fails the contract typecheck when the view stops carrying what the item is about or its recorded feedback
+ * (ISSUE-7224d0d4): a Pick of fewer keys still type-checks, so the keys are asserted here.
+ */
+type RequireKeys<T, K extends PropertyKey> = [K] extends [keyof T] ? true : never;
+export const DELIVERY_ITEM_VIEW_CARRIES_DESCRIPTION_AND_FEEDBACK: RequireKeys<DeliveryItemView, 'description' | 'feedback'> = true;
 
 /** The fields the plugin reads from an evidence entry to choose how to open it. */
 export type DeliveryEvidenceView = Pick<DeliveryEvidenceEntry, 'artifactId' | 'kind' | 'mdPath' | 'openWith' | 'approval' | 'review'>;

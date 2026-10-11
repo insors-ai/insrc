@@ -282,6 +282,35 @@ export interface DeliveryEvidenceEntry {
 	readonly reviewCurrency: ReviewCurrency | null;
 }
 
+/** One descriptive value read from a record (with the record it came from), or the fact that no record states it. */
+export type DeliveryRecorded<T> =
+	| { readonly state: 'recorded'; readonly value: T; readonly artifactId: string }
+	| { readonly state: 'not-recorded' };
+
+/** A recorded story size estimate. */
+export type DeliverySize = 'S' | 'M' | 'L' | 'XL';
+
+/**
+ * What an item is about, read from its own records (ISSUE-7224d0d4). Each kind carries only the values that apply
+ * to it: a value that does not apply to a kind is not part of that kind's variant.
+ */
+export type DeliveryItemDescription =
+	| { readonly kind: 'epic'; readonly problem: DeliveryRecorded<string>; readonly summary: DeliveryRecorded<string> }
+	| { readonly kind: 'story'; readonly purpose: DeliveryRecorded<string>; readonly size: DeliveryRecorded<DeliverySize> }
+	| { readonly kind: 'issue'; readonly reproduction: DeliveryRecorded<string>; readonly rootCause: DeliveryRecorded<string>; readonly fixIntent: DeliveryRecorded<string> }
+	| { readonly kind: 'task' };
+
+/** One read-only feedback entry recorded on an item's own design record; absent optional fields are null. */
+export interface DeliveryFeedback {
+	readonly artifactId: string;
+	readonly id:         string;
+	readonly author:     string;
+	readonly timestamp:  string;
+	readonly kind:       'feedback' | 'suggestion' | 'comment' | null;
+	readonly comment:    string;
+	readonly target:     { readonly file: string; readonly version: string | null; readonly segment: { readonly startLine: number; readonly endLine: number } | null };
+}
+
 export interface DeliveryItem {
 	readonly id:               string;
 	readonly kind:             DeliveryItemKind;
@@ -305,6 +334,10 @@ export interface DeliveryItem {
 	readonly notices:          readonly DeliveryNotice[];
 	readonly needsAttention:   boolean;
 	readonly attentionReasons: readonly (AttentionReason | NoticeCode)[];
+	/** What the item is about, from its own records; see DeliveryItemDescription. */
+	readonly description:      DeliveryItemDescription;
+	/** The feedback recorded on the item's own design records (an epic's DEF and HLD, a story's LLD and PLAN); never inherited. */
+	readonly feedback:         readonly DeliveryFeedback[];
 }
 
 export interface DeliverySnapshot {

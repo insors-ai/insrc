@@ -18,11 +18,21 @@ export interface FakeProcScript {
   readonly hangUntilKilled?: boolean;
   /** If set, lines() throws (models the stdout Readable erroring mid-stream) after emitting this many lines. */
   readonly throwAfter?: number;
+  /** The fake process's pid. */
+  readonly pid?: number;
+  /** If set, SIGTERM is recorded but ignored; only SIGKILL ends the process. */
+  readonly ignoreSigterm?: boolean;
 }
 
 /** Observable handle over a spawned fake process (for asserting kill / cleanup / write relay). */
 export interface FakeProcHandle {
   wasKilled(): boolean;
+  /** Every signal sent via kill(), in order. */
+  signals(): readonly string[];
+  /** Whether the process has exited. */
+  exited(): boolean;
+  /** Ends the process on its own (exit code 0), as a CLI finishing its background work does. */
+  exitNow(): void;
   /** S004: every string written to the fake process stdin via write(), in call order. */
   writes(): readonly string[];
 }
@@ -38,6 +48,63 @@ export interface FakeSpawner {
   readonly calls: FakeSpawnCall[];
   /** Handles for every process spawned so far, in spawn order. */
   readonly procs: FakeProcHandle[];
+}
+
+/** Resolves after `ms` (default: the next macrotask). */
+export const tick = (ms = 0): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/** Polls `fn` every 5 ms until it holds; throws when `ms` passes first. */
+export async function waitFor(fn: () => boolean, ms = 1500): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < ms) {
+    if (fn()) return;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+  throw new Error('waitFor timed out');
+}
+
+/**
+ * A started CLI process for lock / lifecycle tests: it stays alive until exitNow() or a signal it
+ * dies of. `dies` names the signal that ends it ('SIGTERM': either signal; 'SIGKILL': only
+ * SIGKILL; 'never': neither). Every signal is recorded. Fits both LeaseProcess and TurnProcess.
+ */
+export interface FakeLiveProc {
+  readonly pid: number;
+  readonly exit: Promise<{ code: number | null; signal: string | null }>;
+  readonly signals: string[];
+  kill(signal: 'SIGTERM' | 'SIGKILL'): void;
+  /** SIGTERM, then resolves when the process has exited. */
+  stop(): Promise<void>;
+  exited(): boolean;
+  exitNow(): void;
+}
+
+export function fakeLiveProc(pid: number, dies: 'SIGTERM' | 'SIGKILL' | 'never' = 'SIGTERM'): FakeLiveProc {
+  let done = false;
+  let settle!: (v: { code: number | null; signal: string | null }) => void;
+  const exit = new Promise<{ code: number | null; signal: string | null }>((r) => (settle = r));
+  const end = (v: { code: number | null; signal: string | null }): void => {
+    done = true;
+    settle(v);
+  };
+  const signals: string[] = [];
+  const proc: FakeLiveProc = {
+    pid,
+    exit,
+    signals,
+    exited: () => done,
+    exitNow: () => end({ code: 0, signal: null }),
+    kill(signal) {
+      signals.push(signal);
+      if (dies === 'never') return;
+      if (signal === dies || signal === 'SIGKILL') end({ code: null, signal });
+    },
+    async stop() {
+      proc.kill('SIGTERM');
+      await exit;
+    },
+  };
+  return proc;
 }
 
 /** Build a fake {@link SpawnFn} that plays one script per invocation (or the same script every time). */
@@ -73,10 +140,16 @@ function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakePr
     s.spawnErrorCode !== undefined ? Object.assign(new Error(s.spawnErrorCode), { code: s.spawnErrorCode }) : undefined,
   );
 
-  let resolveExit!: (v: { code: number | null; signal: string | null }) => void;
+  let exited = false;
+  const signals: string[] = [];
+  let settleExit!: (v: { code: number | null; signal: string | null }) => void;
   const exit = new Promise<{ code: number | null; signal: string | null }>((r) => {
-    resolveExit = r;
+    settleExit = r;
   });
+  const resolveExit = (v: { code: number | null; signal: string | null }): void => {
+    exited = true;
+    settleExit(v);
+  };
   if (!s.hangUntilKilled) resolveExit(s.exit ?? { code: 0, signal: null });
 
   async function* lines(): AsyncIterable<string> {
@@ -103,16 +176,31 @@ function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakePr
     stderr: () => stderr,
     exit,
     spawnError,
-    kill: () => {
+    ...(s.pid !== undefined ? { pid: s.pid } : {}),
+    kill: (signal = 'SIGTERM') => {
+      signals.push(signal);
+      if (signal === 'SIGTERM' && s.ignoreSigterm === true) return;
       killed = true;
       releaseHang();
-      resolveExit({ code: null, signal: 'SIGTERM' });
+      resolveExit({ code: null, signal });
     },
     write: (data: string) => {
       writes.push(data);
     },
   };
-  return { proc, handle: { wasKilled: () => killed, writes: () => writes } };
+  return {
+    proc,
+    handle: {
+      wasKilled: () => killed,
+      writes: () => writes,
+      signals: () => signals,
+      exited: () => exited,
+      exitNow: () => {
+        releaseHang();
+        resolveExit({ code: 0, signal: null });
+      },
+    },
+  };
 }
 
 // ---- claude fixtures --------------------------------------------------------

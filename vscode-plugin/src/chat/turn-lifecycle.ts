@@ -94,6 +94,18 @@ export function trySaveSession(store: Pick<ChatSessionStore, 'save'>, log: ChatP
   }
 }
 
+/**
+ * Finishes a turn's event iterator without waiting for it. A generator's cleanup (its `finally`)
+ * may throw: the returned promise's rejection is dropped, as is a synchronous throw.
+ */
+function finishIterator(it: AsyncIterator<TurnEvent>): void {
+  try {
+    void Promise.resolve(it.return?.(undefined)).catch(() => {});
+  } catch {
+    /* returning an already-finished iterator is a no-op */
+  }
+}
+
 const isTerminal = (ev: TurnEvent): ev is TurnEvent & { kind: 'done' | 'error' } => ev.kind === 'done' || ev.kind === 'error';
 
 export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
@@ -239,7 +251,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           detached = true;
           if (s.liveTurn !== undefined) runningTurns.delete(s.liveTurn.cursor.turnId); // resumable now
           trySave(s); // the cursor and the rows handled so far
-          void iterator.return?.(undefined); // stop reading; the CLI keeps writing to the session file
+          finishIterator(iterator); // stop reading; the CLI keeps writing to the session file
         };
         if (myGen === generation) detachLive = detachThis;
         for (;;) {
@@ -251,7 +263,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           if (!isCurrent(myGen)) {
             if (isTerminal(ev)) {
               clearCursor(ev.turnId);
-              void iterator.return?.(undefined); // as on the live path: finish the generator
+              finishIterator(iterator); // as on the live path: finish the generator
               break;
             }
             continue;
@@ -262,7 +274,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
             clearCursor(ev.turnId);
             if (ev.kind === 'done' && ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
             sink.onTerminal(ev);
-            void iterator.return?.(undefined); // finish the generator; the process is left to exit
+            finishIterator(iterator); // finish the generator; the process is left to exit
             break;
           }
         }
@@ -349,13 +361,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     const proc = liveProc;
     clearLiveRefs();
     liveProc = undefined;
-    if (it !== undefined) {
-      try {
-        void it.return?.(undefined);
-      } catch {
-        /* returning an already-finished iterator is a no-op */
-      }
-    }
+    if (it !== undefined) finishIterator(it);
     if (prov !== undefined && tid !== undefined) {
       try {
         await deps.providers.get(prov).cancel(tid);

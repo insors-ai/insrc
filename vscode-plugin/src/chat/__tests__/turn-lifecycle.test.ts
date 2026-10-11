@@ -8,7 +8,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTurnLifecycle, CURSOR_SAVE_MS, type FollowSink, type TurnLifecycle, type TurnSink } from '../turn-lifecycle.js';
+import { createTurnLifecycle, CURSOR_SAVE_MS, trySaveSession, type FollowSink, type TurnLifecycle, type TurnSink } from '../turn-lifecycle.js';
 import { createMemorySessionLocks, type SessionLocks } from '../session-lock.js';
 import type { ProviderRegistry, ResumeRequest, RunOptions, StreamAdapter, TurnProcess, TurnRequest } from '../cli-adapter.js';
 import type { ChatSession, LiveTurn } from '../session-store.js';
@@ -665,4 +665,62 @@ test('a detached session-file turn is resumed by follow', async () => {
   assert.equal(h.session.liveTurn, undefined);
   runs[0]!.proc.exitNow();
   resumes[0]!.proc.exitNow();
+});
+
+test('trySaveSession logs a failing save and never throws', () => {
+  const warnings: string[] = [];
+  const session = { id: 'sess-9', provider: 'claude', createdAt: 't', title: '', editMode: 'auto', transcript: [] } as ChatSession;
+  const failing = {
+    save: () => {
+      throw new Error('quota exceeded');
+    },
+  };
+  assert.doesNotThrow(() => trySaveSession(failing, { warn: (m) => warnings.push(m), error: () => {} }, session));
+  assert.deepEqual(warnings, ['[chat] session sess-9 not saved: quota exceeded']);
+  const saved: string[] = [];
+  trySaveSession({ save: (s) => void saved.push(s.id) }, { warn: (m) => warnings.push(m), error: () => {} }, session);
+  assert.deepEqual(saved, ['sess-9'], 'a working save is passed through');
+  assert.equal(warnings.length, 1);
+});
+
+test("a generator whose cleanup throws when the turn finishes it is not an unhandled rejection", async () => {
+  const unhandled: unknown[] = [];
+  const onUnhandled = (reason: unknown): void => void unhandled.push(reason);
+  process.on('unhandledRejection', onUnhandled);
+  try {
+    const proc = fakeLiveProc(3001);
+    const f = feed();
+    void proc.exit.then(() => f.end());
+    const adapter: StreamAdapter = {
+      async *run(_req, o): AsyncIterable<TurnEvent> {
+        o?.onSpawn?.(proc);
+        try {
+          for (;;) {
+            const r = await f.next();
+            if (r.done === true) return;
+            yield r.value;
+          }
+        } finally {
+          // eslint-disable-next-line no-unsafe-finally
+          throw new Error('cleanup failed');
+        }
+      },
+      async *resume(): AsyncIterable<TurnEvent> {},
+      cancel: async () => {},
+      decide: () => {},
+      capabilities: { resume: true },
+    };
+    const h = harness({ providers: registry(adapter) });
+    const a = recSink();
+    const p = h.lc.start(h.session, REQ, a.sink);
+    f.push(delta('t1'));
+    f.push(done('t1')); // the terminal event: the turn returns the generator while it is parked at a yield
+    await p;
+    await tick(20);
+    assert.deepEqual(a.calls, ['beforeRun', 'event:assistant-delta', 'event:done', 'terminal:done']);
+    assert.deepEqual(unhandled, [], 'the rejected return() is handled');
+    proc.exitNow();
+  } finally {
+    process.off('unhandledRejection', onUnhandled);
+  }
 });

@@ -331,3 +331,46 @@ test('3a98d279 — with NO definition head, a PLAN still falls back rather than 
 		assert.ok(!slug.startsWith('-'), `no folder name may begin with a separator, got ${slug}`);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-c00559b7 — a standalone feature's LLD heads its work item, so its PLAN
+// lands in the LLD's folder rather than one named from the plan stage's focus.
+// ---------------------------------------------------------------------------
+
+test('c00559b7 — finalizePlan writes PLAN.md into the anchor LLD\'s folder', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-c005-plan-'));
+	try {
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		// No DEF and no ISSUE: the approved LLD is the work item's only head. Its
+		// anchor is stamped a day before it was written, as finalizeStandaloneLld
+		// stamps a first-time LLD's own anchor.
+		const lldCreated = '2026-04-10T08:30:00.000Z';
+		seedApprovedLld(repo, { epicSlug: LLD_OWN_SLUG, createdAt: lldCreated, epicCreatedAt: ISSUE_MADE });
+		const lldFolder = folderFor(repo, { epicHash: HASH, epicSlug: LLD_OWN_SLUG, createdAt: lldCreated, epicCreatedAt: ISSUE_MADE, standalone: true }, 'S001');
+
+		const emit = { body: minimalPlanBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
+		const result = await finalizeArtifact(planIntent(repo), {}, 'wf-c005-plan', 5, emit, 'client');
+		assert.equal(result.ok, true, `finalize failed: ${JSON.stringify((result as { failure?: unknown }).failure)}`);
+
+		const meta = result.finalized.artifact.meta as { epicSlug?: string; epicCreatedAt?: string; standalone?: boolean };
+		assert.equal(meta.epicSlug, LLD_OWN_SLUG, 'the PLAN inherits the LLD head\'s label, not its own focus');
+		assert.equal(meta.epicCreatedAt, ISSUE_MADE, 'and the LLD\'s anchor, not the plan stage\'s clock');
+		assert.equal(meta.standalone, true);
+		assert.equal(folderFor(repo, meta as never, 'S001'), lldFolder, 'one folder for the LLD and its PLAN');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('c00559b7 — a PLAN for a legacy UNFLAGGED LLD-only item is still placed under docs/standalone', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-c005-legacy-'));
+	try {
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		// staleAckedAt short-circuits the HLD-staleness branch an unflagged LLD would take.
+		seedApprovedLld(repo, { epicSlug: LLD_OWN_SLUG, standalone: undefined, staleAckedAt: '2026-04-09T09:30:00.000Z' });
+		const emit = { body: minimalPlanBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
+		const result = await finalizeArtifact(planIntent(repo), {}, 'wf-c005-legacy', 5, emit, 'client');
+		assert.equal(result.ok, true, `finalize failed: ${JSON.stringify((result as { failure?: unknown }).failure)}`);
+		const meta = result.finalized.artifact.meta as { standalone?: boolean };
+		assert.equal(meta.standalone, true);
+		assert.ok(folderFor(repo, meta as never, 'S001').includes('/docs/standalone/'));
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

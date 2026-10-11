@@ -36,7 +36,7 @@
  * Directories are created on demand.
  */
 
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { PATHS } from '../shared/paths.js';
@@ -298,6 +298,22 @@ export interface EpicDefinitionCore {
 	readonly createdAt?:  string;
 	readonly epicSlug?:   string;
 	readonly standalone?: boolean;
+	/** Which artifact headed the work item. Set only by
+	 *  {@link readEpicDefinitionCore}, never by a single-artifact read. */
+	readonly headKind?:   WorkItemHeadKind;
+	/** The head's `meta.tracker` block (issue refs), when it carries one. */
+	readonly tracker?:    TrackerBlock;
+}
+
+/** The artifact kinds that can head a work item, in precedence order. */
+export type WorkItemHeadKind = 'DEF' | 'ISSUE' | 'LLD';
+
+/** The tracker refs a workflow artifact carries in `meta.tracker`. */
+export interface TrackerBlock {
+	readonly epicRef?:   string;
+	readonly storyRef?:  string;
+	readonly storyRefs?: Readonly<Record<string, string>>;
+	readonly taskRefs?:  Readonly<Record<string, string>>;
 }
 
 /** Read `meta.createdAt` + `meta.epicSlug` + `meta.standalone` from a canonical
@@ -312,15 +328,20 @@ function readArtifactCore(repoPath: string, artifactId: string): EpicDefinitionC
 	if (!existsSync(json)) return {};
 	try {
 		const parsed = JSON.parse(readFileSync(json, 'utf8')) as {
-			meta?: { createdAt?: unknown; epicSlug?: unknown; standalone?: unknown };
+			meta?: { createdAt?: unknown; epicSlug?: unknown; standalone?: unknown; tracker?: unknown };
 		};
 		const createdAt  = typeof parsed.meta?.createdAt  === 'string'  ? parsed.meta.createdAt  : undefined;
 		const epicSlug   = typeof parsed.meta?.epicSlug   === 'string'  ? parsed.meta.epicSlug   : undefined;
 		const standalone = typeof parsed.meta?.standalone === 'boolean' ? parsed.meta.standalone : undefined;
+		// The tracker block rides along so the tracker resolver can take its
+		// identity from this reader without losing issue refs. It is not one of the
+		// "usable" fields: a head is still judged on the three above.
+		const tracker    = isPlainObject(parsed.meta?.tracker) ? parsed.meta.tracker as TrackerBlock : undefined;
 		return {
 			...(createdAt  !== undefined ? { createdAt }  : {}),
 			...(epicSlug   !== undefined ? { epicSlug }   : {}),
 			...(standalone !== undefined ? { standalone } : {}),
+			...(tracker    !== undefined ? { tracker }    : {}),
 		};
 	} catch {
 		return {};
@@ -342,14 +363,15 @@ function readEpicCreatedAtStamp(repoPath: string, artifactId: string): string | 
 	}
 }
 
-/** The work item's DEFINITION artifact core: `DEF-<hash>` first, then
- *  `ISSUE-<hash>`.
+/** The work item's HEAD artifact core: `DEF-<hash>` first, then
+ *  `ISSUE-<hash>`, then the lowest-ordinal `LLD-<hash>-<story>` (a standalone
+ *  feature's only head). `headKind` names which one answered. This is the one
+ *  place the head order is decided: the tracker resolver's identity read
+ *  delegates here, so naming and task resolution cannot disagree.
  *
  *  An ISSUE **is** a DEF — the epic-level definition artifact, formerly named
  *  DEF — so both answer the same question and the read ORDER is the only thing
- *  that distinguishes them. The order is COPIED FROM the tracker resolver's
- *  `readEpicIdentity`, not newly decided, so the two readers can never disagree
- *  about which artifact defines a work item.
+ *  that distinguishes them.
  *
  *  FIRST-READABLE-WINS, not first-present-wins. `readArtifactCore` degrades a
  *  missing file AND a parse failure to `{}` alike, so a corrupt DEF falls
@@ -357,21 +379,72 @@ function readEpicCreatedAtStamp(repoPath: string, artifactId: string): string | 
  *  it yielded at least one usable field: a DEF that parses but carries none of
  *  the three is as useless as one that does not parse.
  *
- *  Never throws — an unreadable pair is an empty result, which every caller
+ *  Never throws — no readable head is an empty result, which every caller
  *  already handles via its own fallback.
- *
- *  UNWIRED as of S001/t1: nothing consumes it yet. S001/t2 routes
- *  {@link readEpicCreatedAt} through it and S001/t5 does the same for
- *  {@link buildRecordFolderArgs}; the sibling Story ISSUE-6f31771d060cb412 then
- *  widens it from these three meta fields to the definition's body as well. */
+ */
 export function readEpicDefinitionCore(repoPath: string, epicHash: string): EpicDefinitionCore {
-	for (const artifactId of [defineArtifactId(epicHash), issueArtifactId(epicHash)]) {
+	for (const [headKind, artifactId] of [
+		['DEF',   defineArtifactId(epicHash)],
+		['ISSUE', issueArtifactId(epicHash)],
+	] as const) {
 		const core = readArtifactCore(repoPath, artifactId);
-		if (core.createdAt !== undefined || core.epicSlug !== undefined || core.standalone !== undefined) {
-			return core;
-		}
+		if (hasUsableField(core)) return { ...core, headKind };
 	}
-	return {};
+
+	// ISSUE-c00559b7 — a standalone feature writes no DEF and no ISSUE; its LLD is
+	// the first artifact of the work item, so the LLD heads it. Without this the
+	// tracker resolver could not see the work item at all, and the build tool
+	// refused every task of its plan. Only the lowest-ordinal Story's LLD is
+	// consulted, so every Story of the item shares one label and anchor; a
+	// malformed one is no head, as before the fix.
+	const lldId = lowestOrdinalLldId(repoPath, epicHash);
+	if (lldId === undefined) return {};
+	const lld = readArtifactCore(repoPath, lldId);
+	if (!hasUsableField(lld)) return {};
+	// A work item headed by an LLD has no DEF, so it is never an epic: report it
+	// standalone even when a legacy LLD carries no flag, so every placement
+	// consumer files it under docs/standalone. Its anchor is the one its own
+	// folder is keyed on (workItemAnchorCreatedAt).
+	const createdAt = readEpicCreatedAtStamp(repoPath, lldId) ?? lld.createdAt;
+	return {
+		...lld,
+		...(createdAt !== undefined ? { createdAt } : {}),
+		standalone: true,
+		headKind:   'LLD',
+	};
+}
+
+/** A head is usable when it yielded at least one of the three epic-level fields. */
+function hasUsableField(core: EpicDefinitionCore): boolean {
+	return core.createdAt !== undefined || core.epicSlug !== undefined || core.standalone !== undefined;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** The artifact id of the work item's lowest-ordinal Story LLD (`S001` before
+ *  `S002`, `s1` before `s2`), or undefined when it has none. Ordinals compare
+ *  numerically, with the id itself as the tie-break, so the pick is stable. */
+function lowestOrdinalLldId(repoPath: string, epicHash: string): string | undefined {
+	let files: readonly string[];
+	try {
+		files = readdirSync(join(repoPath, ARTIFACTS_DIR));
+	} catch {
+		return undefined;
+	}
+	const prefix = lldFilenamePrefix(epicHash);
+	const storyIds = files
+		.filter(f => f.startsWith(prefix) && f.endsWith('.json'))
+		.map(f => f.slice(prefix.length, -'.json'.length))
+		.filter(id => id.length > 0);
+	if (storyIds.length === 0) return undefined;
+	const ordinal = (id: string): number => {
+		const m = /(\d+)$/.exec(id);
+		return m === null ? Number.MAX_SAFE_INTEGER : Number(m[1]);
+	};
+	const [first] = [...storyIds].sort((a, b) => ordinal(a) - ordinal(b) || a.localeCompare(b));
+	return first === undefined ? undefined : lldArtifactId(epicHash, first);
 }
 
 /** Resolve the sc2 folder args (anchor createdAt + top-level split + slug label)

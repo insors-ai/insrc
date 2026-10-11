@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -234,3 +234,34 @@ Run at 2026-10-11T10:31:05.314Z on commit `0f2dd749`. Tests check: **passed**. 5
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/shutdown-store-failure.test.ts` | 0 | 5 | 3.2 s |  |
+
+## t8
+
+Run at 2026-10-11T10:38:18.205Z on commit `ec94718e`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store | `src/cli/services/__tests__/review-source-roots-daemon.test.ts` |
+
+**unit: CLI review: a rejecting reader falls back to the repository root and the output says so**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CLI review: a rejecting reader falls back to the repository root and the output says so | `src/workflow/review/__tests__/source-root-reader.test.ts` |
+| pass | workflow review says when the source roots could not be read from the index | `src/cli/__tests__/command.test.ts` |
+
+**unit: review with no reader passed uses the default reader, as the daemon and the MCP server do**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review with no reader passed uses the default reader, as the daemon and the MCP server do | `src/workflow/review/__tests__/source-root-reader.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/cli/__tests__/command.test.ts` | 0 | 22 | 0.4 s |  |
+| `src/cli/services/__tests__/review-source-roots-daemon.test.ts` | 0 | 1 | 0.9 s |  |
+| `src/workflow/review/__tests__/source-root-reader.test.ts` | 0 | 4 | 0.5 s |  |

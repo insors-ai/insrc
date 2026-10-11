@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-11T10:31:05.314Z"
+    "updatedAt": "2026-10-11T10:38:18.205Z"
   },
   "body": {
     "tasks": [
@@ -876,6 +876,195 @@
               },
               {
                 "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "ec94718e",
+        "ranAt": "2026-10-11T10:38:18.205Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+                "title": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CLI review: a rejecting reader falls back to the repository root and the output says so",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/source-root-reader.test.ts",
+                "title": "CLI review: a rejecting reader falls back to the repository root and the output says so",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "workflow review says when the source roots could not be read from the index",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "review with no reader passed uses the default reader, as the daemon and the MCP server do",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/source-root-reader.test.ts",
+                "title": "review with no reader passed uses the default reader, as the daemon and the MCP server do",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/command.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 406,
+            "titles": [
+              {
+                "title": "help lists the command reference",
+                "result": "pass"
+              },
+              {
+                "title": "repo add without --steering passes no steering (no silent write)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering installs both CLAUDE.md + AGENTS.md",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add dispatches to repo.add with the path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status renders a one-line summary",
+                "result": "pass"
+              },
+              {
+                "title": "config list shows known options (default) merged with set values",
+                "result": "pass"
+              },
+              {
+                "title": "config list <search> filters options by substring",
+                "result": "pass"
+              },
+              {
+                "title": "config get navigates a dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set parses JSON values (number) and writes the dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set keeps a non-JSON token as a string",
+                "result": "pass"
+              },
+              {
+                "title": "pane switches the active pane",
+                "result": "pass"
+              },
+              {
+                "title": "quit calls exit",
+                "result": "pass"
+              },
+              {
+                "title": "unknown command is reported, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "service errors surface as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review renders verdict, counts, auto-fixes, and pending findings",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve --override threads the reason to approve",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve surfaces a review block as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow run streams progress via onLog and reports path + review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "workflow findings lists pending, workflow resolve resolves one (R3)",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status adds the store failure line when the status carries it",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review says when the source roots could not be read from the index",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 890,
+            "titles": [
+              {
+                "title": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/source-root-reader.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 541,
+            "titles": [
+              {
+                "title": "review with no reader passed uses the default reader, as the daemon and the MCP server do",
+                "result": "pass"
+              },
+              {
+                "title": "a reader that is passed names the source roots, in place of the store",
+                "result": "pass"
+              },
+              {
+                "title": "CLI review: a rejecting reader falls back to the repository root and the output says so",
+                "result": "pass"
+              },
+              {
+                "title": "the reader given to the review of an artifact file reaches the source-root read, and the fallback reaches the written document",
                 "result": "pass"
               }
             ],

@@ -1,0 +1,409 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1791730192784-y7n8nn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-11T14:50:53.399Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 60615,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b452bdbfc94c0a8f",
+    "epicSlug": "di3-guideline-creation-revision-agent-reuse",
+    "authoredBy": "controller",
+    "questionResolutions": {
+      "q1d8128b2": {
+        "question": "Item a2: Confirm whether the first release includes lightweight palette/type/component/layout specimens or written guidelines only before designing story s6.",
+        "status": "resolved",
+        "choice": "Include lightweight palette, typography, component-state and representative layout examples alongside written project guidelines in the first release.",
+        "rationale": "Explicit user selection in chat on 11 October 2026; examples illustrate reusable guidelines, not per-page designs.",
+        "resolvedAt": "2026-10-11T14:52:34.995Z"
+      }
+    }
+  },
+  "body": {
+    "problem": "Users who want a consistent project design language must repeatedly restate their intent, compare disconnected choices and carry decisions between conversations themselves. Adding a mobile platform risks losing established brand choices, while routine page work can reopen settled design questions. There is no coherent user journey for creating, reviewing and deliberately revising reusable project guidelines while keeping ordinary consumption separate from authoring.",
+    "summary": {
+      "prose": "Let users create and revise reusable guidelines for selected project UI types in a guided conversation. Agents then apply the approved guidelines across pages without repeating design exploration.",
+      "audience": "product"
+    },
+    "nonGoals": [
+      {
+        "text": "Per-page design exercises, production screen mockups or framework generation",
+        "rationale": "This workflow creates project guidelines, not individual page designs."
+      },
+      {
+        "text": "Reimplement corpus ingestion or project lifecycle",
+        "rationale": "DI1 and DI2 own those dependencies."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "DI1 corpus and DI2 project lifecycle contracts will be reviewed and approved before dependent workflow implementation.",
+        "confidence": "high",
+        "source": "c3"
+      },
+      {
+        "text": "Lightweight guideline specimens are a proposed aid; exact fidelity remains to be confirmed before its story design.",
+        "confidence": "low",
+        "source": "c1"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Create distinct guideline sets for requested Web/Mobile-iOS/Mobile-Android types from a shared project brief; page changes never trigger guideline authoring.",
+        "type": "stakeholder",
+        "source": "c1"
+      },
+      {
+        "id": "k2",
+        "text": "Review and explicit version-specific approval precede activation; revisions preserve current approved sets until replacement approval.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k3",
+        "text": "Reuse DI1 corpus evidence and DI2 identity/lifecycle; preserve provenance and avoid silent cross-platform changes.",
+        "type": "contract",
+        "source": "c3"
+      },
+      {
+        "id": "k4",
+        "text": "Daemon owns persistence, clients use IPC, cloud access uses CLI providers, provider calls are sequential and critical reasoning obeys the capability floor.",
+        "type": "invariant",
+        "source": "c2"
+      }
+    ],
+    "flavor": "new-capability",
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Request project guidelines for selected UI types",
+        "userValue": "Users describe their project once and retain existing decisions.",
+        "dependsOn": [],
+        "sizeEstimate": "M",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a request for Web and iOS project guidelines",
+            "when": "the conversation begins",
+            "then": "the project, requested types and existing sets are resolved and one shared brief is gathered",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an approved Web set already exists",
+            "when": "the same project/type is requested again",
+            "then": "existing guidance is surfaced and a revision requires explicit intent rather than a competing default",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Request project guidelines for selected UI types"
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Compare directions and draft coherent reusable guidelines",
+        "userValue": "Users make informed project-wide choices supported by source evidence.",
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "M",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a sufficient project brief",
+            "when": "directions are explored",
+            "then": "distinct coherent alternatives explain task fit, tradeoffs and corpus evidence",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a selected direction and requested UI types",
+            "when": "drafting completes",
+            "then": "each requested type has reusable rules and source lineage, with corpus gaps explicit and no framework prerequisite",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Compare directions and draft coherent reusable guidelines"
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Review approve and resume guideline work deliberately",
+        "userValue": "Users keep control of activation without losing progress.",
+        "dependsOn": [
+          "s2"
+        ],
+        "sizeEstimate": "M",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "separate reviewed Web and iOS drafts",
+            "when": "the user approves only the exact Web version",
+            "then": "only Web activates while iOS remains a draft",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a conversation is interrupted",
+            "when": "it resumes",
+            "then": "the brief, choices and drafts are retained without duplicate activation",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "review is stale or blocking",
+            "when": "approval is attempted",
+            "then": "activation is withheld with the reason visible",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k4"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Review approve and resume guideline work deliberately"
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Add platforms and revise guidelines without changing other sets",
+        "userValue": "Users evolve a project while preserving settled choices.",
+        "dependsOn": [
+          "s3"
+        ],
+        "sizeEstimate": "M",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "approved Web and iOS guidelines",
+            "when": "the user requests Android",
+            "then": "brand choices are reused with source-version lineage and Android-specific decisions are explicit",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an explicit Web revision",
+            "when": "a new draft is prepared",
+            "then": "current Web and mobile versions remain unchanged until the exact revision is approved",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Add platforms and revise guidelines without changing other sets"
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "Apply active guidelines to page work without restarting design",
+        "userValue": "Agents use stable rules for every page.",
+        "dependsOn": [
+          "s3"
+        ],
+        "sizeEstimate": "M",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "multiple page tasks with one project/UI type",
+            "when": "agents request design context",
+            "then": "the same active guideline version is returned and recorded without new drafts or reapproval",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "no approved set for the requested type",
+            "when": "an agent requests context",
+            "then": "missing guidance is reported and creation is offered without silent generation or substitution",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Apply active guidelines to page work without restarting design"
+          }
+        ]
+      },
+      {
+        "id": "s6",
+        "title": "Inspect guideline examples and verify cross-platform reuse",
+        "userValue": "Users can understand reusable rules and assess practical consistency.",
+        "dependsOn": [
+          "s4",
+          "s5"
+        ],
+        "sizeEstimate": "M",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a guideline version and agreed lightweight specimen scope",
+            "when": "examples are produced",
+            "then": "palette, type, component states and representative layouts illustrate that version without requiring production page designs",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "eight project briefs across three UI types",
+            "when": "guidelines are evaluated on several representative pages each",
+            "then": "traceability, platform fit, consistency, read-only reuse and critical violations are reported against the PRD acceptance criteria",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Inspect guideline examples and verify cross-platform reuse"
+          }
+        ]
+      }
+    ],
+    "openQuestions": [
+      "Item a2: Confirm whether the first release includes lightweight palette/type/component/layout specimens or written guidelines only before designing story s6."
+    ],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20261011b452bdbf:FR001",
+          "statement": "Users create, resume and revise project guidelines for selected UI types through one guided conversation.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261011b452bdbf:FR002",
+          "statement": "Agents apply approved guidelines repeatedly without generating new design artifacts or approval requests.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261011b452bdbf:S001:FR001",
+          "statement": "Request project guidelines for selected UI types",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261011b452bdbf:S002:FR001",
+          "statement": "Compare directions and draft coherent reusable guidelines",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261011b452bdbf:S003:FR001",
+          "statement": "Review approve and resume guideline work deliberately",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261011b452bdbf:S004:FR001",
+          "statement": "Add platforms and revise guidelines without changing other sets",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261011b452bdbf:S005:FR001",
+          "statement": "Apply active guidelines to page work without restarting design",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E20261011b452bdbf:S006:FR001",
+          "statement": "Inspect guideline examples and verify cross-platform reuse",
+          "scope": "item",
+          "itemRef": "s6"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/design-intelligence-prd.md#project-guideline-workflow"
+    },
+    {
+      "id": "c2",
+      "kind": "convention",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "plans/design-intelligence-implementation.md#di3-guideline-creation-revision-and-agent-reuse"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "/Users/subhagho/work/projects/insors/insrc/docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/DEF.md"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "/Users/subhagho/work/projects/insors/insrc/docs/epics/di2-project-guideline-identity-versioned-lifecycle-E202610114abafc9d/DEF.md"
+    }
+  ]
+}

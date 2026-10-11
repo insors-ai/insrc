@@ -1,0 +1,206 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "d9f85b3cc8cc966b",
+    "storyId": "S001",
+    "createdAt": "2026-10-11T15:39:50.029Z",
+    "updatedAt": "2026-10-11T15:39:50.029Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "1b3e512a",
+        "ranAt": "2026-10-11T15:39:50.029Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "er/ux/sequence/component validators: described definition (narrative + descriptions) -> no HIGH",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — er: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — ux: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — sequence: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — component: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — the closed schemas still reject an unknown field, so the additions are deliberate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "er/ux/sequence/component validators: sound undescribed definition -> []",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — er: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — ux: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — sequence: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+                "title": "d9f85b3c t1 — component: a sound definition without the new fields still returns []",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "body-fields / ux-body-fields: synth property schemas admit narrative + description",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/body-fields.test.ts",
+                "title": "d9f85b3c t1 — design.story and design.epic synth schemas admit narrative + descriptions on ER, sequence and component definitions",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/ux-body-fields.test.ts",
+                "title": "d9f85b3c t1 — design.story and design.epic synth schemas admit a UX card narrative and described elements",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/body-fields.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 506,
+            "titles": [
+              {
+                "title": "isHldBody: passes with NEITHER new field (older body) and WITH the new fields",
+                "result": "pass"
+              },
+              {
+                "title": "isLldBody: passes with NEITHER new field (older body) and WITH the new fields",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — design.story and design.epic synth schemas admit narrative + descriptions on ER, sequence and component definitions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/descriptions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 466,
+            "titles": [
+              {
+                "title": "d9f85b3c t1 — er: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — er: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — ux: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — ux: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — sequence: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — sequence: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — component: a described definition (narrative + descriptions) gets no HIGH",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — component: a sound definition without the new fields still returns []",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — the closed schemas still reject an unknown field, so the additions are deliberate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/ux-body-fields.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 512,
+            "titles": [
+              {
+                "title": "isHldBody / isLldBody: pass with NEITHER new field and WITH uxDefinition + adherence",
+                "result": "pass"
+              },
+              {
+                "title": "renderLldMarkdown: uxDefinition + adherence present but NO ux-mock companion → byte-identical (omit-slot)",
+                "result": "pass"
+              },
+              {
+                "title": "renderLldMarkdown: a ux-mock companion renders the UX section as a LINK (never inlined)",
+                "result": "pass"
+              },
+              {
+                "title": "renderLldMarkdown: an ER + a UX companion render in their OWN slots",
+                "result": "pass"
+              },
+              {
+                "title": "ADHERENCE_PROPERTY_SCHEMA: validates a recorded selection against the AdherenceDimension set",
+                "result": "pass"
+              },
+              {
+                "title": "isAdherenceDimension: only the five selectable members",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t1 — design.story and design.epic synth schemas admit a UX card narrative and described elements",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

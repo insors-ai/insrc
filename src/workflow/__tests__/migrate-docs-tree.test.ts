@@ -821,3 +821,82 @@ test('t9 — an ORPHANED companion is placed from its work item, with no sibling
 		assert.ok(existsSync(join(repo, `docs/standalone/${GOOD}-${T6_SEG}/S001/er-model.html`)));
 	} finally { cleanup(); }
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-c00559b7 — a standalone feature with no DEF and no ISSUE is headed by
+// its LLD. Before the fix its PLAN/BUILD/CR/TESTS were written while the item
+// had no head, each named after its own stage's focus, so the item was split
+// across several folders. The migrator gathers them into the LLD's folder.
+// ---------------------------------------------------------------------------
+
+const SA_HASH = 'fedcba0987654321';           // → hash8 'fedcba09'
+const SA_LLD_ANCHOR = '2026-10-11T09:00:00.000Z';
+const SA_LLD_SLUG = 'the-lld-label';
+
+/** An LLD in its own folder, and its downstream records in a SECOND folder named
+ *  after the plan stage's focus (and keyed on the plan's own clock). */
+function seedSplitStandalone(opts: { flagged: boolean }): string {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-mig-lldhead-'));
+	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+	const flag = opts.flagged ? { standalone: true } : {};
+	seedJson(repo, `LLD-${SA_HASH}-S001`, { createdAt: SA_LLD_ANCHOR, epicSlug: SA_LLD_SLUG, storyId: 'S001', ...flag });
+	const lldFolder = `docs/${opts.flagged ? 'standalone' : 'epics'}/${SA_LLD_SLUG}-E20261011fedcba09`;
+	seedMd(repo, `${lldFolder}/S001/LLD.md`, `LLD-${SA_HASH}-S001`);
+
+	const stray = 'docs/standalone/decompose-the-approved-lld-E20261012fedcba09/S001';
+	for (const kind of ['PLAN', 'BUILD', 'CR', 'TESTS'] as const) {
+		seedJson(repo, `${kind}-${SA_HASH}-S001`, {
+			createdAt: '2026-10-12T10:00:00.000Z', epicCreatedAt: '2026-10-12T10:00:00.000Z',
+			epicSlug: 'decompose-the-approved-lld', storyId: 'S001', standalone: true,
+		});
+		seedMd(repo, `${stray}/${kind}.md`, `${kind}-${SA_HASH}-S001`);
+	}
+	return repo;
+}
+
+test('c00559b7 — planMigration consolidates an anchorless split item\'s PLAN/BUILD/CR/TESTS into its LLD\'s folder', () => {
+	const repo = seedSplitStandalone({ flagged: true });
+	try {
+		const plan = planMigration(repo);
+		assert.deepEqual(plan.unmappable, []);
+		const lldFolder = join(repo, 'docs/standalone', `${SA_LLD_SLUG}-E20261011fedcba09`, 'S001');
+		const byKind = new Map(plan.moves.filter(m => m.kind !== 'COMPANION').map(m => [m.kind, m]));
+		for (const kind of ['PLAN', 'BUILD', 'CR', 'TESTS']) {
+			assert.equal(byKind.get(kind as never)?.to, join(lldFolder, `${kind}.md`), `${kind} joins the LLD`);
+		}
+		assert.equal(byKind.get('LLD' as never), undefined, 'the LLD is already where it belongs');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('c00559b7 — planMigration groups an unflagged LLD-headed item as standalone', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-mig-lldhead-legacy-'));
+	try {
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		// A legacy LLD and PLAN: no DEF, no ISSUE, and no member carries the flag.
+		seedJson(repo, `LLD-${SA_HASH}-S001`, { createdAt: SA_LLD_ANCHOR, epicSlug: SA_LLD_SLUG, storyId: 'S001' });
+		seedJson(repo, `PLAN-${SA_HASH}-S001`, { createdAt: '2026-10-12T10:00:00.000Z', epicSlug: SA_LLD_SLUG, storyId: 'S001' });
+		seedMd(repo, `docs/epics/${SA_LLD_SLUG}-E20261011fedcba09/S001/LLD.md`, `LLD-${SA_HASH}-S001`);
+		seedMd(repo, `docs/epics/${SA_LLD_SLUG}-E20261011fedcba09/S001/PLAN.md`, `PLAN-${SA_HASH}-S001`);
+
+		const plan = planMigration(repo);
+		assert.deepEqual(plan.unmappable, []);
+		const dest = join(repo, 'docs/standalone', `${SA_LLD_SLUG}-E20261011fedcba09`, 'S001');
+		const tos = plan.moves.filter(m => m.kind !== 'COMPANION').map(m => m.to).sort();
+		assert.deepEqual(tos, [join(dest, 'LLD.md'), join(dest, 'PLAN.md')]);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('c00559b7 — the head LLD\'s label wins over a downstream member\'s own; a DEF or ISSUE still outranks any LLD', () => {
+	const repo = seedSplitStandalone({ flagged: true });
+	try {
+		// Without a head, the BUILD's slug sorted first and named the folder.
+		assert.ok(planMigration(repo).moves.every(m => !m.to.includes('decompose-the-approved-lld')));
+
+		// An ISSUE on the same hash takes the label back.
+		seedJson(repo, `ISSUE-${SA_HASH}`, { createdAt: SA_LLD_ANCHOR, epicSlug: 'the-issue-label', standalone: true });
+		seedMd(repo, 'docs/standalone/the-issue-label-E20261011fedcba09/ISSUE.md', `ISSUE-${SA_HASH}`);
+		const withIssue = planMigration(repo);
+		assert.ok(withIssue.moves.length > 0);
+		assert.ok(withIssue.moves.every(m => m.to.includes('the-issue-label-E')), JSON.stringify(withIssue.moves.map(m => relative(repo, m.to))));
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

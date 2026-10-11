@@ -204,7 +204,7 @@ function gitInit(repo: string): void {
 	g('commit', '-q', '-m', 'seed flat tree');
 }
 
-test('applyMigration: git mv relocates each md (history followed), no flat md remains, .insrc/artifacts byte-identical', () => {
+test('applyMigration: git mv relocates each md (history followed), no flat md remains, a consistent member\'s JSON byte-identical', () => {
 	const repo = seedEpicRepo();
 	try {
 		gitInit(repo);
@@ -220,7 +220,9 @@ test('applyMigration: git mv relocates each md (history followed), no flat md re
 		assert.ok(existsSync(to));
 		const followed = execFileSync('git', ['log', '--follow', '--format=%s', '--', to], { cwd: repo, encoding: 'utf8' });
 		assert.match(followed, /seed flat tree/, 'git log --follow shows the pre-move commit');
-		// the JSON store is byte-unchanged
+		// The DEF heads the work item, so its stored meta already matches and its
+		// JSON is byte-unchanged. Stale members are realigned (ISSUE-7d42920d;
+		// see migrate-docs-meta-rewrite.test.ts).
 		assert.equal(readFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HASH}.json`), 'utf8'), jsonBefore);
 		// clean tree after (all committed)
 		assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: repo, encoding: 'utf8' }).trim(), '');

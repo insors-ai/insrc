@@ -104,7 +104,11 @@
       {
         "command": "insrc.delivery.openBoard",
         "title": "Open delivery board",
-        "category": "insrc"
+        "category": "insrc",
+        "icon": {
+          "light": "media/insrc-delivery-icon.svg",
+          "dark": "media/insrc-delivery-icon-dark.svg"
+        }
       }
     ],
     "menus": {

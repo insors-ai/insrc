@@ -63,13 +63,18 @@ function chatGateSpan(src: string): readonly [number, number] {
 
 test('extension.ts registers insrc.delivery.openBoard outside the chat gate with a warn-and-error logger and a repo-scoped delivery client', async () => {
   const cmd = PKG.contributes?.commands?.find(c => c.command === 'insrc.delivery.openBoard');
-  assert.deepEqual(cmd, { command: 'insrc.delivery.openBoard', title: 'Open delivery board', category: 'insrc' });
+  assert.deepEqual(cmd, {
+    command: 'insrc.delivery.openBoard',
+    title: 'Open delivery board',
+    category: 'insrc',
+    icon: { light: 'media/insrc-delivery-icon.svg', dark: 'media/insrc-delivery-icon-dark.svg' },
+  });
 
   // extension.ts calls the wiring once, outside the insrc.chat.enabled gate, with the workspace folder and the two-sink logger.
   const [gateStart, gateEnd] = chatGateSpan(EXT);
   const call = EXT.indexOf('registerDeliveryBoard({');
   assert.ok(call >= 0 && (call < gateStart || call >= gateEnd), 'registerDeliveryBoard is called outside the chat gate');
-  const args = EXT.slice(call, EXT.indexOf('});', call));
+  const args = EXT.slice(call, EXT.indexOf('\n  });', call));
   assert.match(args, /rpc: client\.rpc/);
   assert.match(args, /repo: \(\) => vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \?\? null/);
   assert.match(args, /logger: panelLog,/);
@@ -137,7 +142,7 @@ test('the board receives the review pane when the chat setting creates one, and 
   const assign = EXT.indexOf('docsReviewHost = reviewHost;');
   assert.ok(assign > gateStart && assign < gateEnd, 'and assigned inside it');
   const call = EXT.indexOf('registerDeliveryBoard({');
-  assert.match(EXT.slice(call, EXT.indexOf('});', call)), /reviewPane: docsReviewHost,/, 'and passed to the board outside it');
+  assert.match(EXT.slice(call, EXT.indexOf('\n  });', call)), /reviewPane: docsReviewHost,/, 'and passed to the board outside it');
 
   const snap = snapshot([item({ id: 'S1', evidence: [
     { artifactId: 'LLD-x', kind: 'LLD', mdPath: 'docs/e/S001/LLD.md', openWith: 'review-view', approval: { state: 'pending', at: null }, review: null, reviewCurrency: null },

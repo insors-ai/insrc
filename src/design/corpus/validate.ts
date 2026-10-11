@@ -283,7 +283,7 @@ function validateCoverageEnvelope(
   if (coverage) {
     try {
       const envelope = parsedBytes(coverage.bytes, CORPUS_LIMITS.packageBytes);
-      if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope) || (envelope as Record<string, unknown>)['candidateContentDigest'] !== candidateDigest) {
+      if (!candidateDigest || !envelope || typeof envelope !== 'object' || Array.isArray(envelope) || (envelope as Record<string, unknown>)['candidateContentDigest'] !== candidateDigest) {
         add('review.stale', '/manifest/coveragePath', 'Coverage must bind the exact candidate content digest.');
       }
       const pending: unknown[] = [envelope];

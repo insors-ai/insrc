@@ -2,6 +2,8 @@
 
 # A request that cannot be counted is announced as the largest size before it is refused
 
+> **Consolidated (2026-10-11):** absorbed into Epic `c2ba6fa62a148ed1` as Story s5 — see [the Epic definition](../../epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md). Not closed; it is designed and delivered through that Story, not on its own.
+
 ## Reproduction
 
 Read from the code by the code review of Story s2 of the analyzer epic (finding 12); it can be shown with stand-ins and no model. Send a code request on a path no registered repository contains, and record the run's events. Observed: the run emits `classified` with size XL and a measure that says `determined: false`; it then builds the run's context, and only after that checks the scope and ends the run as refused. Expected: a request that is going to be refused for its scope is not announced as a large run first; where a size is announced that could not be counted, a consumer can tell it from a size that was counted without reading a second field. No consumer was seen acting on the size alone today; the framework's design describes a warning before a large run, which would do so.

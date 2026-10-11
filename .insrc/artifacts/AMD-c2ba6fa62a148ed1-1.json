@@ -1,0 +1,48 @@
+{
+  "id": "AMD-c2ba6fa62a148ed1-1",
+  "epicHash": "c2ba6fa62a148ed1",
+  "epicSlug": "complete-consistent-richer-code-index-one",
+  "hldBaseRunId": "wf-1791697214822-7bombm",
+  "amendment": {
+    "type": "storyBoundary.addStory",
+    "storyId": "s11",
+    "internal": "Private implementation of s11: The step tools run inside the daemon, and the MCP server opens no store"
+  },
+  "rationale": "Extends Epic `complete-consistent-richer-code-index-one` (c2ba6fa62a148ed1), building on its definition and high-level design and on Story s4's design: the step tools that today run in the MCP server's process and read the live store directly are moved into the daemon, so that s4's rule that only the daemon opens the live store can be switched on.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/mcp/server.ts:402",
+      "quotedText": "async (rawArgs, _extra) => handleAnalyzeStep(rawArgs),"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/analyze-step/phases/narrow.ts:30",
+      "quotedText": "import { putCachedExploration } from '../../../db/exploration-cache.js';"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md",
+      "quotedText": "Only the daemon opens the stores; every new read or write is reached through the daemon."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/LLD.md",
+      "quotedText": "The live store opens only in a process that has declared itself its owner"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "define",
+    "runId": "wf-1791707415811-uw7lw7",
+    "storyId": "s11",
+    "stepId": "scope.assess"
+  },
+  "proposedAt": "2026-10-11T08:30:52.243Z",
+  "status": "approved",
+  "approvedAt": "2026-10-11T08:33:09.516Z",
+  "approvedBy": "Subho Ghosh"
+}

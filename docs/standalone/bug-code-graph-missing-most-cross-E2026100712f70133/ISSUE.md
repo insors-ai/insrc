@@ -2,6 +2,8 @@
 
 # Stop losing cross-file import and call edges in the code graph
 
+> **Consolidated (2026-10-11):** absorbed into Epic `c2ba6fa62a148ed1` as Story s1 — see [the Epic definition](../../epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md). Not closed; it is designed and delivered through that Story, not on its own.
+
 ## Reproduction
 
 On a repo that has had one full index (this repo, indexed 2026-07-14, status ready, no pending jobs):

@@ -53,6 +53,14 @@ export interface TurnLifecycle {
    * current one (synchronously), then waits for the lease and reads the turn. Never rejects.
    */
   start(session: ChatSession, req: TurnRequest, sink: TurnSink): Promise<void>;
+  /** The Stop control: ends the live turn and its process. Resolves once it has exited. Idempotent. */
+  stop(): Promise<void>;
+  /**
+   * A chat switch, the panel closing, or adopt(): stop reading the live turn. A turn that writes to
+   * the session file keeps running (with its lease) and its cursor stays saved, so following the
+   * session again resumes it. A pipe turn could not be resumed, so it is stopped as by stop().
+   */
+  detach(): Promise<void>;
   /** The current turn stops reporting (a chat switch). */
   invalidate(): void;
   /** The turn being read live, once its first event arrived. */
@@ -247,8 +255,62 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     });
   }
 
+  /**
+   * Ends the live turn: drops a turn waiting for its lease, returns the iterator, cancels the
+   * provider's turn and stops the newest CLI process. Resolves once the process has exited (or
+   * there was none). Idempotent.
+   */
+  const stopLive = async (): Promise<void> => {
+    waitCtl?.abort();
+    waitCtl = undefined;
+    detachLive = undefined;
+    const it = activeIterator;
+    const prov = activeProvider;
+    const tid = activeTurnId;
+    const proc = liveProc;
+    clearLiveRefs();
+    liveProc = undefined;
+    if (it !== undefined) {
+      try {
+        void it.return?.(undefined);
+      } catch {
+        /* returning an already-finished iterator is a no-op */
+      }
+    }
+    if (prov !== undefined && tid !== undefined) {
+      try {
+        await deps.providers.get(prov).cancel(tid);
+      } catch {
+        /* provider gone / already finished — nothing to cancel */
+      }
+    }
+    if (proc !== undefined) {
+      try {
+        await proc.stop();
+      } catch {
+        /* already gone / not signalable — callers fire this and forget it */
+      }
+    }
+  };
+
+  const detach = async (): Promise<void> => {
+    waitCtl?.abort();
+    waitCtl = undefined;
+    const detachThis = detachLive;
+    if (detachThis !== undefined && liveProc?.cursor !== undefined) {
+      detachLive = undefined;
+      liveProc = undefined;
+      clearLiveRefs();
+      detachThis();
+      return;
+    }
+    await stopLive();
+  };
+
   return {
     start,
+    stop: stopLive,
+    detach,
     invalidate(): void {
       ++generation;
     },

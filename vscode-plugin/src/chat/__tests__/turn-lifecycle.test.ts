@@ -54,15 +54,30 @@ interface Run {
   readonly req: TurnRequest;
 }
 
-/** Each run starts a fake CLI process (with a session-file cursor unless `pipe`), then yields what the test feeds. */
-function scriptedAdapter(opts: { pipe?: boolean; noSpawn?: boolean } = {}): { adapter: StreamAdapter; runs: Run[] } {
+/**
+ * Each run starts a fake CLI process (with a session-file cursor unless `pipe`), then yields what
+ * the test feeds; the turn's output ends when its process exits.
+ */
+function scriptedAdapter(opts: { pipe?: boolean; noSpawn?: boolean; cancelThrows?: boolean; stopThrows?: boolean } = {}): {
+  adapter: StreamAdapter;
+  runs: Run[];
+  cancels: string[];
+} {
   const runs: Run[] = [];
+  const cancels: string[] = [];
   const adapter: StreamAdapter = {
     async *run(req: TurnRequest, o?: RunOptions): AsyncIterable<TurnEvent> {
       const turnId = `t${runs.length + 1}`;
       const proc: Proc = fakeLiveProc(1000 + runs.length + 1);
       if (opts.pipe !== true) proc.cursor = { sessionId: o?.sessionId ?? '', turnId, generation: 1, offset: 0 };
+      if (opts.stopThrows === true) {
+        proc.stop = async () => {
+          proc.signals.push('stop');
+          throw new Error('not signalable');
+        };
+      }
       const f = feed();
+      void proc.exit.then(() => f.end());
       runs.push({ turnId, proc, feed: f, req });
       if (opts.noSpawn !== true) o?.onSpawn?.(proc);
       let offset = 0;
@@ -75,11 +90,14 @@ function scriptedAdapter(opts: { pipe?: boolean; noSpawn?: boolean } = {}): { ad
       }
     },
     async *resume(): AsyncIterable<TurnEvent> {},
-    cancel: async () => {},
+    cancel: async (turnId) => {
+      cancels.push(turnId);
+      if (opts.cancelThrows === true) throw new Error('provider gone');
+    },
     decide: () => {},
     capabilities: { resume: true },
   };
-  return { adapter, runs };
+  return { adapter, runs, cancels };
 }
 
 function registry(adapter: StreamAdapter): ProviderRegistry {
@@ -361,4 +379,120 @@ test('a panel closed while a turn is read is told nothing more', async () => {
   assert.deepEqual(a.calls, ['beforeRun']);
   assert.equal(h.session.liveTurn, undefined, 'its cursor is still cleared at the terminal event');
   runs[0]!.proc.exitNow();
+});
+
+test('stop cancels the provider turn and stops the live process; idempotent with nothing running', async () => {
+  const { adapter, runs, cancels } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter) });
+  const a = recSink();
+  const p = h.lc.start(h.session, REQ, a.sink);
+  await waitFor(() => runs.length === 1);
+  runs[0]!.feed.push(delta('t1'));
+  await waitFor(() => h.lc.live !== undefined);
+  await h.lc.stop();
+  assert.deepEqual(cancels, ['t1'], "the provider's turn is cancelled");
+  assert.deepEqual(runs[0]!.proc.signals, ['SIGTERM']);
+  assert.equal(runs[0]!.proc.exited(), true, 'stop resolves once the process has exited');
+  assert.equal(h.lc.live, undefined);
+  await p;
+
+  await h.lc.stop(); // nothing running now
+  const idle = harness({ providers: registry(scriptedAdapter().adapter) });
+  await idle.lc.stop();
+  assert.equal(idle.lc.live, undefined);
+});
+
+test('stop and detach drop a turn waiting for its lease', async () => {
+  for (const end of ['stop', 'detach'] as const) {
+    const { adapter, runs } = scriptedAdapter();
+    const h = harness({ providers: registry(adapter) });
+    const first = h.lc.start(h.session, REQ, recSink().sink);
+    await waitFor(() => runs.length === 1);
+    runs[0]!.feed.push(done('t1'));
+    await first; // its process keeps running after the answer
+    const b = recSink();
+    const second = h.lc.start(h.session, REQ, b.sink);
+    await waitFor(() => b.calls.includes('waiting'));
+    await h.lc[end]();
+    await second;
+    await tick(20);
+    assert.deepEqual(b.calls, ['waiting'], `${end}: the waiting turn is dropped silently`);
+    assert.equal(runs.length, 1, `${end}: the waiting turn never runs`);
+    runs[0]!.proc.exitNow();
+  }
+
+  // Detaching from a session-file turn that is still being read drops a turn queued behind it too.
+  const { adapter, runs } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter) });
+  void h.lc.start(h.session, REQ, recSink().sink);
+  await waitFor(() => runs.length === 1);
+  runs[0]!.feed.push(delta('t1'));
+  await waitFor(() => h.lc.live !== undefined);
+  const b = recSink();
+  const second = h.lc.start(h.session, REQ, b.sink);
+  await waitFor(() => b.calls.includes('waiting'));
+  await h.lc.detach();
+  await Promise.race([second, tick(50)]);
+  runs[0]!.proc.exitNow();
+  await tick(20);
+  assert.deepEqual(b.calls, ['waiting'], 'detach from a reading turn: the waiting turn is dropped');
+  assert.equal(runs.length, 1);
+});
+
+test('detach leaves a session-file turn running with its cursor saved and stops a pipe turn', async () => {
+  const { adapter, runs } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter) });
+  const a = recSink();
+  const p = h.lc.start(h.session, REQ, a.sink);
+  await waitFor(() => runs.length === 1);
+  runs[0]!.feed.push(delta('t1'));
+  await waitFor(() => h.lc.live !== undefined);
+  const savesBefore = h.saves.length;
+  await h.lc.detach();
+  assert.deepEqual(runs[0]!.proc.signals, [], 'the session-file turn keeps running');
+  assert.equal(h.lc.live, undefined);
+  assert.ok(h.saves.length > savesBefore, 'the cursor is saved at detach');
+  assert.deepEqual(h.saves.at(-1)?.cursor, { turnId: 't1', generation: 1, offset: 10 });
+  assert.equal(h.session.liveTurn?.cursor.turnId, 't1', 'the cursor stays saved for a later follow');
+  runs[0]!.feed.push(delta('t1'));
+  await p; // the read in flight at detach ends with the next line, unreported
+  assert.deepEqual(a.calls, ['beforeRun', 'event:assistant-delta'], 'nothing is reported after detach');
+
+  // The lease stays with the running process: the next turn waits for it.
+  const b = recSink();
+  const q = h.lc.start(h.session, REQ, b.sink);
+  await waitFor(() => b.calls.includes('waiting'));
+  runs[0]!.proc.exitNow();
+  await waitFor(() => runs.length === 2);
+  runs[1]!.feed.push(done('t2'));
+  await q;
+  runs[1]!.proc.exitNow();
+
+  // A pipe turn cannot be resumed: detach stops it.
+  const pipe = scriptedAdapter({ pipe: true });
+  const h2 = harness({ providers: registry(pipe.adapter) });
+  const r = h2.lc.start(h2.session, REQ, recSink().sink);
+  await waitFor(() => pipe.runs.length === 1);
+  pipe.runs[0]!.feed.push(delta('t1'));
+  await waitFor(() => h2.lc.live !== undefined);
+  await h2.lc.detach();
+  await r;
+  assert.deepEqual(pipe.runs[0]!.proc.signals, ['SIGTERM'], 'the pipe turn is stopped');
+  assert.equal(pipe.runs[0]!.proc.exited(), true);
+  assert.deepEqual(pipe.cancels, ['t1']);
+});
+
+test('stop continues past a failing cancel or process stop', async () => {
+  const { adapter, runs, cancels } = scriptedAdapter({ cancelThrows: true, stopThrows: true });
+  const h = harness({ providers: registry(adapter) });
+  const p = h.lc.start(h.session, REQ, recSink().sink);
+  await waitFor(() => runs.length === 1);
+  runs[0]!.feed.push(delta('t1'));
+  await waitFor(() => h.lc.live !== undefined);
+  await h.lc.stop(); // never rejects
+  assert.deepEqual(cancels, ['t1'], 'cancel was tried');
+  assert.deepEqual(runs[0]!.proc.signals, ['stop'], 'the process stop was still tried after cancel failed');
+  assert.equal(h.lc.live, undefined);
+  runs[0]!.proc.exitNow();
+  await p;
 });

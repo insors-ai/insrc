@@ -47,18 +47,36 @@ export interface TurnSink {
   onError(message: string, turnId: string): void;
 }
 
+/** The panel's side of a followed turn (resumed from a saved cursor). */
+export interface FollowSink {
+  /** Every event of the turn, whether or not the session is shown. */
+  onEvent(ev: TurnEvent): void;
+  /** The turn was read to its end: its cursor has been cleared and the session saved. */
+  onEnd(): void;
+}
+
 export interface TurnLifecycle {
   /**
    * Runs a turn for the session: drops a turn still waiting for the lease and supersedes the
    * current one (synchronously), then waits for the lease and reads the turn. Never rejects.
    */
   start(session: ChatSession, req: TurnRequest, sink: TurnSink): Promise<void>;
-  /** The Stop control: ends the live turn and its process. Resolves once it has exited. Idempotent. */
+  /**
+   * Follows a session's saved turn (its output still being read from the session file, e.g. after
+   * a window reload) from where it was left. Only the cursor's owner follows it: this host, or any
+   * host once the owner's extension host is gone (it then takes ownership). Runs in the background.
+   */
+  follow(session: ChatSession, sink: FollowSink): void;
+  /**
+   * The Stop control: ends the live turn, and a turn followed after a reload, with their
+   * processes. Resolves once they have exited. Idempotent.
+   */
   stop(): Promise<void>;
   /**
    * A chat switch, the panel closing, or adopt(): stop reading the live turn. A turn that writes to
    * the session file keeps running (with its lease) and its cursor stays saved, so following the
-   * session again resumes it. A pipe turn could not be resumed, so it is stopped as by stop().
+   * session again resumes it. A pipe turn could not be resumed, so it is stopped as by stop(). A
+   * followed turn's process is not this host's to stop: it is only no longer followed.
    */
   detach(): Promise<void>;
   /** The current turn stops reporting (a chat switch). */
@@ -85,6 +103,9 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   // The newest CLI process this host started; kept until it exits, even after its answer, so Stop
   // can end a process that is still running in the background.
   let liveProc: TurnProcess | undefined;
+  // The saved turn this host is following after a reload (resume), if any.
+  let following: { readonly sessionId: string; readonly ctl: AbortController } | undefined;
+  let resumedProc: TurnProcess | undefined;
 
   /** Forgets which turn is being read live (the one place these refs are reset together). */
   const clearLiveRefs = (): void => {
@@ -255,6 +276,62 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     });
   }
 
+  function follow(s: ChatSession, sink: FollowSink): void {
+    const live = s.liveTurn;
+    if (live === undefined || following?.sessionId === s.id || runningTurns.has(live.cursor.turnId)) return;
+    if (live.ownerHostPid !== deps.hostPid && deps.isAlive(live.ownerHostPid)) return; // another window follows it
+    let adapter;
+    try {
+      adapter = deps.providers.get(s.provider);
+    } catch {
+      return;
+    }
+    if (typeof adapter.resume !== 'function') return;
+    s.liveTurn = { ...live, ownerHostPid: deps.hostPid };
+    trySave(s);
+    const ctl = new AbortController();
+    following = { sessionId: s.id, ctl };
+    let lastSave = Date.now();
+    const turnId = live.cursor.turnId;
+    void (async () => {
+      try {
+        const events = adapter.resume(
+          { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null },
+          {
+            signal: ctl.signal,
+            onAttach: (p) => {
+              resumedProc = p;
+            },
+            onProgress: (c) => {
+              if (s.liveTurn?.cursor.turnId !== c.turnId) return;
+              s.liveTurn = { ...s.liveTurn, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset } };
+              if (Date.now() - lastSave >= CURSOR_SAVE_MS) {
+                lastSave = Date.now();
+                trySave(s);
+              }
+            },
+          },
+        );
+        for await (const ev of events) {
+          if (ctl.signal.aborted) break;
+          sink.onEvent(ev);
+          if (ev.kind === 'done' && ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
+          if (isTerminal(ev)) break;
+        }
+        if (!ctl.signal.aborted) {
+          if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
+          trySave(s);
+          sink.onEnd();
+        }
+      } catch (err) {
+        log.warn(`[chat] session ${s.id}: could not resume turn ${turnId}: ${err instanceof Error ? err.message : String(err)}`);
+      } finally {
+        if (following?.ctl === ctl) following = undefined;
+        resumedProc = undefined;
+      }
+    })();
+  }
+
   /**
    * Ends the live turn: drops a turn waiting for its lease, returns the iterator, cancels the
    * provider's turn and stops the newest CLI process. Resolves once the process has exited (or
@@ -293,9 +370,19 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     }
   };
 
+  const stop = async (): Promise<void> => {
+    following?.ctl.abort();
+    const resumed = resumedProc;
+    resumedProc = undefined;
+    await stopLive();
+    if (resumed !== undefined) await resumed.stop().catch(() => {});
+  };
+
   const detach = async (): Promise<void> => {
     waitCtl?.abort();
     waitCtl = undefined;
+    following?.ctl.abort(); // a resumed turn: its process is not ours to stop here
+    resumedProc = undefined;
     const detachThis = detachLive;
     if (detachThis !== undefined && liveProc?.cursor !== undefined) {
       detachLive = undefined;
@@ -309,7 +396,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
 
   return {
     start,
-    stop: stopLive,
+    follow,
+    stop,
     detach,
     invalidate(): void {
       ++generation;

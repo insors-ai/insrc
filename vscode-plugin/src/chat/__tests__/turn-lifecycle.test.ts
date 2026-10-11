@@ -8,9 +8,9 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTurnLifecycle, CURSOR_SAVE_MS, type TurnLifecycle, type TurnSink } from '../turn-lifecycle.js';
+import { createTurnLifecycle, CURSOR_SAVE_MS, type FollowSink, type TurnLifecycle, type TurnSink } from '../turn-lifecycle.js';
 import { createMemorySessionLocks, type SessionLocks } from '../session-lock.js';
-import type { ProviderRegistry, RunOptions, StreamAdapter, TurnProcess, TurnRequest } from '../cli-adapter.js';
+import type { ProviderRegistry, ResumeRequest, RunOptions, StreamAdapter, TurnProcess, TurnRequest } from '../cli-adapter.js';
 import type { ChatSession, LiveTurn } from '../session-store.js';
 import type { TurnEvent } from '../stream-events.js';
 import { fakeLiveProc, tick, waitFor, type FakeLiveProc } from './fixtures.js';
@@ -47,6 +47,11 @@ function feed(): Feed {
 }
 
 type Proc = FakeLiveProc & { cursor?: TurnProcess['cursor'] };
+interface Resume {
+  readonly req: ResumeRequest;
+  readonly proc: Proc;
+  readonly feed: Feed;
+}
 interface Run {
   readonly turnId: string;
   readonly proc: Proc;
@@ -58,13 +63,15 @@ interface Run {
  * Each run starts a fake CLI process (with a session-file cursor unless `pipe`), then yields what
  * the test feeds; the turn's output ends when its process exits.
  */
-function scriptedAdapter(opts: { pipe?: boolean; noSpawn?: boolean; cancelThrows?: boolean; stopThrows?: boolean } = {}): {
+function scriptedAdapter(opts: { pipe?: boolean; noSpawn?: boolean; cancelThrows?: boolean; stopThrows?: boolean; resumeThrows?: boolean } = {}): {
   adapter: StreamAdapter;
   runs: Run[];
   cancels: string[];
+  resumes: Resume[];
 } {
   const runs: Run[] = [];
   const cancels: string[] = [];
+  const resumes: Resume[] = [];
   const adapter: StreamAdapter = {
     async *run(req: TurnRequest, o?: RunOptions): AsyncIterable<TurnEvent> {
       const turnId = `t${runs.length + 1}`;
@@ -89,7 +96,23 @@ function scriptedAdapter(opts: { pipe?: boolean; noSpawn?: boolean; cancelThrows
         o?.onProgress?.({ sessionId: o.sessionId ?? '', turnId, generation: 1, offset });
       }
     },
-    async *resume(): AsyncIterable<TurnEvent> {},
+    async *resume(req, o): AsyncIterable<TurnEvent> {
+      if (opts.resumeThrows === true) throw new Error('segment unreadable');
+      const proc: Proc = fakeLiveProc(2000 + resumes.length + 1);
+      const f = feed();
+      void proc.exit.then(() => f.end());
+      o?.signal?.addEventListener('abort', () => f.end());
+      resumes.push({ req, proc, feed: f });
+      o?.onAttach?.(proc);
+      let offset = req.cursor.offset;
+      for (;;) {
+        const r = await f.next();
+        if (r.done === true) return;
+        yield r.value;
+        offset += 10;
+        o?.onProgress?.({ ...req.cursor, offset });
+      }
+    },
     cancel: async (turnId) => {
       cancels.push(turnId);
       if (opts.cancelThrows === true) throw new Error('provider gone');
@@ -97,7 +120,7 @@ function scriptedAdapter(opts: { pipe?: boolean; noSpawn?: boolean; cancelThrows
     decide: () => {},
     capabilities: { resume: true },
   };
-  return { adapter, runs, cancels };
+  return { adapter, runs, cancels, resumes };
 }
 
 function registry(adapter: StreamAdapter): ProviderRegistry {
@@ -127,7 +150,7 @@ interface Harness {
   readonly saves: Array<LiveTurn | undefined>;
   open: boolean;
 }
-function harness(o: { providers: ProviderRegistry; locks?: SessionLocks }): Harness {
+function harness(o: { providers: ProviderRegistry; locks?: SessionLocks; isAlive?: (pid: number) => boolean; warnings?: string[] }): Harness {
   const saves: Array<LiveTurn | undefined> = [];
   const h: Harness = {
     open: true,
@@ -142,9 +165,9 @@ function harness(o: { providers: ProviderRegistry; locks?: SessionLocks }): Harn
     lockTimeoutMs: () => 60_000,
     hostPid: 7,
     processStartTime: (pid) => pid + 1,
-    isAlive: () => true,
+    isAlive: o.isAlive ?? (() => true),
     isOpen: () => h.open,
-    logger: { warn: () => {}, error: () => {} },
+    logger: { warn: (m) => void o.warnings?.push(m), error: () => {} },
   });
   return h;
 }
@@ -495,4 +518,151 @@ test('stop continues past a failing cancel or process stop', async () => {
   assert.equal(h.lc.live, undefined);
   runs[0]!.proc.exitNow();
   await p;
+});
+
+/** A follow sink recording events, and the session's cursor as it was at onEnd. */
+function followSink(h: Harness): { sink: FollowSink; calls: string[]; cursorAtEnd: Array<LiveTurn | undefined> } {
+  const calls: string[] = [];
+  const cursorAtEnd: Array<LiveTurn | undefined> = [];
+  return {
+    calls,
+    cursorAtEnd,
+    sink: {
+      onEvent: (ev) => calls.push(`event:${ev.kind}`),
+      onEnd: () => {
+        calls.push('end');
+        cursorAtEnd.push(h.session.liveTurn);
+      },
+    },
+  };
+}
+const savedTurn = (ownerHostPid: number): LiveTurn => ({ cursor: { turnId: 'old', generation: 2, offset: 100 }, ownerHostPid, pid: 900, startedAt: 5 });
+
+test('follow skips a running turn, a turn already followed and a turn owned by a live host', async () => {
+  // No saved turn.
+  const none = scriptedAdapter();
+  const h0 = harness({ providers: registry(none.adapter) });
+  h0.lc.follow(h0.session, followSink(h0).sink);
+  // Owned by another extension host that is still alive.
+  const other = scriptedAdapter();
+  const h1 = harness({ providers: registry(other.adapter), isAlive: (pid) => pid === 99 });
+  h1.session.liveTurn = savedTurn(99);
+  h1.lc.follow(h1.session, followSink(h1).sink);
+  await tick(10);
+  assert.equal(none.resumes.length, 0, 'no saved turn: nothing to follow');
+  assert.equal(other.resumes.length, 0, "another live window's turn is not followed");
+  assert.equal(h1.session.liveTurn?.ownerHostPid, 99, 'ownership is not taken from a live host');
+
+  // Already followed: a second follow of the same session does not resume it again.
+  const twice = scriptedAdapter();
+  const h2 = harness({ providers: registry(twice.adapter), isAlive: () => false });
+  h2.session.liveTurn = savedTurn(99);
+  h2.lc.follow(h2.session, followSink(h2).sink);
+  h2.lc.follow(h2.session, followSink(h2).sink);
+  await waitFor(() => twice.resumes.length === 1);
+  await tick(10);
+  assert.equal(twice.resumes.length, 1, 'a session already followed is not followed twice');
+  await h2.lc.stop();
+
+  // A turn this host is running live is read by start, not followed.
+  const live = scriptedAdapter();
+  const h3 = harness({ providers: registry(live.adapter) });
+  const p = h3.lc.start(h3.session, REQ, recSink().sink);
+  await waitFor(() => live.runs.length === 1);
+  assert.equal(h3.session.liveTurn?.cursor.turnId, 't1');
+  h3.lc.follow(h3.session, followSink(h3).sink);
+  await tick(10);
+  assert.equal(live.resumes.length, 0, 'a turn running in this host is not followed');
+  live.runs[0]!.feed.push(done('t1'));
+  await p;
+  live.runs[0]!.proc.exitNow();
+});
+
+test('follow takes ownership from a dead host, reports every event, clears the cursor and calls onEnd', async () => {
+  const { adapter, resumes } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter), isAlive: () => false });
+  h.session.liveTurn = savedTurn(99);
+  const f = followSink(h);
+  h.lc.follow(h.session, f.sink);
+  await waitFor(() => resumes.length === 1);
+  assert.deepEqual(resumes[0]!.req, { cursor: { sessionId: 'sess-1', turnId: 'old', generation: 2, offset: 100 }, pid: 900, startedAt: 5 }, 'resumed from the saved cursor');
+  assert.equal(h.saves[0]?.ownerHostPid, 7, 'ownership is taken (and saved) before reading');
+
+  resumes[0]!.feed.push(delta('old'));
+  resumes[0]!.feed.push(delta('old'));
+  resumes[0]!.feed.push(done('old', 'native-3'));
+  await waitFor(() => f.calls.includes('end'));
+  assert.deepEqual(f.calls, ['event:assistant-delta', 'event:assistant-delta', 'event:done', 'end']);
+  assert.deepEqual(f.cursorAtEnd, [undefined], 'the cursor is cleared before onEnd');
+  assert.equal(h.saves.at(-1), undefined, 'and the cleared session saved');
+  assert.equal(h.session.nativeSessionId, 'native-3');
+});
+
+test('a failing resume keeps the cursor saved', async () => {
+  const warnings: string[] = [];
+  const { adapter } = scriptedAdapter({ resumeThrows: true });
+  const h = harness({ providers: registry(adapter), isAlive: () => false, warnings });
+  h.session.liveTurn = savedTurn(99);
+  const f = followSink(h);
+  h.lc.follow(h.session, f.sink);
+  await waitFor(() => warnings.length === 1);
+  assert.match(warnings[0]!, /could not resume turn old: segment unreadable/);
+  assert.equal(h.session.liveTurn?.cursor.turnId, 'old', 'the cursor stays saved');
+  assert.deepEqual(f.calls, [], 'onEnd is not called');
+  // Following has been released: a later follow tries again.
+  h.lc.follow(h.session, f.sink);
+  await waitFor(() => warnings.length === 2);
+});
+
+test("stop ends a followed turn's process; detach leaves it running", async () => {
+  const { adapter, resumes } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter), isAlive: () => false });
+  h.session.liveTurn = savedTurn(99);
+  const f = followSink(h);
+  h.lc.follow(h.session, f.sink);
+  await waitFor(() => resumes.length === 1);
+  await h.lc.stop();
+  assert.deepEqual(resumes[0]!.proc.signals, ['SIGTERM'], "Stop ends the followed turn's process");
+  assert.equal(resumes[0]!.proc.exited(), true);
+  await tick(10);
+  assert.deepEqual(f.calls, [], 'a stopped follow does not end the turn');
+
+  const d = scriptedAdapter();
+  const h2 = harness({ providers: registry(d.adapter), isAlive: () => false });
+  h2.session.liveTurn = savedTurn(99);
+  const g = followSink(h2);
+  h2.lc.follow(h2.session, g.sink);
+  await waitFor(() => d.resumes.length === 1);
+  await h2.lc.detach();
+  await tick(10);
+  assert.deepEqual(d.resumes[0]!.proc.signals, [], 'detach leaves the followed process running');
+  assert.deepEqual(g.calls, [], 'and does not end the turn');
+  assert.equal(h2.session.liveTurn?.cursor.turnId, 'old', 'its cursor stays saved');
+  h2.lc.follow(h2.session, g.sink);
+  await waitFor(() => d.resumes.length === 2);
+  d.resumes[1]!.proc.exitNow();
+  d.resumes[0]!.proc.exitNow();
+});
+
+test('a detached session-file turn is resumed by follow', async () => {
+  const { adapter, runs, resumes } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter) });
+  const p = h.lc.start(h.session, REQ, recSink().sink);
+  await waitFor(() => runs.length === 1);
+  runs[0]!.feed.push(delta('t1'));
+  await waitFor(() => h.lc.live !== undefined);
+  await h.lc.detach();
+  runs[0]!.feed.push(delta('t1'));
+  await p;
+
+  const f = followSink(h);
+  h.lc.follow(h.session, f.sink);
+  await waitFor(() => resumes.length === 1);
+  assert.deepEqual(resumes[0]!.req.cursor, { sessionId: 'sess-1', turnId: 't1', generation: 1, offset: 10 }, 'followed from where the detach left it');
+  assert.equal(resumes[0]!.req.pid, 1001, "the turn's own process");
+  resumes[0]!.feed.push(done('t1'));
+  await waitFor(() => f.calls.includes('end'));
+  assert.equal(h.session.liveTurn, undefined);
+  runs[0]!.proc.exitNow();
+  resumes[0]!.proc.exitNow();
 });

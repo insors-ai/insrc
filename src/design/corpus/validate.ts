@@ -1,4 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { types as utilTypes } from 'node:util';
 import { canonicalJson, CorpusInputError, recordContentDigest, CORPUS_LIMITS, hashBytes, candidateContentDigest, reviewContentDigest, releaseContentDigest } from './canonical.js';
 import { decodeGuidanceRecord, decodeReleaseManifest, decodeStageAssessments, sortIssues } from './contracts.js';
 import type { GuidanceRecord, ReleaseManifest, PublicationCheck, ValidationIssue, ValidationResult } from './contracts.js';
@@ -13,7 +14,7 @@ const failure = <T>(issues: readonly ValidationIssue[]): ValidationResult<T> => 
 const inputIssue = (error: unknown): ValidationIssue => error instanceof CorpusInputError
   ? issue(error.code, error.path, error.message) : issue('schema.invalid', '', 'Expected bounded JSON data.');
 export function isPortablePath(path: string): boolean {
-  return path.length > 0 && !/[\\%:\x00-\x1f\x7f]/.test(path)
+  return path.length > 0 && !/[\\%:\x00-\x1f\x7f-\x9f]/.test(path)
     && path.split('/').every(segment => segment !== '' && segment !== '.' && segment !== '..');
 }
 const pathCollisionKey = (path: string): string => path.normalize('NFC').toLowerCase();
@@ -25,8 +26,9 @@ function utcDate(value: string): boolean {
 /** Validate JSON safety, closed schema, then semantic invariants without changing authored values. */
 export function validateGuidanceRecord(input: unknown, options: RecordValidationOptions = { mode: 'draft' }): ValidationResult<GuidanceRecord> {
   // Inspect descriptors before AJV can read properties. This also bounds traversal and hashing.
-  try { canonicalJson(input); } catch (error) { return failure([inputIssue(error)]); }
-  const decoded = decodeGuidanceRecord(input);
+  let snapshot: unknown;
+  try { snapshot = JSON.parse(canonicalJson(input)); } catch (error) { return failure([inputIssue(error)]); }
+  const decoded = decodeGuidanceRecord(snapshot);
   if (!decoded.ok) return decoded;
   const record = decoded.value;
   const issues: ValidationIssue[] = [];
@@ -104,6 +106,7 @@ export interface ValidatedRelease {
   readonly candidateContentDigest: string;
   readonly manifestDigest: string;
 }
+const typedArrayByteLength = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(Uint8Array.prototype), 'byteLength')!.get!;
 function parsedBytes(bytes: Uint8Array, maxBytes: number): unknown {
   if (bytes.byteLength > maxBytes) throw new CorpusInputError('limit.exceeded', '', 'JSON bytes exceed the format limit.');
   const value: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes));
@@ -121,9 +124,12 @@ function dataProperties(value: unknown, allowed: readonly string[]): Record<stri
 export function validateRelease(input: unknown): ValidationResult<ValidatedRelease> {
   const candidate = dataProperties(input, ['manifest', 'files', 'manifestPath']);
   if (!candidate) return failure([issue('schema.invalid', '', 'Expected a release candidate with data properties.')]);
-  const manifestInput: unknown = candidate['manifest']?.value;
+  let manifestInput: unknown = candidate['manifest']?.value;
   let manifestBytes: number;
-  try { manifestBytes = Buffer.byteLength(canonicalJson(manifestInput, CORPUS_LIMITS.packageBytes)); }
+  try {
+    const json = canonicalJson(manifestInput, CORPUS_LIMITS.packageBytes);
+    manifestBytes = Buffer.byteLength(json); manifestInput = JSON.parse(json);
+  }
   catch (error) { const problem = inputIssue(error); return failure([{ ...problem, path: '/manifest' + problem.path }]); }
   const decoded = decodeReleaseManifest(manifestInput);
   if (!decoded.ok) return failure(decoded.issues.map(problem => ({ ...problem, path: '/manifest' + problem.path })));
@@ -152,17 +158,24 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
     const path: unknown = entry?.['path']?.value;
     const kind: unknown = entry?.['kind']?.value;
     const bytes: unknown = entry?.['bytes']?.value;
-    if (!entry || typeof path !== 'string' || !(bytes instanceof Uint8Array)) {
+    if (!entry || typeof path !== 'string' || !utilTypes.isUint8Array(bytes)) {
       add('inventory.invalid', `/files/${i}`, 'Expected a path, file kind and byte buffer.'); continue;
     }
     if (!isPortablePath(path)) add('path.invalid', `/files/${i}/path`, 'Expected a portable package-relative path.');
     if (kind !== 'regular') add('inventory.invalid', `/files/${i}/kind`, 'Only regular files are admitted.');
     if (files.has(path) || folded.has(pathCollisionKey(path))) add('inventory.invalid', `/files/${i}/path`, 'Inventory paths must be unique without case collisions.');
     if (typeof manifestPath === 'string' && pathCollisionKey(path) === pathCollisionKey(manifestPath)) add('inventory.invalid', `/files/${i}/path`, 'Manifest must not appear in its own data inventory.');
-    totalBytes += bytes.byteLength;
+    // Read the intrinsic length and copy native bytes, without invoking user properties.
+    let copy: Uint8Array;
+    try {
+      const byteLength = typedArrayByteLength.call(bytes) as number;
+      totalBytes += byteLength;
+      if (totalBytes > CORPUS_LIMITS.packageBytes) return failure([...issues, issue('limit.exceeded', '/files', 'Package bytes exceed the format limit.')]);
+      copy = new Uint8Array(byteLength); copy.set(bytes);
+    } catch { add('inventory.invalid', `/files/${i}/bytes`, 'Expected readable native byte data.'); continue; }
     if (totalBytes > CORPUS_LIMITS.packageBytes) return failure([...issues, issue('limit.exceeded', '/files', 'Package bytes exceed the format limit.')]);
     folded.add(pathCollisionKey(path)); fileIndices.set(path, i);
-    files.set(path, { path, kind: 'regular', bytes });
+    files.set(path, { path, kind: 'regular', bytes: copy });
   }
   const listed = new Set<string>(); const listedFolded = new Set<string>();
   const fileDigests = new Map<string, string>();
@@ -309,20 +322,21 @@ export function checkPublication(candidate: unknown, assessments: unknown): Publ
       }
     } catch { /* Invalid JSON has no computable format identity. Keep the diagnostic from validateRelease. */ }
   }
-  try { canonicalJson(assessments, CORPUS_LIMITS.packageBytes); }
+  let assessmentSnapshot: unknown;
+  try { assessmentSnapshot = JSON.parse(canonicalJson(assessments, CORPUS_LIMITS.packageBytes)); }
   catch (error) {
     const problem = inputIssue(error);
     issues.push({ ...problem, path: '/assessments' + problem.path });
     return { eligible: false, manifestDigest, issues: sortIssues(issues) };
   }
-  const decoded = decodeStageAssessments(assessments);
+  const decoded = decodeStageAssessments(assessmentSnapshot);
   if (!decoded.ok) {
     issues.push(...decoded.issues.map(problem => ({ ...problem, path: '/assessments' + problem.path })));
     return { eligible: false, manifestDigest, issues: sortIssues(issues) };
   }
   for (const stage of ['eligibility', 'coverage'] as const) {
     const matches = decoded.value.filter(assessment => assessment.stage === stage);
-    if (matches.length !== 1) issues.push(issue('assessment.missing', '/assessments', 'Exactly one assessment is required for each stage.'));
+    if (matches.length !== 1) issues.push(issue('assessment.missing', '/assessments', `Exactly one ${stage} assessment is required.`));
   }
   decoded.value.forEach((assessment, i) => {
     if (!contentDigest || assessment.candidateContentDigest !== contentDigest) issues.push(issue('assessment.stale', `/assessments/${i}/candidateContentDigest`, 'Assessment does not bind this exact candidate.'));

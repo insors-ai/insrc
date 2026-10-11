@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { canonicalJson, hashCanonical, hashBytes, CorpusInputError } from '../canonical.js';
+import { canonicalJson, hashCanonical, hashBytes, CorpusInputError, CORPUS_LIMITS } from '../canonical.js';
 
 test('canonical golden bytes and SHA256 match independent vectors', () => {
   assert.equal(canonicalJson({ z: -0, a: [true, null, 'é'] }), '{"a":[true,null,"é"],"z":0}');
@@ -28,4 +28,10 @@ test('canonical depth and byte limits fail explicitly', () => {
   let deep: unknown = 0; for (let i = 0; i < 66; i++) deep = [deep];
   assert.throws(() => canonicalJson(deep), /limit/);
   assert.throws(() => canonicalJson('x'.repeat(1024 * 1024)), /limit/);
+});
+
+test('canonical limits reject invalid caller configuration', () => {
+  for (const maxBytes of [0, -1, 1.5, NaN, Infinity, CORPUS_LIMITS.packageBytes + 1]) {
+    assert.throws(() => canonicalJson({}, maxBytes));
+  }
 });

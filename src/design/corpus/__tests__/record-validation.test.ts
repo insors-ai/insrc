@@ -53,3 +53,15 @@ test('conditional domain payloads compose and color references must resolve', ()
   assert.equal(validate(sealRecord({ ...all, domainPayload: { ...all.domainPayload, color: { ...color, roles: [color.roles[0]!, color.roles[0]!] } } })).ok, false);
   assert.equal(validate(sealRecord({ ...all, domainPayload: { ...all.domainPayload, color: { ...color, pairings: [{ foregroundRole: 'missing', backgroundRole: 'paper', usage: 'Test' }] } } })).ok, false);
 });
+
+test('record validation uses an independent descriptor snapshot and checks reviewed drafts', () => {
+  const record = sealRecord(recordFixture()); let reads = 0;
+  const proxy = new Proxy(record, { get() { reads++; throw new Error('Live read'); } });
+  const result = validate(proxy); assert.equal(result.ok, true); assert.equal(reads, 0);
+  assert.equal(validateGuidanceRecord(record, { mode: 'draft', contentPaths: new Set() }).ok, false);
+  assert.equal(validateGuidanceRecord({ ...record, review: { ...record.review, reviewer: '' } }, { mode: 'draft' }).ok, false);
+  if (result.ok) {
+    record.examples[0]!.contentRef = 'changed-after-validation.json';
+    assert.notEqual(result.value.examples[0]!.contentRef, record.examples[0]!.contentRef);
+  }
+});

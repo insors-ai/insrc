@@ -102,3 +102,17 @@ test('coverage decode errors and Unicode-equivalent inventory paths are rejected
     { path: 'examples/e\u0301.json', kind: 'regular', bytes: bytes({}) },
   ] }, 'inventory.invalid');
 });
+
+test('release validation snapshots manifest and bytes and rejects C1 controls', () => {
+  const candidate = packageFixture(); let reads = 0;
+  const proxy = new Proxy(candidate.manifest, { get() { reads++; throw new Error('Live manifest read'); } });
+  const bytes = candidate.files[0]!.bytes;
+  Object.defineProperty(bytes, 'byteLength', { get() { reads++; throw new Error('Custom byte length'); } });
+  const result = validateRelease({ ...candidate, manifest: proxy });
+  assert.equal(result.ok, true); assert.equal(reads, 0);
+  if (result.ok) {
+    candidate.manifest.records[0]!.path = 'mutated.json';
+    assert.notEqual(result.value.manifest.records[0]!.path, candidate.manifest.records[0]!.path);
+  }
+  assert.equal(isPortablePath('examples/\u0085.json'), false);
+});

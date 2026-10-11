@@ -29,8 +29,12 @@ import type { DimensionFinding } from '../../code-review/types.js';
 
 /** One component (module/box) in the dependency graph. */
 export interface Component {
-	readonly id:     string;
-	readonly label?: string | undefined;
+	readonly id:           string;
+	readonly label?:       string | undefined;
+	/** What this component is responsible for is, shown in the companion page's description table. Optional. */
+	readonly description?: string | undefined;
+	/** The repo path the component lives at, shown beside it in the description table. Optional. */
+	readonly path?:        string | undefined;
 }
 
 /** One directed dependency edge (`from` depends on `to`). */
@@ -44,6 +48,8 @@ export interface ComponentDependency {
  *  component-dependency companion. */
 export interface ComponentDependencyDefinition {
 	readonly id?:           string | undefined;
+	/** A short narrative of what this visual shows, rendered above it on the companion page. Optional: a missing one is a LOW completeness finding at code review. */
+	readonly narrative?:    string | undefined;
 	readonly components:    readonly Component[];
 	readonly dependencies:  readonly ComponentDependency[];
 }

@@ -38,18 +38,24 @@ export interface UxTextBlock {
 	readonly color?:    'default' | 'dark' | 'light' | 'accent' | 'good' | 'warning' | 'attention' | undefined;
 	readonly wrap?:     boolean | undefined;
 	readonly isSubtle?: boolean | undefined;
+	/** What this element is for, shown in the companion page's key-elements table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** A Container element — a vertical group of child elements. */
 export interface UxContainer {
 	readonly type:  'Container';
 	readonly items: readonly UxElement[];
+	/** What this element is for, shown in the companion page's key-elements table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** A ColumnSet element — a horizontal row of Columns. */
 export interface UxColumnSet {
 	readonly type:    'ColumnSet';
 	readonly columns: readonly UxColumn[];
+	/** What this element is for, shown in the companion page's key-elements table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** A Column element — a vertical group inside a ColumnSet. */
@@ -57,6 +63,8 @@ export interface UxColumn {
 	readonly type:   'Column';
 	readonly items:  readonly UxElement[];
 	readonly width?: string | number | undefined;
+	/** What this element is for, shown in the companion page's key-elements table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** An Image element. */
@@ -65,6 +73,8 @@ export interface UxImage {
 	readonly url:      string;
 	readonly altText?: string | undefined;
 	readonly size?:    'auto' | 'stretch' | 'small' | 'medium' | 'large' | undefined;
+	/** What this element is for, shown in the companion page's key-elements table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** A single-line/multi-line text input. */
@@ -74,6 +84,8 @@ export interface UxInputText {
 	readonly label?:       string | undefined;
 	readonly placeholder?: string | undefined;
 	readonly isMultiline?: boolean | undefined;
+	/** What this element is for, shown in the companion page's key-elements table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** One choice of an Input.ChoiceSet. */
@@ -89,6 +101,8 @@ export interface UxInputChoiceSet {
 	readonly label?:         string | undefined;
 	readonly isMultiSelect?: boolean | undefined;
 	readonly choices:        readonly UxChoice[];
+	/** What this element is for, shown in the companion page's key-elements table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** A submit or open-url action. */
@@ -96,12 +110,16 @@ export interface UxAction {
 	readonly type:  'Action.Submit' | 'Action.OpenUrl';
 	readonly title: string;
 	readonly url?:  string | undefined;
+	/** What this action does, shown in the companion page's key-elements table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** An action set — a row of actions. */
 export interface UxActionSet {
 	readonly type:    'ActionSet';
 	readonly actions: readonly UxAction[];
+	/** What this element is for, shown in the companion page's key-elements table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** One card element — the discriminated union of the supported element types. */
@@ -117,9 +135,11 @@ export type UxElement =
 
 /** The authored UX design — the source of truth for the UX mock companion. */
 export interface UxDefinition {
-	readonly type:     'AdaptiveCard';
-	readonly version?: string | undefined;
-	readonly body:     readonly UxElement[];
+	readonly type:       'AdaptiveCard';
+	readonly version?:   string | undefined;
+	/** A short narrative of what this visual shows, rendered above it on the companion page. Optional: a missing one is a LOW completeness finding at code review. */
+	readonly narrative?: string | undefined;
+	readonly body:       readonly UxElement[];
 }
 
 /** Thrown when the vendored Adaptive Cards schema asset is unloadable/malformed — a

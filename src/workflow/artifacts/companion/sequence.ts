@@ -30,8 +30,10 @@ import type { DimensionFinding } from '../../code-review/types.js';
 
 /** One participant (actor) in the sequence. */
 export interface SequenceParticipant {
-	readonly id:     string;
-	readonly label?: string | undefined;
+	readonly id:           string;
+	readonly label?:       string | undefined;
+	/** What this participant is is, shown in the companion page's description table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** One ordered message (call) between two participants. */
@@ -42,6 +44,8 @@ export interface SequenceMessage {
 	/** 'recurse' marks a self/cycle repeat (rendered as a recursion note). */
 	readonly kind?: 'call' | 'return' | 'recurse' | undefined;
 	readonly note?: string | undefined;
+	/** What this step does is, shown in the companion page's description table. Optional. */
+	readonly description?: string | undefined;
 }
 
 /** A "depth truncated here" marker attached to a participant. */
@@ -53,6 +57,8 @@ export interface SequenceTruncation {
 /** The authored sequence (behaviour) — the source of truth for the sequence companion. */
 export interface SequenceDefinition {
 	readonly id?:           string | undefined;
+	/** A short narrative of what this visual shows, rendered above it on the companion page. Optional: a missing one is a LOW completeness finding at code review. */
+	readonly narrative?:    string | undefined;
 	readonly participants:  readonly SequenceParticipant[];
 	readonly messages:      readonly SequenceMessage[];
 	readonly truncations?:  readonly SequenceTruncation[] | undefined;

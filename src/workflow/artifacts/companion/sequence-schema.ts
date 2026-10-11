@@ -25,7 +25,8 @@ export const SEQUENCE_DEFINITION_PROPERTY_SCHEMA: Record<string, unknown> = {
 	required: ['participants', 'messages'],
 	additionalProperties: false,
 	properties: {
-		id: { type: 'string' },
+		id:        { type: 'string' },
+		narrative: { type: 'string' },
 		participants: {
 			type: 'array',
 			items: {
@@ -33,8 +34,9 @@ export const SEQUENCE_DEFINITION_PROPERTY_SCHEMA: Record<string, unknown> = {
 				required: ['id'],
 				additionalProperties: false,
 				properties: {
-					id:    { type: 'string' },
-					label: { type: 'string' },
+					id:          { type: 'string' },
+					label:       { type: 'string' },
+					description: { type: 'string' },
 				},
 			},
 		},
@@ -50,6 +52,7 @@ export const SEQUENCE_DEFINITION_PROPERTY_SCHEMA: Record<string, unknown> = {
 					label: { type: 'string' },
 					kind:  { enum: ['call', 'return', 'recurse'] },
 					note:  { type: 'string' },
+					description: { type: 'string' },
 				},
 			},
 		},
@@ -70,4 +73,4 @@ export const SEQUENCE_DEFINITION_PROPERTY_SCHEMA: Record<string, unknown> = {
 
 /** The content-gate HARD RULE the HLD + LLD synthesizers share for the sequence element. */
 export const SEQUENCE_CONTENT_GATE_RULE =
-	'- CONTENT-GATE — author a `sequenceDefinition` (ordered `participants` + `messages`) ONLY when a behaviour / call-flow diagram would materially aid understanding of THIS document; omit it entirely otherwise. It is the SOURCE OF TRUTH; a sequence-diagram companion is generated from it deterministically. Do NOT author `companions` — the framework renders + attaches those.';
+	'- CONTENT-GATE — author a `sequenceDefinition` (ordered `participants` + `messages`) ONLY when a behaviour / call-flow diagram would materially aid understanding of THIS document; omit it entirely otherwise. It is the SOURCE OF TRUTH; a sequence-diagram companion is generated from it deterministically. Do NOT author `companions` — the framework renders + attaches those. Give it a `narrative` (one or two sentences on what the visual shows and why) and a `description` on every participant and message; both are optional, but a missing one is flagged at code review.';

@@ -32,6 +32,8 @@ import { loadLinkmlMetamodelSchema } from './metamodel.js';
 
 /** One slot of an ER class — a LinkML SlotDefinition subset. */
 export interface ErSlot {
+	/** What this slot holds is, shown in the companion page's description table. Optional. */
+	readonly description?:         string | undefined;
 	/** The slot type: a scalar type name (attribute) or a class name (relationship). */
 	readonly range?:               string | undefined;
 	readonly required?:            boolean | undefined;
@@ -44,13 +46,17 @@ export interface ErSlot {
 
 /** One ER class (entity) — a LinkML ClassDefinition subset. */
 export interface ErClass {
+	/** What this entity represents is, shown in the companion page's description table. Optional. */
+	readonly description?: string | undefined;
 	readonly attributes?: Record<string, ErSlot> | undefined;
 }
 
 /** The authored ER data model — the source of truth for the ER companion. */
 export interface ErDefinition {
-	readonly id?:      string | undefined;
-	readonly classes:  Record<string, ErClass>;
+	readonly id?:        string | undefined;
+	/** A short narrative of what this visual shows, rendered above it on the companion page. Optional: a missing one is a LOW completeness finding at code review. */
+	readonly narrative?: string | undefined;
+	readonly classes:    Record<string, ErClass>;
 }
 
 /** Thrown by erDefinitionToIr when a class-ranged slot names a class absent from

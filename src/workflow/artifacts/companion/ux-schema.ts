@@ -27,7 +27,8 @@ export const UX_DEFINITION_PROPERTY_SCHEMA: Record<string, unknown> = {
 	additionalProperties: false,
 	properties: {
 		type:    { const: 'AdaptiveCard' },
-		version: { type: 'string' },
+		version:   { type: 'string' },
+		narrative: { type: 'string' },
 		body: {
 			type: 'array',
 			items: { type: 'object' },
@@ -37,4 +38,4 @@ export const UX_DEFINITION_PROPERTY_SCHEMA: Record<string, unknown> = {
 
 /** The content-gate HARD RULE the HLD + LLD synthesizers share for the UX element. */
 export const UX_CONTENT_GATE_RULE =
-	'- CONTENT-GATE — author a `uxDefinition` (an Adaptive Cards card subset) ONLY when THIS document designs a user-facing experience whose intended layout would materially aid understanding; omit it entirely otherwise. It is the SOURCE OF TRUTH; a UX mock companion is generated from it deterministically. Do NOT author `companions` — the framework renders + attaches those.';
+	'- CONTENT-GATE — author a `uxDefinition` (an Adaptive Cards card subset) ONLY when THIS document designs a user-facing experience whose intended layout would materially aid understanding; omit it entirely otherwise. It is the SOURCE OF TRUTH; a UX mock companion is generated from it deterministically. Do NOT author `companions` — the framework renders + attaches those. Give it a `narrative` (one or two sentences on what the visual shows and why) and a `description` on every element and action; both are optional, but a missing one is flagged at code review.';

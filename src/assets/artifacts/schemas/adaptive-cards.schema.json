@@ -13,6 +13,10 @@
       "type": "string",
       "description": "Optional Adaptive Cards schema version (e.g. '1.5')."
     },
+    "narrative": {
+      "type": "string",
+      "description": "insrc extension (not Adaptive Cards): a short narrative of what the screen is for, shown above the mock on the companion page."
+    },
     "body": {
       "type": "array",
       "description": "The ordered card elements.",
@@ -39,6 +43,7 @@
       "required": ["type", "text"],
       "properties": {
         "type": { "const": "TextBlock" },
+        "description": { "type": "string" },
         "text": { "type": "string" },
         "weight": { "type": "string", "enum": ["lighter", "default", "bolder"] },
         "size": { "type": "string", "enum": ["small", "default", "medium", "large", "extraLarge"] },
@@ -53,6 +58,7 @@
       "required": ["type", "items"],
       "properties": {
         "type": { "const": "Container" },
+        "description": { "type": "string" },
         "items": { "type": "array", "items": { "$ref": "#/$defs/Element" } }
       }
     },
@@ -62,6 +68,7 @@
       "required": ["type", "columns"],
       "properties": {
         "type": { "const": "ColumnSet" },
+        "description": { "type": "string" },
         "columns": { "type": "array", "items": { "$ref": "#/$defs/Column" } }
       }
     },
@@ -71,6 +78,7 @@
       "required": ["type", "items"],
       "properties": {
         "type": { "const": "Column" },
+        "description": { "type": "string" },
         "items": { "type": "array", "items": { "$ref": "#/$defs/Element" } },
         "width": { "type": ["string", "integer"] }
       }
@@ -81,6 +89,7 @@
       "required": ["type", "url"],
       "properties": {
         "type": { "const": "Image" },
+        "description": { "type": "string" },
         "url": { "type": "string" },
         "altText": { "type": "string" },
         "size": { "type": "string", "enum": ["auto", "stretch", "small", "medium", "large"] }
@@ -92,6 +101,7 @@
       "required": ["type", "id"],
       "properties": {
         "type": { "const": "Input.Text" },
+        "description": { "type": "string" },
         "id": { "type": "string" },
         "label": { "type": "string" },
         "placeholder": { "type": "string" },
@@ -104,6 +114,7 @@
       "required": ["type", "id", "choices"],
       "properties": {
         "type": { "const": "Input.ChoiceSet" },
+        "description": { "type": "string" },
         "id": { "type": "string" },
         "label": { "type": "string" },
         "isMultiSelect": { "type": "boolean" },
@@ -128,6 +139,7 @@
       "required": ["type", "actions"],
       "properties": {
         "type": { "const": "ActionSet" },
+        "description": { "type": "string" },
         "actions": { "type": "array", "items": { "$ref": "#/$defs/Action" } }
       }
     },
@@ -140,6 +152,7 @@
           "required": ["type", "title"],
           "properties": {
             "type": { "const": "Action.Submit" },
+            "description": { "type": "string" },
             "title": { "type": "string" }
           }
         },
@@ -149,6 +162,7 @@
           "required": ["type", "title", "url"],
           "properties": {
             "type": { "const": "Action.OpenUrl" },
+            "description": { "type": "string" },
             "title": { "type": "string" },
             "url": { "type": "string" }
           }

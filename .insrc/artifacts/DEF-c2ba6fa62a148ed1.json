@@ -988,7 +988,7 @@
       {
         "id": "s5",
         "title": "Reads of the index's state give a named, truthful answer (ISSUE-a6940f8a, ISSUE-e2bcadd9)",
-        "userValue": "A request about code the index does not hold is refused for that reason, and never looks like a very large request or an unexplained internal error.",
+        "userValue": "A request about code the index does not hold is refused for that reason, and never looks like a very large request or an unexplained internal error, and a request made while the repository is being indexed is told so instead of being answered from a half-built index.",
         "sizeEstimate": "M",
         "localConstraints": [
           {
@@ -1007,6 +1007,9 @@
           },
           {
             "statement": "The remaining defects recorded in ISSUE-e2bcadd9 are closed as that issue states them."
+          },
+          {
+            "statement": "While a repository is being indexed or reindexed, a search or analyze request about it is refused with a named error that states the indexing state; no partial answer is returned."
           }
         ],
         "acceptanceCriteria": [
@@ -1035,6 +1038,16 @@
             "then": "the expected result that issue states is observed",
             "operationalizes": [
               "k8"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a repository whose index or reindex is in progress",
+            "when": "a search request or an analyze request about that repository is made",
+            "then": "the request is refused with a named error and its own code that says the repository is being indexed and how far the run has got, and no partial result is returned",
+            "operationalizes": [
+              "k1",
+              "k2"
             ]
           }
         ]
@@ -1676,6 +1689,12 @@
           "itemRef": "s5"
         },
         {
+          "id": "E20261011c2ba6fa6:S005:FR004",
+          "statement": "While a repository is being indexed or reindexed, a search or analyze request about it is refused with a named error that states the indexing state; no partial answer is returned.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
           "id": "E20261011c2ba6fa6:S006:FR001",
           "statement": "A file is left out of the index when, and only when, git's ignore sources leave it out and git does not track it, with two named exceptions that are left out everywhere: a generated or minified file, and anything in the daemon's own .insrc directory.",
           "scope": "item",
@@ -1860,6 +1879,16 @@
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
         },
         "comment": "Clarified by the stakeholder, 2026-10-11: a reindex calls the delete operations on the graph store and the vector store for the repository and builds everything again, vectors and document summaries included. This supersedes the earlier note that unchanged text keeps its vector. Not re-reviewed.",
+        "kind": "comment"
+      },
+      {
+        "id": "665b06ab",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-11T07:53:00.814Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
+        },
+        "comment": "Amended after approval, 2026-10-11, on the stakeholder's decision: while a repository is being indexed or reindexed, search and analyze requests about it return a named error that states the indexing state, and no partial answer. Carried by Story s5 (a new requirement and acceptance criterion ac4 in the definition). Not re-reviewed.",
         "kind": "comment"
       }
     ]

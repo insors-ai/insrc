@@ -69,6 +69,7 @@ The code index cannot be trusted to be complete or consistent, and it records le
 - **E20261011c2ba6fa6:S005:FR001** — A request whose scope will be refused is refused before it is announced with a size, or its announcement makes plain that its size could not be counted.
 - **E20261011c2ba6fa6:S005:FR002** — A failure to read a repository's last-indexed time, or a failure inside a lookup, is one of the named causes of not proceeding.
 - **E20261011c2ba6fa6:S005:FR003** — The remaining defects recorded in ISSUE-e2bcadd9 are closed as that issue states them.
+- **E20261011c2ba6fa6:S005:FR004** — While a repository is being indexed or reindexed, a search or analyze request about it is refused with a named error that states the indexing state; no partial answer is returned.
 
 **s6:**
 
@@ -225,13 +226,14 @@ The daemon keeps running through long indexing and many requests, and when somet
 
 **User value:** `size: M`
 
-A request about code the index does not hold is refused for that reason, and never looks like a very large request or an unexplained internal error.
+A request about code the index does not hold is refused for that reason, and never looks like a very large request or an unexplained internal error, and a request made while the repository is being indexed is told so instead of being answered from a half-built index.
 
 **Acceptance criteria:**
 
 - **ac1:** Given a request whose scope the index does not hold, when the request is run, then no event announces it as the largest size, and it is refused with the same code and message as today. _(operationalizes `k1`)_
 - **ac2:** Given a read of a repository's last-indexed time that throws, when a context is being built for a request, then the request ends with a named cause and its own error code, not an internal error. _(operationalizes `k1`)_
 - **ac3:** Given each of the four reproductions in ISSUE-e2bcadd9, when it is run, then the expected result that issue states is observed. _(operationalizes `k8`)_
+- **ac4:** Given a repository whose index or reindex is in progress, when a search request or an analyze request about that repository is made, then the request is refused with a named error and its own code that says the repository is being indexed and how far the run has got, and no partial result is returned. _(operationalizes `k1`, `k2`)_
 
 **Local constraints:**
 
@@ -373,6 +375,7 @@ A question about a design or a rule finds the documents that bear on it through 
 - **Subho Ghosh** (2026-10-11T07:31:05.256Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Amended after approval, on the stakeholder's decisions of 2026-10-11 made while the high-level design was reviewed. (1) k11 and Story s6: the filter honours all three of git's ignore sources (.gitignore files, the clone's exclude file, the global ignore file); a file git tracks is indexed even when a rule matches; two built-in exclusions apply everywhere (generated or minified files, the daemon's own .insrc directory); a plain folder is filtered by the rules alone (ac9 reworded). (2) Story s1: the pickScope figure is removed from ac2 because that function no longer exists in the source, and the Story's design names the re-export case instead; ac4 says completeness is a field shown beside the status, whose four values are kept. (3) Story s7 ac2: an ambiguous call stays pending with its candidates and is reported apart; the value "chosen among candidates" is reserved. These amendments were not re-reviewed as a definition.
 - **Subho Ghosh** (2026-10-11T07:43:12.977Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Amended after approval, 2026-10-11, on the stakeholder's decision: reindex is the one command and indexes every file from scratch, whether or not its content has changed; there is no separate repair. Today repo.reindex skips every file whose stored content hash is unchanged (src/indexer/index.ts:628 and :1004-1008). Not re-reviewed. Open for the stakeholder to confirm: unchanged text with an unchanged embedding model keeps its vector.
 - **Subho Ghosh** (2026-10-11T07:46:08.673Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Clarified by the stakeholder, 2026-10-11: a reindex calls the delete operations on the graph store and the vector store for the repository and builds everything again, vectors and document summaries included. This supersedes the earlier note that unchanged text keeps its vector. Not re-reviewed.
+- **Subho Ghosh** (2026-10-11T07:53:00.814Z) `comment` — `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`: Amended after approval, 2026-10-11, on the stakeholder's decision: while a repository is being indexed or reindexed, search and analyze requests about it return a named error that states the indexing state, and no partial answer. Carried by Story s5 (a new requirement and acceptance criterion ac4 in the definition). Not re-reviewed.
 
 <!-- insrc:review -->
 

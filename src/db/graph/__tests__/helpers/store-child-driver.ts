@@ -30,6 +30,8 @@ export interface StoreChild {
 	send(cmd: StoreChildCommand, timeoutMs?: number): Promise<StoreChildReply>;
 	/** End the child by SIGKILL and wait until it is gone. */
 	kill(): Promise<void>;
+	/** Settles when the child is gone, however it ended. */
+	readonly exited: Promise<{ code: number | null; signal: NodeJS.Signals | null }>;
 }
 
 const live = new Set<ChildProcess>();
@@ -60,11 +62,11 @@ export async function spawnStoreChild(storePath: string, opts: { raw?: boolean; 
 		const w = waiting.shift();
 		if (w !== undefined) w.resolve(r); else unclaimed.push(r);
 	});
-	const exited = new Promise<void>(res => child.once('exit', (code, signal) => {
+	const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(res => child.once('exit', (code, signal) => {
 		live.delete(child);
 		gone = new Error(`store child exited (code ${code}, signal ${signal})`);
 		for (const w of waiting.splice(0)) w.reject(gone);
-		res();
+		res({ code, signal });
 	}));
 
 	function next(timeoutMs: number): Promise<StoreChildReply> {
@@ -98,6 +100,7 @@ export async function spawnStoreChild(storePath: string, opts: { raw?: boolean; 
 			try { child.kill('SIGKILL'); } catch { /* gone */ }
 			await exited;
 		},
+		exited,
 	};
 }
 

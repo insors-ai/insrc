@@ -62,7 +62,18 @@ export type StoreChildCommand =
 	 *  handler, `test.stream` as a stream handler. Answers with the socket path. */
 	| { op: 'serve' }
 	/** Start the daemon's periodic reader check with a shortened interval. */
-	| { op: 'reader-check-every'; ms: number };
+	| { op: 'reader-check-every'; ms: number }
+	/**
+	 * Behave like a daemon as far as ENDING goes: write the pid file, register
+	 * the daemon's fatal-error handler, run a job queue, and serve
+	 * `daemon.shutdown` (the daemon's real shutdown sequence), `daemon.status`
+	 * (its real status builder, reading the store) and `test.enqueue` (a job
+	 * that waits `ms`, then writes `key`). `logPath` receives the last line;
+	 * `crashLogDir` the crash log. Answers with the socket path.
+	 */
+	| { op: 'daemon-like'; logPath: string; crashLogDir: string }
+	/** Raise a rejection that nothing handles. */
+	| { op: 'reject-unhandled' };
 
 export type StoreChildReply =
 	| { ok: true; value?: unknown; settled?: boolean }
@@ -163,6 +174,57 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 		}
 		case 'reader-check-every':
 			startPeriodicReaderCheck(cmd.ms);
+			return { ok: true };
+		case 'daemon-like': {
+			const { IpcServer } = await import('../../../../daemon/server.js');
+			const { IndexQueue } = await import('../../../../daemon/queue.js');
+			const { writePid } = await import('../../../../daemon/lifecycle.js');
+			const { createShutdown, realEndDeps } = await import('../../../../daemon/shutdown.js');
+			const { reportFatal } = await import('../../../../daemon/fatal.js');
+			const { buildDaemonStatus } = await import('../../../../daemon/status.js');
+			const { PATHS } = await import('../../../../shared/paths.js');
+			const { getLogger } = await import('../../../../shared/logger.js');
+			const log = getLogger('store-child');
+
+			const end = { ...realEndDeps, lastLinePath: cmd.logPath };
+			process.on('unhandledRejection', reason => reportFatal('unhandledRejection', reason, {
+				logFatal: (o, m) => { log.fatal(o, m); }, crashLogDir: cmd.crashLogDir, end,
+			}));
+
+			writePid();
+			const queue = new IndexQueue();
+			const queueDone = queue.start(async job => {
+				const j = job as unknown as { ms: number; key: string };
+				await new Promise(res => setTimeout(res, j.ms));
+				await withWriteTxn(s => { void s.meta.put(j.key, '1'); });
+			});
+			const server = new IpcServer({
+				'daemon.shutdown': async () => { shutdown('daemon.shutdown RPC'); return { ok: true }; },
+				'daemon.status': async () => buildDaemonStatus({
+					uptimeSec: 1,
+					listRepos: async () => { opened().meta.get('a'); return []; },
+					queueDepth: queue.depth,
+					modelState: { status: 'ready' },
+					installedCommit: '',
+				}),
+				'test.enqueue': async params => {
+					const p = params as { ms: number; key: string };
+					queue.enqueue({ kind: 'full', repoPath: `/job-${p.key}`, ms: p.ms, key: p.key } as never);
+					return { ok: true };
+				},
+			});
+			const shutdown = createShutdown({
+				log,
+				stopBackgroundWork: () => { queue.stop(); void server.close(); },
+				queueDone,
+				closeStores: async () => { await closeGraphStore(); },
+				end,
+			});
+			await server.listen();
+			return { ok: true, value: PATHS.sockFile };
+		}
+		case 'reject-unhandled':
+			void Promise.reject(new Error('nothing handles this'));
 			return { ok: true };
 		case 'close':
 			if (raw) await opened().root.close(); else await closeGraphStore();

@@ -763,8 +763,13 @@ export async function closeGraphStore(): Promise<void> {
 	_instance = null;
 	_initPromise = null;
 	if (inst === null) return;
+	// A failure that no call has met yet must be found HERE: the library's
+	// close never returns once the semaphores are gone.
+	if (_health.state === 'ok') {
+		const lost = probeForLockLoss(inst);
+		if (lost !== undefined) recordLocksLost('closing the store', 'read', lost);
+	}
 	if (_health.state === 'locks-lost') {
-		// The library's close never returns once the semaphores are gone.
 		log.warn({ operation: _health.operation, at: _health.at }, 'lmdb graph store close skipped: the store lost its locks');
 		return;
 	}

@@ -135,20 +135,25 @@ function tempHome(name: string): { home: string; store: string } {
 	return { home, store: join(home, 'graph.lmdb') };
 }
 
-/** One request over a real socket; resolves with the first line answered. */
+/** One request over a real socket; resolves with the first line answered.
+ *  Never waits for ever: a connection that ends without an answer (the child
+ *  died) and a silent one both reject. */
 function ask(sock: string, req: Record<string, unknown>): Promise<Record<string, unknown>> {
 	return new Promise((resolve, reject) => {
 		const c = createConnection(sock);
 		let buf = '';
+		const timer = setTimeout(() => { c.destroy(); reject(new Error(`no answer to ${String(req['method'])} within 10 s`)); }, 10_000);
 		c.on('connect', () => c.write(`${JSON.stringify(req)}\n`));
 		c.on('data', d => {
 			buf += String(d);
 			const nl = buf.indexOf('\n');
 			if (nl < 0) return;
+			clearTimeout(timer);
 			c.end();
 			resolve(JSON.parse(buf.slice(0, nl)) as Record<string, unknown>);
 		});
-		c.on('error', reject);
+		c.on('close', () => { clearTimeout(timer); reject(new Error(`connection closed without an answer to ${String(req['method'])}`)); });
+		c.on('error', e => { clearTimeout(timer); reject(e); });
 	});
 }
 

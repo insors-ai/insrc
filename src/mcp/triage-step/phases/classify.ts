@@ -31,18 +31,24 @@ export function handleClassify(input: TriageInputClassify): TriageDone {
 	const route = routeForSizeClass(emitted.sizeClass, emitted.magnitude);
 	const result: TriageResult = { ...emitted, route };
 
-	const nextCall = buildNextCall(result, state.focus, state.repo);
+	const nextCall = buildNextCall(result, state.focus, state.repo, state.specHash);
 	const summary = renderSummary(result);
 
 	return { next: 'done', result, route, nextCall, summary };
 }
 
 /** Pre-fill the recommended next tool call for the routed entry. */
-function buildNextCall(result: TriageResult, focus: string, repo: string): TriageDone['nextCall'] {
+function buildNextCall(result: TriageResult, focus: string, repo: string, specHash?: string): TriageDone['nextCall'] {
 	const { route, sizeClass, magnitude, rationale, storyTitle } = result;
+	// ISSUE-c00559b7 — the approved SPEC (verified at start) seeds the stage it
+	// routes to, which then stamps seededFromSpec. Absent → the call is unchanged.
+	const seed = specHash !== undefined ? { specHash } : {};
 	// Epic → the full chain head, no standalone params.
 	if (route.startStage === 'define') {
-		return { tool: 'insrc_workflow_step', params: { phase: 'start', repo, workflow: 'define', focus } };
+		return {
+			tool: 'insrc_workflow_step',
+			params: { phase: 'start', repo, workflow: 'define', focus, ...(specHash !== undefined ? { params: seed } : {}) },
+		};
 	}
 	// Bugfix → the `issue` record first (single source for the chain + the GitHub
 	// issue body). The magnitude carried here lets the downstream flow decide
@@ -90,6 +96,7 @@ function buildNextCall(result: TriageResult, focus: string, repo: string): Triag
 				storySpec: focus,
 				sizeClass,
 				triageRationale: rationale,
+				...seed,
 			},
 		},
 	};

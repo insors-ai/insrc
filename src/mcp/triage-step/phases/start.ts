@@ -13,6 +13,7 @@
 import { getLogger } from '../../../shared/logger.js';
 import { resolveRepoPath } from '../../resolve-repo.js';
 import { buildClassifyPrompt, CLASSIFY_SCHEMA } from '../../../workflow/triage/classify.js';
+import { requireApprovedSpec } from '../../../workflow/gates.js';
 import { encodeState } from '../state.js';
 import type { TriageEmitClassification, TriageInputStart, TriageState } from '../types.js';
 
@@ -30,10 +31,19 @@ export async function handleStart(input: TriageInputStart): Promise<TriageEmitCl
 		throw new Error(`insrc_triage[start]: \`focus\` (the feature request) is required.`);
 	}
 
+	// ISSUE-c00559b7 — a request brainstormed into a SPEC carries that spec into
+	// the routed stage. It is checked HERE, before any state exists, so no
+	// nextCall can ever carry a missing or unapproved spec. requireApprovedSpec
+	// throws SpecArtifactNotFoundError / SpecNotApprovedError, which the handler
+	// returns as the start turn's error.
+	const specHash = typeof input.specHash === 'string' && input.specHash.length > 0 ? input.specHash : undefined;
+	if (specHash !== undefined) requireApprovedSpec(repo, specHash);
+
 	const state: TriageState = {
 		runId: `tri-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 		focus: input.focus,
 		repo,
+		...(specHash !== undefined ? { specHash } : {}),
 	};
 
 	// Grounding is the controller's own analyze passes — the prompt tells it to

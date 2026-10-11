@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import type { DeliveryEvidenceEntry } from '../delivery-contract.js';
-import { buildItemDetails, type PlanRead } from '../board-details.js';
+import { buildItemDetails, type PlanRead, taskShortIdOf } from '../board-details.js';
 import { DISPLAY_LABELS } from '../labels.js';
 import { evidence as ev, item, review, snapshot } from './board-fixtures.js';
 
@@ -45,11 +45,12 @@ test('planned tasks show their dependencies and checks with Passed, Failed or Un
     { id: 't5', dependsOn: [], acceptanceChecks: ['no task item'] },
   ] };
   const d = buildItemDetails(taskedSnapshot(), 'E1:S001', plan, null, DISPLAY_LABELS)!;
-  assert.deepEqual(d.tasks.map(t => [t.title, t.resultLabel, t.planned, t.dependsOn, t.acceptanceChecks]), [
-    ['Types', 'Passed', true, [], ['types compile']],
-    ['Builder', 'Failed', true, ['Types'], ['rows built']],
-    ['Host', 'Unrecorded', true, ['Builder', 't9'], []],
-    ['Hotfix', 'Unplanned', false, null, null],
+  assert.deepEqual(d.tasks.map(t => [t.shortId, t.title, t.resultLabel, t.planned, t.dependsOn, t.acceptanceChecks]), [
+    ['T001', 'Types', 'Passed', true, [], ['types compile']],
+    ['T002', 'Builder', 'Failed', true, [{ shortId: 'T001', title: 'Types' }], ['rows built']],
+    // A dependency no task item carries keeps its PLAN id as both its short id and its title.
+    ['T003', 'Host', 'Unrecorded', true, [{ shortId: 'T002', title: 'Builder' }, { shortId: 't9', title: 't9' }], []],
+    ['T004', 'Hotfix', 'Unplanned', false, null, null],
   ]);
   assert.deepEqual(d.taskCounts, { passed: 1, failed: 1, unrecorded: 1, unplanned: 1 });
 
@@ -269,5 +270,11 @@ test('a task row with no title shows its id, as the same task does among the dep
   ]);
   const plan: PlanRead = { state: 'ok', tasks: [{ id: 't1', dependsOn: [], acceptanceChecks: [] }, { id: 't2', dependsOn: ['t1'], acceptanceChecks: [] }] };
   const d = buildItemDetails(snap, 'S1', plan, null, DISPLAY_LABELS)!;
-  assert.deepEqual(d.tasks.map(t => [t.title, t.dependsOn]), [['S1:T1', []], ['Second', ['S1:T1']]]);
+  assert.deepEqual(d.tasks.map(t => [t.shortId, t.title, t.dependsOn]), [['T1', 'S1:T1', []], ['T2', 'Second', [{ shortId: 'T1', title: 'S1:T1' }]]]);
+});
+
+test("a task's short id is the last ':' segment of its item id, or the whole id without one", () => {
+  assert.equal(taskShortIdOf('E20261011aaaaaaaa:S001:T002'), 'T002');
+  assert.equal(taskShortIdOf('S1:T1'), 'T1');
+  assert.equal(taskShortIdOf('T5'), 'T5');
 });

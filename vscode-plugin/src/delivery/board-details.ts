@@ -37,6 +37,12 @@ export type PlanRead =
 export interface OpenedRecord { readonly artifactId: string; readonly text: string }
 
 
+/** A task's short id: the last ':'-separated segment of its item id (E1:S001:T002 gives T002), or the id whole. */
+export function taskShortIdOf(taskItemId: string): string {
+  const i = taskItemId.lastIndexOf(':');
+  return i < 0 ? taskItemId : taskItemId.slice(i + 1);
+}
+
 function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, labels: DisplayLabels): TaskRowView[] {
   const taskItems = item.tasks.map(t => byId.get(t.taskItemId)).filter((t): t is DeliveryItemView => t !== undefined);
   const itemForPlanId = (planId: string): DeliveryItemView | undefined => taskItems.find(t => t.sourceIds.includes(planId));
@@ -47,6 +53,7 @@ function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, label
       : undefined;
     return {
       taskItemId: t.taskItemId,
+      shortId: taskShortIdOf(t.taskItemId),
       // titleOf, like the dependencies on the same row: a task with no title shows its id.
       title: taskItem === undefined ? null : titleOf(taskItem),
       resultLabel: t.planned ? labelOf(labels.taskResult, t.result) : labels.unplanned,
@@ -54,7 +61,7 @@ function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, label
       resultTone: t.planned ? taskResultTone(t.result) : 'neutral',
       dependsOn: planTask === undefined ? null : planTask.dependsOn.map(d => {
         const dep = itemForPlanId(d);
-        return dep === undefined ? d : titleOf(dep);
+        return dep === undefined ? { shortId: d, title: d } : { shortId: taskShortIdOf(dep.id), title: titleOf(dep) };
       }),
       acceptanceChecks: planTask === undefined ? null : [...planTask.acceptanceChecks],
     };

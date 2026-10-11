@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 68 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 77 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -281,3 +281,36 @@ Run at 2026-10-11T16:19:19.702Z on commit `76d4f441`. Tests check: **passed**. 8
 | `src/docgen/__tests__/generate.test.ts` | 0 | 3 | 0.5 s |  |
 | `src/docgen/render/__tests__/shell.test.ts` | 0 | 5 | 0.3 s |  |
 | `src/workflow/__tests__/companion-context-finalize.test.ts` | 0 | 4 | 0.7 s |  |
+
+## t9
+
+Run at 2026-10-11T16:22:21.248Z on commit `e812e0b2`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: completenessFindings: absent narrative / missing descriptions / fully described**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | d9f85b3c t9 — an absent narrative is one LOW, and missing descriptions one LOW naming them | `src/workflow/artifacts/companion/__tests__/completeness.test.ts` |
+| pass | d9f85b3c t9 — a fully described definition of each kind has no completeness findings | `src/workflow/artifacts/companion/__tests__/completeness.test.ts` |
+| pass | d9f85b3c t9 — a narrative alone, or descriptions alone, leaves exactly the other LOW | `src/workflow/artifacts/companion/__tests__/completeness.test.ts` |
+| pass | d9f85b3c t9 — a long list is summarised after eight names | `src/workflow/artifacts/companion/__tests__/completeness.test.ts` |
+| pass | d9f85b3c t9 — the validators are unchanged: a sound undescribed definition still validates to [] | `src/workflow/artifacts/companion/__tests__/completeness.test.ts` |
+
+**integration: code-review diagram + ux dimensions: completeness LOWs recorded, verdict not block**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runCodeReview: a sound erDefinition runs the diagram dimension + folds to pass | `src/workflow/code-review/__tests__/diagram-conditional.test.ts` |
+| pass | judgeDiagram: a sound sequence / component definition → only the completeness LOWs (LLD-d9f85b3c t9) | `src/workflow/code-review/dimensions/__tests__/diagram-handlers.test.ts` |
+| pass | judgeDiagram: dispatches an erDefinition-bearing body to the ER handler (sound → only completeness LOWs) | `src/workflow/code-review/dimensions/__tests__/diagram.test.ts` |
+| pass | judgeUx: a schema-valid uxDefinition → dimension:ux, only completeness LOWs | `src/workflow/code-review/dimensions/__tests__/ux.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/artifacts/companion/__tests__/completeness.test.ts` | 0 | 5 | 0.5 s |  |
+| `src/workflow/code-review/__tests__/diagram-conditional.test.ts` | 0 | 7 | 0.5 s |  |
+| `src/workflow/code-review/dimensions/__tests__/diagram-handlers.test.ts` | 0 | 5 | 0.4 s |  |
+| `src/workflow/code-review/dimensions/__tests__/diagram.test.ts` | 0 | 8 | 0.5 s |  |
+| `src/workflow/code-review/dimensions/__tests__/ux.test.ts` | 0 | 9 | 0.5 s |  |

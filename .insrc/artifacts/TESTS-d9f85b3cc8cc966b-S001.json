@@ -4,7 +4,7 @@
     "epicHash": "d9f85b3cc8cc966b",
     "storyId": "S001",
     "createdAt": "2026-10-11T15:39:50.029Z",
-    "updatedAt": "2026-10-11T16:19:19.702Z",
+    "updatedAt": "2026-10-11T16:22:21.248Z",
     "standalone": true
   },
   "body": {
@@ -1053,6 +1053,258 @@
               },
               {
                 "title": "finalize[design.epic]: HLD companions name the HLD as the source doc and the Epic as the work item",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "e812e0b2",
+        "ranAt": "2026-10-11T16:22:21.248Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "completenessFindings: absent narrative / missing descriptions / fully described",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+                "title": "d9f85b3c t9 — an absent narrative is one LOW, and missing descriptions one LOW naming them",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+                "title": "d9f85b3c t9 — a fully described definition of each kind has no completeness findings",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+                "title": "d9f85b3c t9 — a narrative alone, or descriptions alone, leaves exactly the other LOW",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+                "title": "d9f85b3c t9 — a long list is summarised after eight names",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+                "title": "d9f85b3c t9 — the validators are unchanged: a sound undescribed definition still validates to []",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "code-review diagram + ux dimensions: completeness LOWs recorded, verdict not block",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diagram-conditional.test.ts",
+                "title": "runCodeReview: a sound erDefinition runs the diagram dimension + folds to pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/diagram-handlers.test.ts",
+                "title": "judgeDiagram: a sound sequence / component definition → only the completeness LOWs (LLD-d9f85b3c t9)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/diagram.test.ts",
+                "title": "judgeDiagram: dispatches an erDefinition-bearing body to the ER handler (sound → only completeness LOWs)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/ux.test.ts",
+                "title": "judgeUx: a schema-valid uxDefinition → dimension:ux, only completeness LOWs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/completeness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 460,
+            "titles": [
+              {
+                "title": "d9f85b3c t9 — an absent narrative is one LOW, and missing descriptions one LOW naming them",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t9 — a fully described definition of each kind has no completeness findings",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t9 — a narrative alone, or descriptions alone, leaves exactly the other LOW",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t9 — a long list is summarised after eight names",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t9 — the validators are unchanged: a sound undescribed definition still validates to []",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/diagram-conditional.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 524,
+            "titles": [
+              {
+                "title": "effectiveJudges keeps diagram only for a subject with an erDefinition/diagram companion",
+                "result": "pass"
+              },
+              {
+                "title": "DEFAULT_DEPS carries the diagram slot (conditional at run time)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a sound erDefinition runs the diagram dimension + folds to pass",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a broken (dangling) erDefinition folds a diagram HIGH to block",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a no-ER subject runs exactly the base dimensions (byte-shape compatible with pre-S003)",
+                "result": "pass"
+              },
+              {
+                "title": "expectedDimensions appends diagram only with an ER/diagram; schema enum + arity follow",
+                "result": "pass"
+              },
+              {
+                "title": "enforceCodeReviewGate: a diagram block withholds under enforce=true, is advisory-warn under false",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/dimensions/__tests__/diagram-handlers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 442,
+            "titles": [
+              {
+                "title": "registry: the sequence + component peer handlers register alongside er (additive, er untouched)",
+                "result": "pass"
+              },
+              {
+                "title": "hasDiagramReferences: engages on a body carrying only a sequence / component definition (body-keyed)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: a sound sequence / component definition → only the completeness LOWs (LLD-d9f85b3c t9)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: a dangling sequence definition folds a HIGH breach through the diagram dimension",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: a dangling component definition folds a HIGH breach through the diagram dimension",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/dimensions/__tests__/diagram.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 452,
+            "titles": [
+              {
+                "title": "registry: S003 registers the ER handler; a duplicate registration throws (fail-fast)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: dispatches an erDefinition-bearing body to the ER handler (sound → only completeness LOWs)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: a dangling erDefinition folds a HIGH breach through the dimension",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: dispatches a companion to its owning registered handler (spy) + aggregates",
+                "result": "pass"
+              },
+              {
+                "title": "judgeDiagram: a companion no handler owns yields ONE LOW observation (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "ER handler: a referenced-but-absent companion file → HIGH breach (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "ER handler: a present companion file → no absent-file breach",
+                "result": "pass"
+              },
+              {
+                "title": "hasDiagramReferences: true for an erDefinition and/or a diagram companion; false otherwise",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/dimensions/__tests__/ux.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 465,
+            "titles": [
+              {
+                "title": "hasUxAcceptance: true for a uxDefinition, an adherence selection incl 'ux', or a ux-mock companion; false otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "adherenceSelectionOf: reads the recorded selection ([] when absent)",
+                "result": "pass"
+              },
+              {
+                "title": "hasDiagramReferences: FALSE for a ux-mock-only subject (excludes ux-mock; counts only diagram-*)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: a schema-valid uxDefinition → dimension:ux, only completeness LOWs",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: adherence requires 'ux' but no uxDefinition / no ux-mock evidence → HIGH breach (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: a schema-invalid uxDefinition folds a HIGH breach through the dimension",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: a referenced-but-absent ux-mock companion file → HIGH breach",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: a present ux-mock companion file → no absent-file breach",
+                "result": "pass"
+              },
+              {
+                "title": "judgeUx: an unknown recorded adherence member → HIGH breach",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-11T10:11:32.404Z"
+    "updatedAt": "2026-10-11T10:31:05.314Z"
   },
   "body": {
     "tasks": [
@@ -780,6 +780,102 @@
               },
               {
                 "title": "source-scan: daemon-gateway.ts imports no vscode and uses no cloud/HTTP client (only sc1 + fs/process — ac4/k2)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "0f2dd749",
+        "ranAt": "2026-10-11T10:31:05.314Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "status after failure: storeFailure names another process and does not contain 'semume'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3219,
+            "titles": [
+              {
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              },
+              {
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
                 "result": "pass"
               }
             ],

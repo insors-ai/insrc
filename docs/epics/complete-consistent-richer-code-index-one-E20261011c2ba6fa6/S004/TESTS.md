@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -199,3 +199,38 @@ Run at 2026-10-11T10:11:32.404Z on commit `7d18c49e`. Tests check: **passed**. 5
 | `src/cli/__tests__/tui.test.ts` | 0 | 21 | 2.3 s |  |
 | `src/daemon/__tests__/status-store-failure.test.ts` | 0 | 2 | 0.6 s |  |
 | `vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts` | 0 | 10 | 0.4 s |  |
+
+## t7
+
+Run at 2026-10-11T10:31:05.314Z on commit `0f2dd749`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close | `src/daemon/__tests__/shutdown-store-failure.test.ts` |
+
+**integration: status after failure: storeFailure names another process and does not contain 'semume'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | status after failure: storeFailure names another process and does not contain 'semume' | `src/daemon/__tests__/shutdown-store-failure.test.ts` |
+
+**integration: fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds | `src/daemon/__tests__/shutdown-store-failure.test.ts` |
+
+**integration: healthy shutdown is unchanged: queue drained, connections closed in order, normal exit**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | healthy shutdown is unchanged: queue drained, connections closed in order, normal exit | `src/daemon/__tests__/shutdown-store-failure.test.ts` |
+| pass | with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit | `src/daemon/__tests__/shutdown-store-failure.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/shutdown-store-failure.test.ts` | 0 | 5 | 3.2 s |  |

@@ -95,6 +95,7 @@
 
 		var drag = null;
 		vp.addEventListener('pointerdown', function (ev) {
+			if (ev.button !== undefined && ev.button !== 0) { return; }   // primary button only
 			drag = { px: ev.clientX, py: ev.clientY, x: x, y: y };
 			vp.classList.add('drag');
 			if (vp.setPointerCapture) { vp.setPointerCapture(ev.pointerId); }

@@ -1598,11 +1598,11 @@ export function firstCompanionValidationFailure(body: {
  * content-gate); finalize renders the companion DETERMINISTICALLY — NO provider
  * here. The definition's validation is now the finalizer's pre-render gate
  * (`firstCompanionValidationFailure`), so this helper assumes an already-valid
- * definition and only renders the sibling `er-model.html` via docgen's
- * assembleShell, returning the CompanionArtifactRef the Diagrams slot links. Never
- * throws: a DiagramGenerationError (docgen infra failure) leaves the erDefinition
- * in-body without a picture (that is NOT an author error). `destPath` is a sibling
- * of the artifact `.md`.
+ * definition and only renders the sibling `er-model.html` as a companion page
+ * (render.ts → shell.ts), returning the CompanionArtifactRef the Diagrams slot
+ * links. Never throws on a companion fault: a DiagramGenerationError (a missing
+ * runtime or a failed write) leaves the erDefinition in-body without a picture
+ * (that is NOT an author error). `destPath` is a sibling of the artifact `.md`.
  */
 /** LLD-d9f85b3c S001/t8: the one header every companion of a finalize site
  *  shares. The companions are siblings of `mdPath`, so the source-doc link is the
@@ -1642,11 +1642,12 @@ async function renderErCompanionForBody(
  * renderErCompanionForBody. The synthesizer LLM authors the `uxDefinition` into the
  * body only when a user-facing experience materially aids understanding (the
  * content-gate); finalize renders the mock DETERMINISTICALLY — NO provider here.
- * Given an authored uxDefinition that carries no HIGH validation finding, it renders
- * the sibling `ux-mock.html` via docgen's assembleShell and returns the
- * kind:'ux-mock' CompanionArtifactRef the S002 UX slot links (never inlined —
- * ac1/k1). Never throws on a companion fault: a HIGH validation finding or a
- * DiagramGenerationError leaves the uxDefinition in-body without a picture (k1/k3).
+ * Validation is the finalizer's pre-render gate (firstCompanionValidationFailure),
+ * so this renders an already-valid uxDefinition as the sibling `ux-mock.html`
+ * companion page (render.ts → shell.ts) and returns the kind:'ux-mock'
+ * CompanionArtifactRef the S002 UX slot links (never inlined — ac1/k1). Never
+ * throws on a companion fault: a DiagramGenerationError leaves the uxDefinition
+ * in-body without a picture (k1/k3).
  */
 async function renderUxCompanionForBody(
 	body:         { readonly uxDefinition?: UxDefinition | undefined; readonly functionalDefinition?: FunctionalDefinition | undefined },
@@ -1676,12 +1677,12 @@ async function renderUxCompanionForBody(
  * renderUxCompanionForBody. The synthesizer LLM authors a `sequenceDefinition`
  * and/or a `componentDependencyDefinition` into the body only when a behaviour /
  * structure diagram materially aids understanding (the content-gate); finalize
- * renders each DETERMINISTICALLY — NO provider here. For each authored definition
- * that carries no HIGH validation finding it renders the sibling HTML via docgen's
- * assembleShell and returns its `kind:'diagram-mermaid'` CompanionArtifactRef.
- * Content-gated + non-throwing: an absent slot yields no companion, and a HIGH
- * validation finding or a DiagramGenerationError leaves that definition in-body
- * without a picture (k1) — a valid second definition still renders. Returns the
+ * renders each DETERMINISTICALLY — NO provider here. Validation is the finalizer's
+ * pre-render gate, so each authored definition renders as a sibling companion page
+ * (render.ts → shell.ts) and returns its `kind:'diagram-mermaid'` ref.
+ * Content-gated + non-throwing: an absent slot yields no companion, and a
+ * DiagramGenerationError leaves that definition in-body without a picture (k1) —
+ * a valid second definition still renders. Returns the
  * refs for whichever slots the body carries ([] when neither is present).
  */
 async function renderDiagramCompanionsForBody(

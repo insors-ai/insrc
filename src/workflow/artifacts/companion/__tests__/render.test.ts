@@ -16,7 +16,7 @@
 
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, existsSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -79,4 +79,16 @@ test('renderErCompanion: a non-ok DocGenOutcome → DiagramGenerationError + no 
 
 	rmSync(dir, { recursive: true, force: true });
 	rmSync(emptyAssets, { recursive: true, force: true });
+});
+
+test('renderErCompanion: a failed write is a DiagramGenerationError, so finalize skips the companion instead of aborting', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'er-companion-'));
+	// A FILE where the companion's folder should be: mkdir/write fail (ENOTDIR).
+	writeFileSync(join(dir, 'blocked'), 'not a folder');
+	await assert.rejects(() => renderErCompanion(er, 'ER model', join(dir, 'blocked', 'er-model.html'), { repoPath: dir, header }), (e: unknown) => {
+		assert.ok(e instanceof DiagramGenerationError);
+		assert.equal((e as DiagramGenerationError).status, 'write-failed');
+		return true;
+	});
+	rmSync(dir, { recursive: true, force: true });
 });

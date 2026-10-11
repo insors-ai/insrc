@@ -114,3 +114,16 @@ test('d9f85b3c t2 — a missing viewport or stage yields a no-op handle instead 
 	const pz = load([]).insrcPanZoom.init({ viewport: 'vp', stage: 'stage' });
 	assert.doesNotThrow(() => { pz.fit(); pz.reset(); });
 });
+
+test('d9f85b3c t2 — only the primary button drags: a right- or middle-click leaves the view where it is', () => {
+	const vp = el('vp', { clientWidth: 400, clientHeight: 400 });
+	const stage = el('stage', { scrollWidth: 100, scrollHeight: 100 });
+	load([vp, stage]).insrcPanZoom.init({ viewport: 'vp', stage: 'stage' });
+	const before = stage.style['transform'];
+	vp.fire('pointerdown', { button: 2, clientX: 0, clientY: 0, pointerId: 1 });
+	vp.fire('pointermove', { clientX: 50, clientY: 50 });
+	assert.equal(stage.style['transform'], before, 'a right-click starts no drag');
+	vp.fire('pointerdown', { button: 0, clientX: 0, clientY: 0, pointerId: 1 });
+	vp.fire('pointermove', { clientX: 50, clientY: 50 });
+	assert.equal(stage.style['transform'], 'translate(50px,50px) scale(1)', 'the primary button drags');
+});

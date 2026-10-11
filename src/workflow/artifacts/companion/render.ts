@@ -71,8 +71,15 @@ export type RenderErCompanionOpts = CompanionRenderOpts;
 function writeCompanionPage(page: CompanionPageContent, destPath: string, header: CompanionHeader): void {
 	const runtime = loadCompanionRuntime(page.visual.kind);
 	const html = renderCompanionPage(header, page, runtime);
-	mkdirSync(dirname(destPath), { recursive: true });
-	writeFileSync(destPath, html, 'utf8');
+	// A companion that cannot be written (EACCES, ENOSPC, EROFS, ...) is a fault of
+	// that companion, like a missing runtime: the caller skips it and the artifact
+	// is still written with its definition in-body.
+	try {
+		mkdirSync(dirname(destPath), { recursive: true });
+		writeFileSync(destPath, html, 'utf8');
+	} catch (err) {
+		throw new DiagramGenerationError('write-failed', `could not write ${destPath}: ${(err as Error).message}`);
+	}
 }
 
 function companionRef(kind: CompanionArtifactRef['kind'], title: string, destPath: string, opts: CompanionRenderOpts): CompanionArtifactRef {

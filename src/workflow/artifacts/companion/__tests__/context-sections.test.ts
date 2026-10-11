@@ -24,6 +24,7 @@ import { sequenceDefinitionToIr, type SequenceDefinition } from '../sequence.js'
 import { componentDependencyDefinitionToIr, type ComponentDependencyDefinition } from '../component.js';
 import { renderErCompanion, renderSequenceCompanion } from '../render.js';
 import type { IrSection } from '../../../docgen/types.js';
+import type { CompanionHeader } from '../types.js';
 
 const er: ErDefinition = {
 	classes: {
@@ -95,27 +96,32 @@ test('toIr does not mutate the input definition (read-only derivation)', () => {
 	assert.deepEqual(seq, seqClone);
 });
 
-// ── t5: renderers thread the optional sourceLink onto the written HTML ───────
+// ── LLD-d9f85b3c S001/t8: the source document link now lives in the page header ─
 
-test('renderErCompanion with opts.sourceLink writes the escaped back-link into the HTML', async () => {
+const header: CompanionHeader = {
+	projectName: 'insrc', workItemId: 'E20261011abcdef01:S001', sourceDoc: { id: 'LLD-abcdef0123456789-S001', href: './LLD.md' },
+	date: '2026-10-11 14:32', user: 'Subho Ghosh', contextLine: 'Standalone story S001',
+};
+
+test('renderErCompanion writes the source document link and context line from the header', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'ctx-src-'));
 	const dest = join(dir, 'er-model.html');
-	const ref = await renderErCompanion(er, 'ER model', dest, { repoPath: dir, sourceLink: { label: 'View the source document (LLD.md)', href: './LLD.md' } });
+	const ref = await renderErCompanion(er, 'ER model', dest, { repoPath: dir, header });
 	assert.equal(ref.kind, 'diagram-mermaid');
 	const html = readFileSync(dest, 'utf8');
-	assert.match(html, /<a href="\.\/LLD\.md"[^>]*>View the source document \(LLD\.md\)<\/a>/);
-	assert.match(html, /id="docgen-narrative"/);
+	assert.ok(html.includes('<tr><th>Source doc</th><td><a href="./LLD.md">LLD-abcdef0123456789-S001</a></td></tr>'));
+	assert.ok(html.includes('<p class="context">Standalone story S001</p>'));
 	rmSync(dir, { recursive: true, force: true });
 });
 
-test('renderSequenceCompanion without sourceLink still writes HTML (backward-safe) — band present, no link', async () => {
+test('renderSequenceCompanion writes the narrative and the description tables beside the diagram', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'ctx-nolink-'));
 	const dest = join(dir, 'sequence-diagram.html');
-	const ref = await renderSequenceCompanion(seq, 'Sequence diagram', dest, { repoPath: dir });
+	const ref = await renderSequenceCompanion({ ...seq, narrative: 'A asks B to do it.' }, 'Sequence diagram', dest, { repoPath: dir, header });
 	assert.ok(existsSync(dest));
 	assert.equal(ref.kind, 'diagram-mermaid');
 	const html = readFileSync(dest, 'utf8');
-	assert.match(html, /id="docgen-narrative"/);                 // context band still rendered (sections populated)
-	assert.doesNotMatch(html, /View the source document/);        // but no source link
+	assert.ok(html.includes('<p>A asks B to do it.</p>'));
+	assert.ok(html.includes('<h3>Participants</h3>') && html.includes('<h3>Messages</h3>'));
 	rmSync(dir, { recursive: true, force: true });
 });

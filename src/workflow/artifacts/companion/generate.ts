@@ -22,6 +22,8 @@
 
 import type { LLMProvider } from '../../../shared/types.js';
 import { getLogger } from '../../../shared/logger.js';
+import { basename } from 'node:path';
+
 import type { ArtifactKind, WorkItemIdentity, WorkItemKind } from '../../path-scheme.js';
 import { resolveCompanionPath } from '../../path-scheme.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
@@ -29,6 +31,7 @@ import type { ErDefinition } from './er.js';
 import { validateErDefinition } from './er.js';
 import { renderErCompanion, DiagramGenerationError } from './render.js';
 import { assessDiagramNeed } from './assess.js';
+import { formatDate } from './header.js';
 import type { CompanionArtifactRef } from './types.js';
 
 const log = getLogger('artifacts:companion:generate');
@@ -96,8 +99,19 @@ export async function generateErCompanions(
 		return [];
 	}
 	try {
+		// No production caller (S001/t10 removes this seam); the header is built from
+		// what the context carries.
+		const header = {
+			projectName: basename(ctx.repoPath),
+			workItemId:  ctx.identity.canonical,
+			sourceDoc:   { id: ctx.slug, href: './' },
+			date:        formatDate(new Date()),
+			user:        'unknown',
+			contextLine: ctx.identity.canonical,
+		};
 		const ref = await renderErCompanion(erDef, ctx.title ?? DEFAULT_COMPANION_TITLE, destPath, {
 			repoPath: ctx.repoPath,
+			header,
 			...(erNeed.ofSectionId !== undefined ? { ofSectionId: erNeed.ofSectionId } : {}),
 		});
 		return [ref];

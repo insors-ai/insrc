@@ -25,6 +25,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { renderErCompanion, renderUxCompanion } from '../render.js';
+import type { CompanionHeader } from '../types.js';
+
+const HEADER: CompanionHeader = {
+	projectName: 'insrc', workItemId: 'E20261011abcdef01:S001', sourceDoc: { id: 'LLD-abcdef0123456789-S001', href: './LLD.md' },
+	date: '2026-10-11 14:32', user: 'Subho Ghosh', contextLine: 'Standalone story S001',
+};
 import type { ErDefinition } from '../er.js';
 import type { UxDefinition } from '../ux.js';
 import type { CompanionArtifactRef } from '../types.js';
@@ -65,7 +71,7 @@ const lldArtifact = (body: LldBody): LldArtifact => ({
 test('finalize seam: a valid uxDefinition → sibling ux-mock HTML + a UX section LINK in the markdown (never inlined)', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'ux-integration-'));
 	const dest = join(repo, 'ux-mock.html');
-	const uxRef = await renderUxCompanion(validUx, 'UX mock', dest, { repoPath: repo });
+	const uxRef = await renderUxCompanion(validUx, 'UX mock', dest, { repoPath: repo, header: HEADER });
 	assert.equal(uxRef.kind, 'ux-mock');
 	assert.ok(existsSync(dest), 'the sibling ux-mock HTML companion is written');
 
@@ -78,8 +84,8 @@ test('finalize seam: a valid uxDefinition → sibling ux-mock HTML + a UX sectio
 
 test('finalize seam: a body with BOTH an ER and a UX definition emits BOTH companions in their own slots', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'ux-integration-'));
-	const erRef: CompanionArtifactRef = await renderErCompanion(validEr, 'ER model', join(repo, 'er-model.html'), { repoPath: repo });
-	const uxRef: CompanionArtifactRef = await renderUxCompanion(validUx, 'UX mock', join(repo, 'ux-mock.html'), { repoPath: repo });
+	const erRef: CompanionArtifactRef = await renderErCompanion(validEr, 'ER model', join(repo, 'er-model.html'), { repoPath: repo, header: HEADER });
+	const uxRef: CompanionArtifactRef = await renderUxCompanion(validUx, 'UX mock', join(repo, 'ux-mock.html'), { repoPath: repo, header: HEADER });
 	assert.ok(existsSync(join(repo, 'er-model.html')));
 	assert.ok(existsSync(join(repo, 'ux-mock.html')));
 
@@ -114,7 +120,7 @@ const hldArtifact = (body: HldBody): HldArtifact => ({
 test('HLD: a valid uxDefinition → sibling ux-mock HTML + a UX section LINK in the markdown (never inlined)', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'ux-integration-hld-'));
 	const dest = join(repo, 'ux-mock.html');
-	const uxRef = await renderUxCompanion(validUx, 'UX mock', dest, { repoPath: repo });
+	const uxRef = await renderUxCompanion(validUx, 'UX mock', dest, { repoPath: repo, header: HEADER });
 	assert.equal(uxRef.kind, 'ux-mock');
 	assert.ok(existsSync(dest), 'the sibling ux-mock HTML companion is written');
 
@@ -127,8 +133,8 @@ test('HLD: a valid uxDefinition → sibling ux-mock HTML + a UX section LINK in 
 
 test('HLD: a body with BOTH an ER and a UX definition emits BOTH companions in their own slots', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'ux-integration-hld-'));
-	const erRef: CompanionArtifactRef = await renderErCompanion(validEr, 'ER model', join(repo, 'er-model.html'), { repoPath: repo });
-	const uxRef: CompanionArtifactRef = await renderUxCompanion(validUx, 'UX mock', join(repo, 'ux-mock.html'), { repoPath: repo });
+	const erRef: CompanionArtifactRef = await renderErCompanion(validEr, 'ER model', join(repo, 'er-model.html'), { repoPath: repo, header: HEADER });
+	const uxRef: CompanionArtifactRef = await renderUxCompanion(validUx, 'UX mock', join(repo, 'ux-mock.html'), { repoPath: repo, header: HEADER });
 
 	const md = renderHldMarkdown(hldArtifact({ ...baseHld, erDefinition: validEr, uxDefinition: validUx, companions: [erRef, uxRef] } as unknown as HldBody));
 	assert.match(md, /\[ER model\]\(er-model\.html\)/);

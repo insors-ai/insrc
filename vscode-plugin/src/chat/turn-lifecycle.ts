@@ -106,6 +106,16 @@ function finishIterator(it: AsyncIterator<TurnEvent>): void {
   }
 }
 
+/** Once a turn's output has been fully handled: forget its cursor (if it is still that turn's). */
+function clearCursor(s: ChatSession, turnId: string): void {
+  if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
+}
+
+/** A done event carries the provider's native session id: the next turn resumes it. */
+function keepNativeSession(s: ChatSession, ev: TurnEvent): void {
+  if (ev.kind === 'done' && ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
+}
+
 const isTerminal = (ev: TurnEvent): ev is TurnEvent & { kind: 'done' | 'error' } => ev.kind === 'done' || ev.kind === 'error';
 
 export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
@@ -136,6 +146,28 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   };
   const trySave = (target: ChatSession): void => trySaveSession(deps.store, log, target);
   const isCurrent = (gen: number): boolean => deps.isOpen() && gen === generation;
+
+  /**
+   * Keeps a turn's saved cursor (session.liveTurn) current as its lines are handled: progress for
+   * the same turn moves it, saved together with the transcript rows those lines produced, at most
+   * every CURSOR_SAVE_MS, so the saved session is always a consistent snapshot.
+   */
+  const cursorTracker = (s: ChatSession, lastSave: number): { saveNow(): void; progress(c: TurnCursor): void } => {
+    let last = lastSave;
+    const saveNow = (): void => {
+      last = Date.now();
+      trySave(s);
+    };
+    return {
+      saveNow,
+      progress(c) {
+        const live = s.liveTurn;
+        if (live === undefined || live.cursor.turnId !== c.turnId) return;
+        s.liveTurn = { ...live, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset } };
+        if (Date.now() - last >= CURSOR_SAVE_MS) saveNow();
+      },
+    };
+  };
 
   /**
    * One CLI process per session: waits until the session's previous process has exited (in this
@@ -193,13 +225,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     // runLeased releases the lease on every path unless a process was attached to it (then the
     // process's exit releases it): a failed spawn, an adapter without onSpawn, or a throw.
     await runLeased(lease, async (attachLease) => {
-      // Save the cursor as lines are handled, together with the transcript rows they produced, so
-      // the saved session is always a consistent snapshot. Throttled; the terminal event saves.
-      let lastCursorSave = 0;
-      const saveCursorNow = (): void => {
-        lastCursorSave = Date.now();
-        trySave(s);
-      };
+      const cursor = cursorTracker(s, 0);
       // The lease follows the started process: it is released when that process exits, not
       // when its answer ends.
       const onSpawn = (proc: TurnProcess): void => {
@@ -223,18 +249,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
             ownerHostPid: deps.hostPid,
             ...(proc.pid !== undefined ? { pid: proc.pid, startedAt: deps.processStartTime(proc.pid) ?? null } : {}),
           };
-          saveCursorNow();
+          cursor.saveNow();
         }
-      };
-      const onProgress = (c: TurnCursor): void => {
-        const live = s.liveTurn;
-        if (live === undefined || live.cursor.turnId !== c.turnId) return;
-        s.liveTurn = { ...live, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset } };
-        if (Date.now() - lastCursorSave >= CURSOR_SAVE_MS) saveCursorNow();
-      };
-      /** At the turn's terminal event its output has been fully handled: forget its cursor. */
-      const clearCursor = (turnId: string): void => {
-        if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
       };
       let detached = false;
       let detachThis: (() => void) | undefined;
@@ -242,9 +258,10 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         // Inside the try, so a failed beforeRun or adapter start is a turn error and the lease is
         // still released.
         await sink.beforeRun();
-        // Hold the iterator explicitly so a stop can .return() it even while it is parked
-        // awaiting its first event.
-        const iterator = adapter.run(req, { onSpawn, onProgress, sessionId: s.id })[Symbol.asyncIterator]();
+        // Hold the iterator explicitly so a stop or detach can .return() it. A return() made while
+        // a next() is pending only takes effect once that next() settles (the next line, or the
+        // end of the output when the process exits).
+        const iterator = adapter.run(req, { onSpawn, onProgress: cursor.progress, sessionId: s.id })[Symbol.asyncIterator]();
         activeIterator = iterator;
         activeProvider = s.provider;
         detachThis = (): void => {
@@ -262,7 +279,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           // never stalls on a full pipe; its process (and the lease) end when it exits.
           if (!isCurrent(myGen)) {
             if (isTerminal(ev)) {
-              clearCursor(ev.turnId);
+              clearCursor(s, ev.turnId);
               finishIterator(iterator); // as on the live path: finish the generator
               break;
             }
@@ -271,8 +288,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           activeTurnId = ev.turnId;
           sink.onEvent(ev);
           if (isTerminal(ev)) {
-            clearCursor(ev.turnId);
-            if (ev.kind === 'done' && ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
+            clearCursor(s, ev.turnId);
+            keepNativeSession(s, ev);
             sink.onTerminal(ev);
             finishIterator(iterator); // finish the generator; the process is left to exit
             break;
@@ -305,7 +322,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     trySave(s);
     const ctl = new AbortController();
     following = { sessionId: s.id, ctl };
-    let lastSave = Date.now();
+    const cursor = cursorTracker(s, Date.now());
     const turnId = live.cursor.turnId;
     void (async () => {
       try {
@@ -316,24 +333,17 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
             onAttach: (p) => {
               resumedProc = p;
             },
-            onProgress: (c) => {
-              if (s.liveTurn?.cursor.turnId !== c.turnId) return;
-              s.liveTurn = { ...s.liveTurn, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset } };
-              if (Date.now() - lastSave >= CURSOR_SAVE_MS) {
-                lastSave = Date.now();
-                trySave(s);
-              }
-            },
+            onProgress: cursor.progress,
           },
         );
         for await (const ev of events) {
           if (ctl.signal.aborted) break;
           sink.onEvent(ev);
-          if (ev.kind === 'done' && ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
+          keepNativeSession(s, ev);
           if (isTerminal(ev)) break;
         }
         if (!ctl.signal.aborted) {
-          if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
+          clearCursor(s, turnId);
           trySave(s);
           sink.onEnd();
         }

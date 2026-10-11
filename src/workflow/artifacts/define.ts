@@ -160,7 +160,7 @@ export function renderDefineMarkdown(artifact: DefineArtifact): string {
 
 /** A short, distinct H1 name (fixes defect #4 — the 40-word H1). Prefers the Epic
  *  slug; falls back to the problem's first sentence. */
-function epicShortName(artifact: DefineArtifact): string {
+export function epicShortName(artifact: DefineArtifact): string {
 	const slug = (artifact.meta as { epicSlug?: string }).epicSlug;
 	if (typeof slug === 'string' && slug.length > 0) return slug;
 	return firstSentence(artifact.body.problem);

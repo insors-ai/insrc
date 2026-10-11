@@ -83,10 +83,47 @@ export interface Unmappable {
 	readonly reason:     string;
 }
 
+/** One exact whole-line replacement in an artifact md, at its post-move path. */
+export interface MdLabelEdit {
+	/** Absolute md path AFTER the moves (the destination when the md moves). */
+	readonly file: string;
+	/** The label line as the renderer wrote it from the stored meta. */
+	readonly from: string;
+	/** The same line rendered from the realigned meta. */
+	readonly to:   string;
+}
+
+/**
+ * One planned metadata realignment (ISSUE-7d42920d). The moves put every md of a
+ * work item in the folder its group resolved to, but each artifact's stored
+ * label, anchor and standalone flag are what `deriveMdPath` and the next live
+ * write read. A member whose stored values disagree with its group gets one of
+ * these, listing only the fields that change.
+ */
+export interface MetaRewrite {
+	readonly artifactId: string;
+	/** Absolute path of the artifact's `.insrc/artifacts/<id>.json`. */
+	readonly jsonPath:   string;
+	/** Group key, so the rewrite is committed with its work item's chunk. */
+	readonly groupHash:  string;
+	/** The meta fields that change. `standalone` is only ever set to true. */
+	readonly set: {
+		readonly epicSlug?:      string;
+		readonly epicCreatedAt?: string;
+		readonly standalone?:    true;
+	};
+	/** Label lines in the member's md that print the changed slug. */
+	readonly mdEdits:        readonly MdLabelEdit[];
+	/** Companion pages of the member whose header still shows the old label.
+	 *  They are not edited — the next finalize regenerates them. */
+	readonly companionNotes: readonly string[];
+}
+
 export interface MigrationPlan {
 	readonly moves:        readonly MigrationMove[];
 	readonly linkRewrites: readonly LinkRewrite[];
 	readonly unmappable:   readonly Unmappable[];
+	readonly metaRewrites: readonly MetaRewrite[];
 }
 
 // ---------------------------------------------------------------------------
@@ -317,7 +354,8 @@ export function planMigration(repoPath: string): MigrationPlan {
 	const moves:        MigrationMove[] = [];
 	const linkRewrites: LinkRewrite[]   = [];
 	const unmappable:   Unmappable[]    = [];
-	if (!existsSync(artifactsDir)) return { moves, linkRewrites, unmappable };
+	const metaRewrites: MetaRewrite[]   = [];
+	if (!existsSync(artifactsDir)) return { moves, linkRewrites, unmappable, metaRewrites };
 
 	const flatIndex   = indexFlatMd(repoPath);
 	const nestedIndex = indexNestedMd(repoPath);
@@ -598,7 +636,7 @@ export function planMigration(repoPath: string): MigrationPlan {
 		}
 	}
 
-	return { moves, linkRewrites, unmappable };
+	return { moves, linkRewrites, unmappable, metaRewrites };
 }
 
 // ---------------------------------------------------------------------------

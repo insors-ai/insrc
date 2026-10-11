@@ -4,7 +4,7 @@
     "runId": "wf-1791182900663-ze4h83",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
     "createdAt": "2026-10-05T06:50:56.951Z",
-    "epicCreatedAt": "2026-10-05T06:50:56.951Z",
+    "epicCreatedAt": "2026-10-05T06:10:31.833Z",
     "standalone": true,
     "attribution": {
       "outputs": [
@@ -20,7 +20,7 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "f2f08ccf89f8ab25",
-    "epicSlug": "plan-build-structured-design-review-template",
+    "epicSlug": "structured-design-review-template-approved-spec",
     "storyId": "S001",
     "lldRunId": "wf-1791180422005-29ykwt",
     "lldEffectiveHash": "f2f08ccf89f8ab252ea8cd02e81857294475ba425d5a5285f5160562ce9ba014",

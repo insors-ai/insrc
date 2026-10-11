@@ -4,7 +4,7 @@
 
 ## Summary
 
-**Epic:** `decompose-approved-lld-d9f85b3cc8cc966b-s001-shared`
+**Epic:** `implement-approved-spec-77932eaa1a85819b-docs-standalone`
 **LLD run:** `wf-1791714449161-37ufux`
 **LLD effective hash:** `d9f85b3cc8cc...`
 

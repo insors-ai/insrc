@@ -4,7 +4,7 @@
 
 ## Summary
 
-**Epic:** `plan-build-structured-design-review-template`
+**Epic:** `structured-design-review-template-approved-spec`
 **LLD run:** `wf-1791180422005-29ykwt`
 **LLD effective hash:** `f2f08ccf89f8...`
 

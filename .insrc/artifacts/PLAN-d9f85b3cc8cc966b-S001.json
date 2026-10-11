@@ -4,7 +4,7 @@
     "runId": "wf-1791717650054-gif810",
     "repoPath": "/home/subho/work/dev/insors/insrc",
     "createdAt": "2026-10-11T11:24:07.045Z",
-    "epicCreatedAt": "2026-10-11T11:24:07.045Z",
+    "epicCreatedAt": "2026-10-11T10:31:49.465Z",
     "standalone": true,
     "attribution": {
       "outputs": [
@@ -20,7 +20,7 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "d9f85b3cc8cc966b",
-    "epicSlug": "decompose-approved-lld-d9f85b3cc8cc966b-s001-shared",
+    "epicSlug": "implement-approved-spec-77932eaa1a85819b-docs-standalone",
     "storyId": "S001",
     "lldRunId": "wf-1791714449161-37ufux",
     "lldEffectiveHash": "d9f85b3cc8cc966bf50026e8e7e213c898543242bc2de8d74541bba00d58abb9",

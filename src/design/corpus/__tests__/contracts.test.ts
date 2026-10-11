@@ -1,6 +1,7 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CORPUS_DOMAINS, decodeGuidanceRecord, decodeEvidenceRef, decodeReleaseManifest } from '../contracts.js';
+import { CORPUS_DOMAINS, decodeGuidanceRecord, decodeEvidenceRef, decodeReleaseAvailability, decodeReleaseManifest } from '../contracts.js';
 import { recordFixture } from './fixtures.js';
 
 test('closed schemas preserve original fixtures for every guidance kind', () => {
@@ -35,8 +36,7 @@ test('evidence and manifest schemas require pinned identities without coercion',
   assert.equal(decodeReleaseManifest({ schemaVersion: '1' }).ok, false);
 });
 
-test('release availability is closed and validates every lifecycle state', async () => {
-  const { decodeReleaseAvailability } = await import('../contracts.js');
+test('release availability is closed and validates every lifecycle state', () => {
   for (const state of ['published', 'deprecated', 'withdrawn']) {
     const value = { releaseId: 'a'.repeat(64), state, catalogGeneration: 1 };
     assert.deepEqual(decodeReleaseAvailability(value), { ok: true, value });

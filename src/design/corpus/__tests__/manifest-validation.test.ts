@@ -1,3 +1,4 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CORPUS_LIMITS, hashBytes, releaseContentDigest, reviewContentDigest } from '../canonical.js';
@@ -82,4 +83,22 @@ test('manifest overrides and diagnostic pointers identify actual candidate field
       assert.notEqual(target, undefined, issue.path);
     }
   }
+});
+
+test('specimens cannot reference metadata records or unbound coverage bytes', () => {
+  for (const contentRef of ['coverage.json', 'sources.json', 'NOTICE.txt', 'records/0.json']) {
+    const source = recordFixture();
+    const record = sealRecord({ ...source, examples: source.examples.map(example => ({ ...example, contentRef })) });
+    fails(packageFixture([record]), 'reference.missing');
+  }
+});
+test('coverage decode errors and Unicode-equivalent inventory paths are rejected', () => {
+  const valid = packageFixture();
+  for (const payload of [new Uint8Array([0xff]), Buffer.from('{invalid JSON')]) {
+    fails({ ...valid, files: valid.files.map(file => file.path === 'coverage.json' ? { ...file, bytes: payload } : file) }, 'schema.invalid');
+  }
+  fails({ ...valid, files: [...valid.files,
+    { path: 'examples/\u00e9.json', kind: 'regular', bytes: bytes({}) },
+    { path: 'examples/e\u0301.json', kind: 'regular', bytes: bytes({}) },
+  ] }, 'inventory.invalid');
 });

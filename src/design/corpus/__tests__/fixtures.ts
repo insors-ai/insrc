@@ -1,3 +1,4 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { recordContentDigest } from '../canonical.js';
 import type { GuidanceKind, GuidanceRecord } from '../contracts.js';
 

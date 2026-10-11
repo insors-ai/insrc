@@ -16,6 +16,7 @@ export function isPortablePath(path: string): boolean {
   return path.length > 0 && !/[\\%:\x00-\x1f\x7f]/.test(path)
     && path.split('/').every(segment => segment !== '' && segment !== '.' && segment !== '..');
 }
+const pathCollisionKey = (path: string): string => path.normalize('NFC').toLowerCase();
 function utcDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)
     && Number.isFinite(Date.parse(value))
@@ -156,19 +157,19 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
     }
     if (!isPortablePath(path)) add('path.invalid', `/files/${i}/path`, 'Expected a portable package-relative path.');
     if (kind !== 'regular') add('inventory.invalid', `/files/${i}/kind`, 'Only regular files are admitted.');
-    if (files.has(path) || folded.has(path.toLowerCase())) add('inventory.invalid', `/files/${i}/path`, 'Inventory paths must be unique without case collisions.');
-    if (typeof manifestPath === 'string' && path.toLowerCase() === manifestPath.toLowerCase()) add('inventory.invalid', `/files/${i}/path`, 'Manifest must not appear in its own data inventory.');
+    if (files.has(path) || folded.has(pathCollisionKey(path))) add('inventory.invalid', `/files/${i}/path`, 'Inventory paths must be unique without case collisions.');
+    if (typeof manifestPath === 'string' && pathCollisionKey(path) === pathCollisionKey(manifestPath)) add('inventory.invalid', `/files/${i}/path`, 'Manifest must not appear in its own data inventory.');
     totalBytes += bytes.byteLength;
     if (totalBytes > CORPUS_LIMITS.packageBytes) return failure([...issues, issue('limit.exceeded', '/files', 'Package bytes exceed the format limit.')]);
-    folded.add(path.toLowerCase()); fileIndices.set(path, i);
+    folded.add(pathCollisionKey(path)); fileIndices.set(path, i);
     files.set(path, { path, kind: 'regular', bytes });
   }
   const listed = new Set<string>(); const listedFolded = new Set<string>();
   const fileDigests = new Map<string, string>();
   manifest.files.forEach((entry, i) => {
     if (!isPortablePath(entry.path)) add('path.invalid', `/manifest/files/${i}/path`, 'Expected a portable package-relative path.');
-    if (listed.has(entry.path) || listedFolded.has(entry.path.toLowerCase())) add('inventory.invalid', `/manifest/files/${i}/path`, 'Manifest file paths must be unique without case collisions.');
-    listed.add(entry.path); listedFolded.add(entry.path.toLowerCase());
+    if (listed.has(entry.path) || listedFolded.has(pathCollisionKey(entry.path))) add('inventory.invalid', `/manifest/files/${i}/path`, 'Manifest file paths must be unique without case collisions.');
+    listed.add(entry.path); listedFolded.add(pathCollisionKey(entry.path));
     const file = files.get(entry.path);
     if (!file) add('reference.missing', `/manifest/files/${i}/path`, 'Declared file is missing from inventory.');
     else {
@@ -189,7 +190,8 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
   const ids = new Set<string>(); const recordPaths = new Set<string>();
   const records: GuidanceRecord[] = [];
   const recordEntries = new Map<string, { record: GuidanceRecord; index: number }>();
-  const contentPaths = new Set(files.keys());
+  const metadataAndRecords = new Set([...reserved, ...manifest.records.map(record => record.path)]);
+  const contentPaths = new Set([...files.keys()].filter(path => !metadataAndRecords.has(path)));
   manifest.records.forEach((entry, i) => {
     const prefix = `/manifest/records/${i}`;
     const contentPrefix = `/files/${fileIndices.get(entry.path) ?? 0}/bytes`;
@@ -212,6 +214,22 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
     if (record.recordId !== entry.recordId || record.recordVersion !== entry.recordVersion) add('digest.mismatch', prefix, 'Manifest record pair does not match decoded content.');
     records.push(record); recordEntries.set(record.recordId, { record, index: i });
   });
+  issues.push(...validateRelationships(recordEntries, manifest, fileIndices));
+  const candidateDigest = candidateContentDigest(manifest);
+  issues.push(...validateCoverageEnvelope(manifest, files, fileIndices, candidateDigest));
+  const manifestDigest = releaseContentDigest(manifest);
+  if (manifest.releaseId !== manifestDigest) add('digest.mismatch', '/manifest/releaseId', 'Release identity does not match canonical manifest.');
+  return issues.length ? failure(issues) : { ok: true, value: { manifest, records, candidateContentDigest: candidateDigest, manifestDigest } };
+}
+
+/** Semantic graph checking stays independent of byte decoding and inventory admission. */
+function validateRelationships(
+  recordEntries: ReadonlyMap<string, { record: GuidanceRecord; index: number }>,
+  manifest: ReleaseManifest,
+  fileIndices: ReadonlyMap<string, number>,
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const add = (code: ValidationIssue['code'], path: string, message: string) => issues.push(issue(code, path, message));
   const edges = new Map<string, Set<string>>();
   for (const { record, index } of recordEntries.values()) {
     const targets = new Set<string>(); edges.set(record.recordId, targets);
@@ -236,7 +254,18 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
     }
   }
   if (visited !== edges.size) add('reference.cycle', '/manifest/records', 'Included record relationships must form an acyclic graph.');
-  const candidateDigest = candidateContentDigest(manifest);
+  return issues;
+}
+
+/** Coverage is opaque except for canonical bytes, exact binding and prohibited self-reference. */
+function validateCoverageEnvelope(
+  manifest: ReleaseManifest,
+  files: ReadonlyMap<string, PackageFile>,
+  fileIndices: ReadonlyMap<string, number>,
+  candidateDigest: string,
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const add = (code: ValidationIssue['code'], path: string, message: string) => issues.push(issue(code, path, message));
   const coverage = files.get(manifest.coveragePath);
   if (coverage) {
     try {
@@ -255,9 +284,7 @@ export function validateRelease(input: unknown): ValidationResult<ValidatedRelea
       if (reviewContentDigest(envelope) !== manifest.reviewDigest) add('digest.mismatch', '/manifest/reviewDigest', 'Review digest does not match canonical coverage bytes.');
     } catch (error) { const problem = inputIssue(error); issues.push({ ...problem, path: `/files/${fileIndices.get(manifest.coveragePath)!}/bytes`, message: `Decoded coverage ${problem.path || '/'}: ${problem.message}` }); }
   }
-  const manifestDigest = releaseContentDigest(manifest);
-  if (manifest.releaseId !== manifestDigest) add('digest.mismatch', '/manifest/releaseId', 'Release identity does not match canonical manifest.');
-  return issues.length ? failure(issues) : { ok: true, value: { manifest, records, candidateContentDigest: candidateDigest, manifestDigest } };
+  return issues;
 }
 
 /**

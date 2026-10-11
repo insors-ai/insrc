@@ -1,3 +1,4 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { candidateContentDigest, hashBytes, recordContentDigest, releaseContentDigest, reviewContentDigest } from '../canonical.js';
 import type { GuidanceRecord, ReleaseManifest } from '../contracts.js';
 import type { PackageFile, ReleaseCandidate } from '../validate.js';

@@ -1,3 +1,4 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { recordContentDigest, candidateContentDigest, reviewContentDigest, releaseContentDigest, hashBytes } from '../canonical.js';

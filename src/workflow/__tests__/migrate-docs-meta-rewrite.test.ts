@@ -221,3 +221,95 @@ function seedHeadLldStory2(repo: string): void {
 	seedJson(repo, `LLD-${H}-S002`, { createdAt: ANCHOR, epicCreatedAt: ANCHOR, epicHash: H, epicSlug: LABEL, storyId: 'S002', standalone: true });
 	seedMd(repo, `${FOLDER}/S002/LLD.md`, `LLD-${H}-S002`);
 }
+
+// ---------------------------------------------------------------------------
+// t3 — the md label lines and companion notes of a relabelled member
+// ---------------------------------------------------------------------------
+
+test("t3 — PLAN and LLD get the '**Epic:**' edit at the post-move path, including an old '`undefined`' line", () => {
+	const repo = newRepo();
+	try {
+		seedHeadLld(repo);
+		seedJson(repo, `PLAN-${H}-S001`, { createdAt: ANCHOR, epicHash: H, epicSlug: 'a-plan-label', storyId: 'S001', standalone: true });
+		seedMd(repo, 'docs/standalone/a-plan-label-E20261011a1b2c3d4/S001/PLAN.md', `PLAN-${H}-S001`, '**Epic:** `a-plan-label`\n');
+		// A second Story's LLD written with no slug: its renderer printed `undefined`.
+		seedJson(repo, `LLD-${H}-S002`, { createdAt: ANCHOR, epicHash: H, storyId: 'S002', standalone: true });
+		seedMd(repo, `${FOLDER}/S002/LLD.md`, `LLD-${H}-S002`, '**Epic:** `undefined`\n');
+
+		const plan = planMigration(repo);
+		assert.deepEqual(plan.unmappable, []);
+		const planTo = plan.moves.find(m => m.kind === 'PLAN')!.to;
+		assert.deepEqual(rewriteOf(plan.metaRewrites, `PLAN-${H}-S001`)?.mdEdits, [
+			{ file: planTo, from: '**Epic:** `a-plan-label`', to: `**Epic:** \`${LABEL}\`` },
+		]);
+		assert.deepEqual(rewriteOf(plan.metaRewrites, `LLD-${H}-S002`)?.mdEdits, [
+			{ file: join(repo, FOLDER, 'S002', 'LLD.md'), from: '**Epic:** `undefined`', to: `**Epic:** \`${LABEL}\`` },
+		]);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+const E      = '0f1e2d3c4b5a6978';           // hash8 '0f1e2d3c'
+const E_ROOT = 'docs/epics/the-label-E202610110f1e2d3c';
+
+/** An epic whose label comes from its ISSUE, with a slug-less DEF and members
+ *  that still carry an old label, all filed in a stray folder. */
+function seedRelabelledEpic(repo: string, hldBody: Record<string, unknown> = {}): void {
+	const stray = 'docs/epics/old-label-E202610110f1e2d3c';
+	seedJson(repo, `DEF-${E}`, { createdAt: ANCHOR, epicHash: E }, { problem: 'Folders drift apart. More words.' });
+	seedMd(repo, `${stray}/DEF.md`, `DEF-${E}`, '# Epic: Folders drift apart.\n');
+	seedJson(repo, `ISSUE-${E}`, { createdAt: ANCHOR, epicHash: E, epicSlug: 'the-label' });
+	seedMd(repo, `${E_ROOT}/ISSUE.md`, `ISSUE-${E}`);
+	seedJson(repo, `HLD-${E}`, { createdAt: ANCHOR, epicHash: E, epicSlug: 'old-label' }, { frameworkSummary: 'One folder.', ...hldBody });
+	seedMd(repo, `${stray}/HLD.md`, `HLD-${E}`, '# HLD: old-label\n');
+	seedJson(repo, `EXT-${E}-S001`, { createdAt: ANCHOR, epicHash: E, epicSlug: 'old-label', storyId: 'S001' }, { addedStory: { title: 'Add a thing' } });
+	seedMd(repo, `${stray}/S001/EXT.md`, `EXT-${E}-S001`);
+	for (const kind of ['BUILD', 'CR', 'TESTS'] as const) {
+		seedJson(repo, `${kind}-${E}-S001`, { createdAt: ANCHOR, epicHash: E, epicSlug: 'old-label', storyId: 'S001' });
+		seedMd(repo, `${stray}/S001/${kind}.md`, `${kind}-${E}-S001`);
+	}
+}
+
+test('t3 — BUILD/CR/TESTS get JSON-only rewrites; EXT gets its two title-line edits; DEF and HLD get their H1 edit', () => {
+	const repo = newRepo();
+	try {
+		seedRelabelledEpic(repo);
+		const plan = planMigration(repo);
+		assert.deepEqual(plan.unmappable, []);
+		const to = (id: string) => plan.moves.find(m => m.from.endsWith(`/${id.split('-')[0]}.md`))!.to;
+
+		for (const kind of ['BUILD', 'CR', 'TESTS']) {
+			const rw = rewriteOf(plan.metaRewrites, `${kind}-${E}-S001`)!;
+			assert.equal(rw.set.epicSlug, 'the-label', kind);
+			assert.deepEqual(rw.mdEdits, [], `${kind} prints no label`);
+		}
+		assert.deepEqual(rewriteOf(plan.metaRewrites, `EXT-${E}-S001`)?.mdEdits, [
+			{ file: to(`EXT-${E}-S001`), from: '# Extend: old-label — Add a thing', to: '# Extend: the-label — Add a thing' },
+			{
+				file: to(`EXT-${E}-S001`),
+				from: '> **Extends Epic `old-label`** — this builds on existing docs + code; no new Epic was created.',
+				to:   '> **Extends Epic `the-label`** — this builds on existing docs + code; no new Epic was created.',
+			},
+		]);
+		// The slug-less DEF's H1 was its problem's first sentence.
+		assert.deepEqual(rewriteOf(plan.metaRewrites, `DEF-${E}`)?.mdEdits, [
+			{ file: join(repo, E_ROOT, 'DEF.md'), from: '# Epic: Folders drift apart.', to: '# Epic: the-label' },
+		]);
+		assert.deepEqual(rewriteOf(plan.metaRewrites, `HLD-${E}`)?.mdEdits, [
+			{ file: join(repo, E_ROOT, 'HLD.md'), from: '# HLD: old-label', to: '# HLD: the-label' },
+		]);
+		assert.equal(rewriteOf(plan.metaRewrites, `ISSUE-${E}`), undefined, 'the head already carries the label');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t3 — a relabelled HLD with a companion page plans no edit to the page and lists it in companionNotes', () => {
+	const repo = newRepo();
+	try {
+		seedRelabelledEpic(repo, { companions: [{ kind: 'component-dependency', relPath: 'docs/epics/old-label-E202610110f1e2d3c/component-dependency.html', title: 'Components' }] });
+		seedMd(repo, 'docs/epics/old-label-E202610110f1e2d3c/component-dependency.html', null, '<p>Epic old-label</p>');
+		const plan = planMigration(repo);
+		const rw = rewriteOf(plan.metaRewrites, `HLD-${E}`)!;
+		assert.deepEqual(rw.companionNotes, [join(repo, E_ROOT, 'component-dependency.html')]);
+		assert.ok(rw.mdEdits.every(e => e.file.endsWith('HLD.md')), 'only the HLD md is edited');
+		assert.ok(plan.metaRewrites.every(r => r.mdEdits.every(e => !e.file.endsWith('.html'))));
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

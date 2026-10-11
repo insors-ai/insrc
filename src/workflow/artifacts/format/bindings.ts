@@ -20,6 +20,13 @@ import type { ChangeLog, FeedbackRecord } from '../provenance/types.js';
  * (the engine supplies the numbered heading). `[]` when the record is
  * absent/empty (the renderer then omits the section — absent-safe).
  */
+/** The summary line naming the work item's label (PLAN and LLD). The docs
+ *  migration rebuilds it from stored meta to edit it in place, so both sides
+ *  share this one definition. A missing slug renders as written, `undefined`. */
+export function epicLabelLine(epicSlug: unknown): string {
+	return `**Epic:** \`${String(epicSlug)}\``;
+}
+
 export function frBodyLines(fd: FunctionalDefinition | undefined): string[] {
 	const raw = renderFunctionalRequirementsSection(fd);
 	if (raw.length === 0) return [];

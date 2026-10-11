@@ -28,7 +28,7 @@ import { renderFunctionalRequirementsSection } from './functional-definition.js'
 import type { DocumentSummary, SharedContextRef } from './format/types.js';
 import type { FeedbackRecord } from './provenance/types.js';
 import { renderFromFormat, deriveHldContextRef, type SectionBindings, type SectionItem } from './format/engine.js';
-import { citationBodyLines, frBodyLines, companionBodyLines, uxCompanionBodyLines, feedbackBodyLines } from './format/bindings.js';
+import { citationBodyLines, epicLabelLine, frBodyLines, companionBodyLines, uxCompanionBodyLines, feedbackBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 import type { BoundaryFinding } from '../synthesizer.js';
 import type { ErDefinition } from './companion/er.js';
@@ -333,7 +333,7 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 	const isStandalone = (meta as { standalone?: boolean }).standalone === true;
 
 	const summaryLines = (): string[] => {
-		const out: string[] = [`**Epic:** \`${meta.epicSlug}\``];
+		const out: string[] = [epicLabelLine(meta.epicSlug)];
 		if (typeof meta.hldBaseRunId === 'string' && meta.hldBaseRunId.length > 0) out.push(`**HLD base run:** \`${meta.hldBaseRunId}\``);
 		if (typeof meta.hldEffectiveHash === 'string' && meta.hldEffectiveHash.length > 0) out.push(`**HLD effective hash:** \`${meta.hldEffectiveHash.slice(0, 12)}...\``);
 		const seededFromSpec = (meta as { seededFromSpec?: string }).seededFromSpec;

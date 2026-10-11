@@ -35,6 +35,10 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmdirSync, statSync, 
 import { dirname, join, relative, sep } from 'node:path';
 
 import { getLogger } from '../shared/logger.js';
+import { epicShortName, type DefineArtifact } from './artifacts/define.js';
+import { extendBannerLine, extendTitleLine } from './artifacts/extend.js';
+import { epicLabelLine } from './artifacts/format/bindings.js';
+import { hldShortName, type HldArtifact } from './artifacts/hld.js';
 import { deriveWorkItemIdentity, type WorkItemIdentity } from './id.js';
 import {
 	listArtifactMdPaths,
@@ -375,7 +379,7 @@ function segmentOf(hash: string, anchor: string | undefined): string | undefined
  * the segment uses only the date, so a ledger record written hours after its
  * LLD, with no stamp of its own, already resolves the right folder.
  */
-function planMetaRewrite(m: Artifact, g: GroupResolution): MetaRewrite | undefined {
+function planMetaRewrite(m: Artifact, g: GroupResolution, mdFile: string): MetaRewrite | undefined {
 	const set: { epicSlug?: string; epicCreatedAt?: string; standalone?: true } = {};
 	if (g.slug !== undefined && m.epicSlug !== g.slug) set.epicSlug = g.slug;
 	if (g.groupSegment !== undefined && segmentOf(g.hash, m.epicCreatedAt ?? m.createdAt) !== g.groupSegment) {
@@ -383,7 +387,61 @@ function planMetaRewrite(m: Artifact, g: GroupResolution): MetaRewrite | undefin
 	}
 	if (g.workItemKind === 'standalone' && !m.storedStandalone) set.standalone = true;
 	if (Object.keys(set).length === 0) return undefined;
-	return { artifactId: m.id, jsonPath: m.jsonPath, groupHash: g.hash, set, mdEdits: [], companionNotes: [] };
+	const relabel = set.epicSlug !== undefined ? labelEdits(m, set.epicSlug, mdFile) : { mdEdits: [], companionNotes: [] };
+	return { artifactId: m.id, jsonPath: m.jsonPath, groupHash: g.hash, set, ...relabel };
+}
+
+/**
+ * The md label lines a relabel changes, rebuilt from the stored meta exactly as
+ * the kind's renderer wrote them, and the companion pages left showing the old
+ * label. Only PLAN, LLD, EXT, DEF and HLD print the label; the other kinds get a
+ * JSON-only rewrite. `mdFile` is the md's post-move path.
+ */
+function labelEdits(m: Artifact, newSlug: string, mdFile: string): { mdEdits: MdLabelEdit[]; companionNotes: string[] } {
+	const mdEdits: MdLabelEdit[] = [];
+	const companionNotes: string[] = [];
+	if (!['PLAN', 'LLD', 'EXT', 'DEF', 'HLD'].includes(m.kind)) return { mdEdits, companionNotes };
+	let parsed: { meta?: Record<string, unknown>; body?: Record<string, unknown> };
+	try {
+		parsed = JSON.parse(readFileSync(m.jsonPath, 'utf8')) as typeof parsed;
+	} catch {
+		return { mdEdits, companionNotes };   // apply re-reads it and fails loudly
+	}
+	const meta = parsed.meta ?? {};
+	const body = parsed.body ?? {};
+	const oldSlug = meta['epicSlug'];
+	const relabelled = { ...parsed, meta: { ...meta, epicSlug: newSlug }, body };
+	const edit = (from: string, to: string): void => { if (from !== to) mdEdits.push({ file: mdFile, from, to }); };
+	switch (m.kind) {
+		case 'PLAN':
+		case 'LLD':
+			edit(epicLabelLine(oldSlug), epicLabelLine(newSlug));
+			break;
+		case 'EXT': {
+			const title = (body['addedStory'] as { title?: unknown } | undefined)?.title;
+			edit(extendTitleLine(oldSlug, title), extendTitleLine(newSlug, title));
+			edit(extendBannerLine(oldSlug), extendBannerLine(newSlug));
+			break;
+		}
+		case 'DEF':
+			edit(`# Epic: ${epicShortName(parsed as unknown as DefineArtifact)}`, `# Epic: ${epicShortName(relabelled as unknown as DefineArtifact)}`);
+			break;
+		case 'HLD':
+			edit(`# HLD: ${hldShortName(parsed as unknown as HldArtifact)}`, `# HLD: ${hldShortName(relabelled as unknown as HldArtifact)}`);
+			break;
+	}
+	// A companion is a sibling of its md and travels with it (step 2b), so it
+	// sits beside the post-move md. Its header prints the label for an HLD and
+	// an epic Story's LLD; a standalone LLD's header names only the Story.
+	const companions = body['companions'];
+	const headerShowsLabel = m.kind === 'HLD' || (m.kind === 'LLD' && meta['standalone'] !== true);
+	if (headerShowsLabel && Array.isArray(companions)) {
+		for (const c of companions as { relPath?: unknown }[]) {
+			if (typeof c.relPath !== 'string') continue;
+			companionNotes.push(join(dirname(mdFile), c.relPath.slice(c.relPath.lastIndexOf('/') + 1)));
+		}
+	}
+	return { mdEdits, companionNotes };
 }
 
 /**
@@ -529,8 +587,8 @@ export function planMigration(repoPath: string): MigrationPlan {
 		// ISSUE-7d42920d — the stored meta each member must carry so that
 		// deriveMdPath, and the next live write, resolve the folder the md is moved
 		// into. Only a member that stays mappable gets one.
-		const realign = (m: Artifact): void => {
-			const rewrite = planMetaRewrite(m, { hash, slug, anchor, groupSegment, workItemKind });
+		const realign = (m: Artifact, mdFile: string): void => {
+			const rewrite = planMetaRewrite(m, { hash, slug, anchor, groupSegment, workItemKind }, mdFile);
 			if (rewrite !== undefined) metaRewrites.push(rewrite);
 		};
 
@@ -548,11 +606,11 @@ export function planMigration(repoPath: string): MigrationPlan {
 			if (m.mdPath === undefined) {
 				// No md anywhere — neither flat nor nested. Either already at its
 				// destination (idempotent skip) or the file is simply gone.
-				if (existsSync(to)) { realign(m); continue; }
+				if (existsSync(to)) { realign(m, to); continue; }
 				unmappable.push({ artifactId: m.id, reason: `md file not found in a flat or nested docs dir and not at its destination ${relative(repoPath, to)}` });
 				continue;
 			}
-			if (m.mdPath === to) { realign(m); continue; }   // already correctly placed
+			if (m.mdPath === to) { realign(m, to); continue; }   // already correctly placed
 
 			const prior = toSeen.get(to);
 			if (prior !== undefined) {
@@ -577,12 +635,12 @@ export function planMigration(repoPath: string): MigrationPlan {
 					'migrate-docs-tree: duplicate render — the destination already holds a different file for this artifact; ' +
 					'leaving BOTH in place (this folder will not converge until one is removed by hand)',
 				);
-				realign(m);
+				realign(m, to);
 				continue;
 			}
 			toSeen.set(to, m.id);
 			moves.push({ from: m.mdPath, to, kind: m.kind, identity, groupHash: hash });
-			realign(m);
+			realign(m, to);
 		}
 	}
 

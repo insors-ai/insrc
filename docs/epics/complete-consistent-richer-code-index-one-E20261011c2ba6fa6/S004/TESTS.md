@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -166,3 +166,36 @@ Run at 2026-10-11T10:06:37.979Z on commit `b5e5dfcf`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/store-failure-dispatch.test.ts` | 0 | 3 | 2.8 s |  |
+
+## t6
+
+Run at 2026-10-11T10:11:32.404Z on commit `7d18c49e`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost | `src/daemon/__tests__/status-store-failure.test.ts` |
+
+**unit: status handler with the store failed returns an empty repository list and storeFailure and does not throw**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | status handler with the store failed returns an empty repository list and storeFailure and does not throw | `src/daemon/__tests__/status-store-failure.test.ts` |
+
+**unit: daemon pane and both plugins: the cause line is shown when the field is present, and a status without it is accepted**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise | `src/cli/__tests__/tui.test.ts` |
+| pass | daemon status adds the store failure line when the status carries it | `src/cli/__tests__/command.test.ts` |
+| pass | status() shows the store failure cause when the payload carries storeFailure, and accepts a status without it | `vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/cli/__tests__/command.test.ts` | 0 | 21 | 0.4 s |  |
+| `src/cli/__tests__/tui.test.ts` | 0 | 21 | 2.3 s |  |
+| `src/daemon/__tests__/status-store-failure.test.ts` | 0 | 2 | 0.6 s |  |
+| `vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts` | 0 | 10 | 0.4 s |  |

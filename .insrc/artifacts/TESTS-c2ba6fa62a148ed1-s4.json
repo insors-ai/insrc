@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-11T10:06:37.979Z"
+    "updatedAt": "2026-10-11T10:11:32.404Z"
   },
   "body": {
     "tasks": [
@@ -469,6 +469,317 @@
               },
               {
                 "title": "periodic check records locks-lost when no request or write has met the failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "7d18c49e",
+        "ranAt": "2026-10-11T10:11:32.404Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/status-store-failure.test.ts",
+                "title": "daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "status handler with the store failed returns an empty repository list and storeFailure and does not throw",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/status-store-failure.test.ts",
+                "title": "status handler with the store failed returns an empty repository list and storeFailure and does not throw",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "daemon pane and both plugins: the cause line is shown when the field is present, and a status without it is accepted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "daemon status adds the store failure line when the status carries it",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts",
+                "title": "status() shows the store failure cause when the payload carries storeFailure, and accepts a status without it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/command.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 427,
+            "titles": [
+              {
+                "title": "help lists the command reference",
+                "result": "pass"
+              },
+              {
+                "title": "repo add without --steering passes no steering (no silent write)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering installs both CLAUDE.md + AGENTS.md",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add dispatches to repo.add with the path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status renders a one-line summary",
+                "result": "pass"
+              },
+              {
+                "title": "config list shows known options (default) merged with set values",
+                "result": "pass"
+              },
+              {
+                "title": "config list <search> filters options by substring",
+                "result": "pass"
+              },
+              {
+                "title": "config get navigates a dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set parses JSON values (number) and writes the dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set keeps a non-JSON token as a string",
+                "result": "pass"
+              },
+              {
+                "title": "pane switches the active pane",
+                "result": "pass"
+              },
+              {
+                "title": "quit calls exit",
+                "result": "pass"
+              },
+              {
+                "title": "unknown command is reported, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "service errors surface as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review renders verdict, counts, auto-fixes, and pending findings",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve --override threads the reason to approve",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve surfaces a review block as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow run streams progress via onLog and reports path + review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "workflow findings lists pending, workflow resolve resolves one (R3)",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status adds the store failure line when the status carries it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2330,
+            "titles": [
+              {
+                "title": "Daemon pane shows running status + uptime",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane renders the down state when the daemon is unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "number keys switch panes (Daemon → Repos)",
+                "result": "pass"
+              },
+              {
+                "title": "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+                "result": "pass"
+              },
+              {
+                "title": "Workflows pane lists epics and opens the chain detail",
+                "result": "pass"
+              },
+              {
+                "title": "Setup pane renders system + recommendation without crashing",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: Setup model-pull streams ollama progress into the message box",
+                "result": "pass"
+              },
+              {
+                "title": "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` runs tracker setup for the selected repo and shows the report",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: a throwing tracker setup renders a failed row instead of crashing",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` with no repos registered is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: the tracker modal dismisses on any key back to the list",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a daemon op streams into the message box; DaemonPane body stays stable",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a failing daemon op surfaces its error line; pane body untouched",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: ui.toast (r refresh) lands in the message box",
+                "result": "pass"
+              },
+              {
+                "title": "':' opens the command bar and runs a typed command",
+                "result": "pass"
+              },
+              {
+                "title": "the tab bar renders a 6th 6:Debug peer tab",
+                "result": "pass"
+              },
+              {
+                "title": "pressing '6' opens the Debug pane and hides the previously active pane",
+                "result": "pass"
+              },
+              {
+                "title": "Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/status-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 579,
+            "titles": [
+              {
+                "title": "daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost",
+                "result": "pass"
+              },
+              {
+                "title": "status handler with the store failed returns an empty repository list and storeFailure and does not throw",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 382,
+            "titles": [
+              {
+                "title": "status() maps a DaemonStatus (incl. missing optionals) to a DaemonStatusView { state, detail }, over daemon.status only (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "status() shows the store failure cause when the payload carries storeFailure, and accepts a status without it",
+                "result": "pass"
+              },
+              {
+                "title": "status() rejects GatewayReadError when daemon.status fails",
+                "result": "pass"
+              },
+              {
+                "title": "registeredRepos() maps repo.list -> RepoRef[]; mcpClients() maps daemon.debug-status clients (attached ⇒ wired)",
+                "result": "pass"
+              },
+              {
+                "title": "mcpClients() tolerates a debug-status payload with no clients (empty view, not an error)",
+                "result": "pass"
+              },
+              {
+                "title": "workflowChain() returns empty rows when artifactsRoot is undefined (valid empty state)",
+                "result": "pass"
+              },
+              {
+                "title": "the VS Code plugin's workflow chain lists no row for a TESTS record and the same rows as without it (mutation: list every json)",
+                "result": "pass"
+              },
+              {
+                "title": "workflowChain() reads the .insrc/artifacts tree into rows, and a malformed artifact rejects GatewayReadError",
+                "result": "pass"
+              },
+              {
+                "title": "scanOrphans() maps the injected scan and rejects GatewayReadError on failure (and never kills)",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: daemon-gateway.ts imports no vscode and uses no cloud/HTTP client (only sc1 + fs/process — ac4/k2)",
                 "result": "pass"
               }
             ],

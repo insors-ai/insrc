@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-11T10:06:37.979Z",
+    "updatedAt": "2026-10-11T10:11:32.404Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -28,9 +28,13 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "The request server's three catch sites and the queue's job runner record a store lock failure (through recordStoreFailureIfLockError) before the error is reduced to a message, and answer or log LmdbStoreLocksLostError. The periodic reader check now probes the store with one read and records a failure; the daemon starts it through startPeriodicReaderCheck, whose interval the test shortens. As recorded on the design, a lock failure on a read is code -30775 or code 22 with MDB_BAD_RSLOT.",
+    "summary": "DaemonStatus gains the optional storeFailure field. The status payload is built by a new src/daemon/status.ts, which guards the store read of the repository list: with the store failed the request answers with an empty list and the cause. The cause line is shown by the CLI's daemon pane and status command, the VS Code plugin's daemon view (which imports the shared type) and the JetBrains plugin's daemon settings page (DaemonStatusDto.storeFailureCause and storeFailureRow). The JetBrains part is covered by a Kotlin test in DaemonStatusGatewayTest, which the gate cannot run; it was run locally with Gradle under JDK 21 (7 tests, 0 failures).",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/TESTS.md"
     },
@@ -40,177 +44,233 @@
           "file": ".insrc/artifacts/LLD-c2ba6fa62a148ed1-s4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-c2ba6fa62a148ed1-s4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:11:32.404Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/DaemonConfigurable.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:11:32.404Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonStatusGatewayTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "scripts/daemon-ctl.sh"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/command.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/tui.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/cli/command.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/cli/panes/DaemonPane.tsx"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/cli/services/__tests__/daemon-stop-forced.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/cli/services/__tests__/daemon-stop.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/cli/services/daemon.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/cli/services/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/cli/services/maintenance.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/status-store-failure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/store-failure-dispatch.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/daemon/queue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/daemon/server.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/status.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/helpers/store-child-driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/helpers/store-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/lock-loss-detection.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/store-health.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-11T10:06:37.979Z"
+        "timestamp": "2026-10-11T10:11:32.404Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:11:32.404Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:11:32.404Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/daemon-gateway.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T10:11:32.404Z"
       }
     ],
-    "commit": "b5e5dfcf"
+    "commit": "7d18c49e"
   }
 }

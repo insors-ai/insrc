@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Draft product requirements for framework-independent web and mobile design intelligence in insrc.">
+<title>insrc Design Intelligence — Product Requirements</title>
+<style>
+:root{--ink:#202f35;--muted:#52656b;--accent:#17695d;--line:#d9e1df;--paper:#fff;--canvas:#f4f6f3;--tint:#edf5f1}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:32px}body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.75 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:var(--accent);text-underline-offset:3px}a:hover{text-decoration-thickness:2px}a:focus-visible{outline:3px solid var(--accent);outline-offset:5px;border-radius:2px}.skip{position:absolute;left:20px;top:-80px;padding:10px 20px;background:white;z-index:5}.skip:focus{top:12px}.layout{display:grid;grid-template-columns:260px minmax(0,900px);gap:54px;max-width:1290px;margin:0 auto;padding:50px 30px 80px}aside{position:sticky;top:34px;align-self:start;max-height:calc(100vh - 68px);overflow:auto;padding:0 8px 15px 0}.brand{font-weight:800;font-size:24px;letter-spacing:-1px;color:var(--accent);margin-bottom:6px}.label{font-size:11px;font-weight:750;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted)}nav{margin-top:25px;display:grid;gap:4px}nav a{display:flex;gap:12px;padding:7px 8px;font-size:13px;line-height:1.5;text-decoration:none;color:var(--muted);border-radius:6px}nav a:hover{background:#e6eeea;color:var(--accent)}nav span{font-size:11px;font-variant-numeric:tabular-nums;color:var(--accent);padding-top:2px}main{min-width:0;background:var(--paper);border:1px solid var(--line);border-top:5px solid var(--accent);border-radius:4px;padding:48px 54px 52px;box-shadow:0 8px 32px #203b2b05}.eyebrow{margin-bottom:18px;color:var(--accent)}h1,h2,h3{line-height:1.25;letter-spacing:-.025em;scroll-margin-top:32px}h1{font-size:clamp(30px,4vw,46px);font-weight:750;margin:0 0 22px;max-width:650px}h2{font-size:25px;margin:54px 0 20px;padding-top:26px;border-top:1px solid var(--line)}h3{font-size:19px;margin:32px 0 14px}p{margin:0 0 18px}h1+p{font-size:13px;font-weight:600;padding:10px 14px;background:#fff6df;color:#72500d;border-left:3px solid #b88725}h1+p+p{font-size:13px;color:var(--muted);margin-bottom:30px}strong{font-weight:700}ul,ol{padding-left:23px;margin:12px 0 24px}li{padding-left:5px;margin:10px 0}table{width:100%;border-collapse:collapse;margin:22px 0 26px;font-size:14px;line-height:1.65;table-layout:fixed}th,td{text-align:left;vertical-align:top;padding:13px 15px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:var(--tint);font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--accent)}th:first-child,td:first-child{width:27%}td:first-child{font-weight:650}tbody tr:nth-child(even){background:#f9fbf9}p.acceptance{padding:14px 17px;background:var(--tint);border-left:3px solid var(--accent);font-size:14px}footer{margin-top:42px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}@media(max-width:1000px){.layout{grid-template-columns:210px minmax(0,1fr);gap:24px;padding:28px 20px}main{padding:35px 30px}}@media(max-width:760px){.layout{display:block;padding:20px 14px}aside{position:static;max-height:none;padding:0 5px 24px}nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;margin-top:15px}nav a{font-size:12px}main{padding:28px 22px}h2{font-size:23px;margin-top:38px}table{font-size:13px}th,td{padding:10px 8px}th:first-child,td:first-child{width:31%}}@media(max-width:400px){nav{grid-template-columns:1fr}main{padding:25px 17px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}@media print{@page{size:A4;margin:18mm}body{background:white;font-size:10pt;line-height:1.5}.layout{display:block;max-width:none;padding:0}aside,.skip{display:none}main{border:0;border-radius:0;box-shadow:none;padding:0}h1{font-size:28pt}h2{font-size:17pt;margin-top:25pt;padding-top:12pt}h3{font-size:13pt}h1,h2,h3{break-after:avoid}p,li{orphans:3;widows:3}table{font-size:9pt}tr{break-inside:avoid}thead{display:table-header-group}a{color:inherit}footer{font-size:9pt}}
+</style>
+</head>
+<body>
+<a class="skip" href="#document">Skip to document</a>
+<div class="layout">
+<aside aria-label="Document navigation"><div class="brand">insrc</div><div class="label">Product requirements</div><nav aria-label="Table of contents"><a href="#product-intent"><span>01</span>Product intent</a>
+<a href="#confirmed-scope-and-proposed-decisions"><span>02</span>Confirmed scope and proposed decisions</a>
+<a href="#problem-and-users"><span>03</span>Problem and users</a>
+<a href="#goals-and-boundaries"><span>04</span>Goals and boundaries</a>
+<a href="#main-user-journeys"><span>05</span>Main user journeys</a>
+<a href="#project-guideline-workflow"><span>06</span>Project guideline workflow</a>
+<a href="#guidance-corpus"><span>07</span>Guidance corpus</a>
+<a href="#open-source-sourcing-and-ingestion"><span>08</span>Open source sourcing and ingestion</a>
+<a href="#functional-requirements"><span>09</span>Functional requirements</a>
+<a href="#proposed-guideline-package"><span>10</span>Proposed guideline package</a>
+<a href="#relationship-to-insrc"><span>11</span>Relationship to insrc</a>
+<a href="#quality-and-release-acceptance"><span>12</span>Quality and release acceptance</a>
+<a href="#delivery-sequence"><span>13</span>Delivery sequence</a>
+<a href="#open-product-choices"><span>14</span>Open product choices</a>
+<a href="#references-and-guidance-policy"><span>15</span>References and guidance policy</a></nav></aside>
+<main id="document"><div class="label eyebrow">Design intelligence · Web and mobile</div>
+<h1 id="insrc-design-intelligence-prd">insrc Design Intelligence PRD</h1>
+<p>Status: Draft for discussion. Not approved for implementation.</p>
+<p>Date: 11 October 2026</p>
+<h2 id="product-intent">Product intent</h2>
+<p>Give people and AI agents a dependable design partner for web and mobile products. The user requests creation of design guidelines for a project and selects the UI types to cover: Web, Mobile-iOS, and Mobile-Android. insrc retrieves relevant design knowledge, helps select a coherent direction, and saves reusable guidelines for each requested UI type. Subsequent page and feature work consumes those guidelines without repeating the design exercise.</p>
+<p>The core asset is a searchable corpus combining eligible open-source design foundations with insrc-authored style, layout, color, typography, and UX guidance. Recommendations should explain why a choice fits the task, which constraints it satisfies, and what tradeoffs it introduces. A project should acquire a consistent design language over time while retaining room for deliberate evolution.</p>
+<h2 id="confirmed-scope-and-proposed-decisions">Confirmed scope and proposed decisions</h2>
+<p>The user has confirmed that the capability belongs in insrc, covers both web and mobile, includes a style/layout/color guidance corpus, and focuses on designing rather than React, Angular, or any other implementation framework. UI UX Pro Max is an inspiration and reference; its implementation and catalog will not be copied.</p>
+<p>A project can have multiple guideline sets, one for each UI type: Web, Mobile-iOS, and Mobile-Android. The creation workflow operates at project and UI-type scope, not page scope. Users may create one set now and add another UI type later.</p>
+<p>External material incorporated into the distributed corpus must be open source or explicitly open-licensed for its content type, including public-domain material. Public availability alone does not qualify a source. Project-private inputs may inform that project&#39;s design but must not enter the shared corpus automatically.</p>
+<p>The first release includes lightweight palette, typography, component-state, and representative layout examples alongside written guidelines, as explicitly selected by the user on 11 October 2026. Other unconfirmed requirements remain proposed product decisions. This scope choice does not constitute workflow artifact approval.</p>
+<h2 id="problem-and-users">Problem and users</h2>
+<p>Agents can make individually plausible UI choices that do not form a coherent product. A palette may lack usable semantic roles, a layout may fail with real content, and a mobile screen may inherit desktop navigation without considering touch or constrained space. Generic style advice also loses previously agreed brand decisions between tasks.</p>
+<p>The primary users are product builders and designers collaborating with an agent, and agents consuming insrc design context. A secondary user is a maintainer curating the guidance corpus. The product must work for a new idea with no repository, an existing design system, and an existing product whose design decisions are only partially documented.</p>
+<h2 id="goals-and-boundaries">Goals and boundaries</h2>
+<p>The first release should help users select a coherent project design direction, establish reusable guidelines for each requested UI type, and apply those guidelines consistently across pages and features. It should preserve decision history and make sources and uncertainty inspectable.</p>
+<p>Framework selection, production application generation, framework component libraries, deployment, and automated code modification are outside this capability&#39;s initial scope. So are a full canvas editor, automatic Figma synchronization, logo generation, and blanket accessibility certification. These may become integrations later without changing the design model.</p>
+<p>Page-by-page design exercises and production screen or flow specification generation are outside this workflow. Representative layouts and component specimens may illustrate a guideline, but creating a new page must not create a new guideline set or restart direction selection.</p>
+<p>Visual previews are proposed as aids to choosing and reviewing reusable guidelines. They do not make production UI generation part of this PRD.</p>
+<h2 id="main-user-journeys">Main user journeys</h2>
+<ol>
+<li><strong>Create project guidelines.</strong> A user asks, “Create design guidelines for Project Atlas for Web and Mobile-iOS.” insrc gathers a project brief, retrieves relevant corpus guidance, compares coherent directions, and drafts a separate guideline set for each requested UI type. Each set is reviewed and explicitly approved before becoming active.</li>
+<li><strong>Add another UI type.</strong> Later, the user requests Mobile-Android guidelines for Atlas. insrc reuses relevant brand decisions from the existing sets, identifies Android-specific choices, and creates the additional set without replacing Web or Mobile-iOS guidelines.</li>
+<li><strong>Use guidelines for page work.</strong> An agent working on a dashboard, settings page, or checkout retrieves the active guidelines for the project and UI type. It applies the same design rules across those pages without a new design exercise or approval of unchanged guidelines.</li>
+<li><strong>Revise project guidelines.</strong> A user explicitly asks to change a guideline set. insrc drafts a new version, explains the changes and affected design rules, and preserves the active version until the revision is reviewed and approved.</li>
+<li><strong>Explore guidance or assess adherence.</strong> A user can ask a focused design question or compare downstream work against an active guideline set. Findings may suggest a project-level revision but do not automatically create page-specific guidelines.</li>
+</ol>
+<h2 id="project-guideline-workflow">Project guideline workflow</h2>
+<h3 id="project-and-ui-type-model">Project and UI type model</h3>
+<p>A project is the parent of independently versioned guideline sets. Each set has a stable identity, project identity, UI type, version, status, design rationale, and source provenance. One active approved version is resolved for each project and UI-type pair; drafts and superseded versions remain available as history. An existing active set makes a new request for the same pair an explicit revision, not a second competing default.</p>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>Guideline set</th>
+<th>Applies to</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Project Atlas</td>
+<td>Web</td>
+<td>All web pages, including responsive mobile web.</td>
+</tr>
+<tr>
+<td>Project Atlas</td>
+<td>Mobile-iOS</td>
+<td>All iOS screens, with relevant phone and tablet adaptations.</td>
+</tr>
+<tr>
+<td>Project Atlas</td>
+<td>Mobile-Android</td>
+<td>All Android screens, with relevant phone and tablet adaptations.</td>
+</tr>
+</tbody></table>
+<p>Only requested UI types need guideline sets. Shared brand decisions can be reused with an explicit source-version reference, while each set remains complete enough to consume independently. A change in one set never silently modifies another. Page names, routes, and feature identifiers are not guideline identities.</p>
+<h3 id="creation-and-revision-lifecycle">Creation and revision lifecycle</h3>
+<ol>
+<li><strong>Request and resolve.</strong> Identify the project and requested UI types. Check for active guidelines and drafts before starting creation or an explicit revision.</li>
+<li><strong>Capture the project brief.</strong> Establish audience, recurring tasks, brand, content density, accessibility, and desired character once. Clarify only meaningful differences for each UI type.</li>
+<li><strong>Explore and choose.</strong> Retrieve the corpus and compare project-level design directions. Existing approved brand choices constrain additions unless the user requests a change.</li>
+<li><strong>Draft guideline sets.</strong> Produce reusable style, color, typography, layout, navigation, component, state, motion, and accessibility rules for each requested UI type, with rationale and representative examples.</li>
+<li><strong>Review and approve.</strong> Review the sets and obtain explicit approval identifying the set and version. Approval can cover several named sets together; one set can remain a draft while another becomes active.</li>
+<li><strong>Reuse.</strong> Downstream work resolves the active set by project and UI type, records its version, and uses the applicable rules. This is retrieval and application, not a new creation workflow.</li>
+<li><strong>Revise deliberately.</strong> Missing reusable guidance or an explicit change request may lead to an amendment of the relevant set. Existing approved versions remain active until replacement is approved. Existing page work is not automatically rewritten.</li>
+</ol>
+<h3 id="missing-guidance-and-exceptions">Missing guidance and exceptions</h3>
+<p>If no approved set exists, return a clear missing-guidelines result and offer the project guideline creation workflow. Do not generate a silent default or use a guideline from the wrong UI type. A draft may be inspected as a draft, but must not be returned as active approved guidance.</p>
+<p>If a page exposes a gap, first apply the existing rules and reusable patterns. Surface any unresolved conflict; propose a project/UI-type amendment only when a reusable decision is needed. A scoped exception must reference the active guideline version and its rationale, and must not become a separate page guideline set.</p>
+<h2 id="guidance-corpus">Guidance corpus</h2>
+<h3 id="coverage">Coverage</h3>
+<p>The corpus is a maintained product dataset with licensed foundations, independently written guidance, and original examples. Launch coverage is measured by supported design tasks and tested combinations, rather than a large advertised record count.</p>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Required guidance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Visual style</td>
+<td>Hierarchy, whitespace, shape, borders, elevation, texture, imagery, visual character, compatible treatments, and conditions where a treatment becomes distracting or inaccessible.</td>
+</tr>
+<tr>
+<td>Layout</td>
+<td>Grids, content width, spacing, grouping, density, alignment, page composition, split views, list/detail, dashboards, forms, onboarding, search, discovery, and reading experiences.</td>
+</tr>
+<tr>
+<td>Color</td>
+<td>Semantic roles, tonal relationships, accent allocation, foreground/background pairs, status meaning, data visualization, light/dark modes, and brand adaptation.</td>
+</tr>
+<tr>
+<td>Typography</td>
+<td>Role hierarchy, scale, line length, line height, weight, readability, fallback behavior, script coverage, number formatting, and text expansion.</td>
+</tr>
+<tr>
+<td>Navigation and flows</td>
+<td>Information architecture, navigation depth, task sequence, progressive disclosure, search and filtering, back behavior, confirmation, and recovery.</td>
+</tr>
+<tr>
+<td>Components and states</td>
+<td>Design anatomy and behavior of controls, lists, cards, tables, dialogs, sheets, notifications, loading, empty, error, disabled, selected, and success states.</td>
+</tr>
+<tr>
+<td>Motion and feedback</td>
+<td>Purposeful transitions, continuity, progress feedback, interruption, reduced motion, and preservation of meaningful state.</td>
+</tr>
+<tr>
+<td>Inclusive design</td>
+<td>Contrast, focus visibility, keyboard and touch access, text scaling, semantic reading order, non-color cues, localization, and right-to-left considerations.</td>
+</tr>
+<tr>
+<td>Platform adaptation</td>
+<td>Responsive web, mobile web, iOS, and Android guidance with explicit platform applicability and units.</td>
+</tr>
+<tr>
+<td>Content and trust</td>
+<td>Labels, instructions, errors, consent, destructive actions, and avoidance of misleading or coercive interactions.</td>
+</tr>
+</tbody></table>
+<p>Style names are discovery aids. A recommendation must also describe controllable visual properties so a user can refine a direction without selecting a fashionable label. Industry or product-category tags are weak context signals, not rules such as “finance must be blue.”</p>
+<h3 id="what-every-entry-contains">What every entry contains</h3>
+<p>Each published entry must have a stable identifier, version, title, domain, guidance type, applicability, and independently authored explanation. It must also include:</p>
+<ul>
+<li>The user need or design problem it addresses, suitable conditions, contraindications, and tradeoffs.</li>
+<li>Relationships to compatible, conflicting, prerequisite, and alternative guidance.</li>
+<li>At least one concrete example and one misuse example, with platform adaptations where relevant.</li>
+<li>Source repository and exact file paths, pinned commit or release, license identifier and license text location, required attribution and notices, authorship or derivation status, modifications, retrieval date, and review status. Original records identify their author and corpus release instead of inventing upstream provenance.</li>
+<li>A classification distinguishing an external requirement, platform convention, design heuristic, and subjective preference.</li>
+<li>Any measurable checks, required inputs, exceptions, and limits on what those checks establish.</li>
+</ul>
+<p>Color entries contain usable semantic roles and explicit pairings, not just swatches. Layout entries describe content priority and adaptation rules, not just a fixed screenshot. Style entries include composition, typography, color, and interaction implications.</p>
+<h3 id="illustrative-original-entry">Illustrative original entry</h3>
+<p><strong>Pattern: Overview with progressive detail.</strong> Suitable when people need to scan many objects and inspect one without losing their place. An expansive layout may show a list and detail region together. A compact layout may use a separate detail destination with reliable back navigation and restored list position. Preserve the same labels and priority information across both.</p>
+<p>The tradeoff is reduced simultaneous comparison on compact screens. Avoid choosing the pattern when the primary task requires comparing many full records side by side. Pair it with a clear selection treatment and explicit empty-selection behavior. Review whether navigation preserves filters, scroll position, and unsaved edits.</p>
+<p>This example illustrates the required depth of an entry; it is not an imported corpus record or a universal prescription.</p>
+<h3 id="curation-and-extensions">Curation and extensions</h3>
+<p>The proposed model has a bundled core corpus and project-specific additions. Project additions can express brand rules, forbidden treatments, preferred patterns, and intentional exceptions. Broader organization packs are a later extension.</p>
+<p>Core entries move through draft, reviewed, published, and deprecated states. A named maintainer owns each release. Validation checks metadata, broken relationships, contradictory constraints, missing examples, and claimed numeric properties. Editorial review checks context, accessibility implications, source attribution, and stereotype-driven recommendations.</p>
+<p>Corpus releases are versioned. Existing project decisions remain tied to their original evidence; a new corpus release produces suggested revisions and never silently redesigns a project. External material informs original summaries, with attribution and reuse terms recorded before any excerpts or assets are distributed.</p>
+<h2 id="open-source-sourcing-and-ingestion">Open source sourcing and ingestion</h2>
+<h3 id="corpus-layers">Corpus layers</h3>
+<ol>
+<li><strong>Foundations:</strong> eligible color scales, semantic palettes, spacing, typography, shape, and motion values from open-source projects. Preserve source identities and units when normalizing them.</li>
+<li><strong>Patterns:</strong> insrc-authored layout and interaction guidance informed by eligible examples, including list/detail, navigation, onboarding, forms, and dashboards. Document applicability, tradeoffs, states, and platform adaptations.</li>
+<li><strong>Style recipes:</strong> original combinations of foundations and patterns, such as editorial, restrained enterprise, expressive consumer, and dense analytical directions. Each recipe includes compatible choices, original specimens, misuse examples, and web/mobile adaptations.</li>
+</ol>
+<p>The sources supply ingredients and examples. insrc&#39;s editorial work supplies the reasoning that makes a combination useful for a particular audience and task. Framework-specific source code can inform design records without becoming a framework dependency or appearing in the user-facing design specification.</p>
+<h3 id="initial-source-candidates">Initial source candidates</h3>
+<p>The following repositories are the proposed starting collection, based on the source review on 11 October 2026. Repository licenses identify candidates; individual files and bundled assets must still pass the ingestion requirements before inclusion. No sources have been imported by this PRD.</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Intended contribution</th>
+<th>License and inclusion boundary</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://github.com/argyleink/open-props">Open Props</a></td>
+<td>Color, gradient, spacing, typography, shadow, border, aspect-ratio, and motion foundations.</td>
+<td><a href="https://github.com/argyleink/open-props/blob/main/LICENSE">MIT</a>; preserve notices for included material.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/radix-ui/colors">Radix Colors</a></td>
+<td>Color scales and palette foundations.</td>
+<td>MIT repository; only import covered files. Color combinations still require validation in context.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/material-foundation/material-color-utilities">Material Color Utilities</a></td>
+<td>Palette generation and semantic color-scheme algorithms.</td>
+<td>Apache-2.0 repository; retain applicable notices and modification records. This license does not establish reuse rights for the separate Material website.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/carbon-design-system/carbon">Carbon</a></td>
+<td>Grids, spacing, typography, color roles, themes, motion, and component examples.</td>
+<td>Apache-2.0 repository; separately check any external documentation, fonts, or assets.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/uswds/uswds">US Web Design System</a></td>
+<td>Responsive layouts, forms, navigation, tokens, and accessible interface examples.</td>
+<td>Primarily CC0, with third-party exceptions identified in its license file. Include only eligible portions.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/microsoft/fluentui-apple">Fluent UI Apple</a> and <a href="https://github.com/microsoft/fluentui-android">Fluent UI Android</a></td>
+<td>Mobile component anatomy, color, typography, and interaction examples.</td>
+<td>MIT repositories; referenced logos and icons have separate asset terms and are excluded unless independently eligible.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/saadeghi/daisyui">daisyUI</a></td>
+<td>Coordinated visual themes and component treatments.</td>
+<td>MIT core repository; the listing does not authorize importing paid templates or separately distributed assets.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/tabler/tabler">Tabler</a></td>
+<td>Dashboard compositions, page layouts, forms, tables, and navigation examples.</td>
+<td>MIT core; bundled dependencies retain their own licenses. Exclude ineligible dependencies, including chart assets not covered by an eligible license.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/google/fonts">Google Fonts</a></td>
+<td>Font families and metadata for typography specimens.</td>
+<td>Per-family licenses, mostly SIL OFL, with Apache and Ubuntu Font License families also present. Verify each included family and any reserved-name conditions; write pairing guidance independently.</td>
+</tr>
+</tbody></table>
+<p>Start with Open Props, Radix Colors, Carbon, USWDS, Material Color Utilities, and Fluent mobile for foundational coverage. Add daisyUI and Tabler for visual variety and composition examples, and selected eligible fonts for specimens. Source diversity must support design breadth without merging incompatible systems into an arbitrary universal style.</p>
+<h3 id="eligibility-and-attribution">Eligibility and attribution</h3>
+<p>Use an explicit source allowlist. The initial policy favors MIT, Apache-2.0, CC0, and eligible open font licenses, subject to the actual file terms. Unknown, absent, conflicting, or restrictive terms block distribution of the affected material until resolved. A new license category requires an explicit policy decision; repository visibility and an “open source” marketing label are insufficient.</p>
+<p>Assess code, documentation, datasets, screenshots, fonts, icons, and other assets separately. Do not assume a repository&#39;s code license covers linked websites or third-party material. Preserve required license texts, copyright notices, attribution, and change notices alongside the distributed corpus and any exports that contain covered material. Rewriting or rendering an imported asset does not remove its provenance requirements.</p>
+<p>External standards and public platform documentation may be cited as reference material. They do not enter the distributable corpus as copied text or assets without eligible reuse terms. Keep reference-only sources distinct from imported material in provenance records.</p>
+<h3 id="ingestion-and-update-process">Ingestion and update process</h3>
+<ol>
+<li><strong>Register a source.</strong> Record repository, intended domains, supported platforms, owner, and an exact commit or release.</li>
+<li><strong>Check eligibility.</strong> Inventory candidate files and their licenses, exceptions, dependencies, and attribution requirements. Exclude ineligible files before extraction.</li>
+<li><strong>Extract and normalize.</strong> Convert eligible values and examples into framework-independent records while preserving semantic roles, units, source paths, and version lineage. Keep incompatible platform conventions explicit.</li>
+<li><strong>Author guidance.</strong> Add task fit, tradeoffs, compatible patterns, contraindications, states, and original specimens. Label inferred guidance and generated suggestions for review rather than presenting them as source-authored rules.</li>
+<li><strong>Validate and review.</strong> Check schema completeness, source links, relationships, measurable claims, and accessibility implications. A human curator reviews design quality and provenance before publication.</li>
+<li><strong>Publish a versioned release.</strong> Ship the corpus with a source manifest and required notices. Consumers can identify the release and source records behind each recommendation.</li>
+<li><strong>Review upstream changes.</strong> Compare pinned revisions, including license changes. Stage eligible updates for review, support rollback or withdrawal of affected records, and preserve historical attribution. Never silently change an approved project design system.</li>
+</ol>
+<p class="acceptance"><strong>Acceptance:</strong> an unknown-license file is excluded; an eligible palette retains its source and notices through export; a source update does not overwrite approved design decisions; and imported material can be traced from a recommendation to its exact upstream revision.</p>
+<h2 id="functional-requirements">Functional requirements</h2>
+<h3 id="fr1-capture-a-useful-design-brief">FR1 Capture a useful design brief</h3>
+<p>Resolve the project and requested UI types before gathering audience, recurring tasks, content types, brand constraints, desired character, accessibility needs, locales, and existing design assets. Support partial briefs and projects without an indexed repository. Do not require a page inventory or an implementation framework. Check for existing guideline sets before creating a draft.</p>
+<p class="acceptance"><strong>Acceptance:</strong> “Create Web and Mobile-iOS guidelines for Atlas” produces two draft sets under Atlas from one shared brief, with only consequential platform differences clarified.</p>
+<h3 id="fr2-retrieve-guidance-with-reasons">FR2 Retrieve guidance with reasons</h3>
+<p>Support searches by task, style, layout, color role, platform, content density, and constraints. Filter inapplicable guidance before presenting recommendations. Return source identifiers, fit explanations, caveats, and useful alternatives. A gap in the corpus must be reported; a newly generated suggestion must be labeled as such and must not become a published corpus entry automatically.</p>
+<p class="acceptance"><strong>Acceptance:</strong> the same task on desktop web and a compact mobile surface retrieves relevant shared guidance plus explicitly different platform guidance.</p>
+<h3 id="fr3-compose-coherent-design-directions">FR3 Compose coherent design directions</h3>
+<p>Propose two or three meaningfully different project-level directions when creating guidelines or explicitly revising their direction. Routine page work retrieves approved guidelines and does not trigger this exploration. Each combines layout, hierarchy, type, color, imagery, shape, and interaction principles into one internally consistent proposal. Explain the effect on the user&#39;s task and the constraints that ruled out alternatives. Respect a request for one direction or for iteration on an existing choice.</p>
+<p class="acceptance"><strong>Acceptance:</strong> alternatives differ in consequential design properties, not just accent color, and each traces its key decisions to brief constraints or corpus guidance.</p>
+<h3 id="fr4-persist-guidelines-by-project-and-ui-type">FR4 Persist guidelines by project and UI type</h3>
+<p>Persist one guideline identity per project and UI type, with independently versioned drafts, approved versions, and superseded history. Save semantic colors, typography roles, spacing, shape, elevation, imagery, motion, navigation, component rules, rationale, corpus versions, and documented exceptions. Keep one active approved version per pair.</p>
+<p>When a preference conflicts with an applicable requirement, surface the conflict and propose a compatible alternative. Approved project choices take precedence over general corpus preferences, but do not erase accessibility findings. Shared decisions reused from another set retain their source version; updating one set must not change another silently.</p>
+<p class="acceptance"><strong>Acceptance:</strong> Atlas can have active Web, Mobile-iOS, and Mobile-Android guidelines simultaneously. Approving Web version 2 preserves Web version 1 in history and leaves both mobile sets unchanged.</p>
+<h3 id="fr5-define-reusable-layout-and-interaction-rules">FR5 Define reusable layout and interaction rules</h3>
+<p>Define layout families, content hierarchy, density, spacing, navigation conventions, component anatomy, and state behavior for recurring project needs. Include reusable rules for forms, lists, detail views, feedback, empty results, loading, validation, and recovery. Account for long content, localization, and interrupted tasks where relevant.</p>
+<p>Representative examples illustrate how the rules work. Individual production pages and complete feature flows are not required outputs. The guidelines must support new pages without creating a page-specific design artifact in this workflow.</p>
+<p class="acceptance"><strong>Acceptance:</strong> a dashboard, settings page, and checkout can all consume the same Web guideline version. No additional guideline creation, direction comparison, or approval is triggered solely because the page changes.</p>
+<h3 id="fr6-adapt-across-web-and-mobile">FR6 Adapt across web and mobile</h3>
+<p>Produce separate Web, Mobile-iOS, and Mobile-Android guideline sets for the requested UI types. Reuse common brand and semantic foundations while specifying platform-appropriate rules in each set. Web coverage includes narrow and wide layouts, keyboard/pointer/touch input, focus order, and browser navigation. Mobile coverage includes iOS and Android distinctions, touch ergonomics, safe areas, software keyboard effects, back behavior, orientation, and text scaling. Tablet and other larger mobile windows must have explicit adaptation guidance.</p>
+<p>Record platform-specific measurements with their units; do not treat CSS pixels, points, and density-independent pixels as interchangeable. Avoid inferring input method solely from viewport width. Mobile web remains a web surface even when its layout resembles a native app.</p>
+<p class="acceptance"><strong>Acceptance:</strong> retrieving Atlas guidelines for Mobile-Android returns its Android rules and version, never a mobile-web or iOS substitute. Responsive mobile web resolves to the Web set; phone and tablet adaptations remain within the appropriate mobile set.</p>
+<h3 id="fr7-make-designs-inspectable">FR7 Make designs inspectable</h3>
+<p>Initial outputs include lightweight palette and typography specimens, component-state examples, and representative layout wireframes for each guideline set. Use realistic sample content and relevant compact/expanded and light/dark variants. Link specimens to the guideline identity and version. They illustrate reusable rules and are not a commitment to design every production page.</p>
+<p>Examples use lightweight specimen and wireframe fidelity; polished production-page mockups are outside the first-release scope. A preview must identify omitted interactions; a static image cannot establish keyboard behavior, assistive-technology support, or runtime responsiveness. The versioned guideline set remains the authoritative record.</p>
+<h3 id="fr8-review-with-evidence">FR8 Review with evidence</h3>
+<p>Review draft guideline sets against the project brief, selected corpus guidance, existing approved decisions, and relevant platform guidance. Optional adherence checks compare downstream work against a named guideline version; they do not restart guideline creation. Each finding includes the affected element, evidence, severity or preference classification, suggested correction, and verification method.</p>
+<p>Report results as verified, failed, needs inspection, or not applicable. Distinguish computed properties from visual observations and heuristic judgments. Calculate contrast for supplied color pairs; do not infer an exact ratio from an arbitrary screenshot. Do not assert complete accessibility conformance from a palette or image.</p>
+<p class="acceptance"><strong>Acceptance:</strong> a seeded role-color conflict produces a traceable finding; an unobservable focus-order question remains “needs inspection.”</p>
+<h3 id="fr9-export-and-reuse-design-context">FR9 Export and reuse design context</h3>
+<p>Resolve active guidelines by project and UI type and return a human-readable document plus a structured, framework-independent representation. Preserve guideline identity, version, approval status, source identifiers, semantic roles, platform rules, exceptions, and unresolved issues. Downstream work records the guideline version it used; an explicit historical-version request returns that version with its status.</p>
+<p>Return a clear missing-guidelines result when no approved set exists. Never silently substitute another platform, promote a draft, or generate new guidelines for a page. Repeated retrieval is read-only and must not create drafts or approval requests.</p>
+<p class="acceptance"><strong>Acceptance:</strong> three different Web pages retrieve the same active Atlas Web guideline identity and version. An Android request with no approved Android set reports the gap. The same guidelines can guide different implementation frameworks without changing their design meaning.</p>
+<h2 id="proposed-guideline-package">Proposed guideline package</h2>
+<table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Project brief</td>
+<td>Audience, recurring tasks, requested UI types, brand constraints, assumptions, and reference intent.</td>
+</tr>
+<tr>
+<td>Direction comparison</td>
+<td>Project-level alternatives, tradeoffs, supporting guidance, and selection rationale; produced during creation or explicit direction revision.</td>
+</tr>
+<tr>
+<td>Guideline set for each UI type</td>
+<td>Project and guideline identity, UI type, version, status, visual foundations, reusable layout and interaction rules, component principles, accessibility guidance, and exceptions.</td>
+</tr>
+<tr>
+<td>Guideline specimens</td>
+<td>Lightweight palette, typography, component-state, and representative layout examples tied to a guideline version.</td>
+</tr>
+<tr>
+<td>Guideline review</td>
+<td>Findings, evidence, corrections, and unresolved validation tasks for each set.</td>
+</tr>
+<tr>
+<td>Decision and version history</td>
+<td>Explicit approvals, accepted changes, rejected alternatives, source lineage, and superseded versions.</td>
+</tr>
+</tbody></table>
+<p>Individual page designs and production flow specifications are downstream consumers of this package, not required artifacts of guideline creation.</p>
+<h2 id="relationship-to-insrc">Relationship to insrc</h2>
+<p>Design intelligence should be available through insrc&#39;s agent-facing surface and participate in its tracked artifact lifecycle. Guideline creation and revision should support a project brief as well as optional structured project context. Routine downstream work only retrieves and applies the active guideline set for its project and UI type. Existing repository evidence may inform a design, but undocumented properties must remain inferences, and a missing repository must not block new-product design.</p>
+<p>Implementation must preserve insrc&#39;s existing constraints: daemon-owned persistence accessed through IPC, local embeddings, cloud model access through the installed CLI providers, and high-capability reasoning for critical design and review decisions. This PRD does not select storage schemas, tool names, or module boundaries; those belong to subsequent technical design.</p>
+<p>Design approval records an explicit user choice. A style preference response, generated specimen, or completed review must not be treated as approval of a guideline set. Approval identifies the exact set and version. Discovery and guideline retrieval remain lightweight; creating or revising guidelines uses the tracked lifecycle. Reading approved guidelines for another page does not require renewed approval.</p>
+<h2 id="quality-and-release-acceptance">Quality and release acceptance</h2>
+<p>The proposed evaluation set contains eight independently authored project briefs, each exercised for Web, Mobile-iOS, and Mobile-Android, yielding 24 guideline sets. Each set is then applied to multiple representative page tasks covering discovery, search/list/detail, onboarding, booking, checkout, dashboard analysis, content reading, or settings. These tasks test guideline reuse; they are not separate creation workflows. Mobile web and tablet adaptation checks are included within the relevant sets. Fixtures include missing brand inputs, strict existing brand rules, long localized content, dark mode, large text, and conflicting preferences.</p>
+<p>Release gates are proposed targets, not measured results:</p>
+<ul>
+<li>Every published corpus entry has provenance, applicability, examples, review status, and a valid version.</li>
+<li>Every incorporated external file has an eligible license and pinned revision; each corpus release includes its source manifest and required notices. Reference-only sources, ineligible dependencies, and project-private inputs are absent from the distributed corpus.</li>
+<li>Every required task/platform combination has relevant style, layout, color, and interaction guidance; coverage gaps are explicit.</li>
+<li>Every evaluated guideline package includes reusable rules, state coverage, and a traceable basis for its major decisions.</li>
+<li>Multiple pages for the same project and UI type resolve the same active guideline version without triggering creation or approval. Separate UI types resolve separate sets; missing sets are reported explicitly.</li>
+<li>Revising one set preserves prior versions, leaves other UI types unchanged, and never updates existing pages automatically.</li>
+<li>No evaluated recommendation has an unresolved known hard-constraint violation; corpus updates preserve approved project decisions.</li>
+<li>At least 80% of evaluated packages receive a human-review score of 4 or higher on a five-point rubric for task fit, coherence, clarity, and platform suitability. No package may average away a critical usability failure.</li>
+<li>Review detects all deliberately seeded measurable violations and makes no false claim of verification for behavior unavailable in its inputs.</li>
+</ul>
+<p>Use a comparison against the same briefs with ordinary unguided prompting to assess whether the corpus improves consistency and reduces material redesign. Record review revisions and completion time as diagnostic measures. Human judgments should use a written rubric and adjudicate reviewer disagreements. Automatic scores alone do not establish aesthetic quality or usability.</p>
+<h2 id="delivery-sequence">Delivery sequence</h2>
+<p><strong>First release:</strong> a reviewed core corpus across all listed domains; project brief intake; UI-type selection; project-level direction comparison; creation, review, and approval of separate Web, Mobile-iOS, and Mobile-Android guideline sets; versioned retrieval for downstream work; explicit revision; and framework-independent export. Lightweight guideline specimens accompany the written guidelines.</p>
+<p>Corpus delivery includes the source allowlist, eligibility checks, normalized foundations and patterns, original style recipes, provenance-preserving exports, release notices, and a reviewed update process. The source list is a starting collection, not a requirement to ingest every repository in full.</p>
+<p><strong>Later expansion:</strong> broader corpus coverage, organization packs, richer visual exploration, additional platforms, and optional design-tool integrations. Expansion must not delay web and mobile coverage into separate initial releases.</p>
+<p>Before implementation, confirm the open product choices, complete the tracked specification and independent review, obtain explicit artifact approval, and route through insrc triage. No implementation estimate is committed by this PRD.</p>
+<h2 id="open-product-choices">Open product choices</h2>
+<ol>
+<li><strong>Project adaptation inputs.</strong> Recommended: a brief and existing written design rules are sufficient; supplied screenshots are optional review/reference inputs. Deep extraction from design tools can follow later.</li>
+<li><strong>Corpus ownership.</strong> Recommended: insrc-maintained core plus project additions, with a named maintainer and release review. Confirm who will own editorial quality and future updates.</li>
+</ol>
+<h2 id="references-and-guidance-policy">References and guidance policy</h2>
+<p><a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill">UI UX Pro Max</a> is the capability reference motivating this proposal. Its searchable design guidance and design-system generation inform the problem framing. This PRD does not adopt its code, datasets, taxonomy, or promotional coverage claims.</p>
+<p>For accessibility rules, use versioned primary references and retain applicability and exceptions. For example, <a href="https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html">W3C&#39;s explanation of contrast minimum</a> distinguishes normal and large text and identifies exceptions; a palette-level pass is insufficient to establish interface conformance. <a href="https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html">W3C&#39;s explanation of target size minimum</a> should inform applicable web checks without being substituted indiscriminately for native platform guidance.</p>
+<p><a href="https://developer.apple.com/design/human-interface-guidelines/">Apple Human Interface Guidelines</a> and <a href="https://m3.material.io/foundations/">Material Design foundations</a> are reference-only sources unless specific content has verified eligible redistribution terms. The same eligibility check applies to copied standards text. Public readability does not establish an open-source license, and an open-source implementation does not license a separate documentation website. Referencing these sources does not require every product to adopt their visual styles. Source-linked guidance must preserve the distinction between an external requirement, platform convention, and an insrc-authored heuristic.</p>
+
+<footer>insrc · Design Intelligence · Draft for discussion · 11 October 2026</footer>
+</main>
+</div>
+</body>
+</html>

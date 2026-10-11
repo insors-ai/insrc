@@ -25,6 +25,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+import { rpc } from '../client.js';
+import type { RegisteredRepo } from '../../shared/types.js';
 import { describeStop, startDaemon, stopDaemon } from './daemon.js';
 import type { StartResult, StopOutcome } from './daemon.js';
 import { loadBuiltCatalog } from '../../config/config-catalog-loader.js';
@@ -209,9 +211,14 @@ export async function runUpdateReconcile(root: string, onLog: LogFn, configPath?
  *  this CLI process's own build) — mirroring `runUpdateReconcile`, which loads
  *  the freshly built catalog from `root/out` rather than the resident module.
  *
- *  `deps` is a test seam (prod walks the real registry + fs): overrides are
- *  merged AFTER the root-derived `readBlock`, so a test can inject
- *  `listRepos`/`readFile`/`writeFile` without opening LMDB or touching disk. */
+ *  The registered repositories are ASKED OF THE DAEMON (`repo.list`): this runs
+ *  in the CLI's process, and only the daemon may open the store. With no
+ *  daemon running the refresh fails here, is logged, and is left to the
+ *  daemon's own refresh at its next start.
+ *
+ *  `deps` is a test seam (prod asks the daemon + walks the real fs): overrides
+ *  are merged AFTER the defaults, so a test can inject
+ *  `listRepos`/`readFile`/`writeFile` without a daemon or touching disk. */
 export async function runUpdateSteeringRefresh(
 	root: string,
 	onLog: LogFn,
@@ -222,7 +229,7 @@ export async function runUpdateSteeringRefresh(
 		const block = readFileSync(blockPath, 'utf8').trim();
 		if (block.length === 0) throw new Error(`steering block asset is empty: ${blockPath}`);
 
-		const report = await refreshSteeringAcrossRepos({ readBlock: () => block, ...deps });
+		const report = await refreshSteeringAcrossRepos({ readBlock: () => block, listRepos: listReposFromDaemon, ...deps });
 		const refreshed = report.filter(o => o.action === 'replaced').length;
 		const skipped   = report.filter(o => o.action === 'skipped').length;
 		onLog(`steering refresh: ${refreshed} refreshed, ${skipped} skipped across ${report.length} file(s)`);
@@ -300,6 +307,12 @@ export async function restart(onLog: LogFn, deps: RestartDeps = { stopDaemon, st
 export interface RestartDeps {
 	readonly stopDaemon:  () => Promise<StopOutcome>;
 	readonly startDaemon: () => Promise<StartResult>;
+}
+
+/** The registered repositories, asked of the daemon. Exported so a test can
+ *  tell that the refresh uses it. */
+export function listReposFromDaemon(): Promise<readonly RegisteredRepo[]> {
+	return rpc<RegisteredRepo[]>('repo.list');
 }
 
 // ---------------------------------------------------------------------------

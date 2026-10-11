@@ -212,6 +212,7 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 					installedCommit: '',
 				}),
 				[METHOD_ENTITIES_FOR_SOURCE_ROOTS]: async params => entitiesForSourceRoots(params),
+				'repo.list': async () => (await import('../../../repos.js')).listRepos(null as never),
 				'test.enqueue': async params => {
 					const p = params as { ms: number; key: string };
 					queue.enqueue({ kind: 'full', repoPath: `/job-${p.key}`, ms: p.ms, key: p.key } as never);

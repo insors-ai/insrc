@@ -15,6 +15,10 @@
  * Run: npx tsx --test src/workflow/review/__tests__/probe-source-roots.test.ts
  */
 
+import { after as afterAll } from 'node:test';
+import { mkdtempSync as mkdtempSyncRaw, rmSync as rmSyncForStore } from 'node:fs';
+import { tmpdir as tmpdirForStore } from 'node:os';
+import { join as joinForStore } from 'node:path';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -23,6 +27,18 @@ import { join } from 'node:path';
 
 import { gatherEvidence } from '../probe.js';
 import type { Claim } from '../types.js';
+import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
+
+// This file reads the graph store through code that takes no path. Give it a
+// temporary one: the store at the default path belongs to the daemon alone
+// (Epic c2ba6fa6, Story s4).
+const STORE_DIR = mkdtempSyncRaw(joinForStore(tmpdirForStore(), 'insrc-test-store-'));
+setGraphStorePath(joinForStore(STORE_DIR, 'graph.lmdb'));
+afterAll(async () => {
+	await closeGraphStore();
+	rmSyncForStore(STORE_DIR, { recursive: true, force: true });
+});
+
 
 function withRepo(layoutDir: string, fn: (repo: string) => Promise<void>): Promise<void> {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-probe-'));

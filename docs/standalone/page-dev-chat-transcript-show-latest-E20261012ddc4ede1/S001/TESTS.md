@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -170,3 +170,55 @@ Run at 2026-10-12T08:00:24.231Z on commit `31ac8a7f`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` | 0 | 4 | 0.4 s |  |
+
+## t6
+
+Run at 2026-10-12T08:03:08.089Z on commit `790f7779`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: returning to the bottom with more than 300 rows held runs the trim from the scroll listener**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | returning to the bottom with more than 300 rows held runs the trim from the scroll listener | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: a row that throws while an older page renders falls back, and following is switched back on afterwards**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a row that throws while an older page renders falls back, and following is switched back on afterwards | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: the 'load earlier' bar is shown only when the first held index is above 0, names the count of older rows, and appears after a trim**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the 'load earlier' bar is shown only when the first held index is above 0, names the count of older rows, and appears after a trim | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` | 0 | 11 | 0.5 s |  |

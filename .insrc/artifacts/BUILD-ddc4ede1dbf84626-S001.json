@@ -4,7 +4,7 @@
     "epicHash": "ddc4ede1dbf84626",
     "storyId": "S001",
     "createdAt": "2026-10-12T07:35:29.855Z",
-    "updatedAt": "2026-10-12T08:00:24.231Z",
+    "updatedAt": "2026-10-12T08:03:08.089Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:11:33.406Z",
@@ -31,9 +31,13 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "Adds transcript-pager.ts, the webview pager as an embeddable source: append(node) follows to the bottom only when the view was already there; stamp/track mark each node with its row index; trimIfNeeded removes the oldest nodes above 300 held rows when at the bottom, back to a user row leaving about 200, with a plain cut when there is no turn start to cut at, and forgets the removed rows' keys and pending tool entries; reset sets the window for a restore. Sizes are fixed constants. Tests drive the real registry on the shared fake DOM. The shell does not embed it yet. reset takes the session id as well as the index and total, since the next task needs it to match pages.",
+    "summary": "The pager gains prepend(page): a page for the shown session that ends at the first held index is rendered through the registry with its pending rows isolated and following off, moved above the held rows, and the scroll position moved by the height added; any other page is discarded. requestOlder posts one load-older at a time, cleared by the matching page, a reset or a 5 second wait. A scroll listener asks for a page at the top and trims on return to the bottom. The 'load earlier' bar shows the count of older rows while any exist. A row that cannot be rendered falls back to a plain line.",
     "testRecord": {
       "md": "docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/TESTS.md"
     },
@@ -43,100 +47,100 @@
           "file": ".insrc/artifacts/PLAN-ddc4ede1dbf84626-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fake-dom.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fake-dom.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/render-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/transcript-pager.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/transcript-window.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:00:24.231Z"
+        "timestamp": "2026-10-12T08:03:08.089Z"
       }
     ],
-    "commit": "31ac8a7f"
+    "commit": "790f7779"
   }
 }

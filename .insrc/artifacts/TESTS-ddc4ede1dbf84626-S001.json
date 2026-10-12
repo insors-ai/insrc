@@ -4,7 +4,7 @@
     "epicHash": "ddc4ede1dbf84626",
     "storyId": "S001",
     "createdAt": "2026-10-12T07:35:29.855Z",
-    "updatedAt": "2026-10-12T08:00:24.231Z",
+    "updatedAt": "2026-10-12T08:03:08.089Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:11:33.406Z",
     "epicSlug": "page-dev-chat-transcript-show-latest"
@@ -1227,6 +1227,160 @@
               },
               {
                 "title": "pager reset: a restore sets the first held index and total and ends at the bottom",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "790f7779",
+        "ranAt": "2026-10-12T08:03:08.089Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "returning to the bottom with more than 300 rows held runs the trim from the scroll listener",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "returning to the bottom with more than 300 rows held runs the trim from the scroll listener",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a row that throws while an older page renders falls back, and following is switched back on afterwards",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "a row that throws while an older page renders falls back, and following is switched back on afterwards",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the 'load earlier' bar is shown only when the first held index is above 0, names the count of older rows, and appears after a trim",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "the 'load earlier' bar is shown only when the first held index is above 0, names the count of older rows, and appears after a trim",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 456,
+            "titles": [
+              {
+                "title": "a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held",
+                "result": "pass"
+              },
+              {
+                "title": "a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom",
+                "result": "pass"
+              },
+              {
+                "title": "one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row",
+                "result": "pass"
+              },
+              {
+                "title": "pager reset: a restore sets the first held index and total and ends at the bottom",
+                "result": "pass"
+              },
+              {
+                "title": "pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders",
+                "result": "pass"
+              },
+              {
+                "title": "pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row",
+                "result": "pass"
+              },
+              {
+                "title": "trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes",
+                "result": "pass"
+              },
+              {
+                "title": "pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "returning to the bottom with more than 300 rows held runs the trim from the scroll listener",
+                "result": "pass"
+              },
+              {
+                "title": "a row that throws while an older page renders falls back, and following is switched back on afterwards",
+                "result": "pass"
+              },
+              {
+                "title": "the 'load earlier' bar is shown only when the first held index is above 0, names the count of older rows, and appears after a trim",
                 "result": "pass"
               }
             ],

@@ -366,6 +366,21 @@ function assertMayOpen(path: string): void {
 	if (resolvedStorePath(path) === resolvedStorePath(PATHS.lmdb)) throw new LmdbStoreNotOwnerError(path);
 }
 
+/**
+ * True when this process may open the daemon's live stores: it declared
+ * itself the owner, or (until Story s11 deletes it) a permitted reader. Read
+ * by the vector store's open, so one declaration governs both stores.
+ */
+export function mayOpenLiveStores(): boolean {
+	return _ownsLiveStore || _mayReadLiveStore;
+}
+
+/** A path with symbolic links resolved, as the owner checks compare them
+ *  (also for a path that does not exist yet). */
+export function resolveStorePath(path: string): string {
+	return resolvedStorePath(path);
+}
+
 /** ONLY for tests: forget both declarations. */
 export function resetLiveStoreDeclarationsForTests(): void {
 	_ownsLiveStore = false;

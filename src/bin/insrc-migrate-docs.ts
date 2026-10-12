@@ -32,11 +32,16 @@ function main(): void {
 		const fields = Object.entries(r.set).map(([k, v]) => `${k}=${String(v)}`).join(' ');
 		process.stdout.write(`  meta  ${r.artifactId}: ${fields}\n`);
 		for (const e of r.mdEdits) process.stdout.write(`        ${rel(e.file)}: '${e.from}' -> '${e.to}'\n`);
-		for (const e of r.unmatchedLabelLines) process.stdout.write(`        note  ${rel(e.file)}: label line not found exactly once, left as is: '${e.from}'\n`);
+		for (const e of r.unmatchedLabelLines) process.stdout.write(`        note  ${rel(e.file)}: label line not found exactly once, fix by hand before applying: '${e.from}'\n`);
 		for (const c of r.companionNotes) process.stdout.write(`        note  ${rel(c)}: companion page still shows the old label until it is regenerated\n`);
 	}
 	for (const u of plan.unmappable) process.stdout.write(`  UNMAPPABLE  ${u.artifactId}: ${u.reason}\n`);
 
+	const unmatched = plan.metaRewrites.reduce((n, r) => n + r.unmatchedLabelLines.length, 0);
+	if (unmatched > 0) {
+		process.stderr.write(`\nRefusing: ${unmatched} label line(s) are not in their md exactly once. Fix those md files and re-run.\n`);
+		process.exit(1);
+	}
 	if (plan.unmappable.length > 0) {
 		process.stderr.write(`\nRefusing: ${plan.unmappable.length} artifact(s) cannot be mapped. Fix the data and re-run.\n`);
 		process.exit(1);

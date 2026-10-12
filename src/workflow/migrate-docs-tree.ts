@@ -123,8 +123,10 @@ export interface MetaRewrite {
 	/** Label lines in the member's md that print the changed slug. */
 	readonly mdEdits:        readonly MdLabelEdit[];
 	/** Label lines the renderer would have printed but the md does not hold
-	 *  exactly once (an older renderer, a custom format, a hand edit). They are
-	 *  not edited; the dry run lists them so the md can be fixed by hand. */
+	 *  exactly once (an older renderer, a custom format, a hand edit). The dry
+	 *  run lists them and applyMigration refuses the plan until the md is fixed
+	 *  by hand: realigning the JSON alone would leave a stale label that no
+	 *  later plan could see. */
 	readonly unmatchedLabelLines: readonly MdLabelEdit[];
 	/** Companion pages of the member whose header still shows the old label.
 	 *  They are not edited — the next finalize regenerates them. */
@@ -608,8 +610,8 @@ export function planMigration(repoPath: string): MigrationPlan {
 		// ISSUE-7d42920d — the stored meta each member must carry so that
 		// deriveMdPath, and the next live write, resolve the folder the md is moved
 		// into. Only a member that stays mappable gets one.
-		const realign = (m: Artifact, mdFile: string): void => {
-			const rewrite = planMetaRewrite(m, { hash, slug, anchor, groupSegment, workItemKind }, mdFile, m.mdPath ?? mdFile);
+		const realign = (m: Artifact, mdFile: string, currentMd: string = m.mdPath ?? mdFile): void => {
+			const rewrite = planMetaRewrite(m, { hash, slug, anchor, groupSegment, workItemKind }, mdFile, currentMd);
 			if (rewrite !== undefined) metaRewrites.push(rewrite);
 		};
 
@@ -656,7 +658,9 @@ export function planMigration(repoPath: string): MigrationPlan {
 					'migrate-docs-tree: duplicate render — the destination already holds a different file for this artifact; ' +
 					'leaving BOTH in place (this folder will not converge until one is removed by hand)',
 				);
-				realign(m, to);
+				// The render kept is the one at the destination, so its lines are
+				// the ones checked and edited.
+				realign(m, to, to);
 				continue;
 			}
 			toSeen.set(to, m.id);
@@ -869,6 +873,11 @@ export function applyMigration(repoPath: string, plan: MigrationPlan): void {
 		const lines = plan.unmappable.map(u => `  - ${u.artifactId}: ${u.reason}`).join('\n');
 		throw new Error(`migrate-docs-tree: refusing to apply — ${plan.unmappable.length} unmappable artifact(s):\n${lines}`);
 	}
+	const unmatched = plan.metaRewrites.flatMap(r => r.unmatchedLabelLines.map(e => ({ id: r.artifactId, e })));
+	if (unmatched.length > 0) {
+		const lines = unmatched.map(({ id, e }) => `  - ${id}: '${e.from}' not found exactly once in ${relative(repoPath, e.file)}`).join('\n');
+		throw new Error(`migrate-docs-tree: refusing to apply — ${unmatched.length} label line(s) to fix by hand first:\n${lines}`);
+	}
 	if (plan.moves.length === 0 && plan.metaRewrites.length === 0) {
 		log.info('migrate-docs-tree: nothing to migrate (already nested and aligned)');
 		return;
@@ -930,6 +939,11 @@ export function applyMigration(repoPath: string, plan: MigrationPlan): void {
 				? `chore(docs): migrate ${groupHash} artifacts to the nested work-item tree (S003)`
 				: `chore(docs): realign ${groupHash} artifact labels with their work-item folder`;
 			git(repoPath, 'commit', '-m', message, '--', ...paths);
+		}
+		// A link rewritten in a file that neither moved nor was realigned is still
+		// only staged; commit it so the run leaves a clean tree.
+		if (git(repoPath, 'diff', '--cached', '--name-only').trim().length > 0) {
+			git(repoPath, 'commit', '-m', 'chore(docs): rewrite links to migrated artifacts');
 		}
 		log.info({ moves: plan.moves.length, metaRewrites: plan.metaRewrites.length, chunks: byGroup.size }, 'migrate-docs-tree: applied');
 	} catch (err) {

@@ -499,7 +499,7 @@ test('t4 — a SPEC realigned to standalone resolves under docs/standalone via d
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('t4 — a label line the md does not hold is reported, not planned, and the JSON is still realigned', () => {
+test('t4 — a label line the md does not hold is reported, and apply refuses the plan until the md is fixed', () => {
 	const repo = newRepo();
 	try {
 		seedHeadLld(repo);
@@ -511,9 +511,68 @@ test('t4 — a label line the md does not hold is reported, not planned, and the
 		const rw = rewriteOf(plan.metaRewrites, `PLAN-${H}-S001`)!;
 		assert.deepEqual(rw.mdEdits, []);
 		assert.deepEqual(rw.unmatchedLabelLines, [{ file: join(repo, FOLDER, 'S001', 'PLAN.md'), from: '**Epic:** `a-plan-label`', to: `**Epic:** \`${LABEL}\`` }]);
-		applyMigration(repo, plan);
+
+		// Realigning the JSON alone would hide the stale md from every later plan.
+		const before = fingerprint(repo);
+		const head = git(repo, 'rev-parse', 'HEAD');
+		assert.throws(() => applyMigration(repo, plan), /refusing to apply — 1 label line\(s\) to fix by hand first:[\s\S]*PLAN\.md/);
+		assert.deepEqual(fingerprint(repo), before);
+		assert.equal(git(repo, 'rev-parse', 'HEAD'), head);
+
+		// Once the md carries its label line, the plan applies.
+		writeFileSync(join(repo, FOLDER, 'S001', 'PLAN.md'), artifactIdMarker(`PLAN-${H}-S001`) + '\n\n# Plan\n**Epic:** `a-plan-label`\n');
+		git(repo, 'commit', '-qam', 'restore the label line');
+		applyMigration(repo, planMigration(repo));
 		assert.match(readJson(repo, `PLAN-${H}-S001`), new RegExp(`"epicSlug": "${LABEL}"`));
-		assert.deepEqual(planMigration(repo).metaRewrites, []);
+		assert.match(readFileSync(join(repo, FOLDER, 'S001', 'PLAN.md'), 'utf8'), new RegExp(`\\*\\*Epic:\\*\\* \`${LABEL}\``));
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t4 — a duplicate render checks and edits the copy kept at the destination', () => {
+	const repo = newRepo();
+	try {
+		seedHeadLld(repo);
+		seedJson(repo, `PLAN-${H}-S001`, { createdAt: ANCHOR, epicHash: H, epicSlug: 'a-plan-label', storyId: 'S001', standalone: true });
+		// Two renders: the stray one carries the label line, the kept one does too
+		// but with different surrounding content.
+		seedMd(repo, 'docs/standalone/a-plan-label-E20261011a1b2c3d4/S001/PLAN.md', `PLAN-${H}-S001`, '**Epic:** `a-plan-label`\nstray\n');
+		seedMd(repo, `${FOLDER}/S001/PLAN.md`, `PLAN-${H}-S001`, '**Epic:** `a-plan-label`\nkept\n');
+		gitInit(repo);
+		const plan = planMigration(repo);
+		const kept = join(repo, FOLDER, 'S001', 'PLAN.md');
+		assert.deepEqual(rewriteOf(plan.metaRewrites, `PLAN-${H}-S001`)?.mdEdits.map(e => e.file), [kept]);
+		applyMigration(repo, plan);
+		assert.equal(readFileSync(kept, 'utf8'), artifactIdMarker(`PLAN-${H}-S001`) + `\n\n**Epic:** \`${LABEL}\`\nkept\n`);
+
+		// Kept render without the line: reported against the kept file, not the stray.
+		const repo2 = newRepo();
+		try {
+			seedHeadLld(repo2);
+			seedJson(repo2, `PLAN-${H}-S001`, { createdAt: ANCHOR, epicHash: H, epicSlug: 'a-plan-label', storyId: 'S001', standalone: true });
+			seedMd(repo2, 'docs/standalone/a-plan-label-E20261011a1b2c3d4/S001/PLAN.md', `PLAN-${H}-S001`, '**Epic:** `a-plan-label`\n');
+			seedMd(repo2, `${FOLDER}/S001/PLAN.md`, `PLAN-${H}-S001`, 'no label here\n');
+			const rw = rewriteOf(planMigration(repo2).metaRewrites, `PLAN-${H}-S001`)!;
+			assert.deepEqual(rw.mdEdits, []);
+			assert.deepEqual(rw.unmatchedLabelLines.map(e => e.file), [join(repo2, FOLDER, 'S001', 'PLAN.md')]);
+		} finally { rmSync(repo2, { recursive: true, force: true }); }
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t4 — a link rewritten in a file that does not move is committed, leaving a clean tree', () => {
+	const repo = newRepo();
+	try {
+		seedHeadLld(repo);
+		seedJson(repo, `PLAN-${H}-S001`, { createdAt: ANCHOR, epicHash: H, epicSlug: LABEL, storyId: 'S001', standalone: true });
+		seedMd(repo, 'docs/standalone/a-plan-label-E20261011a1b2c3d4/S001/PLAN.md', `PLAN-${H}-S001`, `**Epic:** \`${LABEL}\`\n`);
+		// The LLD neither moves nor needs realigning, and links to the PLAN.
+		seedMd(repo, `${FOLDER}/S001/LLD.md`, `LLD-${H}-S001`, `**Epic:** \`${LABEL}\`\nSee [the plan](docs/standalone/a-plan-label-E20261011a1b2c3d4/S001/PLAN.md).\n`);
+		gitInit(repo);
+		const plan = planMigration(repo);
+		assert.equal(rewriteOf(plan.metaRewrites, `LLD-${H}-S001`), undefined);
+		assert.deepEqual(plan.linkRewrites.map(l => relative(repo, l.file)), [`${FOLDER}/S001/LLD.md`]);
+		applyMigration(repo, plan);
+		assert.match(readFileSync(join(repo, FOLDER, 'S001', 'LLD.md'), 'utf8'), new RegExp(`${FOLDER}/S001/PLAN\\.md`));
+		assert.equal(git(repo, 'status', '--porcelain').trim(), '');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

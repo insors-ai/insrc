@@ -1,0 +1,410 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791788341863-juoxm1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-12T06:59:47.821Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 45940,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "e980ffbb6dd346e7",
+    "epicSlug": "bug-insrc-mcp-server-process-opens",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "issue",
+      "stage": "issue",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "runInsrcMcpStdio is defined at src/mcp/server.ts:1254 and, inside that function, calls registerBuiltinTools() at :1272, registerBuiltinDataDrivers() at :1273 and registerWorkflowRunners() at :1274, with a comment at :1261 saying it mirrors what the main daemon does at boot.",
+          "evidence": "Every anchor checks out against the source. `read src/mcp/server.ts:1254 → export async function runInsrcMcpStdio(): Promise<void> {` shows where the function is defined. `read src/mcp/server.ts:1261 → // path). Mirrors what the main daemon does at boot -- see` confirms the comment at the cited line. The three calls are at the cited lines, all after the 1254 definition and close together in the same function body: `src/mcp/server.ts:1272: registerBuiltinTools();`, `src/mcp/server.ts:1273: registerBuiltinDataDrivers();` and `src/mcp/server.ts:1274: registerWorkflowRunners();`. The grep also backs up the \"mirrors the daemon\" claim: the daemon makes the same calls at `src/daemon/index.ts:283: registerBuiltinTools();` and `src/daemon/index.ts:289: registerBuiltinDataDrivers();`, and calls workflow runners lazily at `src/daemon/workflow-rpc.ts:175: registerWorkflowRunners();`. The other grep matches are in tests and docs, so they don't change the result.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "All five line anchors and all three symbol anchors resolve to the content the premise claims. No change is needed."
+          }
+        },
+        {
+          "claimId": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "code_class_locate (src/daemon/tools/builtins/code/class-locate.ts) reads the graph by calling getGraphStore() directly at line 214 (`const s = await getGraphStore();`).",
+          "evidence": "The read of src/daemon/tools/builtins/code/class-locate.ts:214 returns `const s = await getGraphStore();`. That matches the premise word for word. The same file registers the tool as `id: 'code_class_locate'` at line 59, so line 214 is part of the code_class_locate builtin. The grep /const s = await getGraphStore\\(\\)/ found no other match under src/daemon/tools. The other source matches are test helpers: src/db/graph/__tests__/helpers/store-child.ts:114 and :151, and src/db/graph/__tests__/store.test.ts:285 and :306. The rest are matches inside the ISSUE.md document.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise: line 214 of class-locate.ts calls getGraphStore() directly, inside the code_class_locate builtin. No change is needed."
+          }
+        },
+        {
+          "claimId": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "code_class_references (src/daemon/tools/builtins/code/class-references.ts) reads the graph by calling getGraphStore() directly at line 184 (`const store = await getGraphStore();`).",
+          "evidence": "The direct read of src/daemon/tools/builtins/code/class-references.ts:184 returns `const store    = await getGraphStore();`. That matches the quoted text in the premise; the only difference is the extra spaces used for alignment. The grep /const store\\s+= await getGraphStore\\(\\)/ finds the same line, `src/daemon/tools/builtins/code/class-references.ts:184`. The grep /id:\\s*'code_class_references'/ finds `src/daemon/tools/builtins/code/class-references.ts:70: id: 'code_class_references',`, so this file is the one that registers the code_class_references tool. Both the anchor and the claim are confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise. The file:line resolves to the cited direct getGraphStore() call, inside the file that registers code_class_references. No edit is needed."
+          }
+        },
+        {
+          "claimId": "c4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "getGraphStore (src/db/graph/store.ts:416, doc comment :410 'Lazy-init the env + all sub-DBs.') lazily opens the LMDB environment in whatever process calls it, keeps it open as a module-level singleton, and does not check which process is calling.",
+          "evidence": "Both anchors resolve as the premise says. The read of src/db/graph/store.ts:416 returns `export async function getGraphStore(): Promise<GraphStore> {`, and the read of src/db/graph/store.ts:410 returns ` * Lazy-init the env + all sub-DBs.`. Together these confirm that the exported entry point opens the LMDB env and its sub-DBs lazily, in whatever process calls it. The sibling ISSUE excerpt (bug-when-another-process-holds-live…/ISSUE.md:57) records that store.ts:439 reads `root = open({` inside the same function, so the env is opened in the calling process. The search for process-identity checks (/process\\.(pid|title|argv)|INSRC_DAEMON/) returned no match in src/db/graph/store.ts. That search was truncated at 50 matches, so this absence is suggestive rather than conclusive, but it is consistent with the claim that the caller is not checked. The module-level singleton caching was not shown directly in a source read. Two earlier verified reviews of this same claim (ISSUE.md:60 and :118) say the handle is cached in module state, and nothing in the evidence contradicts that.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The anchors and the lazy-open behaviour are confirmed by direct reads. The singleton caching and the missing caller check are consistent with the evidence and with earlier verified reviews. Nothing is wrong that would change the fix this premise supports, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "getReadOnlyTools in src/analyze/context/tool-surface.ts throws ReadOnlyToolRegistryMismatch (class declared ~:155, doc at :171) when any allowlist entry has no registered tool, so an empty registry makes it throw.",
+          "evidence": "Every anchor checks out against the source. `src/analyze/context/tool-surface.ts:155` declares `export class ReadOnlyToolRegistryMismatch extends Error`, so \"~:155\" is exact. The read of `src/analyze/context/tool-surface.ts:171` returns the doc comment \" * Throws ReadOnlyToolRegistryMismatch if any allowlist entry has no\". The function itself is declared at `src/analyze/context/tool-surface.ts:179` as `export function getReadOnlyTools(): ToolDefinition[]`, right after that doc comment. The class body, captured in the S008 measurement record (t06.json:854), builds its message as \"Read-only tool surface references unregistered tool(s): ${list} ... or the registry was not populated before getReadOnlyTools() was called\". So the throw condition covers the case where the registry is empty. If no tools are registered, every allowlist entry is missing. The function would throw unless the allowlist were empty, and nothing in the evidence suggests that. The empty-registry conclusion follows directly from the documented condition.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The source confirms all three anchors: the class at :155, the doc comment at :171 and the function at :179. The empty-registry conclusion follows from the documented throw condition and from the error message's 'registry was not populated' wording. No change needed."
+          }
+        },
+        {
+          "claimId": "c9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/analyze/context/driver.ts imports getReadOnlyTools from './tool-surface.js' at line 86 and calls `const tools = getReadOnlyTools();` in its tool loop at line 773.",
+          "evidence": "Both anchors match the source exactly. The read of src/analyze/context/driver.ts:86 returns `import { getReadOnlyTools } from './tool-surface.js';`, and the read of src/analyze/context/driver.ts:773 returns `\tconst tools = getReadOnlyTools();`. The grep for the import pattern matches driver.ts:86, and the grep for `const tools = getReadOnlyTools()` matches driver.ts:773. The other matches are in docs or in tool-surface.test.ts. The live-run capture (S008 t06.json:2385) shows this call sitting inside `async function runToolLoop(...)`, which supports the claim that it is in the tool loop.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is confirmed at both cited lines, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p-allowlist",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "code_class_locate and code_class_references are both members of the analyze read-only tool allowlist (READ_ONLY_TOOL_IDS in src/analyze/context/tool-surface.ts), so they are offered to the analyze tool loop (freeform.probe) in the MCP process.",
+          "evidence": "The direct reads confirm the premise. `src/analyze/context/tool-surface.ts:126` reads `'code_class_locate',` and `:127` reads `'code_class_references',`, and the greps place both entries in the READ_ONLY_TOOL_IDS allowlist in that file. The snapshot test pins both ids as well: `src/analyze/context/__tests__/tool-surface.test.ts:110` (`'code_class_locate'`) and `:111` (`'code_class_references'`) sit inside EXPECTED_READ_ONLY_TOOL_IDS, which is declared at `:61` and asserted equal to READ_ONLY_TOOL_IDS at `:131-132`. Both tools are registered under exactly those ids: `src/daemon/tools/builtins/code/class-locate.ts:59` (`id: 'code_class_locate'`) and `src/daemon/tools/builtins/code/class-references.ts:70` (`id: 'code_class_references'`). Because the ids match, getReadOnlyTools resolves both from the registry; the t06.json body shows it looping over READ_ONLY_TOOL_IDS and calling `registered.get(id)`. Both tools are therefore offered on the analyze tool surface. The freeform.probe tool loop uses this surface, which `docs/daemon.md:408` describes as \"freeform.probe's tool-loop turns\". The premise's claim that this happens in the MCP process is supported only indirectly: the earlier ISSUE.md row c5 states that the MCP registers builtins because getReadOnlyTools throws ReadOnlyToolRegistryMismatch. That claim is consistent with the evidence and is not contradicted.",
+          "action": "None needed; the evidence confirms the premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise: both ids are at tool-surface.ts:126-127 inside READ_ONLY_TOOL_IDS, the snapshot test pins them, and tools are registered under those exact ids. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p-builtin-openers",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "Among the builtin tools under src/daemon/tools/builtins/, exactly two call getGraphStore() directly: code_class_locate (class-locate.ts:214) and code_class_references (class-references.ts:184).",
+          "evidence": "Both anchors are confirmed. The read of src/daemon/tools/builtins/code/class-locate.ts:214 returns `const s = await getGraphStore();`. The read of src/daemon/tools/builtins/code/class-references.ts:184 returns `const store    = await getGraphStore();`.\n\nThe \"exactly two\" claim cannot be checked from the evidence. The /getGraphStore\\(\\)/ grep is TRUNCATED at 50 matches, and its last returned match is src/daemon/tools/builtins/code/class-locate.ts:214. So the cap falls inside the builtins range, not after it. Every builtin file that sorts after code/class-locate.ts is missing from the grep output. That includes class-references.ts itself, which is seen only through the direct read, plus the rest of code/* and the data/, db/, gh/, graph/ and other builtin directories.\n\nThe earlier ISSUE.md review rows (ISSUE.md:53, :116) say the cap hit in `src/db/__tests__`, after the whole builtins range. That no longer holds for this run: matches in docs/ and src/daemon/__tests__ use up the cap first.\n\nThe second grep (/from '.*db/graph/store\\.js'/) is also truncated before src/daemon/tools/. It shows no builtin importer and cannot show that none exists.\n\nSeparately, ISSUE.md:126 notes indirect openers such as src/config/store.ts:167/199/210/250. A count of direct calls alone does not list every builtin that can open the store.",
+          "action": "Run a grep limited to the directory, `rg -n 'getGraphStore\\(' src/daemon/tools/builtins`, which stays under the cap. Use it to confirm or correct the count of exactly two direct callers. If more callers turn up, add them to the inventory, because the fix has to cover every one of them. Otherwise, reword the premise as \"at least these two\" and state that indirect openers (wrappers such as src/config/store.ts) are counted separately.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "Both named call sites are verified. The claim that they are the only two is not, because the grep cap cuts off right after class-locate.ts:214, inside the builtins directory. A directory-scoped re-grep settles it. Without one, the safe wording is a lower bound, not an exact count.",
+            "artifactEdits": [
+              {
+                "find": "exactly two call getGraphStore() directly",
+                "replace": "at least two call getGraphStore() directly (the grep that checks for others hit its cap at class-locate.ts:214)"
+              }
+            ],
+            "options": [
+              "Re-run the grep limited to src/daemon/tools/builtins, then keep 'exactly two' or add the other callers it finds to the inventory.",
+              "Reword to 'at least two builtins call getGraphStore() directly: code_class_locate (class-locate.ts:214) and code_class_references (class-references.ts:184)'.",
+              "Move the fix to the store boundary (getGraphStore refuses to open in the MCP process or routes the call over IPC), so the fix no longer depends on this list being complete."
+            ]
+          }
+        },
+        {
+          "claimId": "p-incomplete",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The artifact explicitly states the opener list is NOT provably complete: besides the two builtins, getGraphStore is reachable via dynamic imports in grounding.ts:105 and freshness.ts:92 and via wrappers such as src/config/store.ts; hence the fix must guard the store boundary rather than enumerate callers.",
+          "evidence": "The evidence confirms each part of the premise. The read of src/workflow/code-review/grounding.ts:105 returns `const { getGraphStore } = await import('../../db/graph/store.js');`. The read of src/workflow/code-review/freshness.ts:92 returns the same dynamic import. The dynamic-import grep matches both lines. The only other source hit is the test src/daemon/__tests__/backup.test.ts:164, which imports backupGraphStore. The wrapper claim also holds: the getGraphStore() grep shows direct calls inside src/config/store.ts at :167, :199, :210 and :250, so anything that calls those functions opens the store indirectly. The static-import grep shows even more wrapper modules than the artifact names, so the list of callers is open. These are src/db/doc-summaries.ts:27, src/db/exploration-cache.ts:31, src/db/graph/edges.ts:21, src/db/graph/ids.ts:27 and src/db/graph/traversal.ts:31. There is also a daemon-side call at src/daemon/index.ts:572. The getGraphStore() grep stops at its 50-match cap, so further callers likely exist. All of this supports the conclusion that the fix should guard the store boundary, because a list of callers cannot be shown to be complete.",
+          "action": "None needed; the premise checks out. Optionally, the artifact could name the extra src/db wrappers (doc-summaries.ts, exploration-cache.ts, graph/edges.ts, graph/ids.ts, graph/traversal.ts) as more evidence that the list of openers is open. That would strengthen the case for guarding the store boundary.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise checks out against the evidence. The cited anchors resolve exactly, and the open set of callers is confirmed, with more wrapper modules than the artifact lists. No edit is needed. The extra wrappers are an optional addition, not a correction."
+          }
+        },
+        {
+          "claimId": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "realGroundingDeps is defined at src/workflow/code-review/grounding.ts:104 and at :105 dynamically imports getGraphStore from '../../db/graph/store.js'.",
+          "evidence": "The evidence backs both parts of the premise. `read src/workflow/code-review/grounding.ts:104` returned `export async function realGroundingDeps(): Promise<GroundingDeps> {`. The grep /export async function realGroundingDeps/ finds exactly one definition in source, at that same line; its other 3 matches are in docs/standalone/.../ISSUE.md. `read src/workflow/code-review/grounding.ts:105` returned `const { getGraphStore }              = await import('../../db/graph/store.js');`. That is a dynamic import of getGraphStore from '../../db/graph/store.js'. The dynamic-import grep also matches this line, src/workflow/code-review/grounding.ts:105. The only differences from the premise are alignment spaces.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is verified as written. Both cited lines resolve to the claimed entity and the claimed import, so no edit is needed. Note: the same dynamic import also appears at src/workflow/code-review/freshness.ts:92. That matters only if the artifact claims grounding.ts is the only place that opens the store; it does not affect this citation."
+          }
+        },
+        {
+          "claimId": "c10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/mcp/server.ts:50 imports DEFAULT_DEPS and handleCodeReviewStep from './code-review-step/handler.js', and src/mcp/code-review-step/handler.ts:38 imports from '../../workflow/code-review/grounding.js', so grounding.ts is in the MCP server's import closure.",
+          "evidence": "Both cited lines match what the premise says. Reading `src/mcp/server.ts:50` gives `import { DEFAULT_DEPS as CODE_REVIEW_STEP_DEFAULT_DEPS, handleCodeReviewStep } from './code-review-step/handler.js';`. That is a static top-level import, and the premise names the right symbols; `DEFAULT_DEPS` is imported under the alias `CODE_REVIEW_STEP_DEFAULT_DEPS`. Reading `src/mcp/code-review-step/handler.ts:38` gives `import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../../workflow/code-review/grounding.js';`, which is also a static top-level import. The grep searches find the same two lines in source. Their only other source hit is `src/daemon/__tests__/code-review-rpc.test.ts:19`, a test file that has nothing to do with the MCP import chain. Following the two static imports in order, server.ts → handler.ts → grounding.ts, puts grounding.ts in the import closure of server.ts. The premise is limited to the \"MCP server's import closure\", meaning server.ts. So the fact that `src/bin/insrc-mcp.ts` loads server.ts with a dynamic import does not affect this claim.",
+          "action": "None needed; the premise is confirmed by the evidence. One optional precision fix: the premise could mention that `DEFAULT_DEPS` is imported under the alias `CODE_REVIEW_STEP_DEFAULT_DEPS`.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both static-import hops match the source exactly at the cited lines, so the artifact needs no correction."
+          }
+        },
+        {
+          "claimId": "p-handler-diff-only",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The MCP code-review-step handler only calls the diff-based grounding (assembleDiffCodeReviewGrounding) and never calls realGroundingDeps; realGroundingDeps is called only from src/daemon/index.ts and src/workflow/code-review/runner.ts.",
+          "evidence": "The grep for /realGroundingDeps/ was not truncated: it returned 14 matches. In source, it finds only the definition at `src/workflow/code-review/grounding.ts:104` (`export async function realGroundingDeps(): Promise<GroundingDeps> {`) and two callers. The first is `src/daemon/index.ts:752-753` (`await realGroundingDeps()`). The second is `src/workflow/code-review/runner.ts:47`, which imports it, with the call at `:148` (`assembleCodeReviewGrounding(repoPath, changedFiles, await realGroundingDeps())`). The other 8 matches are in docs/ markdown. No match in `src/mcp/` refers to realGroundingDeps. The handler imports only the diff-based grounding: `read src/mcp/code-review-step/handler.ts:38` → `import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../../workflow/code-review/grounding.js';`. It wires that function as a seam at `handler.ts:87` (`readonly assembleDiffGrounding: typeof assembleDiffCodeReviewGrounding;`) and `:124` (`assembleDiffGrounding: assembleDiffCodeReviewGrounding,`). One more match, `src/daemon/code-review-rpc.ts:25/142`, also uses assembleDiffCodeReviewGrounding and not realGroundingDeps, so it does not contradict the premise. The evidence confirms both halves of the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified against the complete realGroundingDeps grep (not truncated) and the handler.ts:38 import read. No edit is needed. One caveat: this shows that the handler does not call realGroundingDeps directly. It does not show whether runner.ts is ever loaded inside the MCP process, which is a separate question about the import closure."
+          }
+        },
+        {
+          "claimId": "c11",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/code-review/freshness.ts:92 dynamically imports getGraphStore from '../../db/graph/store.js'.",
+          "evidence": "The read of `src/workflow/code-review/freshness.ts:92` returned `const { getGraphStore }    = await import('../../db/graph/store.js');`, which is exactly what the premise says. The dynamic-import grep also matched this line in source (`src/workflow/code-review/freshness.ts:92`), next to the similar import at `src/workflow/code-review/grounding.ts:105`. The quoted line differs from the source only in alignment whitespace.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the cited line, so no change is needed."
+          }
+        },
+        {
+          "claimId": "c12",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "freshness.ts is called only from the daemon: src/daemon/index.ts:770 dynamically imports computeCodeReviewFreshness and realFreshnessGraphDeps from '../workflow/code-review/freshness.js'.",
+          "evidence": "The read of src/daemon/index.ts:770 matches the premise exactly: `const { computeCodeReviewFreshness, realFreshnessGraphDeps } = await import('../workflow/code-review/freshness.js');`. The grep for `code-review/freshness\\.js` finds that one source import; the other matches are in docs/standalone/.../ISSUE.md. The grep for `realFreshnessGraphDeps` finds only its definition (src/workflow/code-review/freshness.ts:91) and its uses at src/daemon/index.ts:770-771. The grep for `computeCodeReviewFreshness` finds src/daemon/index.ts:770 and :774, the definition and doc comment in freshness.ts (lines 9, 31, 58), and src/workflow/code-review/__tests__/freshness.test.ts, which imports the function at line 9 and calls it at lines 34–96. Those test imports are not production callers, so the claim that only the daemon calls it holds for production code.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise: src/daemon/index.ts:770 is the only production importer of freshness.ts. The only other caller is the unit test file (freshness.test.ts), which does not affect what gets built. No edit needed."
+          }
+        },
+        {
+          "claimId": "p-config-wrapper",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "src/config/store.ts wraps getGraphStore(), so code calling it can open the graph store indirectly.",
+          "evidence": "The grep /getGraphStore\\(\\)/ finds four direct calls inside src/config/store.ts: src/config/store.ts:167, :199, :210 and :250, each reading `const store = await getGraphStore();`. A direct read of src/config/store.ts:167 returns `\t\tconst store = await getGraphStore();`, which confirms the anchor. Each call sits inside a function body in that module (it is indented within a function, not at module top level). So any caller of those config-store functions reaches getGraphStore() through them. This matches the premise that src/config/store.ts wraps getGraphStore() and is an indirect path to opening the graph store. The evidence does not name the enclosing exported functions, but the premise does not depend on them.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is confirmed by four direct getGraphStore() calls inside src/config/store.ts (:167, :199, :210, :250), so nothing needs to change. One optional improvement: name the exported config-store functions that enclose these calls so the list of indirect openers is complete. The gathered evidence does not identify those functions, so no edit is proposed."
+          }
+        },
+        {
+          "claimId": "p-entry",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The MCP binary entry src/bin/insrc-mcp.ts imports '../mcp/server.js' and calls runInsrcMcpStdio() (around :44-45), so the builtin registration in runInsrcMcpStdio runs in the MCP process.",
+          "evidence": "Both anchors resolve to the code the premise describes. `read src/bin/insrc-mcp.ts:44 → FOUND: const { runInsrcMcpStdio } = await import('../mcp/server.js');` is a dynamic import of the server module. `read src/bin/insrc-mcp.ts:45 → FOUND: await runInsrcMcpStdio();` awaits the call in the binary entry. The greps for `await import('../mcp/server.js')` and `await runInsrcMcpStdio()` each match exactly once in source, at src/bin/insrc-mcp.ts:44 and :45. Every other match is in docs. Because the entry calls runInsrcMcpStdio, whatever that function does, including builtin registration, runs in the MCP process. One small inaccuracy: the premise says the entry 'imports' server.js, but the import is dynamic (`await import(...)`), not a static top-level import. This does not change the ordering claim, because the import resolves before runInsrcMcpStdio() is called.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise. The only nuance is that the import is dynamic, which does not affect whether the registration runs in the MCP process, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "c7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CLAUDE.md key architectural rule #1 states 'Daemon owns all DB access — CLI, MCP, and the IDE workbench communicate via IPC only.'",
+          "evidence": "The read of CLAUDE.md:135 returned \"1. **Daemon owns all DB access** — CLI, MCP, and the IDE workbench communicate via IPC only.\" The grep /Daemon owns all DB access/ matched CLAUDE.md:135 with the same text. The line is item 1 of the numbered \"Key architectural rules\" list, so calling it rule #1 is correct, and the quoted text matches the source word for word. AGENTS.md:135 has the same line, and site/architecture.html:183 states the same rule.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The citation resolves exactly to the quoted rule at CLAUDE.md:135. No change is needed."
+          }
+        },
+        {
+          "claimId": "c8",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "Observed 2026-10-12: lsof showed the Codex-spawned MCP process (node ~/.insrc/daemon/out/bin/insrc-mcp.js, pid 51338) holding graph.lmdb and graph.lmdb-lock while no daemon was running.",
+          "evidence": "The premise reports a runtime observation: on 2026-10-12, lsof showed pid 51338 (node ~/.insrc/daemon/out/bin/insrc-mcp.js) holding graph.lmdb and graph.lmdb-lock while no daemon was running. The gathered evidence is only a ripgrep of /graph\\.lmdb/, capped at 50 matches. None of those matches address the claim.\n\n- Some matches are docs that describe the daemon as the process that opens LMDB: design/indexer.html:307 (\"Daemon opens LMDB at ~/.insrc/graph.lmdb\"), docs/daemon.md:164 and docs/daemon.md:178, and docs/plans/graph-storage-lmdb.md:818 (\"Open LMDB env at ~/.insrc/graph.lmdb\").\n- docs/plans/graph-storage-lmdb.md:703 mentions the graph.lmdb-lock reader-table semantics, and the rest are temporary paths from test TAP output.\n- No match comes from the MCP entry point (out/bin/insrc-mcp.js or its src/bin/ / src/mcp/ sources) or from any import chain that would make the MCP process open the graph store directly.\n- The lsof output, pid 51338 and process state are runtime facts. A source probe cannot reproduce them.\n\nThe documented rule that \"Daemon owns all DB access\" is consistent with this being a defect if it happened. But the evidence neither confirms nor contradicts that the MCP process opens LMDB. The premise is therefore unverifiable.",
+          "action": "Ground the observation in source by finding the code path that makes the MCP process open graph.lmdb. To do that, trace the imports from src/bin/insrc-mcp.ts and src/mcp/* to getGraphStore or the lmdb open in src/db/graph/store.ts, and cite that file:line in the artifact. Separately, attach the raw lsof output or a reproduction step: start the MCP server with no daemon, then run `lsof +D ~/.insrc | grep graph.lmdb`. That makes the runtime claim checkable. If no such import path exists, re-scope the premise; for example, a stale build in out/ or a different entry point may be what opened the store.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence covers only doc and test mentions of graph.lmdb. Nothing ties the MCP binary to opening the LMDB env, and a runtime lsof observation cannot be verified from the source tree. Any edit to the premise text needs the real import path or a reproduction from a human.",
+            "options": [
+              "Add a source anchor: cite the src/mcp → src/db/graph/store.ts import chain (file:line) that opens graph.lmdb inside the MCP process.",
+              "Attach reproduction evidence: the raw lsof output plus steps (MCP started with no daemon running) as an appendix, and mark the premise as an observed runtime fact.",
+              "Reword as a hypothesis ('the MCP process appears to open graph.lmdb directly, violating the rule that the daemon owns all DB access') until the source path is confirmed.",
+              "If the open came from a stale out/ build rather than current source, re-scope the premise to rebuild/version drift instead of a code-path defect."
+            ]
+          }
+        },
+        {
+          "claimId": "c14",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "With getGraphStore's open options (mapSize 1GiB, maxDbs 32), a second process opening an LMDB env another process holds succeeds (exit 0), so a second holder alone does not stop the daemon from starting; the exit-134 failures are explicitly NOT attributed to this issue.",
+          "evidence": "The anchor resolves: src/db/graph/store.ts:416 is `export async function getGraphStore(): Promise<GraphStore> {`, and the open options are at store.ts:441 (`mapSize: mapsizeBytes,`) and store.ts:442 (`maxDbs:  MAX_DBS,`). The evidence does not show what `mapsizeBytes` or `MAX_DBS` equal, so it cannot confirm the premise's \"1GiB\" and \"32\". The only support for the \"second open succeeds (exit 0)\" behaviour is the artifact's own recorded step output: c12 in docs/standalone/bug-when-another-process-holds-live-E20261012f442f10b/ISSUE.md:40 (\"holder open({path, mapSize:1GiB, maxDbs:32}) + put + periodic get; second process same open, read, put, close -> exit 0 …\"), plus the matching c14 in the sibling issue E20261012e980ffbb/ISSUE.md:42. No test in the tree re-runs this. The nearest one, src/db/graph/__tests__/helpers/store-child.ts:111, opens with `maxDbs: 8` and no mapSize, so it does not use getGraphStore's options. The artifact's own c6 row (ISSUE.md:52) still calls it unpinned which native open, LanceDB or lmdb-js, aborts with exit 134. That fits the premise's statement that the exit-134 failures are not attributed to this issue. Nothing in the evidence contradicts the premise, but its exact option values and the runtime result cannot be checked here. It is a scoping (negative) claim: it decides what the fix does NOT cover. It does not change what gets built, so no concrete build-breaking failure can be stated.",
+          "action": "Read store.ts near lines 430–442 to resolve `MAX_DBS` and `mapsizeBytes` (and how the mapsize config default is computed). Confirm they equal 32 and 1 GiB, or correct the premise text to the real values. Optionally turn the c12 two-process reproduction into a test that uses getGraphStore's real options, so the \"second holder → exit 0\" contract is checked in-tree and not only by a one-off step output.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The premise is consistent with the recorded reproduction and does not change the prescribed fix. The concrete option values come from the reproduction script, not from store.ts, where they are the symbols `mapsizeBytes` / `MAX_DBS` whose values were not in the evidence. A human should either check the constants or state the claim in terms of the symbols.",
+            "options": [
+              "Verify MAX_DBS === 32 and the default mapsizeBytes === 1 GiB in src/db/graph/store.ts and leave the premise as written.",
+              "Reword the premise to cite the symbols rather than literal values: \"With getGraphStore's open options (mapSize: mapsizeBytes, maxDbs: MAX_DBS — store.ts:441-442), …\" and keep c12 as the reproduction citation.",
+              "Add an in-tree two-process test (extend src/db/graph/__tests__/helpers/store-child.ts to use getGraphStore's options) so the exit-0 contract is enforced and no longer a one-off observation."
+            ]
+          }
+        },
+        {
+          "claimId": "c13",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Related ledger issues ISSUE-f442f10bd21284a5 (make daemon startup report a held store instead of aborting silently) and ISSUE-0d577569 (daemon loses its LMDB locks when another process closes the store) exist as artifacts the fix must be checked against.",
+          "evidence": "Both artifacts exist on the ledger. `docs/standalone/bug-when-another-process-holds-live-E20261012f442f10b/ISSUE.md:1` reads `<!-- insrc:artifact ISSUE-f442f10bd21284a5 -->`. That is the full id named in the premise. Its title, \"Make daemon startup report a held store instead of aborting silently\", is cited at `docs/standalone/bug-insrc-mcp-server-process-opens-E20261012e980ffbb/ISSUE.md:41`. `docs/standalone/defect-installed-daemon-runs-out-lmdb-E202610100d577569/ISSUE.md:1` reads `<!-- insrc:artifact ISSUE-0d5775698fd042a7 -->`. The premise's short id ISSUE-0d577569 is a prefix of that full id. The subject also matches: `bug-when-another-process-holds-live.../ISSUE.md:41` gives it as \"installed daemon runs out of LMDB semaphores (lock loss when another process closes the store)\". The two issues are also linked to each other. f442f10b's ISSUE.md:21 says the abort \"may be the lock-loss state described in ISSUE-0d577569\". Epic E20261011c2ba6fa6 Story S004 (DEF.md:213) takes in ISSUE-0d577569 in full. One small imprecision: the premise uses the full id for the first issue but the short id for the second. The short id is used the same way across the ledger (DEF.md:33, HLD.md:219), so it still resolves to the right issue.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise. ISSUE-0d577569 is the short form of ISSUE-0d5775698fd042a7, and the ledger uses that form everywhere, so nothing needs to change."
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 3,
+        "low": 17
+      },
+      "reviewedAt": "2026-10-12T09:25:11.268Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-12T09:50:23.643Z",
+    "reviewOverride": {
+      "reason": "User-approved override 2026-10-12 after 3 daemon review rounds (6 -> 2 -> 3 MED, 0 HIGH). Every finding checkable against source was verified and fixed (exact line anchors, the freshness.ts opener, the corrected grounding.ts quote, the builtin-opener count from a grep scoped to src/daemon/tools/builtins, getGraphStore's real 1024 GiB / 32-sub-DB options in the reproduction). Remaining: c8, a runtime lsof/ps observation that static probes cannot reproduce; the raw output is cited (c8), and the source path that makes the MCP open the store is cited separately (c1-c4, c9, c10). Earlier MEDs from round 3 (p-builtin-openers, c14) were fixed after that review ran.",
+      "at": "2026-10-12T09:50:23.641Z"
+    },
+    "parentRef": {
+      "slug": "complete-consistent-richer-code-index-one",
+      "storyId": "s4"
+    }
+  },
+  "body": {
+    "title": "Stop the MCP server process from opening the live graph store",
+    "reproduction": "1. Start an insrc MCP server (src/bin/insrc-mcp.ts), e.g. by opening a Claude Code or Codex session that has the insrc MCP configured.\n2. Use it until a call runs an in-process graph tool (code_class_locate / code_class_references, reached through the analyze freeform.probe tool surface).\n3. `lsof ~/.insrc/graph.lmdb` now lists the MCP's node process holding graph.lmdb and graph.lmdb-lock, beside the daemon.\n\nObserved (2026-10-12): `lsof` listed the MCP spawned by the Codex extension (node ~/.insrc/daemon/out/bin/insrc-mcp.js, running since 2026-10-11 20:13, parent the Codex app-server) holding graph.lmdb and graph.lmdb-lock while no daemon was running.\n\nExpected: no process other than the daemon ever opens graph.lmdb; an MCP server reaches the store only through the daemon over IPC.\n\nRelated, NOT established as caused by this: during the same window every daemon start exited with code 134 (ISSUE-f442f10bd21284a5). After the MCP was killed the next start succeeded, but that start also ran a newer build and a different launch command, and a two-process reproduction on a temp store (a second process opening an LMDB env another process holds, with getGraphStore's default open options: a 1024 GiB map and 32 sub-DBs) succeeded with exit 0. So a second holder does not, on its own, stop the daemon from starting.",
+    "rootCause": "runInsrcMcpStdio (src/mcp/server.ts:1254) registers the daemon's whole builtin tool set in the MCP process: registerBuiltinTools() (:1272), registerBuiltinDataDrivers() (:1273) and registerWorkflowRunners() (:1274). The comment at :1261 says it mirrors the daemon boot. It does this so the analyze driver's read-only tool surface is populated in that process: src/analyze/context/driver.ts imports getReadOnlyTools (:86) and calls it in its tool loop (:773), and getReadOnlyTools (src/analyze/context/tool-surface.ts) throws ReadOnlyToolRegistryMismatch if the registry is empty. Two of those builtins read the graph by calling getGraphStore() directly, and both are on the analyze allowlist: code_class_locate (src/daemon/tools/builtins/code/class-locate.ts:214) and code_class_references (src/daemon/tools/builtins/code/class-references.ts:184). getGraphStore (src/db/graph/store.ts:416) lazily opens the LMDB environment in whatever process calls it and keeps it open, so the MCP process becomes a second long-lived owner of the store. Nothing in getGraphStore checks which process is calling, so the breach of rule #1 (the daemon owns all DB access) goes unnoticed until the daemon fails to start.\n\nA grep scoped to src/daemon/tools/builtins finds exactly these two direct callers of getGraphStore(). They are the openers confirmed on the MCP runtime path, but the full list of openers is not provably complete. Other code in the MCP's import closure can also open the store but is not confirmed to run there: src/workflow/code-review/grounding.ts is loaded through src/mcp/server.ts:50 -> src/mcp/code-review-step/handler.ts:38, but the MCP handler only calls the diff-based grounding, and realGroundingDeps (:104, which imports getGraphStore at :105) is called from the daemon and the code-review runner. src/workflow/code-review/freshness.ts:92 does the same import and is called only from the daemon (src/daemon/index.ts:770). Modules that wrap getGraphStore, such as src/config/store.ts, can also open it indirectly.",
+    "fixIntent": "The MCP server process must never open graph.lmdb, whichever code path asks for it. Any graph read it needs must go to the daemon over IPC, or the graph-reading tools must not be offered in the MCP process. Because the set of openers cannot be listed completely, the protection must hold at the store boundary: opening the store from any process other than the daemon fails loudly and says why, instead of silently taking a second hold. A test must enforce that the MCP binary's runtime path cannot open the store, so the regression cannot come back unseen. Check afterwards whether this resolves or narrows ISSUE-0d577569 and ISSUE-f442f10bd21284a5 (daemon loses its LMDB locks when another process closes the store)."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/mcp/server.ts:1254-1274",
+      "quotedText": "export async function runInsrcMcpStdio() ... registerBuiltinTools(); registerBuiltinDataDrivers(); registerWorkflowRunners(); (comment :1261 'Mirrors what the main daemon does at boot')"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/code/class-locate.ts:214",
+      "quotedText": "const s = await getGraphStore();"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/code/class-references.ts:184",
+      "quotedText": "const store    = await getGraphStore();"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/db/graph/store.ts:416",
+      "quotedText": "export async function getGraphStore(): Promise<GraphStore> { (doc :410 'Lazy-init the env + all sub-DBs.')"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/analyze/context/tool-surface.ts:171",
+      "quotedText": "Throws ReadOnlyToolRegistryMismatch if any allowlist entry has no registered tool"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/code-review/grounding.ts:105",
+      "quotedText": "const { getGraphStore }              = await import('../../db/graph/store.js');"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "CLAUDE.md",
+      "quotedText": "Daemon owns all DB access — CLI, MCP, and the IDE workbench communicate via IPC only."
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "lsof ~/.insrc/graph.lmdb and ps, 2026-10-12",
+      "quotedText": "lsof: node 51338 ... 15u graph.lmdb-lock, 22u/23w graph.lmdb; ps: 51338 parent 59527 = .../openai.chatgpt-.../codex app-server; command node /Users/subhagho/.insrc/daemon/out/bin/insrc-mcp.js, started Sun Oct 11 20:13:15"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/analyze/context/driver.ts:86,773",
+      "quotedText": "import { getReadOnlyTools } from './tool-surface.js'; ... const tools = getReadOnlyTools();"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/mcp/server.ts:50",
+      "quotedText": "import { DEFAULT_DEPS as CODE_REVIEW_STEP_DEFAULT_DEPS, handleCodeReviewStep } from './code-review-step/handler.js';"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/workflow/code-review/freshness.ts:92",
+      "quotedText": "const { getGraphStore }    = await import('../../db/graph/store.js');"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:770",
+      "quotedText": "const { computeCodeReviewFreshness, realFreshnessGraphDeps } = await import('../workflow/code-review/freshness.js');"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-f442f10bd21284a5",
+      "quotedText": "Make daemon startup report a held store instead of aborting silently"
+    },
+    {
+      "id": "c14",
+      "kind": "step-output",
+      "ref": "two-process LMDB reproduction on a temp store, 2026-10-12",
+      "quotedText": "holder: open({path, mapSize: 1024 GiB, maxDbs: 32}), the store's defaults (DEFAULT_MAPSIZE_GIB = 1024 at src/db/graph/store.ts:73, MAX_DBS = 32 at :80, passed at :441-442), + put + periodic get; second process: same open, read, put, close -> exit 0. Repeated after the holder closed a descriptor on graph.lmdb-lock and a third process opened and closed the store: still exit 0. (A first run with a 1 GiB map gave the same result.)"
+    },
+    {
+      "id": "c15",
+      "kind": "step-output",
+      "ref": "grep -rn 'getGraphStore(' src/daemon/tools/builtins, 2026-10-12",
+      "quotedText": "src/daemon/tools/builtins/code/class-locate.ts:214 and src/daemon/tools/builtins/code/class-references.ts:184 (no other matches)"
+    }
+  ]
+}

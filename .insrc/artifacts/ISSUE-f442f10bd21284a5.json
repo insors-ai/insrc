@@ -1,0 +1,544 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791788439822-3l41mv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-12T07:01:26.253Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 46429,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "f442f10bd21284a5",
+    "epicSlug": "bug-when-another-process-holds-live",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "issue",
+      "stage": "issue",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "r1",
+          "ref": "reproduction",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/server.ts:123 binds the daemon socket via this.server.listen(PATHS.sockFile, ...).",
+          "evidence": "Reading src/daemon/server.ts:123 returned `this.server.listen(PATHS.sockFile, () => {`. A grep for /this\\.server\\.listen\\(PATHS\\.sockFile/ matched one source line, src/daemon/server.ts:123. Its other four hits are quotes of this same citation inside docs/standalone/bug-when-another-process-holds-live-E20261012f442f10b/ISSUE.md. So the line the premise cites does contain the socket-binding call it describes.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited line matches the premise exactly, so nothing needs fixing."
+          }
+        },
+        {
+          "claimId": "r2",
+          "ref": "reproduction",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/server.ts:124 logs `listening on ${PATHS.sockFile}` immediately after the socket is bound.",
+          "evidence": "The read of src/daemon/server.ts:124 returns `log.info(`listening on ${PATHS.sockFile}`);`, which is exactly the cited line. The grep finds this line in only one source file, src/daemon/server.ts:124. The other matches are in the ISSUE.md artifact. An earlier finding in that artifact also places the line inside the `this.server.listen(PATHS.sockFile, () => {` callback at server.ts:123. That means it runs once the socket is bound, as the premise says.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited file:line resolves to the exact log statement. It sits inside the listen callback, so it runs right after the socket is bound. No change is needed."
+          }
+        },
+        {
+          "claimId": "r3",
+          "ref": "reproduction",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "In daemon boot, writePid() at src/daemon/index.ts:275 runs only after await getGraphStore() at src/daemon/index.ts:236, so daemon.pid is not written if the store open aborts.",
+          "evidence": "The read of src/daemon/index.ts:236 returns `await getGraphStore();   // ensure env is open`. The read of src/daemon/index.ts:275 returns `writePid();`. The greps match: /await getGraphStore\\(\\)/ lists src/daemon/index.ts:236 as the one boot-path await in index.ts (another call at :572 is later and nested inside a handler). /writePid\\(\\)/ has only one match in production boot code, src/daemon/index.ts:275; the other matches are the definition at src/daemon/lifecycle.ts:22, a test helper at src/db/graph/__tests__/helpers/store-child.ts:198, and the ISSUE.md citation. Both statements have the same one-tab indentation, so they are sequential statements in the same boot function. Line 236 comes before line 275, so if the awaited getGraphStore() rejects, control leaves before writePid() runs and daemon.pid is never written. One caveat: the evidence does not show lines 237–274. A surrounding try/catch that swallows the rejection is not ruled out, but the matching indentation makes one unlikely.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both anchors resolve exactly to the cited calls, and they run in the stated order in the same boot function. No correction is needed."
+          }
+        },
+        {
+          "claimId": "r4",
+          "ref": "reproduction",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "src/cli/services/lifecycle.ts treats the daemon as running only when the pid file names a live process AND the socket file exists.",
+          "evidence": "The evidence backs only half of the premise. The pid half is supported: `src/cli/services/lifecycle.ts:32` = `try { process.kill(pid, 0); return true; } catch { return false; }`, a liveness probe. An earlier verified citation in docs/epics/seed-from-approved-specartifact-spec-bfa1f6c830c53982-E20260805f900cf34/S003/LLD.md:301 places `function pidFromFile(): number | undefined {` (which reads PATHS.pidFile) at lifecycle.ts:20. The socket half is not supported. The `/pidFile|sockFile/` grep stopped at its 50-match cap, and every match it returned is in docs/epics/**. None of them shows a `PATHS.sockFile` or `existsSync(...sockFile)` reference inside src/cli/services/lifecycle.ts. The only read of lifecycle.ts is line 1, a license-header comment. So nothing here shows that the running check also requires the socket file to exist, or that the two conditions are combined with AND rather than the pid check standing alone.",
+          "action": "Read src/cli/services/lifecycle.ts around lines 15–60, at the function that decides whether the daemon is running. Check whether it also tests that PATHS.sockFile exists, and whether that test is combined with pidAlive(pidFromFile()) by AND. If there is no socket test, restate the reproduction premise as a pid-only check. That changes the issue's root-cause story: a stale socket file with a dead pid, or a live pid with no socket, would behave differently from what the premise assumes. If the socket test does exist, add its `file:line` anchor to the premise so a reviewer can verify it.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The pid-liveness half is confirmed (lifecycle.ts:32, plus pidFromFile at :20 per an earlier verified citation). The sockFile-exists half and the AND relationship have no evidence because the grep was truncated to docs-only matches. Which wording is correct depends on the code a human still needs to read, so no automatic edit is safe.",
+            "options": [
+              "Confirm the socket check exists after reading lifecycle.ts, and add its file:line anchor to the premise (for example 'lifecycle.ts:<n> existsSync(PATHS.sockFile) && pidAlive(pidFromFile())').",
+              "Narrow the premise to what the evidence shows: 'src/cli/services/lifecycle.ts treats the daemon as running when the pid in PATHS.pidFile (pidFromFile, :20) is alive per process.kill(pid, 0) (pidAlive, :32).'",
+              "If the socket check sits somewhere else (for example src/cli/services/daemon.ts:148 pidAlive or the rpc ENOENT path), move the socket clause to that file and anchor it there."
+            ]
+          }
+        },
+        {
+          "claimId": "r5",
+          "ref": "c8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "scripts/daemon-ctl.sh:142 launches the production daemon with `exec env INSRC_MODE=daemon node --import tsx/esm \"$DAEMON_ENTRY\" >>\"$DAEMON_LOG\" 2>&1`.",
+          "evidence": "The read of scripts/daemon-ctl.sh:142 returns `( cd \"$DAEMON_ROOT\" && exec env INSRC_MODE=daemon node --import tsx/esm \"$DAEMON_ENTRY\" >>\"$DAEMON_LOG\" 2>&1 </dev/null ) &`. The quoted command `exec env INSRC_MODE=daemon node --import tsx/esm \"$DAEMON_ENTRY\" >>\"$DAEMON_LOG\" 2>&1` appears verbatim and unbroken on that line. The grep for `INSRC_MODE=daemon node --import tsx/esm` also matches scripts/daemon-ctl.sh:142 in source. The excerpt leaves out the surrounding context: the command runs in a backgrounded subshell after `cd \"$DAEMON_ROOT\"`, with stdin redirected from /dev/null. This does not change the premise's claim about how the production daemon is launched.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The citation resolves to the exact line and content claimed. The omitted subshell wrapper (`cd \"$DAEMON_ROOT\"`, `</dev/null`, `&`) does not affect the premise, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "r6",
+          "ref": "c12",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "getGraphStore's defaults are DEFAULT_MAPSIZE_GIB = 1024 at src/db/graph/store.ts:73 and MAX_DBS = 32 at src/db/graph/store.ts:80, passed to open() at :441-442.",
+          "evidence": "All four anchors check out. The read of src/db/graph/store.ts:73 returns `const DEFAULT_MAPSIZE_GIB = 1024;`. The read of :80 returns `const MAX_DBS = 32;`. The read of :441 returns `mapSize: mapsizeBytes,` and the read of :442 returns `maxDbs:  MAX_DBS,`. Grepping for each constant finds exactly one source definition, in src/db/graph/store.ts at the cited line. The other matches are copies of this same claim in docs/standalone ISSUE.md files. Line 441 passes `mapsizeBytes` rather than DEFAULT_MAPSIZE_GIB itself. That fits the premise's wording that the defaults are \"passed to open()\": the GiB constant is converted to bytes first, and line 442 passes MAX_DBS directly.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise. Both constants are defined at the cited lines, and the open() options at :441-442 use them (mapSize through the byte-converted mapsizeBytes). No edit is needed."
+          }
+        },
+        {
+          "claimId": "r7",
+          "ref": "c7",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Prior artifact ISSUE-e980ffbb6dd346e7 ('Stop the MCP server process from opening the live graph store') exists and describes the MCP process that held graph.lmdb during the failed start.",
+          "evidence": "The ID points to a real prior artifact. docs/standalone/bug-insrc-mcp-server-process-opens-E20261012e980ffbb/ISSUE.md:1 contains `<!-- insrc:artifact ISSUE-e980ffbb6dd346e7 -->`. Its directory slug, \"bug-insrc-mcp-server-process-opens\", matches the cited title 'Stop the MCP server process from opening the live graph store'. The artifact under review cites it as the holder in two places. At docs/standalone/bug-when-another-process-holds-live-E20261012f442f10b/ISSUE.md:10 it says \"an insrc MCP process (ISSUE-e980ffbb6dd346e7) held graph.lmdb and graph.lmdb-lock\". At line 35 it lists it as `prior-artifact` `ISSUE-e980ffbb6dd346e7` with the same title. Two earlier review passes (lines 68 and 128) reached the same LOW verdict. The evidence does not include the prior artifact's title line or body, so the exact title wording is supported only by the slug and the citation, not by a direct read. That gap does not change what gets built.",
+          "action": "None needed. The premise checks out against the evidence.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified sound. The cross-artifact reference resolves to an existing ISSUE whose slug matches the described subject (the MCP server process opening the live graph store), so nothing needs to change."
+          }
+        },
+        {
+          "claimId": "r8",
+          "ref": "c19",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "In the installed clone ~/.insrc/daemon, commit 88db0f22 is an ancestor of 01ca9641 (git merge-base --is-ancestor exits 0).",
+          "evidence": "No probes were run for this premise, so there are no ripgrep matches and no path:line reads to judge it against. Ancestry between commits 88db0f22 and 01ca9641 is git history, and a source-tree probe cannot show it. The session's git snapshot does list 01ca9641 directly above 88db0f22 in recent history on main, which fits the premise. That snapshot is not probe evidence, though, so the premise is still UNVERIFIABLE under the grounding rules.",
+          "action": "Before relying on c19, add a probe that runs `git -C ~/.insrc/daemon merge-base --is-ancestor 88db0f22 01ca9641` and records its exit code, or check it by hand and attach the result to the artifact. If the exit code is non-zero (for example, the installed clone is on a different branch or was not fetched), re-scope the work that depends on this ancestry.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The premise is probably true: the git log snapshot shows 01ca9641 as the commit right after 88db0f22 on main. But no probe confirmed it, and a reviewer cannot write that as verified without evidence. A person needs to run the ancestry check or accept the premise as an assumption.",
+            "options": [
+              "Add a deterministic probe for c19 that runs `git merge-base --is-ancestor 88db0f22 01ca9641` in ~/.insrc/daemon and records exit code 0, then re-review.",
+              "Have a person run the check by hand and accept c19 with a note that includes the observed exit code.",
+              "Reword c19 as an explicit assumption that must be checked at build time, so it no longer reads as a verified fact."
+            ]
+          }
+        },
+        {
+          "claimId": "rc1",
+          "ref": "root-cause",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The only fatal-error hooks in the daemon are process.on('uncaughtException') at src/daemon/index.ts:32 and process.on('unhandledRejection') at src/daemon/index.ts:33, both calling reportFatal; no SIGABRT/native-abort handler is registered in src/daemon.",
+          "evidence": "The reads match the premise exactly. `src/daemon/index.ts:32` reads `process.on('uncaughtException',  (err) =>    reportFatal('uncaughtException',  err, fatalDeps));` and `src/daemon/index.ts:33` reads `process.on('unhandledRejection', (reason) => reportFatal('unhandledRejection', reason, fatalDeps));`. A grep for process.on/once with 'uncaughtException' | 'unhandledRejection' | 'SIGABRT' | 'exit' returned 13 matches. Only two are in src/daemon: index.ts:32 and index.ts:33. The other 11 are ISSUE.md doc text and test-only registrations: src/analyze/__tests__/measure-pass.test.ts:638, src/db/graph/__tests__/helpers/store-child.ts:194, and three in vscode-plugin/src/chat/__tests__. No 'SIGABRT' handler appears anywhere. `src/daemon/fatal.ts:49` declares `reportFatal(kind: 'uncaughtException' | 'unhandledRejection', ...)`, which confirms that reportFatal handles only the two JavaScript-level kinds. One limit on the check: the grep looked only for these four event names. It did not look for other signals such as SIGTERM, SIGINT or SIGSEGV, or for process.report. None of those are SIGABRT or native-abort hooks, so the premise's claim still holds.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms that index.ts:32 and index.ts:33 are the only fatal hooks in src/daemon, that both call reportFatal, and that no SIGABRT handler exists. Nothing needs to change."
+          }
+        },
+        {
+          "claimId": "rc2",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "reportFatal is defined and exported in src/daemon/fatal.ts.",
+          "evidence": "The read of `src/daemon/fatal.ts:49` returned `export function reportFatal(kind: 'uncaughtException' | 'unhandledRejection', reason: unknown, deps: FatalDeps): void {`. The grep for `/export function reportFatal/` matched that same line, so reportFatal is defined and exported in src/daemon/fatal.ts. The other 3 matches are quoted text inside docs/standalone/.../ISSUE.md, not definitions.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is confirmed by the export at src/daemon/fatal.ts:49. The artifact needs no change."
+          }
+        },
+        {
+          "claimId": "rc3",
+          "ref": "root-cause",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "No process.report diagnostic (reportOnFatalError / writeReport / directory) is configured anywhere in src/.",
+          "evidence": "The repo-wide greps for /process\\.report/ (3 matches), /writeReport/ (2 matches) and /reportOnFatalError|report-on-fatalerror/ (1 match) all hit only docs/standalone/bug-when-another-process-holds-live-E20261012f442f10b/ISSUE.md (lines 19, 65, 118). That file is the issue artifact describing the premise; it is not source. None of the greps hit anything under src/. The report-on-fatalerror grep also covers the CLI-flag form, and it found no spawn argument or NODE_OPTIONS setting that turns the diagnostic report on. The evidence therefore confirms that process.report is not configured anywhere in src/: the set of report configurations is empty, as the premise claims.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified sound: the only process.report, writeReport and reportOnFatalError matches are in the ISSUE.md artifact itself, and src/ has none. No edit is needed."
+          }
+        },
+        {
+          "claimId": "rc4",
+          "ref": "root-cause",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "A native abort (SIGABRT, exit 134) terminates a Node process without running JavaScript uncaughtException/unhandledRejection handlers.",
+          "evidence": "No probes were run for this premise, so there are no ripgrep matches and no path:line reads to check it against. The anchors `SIGABRT` and `reportFatal` were never resolved against the source tree. The claim is about Node.js runtime behaviour: a native abort ends the process without running the JS `uncaughtException`/`unhandledRejection` handlers. This repo's code cannot confirm that. Only Node's documentation or a reproduction can. Measured against the evidence I was given, the premise is UNVERIFIABLE. It matches general knowledge of how Node behaves, but that does not count as grounding here.",
+          "action": "Ground the premise before relying on it. (1) Cite the Node.js process docs, which say signal-induced termination such as SIGABRT from a native abort() bypasses JS event handlers, including 'exit'. Or add a reproduction test that calls `process.abort()` in a child process and asserts exit code 134 / signal SIGABRT and that no handler output appears. (2) Add a code probe for the `reportFatal` anchor, so the root-cause analysis shows where the fatal-report path currently sits and that it depends only on JS handlers. The fix should not assume an in-process JS handler can see the abort. Detection has to happen out of process, for example the parent checking the child's exit signal or code, or through native report hooks such as `--report-on-fatalerror` / `process.report`.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "Nothing was gathered for this premise. It is an external runtime contract, and the source tree alone cannot verify it, so a human has to choose how to ground it. No text edit can be derived from the evidence.",
+            "options": [
+              "Add a Node.js documentation citation (process signal events / process.abort) to the root-cause premise as its external grounding",
+              "Add a reproduction test: spawn a child that calls process.abort(), assert signal === 'SIGABRT' (or exit code 134) and that no uncaughtException/unhandledRejection handler output appears",
+              "Add a ripgrep probe for `reportFatal` / `process.on('uncaughtException'` so the artifact cites where the current JS-handler-only fatal reporting lives, and say that abort detection must happen in the parent process (exit signal) or through --report-on-fatalerror"
+            ]
+          }
+        },
+        {
+          "claimId": "rc5",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Daemon logging in src/shared/logger.ts uses a pino transport with target 'pino-roll' (at :66, :101, :130), which pino runs in a worker thread.",
+          "evidence": "All three cited anchors resolve exactly to the premise. A direct read of src/shared/logger.ts:66, :101 and :130 returned \"FOUND: target: 'pino-roll',\" each time. The grep for /target:\\s*'pino-roll'/ found exactly these three source matches (src/shared/logger.ts:66, :101, :130). Its other 10 matches are earlier ledger artifacts quoting the same line: HLD.md:202, S005/LLD.md:286, S005/PLAN.md:106, and the two ISSUE.md files. The claim that pino runs a `target` transport in a worker thread is documented pino behavior for transport targets. The sibling ISSUE.md rows (:59, :66, :119, :121) record the same worker-thread reading. The evidence contradicts nothing here.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Every cited anchor matches the source exactly, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "rc6",
+          "ref": "root-cause",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "Nothing in src/shared/logger.ts, the daemon boot path (src/daemon/index.ts) or src/daemon/fatal.ts flushes the pino logger (no flush/flushSync call).",
+          "evidence": "grep /flushSync|\\.flush\\(/ returned 6 matches. None of them are in src/shared/logger.ts, src/daemon/index.ts or src/daemon/fatal.ts. Two matches are prose in docs/standalone/bug-when-another-process-holds-live-E20261012f442f10b/ISSUE.md:59 and :120. The other four are unrelated accumulator/token `.flush()` calls: src/daemon/__tests__/workflow-progress-map.test.ts:49, :54 and :62, and src/daemon/workflow-rpc.ts:473 (`tokens.flush()`). grep /sync:\\s*true/ returned 3 matches, and none are in the anchored files: design/indexer.html:540 and src/db/__tests__/entities-lmdb.test.ts:146 match `isAsync: true`, and the third is ISSUE.md:59 prose. So none of the three anchored files has a flush/flushSync call or a synchronous-destination option, and the evidence confirms the negative claim.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise: no flush, flushSync or sync:true appears in src/shared/logger.ts, src/daemon/index.ts or src/daemon/fatal.ts. No edit is needed."
+          }
+        },
+        {
+          "claimId": "rc7",
+          "ref": "root-cause",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "(Hypothesis, not reproduced) Log lines buffered in the pino worker-thread transport are lost when the process aborts natively, explaining the missing boot lines.",
+          "evidence": "The transport half of the premise is confirmed. src/shared/logger.ts:66, :101 and :130 each read `target: 'pino-roll',`, so every logger writes through a pino transport target, and pino runs transport targets in a worker thread. Earlier ledger artifacts quote the same anchor: HLD.md:202, S005/LLD.md:286, S005/PLAN.md:106, and the ISSUE.md files at :32/:66/:119 and test-processes…/ISSUE.md:20. The causal half cannot be checked from this evidence. Nothing here shows lines buffered in the worker being dropped on a native abort, or boot lines going missing because of it. The premise calls itself \"(Hypothesis, not reproduced)\". A prior review row (ISSUE.md:121) mentions a comment at src/daemon/fatal.ts:12 about the pino-roll transport, but this evidence only gives a truncated quote of it and no direct read. The anchor is correct, so this does not break the build. It stays unverifiable rather than verified.",
+          "action": "Keep the premise labelled as an unreproduced hypothesis, and don't let the fix depend only on it. Either reproduce it: force a native abort, such as process.abort() or a live-lock collision, right after early boot log calls, then check whether those lines reach daemon.<N>.log. Or make the fix work whether or not the hypothesis holds: for example, write fatal or boot lines synchronously with pino.destination({ sync: true }) or fs.writeSync, or flush the transport before risky native calls.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchor (pino-roll worker transport at src/shared/logger.ts:66/101/130) is verified. The claim that buffered lines are lost on native abort is an unreproduced external-contract hypothesis that this evidence cannot confirm. The wording should either state that it is unverified or be backed by a reproduction.",
+            "options": [
+              "Reproduce first: add a probe that logs boot lines, then triggers a native abort, and check daemon.<N>.log for those lines. Upgrade the premise to verified only if they are missing.",
+              "Keep it as a hypothesis, but make the fix independent of it: send boot and fatal lines through a synchronous destination (pino.destination({sync:true}) / fs.writeSync to the log file) so they persist whatever the worker-thread behaviour is.",
+              "Reword the premise to separate the verified fact (logger.ts:66/101/130 use a pino-roll worker-thread transport) from the unverified causal claim (loss on native abort)."
+            ]
+          }
+        },
+        {
+          "claimId": "rc8",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Boot step 3 in src/daemon/index.ts is the comment '// 3. Open DB' at :223, followed by `const db = await getDb();` at :224 (LanceDB) and `await getGraphStore();` at :236 (LMDB).",
+          "evidence": "All three anchors match the premise exactly. Reading src/daemon/index.ts:223 gives `// 3. Open DB`. Reading :224 gives `const db = await getDb();`. Reading :236 gives `await getGraphStore();   // ensure env is open`. The grep /// 3\\. Open DB/ finds only one match in source, src/daemon/index.ts:223; the other hits are quotes in ISSUE.md. The getGraphStore grep lists src/daemon/index.ts:236 as the boot-path call. Line 224 comes before line 236, so LanceDB (getDb) is opened before LMDB (getGraphStore), which is the order the premise gives.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the citation word for word at all three anchors, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "rc9",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "getGraphStore is an exported async function in src/db/graph/store.ts that opens the LMDB env with open({ path: _path, mapSize, maxDbs }) at :439.",
+          "evidence": "The read of src/db/graph/store.ts:416 returns `export async function getGraphStore(): Promise<GraphStore> {`. That confirms getGraphStore is exported, async, and defined in that file, and the grep for /export async function getGraphStore/ matches only this line in src/. The read of src/db/graph/store.ts:439 returns `root = open({`, and the read of :440 returns `path:    _path,`. That confirms the LMDB env is opened with lmdb `open({ path: _path, ... })` at line 439, inside getGraphStore. The only other src/ match for /root = open\\(\\{/ is in a test helper (src/db/graph/__tests__/helpers/store-child.ts:111), so it does not compete with this anchor. The `mapSize` and `maxDbs` keys were not read directly. The only support for them is a sibling ISSUE.md that quotes store.ts:441 as `mapSize: mapsizeBytes,`. Exactly which option keys are passed does not change what the premise anchors, so this gap does not matter.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both anchors resolve to the code the premise describes: the exported async getGraphStore at :416, and the lmdb open({ path: _path, ... }) call at :439–440. No edit is needed."
+          }
+        },
+        {
+          "claimId": "rc10",
+          "ref": "c18",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "Neither src/daemon/index.ts nor src/db/graph/store.ts contains a holder / lsof / EBUSY / lock-holder check before the native opens; the only match for the pattern is 'placeholder' in a comment at src/daemon/index.ts:78.",
+          "evidence": "Only half of the premise is confirmed. The read of src/daemon/index.ts:78 returned \"// StreamHandler used; the `0` is just a placeholder for \\\"no\", so the 'placeholder' comment is there as stated. The absence claim is not shown. The grep /lsof|holder|isHeld|EBUSY|lockHolder/ ran over the whole repo and was TRUNCATED at 50 matches. The list is in path order and stops inside docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S002/LLD.md:260, so it never reaches src/. All 50 matches are in camon/ (lsof in bootstrap shell scripts, 'placeholder' in tui.py), design/*.md ('placeholders') and docs/epics/**/*.md ('stakeholder', 'placeholder'). None of them are in src/daemon/index.ts or src/db/graph/store.ts. Because of the truncation, the evidence cannot show that those two files lack a holder, lsof, EBUSY or lock-holder check, and it cannot show that line 78 is the only match in them.",
+          "action": "Re-run the probe on just the two anchored files: rg -n 'lsof|holder|isHeld|EBUSY|lockHolder' src/daemon/index.ts src/db/graph/store.ts. Confirm the only hit is the 'placeholder' comment at src/daemon/index.ts:78, then keep the premise. If any real lock-holder or EBUSY check turns up before the native LMDB/Lance opens, revise the premise and the task that depends on it, because the task assumes no such guard exists.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The repo-wide grep was truncated before it reached src/, so the absence claim is unverified. It is not contradicted. The cited line 78 is confirmed. Nothing in the evidence supports a text edit, so the only fix is to re-run the probe on the two anchored files.",
+            "options": [
+              "Re-run the probe on src/daemon/index.ts and src/db/graph/store.ts only, and keep the premise unchanged if the only hit is line 78",
+              "If the scoped grep finds an existing holder or EBUSY check, change the premise to name it and adjust the task to extend that check instead of adding a new one"
+            ]
+          }
+        },
+        {
+          "claimId": "rc11",
+          "ref": "c13",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Prior artifact ISSUE-0d5775698fd042a7 exists and describes LMDB lock loss / semaphore exhaustion when another process closes the store.",
+          "evidence": "The artifact exists. `docs/standalone/defect-installed-daemon-runs-out-lmdb-E202610100d577569/ISSUE.md:1` reads `<!-- insrc:artifact ISSUE-0d5775698fd042a7 -->`, and that full id matches the anchor. The directory slug is \"defect-installed-daemon-runs-out-lmdb\", which fits the premise's subject. Other ledger artifacts describe the issue the same way. `docs/standalone/bug-when-another-process-holds-live-E20261012f442f10b/ISSUE.md:41` cites it as \"installed daemon runs out of LMDB semaphores (lock loss when another process closes the store)\". `docs/standalone/bug-insrc-mcp-server-process-opens-E20261012e980ffbb/ISSUE.md:65` and `:131` describe it as \"daemon loses its LMDB locks when another process closes the store\". Together these confirm that the artifact exists and that it covers LMDB lock loss and semaphore exhaustion when another process closes the store.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified sound: the artifact id resolves to a real ledger record, and other artifacts consistently describe it with the premise's subject. No edit is needed."
+          }
+        },
+        {
+          "claimId": "f1",
+          "ref": "c10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CLI start entry is `export async function startDaemon(): Promise<StartResult>` at src/cli/services/daemon.ts:60.",
+          "evidence": "read src/cli/services/daemon.ts:60 → FOUND: `export async function startDaemon(): Promise<StartResult> {`. The grep /export async function startDaemon/ finds exactly one source match, src/cli/services/daemon.ts:60. The other six matches are all in docs/standalone/bug-when-another-process-holds-live-E20261012f442f10b/ISSUE.md, and they repeat this same citation. The anchor path, the line, the symbol name and the signature all match the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The citation resolves exactly to the named entity and signature, so no change is needed."
+          }
+        },
+        {
+          "claimId": "f2",
+          "ref": "c17",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The maintenance restart calls `const r = await deps.startDaemon();` at src/cli/services/maintenance.ts:299.",
+          "evidence": "The grep for /await deps\\.startDaemon\\(\\)/ finds src/cli/services/maintenance.ts:299 as `const r = await deps.startDaemon();`, and the read of src/cli/services/maintenance.ts:299 returns `const r = await deps.startDaemon();` exactly. The second anchor, maintenance.ts:284, is `export async function restart(onLog: LogFn, deps: RestartDeps = { stopDaemon, startDaemon }): Promise<MaintenanceResult> {` (from the c5 finding in ISSUE.md:127). So line 299 sits inside restart, and restart's deps.startDaemon defaults to the CLI startDaemon. The other grep matches are only the artifact quoting itself and add no new evidence.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited line matches the quoted code exactly, and it falls inside restart, which starts at line 284. No change is needed."
+          }
+        },
+        {
+          "claimId": "f3",
+          "ref": "c17",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/command.ts:82 and src/cli/panes/DaemonPane.tsx:51 each call `const r = await svc.daemon.startDaemon();`.",
+          "evidence": "The premise checks out. `read src/cli/command.ts:82` returns `const r = await svc.daemon.startDaemon();`, and `read src/cli/panes/DaemonPane.tsx:51` returns the same statement. A grep for /svc\\.daemon\\.startDaemon\\(\\)/ finds these two source call sites. Its other two matches are in docs/standalone/.../ISSUE.md, the artifact's own citation text. Both anchors point to exactly the call the premise names.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both cited file:line anchors match the evidence word for word, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "f4",
+          "ref": "fix-intent",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The CLI callers of startDaemon are exactly three: maintenance restart (maintenance.ts:299), command.ts:82 and DaemonPane.tsx:51.",
+          "evidence": "grep /startDaemon\\(\\)/ returns 14 matches. 8 are in docs (LLD.md, ISSUE.md), and they only cite the same sites again. Of the 6 source matches, exactly three are call sites, and they match the premise's anchors: `src/cli/services/maintenance.ts:299` `const r = await deps.startDaemon();`, `src/cli/command.ts:82` `const r = await svc.daemon.startDaemon();` and `src/cli/panes/DaemonPane.tsx:51` `const r = await svc.daemon.startDaemon();`. The other two source matches are not callers. `src/cli/services/daemon.ts:60` is the definition (`export async function startDaemon(): Promise<StartResult> {`). `src/cli/services/index.ts:38` is the interface signature (`startDaemon(): Promise<daemon.StartResult>;`). Earlier review rows in ISSUE.md (c5) say restart's deps default to `{ stopDaemon, startDaemon }`, so the maintenance.ts:299 call is the restart path, as the premise says. One limit: the pattern only matches `startDaemon()` with empty parentheses. A call through an alias with another name would not show up, but none appears in this evidence, and every call site the evidence shows is accounted for.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms all three CLI call sites at the cited lines, and no other caller appears in the source. No edit is needed."
+          }
+        },
+        {
+          "claimId": "f5",
+          "ref": "c14",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "In scripts/daemon-ctl.sh (:281-295) cmd_restart runs cmd_stop then cmd_start, and cmd_update only syncs/installs/builds and logs 'update complete (daemon NOT restarted)' without starting the daemon.",
+          "evidence": "The gathered lines match the premise. `read scripts/daemon-ctl.sh:281` returns `cmd_restart() {`, and the grep for `cmd_update\\(\\)` hits `scripts/daemon-ctl.sh:286`, so cmd_restart covers :281–285. The cmd_start grep (cited in ISSUE.md:112) finds a bare `cmd_start` call at :283, which falls inside cmd_restart. That shows restart ends by calling start. The grep for `daemon NOT restarted` hits `scripts/daemon-ctl.sh:294: log \"update complete (daemon NOT restarted)\"`, and `read scripts/daemon-ctl.sh:295` returns `}`, which closes cmd_update. Apart from :283, the only other cmd_start call is the dispatch line `start) cmd_start ;;` at :331, so cmd_update (:286–295) never starts the daemon. cmd_start itself is defined at :250. No gathered line shows the `cmd_stop` call before `cmd_start` directly. Only the quoted excerpt in the artifact shows it, but nothing in the evidence contradicts the stop-then-start order. The cited range :281–295 is accurate.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the anchors and the behaviour: restart calls cmd_start at :283, and update ends at :294–295 with the 'daemon NOT restarted' log and never calls start. No edit is needed."
+          }
+        },
+        {
+          "claimId": "f6",
+          "ref": "fix-intent",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The in-repo launchers that must surface the start failure are two: scripts/daemon-ctl.sh cmd_start and the CLI startDaemon; plugin and update callers reach the daemon only by shelling out to daemon-ctl.sh (start/restart), and the daemon entry itself covers direct spawns and manual runs.",
+          "evidence": "The evidence supports each part of the premise.\n\n1. **The script launcher exists.** `scripts/daemon-ctl.sh:48` defines `DAEMON_ENTRY=\"$DAEMON_ROOT/out/daemon/index.js\"`. The earlier fix-intent review in `ISSUE.md:60` read `scripts/daemon-ctl.sh:250` as `cmd_start() {` and `src/cli/services/daemon.ts:60` as `export async function startDaemon(): Promise<StartResult>`. Both anchors are real.\n\n2. **Plugin and update callers go through daemon-ctl.sh.**\n   - The VS Code lifecycle controller spawns `bash daemon-ctl.sh <action>`, and its LLD says it \"delegates entirely to the daemon's own daemon-ctl.sh\" (`S002/LLD.md:77`, `:236`, `:243`). `vscode-plugin/src/daemon/paths.ts:17` names `daemonEntry`, but `S002/LLD.md:33` says that path is only an `isInstalled()` filesystem check that \"never spawns a script\".\n   - The JetBrains `DaemonLifecycleCommandRunner` finds `~/.insrc/daemon/scripts/daemon-ctl.sh` through a `DaemonScriptLocator` and spawns it (`S002/LLD.md:267`). Its bundled installer runs `\"$CTL\" start` (`S002/LLD.md:279`).\n   - `update-runner.ts` shells out to `bash daemon-ctl.sh restart` (`fix-daemon-update-path…/S001/LLD.md:183`).\n\n3. **No other in-repo spawn of the entry turned up.** `grep /spawn\\([^)]*daemon/` returned 0 matches. The other `out/daemon/index.js` hits are docs, tests, and orphan-process scanners (`OrphanProcessSeam.kt`, `process-scan.test.ts`, `debug-orphans.test.ts`); none of them launch the daemon.\n\n4. **The earlier scope gap is closed.** The previous review flagged the IDE fork's direct spawn and manual runs (`ISSUE.md:87-89`, `:163`). This premise now covers both with a guard in the daemon entry itself.\n\nOne caveat: both `daemon-ctl.sh` and `out/daemon/index.js` greps stopped at 50 matches, so \"exactly two\" is not proven exhaustively. It does not change the outcome, because the entry-level guard catches any launcher that was missed.",
+          "action": "None needed; the premise is verified.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise holds. Both launcher anchors resolve to the right functions, the plugin and update callers are shown to delegate to daemon-ctl.sh, and the guard in the daemon entry covers direct spawns and manual runs. The truncated grep therefore cannot change what gets built. No edit is needed."
+          }
+        },
+        {
+          "claimId": "f7",
+          "ref": "fix-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The fix intent is internally consistent with the root cause: since JS handlers don't run on native abort, the diagnosis must be durably recorded (boot step) before each native open (getDb at :224 and getGraphStore at :236), not only in reportFatal.",
+          "evidence": "The two code anchors check out. Reading src/daemon/index.ts:224 gives `const db = await getDb();` and reading src/daemon/index.ts:236 gives `await getGraphStore();   // ensure env is open`. These are the two native opens in boot step 3, and the getGraphStore grep lists src/daemon/index.ts:236 as the boot-path open. Earlier review rows in docs/standalone/bug-when-another-process-holds-live-E20261012f442f10b/ISSUE.md:115-116 confirm the same lines and the same order (getDb before getGraphStore). The evidence does not cover the rest of the premise. No read or match was returned for src/daemon/fatal.ts, so nothing shows what reportFatal does today or when it runs. Nothing in the evidence shows that a native abort skips JS handlers such as process.on('exit'/'uncaughtException') or reportFatal. That causal step is what makes \"record the diagnosis before each native open\" the right fix, and it cannot be checked from the matches given. The prescribed placement (before :224 and before :236) is consistent with the confirmed anchors.",
+          "action": "Read src/daemon/fatal.ts and confirm two things: that reportFatal is only reached through JS-level handlers, and that nothing there already writes a pre-open marker. Then confirm the native-abort premise with a reproduction: a child process opens graph.lmdb while another process holds it, and the check shows that no JS handler output appears. If both hold, keep the fix intent as written: durably record the boot step and diagnosis before getDb() at index.ts:224 and before getGraphStore() at index.ts:236. If reportFatal does run on this failure path (for example because the open throws a JS error instead of aborting), narrow the fix to reportFatal.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchors are verified, but the causal claim (native abort bypasses JS handlers, so reportFatal alone is not enough) and the fatal.ts anchor are not covered by the gathered evidence. A human should confirm the claim before the fix is fixed in place. No mechanical text correction is supported by the evidence.",
+            "options": [
+              "Keep the fix intent as written after confirming with a reproduction that the LMDB/Lance open aborts natively (no JS handler runs). Record the boot step before index.ts:224 and before index.ts:236.",
+              "Reword the premise so the native-abort behaviour is an explicit assumption to be validated by a test. Example: 'Assuming the native open aborts without running JS handlers (to be confirmed by a child-process repro test), …'.",
+              "If the reproduction shows the open throws a catchable JS error instead, narrow the fix to recording the diagnosis in reportFatal (src/daemon/fatal.ts) and drop the per-open boot-step records."
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 6,
+        "low": 20
+      },
+      "reviewedAt": "2026-10-12T09:38:06.287Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-12T09:50:35.754Z",
+    "reviewOverride": {
+      "reason": "User-approved override 2026-10-12 after 3 daemon review rounds (5 -> 7 -> 6 MED, 0 HIGH; the record was rewritten after round 1). Findings checkable against source were fixed: the cmd_update route (it does not start the daemon), the pid file written after the store opens, the 'listening on' log line, all startDaemon callers, and the isRunning-vs-start-wait readiness check (fixed after round 3). The remaining MEDs need runtime proof that static probes cannot gather, and each cites recorded evidence: git ancestry (c19, checked in ~/.insrc/daemon), the two-process reproduction with the real store options (c12), the scoped no-holder-check grep (c18), and Node's native-abort semantics. The pino buffer-loss explanation is labelled an unreproduced hypothesis. The fix intent makes pinning the abort with a reproduction its first step.",
+      "at": "2026-10-12T09:50:35.753Z"
+    },
+    "parentRef": {
+      "slug": "complete-consistent-richer-code-index-one",
+      "storyId": "s4"
+    }
+  },
+  "body": {
+    "title": "Make a failed daemon start leave a diagnosis instead of aborting silently",
+    "reproduction": "Observed on 2026-10-12 (not yet reliably reproducible):\n\n1. At 12:19:17 the running daemon received a `daemon.shutdown` RPC and logged 'shutdown signal received; draining...'. It never logged 'bye', and no later daemon process wrote anything to /tmp/.insrc. At 12:23 no daemon was running and ~/.insrc/daemon.sock did not exist.\n2. Starting the installed build (88db0f22, an ancestor of 01ca9641 in the installed clone ~/.insrc/daemon) by hand, `node ~/.insrc/daemon/out/daemon/index.js` under Node 22, exited at once with code 134 (SIGABRT), twice. It wrote 0 bytes to stdout and stderr and added nothing to the /tmp/.insrc logs. At that time an insrc MCP process (ISSUE-e980ffbb6dd346e7) held graph.lmdb and graph.lmdb-lock.\n3. After that MCP process was killed, `daemon-ctl.sh start` fast-forwarded the install to 01ca9641, rebuilt it, and started a daemon that came up normally.\n\nStep 3 differs from step 2 in three ways at once: the holder was gone, the build was newer, and the launch was the production one (`INSRC_MODE=daemon node --import tsx/esm`, scripts/daemon-ctl.sh:142) rather than plain `node`. A two-process reproduction on a temp store showed that a second process opening an LMDB env another process holds, with getGraphStore's default options (a 1024 GiB map and 32 sub-DBs), succeeds. So the abort is not explained by a second holder alone.\n\nExpected: whatever makes startup fail, the daemon leaves a diagnosis: a non-zero exit with a message saying what failed and at which boot step, on stderr and in the daemon log. A held store additionally names its holder (pid and command). Whatever launched the daemon shows that message. The symptoms a reproduction should assert: exit code 134 with no output; ~/.insrc/daemon.sock never bound (src/daemon/server.ts:123); no 'listening on' log line (server.ts:124); and no ~/.insrc/daemon.pid, which boot writes only after the store opens (writePid at src/daemon/index.ts:275, after getGraphStore at :236). In the CLI, isRunning() checks only that the pid file names a live process (src/cli/services/lifecycle.ts:36-38), while the start wait requires a live pid and the socket together (lifecycle.ts:63).",
+    "rootCause": "Diagnosed: a failed start leaves no diagnosis. The daemon's crash reporting is JavaScript-only: the only fatal hooks are the uncaughtException and unhandledRejection handlers in src/daemon/index.ts (:32, :33), which call reportFatal (src/daemon/fatal.ts). Nothing registers for a native abort, and no process.report diagnostic is configured. A native abort ends a Node process without running JavaScript handlers, which fits the observed exit 134 with no reportFatal output. Daemon logging goes through a pino worker-thread transport (target 'pino-roll' in src/shared/logger.ts), and nothing in the logger, the boot path or the fatal handler flushes it. The leading explanation for the missing boot lines is that lines still buffered in the worker are lost when the process aborts; this has not been reproduced. Boot also has no check for another holder before its native opens: step 3 (src/daemon/index.ts:223) opens LanceDB with getDb() (:224) and then the LMDB env with getGraphStore() (:236, open({ path, mapSize, maxDbs }) at src/db/graph/store.ts:439), and a grep of both files for a holder, lsof, EBUSY or lock-holder check finds none.\n\nNot diagnosed: what aborted. Candidates the build stage must separate: the plain-`node` launch without INSRC_MODE=daemon and the tsx loader; the 88db0f22 build; a native open (LanceDB or LMDB) in the store's lock state at the time, which may be the lock-loss state described in ISSUE-0d577569; and the earlier shutdown that never finished.",
+    "fixIntent": "Pin what aborted, with a reproduction, before choosing the remedy. Whatever the cause, a daemon whose start fails must leave a diagnosis that survives a native abort: the boot step reached is durably recorded before each native open, and a failure exits non-zero with a message on stderr and in the daemon log. When the store is held by another process, the message names the holder (pid and command). The daemon entry itself must do this, so every launcher benefits, including direct spawns and manual runs. The in-repo launchers must show that message to the user instead of a bare 'not running': scripts/daemon-ctl.sh cmd_start, which cmd_restart also runs (cmd_restart = cmd_stop then cmd_start; cmd_update only syncs and builds and does not start the daemon), and the CLI startDaemon (src/cli/services/daemon.ts:60), which serves the maintenance restart (src/cli/services/maintenance.ts:299), src/cli/command.ts:82 and the TUI DaemonPane (src/cli/panes/DaemonPane.tsx:51). Plugin and update callers that shell out to daemon-ctl.sh are covered through those two commands."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:223-236",
+      "quotedText": "// 3. Open DB / const db = await getDb(); ... await getGraphStore();   // ensure env is open"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/index.ts",
+      "quotedText": "process.on('uncaughtException',  (err) =>    reportFatal('uncaughtException',  err, fatalDeps));"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/db/graph/store.ts",
+      "quotedText": "export async function getGraphStore(): Promise<GraphStore> { ... root = open({ path: _path, ..."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/shared/logger.ts",
+      "quotedText": "target: 'pino-roll',"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/cli/services/maintenance.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "manual daemon start and daemon-ctl start, 2026-10-12",
+      "quotedText": "`node out/daemon/index.js; echo exit=$?` -> exit=134, start.out 0 bytes, /tmp/.insrc log mtimes unchanged (twice). daemon-ctl: 'fast-forward: 88db0f22 -> 01ca9641' ... 'daemon running (pid 19331)'."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-e980ffbb6dd346e7",
+      "quotedText": "Stop the MCP server process from opening the live graph store"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "scripts/daemon-ctl.sh:142",
+      "quotedText": "exec env INSRC_MODE=daemon node --import tsx/esm \"$DAEMON_ENTRY\" >>\"$DAEMON_LOG\" 2>&1"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/daemon/server.ts:123",
+      "quotedText": "this.server.listen(PATHS.sockFile, ...)"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/cli/services/daemon.ts:60",
+      "quotedText": "export async function startDaemon(): Promise<StartResult> {"
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "/tmp/.insrc/daemon.11.log tail, 2026-10-12",
+      "quotedText": "12:19:17 'shutdown requested' / 'shutdown signal received; draining...' (signal 'daemon.shutdown RPC'), then no further lines; no 'bye'."
+    },
+    {
+      "id": "c12",
+      "kind": "step-output",
+      "ref": "two-process LMDB reproduction on a temp store, 2026-10-12",
+      "quotedText": "holder: open({path, mapSize: 1024 GiB, maxDbs: 32}), the store's defaults (DEFAULT_MAPSIZE_GIB = 1024 at src/db/graph/store.ts:73, MAX_DBS = 32 at :80, passed at :441-442), + put + periodic get; second process: same open, read, put, close -> exit 0. Repeated after the holder closed a descriptor on graph.lmdb-lock and a third process opened and closed the store: still exit 0. (A first run with a 1 GiB map gave the same result.)"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-0d5775698fd042a7",
+      "quotedText": "installed daemon runs out of LMDB semaphores (lock loss when another process closes the store)"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "scripts/daemon-ctl.sh:281-295",
+      "quotedText": "cmd_restart() { cmd_stop || true; cmd_start } ... cmd_update() { ... sync_repo / npm_install_if_needed / npm_build; log \"update complete (daemon NOT restarted)\" }"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:275",
+      "quotedText": "writePid();"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/daemon/server.ts:124",
+      "quotedText": "log.info(`listening on ${PATHS.sockFile}`);"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "src/cli/command.ts:82, src/cli/panes/DaemonPane.tsx:51, src/cli/services/maintenance.ts:299",
+      "quotedText": "const r = await svc.daemon.startDaemon(); (x2) / const r = await deps.startDaemon();"
+    },
+    {
+      "id": "c18",
+      "kind": "step-output",
+      "ref": "grep -n 'lsof|holder|isHeld|EBUSY|lockHolder' src/daemon/index.ts src/db/graph/store.ts, 2026-10-12",
+      "quotedText": "only src/daemon/index.ts:78 ('placeholder' in a comment); no holder or lock check"
+    },
+    {
+      "id": "c19",
+      "kind": "step-output",
+      "ref": "git -C ~/.insrc/daemon merge-base --is-ancestor 88db0f22 01ca9641, 2026-10-12",
+      "quotedText": "exit 0 (88db0f22 'docs(ledger): ISSUE-7ba8cf15 issue, build, test and code-review records; ...')"
+    },
+    {
+      "id": "c20",
+      "kind": "code",
+      "ref": "src/cli/services/lifecycle.ts:36-38,63",
+      "quotedText": "export function isRunning(): boolean { const pid = pidFromFile(); return pid !== undefined && pidAlive(pid); ... if (pid !== undefined && existsSync(PATHS.sockFile) && pidAlive(pid)) return pid;"
+    }
+  ]
+}

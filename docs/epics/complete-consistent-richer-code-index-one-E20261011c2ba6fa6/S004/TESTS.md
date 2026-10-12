@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 35 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -265,3 +265,20 @@ Run at 2026-10-11T10:38:18.205Z on commit `ec94718e`. Tests check: **passed**. 4
 | `src/cli/__tests__/command.test.ts` | 0 | 22 | 0.4 s |  |
 | `src/cli/services/__tests__/review-source-roots-daemon.test.ts` | 0 | 1 | 0.9 s |  |
 | `src/workflow/review/__tests__/source-root-reader.test.ts` | 0 | 4 | 0.5 s |  |
+
+## t9
+
+Run at 2026-10-12T10:09:37.570Z on commit `e28a8a32`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: the two formerly live-store test files pass against a temporary store and create nothing at the default path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the two formerly live-store test files pass against a temporary store and create nothing at the default path | `src/db/graph/__tests__/no-live-store-in-tests.test.ts` |
+| pass | the check sees a store that IS opened at the default path | `src/db/graph/__tests__/no-live-store-in-tests.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/graph/__tests__/no-live-store-in-tests.test.ts` | 0 | 5 | 6.4 s |  |

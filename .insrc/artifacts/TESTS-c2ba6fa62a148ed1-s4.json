@@ -4,7 +4,8 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-11T10:38:18.205Z",
+    "updatedAt": "2026-10-12T10:09:37.570Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
   "body": {
@@ -1066,6 +1067,63 @@
               },
               {
                 "title": "the reader given to the review of an artifact file reaches the source-root read, and the fallback reaches the written document",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "e28a8a32",
+        "ranAt": "2026-10-12T10:09:37.570Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the two formerly live-store test files pass against a temporary store and create nothing at the default path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/no-live-store-in-tests.test.ts",
+                "title": "the two formerly live-store test files pass against a temporary store and create nothing at the default path",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/no-live-store-in-tests.test.ts",
+                "title": "the check sees a store that IS opened at the default path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/no-live-store-in-tests.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6430,
+            "titles": [
+              {
+                "title": "the two formerly live-store test files pass against a temporary store and create nothing at the default path",
+                "result": "pass"
+              },
+              {
+                "title": "the review probe test, found by the same search, creates nothing at the default path either",
+                "result": "pass"
+              },
+              {
+                "title": "three daemon request tests, found by the same search, create nothing at the default path",
+                "result": "pass"
+              },
+              {
+                "title": "the MCP step and review tests, found by the full audit, create nothing at the default path",
+                "result": "pass"
+              },
+              {
+                "title": "the check sees a store that IS opened at the default path",
                 "result": "pass"
               }
             ],

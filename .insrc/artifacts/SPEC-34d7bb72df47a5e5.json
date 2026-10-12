@@ -20,7 +20,8 @@
     "specHash": "34d7bb72df47a5e5",
     "epicSlug": "anchor-standalone-features-their-lld-name",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-11T12:15:33.293Z"
+    "approvedAt": "2026-10-11T12:15:33.293Z",
+    "standalone": true
   },
   "body": {
     "category": "design",

@@ -5,7 +5,8 @@
     "epicHash": "599a9b506f22b896",
     "storyId": "s1",
     "createdAt": "2026-09-15T18:52:26.614Z",
-    "approvedAt": "2026-09-15T18:53:10.868Z"
+    "approvedAt": "2026-09-15T18:53:10.868Z",
+    "epicSlug": "restructure-docs-artifact-markdown-from-flat"
   },
   "body": {
     "focus": "S001 — uniform work-item identity (widen story-id minter + WorkItemIdentity/deriveWorkItemIdentity)",

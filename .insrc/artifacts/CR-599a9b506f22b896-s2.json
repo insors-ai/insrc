@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "599a9b506f22b896",
-    "storyId": "s2"
+    "storyId": "s2",
+    "epicSlug": "restructure-docs-artifact-markdown-from-flat",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z"
   },
   "body": {
     "kind": "code-review",

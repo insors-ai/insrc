@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 68 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 74 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -235,3 +235,30 @@ Run at 2026-10-12T11:58:13.894Z on commit `141bf9d7`. Tests check: **passed**. 5
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/__tests__/step-context.test.ts` | 0 | 5 | 0.8 s |  |
+
+## t7
+
+Run at 2026-10-12T12:13:21.637Z on commit `482c94d7`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: in-daemon review client equivalence: timeout, aborted (code daemon-review-aborted, not retryable), daemon-error with reason, and the diff-unavailable fallback behave as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | in-daemon client: a done frame resolves with its data and progress reaches onFrame; grounding, freshness and the cwd lookup are shaped as the socket client shapes them | `src/daemon/steps/__tests__/in-daemon-client.test.ts` |
+| pass | in-daemon review client: a wait past its limit fails with 'timeout' (retryable) and aborts the review run | `src/daemon/steps/__tests__/in-daemon-client.test.ts` |
+| pass | in-daemon review client: an aborted step signal fails with 'aborted' (code daemon-review-aborted, not retryable) and ends the inner review run | `src/daemon/steps/__tests__/in-daemon-client.test.ts` |
+| pass | in-daemon review client: an error frame fails with 'daemon-error' and its reason, and a code review whose diff cannot be read comes back as a failed daemon review naming the cause | `src/daemon/steps/__tests__/in-daemon-client.test.ts` |
+| pass | no module under src/daemon/steps imports src/mcp/daemon-stream.ts: the moved handlers reach the daemon through the in-daemon client | `src/daemon/steps/__tests__/workflow-rpc-imports.test.ts` |
+
+**integration: no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself | `src/daemon/steps/__tests__/in-daemon-client.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/in-daemon-client.test.ts` | 0 | 5 | 0.8 s |  |
+| `src/daemon/steps/__tests__/workflow-rpc-imports.test.ts` | 0 | 3 | 0.3 s |  |

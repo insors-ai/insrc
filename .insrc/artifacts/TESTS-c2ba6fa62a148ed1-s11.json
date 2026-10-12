@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s11",
     "createdAt": "2026-10-12T11:26:17.849Z",
-    "updatedAt": "2026-10-12T11:58:13.894Z",
+    "updatedAt": "2026-10-12T12:13:21.637Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -2857,6 +2857,112 @@
               },
               {
                 "title": "step context isolation: two concurrent contexts each see their own cwd and client",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "482c94d7",
+        "ranAt": "2026-10-12T12:13:21.637Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "in-daemon review client equivalence: timeout, aborted (code daemon-review-aborted, not retryable), daemon-error with reason, and the diff-unavailable fallback behave as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+                "title": "in-daemon client: a done frame resolves with its data and progress reaches onFrame; grounding, freshness and the cwd lookup are shaped as the socket client shapes them",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+                "title": "in-daemon review client: a wait past its limit fails with 'timeout' (retryable) and aborts the review run",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+                "title": "in-daemon review client: an aborted step signal fails with 'aborted' (code daemon-review-aborted, not retryable) and ends the inner review run",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+                "title": "in-daemon review client: an error frame fails with 'daemon-error' and its reason, and a code review whose diff cannot be read comes back as a failed daemon review naming the cause",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+                "title": "no module under src/daemon/steps imports src/mcp/daemon-stream.ts: the moved handlers reach the daemon through the in-daemon client",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+                "title": "no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 780,
+            "titles": [
+              {
+                "title": "in-daemon client: a done frame resolves with its data and progress reaches onFrame; grounding, freshness and the cwd lookup are shaped as the socket client shapes them",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon review client: a wait past its limit fails with 'timeout' (retryable) and aborts the review run",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon review client: an aborted step signal fails with 'aborted' (code daemon-review-aborted, not retryable) and ends the inner review run",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon review client: an error frame fails with 'daemon-error' and its reason, and a code review whose diff cannot be read comes back as a failed daemon review naming the cause",
+                "result": "pass"
+              },
+              {
+                "title": "no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 342,
+            "titles": [
+              {
+                "title": "workflow-rpc imports nothing from src/mcp, and takes the workflow step from src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "title": "no file under src/mcp other than server.ts imports src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "title": "no module under src/daemon/steps imports src/mcp/daemon-stream.ts: the moved handlers reach the daemon through the in-daemon client",
                 "result": "pass"
               }
             ],

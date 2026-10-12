@@ -41,6 +41,19 @@ test('mixed-eligibility propagates stale evidence without rejecting independent 
   assert.deepEqual(r2.value.admitted.map(a => a.source.path), ['LICENSE2', 'independent.txt']);
   const reordered = stageSources({ ...f.policy, profiles: [...f.policy.profiles].reverse() }, { ...f.request, paths: [...f.request.paths].reverse() }, [...f.blobs].reverse());
   assert.deepEqual(reordered, r2);
+  const chain = sourceFixture(), bytes = makeBytes('Chain node');
+  for (let i = 0; i < 100; i++) {
+    const path = `chain${String(i).padStart(3, '0')}`;
+    chain.policy.profiles.push({ ...structuredClone(chain.policy.profiles[0]!), path, digest: hashBytes(bytes),
+      licenseEvidence: [{ path: i === 99 ? 'LICENSE' : `chain${String(i + 1).padStart(3, '0')}`, digest: i === 99 ? chain.policy.profiles[0]!.licenseEvidence[0]!.digest : hashBytes(bytes) }] });
+    chain.blobs.push({ path, bytes });
+  }
+  chain.request.paths.push('chain000');
+  assert.equal(stageSources(chain.policy, chain.request, chain.blobs).ok, true);
+  chain.blobs.find(blob => blob.path === 'LICENSE')!.bytes = makeBytes('Stale tail');
+  const propagated = stageSources(chain.policy, chain.request, chain.blobs);
+  assert.equal(propagated.ok && propagated.value.report.unresolved.includes('chain000'), true);
+  assert.equal(propagated.ok && propagated.value.admitted.length, 0);
 });
 test('mixed-eligibility requires explicit font and compound-license decisions', () => {
   const empty = sourceFixture();
@@ -57,6 +70,16 @@ test('mixed-eligibility requires explicit font and compound-license decisions', 
     profile.conditions.push('Explicit redistribution conditions'); profile.termsResolved = false;
     const unknown = stageSources(f.policy, f.request, f.blobs); assert.equal(unknown.ok && unknown.value.report.unresolved.includes('good.txt'), true);
     profile.termsResolved = true;
+    if (category === 'compound') {
+      for (const expression of ['MIT OR Apache-2.0', 'MIT AND Apache-2.0', 'Apache-2.0 WITH LLVM-exception', '(MIT)']) {
+        profile.licenseIds = [expression]; f.policy.categories.at(-1)!.licenseIds = [expression];
+        const unresolved = stageSources(f.policy, f.request, f.blobs);
+        assert.equal(unresolved.ok && unresolved.value.report.unresolved.includes('good.txt'), true);
+      }
+      // The maintainer records the chosen identifier and applicable obligations explicitly.
+      profile.licenseIds = ['MIT']; f.policy.categories.at(-1)!.licenseIds = ['MIT'];
+      profile.reason = 'Reviewed MIT alternative selected from upstream dual license';
+    }
     const resolved = stageSources(f.policy, f.request, f.blobs); assert.equal(resolved.ok && resolved.value.report.admitted.includes('good.txt'), true);
   }
 });

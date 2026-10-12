@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1791783446612-au7dme",
+    "runId": "cr-1791784576567-a9tv5m",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-12T05:37:26.702Z",
+    "createdAt": "2026-10-12T05:56:16.666Z",
     "model": "claude:opus",
-    "elapsedMs": 191647,
+    "elapsedMs": 227379,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "7e0ae92e8f3d3c3e",
@@ -22,6 +22,8 @@
         "plans/design-intelligence-di1-s2-build.md",
         "plans/design-intelligence-implementation.md",
         "plans/reviews/design-intelligence-di1-s2-final-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-initial-code-review.json",
+        "plans/reviews/design-intelligence-di1-s2-review-fixes-verification.txt",
         "plans/reviews/design-intelligence-di1-s2-t1-verification.txt",
         "plans/reviews/design-intelligence-di1-s2-t2-verification.txt",
         "plans/reviews/design-intelligence-di1-s2-t3-verification.txt",
@@ -62,31 +64,15 @@
           {
             "dimension": "adherence",
             "severity": "LOW",
-            "location": "src/design/corpus/sources/lineage.ts:74",
-            "message": "When a record's own output has a derived source binding, validateOutputLineage accepts provenance.authorship 'inferred'. It then skips the author/rationale declaration check that it applies to every other inferred output. As a result, an inferred record can pass without the explicit author and rationale declaration that the plan requires for inferred content. Its author and rationale are never compared with any reviewed declaration.",
-            "expectationRef": "PLAN t5 ac2: 'original/inferred content requires explicit author/rationale declarations'; LLD lineage: 'Original and independently inferred records identify author/rationale'"
-          },
-          {
-            "dimension": "adherence",
-            "severity": "LOW",
-            "location": "src/design/corpus/sources/policy.ts:11",
-            "message": "profileDecision treats font categories like any other category. It only checks that the profile repeats the category's conditions, and the schema allows a category's conditions array to be empty. A category for open-font licences that records no reserved-name or other conditions therefore admits font files. Nothing requires those conditions to be recorded before admission, so a font category with no recorded conditions works as the generic font allowance that the LLD forbids.",
-            "expectationRef": "LLD Reviewed source policy v1: 'Open-font categories require an explicit reviewed category/profile with reserved-name/other conditions recorded before admission; no generic font allowance.'"
+            "location": "src/design/corpus/sources/policy.ts:15",
+            "message": "profileDecision never recognizes a compound license expression. A licenseId string such as 'MIT OR Apache-2.0' is admitted as soon as some category lists the same string and the profile sets termsResolved=true. The test 'mixed-eligibility requires explicit font and compound-license decisions' shows exactly this: the profile keeps licenseIds ['MIT OR Apache-2.0'], the file is admitted, and the unresolved OR expression flows unchanged into SourceFile.licenseIds and NOTICE. The code requires a reviewed category, but it never requires the profile to settle the expression into an unambiguous resolved identifier. So an expression is only blocked when no category happens to list it, not because it is an unsupported expression.",
+            "expectationRef": "LLD 'Reviewed source policy v1': 'unsupported expression ... yields unresolved ... unresolved OR/AND/exception expressions require a maintainer to supply an unambiguous reviewed profile'; profile binds 'resolved license identifiers'. PLAN t2 ac1: 'compound expressions require explicit reviewed decisions'."
           }
         ]
       },
       {
         "dimension": "conventions",
-        "findings": [
-          {
-            "dimension": "conventions",
-            "severity": "LOW",
-            "location": "src/design/corpus/sources/assessment.ts:75",
-            "message": "The record-to-path mapping uses a non-null assertion: `manifest.records.find(entry => entry.recordId === record.recordId)!.path`. It never handles the undefined case. If the lookup misses, the TypeError is caught by the function's catch-all and reported as a generic 'Expected bounded candidate and reviewed source inputs.' error, not as a precise inventory or reference issue. Elsewhere this module handles a missing lookup with an explicit `problem(...)` result, so the clean way is to check for the miss and report a specific issue. The same pattern appears at assessment.ts:70 (`files.get(LINEAGE_PATH)!`), but there an earlier check guarantees the file exists. This is not a breach of noUncheckedIndexedAccess, because `.find()`/`Map.get` are not index access. It departs from the rule's intent of handling undefined explicitly.",
-            "expectationRef": "strict-optional-indexed",
-            "confidence": "observation"
-          }
-        ]
+        "findings": []
       },
       {
         "dimension": "coverage",
@@ -94,25 +80,33 @@
           {
             "dimension": "coverage",
             "severity": "MED",
-            "location": "plans/reviews/design-intelligence-di1-s2-final-verification.txt:1",
-            "message": "Present but unverified: there is no build record, so pass-state cannot be confirmed from the grounding. All 25 promised node:test cases exist verbatim in the changed test files (contracts, eligibility, git-reader, reader-limits, lineage, notices, assessment, acceptance, isolation). The committed TAP log records 58/58 passing under Node 22. I tried to re-run the suite and could not (command not approved), so I am not asserting a pass.",
-            "expectationRef": "all 25 promised S002 test cases",
+            "location": "plans/reviews/design-intelligence-di1-s2-review-fixes-verification.txt:1",
+            "message": "Present but unverified. All 25 promised node:test cases appear verbatim in the changed test files: contracts, eligibility, git-reader, reader-limits, lineage, notices, assessment, acceptance and isolation. The committed TAP logs (final-verification.txt and review-fixes-verification.txt) record 58/58 passing under Node 22.23.2. However, no build record was supplied in this grounding, so the pass-state cannot be confirmed. These tests are present, not missing; this finding does not claim they pass.",
+            "expectationRef": "all 25 promised S002 node:test cases",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
-            "severity": "MED",
+            "severity": "LOW",
             "location": "plans/reviews/design-intelligence-di1-s2-final-verification.txt:330",
-            "message": "Promised smoke test 'strict-build compiles source eligibility and passes the full corpus regression suite' is not a node:test case. Its only evidence is a build log plus test totals. The strict build and the 58-test corpus suite are recorded as passing. The wording also covers a full regression pass, and the recorded full Node 22 sweep has 14 failures: the SQLite overflow, 12 SIGABRT files and a DaemonSection timing failure. These are documented as unrelated, but this promise stands only as far as the corpus suite goes.",
+            "message": "Promised smoke test 'strict-build compiles source eligibility and passes the full corpus regression suite' is not a node:test case. Its only evidence is the logged `npm run build` output plus the 58-test corpus TAP run. Both are recorded as passing, but they cannot be verified without a build record. The recorded full-repository sweep has 14 failures: the SQLite overflow, 12 SIGABRT files and a DaemonSection timing failure. The promise says corpus suite, not repository suite, so this is a caveat on the evidence, not a missing test.",
             "expectationRef": "strict-build compiles source eligibility and passes the full corpus regression suite",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
             "severity": "LOW",
+            "location": "src/design/corpus/sources/stage.ts:21",
+            "message": "stageLocalSources has its own preflight and acquisition branches, and none is directly exercised by the changed tests. Untested: the AcquisitionBudget count overflow across multiple inputs during preflight; the 'No remaining source-byte budget' early return; the post-acquisition byte charge failure; and rejection of a non-absolute localRepository. acceptance.test.ts only covers the success path and the unsafe-path-before-I/O case. The aggregate-budget regressions added in the review fixes call evaluateSourceImports and readPinnedSources, not this orchestrator. The shared AcquisitionBudget class is reached through evaluateSourceImports, but stage.ts's caller-lowered limits and per-input byte budget are not.",
+            "expectationRef": "stageLocalSources aggregate budget / input validation branches",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
             "location": "src/design/corpus/sources/assessment.ts:17",
-            "message": "Every testsReaching edge is empty, but the grounding is diff-only and hollow for newly created files, so empty edges are not evidence of a gap. The changed test files import and call every production export: stageLocalSources, readPinnedSources, createGitRunner, stageSources, requiredSourcePaths, validateOutputLineage, bindLineageToManifest, classifyPackageFiles, validatePackagedLineage, assembleSourceMetadata, assessEligibility, prepareEligibilityCandidate and the decode* functions. The only branches without a direct test are evaluateSourceImports' import-count and combined-byte limit failures. No not-exercised breach is raised.",
-            "expectationRef": "evaluateSourceImports",
+            "message": "Every changed symbol has an empty testsReaching list. Grounding here is diff-only and is known to be hollow for newly created files, so the empty lists are not treated as evidence of a not-exercised gap and no HIGH breach is raised. The changed test files import and call every production export: assessEligibility, prepareEligibilityCandidate, evaluateSourceImports, stageSources, requiredSourcePaths, snapshotBlobs (indirectly), readPinnedSources, createGitRunner, runGitBinary, gitEnvironment, validateOutputLineage, bindLineageToManifest, classifyPackageFiles, validatePackagedLineage, lineageBytes, assembleSourceMetadata, the decode* functions, sourceIdentity, isUtcDate, pathCollisionKey, isPortablePath and stageLocalSources. The fixes from the earlier review also have direct tests: no-close and error-no-close child failures, the request deadline, hostile review inputs, closure overflow, empty font conditions, and inferred derived-binding declarations.",
+            "expectationRef": "testsReaching (degraded grounding)",
             "confidence": "observation"
           }
         ]
@@ -122,54 +116,45 @@
         "findings": [
           {
             "dimension": "quality",
-            "severity": "MED",
-            "location": "src/design/corpus/sources/git-reader.ts:61",
-            "message": "The runner's promise only settles inside the child 'close' handler. The 'error' handler just records `failed` and does not reject or clear the timer. Node can emit 'error' without ever emitting 'exit' or 'close', for example on EMFILE/ENFILE spawn failures, where it returns early. When the timeout fires it only calls stop(), which tries to kill a process that does not exist; it never rejects. In that case readPinnedSources never resolves and the abort listener is never removed, so the 30 s per-child bound does not hold. Fix: on 'error' (and in the timeout path) settle once by clearing the timer, removing the listener and rejecting, instead of depending on 'close'.",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "quality",
-            "severity": "MED",
-            "location": "src/design/corpus/sources/assessment.ts:92",
-            "message": "prepareEligibilityCandidate calls evaluateSourceImports outside any try/catch. evaluateSourceImports reads `review.imports`, `input.blobs` and `input.request` directly from caller objects that were never snapshotted. A null or undefined `review`, a throwing getter, or a Proxy on `review` or an import entry will throw out of a function whose contract is to return a ValidationResult. assessEligibility catches the same throw in its try block, so the two public entry points handle hostile review inputs differently. Fix: snapshot the review fields first, or wrap the evaluation and return failure(...).",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "quality",
-            "severity": "MED",
-            "location": "src/design/corpus/sources/git-reader.ts:135",
-            "message": "Every commit, tree and blob read spawns a new `git cat-file --batch` child, one object per process. Only the per-child timeout (30 s) and the byte and path counts are bounded. With up to 10,000 selected paths of nested depth, one request can spawn tens of thousands of processes, and nothing caps total wall time. The 'bounded acquisition lifecycle' guarantee therefore covers single children, not the request. Fix: keep one long-lived --batch process per request and stream object IDs to it, or add a request-level deadline or AbortSignal.",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/notices.ts:30",
+            "message": "assembleSourceMetadata is exported through the pure barrel and returns a ValidationResult, but it takes `stages` without checking them. It calls `sourceIdentity(...)` on each profile's evidence path, and that call throws CorpusInputError when given a non-portable path or a non-canonical repo/revision. It also dereferences `admitted.profile.licenseEvidence` directly. A StagedSources value built by hand instead of by stageSources therefore throws out of a function that should return failure(...). In-tree callers only pass stageSources output, which has already been checked, so this is currently safe. classifyPackageFiles and validateOutputLineage take stages through collectSources and share the same unguarded path. Fix: wrap the evidence loop in try/catch and return a problem(...) instead.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/design/corpus/sources/eligibility.ts:113",
-            "message": "The evidence-closure walk (a queue over licenseEvidence and noticeEvidence with an `included` set) is re-implemented at the end of stageSources. requiredSourcePaths in the same file already computes the same transitive closure. The two copies can drift, for example if a new evidence kind is added to one only. Fix: extract one closure helper and call it from both places.",
-            "counterpartRef": "requiredSourcePaths",
+            "location": "src/design/corpus/sources/assessment.ts:87",
+            "message": "The same input is snapshotted and staged several times. assessEligibility calls reviewSnapshot, which copies every blob. It then calls evaluateSourceImports(review), which runs reviewSnapshot again on the snapshot, then snapshotBlobs on each import, and then stageSources, which runs snapshotBlobs once more. That is four copies of each acquired blob. prepareEligibilityCandidate does this whole chain (evaluateSourceImports plus assembleSourceMetadata), and then calls assessEligibility at the end, which repeats all of it. Up to the 64 MiB bound, that means about eight full copies of the source bytes and repeated canonicalJson of the policy. Fix: have an internal helper take an already-snapshotted review, and let the public entry points snapshot once.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/design/corpus/sources/stage.ts:27",
-            "message": "stageLocalSources re-implements the combined source/evidence count and byte accumulation with limit checks. evaluateSourceImports in assessment.ts already does the same, against slightly different limit sources (options.limits vs CORPUS_LIMITS). Two copies of the aggregate-budget rule risk drifting apart.",
-            "counterpartRef": "evaluateSourceImports",
+            "location": "src/design/corpus/sources/eligibility.ts:92",
+            "message": "The evidence-invalidation fixed point loops `while (changed)` over every required path on each pass. One pass can demote only one link of a dependency chain, so the worst case is O(n²·e) over up to 10,000 paths. Propagating through a reverse-dependency worklist (evidence path → dependants) would demote each path once, with the same result.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/design/corpus/sources/validation-primitives.ts:10",
-            "message": "pathCollisionKey and isUtcDate copy S001's private path-collision and UTC-timestamp rules instead of sharing them, so there are two sources of truth. Parity tests reduce the risk, but they only cover the listed sample inputs.",
-            "counterpartRef": "validateRelease / validateGuidanceRecord (S001 validate.ts)",
+            "location": "src/design/corpus/sources/lineage.ts:96",
+            "message": "classifyPackageFiles works out the set of evidence paths itself, from profile.licenseEvidence/noticeEvidence via evidencePath(ref.digest). assembleSourceMetadata builds the same set when it emits the evidence files. If one copy changes (for example, a new evidence kind is added to only one), classification and the reconstructed metadata will disagree, and assessment will fail candidates that are actually valid. Fix: extract one helper that returns evidence path → source IDs and call it from both.",
+            "counterpartRef": "assembleSourceMetadata",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/design/corpus/sources/eligibility.ts:34",
-            "message": "requiredSourcePaths checks `paths.size > CORPUS_LIMITS.files` only at the top of each loop iteration. Paths added while processing the last queue item are never checked, so the returned closure can exceed the file limit. Downstream checks in stage.ts and readPinnedSources currently catch this, but the function does not enforce its own documented limit.",
+            "location": "src/design/corpus/sources/lineage.ts:60",
+            "message": "For a derived binding with no modifications, line 60 (`modificationNoticeRequired && derived && !modifications.length`) adds an issue once per contributing source. The unconditional check on line 62 then adds the same issue again for the binding. Line 60 can never be the only check that fires, so it is dead as a guard, and it adds duplicate diagnostics.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/lineage.ts:100",
+            "message": "classifyPackageFiles first runs `pathIssues(roles)` (line 94). It then pushes `pathIssues([...roles, ...evidence.keys()])`, which checks the role paths again. A collision between two role paths, such as sourceManifestPath and noticesPath, is therefore reported twice. Fix: run only the combined check.",
             "confidence": "observation"
           }
         ]
@@ -178,8 +163,8 @@
     "verdict": "warn",
     "counts": {
       "high": 0,
-      "med": 5,
-      "low": 8
+      "med": 1,
+      "low": 10
     }
   }
 }

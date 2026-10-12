@@ -36,6 +36,17 @@ test('candidate-roundtrip admits only eligible material and exports complete not
     const invalid = await stageLocalSources(f.policy, [{ localRepository: git.dir, request: f.request },
       { localRepository: git.dir, request: { ...f.request, paths: ['bad%path'] } }], { run: async () => { calls++; throw new Error('Must not run'); } });
     assert.equal(invalid.ok, false); assert.equal(calls, 0);
+    const inputs = [{ localRepository: git.dir, request: f.request }, { localRepository: git.dir, request: f.request }];
+    const countLimit = await stageLocalSources(f.policy, inputs, { limits: { files: 7 }, run: async () => { calls++; throw new Error('Must not run'); } });
+    assert.equal(!countLimit.ok && countLimit.issues[0]!.code, 'limit.exceeded'); assert.equal(calls, 0);
+    const relative = await stageLocalSources(f.policy, [{ localRepository: 'relative/repo', request: f.request }], { run: async () => { calls++; throw new Error('Must not run'); } });
+    assert.equal(!relative.ok && relative.issues[0]!.code, 'path.invalid'); assert.equal(calls, 0);
+    const exactBytes = f.blobs.reduce((sum, blob) => sum + blob.bytes.byteLength, 0);
+    const exact = await stageLocalSources(f.policy, inputs.slice(0, 1), { limits: { bytes: exactBytes } }); assert.equal(exact.ok, true);
+    const exhausted = await stageLocalSources(f.policy, inputs, { limits: { bytes: exactBytes } });
+    assert.equal(!exhausted.ok && exhausted.issues[0]!.message, 'No remaining source-byte budget.');
+    const short = await stageLocalSources(f.policy, inputs, { limits: { bytes: exactBytes * 2 - 1 } });
+    assert.equal(!short.ok && short.issues[0]!.code, 'limit.exceeded'); assert.equal('value' in short, false);
   } finally { git.dispose(); }
 });
 test('candidate-roundtrip validates original-only and multi-source derived packages', () => {

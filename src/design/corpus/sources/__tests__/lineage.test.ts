@@ -46,6 +46,11 @@ test('lineage-closure retains every source and transformation for derived output
   assert.equal(validateOutputLineage(lineage, [{ path: 'copy', bytes: imported.bytes }], [f.stage]).ok, true);
 });
 test('lineage-closure rejects unbound specimens inconsistent provenance and stale outputs', () => {
+  const malformed = fixture();
+  Object.defineProperty(malformed.stage.admitted[0]!.profile, 'modifications', { get() { throw new Error('Malformed stage'); } });
+  assert.equal(validateOutputLineage(malformed.lineage, [malformed.output], [malformed.stage]).ok, false);
+  Object.defineProperty(malformed.stage.admitted[0]!.profile, 'licenseEvidence', { get() { throw new Error('Malformed stage'); } });
+  assert.equal(classifyPackageFiles(packageFixture().manifest, [malformed.stage]).ok, false);
   const f = fixture();
   assert.equal(validateOutputLineage(f.lineage, [f.output, { path: 'unbound', bytes: makeBytes('unbound') }], [f.stage]).ok, false);
   assert.equal(validateOutputLineage(f.lineage, [{ ...f.output, bytes: makeBytes('tampered') }], [f.stage]).ok, false);

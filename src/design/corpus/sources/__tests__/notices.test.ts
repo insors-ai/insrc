@@ -51,6 +51,9 @@ test('notice-closure deduplicates shared evidence without losing attribution', (
   assert.deepEqual(assembleSourceMetadata([reordered], emptyLineage, options), result);
 });
 test('notice-closure produces stable expected bytes and rejects invalid evidence text', () => {
+  const malformed = fixture().stage;
+  malformed.admitted[0]!.profile.licenseEvidence[0]!.path = '../invalid';
+  assert.equal(assembleSourceMetadata([malformed], emptyLineage, options).ok, false);
   const original = assembleSourceMetadata([], emptyLineage, { ...options, policyVersion: 'original-v1' }); assert.equal(original.ok, true); if (!original.ok) return;
   // Independently specified fixture, not computed by the formatter under test.
   const expected = 'insrc-design-notices-v1\n{"lineage":{"bindings":[],"originals":[],"schemaVersion":1},"policyVersion":"original-v1","schemaVersion":1,"sources":[]}\n';

@@ -93,19 +93,22 @@ export function stageSources(policyInput: unknown, requestInput: unknown, acquir
     }
     decisions.set(path, decision);
   }
-  // Fixed point handles shared/cyclic license evidence without recursive stack growth.
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const path of required.value) {
-      if (decisions.get(path)!.status !== 'eligible') continue;
-      const profile = profiles.get(path)!;
-      if ([...profile.licenseEvidence, ...profile.noticeEvidence].some(ref => decisions.get(ref.path)?.status !== 'eligible'
-        || digests.get(ref.path) !== ref.digest)) {
-        decisions.set(path, { status: 'unresolved', reason: 'Required evidence is ineligible or differs from the reviewed digest.' }); changed = true;
-      }
+  // Each invalidated path enters the worklist once, including shared/cyclic evidence.
+  const dependents = new Map<string, Set<string>>(), invalid: string[] = [];
+  const invalidate = (path: string) => {
+    if (decisions.get(path)?.status !== 'eligible') return;
+    decisions.set(path, { status: 'unresolved', reason: 'Required evidence is ineligible or differs from the reviewed digest.' });
+    invalid.push(path);
+  };
+  for (const path of required.value) {
+    if (decisions.get(path)!.status !== 'eligible') { invalid.push(path); continue; }
+    const profile = profiles.get(path)!;
+    for (const ref of [...profile.licenseEvidence, ...profile.noticeEvidence]) {
+      const users = dependents.get(ref.path) ?? new Set<string>(); users.add(path); dependents.set(ref.path, users);
+      if (digests.get(ref.path) !== ref.digest) invalidate(path);
     }
   }
+  for (let i = 0; i < invalid.length; i++) for (const path of dependents.get(invalid[i]!) ?? []) invalidate(path);
   const report: ImportReport = { admitted: [], excluded: [], unresolved: [] };
   for (const path of [...request.paths].sort(compareText)) {
     const decision = decisions.get(path)!;

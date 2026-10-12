@@ -60,3 +60,9 @@ export class AcquisitionBudget {
       ? failure([problem('limit.exceeded', '/imports', 'Combined acquired inputs exceed limits.')]) : { ok: true, value: true };
   }
 }
+
+/** Typed staged values are still allowed to fail safely if a caller constructs them incorrectly. */
+export function guardStagedOperation<T>(operation: () => ValidationResult<T>): ValidationResult<T> {
+  try { return operation(); }
+  catch { return failure([problem('schema.invalid', '/stages', 'Expected valid evaluated source stages.')]); }
+}

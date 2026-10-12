@@ -47,12 +47,14 @@ function reviewSnapshot(input: unknown): ValidationResult<EligibilityReview> {
 }
 export function evaluateSourceImports(reviewInput: unknown): ValidationResult<StagedSources[]> {
   const snapshot = reviewSnapshot(reviewInput); if (!snapshot.ok) return snapshot;
-  const review = snapshot.value;
+  return evaluateReviewedImports(snapshot.value);
+}
+/** Internal inputs already have detached descriptor-safe snapshots. stageSources validates each acquisition. */
+function evaluateReviewedImports(review: EligibilityReview): ValidationResult<StagedSources[]> {
   const policy = decodeSourcePolicy(review.policy); if (!policy.ok) return policy;
   const stages: StagedSources[] = [];
   for (const input of review.imports) {
-    const acquired = snapshotBlobs(input.blobs); if (!acquired.ok) return acquired;
-    const stage = stageSources(policy.value, input.request, acquired.value); if (!stage.ok) return stage;
+    const stage = stageSources(policy.value, input.request, input.blobs); if (!stage.ok) return stage;
     stages.push(stage.value);
   }
   return { ok: true, value: stages };
@@ -84,7 +86,7 @@ export function assessEligibility(manifestInput: unknown, filesInput: unknown, r
     const reviewed = reviewSnapshot(reviewInput); if (!reviewed.ok) return finish(reviewed.issues);
     const review = reviewed.value;
     const policy = decodeSourcePolicy(review.policy); if (!policy.ok) return finish(policy.issues);
-    const stages = evaluateSourceImports(review); if (!stages.ok) return finish(stages.issues);
+    const stages = evaluateReviewedImports(review); if (!stages.ok) return finish(stages.issues);
     // Reconstruct independently from reviewed policy, exact acquisition bytes and the reviewed output descriptor.
     const expected = assembleSourceMetadata(stages.value, review.lineage, { policyVersion: policy.value.policyVersion,
       sourceManifestPath: manifest.sourceManifestPath, noticesPath: manifest.noticesPath });
@@ -129,7 +131,7 @@ export function prepareEligibilityCandidate(manifestInput: unknown, outputsInput
   const review = reviewed.value;
   const output = snapshotBlobs(outputsInput); if (!output.ok) return output;
   const policy = decodeSourcePolicy(review.policy); if (!policy.ok) return policy;
-  const stages = evaluateSourceImports(review); if (!stages.ok) return stages;
+  const stages = evaluateReviewedImports(review); if (!stages.ok) return stages;
   const metadata = assembleSourceMetadata(stages.value, review.lineage, { policyVersion: policy.value.policyVersion,
     sourceManifestPath: base.sourceManifestPath, noticesPath: base.noticesPath });
   if (!metadata.ok) return metadata;

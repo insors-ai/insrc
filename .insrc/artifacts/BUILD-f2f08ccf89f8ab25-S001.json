@@ -8,7 +8,8 @@
     "standalone": true,
     "sizeClass": "small",
     "triageRationale": "Triage sized this a feature (LLD, plan, build). The plan-driven build route cannot address a standalone feature that has no DEF or ISSUE artifact, so the build ran through the standalone route and followed the approved plan's seven tasks.",
-    "approvedAt": "2026-10-05T07:56:26.337Z"
+    "approvedAt": "2026-10-05T07:56:26.337Z",
+    "epicSlug": "structured-design-review-template-approved-spec"
   },
   "body": {
     "tasks": [

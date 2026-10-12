@@ -256,7 +256,7 @@ export function headShortSha(repoPath: string): string | undefined {
 	}
 }
 
-/** Paths a MERGED record occupies./** Paths a MERGED record occupies. The single derivation both the writer and the
+/** Paths a MERGED record occupies. The single derivation both the writer and the
  *  pre-persist lookup below use, so the two can never disagree about where a
  *  record lives. */
 function pathsForMerged(repoPath: string, merged: BuildRecord): { md: string; json: string } {

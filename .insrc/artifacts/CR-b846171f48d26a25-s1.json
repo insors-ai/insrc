@@ -9,7 +9,10 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "b846171f48d26a25",
-    "storyId": "s1"
+    "storyId": "s1",
+    "epicSlug": "bug-vs-code-insrc-chat-webview",
+    "epicCreatedAt": "2026-09-26T19:14:26.923Z",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

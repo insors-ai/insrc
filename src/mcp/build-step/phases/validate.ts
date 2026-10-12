@@ -42,6 +42,7 @@ import {
 	smallStandaloneCheckPlan,
 	trackedFiles,
 	trivialCheckPlan,
+	withTypecheckProjects,
 	type CheckResult,
 	type ValidationCheckPlan,
 	type ValidationCheckResults,
@@ -383,7 +384,10 @@ async function runValidateSession(
 	// The daemon's own checks come first: their exit codes are facts the judge reads
 	// and cannot override.
 	log.info({ taskId: ident.taskId, storyId: ident.storyId, testFiles: checks.testFiles.length }, 'insrc_build_step[validate]: running checks');
-	const results = await (checkRunnerOverride ?? runValidationChecks)(repoPath, checks);
+	// The typecheck also covers every other TypeScript project the Story's changes
+	// (from its range base) or its test files belong to (ISSUE-b4b6b835).
+	const planned = withTypecheckProjects(repoPath, checks, resolveStoryRangeBase(repoPath, ident.epicHash, ident.storyId));
+	const results = await (checkRunnerOverride ?? runValidationChecks)(repoPath, planned);
 
 	// ONE time and ONE resolved route flag for both of the Story's records.
 	const now = (clockOverride ?? (() => new Date().toISOString()))();

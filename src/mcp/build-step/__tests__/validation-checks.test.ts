@@ -26,6 +26,7 @@ import {
 	smallStandaloneCheckPlan,
 	trivialCheckPlan,
 	type ValidationCheckPlan,
+	withTypecheckProjects,
 } from '../validation-checks.js';
 
 function gitRepo(files: Readonly<Record<string, string>>): string {
@@ -135,7 +136,7 @@ test('a test name whose only *.test.ts token is not a leading prefix is unresolv
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('a plan names the other TypeScript projects that own a changed file or a test file; a build inside the root project names none', () => {
+test('a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none', () => {
 	const repo = gitRepo({
 		...TREE,
 		'tsconfig.json':                        '{}',
@@ -155,25 +156,45 @@ test('a plan names the other TypeScript projects that own a changed file or a te
 		// The nearest tsconfig.json above each .ts / .tsx file; the root's project and other files name nothing.
 		assert.deepEqual(owningTypecheckProjects(repo, ['plugin/src/view.ts', 'plugin/tools/inner/gen.tsx', 'src/a/x.ts', 'plugin/README.md', 'top.ts']), ['plugin', 'plugin/tools/inner']);
 
-		// A commit that touches only the root project: no other project, on every route.
-		commit('src/b/chain.ts', 'root only');
+		const head = (): string => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
+		const start = head();
+		const plan = (): ValidationCheckPlan => planTaskCheckPlan(repo, { tests: [{ name: "chain.test.ts: 'b'" }] });
+		// The plan builders themselves name no project: the build's changes are added afterwards.
+		assert.equal(plan().typecheckProjects, undefined);
 		assert.equal(trivialCheckPlan(repo).typecheckProjects, undefined);
-		assert.equal(planTaskCheckPlan(repo, { tests: [{ name: "chain.test.ts: 'b'" }] }).typecheckProjects, undefined);
-		assert.equal(smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ["chain.test.ts: 'x'"] }] }).typecheckProjects, undefined);
 
-		// A mapped test file inside the plugin names the plugin, whatever HEAD touched.
+		// A commit that touches only the root project: no other project, and the plan is returned as it was.
+		commit('src/b/chain.ts', 'root only');
+		const rootOnly = plan();
+		assert.equal(withTypecheckProjects(repo, rootOnly, start), rootOnly);
+		assert.equal(withTypecheckProjects(repo, rootOnly), rootOnly);
+
+		// A mapped test file inside the plugin names the plugin, whatever the commits touched.
 		const mapped = planTaskCheckPlan(repo, { tests: [{ name: 'the view renders' }] }, [{ name: 'the view renders', cases: [{ file: 'plugin/src/__tests__/view.test.ts', title: 't' }] }]);
-		assert.deepEqual(mapped.typecheckProjects, ['plugin']);
+		assert.deepEqual(withTypecheckProjects(repo, mapped, start).typecheckProjects, ['plugin']);
 
-		// A commit that touches a plugin file names the plugin on every route.
+		// A commit that touches a plugin file names the plugin, on any route's plan.
 		commit('plugin/src/view.ts', 'plugin change');
-		assert.deepEqual(trivialCheckPlan(repo).typecheckProjects, ['plugin']);
-		assert.deepEqual(planTaskCheckPlan(repo, { tests: [{ name: "chain.test.ts: 'b'" }] }).typecheckProjects, ['plugin']);
-		assert.deepEqual(smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] }).typecheckProjects, ['plugin']);
+		assert.deepEqual(withTypecheckProjects(repo, plan()).typecheckProjects, ['plugin']);
+		assert.deepEqual(withTypecheckProjects(repo, trivialCheckPlan(repo)).typecheckProjects, ['plugin']);
+		assert.deepEqual(withTypecheckProjects(repo, smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] })).typecheckProjects, ['plugin']);
 
-		// A change not yet committed counts too.
+		// A build of several commits: the plugin change is no longer the HEAD commit. From the
+		// build's base it is still found; from the HEAD commit alone it is not.
+		commit('src/b/chain.ts', 'root again');
+		assert.deepEqual(withTypecheckProjects(repo, plan(), start).typecheckProjects, ['plugin']);
+		assert.equal(withTypecheckProjects(repo, plan()).typecheckProjects, undefined);
+		const afterPlugin = head();
+
+		// A change not yet committed counts, and so does a new file not yet tracked.
 		writeFileSync(join(repo, 'plugin/tools/inner/gen.tsx'), '// edited\n');
-		assert.deepEqual(trivialCheckPlan(repo).typecheckProjects, ['plugin', 'plugin/tools/inner']);
+		assert.deepEqual(withTypecheckProjects(repo, plan(), afterPlugin).typecheckProjects, ['plugin/tools/inner']);
+		execFileSync('git', ['checkout', '-q', '--', 'plugin/tools/inner/gen.tsx'], { cwd: repo });
+		writeFileSync(join(repo, 'plugin/src/new.ts'), '');
+		assert.deepEqual(withTypecheckProjects(repo, plan(), afterPlugin).typecheckProjects, ['plugin']);
+
+		// A base the repository does not have: that listing is skipped and the others still count.
+		assert.deepEqual(withTypecheckProjects(repo, plan(), '0'.repeat(40)).typecheckProjects, ['plugin']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

@@ -199,19 +199,29 @@ function basePlan(): Pick<ValidationCheckPlan, 'typecheck' | 'testCommand' | 'ty
 	return { typecheck: TYPECHECK_ARGV, testCommand: TEST_RUNNER_ARGV, typecheckTimeoutMs: TYPECHECK_TIMEOUT_MS, testTimeoutMs: TEST_TIMEOUT_MS };
 }
 
-/** The files the build changed: those of the HEAD commit and any not yet committed. */
-function changedFiles(repoPath: string): string[] {
-	const list = (args: readonly string[]): string[] =>
-		execFileSync('git', args, { cwd: repoPath, encoding: 'utf8' }).split('\n').filter(f => f.length > 0);
-	try {
-		return [
-			...list(['show', '--name-only', '--diff-filter=d', '--format=', 'HEAD']),
-			...list(['diff', '--name-only', '--diff-filter=d', 'HEAD']),
-		];
-	} catch (err) {
-		log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'validate: could not list the changed files');
-		return [];
+/**
+ * The files the build changed: those committed since `base` (the Story's range
+ * base; without one, those of the HEAD commit), those changed and not yet
+ * committed, and new files not yet tracked. Each listing stands on its own: one
+ * that fails is logged and the others still count.
+ */
+function changedFiles(repoPath: string, base: string | undefined): string[] {
+	const listings: readonly (readonly string[])[] = [
+		base !== undefined
+			? ['diff', '--name-only', '--diff-filter=d', base, 'HEAD']
+			: ['show', '--name-only', '--diff-filter=d', '--format=', 'HEAD'],
+		['diff', '--name-only', '--diff-filter=d', 'HEAD'],
+		['ls-files', '--others', '--exclude-standard'],
+	];
+	const files: string[] = [];
+	for (const args of listings) {
+		try {
+			files.push(...execFileSync('git', args, { cwd: repoPath, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).split('\n').filter(f => f.length > 0));
+		} catch (err) {
+			log.warn({ repoPath, git: args.join(' '), err: err instanceof Error ? err.message : String(err) }, 'validate: could not list changed files; a project they belong to may go unchecked');
+		}
 	}
+	return files;
 }
 
 /**
@@ -232,9 +242,13 @@ export function owningTypecheckProjects(repoPath: string, files: readonly string
 	return [...projects].sort();
 }
 
-/** A plan with the projects its test files and the build's changed files belong to. */
-function withTypecheckProjects(repoPath: string, plan: ValidationCheckPlan): ValidationCheckPlan {
-	const projects = owningTypecheckProjects(repoPath, [...plan.testFiles, ...changedFiles(repoPath)]);
+/**
+ * The plan with the projects its test files and the build's changed files
+ * belong to. `base` is the Story's range base, so a build of several commits is
+ * covered whole; without it only the HEAD commit's files are known.
+ */
+export function withTypecheckProjects(repoPath: string, plan: ValidationCheckPlan, base?: string): ValidationCheckPlan {
+	const projects = owningTypecheckProjects(repoPath, [...plan.testFiles, ...changedFiles(repoPath, base)]);
 	return projects.length === 0 ? plan : { ...plan, typecheckProjects: projects };
 }
 
@@ -273,12 +287,12 @@ export function planTaskCheckPlan(
 ): ValidationCheckPlan {
 	const byName = new Map((mapping ?? []).map(e => [e.name, e]));
 	const namedTests = task.tests.map(t => planNamedTest(repoPath, t, byName.get(t.name)));
-	return withTypecheckProjects(repoPath, {
+	return {
 		...basePlan(), testFiles: sortedUnion(namedTests),
 		unresolvedTests: namedTests.filter(n => n.source === 'none').map(n => n.name),
 		namedTests,
 		...(task.tests.length === 0 ? { noTests: { ok: false, note: 'the plan task names no tests' } } : {}),
-	});
+	};
 }
 
 /** Small standalone build: the test names in its LLD's test strategy. A subject
@@ -295,14 +309,14 @@ export function smallStandaloneCheckPlan(
 	const namedTests = subjects.map(t => planNamedTest(repoPath, t, byName.get(t.name)));
 	const runnable = namedTests.filter(n => n.source === 'mapping' || LEADING_TEST_FILE.test(n.name));
 	if (runnable.length === 0) {
-		return withTypecheckProjects(repoPath, { ...basePlan(), testFiles: [], unresolvedTests: [], namedTests, noTests: { ok: false, note: 'the LLD names no test file' } });
+		return { ...basePlan(), testFiles: [], unresolvedTests: [], namedTests, noTests: { ok: false, note: 'the LLD names no test file' } };
 	}
-	return withTypecheckProjects(repoPath, {
+	return {
 		...basePlan(), testFiles: sortedUnion(namedTests),
 		// Only a subject that NAMES a file and resolves to none is unresolved.
 		unresolvedTests: namedTests.filter(n => n.source === 'none' && LEADING_TEST_FILE.test(n.name)).map(n => n.name),
 		namedTests,
-	});
+	};
 }
 
 /** Trivial standalone build (no LLD): the test files the build commit touched, possibly none. */
@@ -316,11 +330,11 @@ export function trivialCheckPlan(repoPath: string): ValidationCheckPlan {
 		log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'validate: could not list the HEAD commit\'s files');
 	}
 	const testFiles = [...new Set(touched)].sort();
-	return withTypecheckProjects(repoPath, {
+	return {
 		...basePlan(), testFiles, unresolvedTests: [],
 		namedTests: testFiles.map(file => ({ name: file, source: 'touched' as const, cases: [], files: [file] })),
 		...(testFiles.length === 0 ? { noTests: { ok: true, note: 'no tests named for a trivial build' } } : {}),
-	});
+	};
 }
 
 // ---------------------------------------------------------------------------

@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "0855311b6b32eb72",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "bug-build-record-triage-routed-small",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

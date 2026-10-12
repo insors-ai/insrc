@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "71133869f31324f7",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "rework-site-getting-started-html-1",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

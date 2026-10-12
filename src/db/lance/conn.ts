@@ -27,7 +27,7 @@ import * as lancedb from '@lancedb/lancedb';
 
 import { getLogger } from '../../shared/logger.js';
 import { PATHS } from '../../shared/paths.js';
-import { mayOpenLiveStores, resolveStorePath } from '../graph/store.js';
+import { isLiveStoreOwnerDeclared, resolveStorePath } from '../graph/store.js';
 
 const log = getLogger('lance-conn');
 
@@ -74,7 +74,7 @@ export async function getLanceConn(): Promise<lancedb.Connection> {
 	if (_instance !== null) return _instance;
 	if (_initPromise !== null) return _initPromise;
 	// Before anything touches the path: no directory, no connection.
-	if (!mayOpenLiveStores() && resolveStorePath(_path) === resolveStorePath(PATHS.lance)) {
+	if (!isLiveStoreOwnerDeclared() && resolveStorePath(_path) === resolveStorePath(PATHS.lance)) {
 		throw new LanceStoreNotOwnerError(_path);
 	}
 

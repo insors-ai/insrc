@@ -367,12 +367,12 @@ function assertMayOpen(path: string): void {
 }
 
 /**
- * True when this process may open the daemon's live stores: it declared
- * itself the owner, or (until Story s11 deletes it) a permitted reader. Read
- * by the vector store's open, so one declaration governs both stores.
+ * True when this process declared itself the owner of the live stores. Read
+ * by the vector store's open: the owner declaration governs both stores, and
+ * the vector store has no reader allowance (Epic c2ba6fa6, Story s11, ac7).
  */
-export function mayOpenLiveStores(): boolean {
-	return _ownsLiveStore || _mayReadLiveStore;
+export function isLiveStoreOwnerDeclared(): boolean {
+	return _ownsLiveStore;
 }
 
 /** A path with symbolic links resolved, as the owner checks compare them

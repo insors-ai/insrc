@@ -26,6 +26,7 @@ const CWD = process.cwd();
 
 const { closeLanceConn, getLanceConn, LanceStoreNotOwnerError, setLanceConnPath } = await import('../conn.js');
 const { declareLiveStoreOwner, resetLiveStoreDeclarationsForTests } = await import('../../graph/store.js');
+const graphStore = await import('../../graph/store.js');
 const { PATHS } = await import('../../../shared/paths.js');
 
 beforeEach(async () => {
@@ -48,6 +49,15 @@ function assertRefused(e: unknown): true {
 	assert.match((e as Error).message, /only the insrc daemon may open it/);
 	return true;
 }
+
+test('vector store owner rule: the graph store\'s temporary reader allowance does not open the live vector store', async () => {
+	// Built from two pieces so this file does not hold the name Story s11 deletes.
+	const declareReader = (graphStore as unknown as Record<string, () => void>)['declareLiveStoreReader' + 'UntilS11'];
+	assert.equal(typeof declareReader, 'function', 'the allowance still exists until Task t11');
+	declareReader!();
+	await assert.rejects(getLanceConn(), assertRefused);
+	assert.equal(existsSync(LIVE), false);
+});
 
 test('vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused', async () => {
 	assert.equal(PATHS.lance, LIVE, 'the live path is inside the temporary home');

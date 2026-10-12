@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "a0f4c1cfe262a497",
-    "storyId": "s2"
+    "storyId": "s2",
+    "epicSlug": "provenance-traceability-workflow-artifact-json-two"
   },
   "body": {
     "kind": "code-review",

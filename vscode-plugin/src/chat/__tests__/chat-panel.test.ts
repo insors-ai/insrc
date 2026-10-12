@@ -3186,3 +3186,64 @@ test("a live provider with a queued in-turn request, then the user types a messa
     fc.fireDispose();
   }
 });
+
+test('a request joining the queue while the head is shown updates the shown card in place (one card per requestId)', async () => {
+  const fc = fakeChannel();
+  let release!: () => void;
+  const gate = new Promise<void>((r) => (release = r));
+  let runNo = 0;
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {
+      if (++runNo > 1) { yield { kind: 'done', turnId: 't2', ok: true }; return; }
+      yield refused('j1', 'Edit');
+      await gate; // the first card is shown alone before the next request arrives
+      yield refused('j2', 'Write');
+      yield refused('j3', 'Bash');
+      yield { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' };
+    },
+    cancel: () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  assert.match(fc.html(), /m\.type==='approval-position'\)\{reg\.approvalPosition\(m\.requestId,m\.position,m\.total\);\}/, 'the webview updates the shown card in place');
+  assert.match(fc.html(), /position:ev\.position,total:ev\.total/, 'a posted card carries its position into the renderer');
+  fc.send(env('submit-turn', { text: 'three edits' }));
+  await waitFor(() => approvalCards(fc).length === 1);
+  const first = approvalCards(fc)[0]!;
+  assert.equal(first.position, undefined, 'posted alone: no position yet');
+  release();
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['j1'], 'no second card');
+  const positions = fc.posted.filter((m) => m.payload.type === 'approval-position').map((m) => [m.payload['requestId'], m.payload['position'], m.payload['total']]);
+  assert.deepEqual(positions, [['j1', 1, 2], ['j1', 1, 3]], 'the shown card is updated in place as the queue grows');
+  fc.send(env('permission-decision', { requestId: 'j1', decision: 'deny' }));
+  const second = approvalCards(fc)[1]!;
+  assert.deepEqual([second.requestId, second.position, second.total], ['j2', 1, 2], 'the next card is posted with its own position');
+});
+
+test('reloading the webview while requests are queued re-posts the head card, and deciding it continues the queue', async () => {
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [refused('k1', 'Edit'), refused('k2', 'Write'), refused('k3', 'Bash'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'three edits' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'k1', decision: 'deny' }));
+  const before = fc.posted.length;
+  fc.send(env('ready')); // the webview reloaded: its transcript (and the shown card) is gone
+  const after = fc.posted.slice(before).map((m) => m.payload);
+  const restored = after.findIndex((p) => p.type === 'session-restored');
+  const cards = after
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => p.type === 'turn-event' && (p['event'] as TurnEvent).kind === 'approval-request');
+  assert.equal(cards.length, 1, 'exactly one card is posted again');
+  const card = cards[0]!.p['event'] as Extract<TurnEvent, { kind: 'approval-request' }>;
+  assert.ok(restored !== -1 && cards[0]!.i > restored, 'after session-restored (which clears the view)');
+  assert.deepEqual([card.requestId, card.position, card.total], ['k2', 1, 2], 'the head, with its position');
+  fc.send(env('permission-decision', { requestId: 'k2', decision: 'deny' }));
+  assert.equal(approvalCards(fc).at(-1)!.requestId, 'k3', 'deciding it continues the queue');
+  fc.send(env('permission-decision', { requestId: 'k3', decision: 'deny' }));
+  assert.deepEqual(outcomes(fc).map((o) => o.toolName), ['Edit', 'Write', 'Bash']);
+});

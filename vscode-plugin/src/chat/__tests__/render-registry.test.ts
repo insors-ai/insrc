@@ -904,3 +904,26 @@ test('ISSUE-1163888072faa9f2: a user row settles pending rows (cancelled turn, r
   assert.equal(appended.length, 3, 'the result draws its own row');
   assert.ok(!allText(appended[0]!).includes('late'), 'the cancelled turn\'s row is untouched');
 });
+
+// ---- ISSUE-6a811b8a: the approval card shows its place in the queue ----
+
+test("approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before", () => {
+  const { reg } = makeRegistry();
+  const plain = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'p0', title: 'Run', detail: 'x' } })!;
+  assert.equal(findByClass(plain, 'insrc-approval__pos'), undefined, 'no position label without position/total');
+  assert.equal(findByClass(plain, 'insrc-approval__title')!.children.length, 0, 'the title is just its text, as before');
+  const single = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'p1', title: 'Run', position: 1, total: 1 } })!;
+  assert.equal(findByClass(single, 'insrc-approval__pos'), undefined, 'a total of 1 shows no label');
+  const queued = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'p2', title: 'Run', position: 1, total: 3 } })!;
+  assert.equal(findByClass(queued, 'insrc-approval__pos')?.textContent, '1 of 3');
+  assert.equal(findByClass(queued, 'insrc-approval__title')?.textContent, 'Run', 'the title text is unchanged');
+
+  // In place: a shown card gains / updates its label; an unknown id changes nothing.
+  const r = reg as unknown as { approvalPosition(id: string, p: number, n: number): boolean };
+  assert.equal(r.approvalPosition('p0', 1, 2), true);
+  assert.equal(findByClass(plain, 'insrc-approval__pos')?.textContent, '1 of 2', 'a card posted alone gains the label when the queue grows');
+  assert.equal(r.approvalPosition('p2', 1, 4), true);
+  assert.equal(findByClass(queued, 'insrc-approval__pos')?.textContent, '1 of 4');
+  assert.equal(r.approvalPosition('nope', 1, 9), false, 'an unknown id is ignored');
+  assert.equal(findByClass(queued, 'insrc-approval__pos')?.textContent, '1 of 4', 'and changes no card');
+});

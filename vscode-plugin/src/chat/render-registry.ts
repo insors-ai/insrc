@@ -200,6 +200,8 @@ export const RENDER_REGISTRY_STYLE =
   // (▹ green ✓ / red ✗); the whole card is bordered to read as an action, not prose.
   `.insrc-approval{border:1px solid rgba(251,191,36,.45);border-radius:10px;background:linear-gradient(180deg,rgba(251,191,36,.09),rgba(251,191,36,.03));padding:11px 13px;margin:2px 0;display:flex;flex-direction:column;gap:9px;}` +
   `.insrc-approval__title{font-weight:600;color:var(--amber);display:flex;align-items:center;gap:8px;}` +
+  // ISSUE-6a811b8a: the card's place in the approval queue ('1 of 3'), beside the title.
+  `.insrc-approval__pos{margin-left:auto;font-weight:400;font-size:12px;color:var(--muted,#9aa3ad);}` +
   `.insrc-approval__detail{color:var(--fg);font-size:13px;white-space:pre-wrap;word-break:break-word;}` +
   `.insrc-approval__actions{display:flex;gap:8px;flex-wrap:wrap;}` +
   `.insrc-approval__btn{cursor:pointer;border:1px solid var(--border-lit);background:var(--panel);color:var(--fg);border-radius:7px;padding:4px 12px;line-height:1.4;font-size:13px;font-family:var(--font);}` +
@@ -275,6 +277,14 @@ export function renderRegistryWebviewSource(): string {
     // onApprovalDecision(cb); the card buttons call it with (requestId, decision). Kept
     // as a factory-level hook so the renderer stays CSP-safe (no postMessage/vscode ref).
     `var DEC=null;function onApprovalDecision(cb){DEC=cb;}` +
+    // ISSUE-6a811b8a: the approval cards by requestId, so the host can update a shown card's
+    // queue position in place (approval-position). An unknown id changes nothing.
+    `var APOS={};` +
+    `function posLabel(rid,p,n){var a=APOS[rid];if(!a)return false;` +
+    `if(typeof p!=='number'||typeof n!=='number'||n<=1){if(a.pos){a.pos.textContent='';}return true;}` +
+    `if(!a.pos){a.pos=document.createElement('span');a.pos.className='insrc-approval__pos';a.title.appendChild(a.pos);}` +
+    `a.pos.textContent=p+' of '+n;return true;}` +
+    `function approvalPosition(rid,p,n){return posLabel(String(rid),p,n);}` +
     // S004: the selection-widget decision sink. chat-panel registers a callback via
     // onSelectionDecision(cb); the widget's confirm button calls it with (requestId, selectedIds).
     // Factory-level hook so the renderer stays CSP-safe (no postMessage/vscode ref).
@@ -447,6 +457,9 @@ export function renderRegistryWebviewSource(): string {
     `var card=document.createElement('div');card.className='insrc-approval';card.setAttribute('data-request-id',rid);` +
     `var title=document.createElement('div');title.className='insrc-approval__title';` +
     `title.textContent=meta.title!=null?String(meta.title):((vm&&vm.text)||'Permission request');card.appendChild(title);` +
+    // ISSUE-6a811b8a: a card with more requests queued behind it shows its place ('1 of 3');
+    // without position/total (or a total of 1) the card is exactly as before.
+    `APOS[rid]={title:title,pos:null};posLabel(rid,meta.position,meta.total);` +
     `if(meta.detail!=null&&String(meta.detail)!==''){var det=document.createElement('div');det.className='insrc-approval__detail';det.textContent=String(meta.detail);card.appendChild(det);}` +
     `var actions=document.createElement('div');actions.className='insrc-approval__actions';` +
     `var approve=document.createElement('button');approve.className='insrc-approval__btn insrc-approval__btn--approve';` +
@@ -527,7 +540,7 @@ export function renderRegistryWebviewSource(): string {
     // session-restored, so the fresh replay re-keys from an empty map.
     `var KEYS={};` +
     `function appendKeyed(vm,key){if(key==null)return renderRow(vm);if(KEYS[key])return KEYS[key];var n=renderRow(vm);if(n)KEYS[key]=n;return n;}` +
-    `function resetKeys(){KEYS={};PEND=[];}` +
-    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,onSelectionDecision:onSelectionDecision};}`
+    `function resetKeys(){KEYS={};PEND=[];APOS={};}` +
+    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,onSelectionDecision:onSelectionDecision};}`
   );
 }

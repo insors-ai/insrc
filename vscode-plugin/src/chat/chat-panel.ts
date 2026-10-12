@@ -421,6 +421,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (session === undefined) session = deps.store.draft(available[0]!);
     permissionMode = modeOf(session); // S001 (bugfix): adopt the active session's persisted mode
     post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript, mode: permissionMode });
+    // ISSUE-6a811b8a: session-restored cleared the webview, including the shown approval card;
+    // post the queue head again (once) with its position so the queue can still be answered.
+    shownApproval = undefined;
+    showApprovalHead();
     postHistory();
     followLiveTurn(session);
   };
@@ -665,11 +669,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result'||ev.kind==='permission-outcome'||ev.kind==='selection-request'||ev.kind==='selection-outcome')){reg.renderRow(reg.toViewModel(ev));}` +
       // S004 ac1: a live approval-request renders the in-chat approve/deny card (the renderer
       // builds a detached node, so the handler appends it) — never a silent block.
-      `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName}});if(_c){t.appendChild(_c);t.scrollTop=t.scrollHeight;}}` +
+      `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName,position:ev.position,total:ev.total}});if(_c){t.appendChild(_c);t.scrollTop=t.scrollHeight;}}` +
       `else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}` +
       `if(ev&&(ev.kind==='done'||ev.kind==='error')){setRunning(false);hideProgress();}}` +
       // S006: an edit-prompt carries the computed diff + the HOST's review flag -> render it
       // (+ accept/reject controls only when the host says review; never gated on local state).
+      // ISSUE-6a811b8a: more requests queued behind the shown card — update its '1 of N' in place.
+      `else if(m.type==='approval-position'){reg.approvalPosition(m.requestId,m.position,m.total);}` +
       `else if(m.type==='edit-prompt'){renderDiff(m.path,m.diff,m.review===true);}` +
       // S001 ac1/lc1: the live user-row echo — reconciled to ONE row via its stable key.
       `else if(m.type==='user-row'){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text}),m.key);}` +

@@ -8,16 +8,16 @@ import { bindLineageToManifest } from '../lineage.js';
 import type { Lineage } from '../contracts.js';
 import type { EligibilityReview } from '../assessment.js';
 import { sourceFixture } from './fixtures.js';
-export function assessmentFixture(withSources = true) {
-  const f = sourceFixture(), stage = stageSources(f.policy, f.request, f.blobs); if (!stage.ok) throw new Error('source fixture');
-  const source = stage.value.admitted.find(s => s.source.path === 'good.txt')!;
+export function assessmentFixture(withSources = true, f = sourceFixture()) {
+  const stage = stageSources(f.policy, f.request, f.blobs); if (!stage.ok) throw new Error('source fixture');
+  const sourceIds = stage.value.admitted.filter(source => stage.value.report.admitted.includes(source.source.path)).map(source => source.source.sourceId);
   const record = sealRecord(withSources ? { ...recordFixture(), provenance: { authorship: 'derived', author: 'Fixture author',
-    sourceRefs: [source.source.sourceId], modificationNotes: ['Converted original fixture guidance'] } } : recordFixture());
+    sourceRefs: sourceIds, modificationNotes: ['Converted original fixture guidance'] } } : recordFixture());
   const base = packageFixture([record]);
   const outputs = base.files.filter(file => !['sources.json', 'NOTICE.txt', 'coverage.json'].includes(file.path)).map(({ path, bytes }) => ({ path, bytes }));
   const lineage: Lineage = { schemaVersion: 1, bindings: [], originals: [] };
   for (const output of outputs) {
-    if (withSources) lineage.bindings.push({ path: output.path, digest: hashBytes(output.bytes), authorship: 'derived', sourceIds: [source.source.sourceId],
+    if (withSources) lineage.bindings.push({ path: output.path, digest: hashBytes(output.bytes), authorship: 'derived', sourceIds: sourceIds,
       transformation: 'fixture-curation-v1', modifications: ['Converted original fixture guidance'], reviewedBy: 'Fixture reviewer' });
     else lineage.originals.push({ path: output.path, digest: hashBytes(output.bytes), authorship: 'original', author: record.provenance.author,
       rationale: output.path.startsWith('records/') ? record.rationale : 'Independently authored specimen fixture' });

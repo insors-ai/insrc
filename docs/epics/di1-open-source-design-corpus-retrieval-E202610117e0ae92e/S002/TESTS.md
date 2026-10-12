@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -179,3 +179,31 @@ Run at 2026-10-12T05:22:43.937Z on commit `da79b06a`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/design/corpus/sources/__tests__/notices.test.ts` | 0 | 3 | 0.5 s |  |
+
+## t7
+
+Run at 2026-10-12T05:28:48.875Z on commit `21319c59`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: eligibility-binding reconstructs obligations and rejects modified candidate metadata**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | eligibility-binding reconstructs obligations and rejects modified candidate metadata | `src/design/corpus/sources/__tests__/assessment.test.ts` |
+
+**unit: eligibility-binding rejects role swaps stale profiles and changed output evidence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | eligibility-binding rejects role swaps stale profiles and changed output evidence | `src/design/corpus/sources/__tests__/assessment.test.ts` |
+
+**unit: acyclic-staging assesses before coverage finalization and rejects missing or duplicate coverage**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | acyclic-staging assesses before coverage finalization and rejects missing or duplicate coverage | `src/design/corpus/sources/__tests__/assessment.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/design/corpus/sources/__tests__/assessment.test.ts` | 0 | 3 | 0.5 s |  |

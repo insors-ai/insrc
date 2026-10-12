@@ -4,7 +4,7 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T05:22:43.937Z"
+    "updatedAt": "2026-10-12T05:28:48.875Z"
   },
   "body": {
     "tasks": [
@@ -438,6 +438,76 @@
               },
               {
                 "title": "notice-closure produces stable expected bytes and rejects invalid evidence text",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "21319c59",
+        "ranAt": "2026-10-12T05:28:48.875Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "eligibility-binding reconstructs obligations and rejects modified candidate metadata",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/assessment.test.ts",
+                "title": "eligibility-binding reconstructs obligations and rejects modified candidate metadata",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "eligibility-binding rejects role swaps stale profiles and changed output evidence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/assessment.test.ts",
+                "title": "eligibility-binding rejects role swaps stale profiles and changed output evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "acyclic-staging assesses before coverage finalization and rejects missing or duplicate coverage",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/assessment.test.ts",
+                "title": "acyclic-staging assesses before coverage finalization and rejects missing or duplicate coverage",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/sources/__tests__/assessment.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 491,
+            "titles": [
+              {
+                "title": "eligibility-binding reconstructs obligations and rejects modified candidate metadata",
+                "result": "pass"
+              },
+              {
+                "title": "eligibility-binding rejects role swaps stale profiles and changed output evidence",
+                "result": "pass"
+              },
+              {
+                "title": "acyclic-staging assesses before coverage finalization and rejects missing or duplicate coverage",
                 "result": "pass"
               }
             ],

@@ -11,7 +11,7 @@ const text = () => Type.String({ minLength: 1, maxLength: 16384, pattern: '\\S' 
 const strings = () => Type.Array(text(), { maxItems: CORPUS_LIMITS.files, uniqueItems: true });
 const revision = Type.String({ pattern: '^(?:[a-f0-9]{40}|[a-f0-9]{64})$' });
 const sourceId = Type.String({ pattern: '^source:[a-f0-9]{64}$' });
-const status = Type.Union(['eligible', 'excluded', 'unresolved'].map(v => Type.Literal(v)));
+const status = Type.Union((['eligible', 'excluded', 'unresolved'] as const).map(v => Type.Literal(v)));
 export const SOURCE_FILE_SCHEMA = object({ sourceId, repositoryUrl: text(), revision, path: text(), digest: DIGEST_SCHEMA,
   licenseIds: strings(), licenseTextRefs: strings(), noticeRefs: strings(), attribution: strings(), modifications: strings(),
   retrievedAt: text(), eligibility: status, eligibilityReason: text(), reviewedBy: Type.String({ maxLength: 16384 }) });

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 50 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 63 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -162,3 +162,41 @@ Run at 2026-10-12T11:48:00.943Z on commit `92c6ea9c`. Tests check: **passed**. 2
 | `src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts` | 0 | 6 | 0.5 s |  |
 | `src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts` | 0 | 4 | 0.5 s |  |
 | `src/workflow/runners/brainstorm/__tests__/registration.test.ts` | 0 | 10 | 0.5 s |  |
+
+## t5
+
+Run at 2026-10-12T11:51:53.497Z on commit `f4298fae`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: moved review and code-review tests pass at src/daemon/steps, including the routing tests and the three conditional tests**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1) | `src/daemon/steps/code-review-step/__tests__/handler.test.ts` |
+| pass | T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked | `src/daemon/steps/code-review-step/__tests__/routing.test.ts` |
+| pass | start: a uxDefinition subject → emit_judgements with FIVE prompts + a schema admitting ux | `src/daemon/steps/code-review-step/__tests__/ux-handler.test.ts` |
+| pass | T13 start on a design returns the review template with next emit_findings | `src/daemon/steps/review-step/__tests__/review-step-findings.test.ts` |
+| pass | T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked | `src/daemon/steps/review-step/__tests__/review-step-routing.test.ts` |
+| pass | review-step drives the full loop and stamps meta.review with model=client | `src/daemon/steps/review-step/__tests__/review-step.test.ts` |
+| pass | effectiveJudges keeps diagram only for a subject with an erDefinition/diagram companion | `src/workflow/code-review/__tests__/diagram-conditional.test.ts` |
+| pass | effectiveJudges keeps functional-coverage only for a subject with FRs | `src/workflow/code-review/__tests__/functional-coverage-conditional.test.ts` |
+| pass | effectiveJudges keeps ux only when hasUxAcceptance | `src/workflow/code-review/__tests__/ux-conditional.test.ts` |
+| pass | review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token | `src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts` |
+| pass | no file under src/mcp other than server.ts imports src/daemon/steps | `src/daemon/steps/__tests__/workflow-rpc-imports.test.ts` |
+| pass | T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered | `src/daemon/steps/review-step/__tests__/review-step-routing.test.ts` |
+| pass | T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped | `src/daemon/steps/code-review-step/__tests__/routing.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts` | 0 | 2 | 0.5 s |  |
+| `src/daemon/steps/__tests__/workflow-rpc-imports.test.ts` | 0 | 2 | 0.3 s |  |
+| `src/daemon/steps/code-review-step/__tests__/handler.test.ts` | 0 | 28 | 0.5 s |  |
+| `src/daemon/steps/code-review-step/__tests__/routing.test.ts` | 0 | 21 | 0.5 s |  |
+| `src/daemon/steps/code-review-step/__tests__/ux-handler.test.ts` | 0 | 4 | 0.5 s |  |
+| `src/daemon/steps/review-step/__tests__/review-step-findings.test.ts` | 0 | 9 | 0.9 s |  |
+| `src/daemon/steps/review-step/__tests__/review-step-routing.test.ts` | 0 | 20 | 0.5 s |  |
+| `src/daemon/steps/review-step/__tests__/review-step.test.ts` | 0 | 4 | 0.5 s |  |
+| `src/workflow/code-review/__tests__/diagram-conditional.test.ts` | 0 | 7 | 0.5 s |  |
+| `src/workflow/code-review/__tests__/functional-coverage-conditional.test.ts` | 0 | 5 | 0.5 s |  |
+| `src/workflow/code-review/__tests__/ux-conditional.test.ts` | 0 | 8 | 0.5 s |  |

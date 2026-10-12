@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s11",
     "createdAt": "2026-10-12T11:26:17.849Z",
-    "updatedAt": "2026-10-12T11:48:00.943Z",
+    "updatedAt": "2026-10-12T11:51:53.497Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -2139,6 +2139,628 @@
               },
               {
                 "title": "t4: the triage route table (classify.ts) is not modified to insert brainstorm (ac5)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "f4298fae",
+        "ranAt": "2026-10-12T11:51:53.497Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "moved review and code-review tests pass at src/daemon/steps, including the routing tests and the three conditional tests",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+                "title": "start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/routing.test.ts",
+                "title": "T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/ux-handler.test.ts",
+                "title": "start: a uxDefinition subject → emit_judgements with FIVE prompts + a schema admitting ux",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+                "title": "T13 start on a design returns the review template with next emit_findings",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+                "title": "T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step.test.ts",
+                "title": "review-step drives the full loop and stamps meta.review with model=client",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/diagram-conditional.test.ts",
+                "title": "effectiveJudges keeps diagram only for a subject with an erDefinition/diagram companion",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/functional-coverage-conditional.test.ts",
+                "title": "effectiveJudges keeps functional-coverage only for a subject with FRs",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/ux-conditional.test.ts",
+                "title": "effectiveJudges keeps ux only when hasUxAcceptance",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+                "title": "review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+                "title": "no file under src/mcp other than server.ts imports src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+                "title": "T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/routing.test.ts",
+                "title": "T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 490,
+            "titles": [
+              {
+                "title": "review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token",
+                "result": "pass"
+              },
+              {
+                "title": "code-review-step stays leak-free: release-on-consume — a resend of a released token fails loadState",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 320,
+            "titles": [
+              {
+                "title": "workflow-rpc imports nothing from src/mcp, and takes the workflow step from src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "title": "no file under src/mcp other than server.ts imports src/daemon/steps",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 529,
+            "titles": [
+              {
+                "title": "start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)",
+                "result": "pass"
+              },
+              {
+                "title": "fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "all-empty judgements => a written PASS record (vacuous but valid, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved",
+                "result": "pass"
+              },
+              {
+                "title": "resending the same judgements token after done fails loadState (no double-write)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with isProcessing:true (empty staleFiles) => confirm_wait too",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt",
+                "result": "pass"
+              },
+              {
+                "title": "S001: the timeout auto-diff releases the confirm_wait token before the diff review",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error",
+                "result": "pass"
+              },
+              {
+                "title": "s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record",
+                "result": "pass"
+              },
+              {
+                "title": "T48: the degraded review passes the Story's resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler",
+                "result": "pass"
+              },
+              {
+                "title": "T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base",
+                "result": "pass"
+              },
+              {
+                "title": "s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the response says how many were dropped, per dimension, and against how large a set",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the markdown lists the dropped findings and says they are not counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 524,
+            "titles": [
+              {
+                "title": "T10 code of controller author with fresh grounding is sent to the daemon (full) and returns done with its verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T10 code of unknown author with fresh grounding is sent to the daemon (full) and returns done with its verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "title": "T10 the invoking client is passed to the daemon when the tool knows it",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a stale index returns confirm_wait and asks no daemon; the author is not even read yet",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a declined wait asks the daemon with the degraded mode, and the tool does not assemble the diff itself",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an accepted wait that never becomes fresh asks the daemon with the degraded mode",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an accepted wait that becomes fresh asks the daemon with the full mode, and never returns emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "T17 fresh grounding with no symbols asks the daemon with the degraded mode",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an unavailable freshness check and unavailable grounding each return their own error and ask no daemon",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped",
+                "result": "pass"
+              },
+              {
+                "title": "an older daemon that ignored the degraded mode is an error, not a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "an older daemon that stamped no reviewer is an error, not a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (unreachable) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (daemon-error) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (unknown-method) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (timeout) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (failed) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 the tool waits 30 minutes: with a daemon that never answers it fails when that limit fires",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the judgements phase refuses controller-authored code and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 an unknown author does not stop the judgements phase (only a known controller author does)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/ux-handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 515,
+            "titles": [
+              {
+                "title": "start: a uxDefinition subject → emit_judgements with FIVE prompts + a schema admitting ux",
+                "result": "pass"
+              },
+              {
+                "title": "judgements: a UX HIGH finding withholds completion (verdict block)",
+                "result": "pass"
+              },
+              {
+                "title": "judgements: an adhering (empty) UX judgement folds to pass",
+                "result": "pass"
+              },
+              {
+                "title": "start: a subject with neither uxDefinition nor adherence → the base four (byte-shape compatible)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 922,
+            "titles": [
+              {
+                "title": "T13 start on a design returns the review template with next emit_findings",
+                "result": "pass"
+              },
+              {
+                "title": "T13 a design that answers an ISSUE gets the ISSUE template; an HLD is a design too",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the findings phase stamps the review and does not edit the design",
+                "result": "pass"
+              },
+              {
+                "title": "T13 an answer the session path rejects is rejected by the findings phase with the same errors, and nothing is stamped",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the two paths do not cross: no claims on a design run, no findings on a non-design run",
+                "result": "pass"
+              },
+              {
+                "title": "T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt",
+                "result": "pass"
+              },
+              {
+                "title": "T4 the findings phase stamps the controller on an HLD too",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the registered tool accepts phase `findings` and its phase list names it",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the ISSUE template is validated against its own items",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 509,
+            "titles": [
+              {
+                "title": "T9 a DEF of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a LLD of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a HLD of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a DEF of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a LLD of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a HLD of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "title": "T9 an older artifact with no author field is routed by its attribution labels",
+                "result": "pass"
+              },
+              {
+                "title": "T11 the tool waits 31 minutes for a design (HLD, LLD) and 90 minutes for a DEF",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (unreachable) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (daemon-error) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (unknown-method) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (closed) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (failed) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the findings phase refuses a controller-authored LLD and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the findings phase refuses a controller-authored HLD and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the verdicts phase refuses a controller-authored DEF and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, and so does findings on an LLD",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/review-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 478,
+            "titles": [
+              {
+                "title": "review-step drives the full loop and stamps meta.review with model=client",
+                "result": "pass"
+              },
+              {
+                "title": "review-step verdicts with an unknown state token returns an error envelope",
+                "result": "pass"
+              },
+              {
+                "title": "buildExtractPrompt / EXTRACT_SCHEMA export the expected shape",
+                "result": "pass"
+              },
+              {
+                "title": "buildVerifyPrompt / VERIFY_SCHEMA export the expected shape",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/diagram-conditional.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 523,
+            "titles": [
+              {
+                "title": "effectiveJudges keeps diagram only for a subject with an erDefinition/diagram companion",
+                "result": "pass"
+              },
+              {
+                "title": "DEFAULT_DEPS carries the diagram slot (conditional at run time)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a sound erDefinition runs the diagram dimension + folds to pass",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a broken (dangling) erDefinition folds a diagram HIGH to block",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a no-ER subject runs exactly the base dimensions (byte-shape compatible with pre-S003)",
+                "result": "pass"
+              },
+              {
+                "title": "expectedDimensions appends diagram only with an ER/diagram; schema enum + arity follow",
+                "result": "pass"
+              },
+              {
+                "title": "enforceCodeReviewGate: a diagram block withholds under enforce=true, is advisory-warn under false",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/functional-coverage-conditional.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 514,
+            "titles": [
+              {
+                "title": "effectiveJudges keeps functional-coverage only for a subject with FRs",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: an FR subject runs five dimensions and a functional-coverage HIGH folds to block",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a no-FR subject runs exactly the four base dimensions (absent-safe)",
+                "result": "pass"
+              },
+              {
+                "title": "DEFAULT_DEPS carries the functional-coverage slot (conditional at run time)",
+                "result": "pass"
+              },
+              {
+                "title": "expectedDimensions appends functional-coverage only with FRs; schema enum + arity follow",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/ux-conditional.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 528,
+            "titles": [
+              {
+                "title": "effectiveJudges keeps ux only when hasUxAcceptance",
+                "result": "pass"
+              },
+              {
+                "title": "DEFAULT_DEPS carries the ux slot last (conditional at run time)",
+                "result": "pass"
+              },
+              {
+                "title": "expectedDimensions: base four when neither fires; pushes ux on hasUxAcceptance",
+                "result": "pass"
+              },
+              {
+                "title": "expectedDimensions: a declared-but-uncontented adherence selection is still expected (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "buildJudgementsSchema: admits ux in the enum exactly when ux is in the computed dims",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a valid uxDefinition runs the ux dimension + folds to pass",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a required-but-missing UX design folds a ux HIGH to block (un-forked, ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: neither uxDefinition nor adherence → exactly the base four (byte-shape compatible)",
                 "result": "pass"
               }
             ],

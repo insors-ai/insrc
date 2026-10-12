@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-12T05:01:19.318Z  ·  **Updated:** 2026-10-12T05:05:01.697Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-12T05:01:19.318Z  ·  **Updated:** 2026-10-12T05:25:02.571Z
 
-**Commit:** b4c9622d
+**Commit:** 47761e49
 
 ## Scope
 
@@ -30,12 +30,14 @@ The BUILD, TESTS and code-review writers now store the epicSlug, epicCreatedAt a
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-764b88ed7474de35.json` — **insrc-build** (2026-10-12T05:05:01.697Z)
-- `docs/standalone/stamp-ledger-records-their-work-item-E20261012764b88ed/ISSUE.md` — **insrc-build** (2026-10-12T05:05:01.697Z)
-- `src/workflow/__tests__/ledger-record-identity.test.ts` — **insrc-build** (2026-10-12T05:05:01.697Z)
-- `src/workflow/code-review/runner.ts` — **insrc-build** (2026-10-12T05:05:01.697Z)
-- `src/workflow/runners/build/__tests__/build-record.test.ts` — **insrc-build** (2026-10-12T05:05:01.697Z)
-- `src/workflow/runners/build/__tests__/test-record.test.ts` — **insrc-build** (2026-10-12T05:05:01.697Z)
-- `src/workflow/runners/build/standalone-record.ts` — **insrc-build** (2026-10-12T05:05:01.697Z)
-- `src/workflow/runners/build/test-record.ts` — **insrc-build** (2026-10-12T05:05:01.697Z)
-- `src/workflow/storage.ts` — **insrc-build** (2026-10-12T05:05:01.697Z)
+- `.insrc/artifacts/CR-764b88ed7474de35-S001.json` — **insrc-build** (2026-10-12T05:25:02.571Z)
+- `.insrc/artifacts/ISSUE-764b88ed7474de35.json` — **insrc-build** (2026-10-12T05:25:02.571Z)
+- `docs/standalone/stamp-ledger-records-their-work-item-E20261012764b88ed/ISSUE.md` — **insrc-build** (2026-10-12T05:25:02.571Z)
+- `docs/standalone/stamp-ledger-records-their-work-item-E20261012764b88ed/S001/CR.md` — **insrc-build** (2026-10-12T05:25:02.571Z)
+- `src/workflow/__tests__/ledger-record-identity.test.ts` — **insrc-build** (2026-10-12T05:25:02.571Z)
+- `src/workflow/code-review/runner.ts` — **insrc-build** (2026-10-12T05:25:02.571Z)
+- `src/workflow/runners/build/__tests__/build-record.test.ts` — **insrc-build** (2026-10-12T05:25:02.571Z)
+- `src/workflow/runners/build/__tests__/test-record.test.ts` — **insrc-build** (2026-10-12T05:25:02.571Z)
+- `src/workflow/runners/build/standalone-record.ts` — **insrc-build** (2026-10-12T05:25:02.571Z)
+- `src/workflow/runners/build/test-record.ts` — **insrc-build** (2026-10-12T05:25:02.571Z)
+- `src/workflow/storage.ts` — **insrc-build** (2026-10-12T05:25:02.571Z)

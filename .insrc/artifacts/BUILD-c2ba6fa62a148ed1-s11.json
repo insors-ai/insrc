@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s11",
     "createdAt": "2026-10-12T11:26:17.849Z",
-    "updatedAt": "2026-10-12T12:43:21.695Z",
+    "updatedAt": "2026-10-12T12:48:06.963Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -50,9 +50,13 @@
       {
         "id": "t10",
         "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
       }
     ],
-    "summary": "Deleted src/mcp/sampling-bridge.ts, src/agent/providers/mcp-sampling-provider.ts, runWithSamplerContext and currentSamplerContext (with the sampler AsyncLocalStorage), and both sampler branches of buildShaperProvider (explicit overrides.sampler and the ambient context; ShaperProviderOverrides loses sampler and modelHints, which nothing else used), with their tests: sampling-bridge.test.ts, mcp-sampling-provider.test.ts, sampler-context.test.ts and the five sampler cases of shaper-provider.test.ts. The remaining shaper-provider cases are unchanged and pass. Stale comments describing the in-process MCP/sampling design were updated (server.ts header, analyze-oneshot.ts, role-router.ts); tool descriptions are untouched (the t9 surface test pins them). New src/mcp/__tests__/sampling-retired.test.ts scans every non-test .ts under src for the bridge, the provider and the sampler-context names and checks both files are gone; a re-added mention fails it. DEVIATION from the task text, stated openly: progress-forward.ts and its test are KEPT. The plan called it unused, but since t9 the forwarders relay step.call progress through its mcpProgressSink (src/mcp/server.ts), so deleting it would remove code in use; neither acceptance check concerns it. model-failure.test.ts keeps two example error strings with the old provider's name as classifier input data. Full sweep in docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/sweeps.md: nothing newly failing (MCPSection timing flake, 3 of 3 alone).",
+    "summary": "Deleted the graph store's temporary reader declaration function and its _mayReadLiveStore flag from src/db/graph/store.ts (the MCP server's call was removed in t9); assertMayOpen now admits only a process that declared itself the owner, and resetLiveStoreDeclarationsForTests forgets only that. The store-child helper loses its 'declare-reader' command and gains a default case that answers an unknown command with an error. Reader cases turned into refusal cases: live-store-owner.test.ts (only the owner declaration opens the live path; the store module exports no declaration but declareLiveStoreOwner), live-store-refusal.test.ts (a new third-process test: beside the owner, a process with no declaration is refused LmdbStoreNotOwnerError and holds no descriptor before or after; the old reader command is refused), live-vector-store-owner.test.ts (no declaration but the owner's exists; the live vector store is refused). The 'exactly two places' scan is replaced by one that fails on any occurrence under src/ (all file types it may appear in, tests included) and builds the name from pieces. New ac6 integration test src/mcp/__tests__/mcp-process-refused.test.ts: a child process with HOME in a temporary directory starts the real MCP server via runInsrcMcpStdio (as src/bin/insrc-mcp.ts does), then tries getGraphStore() and getLanceConn() on its live paths: both refused (LmdbStoreNotOwnerError, LanceStoreNotOwnerError / lance-not-owner) and nothing created. Mutations: making the MCP startup declare the owner fails the ac6 test; re-adding the name in a comment fails the scan. Full sweep under Node v22.23.2 recorded in docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/sweeps.md (row t11): 6649 tests, only the 9 known failures/cancellations, nothing newly failing.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/TESTS.md"
     },
@@ -62,464 +66,492 @@
           "file": ".insrc/artifacts/PLAN-c2ba6fa62a148ed1-s11.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/sweeps.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/mcp-sampling-provider.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/agent/providers/mcp-sampling-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/analyze/__tests__/report-head.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/__tests__/no-size.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/bundle-report-schema.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/completeness.live.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/lookup-measure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/sampler-context.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/shaper-provider.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/analyze/context/role-router.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/analyze/context/scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/analyze/context/shaper-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/executor-lmdb.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/store-lmdb.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/answer-step-failed-callers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/step-context.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/step-host.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-oneshot.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/daemon-client.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/resolve-repo.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/daemon/workflow-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/conversations-lmdb.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/delete-entities-by-id.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/doc-summaries-lmdb.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/entities-lmdb.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/reindex-file-lmdb.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/repos-lmdb.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/derived-indices.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/helpers/store-child.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/live-store-owner.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/live-store-refusal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/no-live-store-in-tests.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/lance/__tests__/helpers-opens-default-lance.fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/lance/__tests__/no-live-vector-store-in-tests.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/db/lance/conn.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/external-endpoints.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/messaging-endpoints.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/fixtures/imports-store.fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/fixtures/mcp-process-open.fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/fixtures/tool-surface.golden.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/forward-step.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/import-graph.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/mcp-process-refused.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/sampling-bridge.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/sampling-retired.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/mcp/daemon-stream.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/mcp/forward-step.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/mcp/sampling-bridge.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/mcp/server.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/review-stream.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/shared/review-stream.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/shared/step-context.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/scope-extend.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/workflow/bugfix/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/diagram-conditional.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/functional-coverage-conditional.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/ux-conditional.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/workflow/draft-deps.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/workflow/questions.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/brainstorm/__tests__/registration.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/completion-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T12:43:21.695Z"
+        "timestamp": "2026-10-12T12:48:06.963Z"
       }
     ],
-    "commit": "92dd0e52"
+    "commit": "d821cbc5"
   }
 }

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s11",
     "createdAt": "2026-10-12T11:26:17.849Z",
-    "updatedAt": "2026-10-12T12:43:21.695Z",
+    "updatedAt": "2026-10-12T12:48:06.963Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -3360,6 +3360,145 @@
             "titles": [
               {
                 "title": "sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "d821cbc5",
+        "ranAt": "2026-10-12T12:48:06.963Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "source scan: the reader declaration's name appears nowhere under src/",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "source scan: the reader declaration's name appears nowhere under src/",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "owner check: only the owner declaration opens the live path; without it, and after it is forgotten, the open is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/live-store-refusal.test.ts",
+                "title": "refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac6: the MCP server's process is refused the live graph store and the live vector store",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/mcp-process-refused.test.ts",
+                "title": "ac6: the MCP server's process is refused the live graph store and the live vector store",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts",
+                "title": "vector store owner rule: no declaration other than the owner's exists, and without it the live vector store is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 891,
+            "titles": [
+              {
+                "title": "owner check: default path with no declaration is refused and no file is created",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: after the declaration the same open succeeds, also after a close and reopen",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: a temporary path opens without a declaration",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: the live path as a relative path and through a symbolic link is refused",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: only the owner declaration opens the live path; without it, and after it is forgotten, the open is refused",
+                "result": "pass"
+              },
+              {
+                "title": "source scan: the reader declaration's name appears nowhere under src/",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/live-store-refusal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1018,
+            "titles": [
+              {
+                "title": "refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused",
+                "result": "pass"
+              },
+              {
+                "title": "refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 651,
+            "titles": [
+              {
+                "title": "vector store owner rule: no declaration other than the owner's exists, and without it the live vector store is refused",
+                "result": "pass"
+              },
+              {
+                "title": "vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/mcp-process-refused.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 740,
+            "titles": [
+              {
+                "title": "ac6: the MCP server's process is refused the live graph store and the live vector store",
                 "result": "pass"
               }
             ],

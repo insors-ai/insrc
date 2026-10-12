@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 90 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 95 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -357,3 +357,36 @@ Run at 2026-10-12T12:43:21.695Z on commit `92dd0e52`. Tests check: **passed**. 6
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/context/__tests__/shaper-provider.test.ts` | 0 | 20 | 0.7 s |  |
 | `src/mcp/__tests__/sampling-retired.test.ts` | 0 | 1 | 0.4 s |  |
+
+## t11
+
+Run at 2026-10-12T12:48:06.963Z on commit `d821cbc5`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: source scan: the reader declaration's name appears nowhere under src/**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | source scan: the reader declaration's name appears nowhere under src/ | `src/db/graph/__tests__/live-store-owner.test.ts` |
+| pass | owner check: only the owner declaration opens the live path; without it, and after it is forgotten, the open is refused | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**integration: refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor | `src/db/graph/__tests__/live-store-refusal.test.ts` |
+
+**integration: ac6: the MCP server's process is refused the live graph store and the live vector store**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac6: the MCP server's process is refused the live graph store and the live vector store | `src/mcp/__tests__/mcp-process-refused.test.ts` |
+| pass | vector store owner rule: no declaration other than the owner's exists, and without it the live vector store is refused | `src/db/lance/__tests__/live-vector-store-owner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/graph/__tests__/live-store-owner.test.ts` | 0 | 6 | 0.9 s |  |
+| `src/db/graph/__tests__/live-store-refusal.test.ts` | 0 | 2 | 1 s |  |
+| `src/db/lance/__tests__/live-vector-store-owner.test.ts` | 0 | 2 | 0.7 s |  |
+| `src/mcp/__tests__/mcp-process-refused.test.ts` | 0 | 1 | 0.7 s |  |

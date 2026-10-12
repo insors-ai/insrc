@@ -3521,3 +3521,132 @@ test("the shell is still one nonce'd inline script, with no direct scrollTop wri
   assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded');
   assert.doesNotMatch(html, /asWebviewUri/);
 });
+
+// ---- Story E20261012ddc4ede1:S001 t8: only the latest window is sent on restore ----
+
+test("opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0", async () => {
+  const { store, id, rows } = longSession(50, 20); // 1,000 rows, a user row every 20
+  const saved = store.get(id)!;
+  saved.mode = 'auto';
+  store.save(saved);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  const m = posted(fc, 'session-restored').at(-1)!;
+  const sent = m['transcript'] as Array<{ role: string }>;
+  const first = m['firstIndex'] as number;
+  assert.equal(rows, 1000);
+  assert.ok(sent.length <= 200 && sent.length >= 100, `one window of rows (${sent.length})`);
+  assert.equal(sent[0]!.role, 'user', 'the window starts at a turn start');
+  assert.equal(first + sent.length, 1000, 'the window ends at the end of the transcript');
+  assert.deepEqual(sent, saved.transcript.slice(first), 'the rows are the latest rows, in order');
+  assert.deepEqual([m['sessionId'], m['total'], m['mode']], [id, 1000, 'auto']);
+  // One long turn (no turn start within reach): the plain last page.
+  const long = longSession(1, 450);
+  const fc2 = fakeChannel();
+  createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store: long.store, cwd: () => '/repo' }).open();
+  fc2.send(env('open-chat', { chatId: long.id }));
+  const m2 = posted(fc2, 'session-restored').at(-1)!;
+  assert.deepEqual([(m2['transcript'] as unknown[]).length, m2['firstIndex'], m2['total']], [100, 350, 450]);
+  // A short session is posted whole.
+  const short = longSession(3, 20);
+  const fc3 = fakeChannel();
+  createChatPanelHost({ createPanel: () => fc3.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store: short.store, cwd: () => '/repo' }).open();
+  fc3.send(env('open-chat', { chatId: short.id }));
+  const m3 = posted(fc3, 'session-restored').at(-1)!;
+  assert.deepEqual([(m3['transcript'] as unknown[]).length, m3['firstIndex'], m3['total']], [60, 0, 60]);
+  assert.deepEqual(m3['transcript'], short.store.get(short.id)!.transcript);
+});
+
+test('ready, new-chat and open-chat post the same windowed session-restored', async () => {
+  const { store, id } = longSession(50, 20);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  const windowOf = (m: Record<string, unknown>): unknown[] => [m['sessionId'], m['firstIndex'], m['total'], (m['transcript'] as unknown[]).length];
+  fc.send(env('open-chat', { chatId: id }));
+  const opened = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual(windowOf(opened), [id, 900, 1000, 100]);
+  // A webview reload: the same window again.
+  fc.send(env('ready'));
+  const reloaded = posted(fc, 'session-restored').at(-1)!;
+  assert.notEqual(reloaded, opened);
+  assert.deepEqual(windowOf(reloaded), windowOf(opened));
+  assert.deepEqual(reloaded['transcript'], opened['transcript']);
+  // A new chat: an empty window through the same path (firstIndex and total present).
+  fc.send(env('new-chat', { provider: 'claude' }));
+  const fresh = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual([fresh['firstIndex'], fresh['total'], (fresh['transcript'] as unknown[]).length], [0, 0, 0]);
+  // Back to the long chat: windowed again. Every session-restored carries firstIndex and total.
+  fc.send(env('open-chat', { chatId: id }));
+  assert.deepEqual(windowOf(posted(fc, 'session-restored').at(-1)!), [id, 900, 1000, 100]);
+  for (const m of posted(fc, 'session-restored')) {
+    assert.equal(typeof m['firstIndex'], 'number');
+    assert.equal(typeof m['total'], 'number');
+    assert.ok((m['transcript'] as unknown[]).length <= 200, 'never more than one window');
+  }
+  // A reopened panel (adopt) posts the windowed restore too.
+  const fc2 = fakeChannel();
+  host.adopt(fc2.channel);
+  assert.deepEqual(windowOf(posted(fc2, 'session-restored').at(-1)!), [id, 900, 1000, 100]);
+});
+
+test('a ready after older pages were requested posts the latest window again, with the approval head after it', async () => {
+  const { store, id } = longSession(50, 20);
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [refused('p1', 'Edit'), refused('p2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  // A turn that leaves two approval requests waiting.
+  fc.send(env('submit-turn', { text: 'edit two files' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const total = store.get(id)!.transcript.length; // 1,000 + the user row + the done marker
+  // The reader loads two older pages.
+  fc.send(env('load-older', { sessionId: id, before: 900 }));
+  fc.send(env('load-older', { sessionId: id, before: 800 }));
+  assert.equal(posted(fc, 'transcript-page').length, 2);
+  // The webview reloads: the host posts the LATEST window again, not the pages the reader had loaded.
+  const before = fc.posted.length;
+  fc.send(env('ready'));
+  const after = fc.posted.slice(before).map((m) => m.payload);
+  const restoredAt = after.findIndex((p) => p['type'] === 'session-restored');
+  const r = after[restoredAt]!;
+  const first = r['firstIndex'] as number;
+  assert.deepEqual([r['sessionId'], r['total']], [id, total]);
+  assert.deepEqual(r['transcript'], store.get(id)!.transcript.slice(first), 'the latest rows, to the end of the transcript');
+  assert.ok((r['transcript'] as unknown[]).length <= 200);
+  assert.equal(after.filter((p) => p['type'] === 'transcript-page').length, 0, 'no older page is re-sent');
+  // The approval head is posted again after it, once, with its place in the queue.
+  const cards = after.map((p, i) => ({ p, i })).filter(({ p }) => p['type'] === 'turn-event' && (p['event'] as TurnEvent).kind === 'approval-request');
+  assert.equal(cards.length, 1);
+  assert.ok(cards[0]!.i > restoredAt, 'after session-restored');
+  const card = cards[0]!.p['event'] as Extract<TurnEvent, { kind: 'approval-request' }>;
+  assert.deepEqual([card.requestId, card.position, card.total], ['p1', 1, 2]);
+});
+
+test('the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows', async () => {
+  const { store, id } = longSession(50, 20);
+  const original = JSON.stringify(store.get(id));
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  fc.send(env('ready'));
+  for (let before = 900; before > 0; ) {
+    fc.send(env('load-older', { sessionId: id, before }));
+    before = posted(fc, 'transcript-page').at(-1)!['firstIndex'] as number;
+  }
+  fc.send(env('load-older', { sessionId: id, before: 0 }));
+  fc.send(env('new-chat', { provider: 'claude' }));
+  fc.send(env('open-chat', { chatId: id }));
+  assert.equal(JSON.stringify(store.get(id)), original, 'the stored record is byte-for-byte what it was');
+  // The posted windows and pages are copies: changing one does not touch the stored transcript.
+  const page = posted(fc, 'transcript-page')[0]!['rows'] as unknown[];
+  const win = posted(fc, 'session-restored').at(-1)!['transcript'] as unknown[];
+  page.length = 0;
+  win.length = 0;
+  assert.equal(store.get(id)!.transcript.length, 1000);
+  assert.equal(JSON.stringify(store.get(id)), original);
+});

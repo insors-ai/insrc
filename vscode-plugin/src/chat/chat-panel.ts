@@ -22,7 +22,7 @@ import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode }
 // apart from a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial, type ProviderRegistry, type ProviderId } from './cli-adapter.js';
 import { createApprovalQueue, type ApprovalResolution } from './approval-queue.js';
-import { pageBefore } from './transcript-window.js';
+import { latestWindow, pageBefore } from './transcript-window.js';
 import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type TurnSink } from './turn-lifecycle.js';
@@ -218,10 +218,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const postLive = (event: TurnEvent, rowIndex: number | undefined): void =>
     post({ type: 'turn-event', event, ...(rowIndex !== undefined ? { rowIndex } : {}) });
 
-  // Story E20261012ddc4ede1:S001: every session-restored goes through here, with the absolute
-  // index of its first row and the transcript's total row count.
-  const postRestored = (s: ChatSession): void =>
-    post({ type: 'session-restored', sessionId: s.id, transcript: s.transcript, mode: permissionMode, firstIndex: 0, total: s.transcript.length });
+  // Story E20261012ddc4ede1:S001: every session-restored goes through here. Only the latest window
+  // of the transcript is sent (never the whole history), with the absolute index of its first row
+  // and the transcript's total row count; the webview asks for older pages with 'load-older'.
+  const postRestored = (s: ChatSession): void => {
+    const window = latestWindow(s.transcript);
+    post({ type: 'session-restored', sessionId: s.id, transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
+  };
 
   // S003 (dev-chat ux polish): record a resolved permission decision. Mirrors the tool-result
   // dual persist+render path (appendEvent): emit it LIVE as a turn-event the webview renders via the

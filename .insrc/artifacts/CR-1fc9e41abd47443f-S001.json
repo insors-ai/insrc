@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "1fc9e41abd47443f",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "bug-ux-mock-companion-attached-hld",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

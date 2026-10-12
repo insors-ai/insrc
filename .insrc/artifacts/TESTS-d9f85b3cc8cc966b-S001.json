@@ -5,7 +5,8 @@
     "storyId": "S001",
     "createdAt": "2026-10-11T15:39:50.029Z",
     "updatedAt": "2026-10-11T16:32:23.490Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "implement-approved-spec-77932eaa1a85819b-docs-standalone"
   },
   "body": {
     "tasks": [

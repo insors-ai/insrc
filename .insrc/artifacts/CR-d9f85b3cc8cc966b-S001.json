@@ -10,7 +10,9 @@
     "schemaVersion": 1,
     "epicHash": "d9f85b3cc8cc966b",
     "storyId": "S001",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "implement-approved-spec-77932eaa1a85819b-docs-standalone",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

@@ -139,6 +139,12 @@
       "reviewedAt": "2026-10-12T08:57:28.112Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-12T09:01:24.620Z",
+    "rangeBase": "18b2a094d266c424bf91c6ccb8b6a988480de479",
+    "reviewOverride": {
+      "reason": "User override (2026-10-12): the two remaining MED findings are accepted and carried into the plan as explicit tasks. (1) A held session object saved after its files were evicted or removed (rows file missing or smaller than the recorded size, or head gone) is written whole, with an error-path entry and a unit test. (2) INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf are exported from session-store.ts so the file store and the migration share one source.",
+      "at": "2026-10-12T09:01:24.620Z"
     }
   },
   "body": {

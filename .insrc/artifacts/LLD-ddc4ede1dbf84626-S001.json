@@ -218,6 +218,15 @@
     "reviewOverride": {
       "reason": "User override (2026-10-12): the two remaining medium findings are small and are carried into the plan as explicit task requirements instead of a third design pass. (1) The three shell-text pins in chat-panel.test.ts are updated in the same task that embeds the pager. (2) The trim cuts plainly when no user row is in the removable range, drops pending tool entries whose node it removes, and gets an edge-case test for one turn longer than 300 rows. The four acceptance criteria are stated in the plan.",
       "at": "2026-10-12T07:25:46.342Z"
+    },
+    "questionResolutions": {
+      "qa610cc1d": {
+        "question": "Should the stored session also be split into pages (alternative a2), so a save during a turn stops rewriting the whole transcript? This design leaves storage alone; if wanted, it would be a separate tracked change after this one.",
+        "status": "resolved",
+        "choice": "Defer a2 but log it as a tracked follow-up now",
+        "rationale": "User decision 2026-10-12: \"log this as an issue\". Filed as ISSUE-c96a97a204fac22b; storage stays out of this Story.",
+        "resolvedAt": "2026-10-12T07:27:15.637Z"
+      }
     }
   },
   "body": {

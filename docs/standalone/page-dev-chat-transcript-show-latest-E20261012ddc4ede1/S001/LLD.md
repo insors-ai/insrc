@@ -379,25 +379,21 @@ The host still posts the whole transcript; the webview keeps the rows as data an
 - Should the stored session also be split into pages (alternative a2), so a save during a turn stops rewriting the whole transcript? This design leaves storage alone; if wanted, it would be a separate tracked change after this one.
 - Are fixed sizes acceptable (a page of 100 rows, at most 200 on open, trim an active session above 300 held rows back to about 200), or should they be a setting?
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qa610cc1d` — Should the stored session also be split into pages (alternative a2), so a save during a turn stops rewriting the whole transcript? This design leaves storage alone; if wanted, it would be a separate tracked change after this one.
+  - **resolved**: Defer a2 but log it as a tracked follow-up now — User decision 2026-10-12: "log this as an issue". Filed as ISSUE-c96a97a204fac22b; storage stays out of this Story. _(2026-10-12T07:27:15.637Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**2 do not hold · 1 could not be verified · 11 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-12T07:19:40.858Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| change-sites | MED | The shell tests that pin the replay need updating only in migration step 6 (switching the restore sites to the latest window); step 5 (embedding the pager) stands on its own. | Step 5 itself changes the three shell strings the suite pins: chat-panel.test.ts:1148 `assert.match(html, /setProvLock\\(\\(\\(m\\.transcript\\\|\\\|\\[\\]\\)\\.length\\)>0\\);/` (step 5 settles the lock from `total`), chat-panel.test.ts:1170 `/reg\\.resetKeys\\(\\);\\(m\\.transcript\\\|\\\|\\[\\]\\)\\.forEach/` and the [[c7]] pin `/reg\\.appendKeyed\\(reg\\.toViewModel\\(x\\),'r'\\+i\\)/` (step 5 replays with absolute keys through the pager's reset). Any test pinning line()'s `t.scrollTop=t.scrollHeight` breaks there too. So step 5 leaves the suite red until step 6, and is not rollbackable on its own as stated. [files: vscode-plugin/src/chat/__tests__/chat-panel.test.ts, vscode-plugin/src/chat/chat-panel.ts] | Move the shell-pin updates (chat-panel.test.ts:757 block, :1148, :1170) into step 5 and keep in step 6 only the tests that assert the whole transcript is posted; name these three pins in the session-restored call-site list. |
-| error-paths | MED | trimIfNeeded's handling is stated for every case, including an active turn with no user row in reach, and the registry state it must forget is complete (only the r<n> keys). | The page rule states its fallback ('with none there, keep the plain cut'); the trim rule says only 'removes the oldest nodes back to a user row leaving about 200' and no edge case covers a single active turn past 300 rows (every assistant-delta, tool-call, tool-result and marker writes a row: chat-panel.ts:840-867). Either the trim never fires there (the active session is not paged out) or it cuts plainly, and then the pending-tool list can still hold a removed node: render-registry.ts:409 `PEND.push({wrap:wrap,box:box,...});if(PEND.length>32)PEND.shift();` is cleared only by a user row or a done/error marker (:379, :389), and a later live result attaches inside that detached node and appends nothing: :437-442 `if(pend){...pend.box.appendChild(...);return pend.wrap;}`. The result would be invisible until the page is reloaded. forgetKeysBefore drops only KEYS. [files: vscode-plugin/src/chat/render-registry.ts, vscode-plugin/src/chat/chat-panel.ts] | State the trim's cut when no user row is in the removable range (plain cut, as for pages), and have the trim also drop pending-tool entries whose node it removes (so a later result renders standalone); add an edge-case row and a pager test for 'one turn longer than 300 rows'. |
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| coverage-of-intent | The acceptance criteria ac1..ac4 the design maps tests to say what the design assumes they say. | The design is standalone; .insrc/artifacts/LLD-ddc4ede1dbf84626-S001.json contains `ac1`..`ac4` only as criterionId entries in acceptanceMapping (5 matches for ac1\|ac2\|ac3\|ac4\|acceptance, all in the mapping), and docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001 holds only LLD.md and the sequence diagram. No document states the criteria's text, so I could only judge coverage against the quoted user request [[c10]]. | State the text of ac1..ac4 in the LLD (or cite the SPEC/triage record that defines them) so the mapping can be checked. |
+- **[[c1]]** `analyze-bundle` `s1: vscode-plugin/src/chat module profile and import graph` — "A leaf consumer: in-degree 10 (9 from vscode-plugin/src/extension.ts, 1 from vscode-plugin/src/delivery/board-wiring.ts), out-degree 2."
+- **[[c2]]** `code` `vscode-plugin/src/chat/session-store.ts` — "void memento.update(SESSION_PREFIX + session.id, session);"
+- **[[c3]]** `code` `vscode-plugin/src/chat/chat-panel.ts` — "post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript, mode: permissionMode });"
+- **[[c4]]** `code` `vscode-plugin/src/chat/chat-panel.ts` — "else post({ type: 'turn-event', event: ev });"
+- **[[c5]]** `code` `vscode-plugin/src/chat/chat-panel.ts` — "function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;t.appendChild(d);t.scrollTop=t.scrollHeight;return d;}"
+- **[[c6]]** `code` `vscode-plugin/src/chat/protocol.ts` — "export const WEBVIEW_TO_HOST_TYPES = ["
+- **[[c7]]** `code` `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — "assert.match(html, /reg\.appendKeyed\(reg\.toViewModel\(x\),'r'\+i\)/, 'restore replays keyed via the sc1 registry');"
+- **[[c8]]** `code` `vscode-plugin/src/chat/__tests__/fake-dom.ts` — "insertBefore(c: BodyStub, ref: BodyStub | null): BodyStub;"
+- **[[c9]]** `code` `vscode-plugin/src/chat/render-registry.ts` — "function appendKeyed(vm,key){if(key==null)return renderRow(vm);if(KEYS[key])return KEYS[key];var n=renderRow(vm);if(n)KEYS[key]=n;return n;}"
+- **[[c10]]** `stakeholder` `user request, 2026-10-12` — "Support pagination of chat history, it takes ages to open when chat history is long. - even active session should page out history"
+- **[[c11]]** `prior-artifact` `first review of LLD-ddc4ede1dbf84626-S001 (block: 1 high, 4 medium)` — "Every row the registry renders goes through the shell's `line()`, which forces the view to the bottom on each append"

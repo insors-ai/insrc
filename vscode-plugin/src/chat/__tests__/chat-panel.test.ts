@@ -2831,6 +2831,11 @@ test("three requests in one turn: only the first card is posted (with '1 of 3')"
 test('a turn followed after reload routes its approval-requests through the queue and its end ends the batch', async () => {
   const { store, id } = storeWithLiveTurn(1);
   const { adapter, requests } = resumeAdapter([refused('f1', 'Edit'), refused('f2', 'Write'), { kind: 'done', turnId: 't1', ok: true }]);
+  const followUps: TurnRequest[] = [];
+  adapter.run = async function* (req: TurnRequest): AsyncIterable<TurnEvent> {
+    followUps.push(req);
+    yield { kind: 'done', turnId: 'fu1', ok: true };
+  };
   const fc = fakeChannel();
   const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 2, isAlive: (pid) => pid === 2 });
   host.open();
@@ -2840,8 +2845,14 @@ test('a turn followed after reload routes its approval-requests through the queu
   assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['f1'], 'only the first of the followed turn\'s requests is shown');
   fc.send(env('permission-decision', { requestId: 'f2', decision: 'deny' }));
   assert.equal(outcomes(fc).length, 0, 'the waiting request cannot be decided early');
-  fc.send(env('permission-decision', { requestId: 'f1', decision: 'deny' }));
+  fc.send(env('permission-decision', { requestId: 'f1', decision: 'approve' }));
   assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['f1', 'f2'], 'the second is shown once the first is decided');
+  assert.equal(followUps.length, 0, 'no follow-up while the batch is still being decided');
+  fc.send(env('permission-decision', { requestId: 'f2', decision: 'approve' }));
+  await waitFor(() => followUps.length === 1);
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(followUps.length, 1, 'the followed turn\'s end completed its batch: exactly one follow-up');
+  assert.deepEqual([...(followUps[0]!.allowedTools ?? [])], ['Edit', 'Write']);
 });
 
 test('Stop with requests queued records each as rejected and clears the queue', async () => {
@@ -2979,4 +2990,128 @@ test('an in-turn request that carries a toolName is relayed with decide(), not b
   } finally {
     fc.fireDispose();
   }
+});
+
+/** An adapter whose Nth run() yields the Nth script (later runs just end), recording each request. */
+function sequenceAdapter(scripts: TurnEvent[][]): { adapter: StreamAdapter; runs: TurnRequest[] } {
+  const runs: TurnRequest[] = [];
+  const adapter: StreamAdapter = {
+    async *run(req: TurnRequest): AsyncIterable<TurnEvent> {
+      runs.push(req);
+      const n = runs.length;
+      for (const ev of scripts[n - 1] ?? [{ kind: 'done', turnId: `t${n}`, ok: true }]) {
+        await Promise.resolve();
+        yield ev;
+      }
+    },
+    cancel: () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  return { adapter, runs };
+}
+
+const runsSettled = (): Promise<void> => new Promise((r) => setTimeout(r, 30));
+
+test('approving all three starts exactly one follow-up turn, after the last decision and the turn\'s end, with allowedTools = all three tools and a prompt naming the three approved actions', async () => {
+  const fc = fakeChannel();
+  const { adapter, runs } = sequenceAdapter([[
+    refused('a1', 'Edit'), refused('a2', 'Write'), refused('a3', 'Bash', 't1', { command: 'npm test' }), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ]]);
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit and test' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'a1', decision: 'approve' }));
+  fc.send(env('permission-decision', { requestId: 'a2', decision: 'approve' }));
+  await runsSettled();
+  assert.equal(runs.length, 1, 'no follow-up before the last decision');
+  fc.send(env('permission-decision', { requestId: 'a3', decision: 'approve' }));
+  await waitFor(() => runs.length === 2);
+  await runsSettled();
+  assert.equal(runs.length, 2, 'exactly one follow-up');
+  const fu = runs[1]!;
+  assert.deepEqual([...(fu.allowedTools ?? [])], ['Edit', 'Write', 'Bash']);
+  assert.match(fu.prompt, /the Edit action/);
+  assert.match(fu.prompt, /the Write action/);
+  assert.match(fu.prompt, /run exactly this: npm test/);
+  assert.doesNotMatch(fu.prompt, /Denied/);
+});
+
+test('no approval ever supersedes a running follow-up: turns.start is called once per batch', async () => {
+  const fc = fakeChannel();
+  // Decided before the turn ends: the batch completes at the turn's end, not at each decision.
+  let releaseDone!: () => void;
+  const gate = new Promise<void>((r) => (releaseDone = r));
+  const runs: TurnRequest[] = [];
+  const adapter = scriptedAdapter([refused('b1', 'Edit'), refused('b2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }], { onRun: (r) => runs.push(r), gateBeforeDone: gate });
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'two edits' }));
+  await waitFor(() => approvalCards(fc).length === 1);
+  await runsSettled();
+  fc.send(env('permission-decision', { requestId: 'b1', decision: 'approve' }));
+  fc.send(env('permission-decision', { requestId: 'b2', decision: 'approve' }));
+  await runsSettled();
+  assert.equal(runs.length, 1, 'the turn has not ended: no follow-up yet');
+  releaseDone();
+  await waitFor(() => runs.length === 2);
+  await runsSettled();
+  assert.equal(runs.length, 2, 'one follow-up for the batch (its own events are not refusals, so nothing more)');
+});
+
+test('deny: a denied request gets a rejected chip, the next request is still asked, and the follow-up names it as denied; all denied -> no follow-up and an informational message', async () => {
+  const fc = fakeChannel();
+  const { adapter, runs } = sequenceAdapter([[
+    refused('d1', 'Edit'), refused('d2', 'Bash', 't1', { command: 'rm -rf build' }), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ]]);
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit and clean' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'd2', decision: 'deny' })); // not the head: ignored
+  fc.send(env('permission-decision', { requestId: 'd1', decision: 'approve' }));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['d1', 'd2'], 'the next request is still asked');
+  fc.send(env('permission-decision', { requestId: 'd2', decision: 'deny' }));
+  assert.deepEqual(outcomes(fc).map((o) => o.decision), ['approved', 'rejected'], 'the denied request gets a rejected chip');
+  await waitFor(() => runs.length === 2);
+  assert.deepEqual([...(runs[1]!.allowedTools ?? [])], ['Edit'], 'a denied tool is never granted');
+  assert.match(runs[1]!.prompt, /Denied — do not attempt these:\n- run exactly this: rm -rf build/);
+
+  // All denied: nothing runs, one informational message says so.
+  const fc2 = fakeChannel();
+  const seq2 = sequenceAdapter([[refused('n1', 'Edit'), refused('n2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-2' }]]);
+  const host2 = createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: seq2.adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host2.open();
+  fc2.send(env('submit-turn', { text: 'two edits' }));
+  await waitFor(() => turnEvents(fc2).some((e) => e.kind === 'done'));
+  fc2.send(env('permission-decision', { requestId: 'n1', decision: 'deny' }));
+  fc2.send(env('permission-decision', { requestId: 'n2', decision: 'deny' }));
+  await runsSettled();
+  assert.equal(seq2.runs.length, 1, 'all denied: no follow-up');
+  const info = turnEvents(fc2).filter((e) => e.kind === 'assistant-delta' && e.turnId.startsWith('info-batch-'));
+  assert.equal(info.length, 1, 'one informational message');
+  assert.match((info[0] as { text: string }).text, /No action was approved/);
+});
+
+test('a follow-up that is refused again forms the next batch and its follow-up carries the previous batch\'s grants', async () => {
+  const fc = fakeChannel();
+  const { adapter, runs } = sequenceAdapter([
+    [refused('g1', 'Edit'), refused('g2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
+    [refused('g3', 'Bash', 't2', { command: 'npm test' }), { kind: 'done', turnId: 't2', ok: true, sessionId: 'sess-1' }],
+  ]);
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit then test' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'g1', decision: 'approve' }));
+  fc.send(env('permission-decision', { requestId: 'g2', decision: 'approve' }));
+  await waitFor(() => approvalCards(fc).some((c) => c.requestId === 'g3'));
+  assert.equal(runs.length, 2);
+  fc.send(env('permission-decision', { requestId: 'g3', decision: 'approve' }));
+  await waitFor(() => runs.length === 3);
+  await runsSettled();
+  assert.equal(runs.length, 3, 'one follow-up per batch');
+  assert.deepEqual([...(runs[2]!.allowedTools ?? [])], ['Edit', 'Write', 'Bash'], 'the previous batch\'s grants are kept');
+  assert.equal(runs[2]!.prompt, 'Approved — run exactly this now: npm test', 'a single-request batch keeps the exact-command prompt');
 });

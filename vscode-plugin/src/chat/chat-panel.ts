@@ -292,6 +292,47 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     approvals.clear();
   };
 
+  // A self-contained informational assistant message (its own turn id, so it closes itself).
+  const postInfo = (turnId: string, text: string): void => {
+    post({ type: 'turn-event', event: { kind: 'assistant-delta', turnId, text } });
+    post({ type: 'turn-event', event: { kind: 'done', turnId, ok: true } });
+  };
+
+  // ISSUE-6a811b8a: when a turn-ended batch is complete (its turn ended and every request it raised
+  // is decided), run ONE follow-up for it, allowed every tool approved so far (the grant chain). A
+  // single approved request keeps today's exact prompt; several get one prompt naming each approved
+  // action and each denied one, so nothing already decided is asked again. Only one follow-up is
+  // ever started per batch, so no approval can supersede another approval's follow-up.
+  const runCompletedBatch = (): void => {
+    const batch = approvals.takeCompletedBatch();
+    if (batch === undefined) return;
+    const action = (r: { toolName?: string | undefined; command?: string | undefined }): string =>
+      r.command !== undefined && r.command !== '' ? `run exactly this: ${r.command}` : `the ${r.toolName ?? 'tool'} action you requested permission for`;
+    const approved = batch.decisions.filter((d) => d.decision === 'approve' && d.request.blockKind === 'tool-gate').map((d) => d.request);
+    const denied = batch.decisions.filter((d) => d.decision === 'deny').map((d) => d.request);
+    const blocked = batch.decisions.filter((d) => d.decision === 'approve' && d.request.blockKind === 'dir-block').map((d) => d.request);
+    if (approved.length === 0) {
+      // Nothing to run. A single request keeps today's behaviour (its chip says it all); a batch
+      // of several says so once.
+      if (batch.decisions.length > 1) postInfo(`info-batch-${batch.turnId}`, 'No action was approved, so nothing was run.');
+      return;
+    }
+    let prompt: string;
+    if (batch.decisions.length === 1) {
+      const only = approved[0]!;
+      prompt =
+        only.command !== undefined && only.command !== ''
+          ? `Approved — run exactly this now: ${only.command}`
+          : `Approved: please proceed with the ${only.toolName ?? 'tool'} action you requested permission for.`;
+    } else {
+      const lines = ['The permission requests have been decided.', 'Approved — do these now:', ...approved.map((r) => `- ${action(r)}`)];
+      if (denied.length > 0) lines.push('Denied — do not attempt these:', ...denied.map((r) => `- ${action(r)}`));
+      if (blocked.length > 0) lines.push('Still blocked (outside the allowed working directories) — do not attempt these:', ...blocked.map((r) => `- ${action(r)}`));
+      prompt = lines.join('\n');
+    }
+    void runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
+  };
+
   // A provider that answers in-turn (control-protocol / codex): relay the decision to the LIVE
   // turn's captured adapter (its own provider, never the current session's — it may have
   // switched). decide() no-ops on an unknown/stale/dead requestId, so a late click is safe.
@@ -350,6 +391,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       onEnd: () => {
         if (session !== s) return;
         for (const turnId of followedTurns) approvals.endTurn(turnId);
+        runCompletedBatch();
         postHistory();
       },
     });
@@ -762,6 +804,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (governor !== undefined && ev.kind === 'file-edit') governor.observe(ev.path).catch((err: unknown) => warnGovernor('observe', err));
       },
       onTerminal: () => {
+        runCompletedBatch(); // ISSUE-6a811b8a: requests decided before the turn ended are now complete
         trySave(s); // persist the turn's transcript rows (an errored turn's too); a failing save never breaks the turn
         if (governor !== undefined) governor.resolveTurn().catch((err: unknown) => warnGovernor('resolveTurn', err));
         postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
@@ -912,38 +955,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             showApprovalHead();
             return;
           }
-          const pending = { toolName: decided.toolName ?? 'tool', command: decided.command, blockKind: decided.blockKind };
-          if (msg.decision === 'approve') {
-            if (pending.blockKind === 'dir-block') {
-              // A working-dir / sandbox-allowlist block: --allowedTools cannot grant a directory,
-              // so DON'T re-run (that produced the confused no-op). Post a self-contained
-              // informational message explaining what actually needs to change — no adapter/argv/
-              // allowlist touched (buildArgs still adds only --allowedTools, never --add-dir).
-              const tid = `info-${msg.requestId}`;
-              post({
-                type: 'turn-event',
-                event: {
-                  kind: 'assistant-delta',
-                  turnId: tid,
-                  text:
-                    `This action was blocked because its path is outside this session's allowed working directories. ` +
-                    `Approving cannot grant it — the directory must be added to the session's allowed working directories first ` +
-                    `(this is a sandbox/workspace setting, not a tool permission).`,
-                },
-              });
-              post({ type: 'turn-event', event: { kind: 'done', turnId: tid, ok: true } });
-            } else if (typeof pending.command === 'string' && pending.command !== '') {
-              // A tool-permission gate WITH a concrete command: re-run naming the EXACT command so the
-              // resumed model has an unambiguous action (not a vague "please proceed" nudge).
-              // S003 (ux polish) ac2: suppressEcho so the synthetic grant prompt is not echoed as a
-              // user bubble — only the resolved permission-outcome chip marks the approval.
-              void runTurn(`Approved — run exactly this now: ${pending.command}`, [pending.toolName], { suppressEcho: true });
-            } else {
-              // A tool-permission gate with no captured command: fall back to today's tool-name phrasing.
-              void runTurn(`Approved: please proceed with the ${pending.toolName} action you requested permission for.`, [pending.toolName], { suppressEcho: true });
-            }
+          if (msg.decision === 'approve' && decided.blockKind === 'dir-block') {
+            // A working-dir / sandbox-allowlist block: --allowedTools cannot grant a directory, so it
+            // is never re-run (that produced the confused no-op) and never a grant. Post a
+            // self-contained informational message explaining what actually needs to change — no
+            // adapter/argv/allowlist touched (buildArgs still adds only --allowedTools, never --add-dir).
+            postInfo(
+              `info-${msg.requestId}`,
+              `This action was blocked because its path is outside this session's allowed working directories. ` +
+                `Approving cannot grant it — the directory must be added to the session's allowed working directories first ` +
+                `(this is a sandbox/workspace setting, not a tool permission).`,
+            );
           }
+          // ISSUE-6a811b8a: a turn-ended decision joins its turn's batch (the queue keeps it); the
+          // follow-up runs once, when the whole batch is decided and its turn has ended.
           showApprovalHead();
+          runCompletedBatch();
           return;
         }
         // Otherwise an id the host does not hold: relay to the LIVE turn's captured adapter, as

@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-12T05:32:00.687Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-12T05:32:00.687Z  ·  **Updated:** 2026-10-12T05:33:13.637Z
 
-**Commit:** 500beba0
+**Commit:** 6d0ea41f
 
 ## Scope
 
@@ -17,3 +17,20 @@ Fix intent: both argv builders hand the prompt to the CLI so it can never be rea
 ## Triage rationale
 
 Small bugfix (ISSUE-65cb63f7): one file's two argv builders plus their tests.
+
+## Summary
+
+The chat's claude and codex argv builders now put every flag first and the prompt last, after '--', for new and resumed turns, so a prompt starting with '-' reaches the CLI as the prompt. Verified against the real claude CLI: without '--' a '- MED: ...' prompt fails with "unknown option"; with '--' it is read as the prompt. New test 65cb63f7 in cli-adapter.test.ts fails without the fix and passes with it.
+
+## Tasks validated
+
+- ✓ `S001`
+
+**Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
+
+## Changes
+
+- `.insrc/artifacts/ISSUE-65cb63f7186f84fa.json` — **insrc-build** (2026-10-12T05:33:13.637Z)
+- `docs/standalone/pass-chat-prompts-claude-codex-clis-E2026101265cb63f7/ISSUE.md` — **insrc-build** (2026-10-12T05:33:13.637Z)
+- `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` — **insrc-build** (2026-10-12T05:33:13.637Z)
+- `vscode-plugin/src/chat/cli-adapter.ts` — **insrc-build** (2026-10-12T05:33:13.637Z)

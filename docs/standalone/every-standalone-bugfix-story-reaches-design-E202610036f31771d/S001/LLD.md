@@ -4,7 +4,7 @@
 
 ## Summary
 
-**Epic:** `give-standalone-bugfix-story-acceptance-contract`
+**Epic:** `every-standalone-bugfix-story-reaches-design`
 **HLD base run:** `wf-1791009049104-2jtsu7`
 **HLD effective hash:** `df5108d0c347...`
 

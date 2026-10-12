@@ -99,6 +99,13 @@ export type TurnEvent =
        * for command-less requests — the event is then byte-identical to today (k2).
        */
       readonly command?: string;
+      /**
+       * ISSUE-6a811b8a: where the request is answered. 'turn-ended': the provider refused the
+       * tool call and ended the turn (claude's permission_denied), so an approval is carried by a
+       * follow-up turn. 'in-turn': the provider waits inside the running turn for decide()
+       * (control protocol, codex). Set by the mapper that raised it; absent reads as 'in-turn'.
+       */
+      readonly resolution?: 'turn-ended' | 'in-turn';
     }
   | {
       /**

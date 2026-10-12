@@ -807,8 +807,8 @@ test('S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identica
   const ev = apprOf(await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
   assert.ok(ev, 'an approval-request was emitted');
   assert.equal(ev!.command, undefined, 'no command field when the line carries none');
-  // The event has exactly the pre-fix key set (no stray command key).
-  assert.deepEqual(Object.keys(ev!).sort(), ['detail', 'kind', 'requestId', 'title', 'toolName', 'turnId']);
+  // The event has exactly the pre-fix key set plus resolution (ISSUE-6a811b8a): no stray command key.
+  assert.deepEqual(Object.keys(ev!).sort(), ['detail', 'kind', 'requestId', 'resolution', 'title', 'toolName', 'turnId']);
 });
 
 test('S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)', async () => {
@@ -1317,4 +1317,22 @@ test('65cb63f7: a prompt starting with "-" or "--" reaches claude and codex verb
       assert.equal(args.indexOf('--'), args.length - 2, `${label} — the only marker, so every flag precedes it`);
     }
   }
+});
+
+// ---- ISSUE-6a811b8a: where an approval request is answered ------------------------
+
+test("claude permission_denied emits resolution 'turn-ended'; control-protocol and codex approval requests emit resolution 'in-turn'", async () => {
+  const denied = JSON.stringify({ type: 'system', subtype: 'permission_denied', tool_name: 'Write', tool_use_id: 'toolu_res_1', message: 'Write needs your permission' });
+  const { deps: d1 } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const turnEnded = apprOf(await collect(createProviderRegistry(d1).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
+  assert.equal(turnEnded?.resolution, 'turn-ended', 'claude refused and ended the turn');
+
+  const { deps: d2 } = depsFor({ lines: CLAUDE_PERMISSION_TURN });
+  const control = apprOf(await collect(createProviderRegistry(d2).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
+  assert.equal(control?.resolution, 'in-turn', 'a control-protocol request waits inside the turn');
+  assert.equal(control?.toolName, 'Bash', 'and it carries a toolName, so toolName cannot tell the two apart');
+
+  const { deps: d3 } = depsFor({ lines: CODEX_PERMISSION_TURN });
+  const codex = apprOf(await collect(createProviderRegistry(d3).get('codex').run(REQ({ provider: 'codex', permissionMode: 'manual' }))));
+  assert.equal(codex?.resolution, 'in-turn', 'a codex approval waits inside the turn');
 });

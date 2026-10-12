@@ -316,6 +316,8 @@ function normalizeApprovalEvent(turnId: string, raw: Record<string, unknown>): T
     title,
     detail,
     ...(toolName !== undefined ? { toolName } : {}),
+    // ISSUE-6a811b8a: every request normalized here waits inside the running turn for decide().
+    resolution: 'in-turn',
   };
 }
 
@@ -542,6 +544,8 @@ const claudeMapper: ProviderMapper = {
             detail: message,
             toolName,
             ...(cmd !== undefined && cmd !== '' ? { command: cmd } : {}),
+            // ISSUE-6a811b8a: claude ends the turn after this line, so the approval is carried by a follow-up.
+            resolution: 'turn-ended',
           },
         ];
       }

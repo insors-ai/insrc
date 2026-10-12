@@ -140,7 +140,9 @@
       "reviewedAt": "2026-10-12T05:47:20.480Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
-    }
+    },
+    "approvedAt": "2026-10-12T05:49:01.734Z",
+    "rangeBase": "20881678e4a2c562eb520837693b0de1a3f16651"
   },
   "body": {
     "summary": {

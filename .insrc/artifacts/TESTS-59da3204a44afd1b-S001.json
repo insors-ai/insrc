@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "59da3204a44afd1b",
+    "storyId": "S001",
+    "createdAt": "2026-10-12T10:25:29.172Z",
+    "updatedAt": "2026-10-12T10:25:29.172Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-12T10:10:09.226Z",
+    "epicSlug": "paste-images-attach-documents-dev-chat"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "744692cd",
+        "ranAt": "2026-10-12T10:25:29.172Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "attachment store: addBytes and addFile write into the session's own directory under a safe numbered name and return id, original name, kind, size and path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts",
+                "title": "attachment store: addBytes and addFile write into the session's own directory under a safe numbered name and return id, original name, kind, size and path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "attachment store: an oversize paste or file, a mime outside the image list and a source that is not a regular file are refused with AttachmentRefused and nothing is written",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts",
+                "title": "attachment store: an oversize paste or file, a mime outside the image list and a source that is not a regular file are refused with AttachmentRefused and nothing is written",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "attachment store: remove ignores an id that is not a plain file name in the session's directory, and remove and removeSession succeed when the target is gone",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts",
+                "title": "attachment store: remove ignores an id that is not a plain file name in the session's directory, and remove and removeSession succeed when the target is gone",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "attachment store: sweep removes only directories of sessions not kept whose files are all older than the age",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts",
+                "title": "attachment store: sweep removes only directories of sessions not kept whose files are all older than the age",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "attachment store: a failed write leaves no partial file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts",
+                "title": "attachment store: a failed write leaves no partial file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 322,
+            "titles": [
+              {
+                "title": "attachment store: addBytes and addFile write into the session's own directory under a safe numbered name and return id, original name, kind, size and path",
+                "result": "pass"
+              },
+              {
+                "title": "attachment store: an oversize paste or file, a mime outside the image list and a source that is not a regular file are refused with AttachmentRefused and nothing is written",
+                "result": "pass"
+              },
+              {
+                "title": "attachment store: remove ignores an id that is not a plain file name in the session's directory, and remove and removeSession succeed when the target is gone",
+                "result": "pass"
+              },
+              {
+                "title": "attachment store: sweep removes only directories of sessions not kept whose files are all older than the age",
+                "result": "pass"
+              },
+              {
+                "title": "attachment store: a failed write leaves no partial file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

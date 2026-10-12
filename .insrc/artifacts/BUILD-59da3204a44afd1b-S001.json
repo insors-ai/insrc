@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "59da3204a44afd1b",
+    "storyId": "S001",
+    "createdAt": "2026-10-12T10:25:29.172Z",
+    "updatedAt": "2026-10-12T10:25:29.172Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-12T10:10:09.226Z",
+    "epicSlug": "paste-images-attach-documents-dev-chat"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/paste-images-attach-documents-dev-chat-E2026101259da3204/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-59da3204a44afd1b-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T10:25:29.172Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T10:25:29.172Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fake-attachment-fs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T10:25:29.172Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/attachment-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T10:25:29.172Z"
+      }
+    ],
+    "commit": "744692cd"
+  }
+}

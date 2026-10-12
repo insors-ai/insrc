@@ -873,14 +873,14 @@ test('S001 (bugfix): realistic tool-gate messages are NOT false-positived as dir
   }
 });
 
-test('S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir (no sandbox widening on a click)', async () => {
+test('S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir, on a grant with no readDirs (no sandbox widening on a click)', async () => {
   // With allowedTools passed (the grant re-run): --allowedTools present, --add-dir absent.
   {
     const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
     await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual', allowedTools: ['Bash'] })));
     const args = spawner.calls[0]!.args;
     assert.ok(args.includes('--allowedTools'), 'the grant re-run passes --allowedTools');
-    assert.ok(!args.includes('--add-dir'), 'buildArgs never adds --add-dir');
+    assert.ok(!args.includes('--add-dir'), 'a grant alone never adds --add-dir');
   }
   // Without allowedTools: still no --add-dir.
   {
@@ -1335,4 +1335,75 @@ test("claude permission_denied emits resolution 'turn-ended'; control-protocol a
   const { deps: d3 } = depsFor({ lines: CODEX_PERMISSION_TURN });
   const codex = apprOf(await collect(createProviderRegistry(d3).get('codex').run(REQ({ provider: 'codex', permissionMode: 'manual' }))));
   assert.equal(codex?.resolution, 'in-turn', 'a codex approval waits inside the turn');
+});
+
+// ---- Story E2026101259da3204:S001 t2: readDirs -> claude --add-dir ---------------
+
+test('claude argv: readDirs adds --add-dir with each directory before the permission flags and the prompt stays last after --; without readDirs the argv is byte-identical to today', async () => {
+  const argv = async (over: Partial<TurnRequest>): Promise<readonly string[]> => {
+    const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', ...over })));
+    return spawner.calls[0]!.args;
+  };
+  const base = ['-p', '--output-format=stream-json', '--verbose'];
+  const resume = { provider: 'claude' as const, nativeSessionId: 'sess-1' };
+  const dirs = ['/home/u/.insrc/chat-attachments/s1', '/other dir'];
+
+  // With readDirs: after --resume, before every permission flag, and the prompt is still last.
+  assert.deepEqual(await argv({ readDirs: [dirs[0]!] }), [...base, '--add-dir', dirs[0]!, '--', 'hi']);
+  assert.deepEqual(await argv({ readDirs: dirs, resume, permissionMode: 'edit-auto', allowedTools: ['Bash', 'Read'] }), [
+    ...base,
+    '--resume',
+    'sess-1',
+    '--add-dir',
+    ...dirs,
+    '--permission-mode',
+    'acceptEdits',
+    '--permission-prompts',
+    'host',
+    '--allowedTools',
+    'Bash',
+    'Read',
+    '--',
+    'hi',
+  ]);
+  for (const permissionMode of ['manual', 'edit-auto', 'auto'] as const) {
+    const args = await argv({ readDirs: dirs, permissionMode, allowedTools: ['Bash'] });
+    const at = args.indexOf('--add-dir');
+    assert.deepEqual(args.slice(at, at + 3), ['--add-dir', ...dirs]);
+    for (const flag of ['--permission-mode', '--permission-prompts', '--allowedTools']) {
+      if (args.includes(flag)) assert.ok(at < args.indexOf(flag), `--add-dir comes before ${flag}`);
+    }
+    assert.deepEqual(args.slice(-2), ['--', 'hi']);
+  }
+
+  // Without readDirs (absent or empty) the argv is exactly what it was, in every combination.
+  const today: Array<[Partial<TurnRequest>, string[]]> = [
+    [{}, [...base, '--', 'hi']],
+    [{ resume }, [...base, '--resume', 'sess-1', '--', 'hi']],
+    [{ permissionMode: 'manual' }, [...base, '--permission-prompts', 'host', '--', 'hi']],
+    [{ permissionMode: 'edit-auto' }, [...base, '--permission-mode', 'acceptEdits', '--permission-prompts', 'host', '--', 'hi']],
+    [{ permissionMode: 'auto' }, [...base, '--permission-mode', 'bypassPermissions', '--', 'hi']],
+    [{ resume, permissionMode: 'manual', allowedTools: ['Bash'] }, [...base, '--resume', 'sess-1', '--permission-prompts', 'host', '--allowedTools', 'Bash', '--', 'hi']],
+  ];
+  for (const [over, expected] of today) {
+    assert.deepEqual(await argv(over), expected);
+    assert.deepEqual(await argv({ ...over, readDirs: [] }), expected);
+  }
+});
+
+test('codex argv is unchanged by readDirs', async () => {
+  const argv = async (over: Partial<TurnRequest>): Promise<readonly string[]> => {
+    const { deps, spawner } = depsFor(CODEX_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', ...over })));
+    return spawner.calls[0]!.args;
+  };
+  const resume = { provider: 'codex' as const, nativeSessionId: 'thread-1' };
+  const readDirs = ['/home/u/.insrc/chat-attachments/s1'];
+  for (const over of [{}, { resume }, { permissionMode: 'manual' as const }, { permissionMode: 'auto' as const }, { resume, permissionMode: 'auto' as const }]) {
+    const without = await argv(over);
+    assert.deepEqual(await argv({ ...over, readDirs }), without);
+    assert.ok(!without.includes('--add-dir'));
+  }
+  assert.deepEqual(await argv({ readDirs }), ['exec', '--json', '--', 'hi']);
 });

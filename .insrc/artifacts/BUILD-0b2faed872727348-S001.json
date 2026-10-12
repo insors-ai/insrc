@@ -8,7 +8,8 @@
     "createdAt": "2026-10-04T15:00:19.614Z",
     "triageRationale": "One finalizer in one file omits the folder anchor its sibling finalizers stamp from the same reader.",
     "updatedAt": "2026-10-04T16:26:51.846Z",
-    "approvedAt": "2026-10-04T16:26:51.931Z"
+    "approvedAt": "2026-10-04T16:26:51.931Z",
+    "epicSlug": "standalone-lld-filed-second-work-item"
   },
   "body": {
     "focus": "Make the standalone LLD finalizer stamp meta.epicCreatedAt from the work item's definition record (readEpicCreatedAt), as the plan finalizer does, so a standalone LLD is filed in its issue's folder whatever day it is written; a standalone LLD with no definition record keeps its own creation time. Then move the misfiled LLD of ISSUE-5f7a7cb95b643ae5 into docs/standalone/batch-approval-stamps-one-shared-meta-E202610025f7a7cb9/S001/ and give its record the anchor.",

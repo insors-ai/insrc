@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 37 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -250,3 +250,37 @@ Run at 2026-10-12T08:07:28.254Z on commit `67e6d06e`. Tests check: **passed**. 7
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 130 | 2 s |  |
 | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 2 | 0.3 s |  |
+
+## t8
+
+Run at 2026-10-12T08:09:31.883Z on commit `71a032d3`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: ready, new-chat and open-chat post the same windowed session-restored**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ready, new-chat and open-chat post the same windowed session-restored | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: a ready after older pages were requested posts the latest window again, with the approval head after it**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a ready after older pages were requested posts the latest window again, with the approval head after it | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 134 | 2 s |  |

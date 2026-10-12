@@ -4,7 +4,7 @@
     "epicHash": "ddc4ede1dbf84626",
     "storyId": "S001",
     "createdAt": "2026-10-12T07:35:29.855Z",
-    "updatedAt": "2026-10-12T08:07:28.254Z",
+    "updatedAt": "2026-10-12T08:09:31.883Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:11:33.406Z",
@@ -39,9 +39,13 @@
       {
         "id": "t7",
         "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
       }
     ],
-    "summary": "The chat shell embeds the pager: it is created before the registry and handed it; line(), renderDiff and the approval card append through pager.append, so nothing else writes the transcript's scroll position; session-restored resets the pager and replays rows keyed and stamped by absolute index; transcript-page goes to prepend; live rows and the user row are tracked with their row index; the 'load earlier' bar sits above the transcript; the provider lock settles from total. The three shell-text pins are updated in this task. Beyond the plan's text pins, a new chat-shell.test.ts runs the real inline script against the shared fake DOM and drives it with host messages (windowed restore, page request, a live row while scrolled up, trimming a long active session). The host still sends the whole transcript.",
+    "summary": "postRestored, the one helper every session-restored goes through (open, adopt, ready, new-chat, open-chat), now sends only the latest window cut by latestWindow, as a copy, with its firstIndex and the transcript's total. No existing test asserted a whole long transcript, so none needed changing; four new tests cover the window, the three restore sites, a reload after older pages were loaded, and the stored session staying byte-for-byte unchanged.",
     "testRecord": {
       "md": "docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/TESTS.md"
     },
@@ -51,107 +55,107 @@
           "file": ".insrc/artifacts/PLAN-ddc4ede1dbf84626-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fake-dom.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fake-dom.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/render-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/transcript-pager.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/transcript-window.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:07:28.254Z"
+        "timestamp": "2026-10-12T08:09:31.883Z"
       }
     ],
-    "commit": "67e6d06e"
+    "commit": "71a032d3"
   }
 }

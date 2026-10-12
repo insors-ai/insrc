@@ -9,8 +9,12 @@
  * The pager owns two things:
  *
  * - Every append to the transcript element goes through `append(node)`. A new row scrolls the view
- *   to the bottom only when the view was at the bottom before the append, so a reader who has
- *   scrolled up is left where they are.
+ *   to the bottom only while the view is following the bottom, so a reader who has scrolled up is
+ *   left where they are. Following is remembered, not measured at each append: the renderers
+ *   append a row empty and fill it afterwards, so the view is often short of the bottom by the
+ *   last row's height without the reader having moved. It ends only when the view is found above
+ *   where the pager last put it (the reader scrolled up) and starts again at the bottom. `track`
+ *   moves a following view to the bottom once more after the row is filled.
  * - Which rows are held. Each node is stamped with the absolute transcript index of the row it
  *   belongs to (the host posts it with every live row). When more than MAX_HELD_ROWS rows are held
  *   and the view is at the bottom, the oldest nodes are removed, back to the start of a turn (a
@@ -49,11 +53,15 @@ o=o||{};
 var MAX=${MAX_HELD_ROWS},KEEP=${KEEP_ROWS},SLACK=${BOTTOM_SLACK_PX},WAIT=${LOAD_WAIT_MS};
 var bar=o.bar||null,post=o.post||function(){};
 var later=o.setTimeout||function(f,ms){return setTimeout(f,ms);},cancel=o.clearTimeout||function(t){clearTimeout(t);};
-var reg=null,sid='',first=0,last=-1,total=0,rendering=false,loading=false,timer=null;
+var reg=null,sid='',first=0,last=-1,total=0,rendering=false,loading=false,timer=null,pinned=true,pinTop=0;
 function attach(r){reg=r;}
 function atBottom(){return term.scrollHeight-term.scrollTop-term.clientHeight<=SLACK;}
-function toBottom(){term.scrollTop=term.scrollHeight;}
-function append(node){var follow=!rendering&&atBottom();term.appendChild(node);if(follow)toBottom();return node;}
+function toBottom(){term.scrollTop=term.scrollHeight;pinned=true;pinTop=term.scrollTop;}
+function following(){
+if(atBottom()){pinned=true;pinTop=term.scrollTop;}
+else if(pinned&&term.scrollTop<pinTop)pinned=false;
+return pinned;}
+function append(node){var follow=!rendering&&following();term.appendChild(node);if(follow)toBottom();return node;}
 function showBar(){if(!bar)return;
 if(first>0){bar.textContent='\\u2191 Load earlier messages ('+first+' older)';bar.style.display='';}
 else{bar.textContent='';bar.style.display='none';}}
@@ -65,7 +73,7 @@ if(last+1>total)total=last+1;}
 function isUserRow(n){return (' '+(n.className||'')+' ').indexOf(' insrc-msg--user ')>=0;}
 function rowOf(n){return typeof n.__row==='number'?n.__row:first;}
 function trimIfNeeded(){
-if(rendering||!atBottom()||last-first+1<=MAX)return false;
+if(rendering||!following()||last-first+1<=MAX)return false;
 var target=last-KEEP+1,kids=term.children,cut=target,i;
 for(i=kids.length-1;i>=0;i--){var r=rowOf(kids[i]);
 if(r<=target&&r>first&&isUserRow(kids[i])){if(last-r+1<=MAX)cut=r;break;}}
@@ -75,7 +83,7 @@ if(gone.length===0)return false;
 first=cut;
 if(reg){reg.forgetKeysBefore(cut);reg.forgetPendingIn(gone);}
 showBar();toBottom();return true;}
-function track(rowIndex,fn){var from=term.children.length;try{return fn();}finally{stamp(from,rowIndex);trimIfNeeded();}}
+function track(rowIndex,fn){var from=term.children.length;try{return fn();}finally{stamp(from,rowIndex);if(!rendering&&following())toBottom();trimIfNeeded();}}
 function endLoad(){loading=false;if(timer!==null){cancel(timer);timer=null;}}
 function requestOlder(){
 if(loading||first<=0||sid==='')return false;
@@ -92,6 +100,7 @@ endLoad();
 if(typeof page.total==='number'&&page.total>total)total=page.total;
 var rows=page.rows||[],start=page.firstIndex;
 if(rows.length===0||typeof start!=='number'||start<0||start>=first){showBar();return false;}
+following();
 var oldTop=term.scrollTop,oldHeight=term.scrollHeight,held=term.children.length,anchor=term.firstChild;
 rendering=true;
 try{reg.withIsolatedPending(function(){for(var i=0;i<rows.length;i++)renderOne(rows[i],start+i);});}
@@ -100,8 +109,9 @@ if(anchor){var fresh=[];for(var k=held;k<term.children.length;k++)fresh.push(ter
 for(var m=0;m<fresh.length;m++)term.insertBefore(fresh[m],anchor);}
 first=start;showBar();
 term.scrollTop=oldTop+(term.scrollHeight-oldHeight);
+if(pinned)pinTop=term.scrollTop;
 return true;}
-function onScroll(){if(term.scrollTop<=SLACK&&first>0)requestOlder();if(atBottom())trimIfNeeded();}
+function onScroll(){if(term.scrollTop<=SLACK&&first>0)requestOlder();if(following()&&atBottom())trimIfNeeded();}
 function reset(sessionId,firstIndex,totalRows){
 sid=sessionId||'';first=typeof firstIndex==='number'&&firstIndex>0?firstIndex:0;last=first-1;
 total=typeof totalRows==='number'?totalRows:0;rendering=false;endLoad();showBar();toBottom();}

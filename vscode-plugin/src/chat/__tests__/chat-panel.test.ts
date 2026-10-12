@@ -3531,7 +3531,7 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   assert.match(html, /if\(m\.type==='turn-event'\)\{const ev=m\.event;pager\.track\(m\.rowIndex,function\(\)\{/);
   assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text\}\),m\.key\);\}\);\}/);
   assert.match(html, /pager\.track\(undefined,function\(\)\{renderDiff\(/, 'a diff card is tracked too');
-  assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);trimIfNeeded\(\);\}\}/, 'track stamps the new nodes and then trims');
+  assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
   assert.match(html, /setProvLock\(_total>0\);/, 'the provider lock settles from total');
 });
 

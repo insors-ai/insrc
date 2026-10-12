@@ -56,14 +56,18 @@ interface View {
   /** Run the pager's pending timers (the load wait). */
   runTimers: () => void;
 }
-function makeView(): View {
+/** A row that has been appended but not yet filled has no height, as in a browser. */
+const filledPx = (n: BodyStub): number => (n.children.length > 0 || n.textContent !== '' ? ROW_PX : 0);
+/** `heightOf` gives each row's height; by default every row is ROW_PX from the moment it is appended. */
+function makeView(heightOf: (n: BodyStub) => number = () => ROW_PX): View {
   const term = bodyStub('div', 'insrc-term');
   const bar = bodyStub('div', 'insrc-older');
   term.clientHeight = VIEW_PX;
   let top = 0;
   const scrollWrites: number[] = [];
-  const maxTop = (): number => Math.max(0, term.children.length * ROW_PX - VIEW_PX);
-  Object.defineProperty(term, 'scrollHeight', { get: () => term.children.length * ROW_PX });
+  const height = (): number => term.children.reduce((sum, c) => sum + heightOf(c), 0);
+  const maxTop = (): number => Math.max(0, height() - VIEW_PX);
+  Object.defineProperty(term, 'scrollHeight', { get: height });
   Object.defineProperty(term, 'scrollTop', { get: () => Math.min(top, maxTop()), set: (v: number) => { scrollWrites.push(v); top = Math.max(0, Math.min(v, maxTop())); } });
   const posted: Array<Record<string, unknown>> = [];
   const timers: Array<{ fn: () => void; ms: number; live: boolean }> = [];
@@ -359,4 +363,34 @@ test("the 'load earlier' bar is shown only when the first held index is above 0,
   liveRows(live, 0, 301, 20);
   assert.notEqual(live.bar.style['display'], 'none', 'the bar appears after a trim');
   assert.match(live.bar.textContent, /\(100 older\)/);
+});
+
+test('rows that are appended empty and filled afterwards are still followed: the view stays at the bottom through a long run and a restore, the trim still runs, and a reader who scrolls up is left alone until they return', () => {
+  const v = makeView(filledPx);
+  // Every registry renderer appends its row empty and fills it afterwards.
+  liveRows(v, 0, 60, 20);
+  assert.equal(v.term.scrollHeight, 60 * ROW_PX, 'the rows have their height once filled');
+  assert.equal(v.term.scrollTop, v.maxTop(), 'the view followed every row, not only the first screenful');
+  assert.equal(v.pager.atBottom(), true);
+  liveRows(v, 60, 301, 20);
+  assert.equal(v.term.scrollTop, v.maxTop());
+  assert.deepEqual([v.pager.state().first, v.term.children.length], [100, 201], 'the trim ran');
+
+  // The reader scrolls up: following stops and the view is left where it is.
+  v.term.scrollTop = 300;
+  liveRows(v, 301, 320, 20);
+  assert.equal(v.term.scrollTop, 300, 'the view did not move');
+  // Back at the bottom, following starts again.
+  v.term.scrollTop = v.maxTop();
+  liveRows(v, 320, 330, 20);
+  assert.equal(v.term.scrollTop, v.maxTop(), 'followed again');
+
+  // A restore replayed row by row ends at the bottom, whatever the reader's position was before.
+  v.term.scrollTop = 0;
+  v.term.textContent = '';
+  v.pager.reset('s1', 900, 1000);
+  for (let i = 900; i < 1000; i++) v.pager.track(i, () => v.reg.appendKeyed(v.reg.toViewModel(i % 20 === 0 ? { role: 'user', text: `q${i}`, at: 't' } : { role: 'assistant', text: `a${i}`, at: 't' }), `r${i}`));
+  assert.equal(v.term.children.length, 100);
+  assert.equal(v.term.scrollTop, v.maxTop(), 'the restored window ends at the bottom');
+  assert.ok(v.maxTop() > 0);
 });

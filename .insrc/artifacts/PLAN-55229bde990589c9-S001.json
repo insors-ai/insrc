@@ -179,7 +179,8 @@
     "reviewOverride": {
       "reason": "User approved in chat after being presented the plan + the 1 MED finding (0 HIGH). The MED (adjacentBoundaries not reaching the contract.detail s4 step prompt at design-story/index.ts:253) is not a defect in the plan's tasks but a refinement being FOLDED INTO the t1 build scope: t1 will also surface adjacentBoundaries into the contract.detail prompt and t4 will assert it. All 12 other premises verified sound against source.",
       "at": "2026-09-15T13:30:56.758Z"
-    }
+    },
+    "standalone": true
   },
   "body": {
     "tasks": [

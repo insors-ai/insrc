@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "55229bde990589c9",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "make-design-story-lld-plan-workflows",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

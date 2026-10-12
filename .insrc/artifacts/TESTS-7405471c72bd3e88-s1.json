@@ -5,7 +5,8 @@
     "storyId": "s1",
     "createdAt": "2026-10-10T07:45:01.489Z",
     "updatedAt": "2026-10-10T08:06:54.451Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "defect-delivery-board-shipped-issue-348d4663"
   },
   "body": {
     "tasks": [

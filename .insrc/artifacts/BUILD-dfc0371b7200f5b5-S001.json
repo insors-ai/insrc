@@ -1,13 +1,14 @@
 {
   "meta": {
     "workflow": "build",
-    "standalone": false,
+    "standalone": true,
     "sizeClass": "feature",
     "triageRationale": "Mount the exported-but-unmounted bugfix seam on the approve path + surface bugfix guidance/steering (a1->a2 amendment: mount in the async daemon workflow.approve handler).",
     "epicHash": "dfc0371b7200f5b5",
     "storyId": "S001",
     "createdAt": "2026-09-26T12:14:57.292Z",
-    "approvedAt": "2026-09-26T12:16:23.220Z"
+    "approvedAt": "2026-09-26T12:16:23.220Z",
+    "epicSlug": "surface-bugfix-workflow-properly-so-first"
   },
   "body": {
     "producesLld": true,

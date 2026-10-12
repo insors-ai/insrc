@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "dfc0371b7200f5b5",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "surface-bugfix-workflow-properly-so-first",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

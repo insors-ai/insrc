@@ -63,6 +63,12 @@ import {
 
 import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
 import { createInDaemonClient, installStepDaemonClient } from './steps/daemon-client.js';
+
+/** The step.call handler, built once on first use (the step modules load lazily). */
+let _stepCallHandler: StreamHandler | undefined;
+function getStepCallHandler(mod: typeof import('./steps/host.js')): StreamHandler {
+	return _stepCallHandler ??= mod.createStepCallHandler();
+}
 import { listModels } from './list-models.js';
 import { makeUpdateHandlers, launchUpdate, readUpdateOutcome } from './update-runner.js';
 import { readInstalledCommit } from './installed-commit.js';
@@ -1889,6 +1895,13 @@ async function main(): Promise<void> {
 		'workflow.review': async (params, send, signal) => {
 			const mod = await import('./workflow-review-rpc.js');
 			return mod.workflowReviewStart(params, send, signal);
+		},
+		// The step host (Epic c2ba6fa6, Story s11): runs one of the seven step
+		// tools for an MCP forwarder, in the caller's context, with this
+		// stream's signal; the 'done' frame carries the tool's reply unchanged.
+		'step.call': async (params, send, signal) => {
+			const mod = await import('./steps/host.js');
+			return getStepCallHandler(mod)(params, send, signal);
 		},
 		'ollama.pull': async (params, send, signal) => {
 			const { model } = params as { model: string };

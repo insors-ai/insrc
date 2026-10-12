@@ -48,8 +48,8 @@ export function loadState(token: string): ReviewStepStatePayload {
 	const entry = store.get(token);
 	if (entry === undefined) {
 		throw new StateTokenNotFound(
-			`review state token '${token}' not found: server restarted, TTL expired, ` +
-			`or the run was already completed. Restart with phase='start'.`,
+			`review state token '${token}' not found: the insrc daemon was restarted (runs are held in its memory and a restart loses them), ` +
+			`the token went unused for an hour, or the run was already completed. Start the run again with phase='start'.`,
 		);
 	}
 	entry.touchedAt = Date.now();
@@ -62,7 +62,8 @@ export function updateState(token: string, payload: ReviewStepStatePayload): voi
 	const entry = store.get(token);
 	if (entry === undefined) {
 		throw new StateTokenNotFound(
-			`review state token '${token}' not found while updating: restart with phase='start'.`,
+			`review state token '${token}' not found while updating: the insrc daemon was restarted, the token went unused for an hour, ` +
+			`or the run was already completed. Start the run again with phase='start'.`,
 		);
 	}
 	entry.payload = payload;

@@ -53,8 +53,8 @@ export function loadState(token: string): WorkflowStepStatePayload {
 	const entry = store.get(token);
 	if (entry === undefined) {
 		throw new StateTokenNotFound(
-			`workflow state token '${token}' not found: server restarted, TTL expired, ` +
-			`or the run was already completed. Restart with phase='start'.`,
+			`workflow state token '${token}' not found: the insrc daemon was restarted (runs are held in its memory and a restart loses them), ` +
+			`the token went unused for an hour, or the run was already completed. Start the run again with phase='start'.`,
 		);
 	}
 	entry.touchedAt = Date.now();

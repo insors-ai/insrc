@@ -153,8 +153,8 @@ export function reencodeState(previousToken: string, payload: StepStatePayload):
 /**
  * Look up the payload for a state token. Returns the STORED payload
  * verbatim -- no re-parsing, no re-decompressing. Throws
- * StepStateDecodeError on unknown tokens (server restarted, TTL
- * expired, malformed token shape).
+ * StepStateDecodeError on unknown tokens (the daemon was restarted,
+ * the token expired, malformed token shape).
  */
 export function decodeState(token: string): StepStatePayload {
 	if (typeof token !== 'string' || token.length < 8 || token.length > 128) {

@@ -285,6 +285,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     for (const r of approvals.clear()) recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
   };
 
+  // ISSUE-6a811b8a: the user typed a message instead of answering. A request the running turn is
+  // waiting on is answered 'deny' first (so the provider stops waiting), then every waiting request
+  // is recorded as rejected and the queue cleared, which also resets the grant chain: a later
+  // follow-up never carries grants from before the typed message.
+  const supersedeQueuedApprovals = (): void => {
+    shownApproval = undefined;
+    for (const r of approvals.clear()) {
+      if (r.resolution === 'in-turn') relayDecision(r.requestId, 'deny');
+      recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
+    }
+  };
+
   // ISSUE-6a811b8a: a chat switch or the panel closing. The waiting cards were live-only, so the
   // queue is dropped without outcome rows.
   const dropQueuedApprovals = (): void => {
@@ -866,6 +878,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         postInitialState();
         return;
       case 'submit-turn':
+        if (typeof msg.text === 'string' && msg.text.trim() !== '') supersedeQueuedApprovals();
         void runTurn(msg.text);
         return;
       case 'cancel-turn':

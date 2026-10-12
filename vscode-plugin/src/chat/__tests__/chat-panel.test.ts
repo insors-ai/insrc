@@ -3115,3 +3115,74 @@ test('a follow-up that is refused again forms the next batch and its follow-up c
   assert.deepEqual([...(runs[2]!.allowedTools ?? [])], ['Edit', 'Write', 'Bash'], 'the previous batch\'s grants are kept');
   assert.equal(runs[2]!.prompt, 'Approved — run exactly this now: npm test', 'a single-request batch keeps the exact-command prompt');
 });
+
+test('a user-typed message while requests are queued records each as rejected, clears the queue, resets the grant chain and runs as a normal turn', async () => {
+  const fc = fakeChannel();
+  const { adapter, runs } = sequenceAdapter([
+    [refused('u1', 'Edit'), refused('u2', 'Write'), refused('u3', 'Bash'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
+    [{ kind: 'assistant-delta', turnId: 't2', text: 'ok' }, { kind: 'done', turnId: 't2', ok: true, sessionId: 'sess-1' }],
+    [refused('u4', 'Grep', 't3'), { kind: 'done', turnId: 't3', ok: true, sessionId: 'sess-1' }],
+  ]);
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'three edits' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'u1', decision: 'approve' })); // Edit joins the grant chain
+  fc.send(env('submit-turn', { text: 'never mind, just say ok' }));
+  assert.deepEqual(outcomes(fc).map((o) => [o.toolName, o.decision]), [['Edit', 'approved'], ['Write', 'rejected'], ['Bash', 'rejected']], 'each waiting request is rejected');
+  fc.send(env('permission-decision', { requestId: 'u2', decision: 'approve' }));
+  assert.equal(outcomes(fc).length, 3, 'the queue is empty');
+  await waitFor(() => runs.length === 2);
+  assert.equal(runs[1]!.prompt, 'never mind, just say ok', 'the message runs as a normal turn');
+  assert.equal(runs[1]!.allowedTools, undefined, 'a normal turn carries no grants');
+  // The typed turn is refused in turn: its follow-up carries only its own grant, not Edit.
+  fc.send(env('submit-turn', { text: 'search' }));
+  await waitFor(() => approvalCards(fc).some((c) => c.requestId === 'u4'));
+  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'done' && e.turnId === 't3').length === 1);
+  fc.send(env('permission-decision', { requestId: 'u4', decision: 'approve' }));
+  await waitFor(() => runs.length === 4);
+  assert.deepEqual([...(runs[3]!.allowedTools ?? [])], ['Grep'], 'grants from before the typed message are gone');
+});
+
+test("a live provider with a queued in-turn request, then the user types a message: decide(turnId, requestId, 'deny') is called before the new turn starts, and the request gets a rejected chip", async () => {
+  const fc = fakeChannel();
+  const order: string[] = [];
+  // The running turn waits inside itself for both answers (as codex does), then ends.
+  let answered!: () => void;
+  const bothAnswered = new Promise<void>((r) => (answered = r));
+  let runNo = 0;
+  const adapter: StreamAdapter = {
+    async *run(req: TurnRequest): AsyncIterable<TurnEvent> {
+      order.push(`run:${req.prompt}`);
+      if (++runNo > 1) {
+        yield { kind: 'done', turnId: 't2', ok: true };
+        return;
+      }
+      yield inTurn('Q1', 'Bash');
+      yield inTurn('Q2');
+      await bothAnswered;
+      yield { kind: 'done', turnId: 't1', ok: true };
+    },
+    cancel: () => {},
+    decide: (t, r, d) => {
+      order.push(`decide:${t}:${r}:${d}`);
+      if (order.filter((o) => o.startsWith('decide:')).length === 2) answered();
+    },
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ codex: adapter }, ['codex']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'run two commands' }));
+    await waitFor(() => approvalCards(fc).length === 1);
+    await new Promise((r) => setTimeout(r, 20));
+    fc.send(env('submit-turn', { text: 'stop, do something else' }));
+    await waitFor(() => order.includes('run:stop, do something else'));
+    const run2 = order.indexOf('run:stop, do something else');
+    assert.ok(order.indexOf('decide:t1:Q1:deny') !== -1 && order.indexOf('decide:t1:Q1:deny') < run2, 'Q1 denied to the provider before the new turn');
+    assert.ok(order.indexOf('decide:t1:Q2:deny') !== -1 && order.indexOf('decide:t1:Q2:deny') < run2, 'Q2 denied to the provider before the new turn');
+    assert.deepEqual(outcomes(fc).map((o) => [o.toolName, o.decision]), [['Bash', 'rejected'], ['Approve Q2', 'rejected']], 'each gets a rejected chip');
+  } finally {
+    fc.fireDispose();
+  }
+});

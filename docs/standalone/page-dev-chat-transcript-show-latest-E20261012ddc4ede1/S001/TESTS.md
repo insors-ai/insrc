@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -222,3 +222,31 @@ Run at 2026-10-12T08:03:08.089Z on commit `790f7779`. Tests check: **passed**. 7
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` | 0 | 11 | 0.5 s |  |
+
+## t7
+
+Run at 2026-10-12T08:07:28.254Z on commit `67e6d06e`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+| pass | the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+| pass | the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+| pass | S001 shell: session-restored replay routes through the sc1 registry (keyed, single-sourced, carries the stored class); CSP/one-script/textContent intact | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+| pass | S001 (74bc0120) ac1/ac2/ac3: the lock starts closed and is settled at all three session transitions | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+| pass | S001 (74bc0120) regression: the lock is additive — the surrounding handlers are unchanged | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 130 | 2 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 2 | 0.3 s |  |

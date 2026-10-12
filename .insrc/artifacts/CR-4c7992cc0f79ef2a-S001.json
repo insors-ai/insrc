@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "4c7992cc0f79ef2a",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "jetbrains-plugin-add-insrc-entry-project",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

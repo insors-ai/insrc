@@ -10,7 +10,9 @@
     "schemaVersion": 1,
     "epicHash": "1d04e56057b3daba",
     "storyId": "s1",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "vs-code-plugin-chat-cli-turn",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

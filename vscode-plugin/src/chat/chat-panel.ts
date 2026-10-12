@@ -300,8 +300,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (live === undefined) return;
     try {
       deps.providers.get(live.provider).decide(live.turnId, requestId, decision);
-    } catch {
-      /* adapter gone / provider unavailable — the decision is undeliverable, never throw */
+    } catch (err: unknown) {
+      // Adapter gone / provider unavailable: the decision is undeliverable. Never throw; the
+      // decision is still recorded and the queue moves on (ISSUE-6a811b8a).
+      log.warn(`[chat] approval decision for ${requestId} could not be delivered: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -329,21 +331,29 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * host once the owner's extension host is gone (it then takes ownership). Events after the cursor
    * are posted (while the session is shown) and appended; the cursor is cleared at the end.
    */
-  const followLiveTurn = (s: ChatSession): void =>
+  const followLiveTurn = (s: ChatSession): void => {
+    // ISSUE-6a811b8a: the turns this follow raised approval requests for, so its end ends their batch
+    // even when the output ends without a terminal event.
+    const followedTurns = new Set<string>();
     turns.follow(s, {
       onEvent: (ev) => {
-        // ISSUE-6a811b8a: a followed turn's approval requests go through the queue like a live one's.
+        // A followed turn's approval requests go through the queue like a live one's.
         if (!disposed && session === s) {
-          if (ev.kind === 'approval-request') enqueueApproval(ev);
-          else post({ type: 'turn-event', event: ev });
+          if (ev.kind === 'approval-request') {
+            followedTurns.add(ev.turnId);
+            enqueueApproval(ev);
+          } else post({ type: 'turn-event', event: ev });
           if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
         }
         appendEvent(s, ev);
       },
       onEnd: () => {
-        if (session === s) postHistory();
+        if (session !== s) return;
+        for (const turnId of followedTurns) approvals.endTurn(turnId);
+        postHistory();
       },
     });
+  };
 
   const postInitialState = (): void => {
     post({ type: 'theme', theme });

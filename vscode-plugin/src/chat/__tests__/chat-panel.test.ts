@@ -2894,3 +2894,89 @@ test("outcome rows: one role:'permission-outcome' row per decision, in decision 
   assert.deepEqual(rows.map((r) => [r.toolName, r.decision]), [['Edit', 'rejected'], ['Write', 'rejected'], ['Bash', 'rejected']], 'one row per decision, in order');
   assert.ok(!saved.transcript.some((r) => (r as { role: string }).role === 'approval-request'), 'no approval-request rows');
 });
+
+/** An in-turn request (codex / control protocol): the provider waits inside the turn for decide(). */
+const inTurn = (requestId: string, toolName?: string, turnId = 't1'): TurnEvent => ({
+  kind: 'approval-request', turnId, requestId, title: `Approve ${requestId}`, detail: 'run it', resolution: 'in-turn', ...(toolName !== undefined ? { toolName } : {}),
+});
+
+test("the second card is posted only after the first is decided; a decision on a waiting card's id does nothing", async () => {
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [refused('w1', 'Edit'), refused('w2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit two files' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['w1']);
+  fc.send(env('permission-decision', { requestId: 'w2', decision: 'deny' }));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['w1'], 'the waiting card is not shown');
+  assert.equal(outcomes(fc).length, 0, 'and its id decides nothing');
+  fc.send(env('permission-decision', { requestId: 'w1', decision: 'deny' }));
+  assert.equal(outcomes(fc).length, 1, 'the head records exactly one outcome');
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['w1', 'w2'], 'the second card follows the first decision');
+  fc.send(env('permission-decision', { requestId: 'w1', decision: 'approve' }));
+  assert.equal(outcomes(fc).length, 1, 'a decided request cannot be decided again');
+});
+
+test('live-turn provider with two requests: decide() is called for the first before the second card is posted; no follow-up turn is started', async () => {
+  const fc = fakeChannel();
+  const order: string[] = [];
+  const runs: TurnRequest[] = [];
+  const evs: TurnEvent[] = [inTurn('L1'), inTurn('L2')];
+  const adapter = scriptedAdapter(evs, { hang: true, onRun: (r) => runs.push(r), onDecide: (_t, r, d) => order.push(`decide:${r}:${d}`) });
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ codex: adapter }, ['codex']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  const origPost = fc.channel.postMessage;
+  fc.channel.postMessage = (m: unknown) => {
+    const p = (m as { payload: { type: string; event?: TurnEvent } }).payload;
+    if (p.type === 'turn-event' && p.event?.kind === 'approval-request') order.push(`card:${p.event.requestId}`);
+    return origPost(m);
+  };
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'run two commands' }));
+    await waitFor(() => approvalCards(fc).length === 1);
+    await new Promise((r) => setTimeout(r, 20)); // the second request has arrived and is waiting
+    assert.deepEqual(order, ['card:L1'], 'only the first card while it is undecided');
+    fc.send(env('permission-decision', { requestId: 'L1', decision: 'approve' }));
+    assert.deepEqual(order, ['card:L1', 'decide:L1:approve', 'card:L2'], 'relayed before the next card is posted');
+    fc.send(env('permission-decision', { requestId: 'L2', decision: 'deny' }));
+    assert.deepEqual(order.slice(3), ['decide:L2:deny']);
+    await new Promise((r) => setTimeout(r, 20));
+    assert.equal(runs.length, 1, 'no follow-up turn for in-turn requests');
+  } finally {
+    fc.fireDispose();
+  }
+});
+
+test('an in-turn request that carries a toolName is relayed with decide(), not batched (routing by resolution)', async () => {
+  const fc = fakeChannel();
+  const decided: string[] = [];
+  const runs: TurnRequest[] = [];
+  const warns: string[] = [];
+  let throwOnce = true;
+  const adapter = scriptedAdapter([inTurn('T1', 'Bash'), inTurn('T2', 'Edit')], {
+    hang: true,
+    onRun: (r) => runs.push(r),
+    onDecide: (_t, r) => {
+      if (throwOnce) { throwOnce = false; throw new Error('adapter gone'); }
+      decided.push(r);
+    },
+  });
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo', logger: { warn: (m) => warns.push(m), error: () => {} } });
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'do it' }));
+    await waitFor(() => approvalCards(fc).length === 1);
+    // The first relay throws: the decision is logged as undeliverable, still recorded, and the queue advances.
+    fc.send(env('permission-decision', { requestId: 'T1', decision: 'approve' }));
+    assert.ok(warns.some((w) => w.includes('T1')), 'the undeliverable decision is logged');
+    assert.equal(outcomes(fc).length, 1);
+    assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['T1', 'T2'], 'the queue advanced');
+    fc.send(env('permission-decision', { requestId: 'T2', decision: 'approve' }));
+    assert.deepEqual(decided, ['T2'], 'a toolName-carrying in-turn request is relayed');
+    await new Promise((r) => setTimeout(r, 20));
+    assert.equal(runs.length, 1, 'never held for a batch follow-up');
+  } finally {
+    fc.fireDispose();
+  }
+});

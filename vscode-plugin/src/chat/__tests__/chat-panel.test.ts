@@ -4040,3 +4040,295 @@ test('host: a dismissed dialog posts nothing, and a pick over the limit keeps th
   assert.equal(refill.error, undefined);
   assert.equal(refill.items.length, 10);
 });
+
+// ---- Story E2026101259da3204:S001 t6: sending attachments with a message ----
+
+const ATTACHED = 'Attached files (read them with your file tools):';
+const userRows = (fc: FakeChannel): Array<Record<string, unknown>> => posted(fc, 'user-row');
+/** A store whose addBytes for `slow.png` waits until release() is called. */
+function gatedStore(): { wrapStore: (s: AttachmentStore) => AttachmentStore; release: () => void } {
+  let release!: () => void;
+  const gate = new Promise<void>((r) => (release = r));
+  return {
+    release,
+    wrapStore: (s) => ({
+      ...s,
+      addBytes: async (id, input) => {
+        if (input.name === 'slow.png') await gate;
+        return s.addBytes(id, input);
+      },
+    }),
+  };
+}
+
+test("host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list", async () => {
+  const h = attachHarness();
+  const sid = activeId(h.fc);
+  const dir = `${ATT_ROOT}/${sid}`;
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'shot.png', clientId: 'c1' });
+  h.fake.files.set('/src/my notes.txt', new Uint8Array(3));
+  h.pick.next = ['/src/my notes.txt'];
+  await h.sendAndWait('pick-attachments');
+
+  const cleared = await h.sendAndWait('submit-turn', { text: '  look at these  ' });
+  assert.deepEqual(cleared, { type: 'attachments-pending', sessionId: sid, items: [] });
+  await waitFor(() => h.runs.length === 1);
+  const refs = [
+    { id: '1-shot.png', name: 'shot.png', kind: 'image', size: 5, path: `${dir}/1-shot.png` },
+    { id: '2-mynotes.txt', name: 'my notes.txt', kind: 'file', size: 3, path: `${dir}/2-mynotes.txt` },
+  ];
+  // The CLI gets the text, then the block of absolute paths, and may read the session's directory.
+  assert.equal(h.runs[0]!.prompt, `look at these\n\n${ATTACHED}\n${dir}/1-shot.png\n${dir}/2-mynotes.txt`);
+  assert.deepEqual(h.runs[0]!.readDirs, [dir]);
+  // The stored row keeps the user's own words and lists the files; no path block in its text.
+  const stored = h.sessions.get(sid)!.transcript[0]!;
+  assert.deepEqual({ ...stored, at: 'x' }, { role: 'user', text: 'look at these', at: 'x', attachments: refs });
+  // The live echo carries the same attachments, under the row's key.
+  assert.deepEqual(userRows(h.fc), [{ type: 'user-row', text: 'look at these', key: 'r0', rowIndex: 0, attachments: refs }]);
+  // The files stay on disk: the message refers to them.
+  assert.deepEqual(attFiles(h), [`${dir}/1-shot.png`, `${dir}/2-mynotes.txt`]);
+
+  // The next message carries none: its row, echo and prompt are as they always were.
+  await waitFor(() => turnEvents(h.fc).some((e) => e.kind === 'done'));
+  const pendingPosts = h.pendings().length;
+  h.fc.send(env('submit-turn', { text: 'and again' }));
+  await waitFor(() => h.runs.length === 2);
+  assert.equal(h.runs[1]!.prompt, 'and again');
+  const row = h.sessions.get(sid)!.transcript.filter((r) => r.role === 'user')[1]!;
+  assert.deepEqual(Object.keys(row), ['role', 'text', 'at']);
+  assert.deepEqual(Object.keys(userRows(h.fc)[1]!), ['type', 'text', 'key', 'rowIndex']);
+  assert.equal(h.pendings().length, pendingPosts, 'a message without attachments posts no pending list');
+});
+
+test('host: a submit with blank text and an attachment runs a turn and names the chat from the attachment; with blank text and none it is a no-op', async () => {
+  const h = attachHarness();
+  const sid = activeId(h.fc);
+  const dir = `${ATT_ROOT}/${sid}`;
+  // Blank and nothing attached: nothing happens.
+  h.fc.send(env('submit-turn', { text: '   ' }));
+  h.fc.send(env('submit-turn', { text: '' }));
+  await runsSettled();
+  assert.equal(h.runs.length, 0);
+  assert.deepEqual(userRows(h.fc), []);
+  assert.equal(h.sessions.get(sid), undefined, 'the draft is still unsaved');
+
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'system diagram.png' });
+  // A malformed submit is still a no-op and takes nothing.
+  h.fc.send(env('submit-turn', { text: 7 }));
+  await runsSettled();
+  assert.equal(h.runs.length, 0);
+  assert.equal(h.pendings().at(-1)!.items.length, 1);
+
+  h.fc.send(env('submit-turn', { text: '  ' }));
+  await waitFor(() => h.runs.length === 1);
+  assert.equal(h.runs[0]!.prompt, `${ATTACHED}\n${dir}/1-systemdiagram.png`);
+  assert.deepEqual(h.runs[0]!.readDirs, [dir]);
+  const s = h.sessions.get(sid)!;
+  assert.equal(s.transcript[0]!.role === 'user' ? s.transcript[0]!.text : 'x', '');
+  assert.equal(s.transcript[0]!.role === 'user' ? s.transcript[0]!.attachments?.length : 0, 1);
+  assert.equal(s.title, 'system diagram.png');
+  assert.equal(userRows(h.fc)[0]!['text'], '');
+  assert.deepEqual(h.pendings().at(-1)!.items, []);
+});
+
+test('host: a submit waits for an attachment still being written, and the message carries every chip in order', async () => {
+  const gate = gatedStore();
+  const h = attachHarness({ wrapStore: gate.wrapStore });
+  const sid = activeId(h.fc);
+  const dir = `${ATT_ROOT}/${sid}`;
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'fast.png' });
+  h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'slow.png' }));
+  h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'third.png' }));
+  h.fc.send(env('submit-turn', { text: 'all three' }));
+  // Pasted after the message was sent: it is not part of that message.
+  h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'after.png' }));
+  await runsSettled();
+  assert.equal(h.runs.length, 0, 'the submit waits for the write');
+  assert.deepEqual(userRows(h.fc), []);
+
+  gate.release();
+  await waitFor(() => h.runs.length === 1);
+  assert.equal(h.runs[0]!.prompt, `all three\n\n${ATTACHED}\n${dir}/1-fast.png\n${dir}/2-slow.png\n${dir}/3-third.png`);
+  const row = h.sessions.get(sid)!.transcript[0]!;
+  assert.deepEqual(row.role === 'user' ? row.attachments?.map((a) => a.id) : [], ['1-fast.png', '2-slow.png', '3-third.png']);
+  assert.deepEqual((userRows(h.fc)[0]!['attachments'] as Array<{ id: string }>).map((a) => a.id), ['1-fast.png', '2-slow.png', '3-third.png']);
+  await waitFor(() => h.pendings().at(-1)!.items.length === 1);
+  assert.deepEqual(h.pendings().at(-1)!.items.map((i) => i['id']), ['4-after.png']);
+});
+
+test('host: a later turn of a session with an attachment still passes readDirs, a session with none passes none, and a grant re-run keeps it', async () => {
+  const { adapter, runs } = sequenceAdapter([
+    [refused('g1', 'Bash', 't1', { command: 'ls' }), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
+    [{ kind: 'assistant-delta', turnId: 't2', text: 'ran' }, { kind: 'done', turnId: 't2', ok: true, sessionId: 'sess-1' }],
+  ]);
+  const h = attachHarness({ adapter });
+  const dir = `${ATT_ROOT}/${activeId(h.fc)}`;
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'shot.png' });
+  h.fc.send(env('submit-turn', { text: 'run it' }));
+  await waitFor(() => approvalCards(h.fc).length === 1 && turnEvents(h.fc).some((e) => e.kind === 'done'));
+  assert.deepEqual(runs[0]!.readDirs, [dir]);
+
+  // The grant re-run is the host's own message: same directory, the approved tool, no file block.
+  h.fc.send(env('permission-decision', { requestId: 'g1', decision: 'approve' }));
+  await waitFor(() => runs.length === 2);
+  assert.equal(runs[1]!.prompt, 'Approved — run exactly this now: ls');
+  assert.deepEqual([...(runs[1]!.allowedTools ?? [])], ['Bash']);
+  assert.deepEqual(runs[1]!.readDirs, [dir]);
+  assert.deepEqual(runs[1]!.resume, { provider: 'claude', nativeSessionId: 'sess-1' });
+
+  // Three messages later it is still readable.
+  await waitFor(() => turnEvents(h.fc).filter((e) => e.kind === 'done').length === 2);
+  h.fc.send(env('submit-turn', { text: 'thanks' }));
+  await waitFor(() => runs.length === 3);
+  assert.equal(runs[2]!.prompt, 'thanks');
+  assert.deepEqual(runs[2]!.readDirs, [dir]);
+
+  // A chat that never had an attachment: no readDirs at all, with the seams present.
+  await h.sendAndWait('new-chat', { provider: 'claude' });
+  h.fc.send(env('submit-turn', { text: 'plain' }));
+  await waitFor(() => runs.length === 4);
+  assert.ok(!('readDirs' in runs[3]!), 'no readDirs key on a session without attachments');
+  assert.deepEqual(Object.keys(runs[3]!).sort(), ['cwd', 'permissionMode', 'prompt', 'provider']);
+  assert.deepEqual(Object.keys(h.sessions.get(activeId(h.fc))!.transcript[0]!), ['role', 'text', 'at']);
+});
+
+test('host: a grant re-run and a selection continuation leave the pending list untouched and attach nothing', async () => {
+  const { adapter, runs } = sequenceAdapter([
+    [refused('g1', 'Bash'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
+    [
+      { kind: 'selection-request', turnId: 't2', requestId: 'sel-1', prompt: 'Pick', options: [{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }] },
+      { kind: 'done', turnId: 't2', ok: true, sessionId: 'sess-1' },
+    ],
+    [{ kind: 'done', turnId: 't3', ok: true, sessionId: 'sess-1' }],
+  ]);
+  const h = attachHarness({ adapter });
+  const sid = activeId(h.fc);
+  const dir = `${ATT_ROOT}/${sid}`;
+  h.fc.send(env('submit-turn', { text: 'start' }));
+  await waitFor(() => approvalCards(h.fc).length === 1 && turnEvents(h.fc).some((e) => e.kind === 'done'));
+  // A chip is waiting while the host sends its own two messages.
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'waiting.png' });
+  const pendingPosts = h.pendings().length;
+
+  h.fc.send(env('permission-decision', { requestId: 'g1', decision: 'approve' }));
+  await waitFor(() => runs.length === 2);
+  assert.equal(runs[1]!.prompt, 'Approved: please proceed with the Bash action you requested permission for.');
+  await waitFor(() => turnEvents(h.fc).some((e) => e.kind === 'selection-request'));
+  h.fc.send(env('selection-decision', { requestId: 'sel-1', selected: ['a'] }));
+  await waitFor(() => runs.length === 3);
+  assert.equal(runs[2]!.prompt, 'Selected: Alpha');
+
+  for (const run of runs.slice(1)) {
+    assert.ok(!run.prompt.includes(ATTACHED), 'no file block in the host\'s own message');
+    assert.ok(!('readDirs' in run), 'no row of the session carries an attachment yet');
+  }
+  const s = h.sessions.get(sid)!;
+  for (const r of s.transcript) assert.ok(!('attachments' in r), 'no row took the waiting attachment');
+  assert.equal(h.pendings().length, pendingPosts, 'the pending list was neither cleared nor re-posted');
+  assert.deepEqual(h.pendings().at(-1)!.items.map((i) => i['id']), ['1-waiting.png']);
+  assert.deepEqual(attFiles(h), [`${dir}/1-waiting.png`]);
+
+  // The user's own next message is what takes it.
+  await waitFor(() => turnEvents(h.fc).filter((e) => e.kind === 'done').length === 3);
+  h.fc.send(env('submit-turn', { text: 'now with the file' }));
+  await waitFor(() => runs.length === 4);
+  assert.equal(runs[3]!.prompt, `now with the file\n\n${ATTACHED}\n${dir}/1-waiting.png`);
+  assert.deepEqual(runs[3]!.readDirs, [dir]);
+});
+
+test('host: a submit with blank text and an attachment supersedes queued approvals', async () => {
+  const { adapter, runs } = sequenceAdapter([
+    [refused('u1', 'Edit'), refused('u2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
+    [{ kind: 'assistant-delta', turnId: 't2', text: 'ok' }, { kind: 'done', turnId: 't2', ok: true, sessionId: 'sess-1' }],
+  ]);
+  const h = attachHarness({ adapter });
+  h.fc.send(env('submit-turn', { text: 'two edits' }));
+  await waitFor(() => approvalCards(h.fc).length === 1 && turnEvents(h.fc).some((e) => e.kind === 'done'));
+
+  // Blank with nothing attached is a no-op: the requests keep waiting.
+  h.fc.send(env('submit-turn', { text: '  ' }));
+  await runsSettled();
+  assert.deepEqual(outcomes(h.fc), []);
+  assert.equal(runs.length, 1);
+
+  // Blank with an attachment is a message: both waiting requests are rejected, then it runs.
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'instead.png' });
+  h.fc.send(env('submit-turn', { text: '' }));
+  await waitFor(() => runs.length === 2);
+  assert.deepEqual(outcomes(h.fc).map((o) => [o.toolName, o.decision]), [['Edit', 'rejected'], ['Write', 'rejected']]);
+  assert.ok(runs[1]!.prompt.startsWith(ATTACHED));
+  assert.equal(runs[1]!.allowedTools, undefined, 'it runs as a normal turn, with no grant');
+  // The outcome rows are written before the message's own row.
+  const roles = h.sessions.get(activeId(h.fc))!.transcript.map((r) => r.role);
+  assert.ok(roles.lastIndexOf('permission-outcome') < roles.lastIndexOf('user'));
+  // The queue is empty: a late click on the old card does nothing.
+  h.fc.send(env('permission-decision', { requestId: 'u1', decision: 'approve' }));
+  await runsSettled();
+  assert.equal(outcomes(h.fc).length, 2);
+  assert.equal(runs.length, 2);
+});
+
+test('host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first', async () => {
+  // A chat switch during the wait.
+  {
+    const gate = gatedStore();
+    const { adapter, runs } = sequenceAdapter([]);
+    const h = attachHarness({ adapter, wrapStore: gate.wrapStore });
+    const one = h.sessions.create('claude');
+    const two = h.sessions.create('claude');
+    await h.sendAndWait('open-chat', { chatId: one.id });
+    h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'slow.png' }));
+    h.fc.send(env('submit-turn', { text: 'send it' }));
+    await h.sendAndWait('open-chat', { chatId: two.id });
+    gate.release();
+    await waitFor(() => h.fake.files.has(`${ATT_ROOT}/${one.id}/1-slow.png`));
+    await runsSettled();
+    assert.equal(runs.length, 0, 'the submit is dropped');
+    assert.deepEqual(h.sessions.get(one.id)!.transcript, []);
+    assert.deepEqual(h.sessions.get(two.id)!.transcript, [], 'it does not land on the chat now shown');
+    assert.deepEqual(userRows(h.fc), []);
+    assert.deepEqual(h.pendings().at(-1)!.items, [], 'the other chat shows none');
+    // The chip is still there when the user comes back, and goes with the next message.
+    assert.deepEqual((await h.sendAndWait('open-chat', { chatId: one.id })).items.map((i) => i['id']), ['1-slow.png']);
+    h.fc.send(env('submit-turn', { text: 'send it now' }));
+    await waitFor(() => runs.length === 1);
+    assert.equal(runs[0]!.prompt, `send it now\n\n${ATTACHED}\n${ATT_ROOT}/${one.id}/1-slow.png`);
+  }
+  // The panel closing during the wait.
+  {
+    const gate = gatedStore();
+    const { adapter, runs } = sequenceAdapter([]);
+    const h = attachHarness({ adapter, wrapStore: gate.wrapStore });
+    const sid = activeId(h.fc);
+    h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'slow.png' }));
+    h.fc.send(env('submit-turn', { text: 'send it' }));
+    h.fc.fireDispose();
+    gate.release();
+    await waitFor(() => h.fake.files.has(`${ATT_ROOT}/${sid}/1-slow.png`));
+    await runsSettled();
+    assert.equal(runs.length, 0);
+    assert.equal(h.sessions.get(sid), undefined, 'nothing was stored');
+    assert.deepEqual(h.errors, []);
+  }
+  // Two submits while a write is under way: the first takes the attachment, the second follows it.
+  {
+    const gate = gatedStore();
+    const { adapter, runs } = sequenceAdapter([]);
+    const h = attachHarness({ adapter, wrapStore: gate.wrapStore });
+    const sid = activeId(h.fc);
+    h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'slow.png' }));
+    h.fc.send(env('submit-turn', { text: 'first' }));
+    h.fc.send(env('submit-turn', { text: 'second' }));
+    await runsSettled();
+    assert.equal(h.sessions.get(sid), undefined, 'neither has run yet');
+    gate.release();
+    await waitFor(() => runs.some((r) => r.prompt === 'second'));
+    const rows = h.sessions.get(sid)!.transcript.filter((r) => r.role === 'user');
+    assert.deepEqual(rows.map((r) => (r.role === 'user' ? [r.text, r.attachments?.map((a) => a.id)] : [])), [['first', ['1-slow.png']], ['second', undefined]]);
+    assert.deepEqual(userRows(h.fc).map((r) => [r['text'], r['key']]), [['first', 'r0'], ['second', 'r1']]);
+    // The attachment went once, with the first message.
+    assert.ok(!runs.at(-1)!.prompt.includes(ATTACHED));
+    assert.deepEqual(runs.at(-1)!.readDirs, [`${ATT_ROOT}/${sid}`]);
+    assert.deepEqual(h.pendings().at(-1)!.items, []);
+  }
+});

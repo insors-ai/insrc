@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -107,3 +107,43 @@ Run at 2026-10-12T10:29:58.252Z on commit `645bbd99`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` | 0 | 71 | 0.3 s |  |
+
+## t5
+
+Run at 2026-10-12T10:33:34.975Z on commit `7b24b330`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: host: attach-image and pick-attachments add to the active session's pending list and post attachments-pending; remove-attachment removes one; errors are posted as one sentence and the list is unchanged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host: attach-image and pick-attachments add to the active session's pending list and post attachments-pending; remove-attachment removes one; errors are posted as one sentence and the list is unchanged | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: host: ready, new-chat and open-chat post each session's own pending list; an unknown or foreign attachment id in remove or open does nothing; open-attachment opens the resolved path of a row's or a pending attachment**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host: ready, new-chat and open-chat post each session's own pending list; an unknown or foreign attachment id in remove or open does nothing; open-attachment opens the resolved path of a row's or a pending attachment | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: host without the attachments seams: the shell has no attach button or chip row and the four messages are ignored**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host without the attachments seams: the shell has no attach button or chip row and the four messages are ignored | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: host: an attach-image whose base64 length implies more than the limit is refused without decoding and without calling the store**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host: an attach-image whose base64 length implies more than the limit is refused without decoding and without calling the store | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: host: a dismissed dialog posts nothing, and a pick over the limit keeps the first ten and posts one error sentence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host: a dismissed dialog posts nothing, and a pick over the limit keeps the first ten and posts one error sentence | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 141 | 2.3 s |  |

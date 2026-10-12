@@ -202,7 +202,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   interface PendingAttachment {
     readonly ref: AttachmentRef;
     readonly clientId?: string | undefined;
+    /** The number of the change that added it, so a submit takes only what was asked for before it. */
+    readonly seq: number;
   }
+  let changeSeq = 0;
   const pendingAttachments = new Map<string, PendingAttachment[]>();
   // One chain of changes per session: adds and removes run one after another, so the limit is
   // checked against the list as it really is.
@@ -243,11 +246,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * Queues a change to a session's pending list behind the ones already running. The change
    * returns the error sentences to show (none when all went well) and whether to post at all.
    */
-  const changePending = (sessionId: string, change: (list: PendingAttachment[]) => Promise<{ readonly post: boolean; readonly errors: readonly string[] }>): void => {
+  const changePending = (
+    sessionId: string,
+    change: (list: PendingAttachment[], seq: number) => Promise<{ readonly post: boolean; readonly errors: readonly string[] }>,
+  ): void => {
+    const seq = ++changeSeq;
     const run = async (): Promise<void> => {
       let result: { readonly post: boolean; readonly errors: readonly string[] };
       try {
-        result = await change(pendingOf(sessionId));
+        result = await change(pendingOf(sessionId), seq);
       } catch (err: unknown) {
         result = { post: true, errors: [attachError('The attachment', err)] };
       }
@@ -892,14 +899,27 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     );
   };
 
-  async function runTurn(text: unknown, allowedTools?: readonly string[], opts?: { readonly suppressEcho?: boolean | undefined }): Promise<void> {
+  /** The line the attached paths are listed under in the prompt sent to the CLI. */
+  const ATTACHED_HEADING = 'Attached files (read them with your file tools):';
+
+  // Story E2026101259da3204:S001: `opts.attachments` is the files this message carries. Only a
+  // real submit passes them (see submitTurn); a grant re-run and a selection continuation are the
+  // host's own messages and carry none.
+  async function runTurn(
+    text: unknown,
+    allowedTools?: readonly string[],
+    opts?: { readonly suppressEcho?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined },
+  ): Promise<void> {
     if (typeof text !== 'string') return; // malformed submit-turn -> no-op (never throws)
-    const prompt = text.trim();
-    if (prompt === '' || session === undefined) return; // empty submit is a no-op
+    const typed = text.trim();
+    const files = opts?.attachments ?? [];
+    if ((typed === '' && files.length === 0) || session === undefined) return; // empty submit is a no-op
 
     const s = session;
+    // The stored row keeps the user's own words; the paths are named only in what the CLI is sent.
+    const prompt = files.length === 0 ? typed : [...(typed === '' ? [] : [typed, '']), ATTACHED_HEADING, ...files.map((f) => f.path)].join('\n');
 
-    s.transcript.push({ role: 'user', text: prompt, at: now() });
+    s.transcript.push(files.length === 0 ? { role: 'user', text: typed, at: now() } : { role: 'user', text: typed, at: now(), attachments: [...files] });
     // S001 ac1/lc1: echo the user's prompt LIVE so it appears during the turn (not only on a
     // later session-restored replay). ONE append is both the durable row and the live echo —
     // its key is the row's transcript index, so the live row and its replay reconcile to a
@@ -908,23 +928,36 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // suppressEcho so the internal "Approved — run exactly this now: …" prompt is NOT echoed as a
     // user bubble (only the resolved permission-outcome chip is shown). A normal submit still echoes.
     if (opts?.suppressEcho !== true) {
-      post({ type: 'user-row', text: prompt, key: `r${s.transcript.length - 1}`, rowIndex: s.transcript.length - 1 });
+      post({
+        type: 'user-row',
+        text: typed,
+        key: `r${s.transcript.length - 1}`,
+        rowIndex: s.transcript.length - 1,
+        ...(files.length > 0 ? { attachments: [...files] } : {}),
+      });
     }
     // S005: name the chat from its FIRST user prompt (clipped) so the history dropdown
     // rows are distinguishable; a whitespace-only prompt is already rejected above, so
     // the clip is non-empty. Later turns keep the established title.
     if (s.transcript.filter((r) => r.role === 'user').length === 1) {
-      const derived = prompt.replace(/\s+/g, ' ').trim().slice(0, 60);
+      // A first message with no text is named from its first attachment.
+      const derived = (typed !== '' ? typed : (files[0]?.name ?? '')).replace(/\s+/g, ' ').trim().slice(0, 60);
       if (derived !== '') s.title = derived;
       // Then ask the LLM for a better title in the background (keeps `derived` on failure).
-      void applyTitle(s, prompt);
+      if (typed !== '') void applyTitle(s, typed);
     }
     trySave(s); // runTurn is fired and forgotten: a failing save must not become an unhandled rejection
 
     const grant = allowedTools && allowedTools.length > 0 ? { allowedTools } : {};
+    // The session's attachments directory is readable on this turn and on every later one (a grant
+    // re-run and a selection continuation too), so the assistant can read a file again.
+    const readable =
+      att !== undefined && s.transcript.some((r) => r.role === 'user' && r.attachments !== undefined && r.attachments.length > 0)
+        ? { readDirs: [att.store.dirOf(s.id)] }
+        : {};
     const req = s.nativeSessionId !== undefined
-      ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
-      : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant };
+      ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, ...readable, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
+      : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, ...readable };
 
     const sink: TurnSink = {
       onWaiting: () => post({ type: 'turn-event', event: { kind: 'status', turnId: 'waiting', phase: 'waiting' } }),
@@ -966,6 +999,39 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // the lock and stops the previous turn posting (the transcript never interleaves); the previous
     // turn's process is NOT killed: this turn waits for it.
     await turns.start(s, req, sink);
+  }
+
+  // Story E2026101259da3204:S001: a submit while the attachment seams are present. Submits run one
+  // after another. Each is tied to the session it was sent in and to the attachment changes asked
+  // for before it: it waits for those, so a message never goes without a file the user saw as a
+  // chip, and takes exactly those from the session's pending list (one pasted after the submit
+  // stays pending). If the chat was switched or the panel closed while it waited, it is dropped
+  // and the attachments stay pending on their session.
+  let submitWork: Promise<void> = Promise.resolve();
+  function submitTurn(text: unknown): void {
+    if (session === undefined) return;
+    const s = session;
+    const writes = attachmentWork.get(s.id) ?? Promise.resolve();
+    const upTo = changeSeq;
+    const run = async (): Promise<void> => {
+      await writes;
+      if (disposed || session !== s) return;
+      const list = pendingOf(s.id);
+      const files = list.filter((p) => p.seq <= upTo).map((p) => p.ref);
+      if (typeof text !== 'string' || (text.trim() === '' && files.length === 0)) return;
+      // A typed message, or one that is only attachments, answers the waiting requests with a no.
+      supersedeQueuedApprovals();
+      if (files.length > 0) {
+        // In place: a change still running holds this same list.
+        list.splice(0, list.length, ...list.filter((p) => p.seq > upTo));
+        postPending(s.id);
+      }
+      // Not awaited: the next submit must not wait for this turn to end (the newest message wins).
+      void runTurn(text, undefined, { attachments: files });
+    };
+    submitWork = submitWork.then(run).catch((err: unknown) => {
+      log.error(`[chat] submit failed: ${err instanceof Error ? err.message : String(err)}`);
+    });
   }
 
   // Returns the absolute transcript index of the row the event wrote, or undefined when it wrote none.
@@ -1020,6 +1086,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         postInitialState();
         return;
       case 'submit-turn':
+        if (att !== undefined) {
+          submitTurn(msg.text);
+          return;
+        }
         if (typeof msg.text === 'string' && msg.text.trim() !== '') supersedeQueuedApprovals();
         void runTurn(msg.text);
         return;
@@ -1188,7 +1258,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         const name = typeof msg.name === 'string' ? msg.name : '';
         const clientId = typeof msg.clientId === 'string' ? msg.clientId : undefined;
         const sessionId = session.id;
-        changePending(sessionId, async (list) => {
+        changePending(sessionId, async (list, seq) => {
           const shown = name.trim() === '' ? 'The pasted image' : name;
           if (list.length >= MAX_ATTACHMENTS_PER_MESSAGE) return { post: true, errors: [`${TOO_MANY}; ${shown} was not attached.`] };
           // Judged from the text's length, so an oversize paste is never decoded.
@@ -1199,7 +1269,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           const bytes = Buffer.from(dataBase64, 'base64');
           if (bytes.length === 0 || bytes.length !== size) return { post: true, errors: ['The pasted item is not a supported image.'] };
           try {
-            list.push({ ref: await att.store.addBytes(sessionId, { name, mime, bytes }), clientId });
+            list.push({ ref: await att.store.addBytes(sessionId, { name, mime, bytes }), clientId, seq });
           } catch (err: unknown) {
             return { post: true, errors: [attachError(shown, err)] };
           }
@@ -1223,12 +1293,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             return;
           }
           if (paths.length === 0) return; // dismissed: nothing changes, nothing is posted
-          changePending(sessionId, async (list) => {
+          changePending(sessionId, async (list, seq) => {
             const errors: string[] = [];
             const room = Math.max(0, MAX_ATTACHMENTS_PER_MESSAGE - list.length);
             for (const path of paths.slice(0, room)) {
               try {
-                list.push({ ref: await att.store.addFile(sessionId, path) });
+                list.push({ ref: await att.store.addFile(sessionId, path), seq });
               } catch (err: unknown) {
                 errors.push(attachError(path.split(/[\\/]/).pop() ?? path, err));
               }

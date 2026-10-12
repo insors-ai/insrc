@@ -728,3 +728,40 @@ test('the migration with no index, or run a second time, reads no session, write
   for (const id of ['broken', 'gone', 'wrong-id']) assert.ok(warns.some((w) => w.includes(`stored session ${id} is not a session record`)), `${id} is logged`);
   assert.equal(fake.files.has(headPath('broken')), false);
 });
+
+// --- review follow-ups -----------------------------------------------------------------------------
+
+test('a failed whole-file write leaves no temporary file behind, and a field the store does not know is carried through a save, a read and the migration', () => {
+  const { store, fake } = makeStore();
+  const s = store.draft('claude');
+  s.transcript.push(say('one'));
+  store.save(s);
+  // The head's rename fails, then its write: neither leaves a .tmp file.
+  for (const op of ['rename', 'writeText'] as const) {
+    fake.failOn = (c) => (c.op === op ? new Error(`${op} failed`) : undefined);
+    s.title = `after a failing ${op}`;
+    assert.throws(() => store.save(s), new RegExp(`${op} failed`));
+    fake.failOn = undefined;
+    assert.deepEqual([...fake.files.keys()].filter((p) => p.endsWith('.tmp')), [], `no temporary file after a failing ${op}`);
+  }
+  store.save(s);
+  assert.deepEqual([...fake.files.keys()].sort(), [headPath(s.id), rowsPath(s.id)].sort());
+
+  // A field added to ChatSession later is not dropped.
+  const future = s as ChatSession & { pinned?: boolean; notes?: { text: string } };
+  future.pinned = true;
+  future.notes = { text: 'kept' };
+  store.save(future);
+  const read = makeStore({ fake }).store.get(s.id) as typeof future;
+  assert.deepEqual([read.pinned, read.notes], [true, { text: 'kept' }]);
+  assert.deepEqual(read, JSON.parse(JSON.stringify(future)));
+  for (const added of ['v', 'updatedAt', 'rows', 'savedAt']) assert.equal(added in read, false, `the head's own ${added} is not a session field`);
+  // And the migration carries it, comparing the whole stored record on read-back.
+  const old = oldState();
+  const m = oldSession(old, 'with extras', 2, '2026-02-02T00:00:00.000Z') as typeof future;
+  m.pinned = true;
+  old.store.save(m);
+  const target = fakeSessionFs();
+  assert.deepEqual(migrateChatSessionsFromMemento({ memento: old.memento, root: ROOT, fs: target.fs }), { migrated: 1, kept: [] });
+  assert.equal((createFileChatSessionStore({ root: ROOT, fs: target.fs }).get(m.id) as typeof future).pinned, true);
+});

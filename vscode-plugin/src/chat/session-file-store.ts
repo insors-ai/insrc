@@ -110,23 +110,15 @@ export const HEAD_SUFFIX = '.head.json';
 export const ROWS_SUFFIX = '.rows.ndjson';
 
 /** A session's head record: the session without its transcript, and what the list and the cap need. */
-export interface SessionHead {
+export type SessionHead = Omit<ChatSession, 'transcript'> & {
   readonly v: 1;
-  readonly id: string;
-  readonly provider: ProviderId;
-  readonly createdAt: string;
-  readonly title: string;
-  readonly editMode: 'auto' | 'review';
-  readonly mode?: ChatSession['mode'];
-  readonly nativeSessionId?: string;
-  readonly liveTurn?: ChatSession['liveTurn'];
   /** The last row's time, else createdAt (updatedAtOf). */
   readonly updatedAt: string;
   /** The transcript's length at the save: a record only, a read takes its rows from the rows file. */
   readonly rows: number;
   /** When the head was written: the order sessions are evicted in. */
   readonly savedAt: string;
-}
+};
 
 export interface SessionPaths {
   readonly head: string;
@@ -145,25 +137,27 @@ let tmpSeq = 0;
 /** Replaces a file's content whole: a temporary file beside it, then a rename over it. */
 export function writeWhole(fs: SessionFilesFs, path: string, data: string): void {
   const tmp = `${path}.${process.pid}.${++tmpSeq}.tmp`;
-  fs.writeText(tmp, data);
-  fs.rename(tmp, path);
+  try {
+    fs.writeText(tmp, data);
+    fs.rename(tmp, path);
+  } catch (err) {
+    // A failed write must not leave its temporary file behind: every call uses a new name.
+    try {
+      fs.remove(tmp);
+    } catch {
+      /* the write's own error is the one to report */
+    }
+    throw err;
+  }
 }
 
+/**
+ * A session's head: every field it carries except the transcript, so a field added to ChatSession
+ * later is kept without a change here.
+ */
 export function headOf(s: ChatSession, savedAt: string): SessionHead {
-  return {
-    v: 1,
-    id: s.id,
-    provider: s.provider,
-    createdAt: s.createdAt,
-    title: s.title,
-    editMode: s.editMode,
-    ...(s.mode !== undefined ? { mode: s.mode } : {}),
-    ...(s.nativeSessionId !== undefined ? { nativeSessionId: s.nativeSessionId } : {}),
-    ...(s.liveTurn !== undefined ? { liveTurn: s.liveTurn } : {}),
-    updatedAt: updatedAtOf(s),
-    rows: s.transcript.length,
-    savedAt,
-  };
+  const { transcript, ...fields } = s;
+  return { ...fields, v: 1, updatedAt: updatedAtOf(s), rows: transcript.length, savedAt };
 }
 
 /** A head file's record, or undefined when the file is missing, not JSON, or not a session head. */
@@ -217,18 +211,10 @@ export function readRows(fs: SessionFilesFs, path: string, log?: FileStoreLogger
   return { rows, bytes };
 }
 
+/** The session a head and its rows make: the head's own fields without what the store added. */
 function sessionOf(head: SessionHead, rows: TranscriptEntry[]): ChatSession {
-  return {
-    id: head.id,
-    provider: head.provider,
-    createdAt: head.createdAt,
-    title: head.title,
-    editMode: head.editMode,
-    ...(head.mode !== undefined ? { mode: head.mode } : {}),
-    ...(head.nativeSessionId !== undefined ? { nativeSessionId: head.nativeSessionId } : {}),
-    ...(head.liveTurn !== undefined ? { liveTurn: head.liveTurn } : {}),
-    transcript: rows,
-  };
+  const { v: _v, updatedAt: _updatedAt, rows: _rows, savedAt: _savedAt, ...fields } = head;
+  return { ...fields, transcript: rows };
 }
 
 export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStore {
@@ -511,7 +497,7 @@ export function migrateChatSessionsFromMemento(deps: MigrationDeps): MigrationRe
     // With the same rows the whole session must match; with more rows the files are newer, and
     // their head is the newer one too.
     const fieldsMatch =
-      got.length > want.length || isDeepStrictEqual(plain(sessionOf(head, got)), plain(sessionOf(headOf(stored, ''), [...want])));
+      got.length > want.length || isDeepStrictEqual(plain(sessionOf(head, got)), plain(stored));
     if (!rowsMatch || !fieldsMatch) {
       log?.warn(`[chat] stored session ${id} does not read back equal from its files; left in place`);
       return false;

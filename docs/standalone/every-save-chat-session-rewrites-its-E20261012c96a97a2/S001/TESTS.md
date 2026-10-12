@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -73,3 +73,49 @@ Run at 2026-10-12T09:14:01.747Z on commit `1c71c3f5`. Tests check: **passed**. 7
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` | 0 | 7 | 0.3 s |  |
+
+## t3
+
+Run at 2026-10-12T09:17:10.214Z on commit `d73cc765`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: after another writer has appended to the rows file, the same held session object is saved three times (with a new row, with only a head change, and after a get of its id): every save only appends, the rows file is never replaced, it holds both writers' rows in save order, and the get returns a fresh object with all of them (mutation: untrack the object when the cached copy is dropped)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | after another writer has appended to the rows file, the same held session object is saved three times (with a new row, with only a head change, and after a get of its id): every save only appends, the rows file is never replaced, it holds both writers' rows in save order, and the get returns a fresh object with all of them (mutation: untrack the object when the cached copy is dropped) | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: an object the store has never tracked, saved for an id whose files exist, replaces the rows file whole through a temporary file and a rename; so does a tracked object whose transcript is shorter than its count**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an object the store has never tracked, saved for an id whose files exist, replaces the rows file whole through a temporary file and a rename; so does a tracked object whose transcript is shorter than its count | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: a failing append or head write makes save throw and leaves the object's count where the rows on disk are, so the next save writes the missing rows once and none twice**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a failing append or head write makes save throw and leaves the object's count where the rows on disk are, so the next save writes the missing rows once and none twice | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: with maxSessions set, a save that creates a new session removes the sessions with the oldest savedAt and their rows files and calls onEvict for each, never the session being saved; a failing remove is logged and the save succeeds; a cap of 0 or less is no cap**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with maxSessions set, a save that creates a new session removes the sessions with the oldest savedAt and their rows files and calls onEvict for each, never the session being saved; a failing remove is logged and the save succeeds; a cap of 0 or less is no cap | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: a held session object saved after its files were removed is written whole with its head, get then returns every row, and the cap is applied without removing it (mutation: append only the rows beyond its count)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a held session object saved after its files were removed is written whole with its head, get then returns every row, and the cap is applied without removing it (mutation: append only the rows beyond its count) | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: a save after the store cut back a torn last line appends and does not replace the rows file**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a save after the store cut back a torn last line appends and does not replace the rows file | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` | 0 | 13 | 0.3 s |  |

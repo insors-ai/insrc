@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 35 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 42 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -282,3 +282,56 @@ Run at 2026-10-12T10:09:37.570Z on commit `e28a8a32`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/graph/__tests__/no-live-store-in-tests.test.ts` | 0 | 5 | 6.4 s |  |
+
+## t10
+
+Run at 2026-10-12T10:18:12.379Z on commit `afd417ad`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: owner check: default path with no declaration is refused and no file is created**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owner check: default path with no declaration is refused and no file is created | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**unit: owner check: after the declaration the same open succeeds, also after a close and reopen**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owner check: after the declaration the same open succeeds, also after a close and reopen | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**unit: owner check: a temporary path opens without a declaration**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owner check: a temporary path opens without a declaration | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**unit: owner check: the live path as a relative path and through a symbolic link is refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owner check: the live path as a relative path and through a symbolic link is refused | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**unit: owner check: permitted-reader only opens the live path; neither declaration is refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owner check: permitted-reader only opens the live path; neither declaration is refused | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**integration: refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused | `src/db/graph/__tests__/live-store-refusal.test.ts` |
+
+**unit: source scan: the permitted-reader function's name appears at exactly two places**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | source scan: the permitted-reader function's name appears at exactly two places | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/graph/__tests__/live-store-owner.test.ts` | 0 | 6 | 0.8 s |  |
+| `src/db/graph/__tests__/live-store-refusal.test.ts` | 0 | 1 | 0.9 s |  |

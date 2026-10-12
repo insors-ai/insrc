@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-12T10:09:37.570Z",
+    "updatedAt": "2026-10-12T10:18:12.379Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1124,6 +1124,153 @@
               },
               {
                 "title": "the check sees a store that IS opened at the default path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "afd417ad",
+        "ranAt": "2026-10-12T10:18:12.379Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "owner check: default path with no declaration is refused and no file is created",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "owner check: default path with no declaration is refused and no file is created",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "owner check: after the declaration the same open succeeds, also after a close and reopen",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "owner check: after the declaration the same open succeeds, also after a close and reopen",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "owner check: a temporary path opens without a declaration",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "owner check: a temporary path opens without a declaration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "owner check: the live path as a relative path and through a symbolic link is refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "owner check: the live path as a relative path and through a symbolic link is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "owner check: permitted-reader only opens the live path; neither declaration is refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "owner check: permitted-reader only opens the live path; neither declaration is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/live-store-refusal.test.ts",
+                "title": "refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "source scan: the permitted-reader function's name appears at exactly two places",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "source scan: the permitted-reader function's name appears at exactly two places",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 798,
+            "titles": [
+              {
+                "title": "owner check: default path with no declaration is refused and no file is created",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: after the declaration the same open succeeds, also after a close and reopen",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: a temporary path opens without a declaration",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: the live path as a relative path and through a symbolic link is refused",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: permitted-reader only opens the live path; neither declaration is refused",
+                "result": "pass"
+              },
+              {
+                "title": "source scan: the permitted-reader function's name appears at exactly two places",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/live-store-refusal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 865,
+            "titles": [
+              {
+                "title": "refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused",
                 "result": "pass"
               }
             ],

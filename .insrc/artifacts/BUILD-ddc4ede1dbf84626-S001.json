@@ -4,7 +4,7 @@
     "epicHash": "ddc4ede1dbf84626",
     "storyId": "S001",
     "createdAt": "2026-10-12T07:35:29.855Z",
-    "updatedAt": "2026-10-12T07:55:35.663Z",
+    "updatedAt": "2026-10-12T07:57:44.563Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:11:33.406Z",
@@ -23,9 +23,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "appendEvent now returns the index of the row it wrote; both sinks, the two outcome recorders and the user-row write first and post with rowIndex. A load-older handler answers one transcript-page for the active session and ignores stale or malformed requests. session-restored goes through one helper and carries firstIndex 0 and total; the whole transcript is still sent. Re-validated against the amended plan: a followed row is written before it is posted, and after a chat switch the follow stops, posting and writing nothing more, as before this change.",
+    "summary": "The shared fake DOM gains scrollTop, scrollHeight and clientHeight (plain numbers). The render registry gains three paging companions: forgetKeysBefore(index), withIsolatedPending(fn) (restores the live pending list also on a throw) and forgetPendingIn(nodes). Nothing uses them yet.",
     "testRecord": {
       "md": "docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/TESTS.md"
     },
@@ -35,9 +39,86 @@
           "file": ".insrc/artifacts/PLAN-ddc4ede1dbf84626-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T07:55:35.663Z"
+        "timestamp": "2026-10-12T07:57:44.563Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:57:44.563Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:57:44.563Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fake-dom.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:57:44.563Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fake-dom.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:57:44.563Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:57:44.563Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:57:44.563Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:57:44.563Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:57:44.563Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:57:44.563Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/render-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:57:44.563Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/transcript-window.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:57:44.563Z"
       }
     ],
-    "commit": "72fc12d2"
+    "commit": "2884a6f5"
   }
 }

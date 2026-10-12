@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -107,3 +107,32 @@ Run at 2026-10-12T07:55:35.663Z on commit `72fc12d2`. Tests check: **passed**. 6
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 128 | 1.9 s |  |
+
+## t4
+
+Run at 2026-10-12T07:57:44.563Z on commit `2884a6f5`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` |
+
+**unit: registry forgetPendingIn drops the pending tool entries whose node is given, and a later result for one renders as its own row**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | registry forgetPendingIn drops the pending tool entries whose node is given, and a later result for one renders as its own row | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` |
+
+**unit: fake-dom nodes carry scrollTop, scrollHeight and clientHeight**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | fake-dom nodes carry scrollTop, scrollHeight and clientHeight | `vscode-plugin/src/chat/__tests__/fake-dom.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/fake-dom.test.ts` | 0 | 3 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/render-registry.test.ts` | 0 | 70 | 0.3 s |  |

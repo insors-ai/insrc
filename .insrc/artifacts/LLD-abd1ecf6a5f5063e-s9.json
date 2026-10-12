@@ -107,7 +107,8 @@
       "reviewedAt": "2026-08-02T12:52:35.560Z",
       "model": "client"
     },
-    "approvedAt": "2026-08-02T13:14:47.773Z"
+    "approvedAt": "2026-08-02T13:14:47.773Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
   },
   "body": {
     "hldContextSlice": {

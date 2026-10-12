@@ -9,7 +9,10 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "5f7a7cb95b643ae5",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "batch-approval-stamps-one-shared-meta",
+    "epicCreatedAt": "2026-10-02T18:38:27.860Z",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

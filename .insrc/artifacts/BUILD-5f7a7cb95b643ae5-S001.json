@@ -6,7 +6,9 @@
     "createdAt": "2026-10-04T15:17:30.878Z",
     "updatedAt": "2026-10-04T16:26:51.747Z",
     "standalone": true,
-    "approvedAt": "2026-10-04T16:26:51.821Z"
+    "approvedAt": "2026-10-04T16:26:51.821Z",
+    "epicSlug": "batch-approval-stamps-one-shared-meta",
+    "epicCreatedAt": "2026-10-02T18:38:27.860Z"
   },
   "body": {
     "tasks": [

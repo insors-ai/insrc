@@ -21,7 +21,11 @@
     "epicSlug": "type-check-plugin-project-build-gate",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-12T08:36:52.747Z",
+    "parentRef": {
+      "slug": "type-check-plugin-project-build-gate"
+    }
   },
   "body": {
     "title": "Type-check the plugin project in the build gate",

@@ -21,7 +21,12 @@
     "epicSlug": "every-save-chat-session-rewrites-its",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-12T08:36:53.415Z",
+    "parentRef": {
+      "slug": "work-framed-approved-spec-proceed-from",
+      "storyId": "s3"
+    }
   },
   "body": {
     "title": "Every save of a chat session rewrites its whole transcript",

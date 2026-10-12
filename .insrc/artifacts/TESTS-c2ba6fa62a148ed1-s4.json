@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-12T10:27:12.069Z",
+    "updatedAt": "2026-10-12T10:32:43.828Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1357,6 +1357,49 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "59e44a23",
+        "ranAt": "2026-10-12T10:32:43.828Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "installed daemon: an outside script is refused and a daemon write afterwards succeeds",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/smoke.md section 2 (10:30:49 UTC 2026-10-12): LmdbStoreNotOwnerError with no descriptors on the store files, then conversation.saveSession ok, read back, deleted, status storeFailure null"
+            }
+          },
+          {
+            "name": "installed daemon: restart of a healthy daemon behaves as before",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "S004/smoke.md sections 1 and 3: CLI restart steps [stop,start] with no force-stop; daemon-ctl.sh restart exit 0, 'daemon shut down' in ~1 s, new pid 57247 at d8ce093e, no storeFailure"
+            }
+          },
+          {
+            "name": "installed daemon: the two formerly live-store test files pass and the log shows no lock-file open from them",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "S004/smoke.md section 4 (10:31:28 UTC): 3 and 16 tests pass with the real home beside daemon pid 57247; lsof shows only the daemon on the store; /tmp/.insrc/daemon.14.log has no 'a file of the graph store was opened' warning"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -360,3 +360,21 @@ Run at 2026-10-12T10:27:12.069Z on commit `db3df771`. Tests check: **passed**. 4
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/store-file-open-diagnostic.test.ts` | 0 | 2 | 0.6 s |  |
 | `src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts` | 0 | 2 | 0.5 s |  |
+
+## t12
+
+Run at 2026-10-12T10:32:43.828Z on commit `59e44a23`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: installed daemon: an outside script is refused and a daemon write afterwards succeeds**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/smoke.md section 2 (10:30:49 UTC 2026-10-12): LmdbStoreNotOwnerError with no descriptors on the store files, then conversation.saveSession ok, read back, deleted, status storeFailure null
+
+**smoke: installed daemon: restart of a healthy daemon behaves as before**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: S004/smoke.md sections 1 and 3: CLI restart steps [stop,start] with no force-stop; daemon-ctl.sh restart exit 0, 'daemon shut down' in ~1 s, new pid 57247 at d8ce093e, no storeFailure
+
+**smoke: installed daemon: the two formerly live-store test files pass and the log shows no lock-file open from them**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: S004/smoke.md section 4 (10:31:28 UTC): 3 and 16 tests pass with the real home beside daemon pid 57247; lsof shows only the daemon on the store; /tmp/.insrc/daemon.14.log has no 'a file of the graph store was opened' warning

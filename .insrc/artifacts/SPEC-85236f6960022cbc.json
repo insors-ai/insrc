@@ -87,7 +87,8 @@
     "reviewOverride": {
       "reason": "Accept-with-note: the sole MED is a prose-accuracy nuance, not a flawed decision — the daemon-owned maintenance.update + self-restart IPC is confirmed NET-NEW (no daemon update/restart IPC exists today; the plugins shell out to daemon-ctl.sh). The decisions are all sound and the 4 LOWs verified sound. Carrying the correction forward: the DEF/HLD MUST size decision-3 as building a NEW daemon IPC that wraps the existing daemon-ctl.sh update logic AND adds daemon self-respawn/restart, with the plugins moving from shelling out to daemon-ctl.sh to calling this IPC. User explicitly approved on this basis.",
       "at": "2026-09-23T17:27:15.126Z"
-    }
+    },
+    "standalone": true
   },
   "body": {
     "category": "requirements",

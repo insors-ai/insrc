@@ -4,7 +4,7 @@
     "epicHash": "59da3204a44afd1b",
     "storyId": "S001",
     "createdAt": "2026-10-12T10:25:29.172Z",
-    "updatedAt": "2026-10-12T10:33:34.975Z",
+    "updatedAt": "2026-10-12T10:37:43.920Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T10:10:09.226Z",
@@ -31,6 +31,10 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
     "testRecord": {
@@ -42,100 +46,100 @@
           "file": ".insrc/artifacts/PLAN-59da3204a44afd1b-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fake-attachment-fs.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/attachment-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/cli-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/render-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/session-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T10:33:34.975Z"
+        "timestamp": "2026-10-12T10:37:43.920Z"
       }
     ],
-    "commit": "7b24b330"
+    "commit": "4f93626c"
   }
 }

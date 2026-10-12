@@ -587,6 +587,6 @@ export function renderRegistryWebviewSource(): string {
     `function forgetKeysBefore(idx){for(var k in KEYS){if(/^r\\d+$/.test(k)&&Number(k.slice(1))<idx)delete KEYS[k];}}` +
     `function withIsolatedPending(fn){var live=PEND;PEND=[];try{return fn();}finally{PEND=live;}}` +
     `function forgetPendingIn(nodes){PEND=PEND.filter(function(p){return nodes.indexOf(p.wrap)<0;});}` +
-    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,forgetKeysBefore:forgetKeysBefore,withIsolatedPending:withIsolatedPending,forgetPendingIn:forgetPendingIn,onSelectionDecision:onSelectionDecision,onAttachmentOpen:onAttachmentOpen};}`
+    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,forgetKeysBefore:forgetKeysBefore,withIsolatedPending:withIsolatedPending,forgetPendingIn:forgetPendingIn,onSelectionDecision:onSelectionDecision,onAttachmentOpen:onAttachmentOpen,attachmentSize:attSize};}`
   );
 }

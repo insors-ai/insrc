@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -147,3 +147,55 @@ Run at 2026-10-12T10:33:34.975Z on commit `7b24b330`. Tests check: **passed**. 5
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 141 | 2.3 s |  |
+
+## t6
+
+Run at 2026-10-12T10:37:43.920Z on commit `4f93626c`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: host: a submit with blank text and an attachment runs a turn and names the chat from the attachment; with blank text and none it is a no-op**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host: a submit with blank text and an attachment runs a turn and names the chat from the attachment; with blank text and none it is a no-op | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: host: a submit waits for an attachment still being written, and the message carries every chip in order**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host: a submit waits for an attachment still being written, and the message carries every chip in order | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: host: a later turn of a session with an attachment still passes readDirs, a session with none passes none, and a grant re-run keeps it**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host: a later turn of a session with an attachment still passes readDirs, a session with none passes none, and a grant re-run keeps it | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: host: a grant re-run and a selection continuation leave the pending list untouched and attach nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host: a grant re-run and a selection continuation leave the pending list untouched and attach nothing | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: host: a submit with blank text and an attachment supersedes queued approvals**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host: a submit with blank text and an attachment supersedes queued approvals | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 148 | 2.7 s |  |

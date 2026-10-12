@@ -648,6 +648,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // ISSUE-6ae99f6e: the functional provider + mode (edits) selects live in the status bar, styled as
       // segments; the mode seg carries the amber 'auto-approve' pill (S004 k6 i) via .statusbar .perm-auto.
       `.statusbar .seg{display:inline-flex;align-items:center;gap:5px;}` +
+      // Story E2026101259da3204:S001: the icon-only attach control (first in the status bar) and
+      // the row of pending attachments between the input and the status bar.
+      (att === undefined
+        ? ''
+        : `.attachbtn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;background:transparent;border:1px solid transparent;border-radius:4px;color:var(--muted);cursor:pointer;}` +
+          `.attachbtn:hover,.attachbtn:focus-visible{color:var(--accent);border-color:var(--border-lit);outline:none;}` +
+          `.attachbtn svg{width:14px;height:14px;}` +
+          `.attachbar{padding:0 12px 8px;background:var(--bg-inset);flex:0 0 auto;}` +
+          `.attachbar[hidden],.atterr[hidden]{display:none;}` +
+          `.attlist{display:flex;flex-wrap:wrap;gap:6px;}` +
+          `.attchip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:2px 4px 2px 8px;border:1px solid var(--border-lit);border-radius:4px;color:var(--fg);font-size:12px;}` +
+          `.attchip__thumb{width:20px;height:20px;object-fit:cover;border-radius:2px;flex:0 0 auto;}` +
+          `.attchip__glyph{color:var(--accent);flex:0 0 auto;}` +
+          `.attchip__name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:28ch;}` +
+          `.attchip__size{color:var(--muted);flex:0 0 auto;}` +
+          `.attchip__x{cursor:pointer;color:var(--muted);padding:0 4px;flex:0 0 auto;}` +
+          `.attchip__x:hover,.attchip__x:focus-visible{color:var(--red);outline:none;}` +
+          `.atterr{color:var(--red);font-size:11.5px;padding-top:4px;}`) +
       `.statusbar .perm-auto{color:var(--amber);border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:2px 9px;}` +
       // The provider/session/edits selects, styled as the bold segment value (transparent, borderless).
       `.segsel{appearance:none;-webkit-appearance:none;background:transparent;border:none;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;line-height:1.2;padding:0 14px 0 2px;margin:0;cursor:pointer;outline:none;` +
@@ -716,6 +734,49 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // restore); picking a different provider starts a new chat with it.
     const providerOpts = available.map((p) => `<option value="${attr(p)}">${attr(p)}</option>`).join('');
     const provDisabled = available.length === 0 ? ' disabled' : '';
+    // Story E2026101259da3204:S001: the attachment controls, present only with the host's seams.
+    // The host owns the pending list; this draws what attachments-pending says and asks for
+    // changes by message. A pasted image is read here, sent as base64, and its data: URL kept as
+    // the chip's thumbnail (matched by clientId; the policy's `img-src data:` allows it). Chips are
+    // built with textContent, and a file is only ever named by the id the host issued.
+    const attachOn = att !== undefined;
+    const attachScript = !attachOn
+      ? ''
+      : `var attBar=document.getElementById('insrc-attachments'),attList=document.getElementById('insrc-attlist'),attErr=document.getElementById('insrc-atterr'),attBtn=document.getElementById('insrc-attach');` +
+        `var attCount=0,attSeq=0,attThumbs={},attSeen={};` +
+        `function renderPending(m){` +
+        `if(m.sessionId!==cur)return;` +
+        `var items=m.items||[];attCount=items.length;attList.textContent='';var shown={};` +
+        `items.forEach(function(a){` +
+        `var chip=document.createElement('span');chip.className='attchip';` +
+        `var th=a.clientId?attThumbs[a.clientId]:undefined;` +
+        `if(a.clientId){shown[a.clientId]=true;attSeen[a.clientId]=true;}` +
+        `if(th){var im=document.createElement('img');im.className='attchip__thumb';im.setAttribute('alt','');im.src=th;chip.appendChild(im);}` +
+        `else{var g=document.createElement('span');g.className='attchip__glyph';g.textContent=a.kind==='image'?'\u25a8':'\u25a4';chip.appendChild(g);}` +
+        `var nm=document.createElement('span');nm.className='attchip__name';nm.textContent=String(a.name);nm.setAttribute('title',String(a.name));chip.appendChild(nm);` +
+        `var sz=document.createElement('span');sz.className='attchip__size';sz.textContent=reg.attachmentSize(a.size);chip.appendChild(sz);` +
+        `var x=document.createElement('span');x.className='attchip__x';x.setAttribute('role','button');x.setAttribute('tabindex','0');x.setAttribute('aria-label','remove '+String(a.name));x.textContent='\u00d7';` +
+        `x.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'remove-attachment',attachmentId:a.id}});});` +
+        `x.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();x.click();}});` +
+        `chip.appendChild(x);attList.appendChild(chip);});` +
+        // A thumbnail is dropped once its chip has been shown and is gone (sent or removed).
+        `Object.keys(attThumbs).forEach(function(k){if(attSeen[k]&&!shown[k]){delete attThumbs[k];delete attSeen[k];}});` +
+        `if(m.error){attErr.textContent=String(m.error);attErr.hidden=false;}else{attErr.textContent='';attErr.hidden=true;}` +
+        `attBar.hidden=items.length===0&&!m.error;}` +
+        `if(attBtn)attBtn.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'pick-attachments'}});});` +
+        `reg.onAttachmentOpen(function(id){vs.postMessage({v:1,payload:{type:'open-attachment',attachmentId:id}});});`;
+    // A paste holding images attaches them and is prevented; any other paste is left alone.
+    const pasteScript = !attachOn
+      ? ''
+      : `box.addEventListener('paste',function(e){` +
+        `var list=e&&e.clipboardData&&e.clipboardData.items?e.clipboardData.items:[],imgs=[];` +
+        `for(var i=0;i<list.length;i++){var it=list[i];if(it&&it.kind==='file'&&typeof it.type==='string'&&it.type.indexOf('image/')===0){var f=it.getAsFile();if(f)imgs.push(f);}}` +
+        `if(imgs.length===0)return;` +
+        `e.preventDefault();` +
+        `imgs.forEach(function(f){var r=new FileReader();` +
+        `r.onload=function(){var url=String(r.result||''),c=url.indexOf(',');if(c<0)return;var cid='p'+(++attSeq);attThumbs[cid]=url;` +
+        `vs.postMessage({v:1,payload:{type:'attach-image',mime:f.type,dataBase64:url.slice(c+1),name:f.name||'',clientId:cid}});};` +
+        `r.readAsDataURL(f);});});`;
     const bootstrap =
       `const vs=acquireVsCodeApi();` +
       `const t=document.getElementById('insrc-term');` +
@@ -738,6 +799,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S004 (dev-chat ux polish): the selection widget's confirm posts a selection-decision the host
       // maps back to labels + continues the run. Wired once via the sc1 selection decision sink.
       `reg.onSelectionDecision(function(requestId,selected){vs.postMessage({v:1,payload:{type:'selection-decision',requestId:requestId,selected:selected}});});` +
+      attachScript +
       // S005: provider-selector + history-dropdown wiring (same one nonce'd script).
       `var cur='';` +
       `const ps=document.getElementById('insrc-provider');` +
@@ -810,7 +872,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // the held rows and keeps the reader's place (a page it did not ask for is discarded).
       `else if(m.type==='transcript-page'){pager.prepend(m);}` +
       // S001 ac1/lc1: the live user-row echo — reconciled to ONE row via its stable key.
-      `else if(m.type==='user-row'){pager.track(m.rowIndex,function(){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text}),m.key);});}` +
+      `else if(m.type==='user-row'){pager.track(m.rowIndex,function(){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text,attachments:m.attachments}),m.key);});}` +
+      (attachOn ? `else if(m.type==='attachments-pending'){renderPending(m);}` : '') +
       // S005: session-restored CLEARS the terminal before replaying (so switching chats
       // does not append onto the prior chat's view) + tracks the active id for the dropdown.
       // S001 t5: the replay routes through the sc1 registry (reg.appendKeyed(reg.toViewModel(x)))
@@ -836,8 +899,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // posts submit-turn + marks running. The '>' prompt posts cancel-turn while running.
       // Guard on non-empty (matches the host runTurn no-op) so an empty submit never marks running
       // or shows a stuck spinner. On submit, show the progress widget; status events refine its label.
-      `function doSubmit(){if(!box.value.trim())return;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';setRunning(true);setProgress('working\\u2026');setProvLock(true);}` +
+      // With attachments on, a blank box still submits when chips are shown.
+      `function doSubmit(){if(!box.value.trim()${attachOn ? '&&attCount===0' : ''})return;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';setRunning(true);setProgress('working\\u2026');setProvLock(true);}` +
       `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){doSubmit();}});` +
+      pasteScript +
       // A user cancel posts cancel-turn AND resets the UI locally: the host reap posts no terminal
       // event, so the webview must clear running + hide the progress widget itself (no stuck spinner).
       `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){vs.postMessage({v:1,payload:{type:'cancel-turn'}});setRunning(false);hideProgress();}else{doSubmit();}});` +
@@ -885,12 +950,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<span id="insrc-prompt" role="button" tabindex="0" aria-label="send">❯</span>` +
       `<textarea id="insrc-input" rows="2" aria-label="message" placeholder="message claude… (⌘↵ send · ^C interrupt)"></textarea>` +
       `</div>` +
+      (attachOn
+        ? `<div id="insrc-attachments" class="attachbar" hidden><div id="insrc-attlist" class="attlist"></div><div id="insrc-atterr" class="atterr" role="status" hidden></div></div>`
+        : '') +
       // Status bar (mock .statusbar): ISSUE-6ae99f6e — the FUNCTIONAL provider + mode selects live here
       // now, left-to-right (provider, then the 'edits' approval-mode). Same ids/options/classes as before
       // so their change-handlers + the pmode/updatePermSeg wiring bind unchanged; the mode seg keeps id
       // 'insrc-modeseg' (pmseg) so the amber auto pill still styles. No read-only session/edits mirror and
       // no '✓ idle' marker — the session is shown by the header dropdown and idle/busy by the progress bar.
       `<div class="statusbar">` +
+      (attachOn
+        ? `<button id="insrc-attach" type="button" class="attachbtn" aria-label="attach files" title="attach files">` +
+          `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M13.2 7.3 8 12.5a3.2 3.2 0 0 1-4.5-4.5l5.6-5.6a2.1 2.1 0 0 1 3 3L6.6 10.9a1.1 1.1 0 0 1-1.5-1.5l4.8-4.8"/></svg>` +
+          `</button>`
+        : '') +
       `<span class="seg"><select id="insrc-provider" class="segsel ${provCls}" aria-label="provider"${provDisabled}>${providerOpts}</select></span>` +
       `<span class="seg" id="insrc-modeseg">edits <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual">Manual</option><option value="edit-auto">Edit Automatically</option><option value="auto">Auto</option></select></span>` +
       `</div>` +

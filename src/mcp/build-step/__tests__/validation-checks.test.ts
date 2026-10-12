@@ -610,3 +610,19 @@ test('ISSUE-7ba8cf15: in its own process a failing test still fails the file', a
 		if (run.outputPath !== undefined) rmSync(run.outputPath, { force: true });
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws', async () => {
+	const dir = runnerDir({ 'ok.test.mjs': "import { test } from 'node:test';\ntest('runs', () => {});\n" });
+	const prev = process.env['TMPDIR'];
+	process.env['TMPDIR'] = join(dir, 'no-such-dir');
+	try {
+		const r = await runValidationChecks(dir, nodePlan({ testFiles: ['ok.test.mjs'] }));
+		const run = r.tests.files![0]!;
+		assert.equal(run.exitCode, null);
+		assert.match(run.note ?? '', /not run: no place for its test report/);
+		assert.equal(r.tests.ok, false);
+	} finally {
+		if (prev === undefined) delete process.env['TMPDIR']; else process.env['TMPDIR'] = prev;
+		rmSync(dir, { recursive: true, force: true });
+	}
+});

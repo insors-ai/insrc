@@ -367,7 +367,14 @@ async function runTestFile(
 		const command = [...plan.testCommand, TAP_REPORTER_ARG, file].join(' ');
 		return { run: { file, command, exitCode: null, timedOut: true, durationMs: 0, titles: [], note: NOTE_LIMIT_USED_UP }, output: '' };
 	}
-	const reportDir = mkdtempSync(join(tmpdir(), 'insrc-validate-report-'));
+	let reportDir: string;
+	try {
+		reportDir = mkdtempSync(join(tmpdir(), 'insrc-validate-report-'));
+	} catch (err) {
+		const command = [...plan.testCommand, TAP_REPORTER_ARG, file].join(' ');
+		const note = `not run: no place for its test report: ${err instanceof Error ? err.message : String(err)}`;
+		return { run: { file, command, exitCode: null, timedOut: false, durationMs: 0, titles: [], note }, output: '' };
+	}
 	const reportPath = join(reportDir, 'report.tap');
 	const argv = [...plan.testCommand, TAP_REPORTER_ARG, `${TAP_DESTINATION_ARG}${reportPath}`, file];
 	const command = argv.join(' ');
@@ -384,7 +391,8 @@ async function runTestFile(
 	} finally {
 		rmSync(reportDir, { recursive: true, force: true });
 	}
-	const output = reportWithPrinted(report, `${r.stdout}${r.stderr.length > 0 ? `${r.stdout.length > 0 && !r.stdout.endsWith('\n') ? '\n' : ''}${r.stderr}` : ''}`);
+	const printed = r.stderr.length === 0 ? r.stdout : `${r.stdout}\n${r.stderr}`;
+	const output = reportWithPrinted(report, printed);
 	const notes: string[] = [];
 	if (r.spawnError !== undefined) notes.push(`could not start: ${r.spawnError}`);
 	if (r.timedOut) notes.push(`timed out after ${Math.round(remainingMs / 1000)} s`);

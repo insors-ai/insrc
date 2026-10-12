@@ -19,7 +19,8 @@
     "schemaVersion": 1,
     "specHash": "1bb064e8e2a1edd1",
     "epicSlug": "structured-design-review-template-every-decision",
-    "approvedAt": "2026-10-05T06:05:44.521Z"
+    "approvedAt": "2026-10-05T06:05:44.521Z",
+    "standalone": true
   },
   "body": {
     "category": "design",

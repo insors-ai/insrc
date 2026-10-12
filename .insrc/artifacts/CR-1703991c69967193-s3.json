@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "1703991c69967193",
-    "storyId": "s3"
+    "storyId": "s3",
+    "epicSlug": "add-bugfix-triage-category-insrc-framework"
   },
   "body": {
     "kind": "code-review",

@@ -6,7 +6,9 @@
     "storyId": "s2",
     "createdAt": "2026-10-01T14:39:06.841Z",
     "updatedAt": "2026-10-01T15:21:18.045Z",
-    "approvedAt": "2026-10-01T15:21:18.082Z"
+    "approvedAt": "2026-10-01T15:21:18.082Z",
+    "epicSlug": "build-vs-code-plugin-ui-integration",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z"
   },
   "body": {
     "tasks": [

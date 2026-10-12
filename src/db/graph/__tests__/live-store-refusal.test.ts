@@ -58,12 +58,31 @@ test('refusal: process B is refused and never opens the lock file; process A the
 	assert.equal(reply.ok, false);
 	assert.equal(reply.name, 'LmdbStoreNotOwnerError');
 
-	// The permitted reader is let in beside the owner.
-	const c = await spawnStoreChild('-', { env });
-	assert.deepEqual(await c.send({ op: 'declare-reader' }), { ok: true });
-	assert.deepEqual(await c.send({ op: 'open' }), { ok: true });
-	assert.deepEqual(await c.send({ op: 'read', key: 'before' }), { ok: true, value: '1' });
-	await c.kill();
 	await b.kill();
+	await a.kill();
+});
+
+test('refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor', { skip: process.platform === 'win32' }, async () => {
+	// Before Story s11 a third process could declare itself a permitted reader; that
+	// allowance is gone, so every process but the owner is refused.
+	const a = await spawnStoreChild('-', { env });
+	assert.deepEqual(await a.send({ op: 'declare-owner' }), { ok: true });
+	assert.deepEqual(await a.send({ op: 'open' }), { ok: true });
+	assert.deepEqual(await a.send({ op: 'put', key: 'third' }), { ok: true });
+
+	const c = await spawnStoreChild('-', { env });
+	assert.deepEqual(await c.send({ op: 'open-store-files' }), { ok: true, value: [] }, 'C holds nothing before it tries');
+	const refused = await c.send({ op: 'open' });
+	assert.equal(refused.ok, false);
+	assert.equal(!refused.ok && refused.name, 'LmdbStoreNotOwnerError');
+	assert.deepEqual(await c.send({ op: 'open-store-files' }), { ok: true, value: [] }, 'C holds no descriptor on the store or its lock file');
+	// The helper no longer knows a reader declaration.
+	const unknown = await c.send({ op: 'declare-' + 'reader' } as never);
+	assert.equal(unknown.ok, false);
+
+	// The owner is unaffected.
+	assert.deepEqual(await a.send({ op: 'read', key: 'third' }), { ok: true, value: '1' });
+	assert.deepEqual(await a.send({ op: 'health' }), { ok: true, value: { state: 'ok' } });
+	await c.kill();
 	await a.kill();
 });

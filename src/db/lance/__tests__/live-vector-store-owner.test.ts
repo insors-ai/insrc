@@ -50,11 +50,11 @@ function assertRefused(e: unknown): true {
 	return true;
 }
 
-test('vector store owner rule: the graph store\'s temporary reader allowance does not open the live vector store', async () => {
-	// Built from two pieces so this file does not hold the name Story s11 deletes.
-	const declareReader = (graphStore as unknown as Record<string, () => void>)['declareLiveStoreReader' + 'UntilS11'];
-	assert.equal(typeof declareReader, 'function', 'the allowance still exists until Task t11');
-	declareReader!();
+test('vector store owner rule: no declaration other than the owner\'s exists, and without it the live vector store is refused', async () => {
+	// The graph store's temporary reader allowance is deleted (Story s11, t11);
+	// the owner declaration is the only one either store knows.
+	assert.deepEqual(Object.keys(graphStore).filter(k => /^declare/.test(k)), ['declareLiveStoreOwner']);
+	assert.equal((graphStore as unknown as Record<string, unknown>)['declareLiveStoreReader' + 'UntilS11'], undefined);
 	await assert.rejects(getLanceConn(), assertRefused);
 	assert.equal(existsSync(LIVE), false);
 });

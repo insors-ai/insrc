@@ -144,7 +144,7 @@ test('owner check: permitted-reader only opens the live path; neither declaratio
 	await assert.rejects(getGraphStore(), assertRefused);
 });
 
-test('source scan: the permitted-reader function\'s name appears at exactly two places', () => {
+test('source scan: the permitted-reader function\'s name appears only at its definition: the MCP server no longer calls it (Story s11, t9)', () => {
 	const SRC = fileURLToPath(new URL('../../../', import.meta.url));
 	const NAME = 'declareLiveStoreReaderUntilS11';
 	const hits: string[] = [];
@@ -157,7 +157,7 @@ test('source scan: the permitted-reader function\'s name appears at exactly two 
 		}
 	};
 	walk(SRC);
-	assert.equal(hits.length, 2, hits.join('\n'));
-	assert.ok(hits.some(h => h.startsWith('db/graph/store.ts:')), 'its definition');
-	assert.ok(hits.some(h => h.startsWith('mcp/server.ts:')), "the MCP server's one call");
+	// The MCP server's call went with its in-process step handlers; Story s11's t11 deletes the definition.
+	assert.equal(hits.length, 1, hits.join('\n'));
+	assert.ok(hits[0]!.startsWith('db/graph/store.ts:'), 'its definition');
 });

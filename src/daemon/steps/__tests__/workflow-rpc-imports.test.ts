@@ -36,23 +36,22 @@ test('workflow-rpc imports nothing from src/mcp, and takes the workflow step fro
 	assert.ok(importsOf(join(DAEMON, '..', 'mcp', 'server.ts')).some(p => p.startsWith(mcp)));
 });
 
-test('no file under src/mcp other than server.ts imports src/daemon/steps', () => {
+test('no file under src/mcp imports src/daemon/steps: the step tools are forwarded, not run in the MCP server (Story s11, t9)', () => {
 	const mcpRoot = normalize(join(DAEMON, '..', 'mcp'));
 	const steps = join(DAEMON, 'steps');
 	const offenders: string[] = [];
 	const walk = (dir: string): void => {
 		for (const name of readdirSync(dir)) {
 			const full = join(dir, name);
-			if (statSync(full).isDirectory()) { walk(full); continue; }
+			if (statSync(full).isDirectory()) { if (name !== '__tests__') walk(full); continue; }
 			if (!/\.(ts|tsx)$/.test(name)) continue;
-			if (full === join(mcpRoot, 'server.ts')) continue;
 			if (importsOf(full).some(p => p.startsWith(steps))) offenders.push(full.slice(mcpRoot.length + 1));
 		}
 	};
 	walk(mcpRoot);
 	assert.deepEqual(offenders, []);
-	// The check sees such an import: server.ts has them.
-	assert.ok(importsOf(join(mcpRoot, 'server.ts')).some(p => p.startsWith(steps)));
+	// The check sees such an import: the daemon's index registers the step host from there.
+	assert.ok(importsOf(join(DAEMON, 'index.ts')).some(p => p.startsWith(steps)));
 });
 
 test('no module under src/daemon/steps imports src/mcp/daemon-stream.ts: the moved handlers reach the daemon through the in-daemon client', () => {

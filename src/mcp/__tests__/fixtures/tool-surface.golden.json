@@ -1,0 +1,809 @@
+[
+	{
+		"name": "insrc_analyze",
+		"title": "insrc analyze",
+		"description": "One-shot analyze: runs the full insrc pipeline server-side and returns a verified, citation-grounded 7-layer bundle (system, focus, summary, structure, surface, artefacts, upstream) in a single tool call. Prefer this variant for STRUCTURAL-MAP questions (module maps, tree layout, entity counts) where no narrow-LLM reasoning is needed; inner LLM calls (if any) go to the daemon's configured shaperProvider (Ollama by default).\n\nFor adherence-check, capability-discovery, or prose-retrieval intents, prefer the sibling tool `insrc_analyze_step` -- it hands narrow-LLM reasoning to YOUR model in-session (better accuracy, no subprocess spawns, no separate billing).\n\nPrefer either analyze tool over Read/Grep/Glob for:\n  - \"map / explore <module>\"\n  - \"does the codebase already do <X>?\"\n  - \"how does <Y> work?\"\n  - \"does the code follow <rule> from <doc>?\"\n  - \"what conventions does <module> follow?\"\n  - \"list every registered <data source | infra manifest>\"\n  - Any question where you'd otherwise grep + read to answer.\n\nCall again with a narrower `focus` to drill down. Fall back to Read/Grep/Glob only when the tool returns an empty or clearly off-topic bundle.",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"repo": {
+					"type": "string",
+					"description": "Absolute path (or registered repo name) the analyze framework should operate on. Must match a repo previously registered via `insrc repo add`. If unset, the daemon's default repo (from `INSRC_REPO` env / config) is used; when neither is set, the call fails with a repo-not-found error listing every registered repo."
+				},
+				"focus": {
+					"type": "string",
+					"minLength": 1,
+					"description": "One-line natural-language framing of what to analyze. E.g. \"map the payable extraction module\", \"does the CLAUDE.md Haiku rule hold?\", or \"list every registered data source\". The framework's classifier turns this into a structured intent + picks a deterministic recipe."
+				},
+				"target": {
+					"type": "string",
+					"enum": [
+						"code",
+						"docs",
+						"data",
+						"infra",
+						"generic"
+					],
+					"description": "Optional target hint. Skip the classifier's target inference when the caller already knows."
+				},
+				"scope": {
+					"type": "string",
+					"enum": [
+						"XS",
+						"S",
+						"M",
+						"L",
+						"XL"
+					],
+					"description": "Optional. The size you expect the request to be (XS smallest, XL largest). It is a hint only: the size is measured from what the request touches, and the answer reports both."
+				}
+			},
+			"required": [
+				"focus"
+			],
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	},
+	{
+		"name": "insrc_analyze_step",
+		"title": "insrc analyze (multi-turn)",
+		"description": "Phase-driven multi-turn context analyzer. Alternative to `insrc_analyze` for clients that want to keep every LLM reasoning turn in-session (no subprocess spawn, no MCP sampling required). Use when:\n\n  - The user asks about a repository's code structure, conventions, adherence, reuse candidates, or design decisions.\n  - You want to answer using the citation-grounded analyze framework rather than manual grep + read.\n\nMulti-turn loop:\n\n  1. Call phase='start' with the user's focus. Server returns\n     { next: 'emit_plan', prompt, schema, state }.\n  2. Follow the prompt to emit a JSON object matching the schema\n     (the ExplorationPlan). Then call phase='plan' with your\n     plan + state.\n  3. If the server returns { next: 'emit_narrow', prompt, schema,\n     state, explorationId }, emit the JSON matching the schema and\n     call phase='narrow' with your JSON + explorationId + state.\n     Repeat until the server returns emit_bundle instead.\n  4. Server returns { next: 'emit_bundle', prompt, schema, state }.\n     Emit the bundle JSON, then call phase='bundle' with your\n     bundle + state.\n  5. Server returns { next: 'done', markdown } -- render this\n     to the user.\n\nThe `guidance` field on each response explains what to do next in one sentence; the `prompt` + `schema` fields are the authoritative instructions. Preserve `state` verbatim between calls.",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"phase": {
+					"type": "string",
+					"enum": [
+						"start",
+						"plan",
+						"narrow",
+						"bundle"
+					],
+					"description": "Which turn of the loop this call carries. Start a new run with `start`, then walk through `plan` -> optional `narrow` (one or more) -> `bundle`. The `narrow` phase is ONLY needed when the prior response was next=\"emit_narrow\"; the server tells you which via the `next` field."
+				},
+				"focus": {
+					"type": "string",
+					"minLength": 1,
+					"description": "Only for phase=start. Natural-language framing of what to analyze."
+				},
+				"repo": {
+					"type": "string",
+					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
+				},
+				"target": {
+					"type": "string",
+					"enum": [
+						"code",
+						"docs",
+						"data",
+						"infra",
+						"generic"
+					],
+					"description": "Only for phase=start. Optional target hint."
+				},
+				"scope": {
+					"type": "string",
+					"enum": [
+						"XS",
+						"S",
+						"M",
+						"L",
+						"XL"
+					],
+					"description": "Only for phase=start. Optional. The size you expect the request to be; a hint only, as the size is measured."
+				},
+				"plan": {
+					"type": "object",
+					"properties": {
+						"answerType": {
+							"type": "string"
+						},
+						"synthesisHint": {
+							"type": "string"
+						},
+						"explorations": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"propertyNames": {
+									"type": "string"
+								},
+								"additionalProperties": {}
+							}
+						}
+					},
+					"required": [
+						"answerType",
+						"synthesisHint",
+						"explorations"
+					],
+					"additionalProperties": {},
+					"description": "Only for phase=plan. The ExplorationPlan JSON your LLM emitted from the prior emit_plan response."
+				},
+				"narrow": {
+					"type": "object",
+					"propertyNames": {
+						"type": "string"
+					},
+					"additionalProperties": {},
+					"description": "Only for phase=narrow. The JSON your LLM emitted matching the schema from the prior emit_narrow response (finalizes one narrow-LLM exploration)."
+				},
+				"explorationId": {
+					"type": "string",
+					"description": "Only for phase=narrow. Echo the explorationId from the prior emit_narrow response so the server can cross-check which exploration this narrow output finalizes."
+				},
+				"bundle": {
+					"type": "object",
+					"properties": {
+						"system": {
+							"type": "string"
+						},
+						"focus": {
+							"type": "string"
+						},
+						"summary": {
+							"type": "string"
+						},
+						"structure": {
+							"type": "string"
+						},
+						"surface": {
+							"type": "string"
+						},
+						"artefacts": {
+							"type": "string"
+						},
+						"upstream": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"system",
+						"focus",
+						"summary",
+						"structure",
+						"surface",
+						"artefacts",
+						"upstream"
+					],
+					"additionalProperties": {},
+					"description": "Only for phase=bundle. The AnalyzeContextBundle JSON your LLM emitted from the prior emit_bundle response."
+				},
+				"state": {
+					"type": "string",
+					"description": "Opaque continuation token from the prior tool response. Required for phase='plan' and phase='bundle'; server generates it on phase='start'."
+				}
+			},
+			"required": [
+				"phase"
+			],
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	},
+	{
+		"name": "insrc_build_step",
+		"title": "insrc build (controller-driven)",
+		"description": "Lean, controller-driven build surface for implementing ONE approved plan Task. The daemon resolves + gates + templatizes; YOU (the controller) do the editing. Stateless — each call is self-contained given `target` (a task id: `#N`, a hierarchical id, or `s1/t3`).\n\nPhases:\n\n  - `implement` — { target }. The daemon runs the admission gate (plan present + approved + fresh) and returns one of:\n      { next: \"refused\", refusal }            — plan missing/unapproved/stale;\n      { next: \"implement\", taskId, workflowId, issueRef, prompt } — EXECUTE the returned prompt: edit code, run tests, commit. The daemon did NOT edit. The prompt surfaces any design decisions resolved at plan-start (from the Story LLD's meta.questionResolutions). Open questions are resolved at stage STARTS via insrc_workflow_step, not here.\n\n  - `validate` — { target, tests? }. The DAEMON runs the typecheck and the Task's tests itself, then a read-only verdict session against the repo, and returns { next: \"done\", verdict, passed }. `passed` is the daemon's judgment, never a self-report. Pass `tests` to say which test cases (a file and a test title) carry each test the Task names: the daemon runs those files, records a result per case in the Story's test record (TESTS.md beside BUILD.md), and fails the Task when a case fails, is skipped or is not found. A wrong mapping returns the error `invalid-test-mapping` and nothing is run.\n\n`repo` falls back to INSRC_REPO. The repo must be registered + indexed.",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"phase": {
+					"type": "string",
+					"enum": [
+						"implement",
+						"validate"
+					],
+					"description": "Which build step to run."
+				},
+				"target": {
+					"type": "string",
+					"minLength": 1,
+					"description": "Task identifier: `#N`, `owner/repo#N`, a canonical/slug hierarchical id, or `s1/t3`. Ignored for a standalone (no-plan) build."
+				},
+				"repo": {
+					"type": "string",
+					"description": "Absolute repo path; falls back to INSRC_REPO env."
+				},
+				"epicHash": {
+					"type": "string",
+					"description": "Optional epic scope for a structural `target` (`s1/t3`) when the repo holds more than one epic — a full or prefix DEF hash naming the epic. Ignored for issue# / hierarchical ids and single-epic dirs."
+				},
+				"standalone": {
+					"type": "object",
+					"properties": {
+						"standalone": {
+							"type": "boolean",
+							"const": true
+						},
+						"epicHash": {
+							"description": "Standalone story identity (self-minted hash). Required for a Small build (locates the approved LLD).",
+							"type": "string"
+						},
+						"storyId": {
+							"description": "Standalone story id; defaults to S001.",
+							"type": "string"
+						},
+						"focus": {
+							"description": "Scope statement — the spec for a Trivial (no-LLD) build.",
+							"type": "string"
+						},
+						"sizeClass": {
+							"description": "Triage size class (small / trivial).",
+							"type": "string"
+						},
+						"triageRationale": {
+							"description": "The classifier's rationale, stamped on the standalone BUILD record.",
+							"type": "string"
+						}
+					},
+					"required": [
+						"standalone"
+					],
+					"description": "Present for a triage-routed no-plan build (Small implements the approved standalone LLD; Trivial implements the scope). Bypasses task/tracker resolution."
+				},
+				"summary": {
+					"type": "string",
+					"description": "Only for phase=validate. OPTIONAL narrative of what this build actually did, in a sentence or two — lands on the BUILD record's `body.summary` and renders as `## Summary`. Never synthesised: omit it and the record carries no summary rather than one invented from the task list. Empty / whitespace-only counts as omitted."
+				},
+				"tests": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"name": {
+								"type": "string",
+								"minLength": 1,
+								"description": "The exact text of one of the Task's named tests (for a standalone Small build: of a subject of the design's test strategy)."
+							},
+							"cases": {
+								"description": "The test cases that carry this named test.",
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"file": {
+											"type": "string",
+											"minLength": 1,
+											"description": "Repo-relative path of the tracked `.test.ts` file."
+										},
+										"title": {
+											"type": "string",
+											"minLength": 1,
+											"description": "The test's title exactly as the test file declares it; matched at any depth of nesting."
+										}
+									},
+									"required": [
+										"file",
+										"title"
+									],
+									"additionalProperties": false
+								}
+							},
+							"reported": {
+								"description": "Only for a `live` or `smoke` test the gate cannot run: the result you observed. Recorded as reported by the builder, not run by the gate.",
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": [
+											"pass",
+											"fail"
+										]
+									},
+									"evidence": {
+										"type": "string",
+										"minLength": 1,
+										"description": "Where the evidence is: a log path, a run id, a section of the build record."
+									}
+								},
+								"required": [
+									"result",
+									"evidence"
+								],
+								"additionalProperties": false
+							}
+						},
+						"required": [
+							"name"
+						],
+						"additionalProperties": false
+					},
+					"description": "Only for phase=validate. The mapping from the Task's named tests to the test cases that carry them. The daemon runs each mapped file itself, reads a result per case (pass / fail / skipped / not found) and writes them to the Story's test record (TESTS.md beside BUILD.md); a case that failed, was skipped or was not found fails the tests check. Omit it to reuse the mapping stored for the Task by an earlier validate turn; with neither, only a test name that begins with `<file>.test.ts:` can be run. A wrong mapping is refused with `invalid-test-mapping` and nothing is run. Ignored for a Trivial standalone build."
+				}
+			},
+			"required": [
+				"phase",
+				"target"
+			],
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	},
+	{
+		"name": "insrc_code_review_step",
+		"title": "insrc code review (by the other party, multi-turn)",
+		"description": "CODE review of a Story's built code across four dimensions (adherence / conventions / coverage / quality), by the party that did NOT write the code. The rule runs in both directions: code the daemon wrote is reviewed by YOU (the controller); code YOU wrote (a build you drove with insrc_build_step), or whose author is not recorded, is reviewed by the daemon. The same model on both sides is fine; the reviewer must be the other party. You do not choose: call phase='start' and the tool routes it by the Story's BUILD record. Either way the result is a block/warn/pass CodeReviewArtifact at CR-<epic>-<story>, and completing the Story (approving its BUILD record) REQUIRES one, done by the other party.\n\nWhen the daemon is the reviewer, phase='start' asks the daemon, waits (up to 30 minutes) and returns { next: 'done', verdict, counts, path, jsonPath, reviewedBy: 'daemon', groundingMode }. A stale index first returns { next: 'confirm_wait', staleFiles, state }: ask the user, then call phase='start' again with that state and `proceed` (true = wait for a fresh index, false = review the diff). A diff review is recorded `degraded` and is `warn` at best. If the daemon review does not complete, it returns next:'error' naming the cause and stamps nothing; it never falls back to a review by you.\n\nYour multi-turn loop (daemon-written code only):\n\n  1. phase='start' with { epicHash, storyId, repo? }. Server resolves the subject (declines with an error if there is no approved contract / build) and fetches grounding, returning { next: 'emit_judgements', prompts, schema, grounding, state } — `prompts` are the four per-dimension charges, `grounding` is the ground truth you judge against.\n  2. Emit the judgements JSON ({ judgements: DimensionResult[] } — one per dimension, each finding a `file:line` location), then phase='judgements' with judgements=<your JSON> + state. Server folds + persists and returns { next: 'done', verdict, counts, path, jsonPath }. When findings were dropped because their file is outside the Story's changed set, the frame also carries `scopeDropped` { count, changedFiles, byDimension }: those findings are NOT in `verdict`/`counts`; they are kept on the record as each dimension's `outOfScope`.\n\nPreserve `state` verbatim between calls; a malformed turn returns a next:'error' frame naming the fault (nothing is written).",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"phase": {
+					"type": "string",
+					"enum": [
+						"start",
+						"judgements"
+					],
+					"description": "Which turn of the loop this call carries."
+				},
+				"epicHash": {
+					"type": "string",
+					"description": "Only for phase=start. The Epic hash keying the Story."
+				},
+				"storyId": {
+					"type": "string",
+					"description": "Only for phase=start. The Story id keying the review."
+				},
+				"repo": {
+					"type": "string",
+					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
+				},
+				"judgements": {
+					"type": "object",
+					"properties": {
+						"judgements": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"propertyNames": {
+									"type": "string"
+								},
+								"additionalProperties": {}
+							}
+						}
+					},
+					"additionalProperties": {},
+					"description": "Only for phase=judgements. The four DimensionResult judgements your LLM emitted (matches the emit_judgements schema)."
+				},
+				"state": {
+					"type": "string",
+					"description": "Opaque continuation token from the prior response. Required after phase=start."
+				},
+				"proceed": {
+					"type": "boolean",
+					"description": "Only when resuming a phase=start `confirm_wait` (the index was stale). true = wait for a fresh index (block-and-poll); false = abort the review (no verdict). Pass together with the `state` from the confirm_wait turn."
+				}
+			},
+			"required": [
+				"phase"
+			],
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	},
+	{
+		"name": "insrc_docgen",
+		"title": "insrc docgen (generate a self-contained code document)",
+		"description": "Generate a self-contained, offline HTML developer document from the indexed code graph (diagram inlined, zoom/pan, no network). Read-only; the graph is read INSIDE the daemon and only the finished document crosses back.\n\n`docType` is a registered document type — e.g. type-structure (class/inheritance), component-dependency (module topology), call-sequence (a flow from an entry-point `symbol`), or narrative (a `base` diagram + an LLM answer to `question`). Enumerate the authoritative current set + each type's inputs via the daemon docgen.list surface rather than assuming this list.\n\nPer-type scope fields: `path` (subtree), `symbol` (call-sequence entry point), `base` + `question` (narrative), `maxDepth` (traversal cap). `repo` falls back to the session workspace / INSRC_REPO and must be registered + finished indexing (else source-not-ready).",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"docType": {
+					"type": "string",
+					"minLength": 1,
+					"description": "Registered docgen document type (enumerate the current set via docgen.list)."
+				},
+				"repo": {
+					"type": "string",
+					"description": "Absolute repo path; falls back to the session workspace / INSRC_REPO. Must be registered + indexed."
+				},
+				"path": {
+					"type": "string",
+					"description": "Repo-relative subtree to scope the document (type-structure / component-dependency)."
+				},
+				"symbol": {
+					"type": "string",
+					"description": "Entry-point symbol (required for call-sequence)."
+				},
+				"base": {
+					"type": "string",
+					"description": "Base diagram for a narrative doc: call-sequence | component-dependency."
+				},
+				"question": {
+					"type": "string",
+					"description": "The question a narrative document should answer (required for narrative)."
+				},
+				"maxDepth": {
+					"type": "integer",
+					"exclusiveMinimum": 0,
+					"maximum": 9007199254740991,
+					"description": "Traversal depth cap (call-sequence / narrative-over-call-sequence)."
+				}
+			},
+			"required": [
+				"docType"
+			],
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	},
+	{
+		"name": "insrc_guide",
+		"title": "insrc guide (fetch one workflow's full guidance)",
+		"description": "Read-only: return the full step-by-step guidance for a specific insrc workflow, on demand, sourced from the canonical steering content the daemon ships (so it reflects the single source with no per-repo copy).\n\nCall it BEFORE running a workflow whose detailed procedure you need, instead of relying on the injected skeleton. Omit / mistype `workflow` to get { error, validWorkflows } (a structured list, never thrown).",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"workflow": {
+					"description": "The workflow whose full step-by-step guidance you want (e.g. \"design.story\"). Omit it to receive the list of workflows that have authored guidance.",
+					"type": "string"
+				}
+			},
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	},
+	{
+		"name": "insrc_review_step",
+		"title": "insrc review (by the other party, multi-turn)",
+		"description": "Review of a persisted workflow artifact by the party that did NOT author it. The rule runs in both directions: an artifact the daemon authored is reviewed by YOU (the controller); an artifact YOU authored (through insrc_workflow_step), or whose author is not recorded, is reviewed by the daemon. The same model on both sides is fine; the reviewer must be the other party. You do not choose: call phase='start' and the tool routes it.\n\nWhen the daemon is the reviewer, phase='start' itself asks the daemon, waits (up to about 31 minutes for an HLD or LLD; up to 90 for a DEF, whose review has measured about 13) and returns { next: 'done', verdict, counts, report, applied, pending, reviewedBy: 'daemon' } — there is no further turn. If the daemon is not running, is too old to know the request, fails, or passes the wait limit, it returns next:'error' naming the cause and stamps nothing. It never falls back to a review by you; fix the cause and call again, or let the user approve with an override reason.\n\nWhen YOU are the reviewer (a daemon-authored artifact), the server does the DETERMINISTIC parts (read the artifact, gather evidence by re-running probes against real source, assemble + persist the report) and YOU emit the claims + the verdicts. Either way the review stamps `meta.review`, and approval REQUIRES it: a DEF, HLD or LLD with no review, or one reviewed by the party that authored it, is withheld, as is one whose verdict blocks.\n\nYour multi-turn loop (daemon-authored artifacts only):\n\n  1. phase='start' with { artifact, repo? }. `artifact` is the `.md` (or `.json`) path. Server returns { next: 'emit_claims', prompt, schema, state }.\n  2. Emit the claims JSON (the artifact's load-bearing premises + their deterministic probes) matching the schema, then phase='claims' with claims=<your JSON> + state. The server re-runs the probes and returns { next: 'emit_verdicts', prompt, schema, evidence, state } — `evidence` is the ground truth you MUST judge against.\n  3. Emit the verdicts JSON (one entry per claim, keyed by claimId), then phase='verdicts' with verdicts=<your JSON> + state. Server returns { next: 'done', verdict, counts, report, applied, pending } once the amended artifact + stamped review are written to disk.\n\nDESIGN documents (an HLD or LLD) take a shorter path: phase='start' returns { next: 'emit_findings', template, prompt, schema, state } — a fixed review checklist. Check every item against the real code and docs with your own tools (use insrc analyze for drill-down), then call phase='findings' with findings=<your JSON> + state. Each premise is reported as `holds`, `does-not-hold` or `could-not-verify`; only `does-not-hold` blocks approval. An answer that breaks the checklist is rejected with the reasons and stamps nothing.\n\nThe `guidance` field on each response explains the next call; `prompt` + `schema` are authoritative. Preserve `state` verbatim between calls.",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"phase": {
+					"type": "string",
+					"enum": [
+						"start",
+						"claims",
+						"verdicts",
+						"findings"
+					],
+					"description": "Which turn of the loop this call carries. `findings` answers a design-review template (after next=emit_findings)."
+				},
+				"artifact": {
+					"type": "string",
+					"description": "Only for phase=start. The artifact `.md` / `.html` / `.json` path to review."
+				},
+				"repo": {
+					"type": "string",
+					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
+				},
+				"claims": {
+					"type": "object",
+					"properties": {
+						"claims": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"propertyNames": {
+									"type": "string"
+								},
+								"additionalProperties": {}
+							}
+						}
+					},
+					"additionalProperties": {},
+					"description": "Only for phase=claims. The extracted-claims JSON your LLM emitted (matches the emit_claims schema)."
+				},
+				"verdicts": {
+					"type": "object",
+					"properties": {
+						"verdicts": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"propertyNames": {
+									"type": "string"
+								},
+								"additionalProperties": {}
+							}
+						}
+					},
+					"additionalProperties": {},
+					"description": "Only for phase=verdicts. The per-claim verdicts JSON your LLM emitted (matches the emit_verdicts schema)."
+				},
+				"findings": {
+					"type": "object",
+					"properties": {
+						"items": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"propertyNames": {
+									"type": "string"
+								},
+								"additionalProperties": {}
+							}
+						}
+					},
+					"additionalProperties": {},
+					"description": "Only for phase=findings. The answer to the design-review template (matches the emit_findings schema)."
+				},
+				"state": {
+					"type": "string",
+					"description": "Opaque continuation token from the prior response. Required after phase=start."
+				}
+			},
+			"required": [
+				"phase"
+			],
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	},
+	{
+		"name": "insrc_schema",
+		"title": "insrc schema (look up an insrc_* tool's input contract)",
+		"description": "Read-only: return the authoritative input contract (JSON Schema) for a specific insrc_* tool — for a multi-turn tool, the specific `phase` you are about to call. The schema is sliced from the tool's OWN registered shape, so it can never drift from what the tool enforces.\n\nCall it BEFORE constructing a call whose shape you are unsure of, instead of guessing fields. Misses are structured, never thrown: omit / mistype `tool` to get { error, validTools }; omit / mistype `phase` on a multi-turn tool to get { error, validPhases }. A phaseless tool ignores a spurious `phase`.",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"tool": {
+					"description": "The insrc_* tool whose input contract you want (e.g. \"insrc_workflow_step\"). Omit it to receive the list of valid tools.",
+					"type": "string"
+				},
+				"phase": {
+					"description": "For a multi-turn tool, the phase whose contract you want (e.g. \"plan\"). Ignored for a single-shape (phaseless) tool.",
+					"type": "string"
+				}
+			},
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	},
+	{
+		"name": "insrc_triage",
+		"title": "insrc triage (classify size → route workflow entry)",
+		"description": "Classify a feature request by SIZE and route it to the right workflow start stage, so every feature — big or small — is tracked without the smallest ones drowning in ceremony. Call this FIRST when asked to build a feature, instead of hand-picking `define` / `design.story` / `build`.\n\nTiers: Epic → `define` (full chain); Feature → standalone `design.story` (LLD) → plan → build; Small → standalone `design.story` → build; Trivial → `build` (no LLD).\n\nTwo-turn loop:\n  1. phase='start' with { focus, repo?, specHash? } (specHash: an approved SPEC to seed the routed stage). Server returns { next: 'emit_classification', prompt, schema, state }.\n  2. GROUND the sizing on `insrc_analyze_step` passes (which modules/files it touches, caller counts, new-vs-reuse), emit a TriageResult JSON matching the schema, then phase='classify' with result=<your JSON> + state. Server returns { next: 'done', result, route, nextCall, summary } — `nextCall` is the exact pre-filled call to make next.\n\nPreserve `state` verbatim between the two calls.",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"phase": {
+					"type": "string",
+					"enum": [
+						"start",
+						"classify"
+					],
+					"description": "Which turn of the loop this call carries."
+				},
+				"focus": {
+					"type": "string",
+					"description": "Only for phase=start. The feature request / scope statement to size."
+				},
+				"repo": {
+					"type": "string",
+					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
+				},
+				"specHash": {
+					"type": "string",
+					"description": "Only for phase=start. The approved SPEC this request was brainstormed into. It must exist and be approved; it is forwarded into the routed design.story / define call so that stage is seeded from it."
+				},
+				"result": {
+					"type": "object",
+					"propertyNames": {
+						"type": "string"
+					},
+					"additionalProperties": {},
+					"description": "Only for phase=classify. The TriageResult JSON your LLM emitted (matches the emit_classification schema)."
+				},
+				"state": {
+					"type": "string",
+					"description": "Opaque continuation token from phase=start. Required for phase=classify."
+				}
+			},
+			"required": [
+				"phase"
+			],
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	},
+	{
+		"name": "insrc_workflow_approve",
+		"title": "insrc workflow approve (in-CLI, controller-driven gate)",
+		"description": "Approve a workflow artifact WITHOUT leaving this session — the in-CLI approval gate. Call this ONLY after you have PRESENTED the artifact summary to the user and they have said yes in chat (the human still authorizes; this just executes it). Approve a SINGLE artifact with `artifactPath`, or a BATCH with `epicHash` (every review-clean, still-pending DEF/HLD/LLD/PLAN artifact under that epic). Exactly one of artifactPath | epicHash.\n\nStamps `approvedAt` and ENFORCES the review rule: a DEF, HLD or LLD needs a review, and a BUILD record needs a code review of its Story, each done by the party that did NOT author the work; a blocking verdict also withholds. A withheld artifact comes back in `skipped[]` {path,reason}, never `approved[]` — relay both arrays to the user. An ISSUE, SPEC or PLAN needs no review. Stamp-only: it does NOT gh-push or commit (that stays with the TUI approve). Pass `overrideReview` to approve past a missing, same-party or blocking review with a recorded reason. `repo` falls back to the session workspace / INSRC_REPO (required only for an epicHash batch).",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"artifactPath": {
+					"type": "string",
+					"description": "Single-artifact target: the .md/.json artifact path to approve. Exactly one of artifactPath | epicHash."
+				},
+				"epicHash": {
+					"type": "string",
+					"description": "Batch target: approve every review-clean, still-pending artifact under this epic. Exactly one of artifactPath | epicHash."
+				},
+				"repo": {
+					"type": "string",
+					"description": "Absolute repo path; falls back to the session workspace / INSRC_REPO. Required only for an epicHash batch."
+				},
+				"overrideReview": {
+					"type": "string",
+					"description": "Optional review-override reason — approves past a HIGH/MED review block and records the reason on the artifact."
+				}
+			},
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	},
+	{
+		"name": "insrc_workflow_run",
+		"title": "insrc workflow (async start/poll, daemon-driven)",
+		"description": "Run a full workflow SERVER-SIDE in the daemon, ASYNC. The daemon drives every phase (decompose → steps → synthesize → review) via its configured LLM provider; a long run no longer blocks this call.\n\nLoop: START → POLL* → done.\n\n  1. START — call with { workflow, focus, params?, repo? } (no poll/abort). Returns { runId, next:'poll', guidance } IMMEDIATELY; the run is now executing detached.\n  2. POLL — call with { poll: <runId>, cursor: <n> } repeatedly (start cursor at 0). Each returns { status, progress:[short lines], cursor:<next> }. RELAY each `progress` batch to the user, then poll again with the returned cursor to get only NEW frames. Space polls a few seconds apart.\n  3. DONE — when status is 'done' the response also carries { artifact, runId, model, review? }; when 'error' it carries { error }; 'aborted' ends the loop. Stop polling on any terminal status.\n\nABORT — call with { abort: <runId> } to cancel a run mid-flight (returns { aborted:true, runId }); the daemon run is really aborted.\n\nUse this for a hands-off run you watch by polling. Use insrc_workflow_step instead when YOU want to drive each turn.\n\n`repo` falls back to INSRC_REPO. The repo must be registered + indexed.",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"workflow": {
+					"type": "string",
+					"enum": [
+						"stub",
+						"brainstorm",
+						"define",
+						"design.epic",
+						"design.story",
+						"plan",
+						"build",
+						"issue",
+						"tracker.push",
+						"tracker.sync",
+						"tracker.post"
+					],
+					"description": "START only. Which workflow to run (define / design.epic / design.story / plan / …)."
+				},
+				"focus": {
+					"type": "string",
+					"minLength": 1,
+					"description": "START only. Natural-language framing of the ask."
+				},
+				"params": {
+					"type": "object",
+					"propertyNames": {
+						"type": "string"
+					},
+					"additionalProperties": {},
+					"description": "START only. Workflow-specific params (epicSlug, storyId, …)."
+				},
+				"repo": {
+					"type": "string",
+					"description": "START only. Absolute repo path; falls back to INSRC_REPO env."
+				},
+				"poll": {
+					"type": "string",
+					"description": "POLL. A runId returned by a prior start call; fetches new progress + status."
+				},
+				"cursor": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991,
+					"description": "POLL. Cursor from the previous poll (start at 0); returns only frames after it."
+				},
+				"abort": {
+					"type": "string",
+					"description": "ABORT. A runId to cancel mid-run."
+				}
+			},
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	},
+	{
+		"name": "insrc_workflow_step",
+		"title": "insrc workflow (multi-turn)",
+		"description": "Phase-driven multi-turn workflow runner. Supports:\n\n  - `define`        — Epic + Stories with citations (Phase B)\n  - `design.epic`   — HLD: framework + shared contracts + rollout (Phase C)\n  - `design.story`  — LLD: Story contract + tests + optional migration (Phase D)\n  - `tracker.push`  — push Epic+Stories to GitHub Issues (Phase F)\n  - `tracker.sync`  — pull GitHub Issue status back into artifact meta\n  - `tracker.post`  — post HLD/LLD/amendment summary as issue comment\n  - `stub`          — Phase A test workflow (echo/echo/echo)\n\nChain: define → design.epic → design.story (per Story) → tracker.*.\nEach gate requires human approval via `insrc workflow approve <path>`.\nAmendments to the HLD are typed proposals from downstream steps; review with `insrc workflow amend <slug> --list`. Use `insrc workflow chain <slug>` at any time to see status + the exact next command.\n\nMulti-turn loop:\n\n  1. phase='start' with { workflow, focus, params? }. Server returns\n     { next: 'emit_plan', prompt, schema, state }.\n  2. Emit the plan JSON matching the schema, then phase='plan'\n     with plan=<your JSON> + state.\n  3. If the server returns { next: 'emit_step', stepId, prompt,\n     schema, state }, emit the JSON matching the schema and call\n     phase='step' with stepId + response + state. Repeat until\n     you receive emit_synthesize.\n  4. Server returns { next: 'emit_synthesize', prompt, schema, state }.\n     Emit the artifact JSON, then phase='synthesize' with artifact + state.\n  5. Server returns { next: 'done', path, markdown, artifact } once\n     the artifact has been written to disk. `done` may also carry\n     `openQuestions` — the new artifact's own still-open questions;\n     you MAY resolve them now via phase='resolve_question' (optional).\n\nOpen-question gate (design.epic / design.story / plan):\n  - phase='start' first checks the IMMEDIATE-UPSTREAM artifact\n    (design.epic->DEF, design.story->HLD, plan->LLD) for unresolved\n    open questions. If any it returns { next: 'resolve_questions',\n    questions: [{ questionId, text, options, recommendation }] } INSTEAD\n    of emit_plan. Present each ONE AT A TIME (Resolve / Defer / Ignore),\n    then call phase='resolve_question' with { workflow, params,\n    questionId, choice? | defer? | ignore?, rationale? }. When it returns\n    { next: 'ready' }, re-call phase='start'. Deferred questions do NOT\n    re-trigger; surface them later with phase='review_deferred'\n    { params: { epicHash | epicSlug } } -> { next: 'deferred', questions }.\n\nCommon params:\n  - design.epic:  { epicSlug }\n  - design.story: { epicSlug, storyId }\n  - tracker.push: { epicSlug, force? }\n  - tracker.sync: { epicSlug }\n  - tracker.post: { epicSlug, target: { kind: hld|lld|amendment, storyId?, amendmentId? } }\n\nThe `guidance` field on each response explains what to do next in one sentence; the `prompt` + `schema` fields are the authoritative instructions. Preserve `state` verbatim between calls.",
+		"inputSchema": {
+			"type": "object",
+			"properties": {
+				"phase": {
+					"type": "string",
+					"enum": [
+						"start",
+						"plan",
+						"step",
+						"synthesize",
+						"resolve_question",
+						"review_deferred"
+					],
+					"description": "Which turn of the loop this call carries."
+				},
+				"workflow": {
+					"type": "string",
+					"enum": [
+						"stub",
+						"brainstorm",
+						"define",
+						"design.epic",
+						"design.story",
+						"plan",
+						"build",
+						"issue",
+						"tracker.push",
+						"tracker.sync",
+						"tracker.post"
+					],
+					"description": "For phase=start (which workflow to run) and phase=resolve_question (the consuming stage whose upstream artifact to patch)."
+				},
+				"focus": {
+					"type": "string",
+					"minLength": 1,
+					"description": "Only for phase=start. Natural-language framing of the ask."
+				},
+				"repo": {
+					"type": "string",
+					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
+				},
+				"params": {
+					"type": "object",
+					"propertyNames": {
+						"type": "string"
+					},
+					"additionalProperties": {},
+					"description": "For phase=start / resolve_question / review_deferred. Workflow-specific params (epicHash, epicSlug, storyId, …)."
+				},
+				"questionId": {
+					"type": "string",
+					"description": "Only for phase=resolve_question. The questionId from a prior resolve_questions / done.openQuestions response."
+				},
+				"choice": {
+					"type": "string",
+					"description": "Only for phase=resolve_question. The chosen option label/decision (omit when deferring/ignoring)."
+				},
+				"defer": {
+					"type": "boolean",
+					"description": "Only for phase=resolve_question. Set true to defer this question to the review flow (does not re-trigger at stage boundaries)."
+				},
+				"ignore": {
+					"type": "boolean",
+					"description": "Only for phase=resolve_question. Set true to leave this question to downstream judgment."
+				},
+				"rationale": {
+					"type": "string",
+					"description": "Only for phase=resolve_question. Optional one-line rationale for the choice / defer / ignore."
+				},
+				"plan": {
+					"type": "object",
+					"properties": {
+						"workflow": {
+							"type": "string"
+						},
+						"steps": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"propertyNames": {
+									"type": "string"
+								},
+								"additionalProperties": {}
+							}
+						},
+						"rationale": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"workflow",
+						"steps"
+					],
+					"additionalProperties": {},
+					"description": "Only for phase=plan. The WorkflowPlan JSON your LLM emitted."
+				},
+				"stepId": {
+					"type": "string",
+					"description": "Only for phase=step. Echo the stepId from the prior emit_step response."
+				},
+				"response": {
+					"type": "object",
+					"propertyNames": {
+						"type": "string"
+					},
+					"additionalProperties": {},
+					"description": "Only for phase=step. The JSON your LLM emitted matching the emit_step schema."
+				},
+				"artifact": {
+					"type": "object",
+					"propertyNames": {
+						"type": "string"
+					},
+					"additionalProperties": {},
+					"description": "Only for phase=synthesize. The artifact JSON matching the emit_synthesize schema."
+				},
+				"state": {
+					"type": "string",
+					"description": "Opaque continuation token from the prior response. Required after phase=start."
+				}
+			},
+			"required": [
+				"phase"
+			],
+			"$schema": "http://json-schema.org/draft-07/schema#"
+		}
+	}
+]

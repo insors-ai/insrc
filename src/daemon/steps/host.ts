@@ -19,7 +19,7 @@
 import type { StreamHandler } from '../server.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInStepContext } from '../../shared/step-context.js';
-import type { StepCallContext } from '../../shared/step-context.js';
+import type { StepCallContext, StepToolName } from '../../shared/step-context.js';
 import { runAnalyzeOneShot } from './analyze-oneshot.js';
 import type { AnalyzeOneShotArgs } from './analyze-oneshot.js';
 import { handleAnalyzeStep } from './analyze-step/handler.js';
@@ -32,17 +32,9 @@ import { handleWorkflowStep } from './workflow-step/handler.js';
 
 const log = getLogger('daemon:step-host');
 
-/** The tools step.call runs. */
-export const STEP_TOOL_NAMES = [
-	'insrc_analyze',
-	'insrc_analyze_step',
-	'insrc_workflow_step',
-	'insrc_build_step',
-	'insrc_review_step',
-	'insrc_code_review_step',
-	'insrc_triage',
-] as const;
-export type StepToolName = typeof STEP_TOOL_NAMES[number];
+/** The tools step.call runs (one list, shared with the MCP forwarders). */
+export { STEP_TOOL_NAMES } from '../../shared/step-context.js';
+export type { StepToolName } from '../../shared/step-context.js';
 
 /** A step tool's reply: the MCP tool result the handler returns. */
 export interface StepEnvelope {

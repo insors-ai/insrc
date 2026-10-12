@@ -67,3 +67,15 @@ export function clientProviderKind(client: StepClient | undefined): 'cli-claude'
 export function stepClientOf(kind: string | undefined): StepClient | undefined {
 	return kind === 'cli-claude' ? 'claude' : kind === 'cli-codex' ? 'codex' : undefined;
 }
+
+/** The tools the daemon's `step.call` request runs (the MCP server forwards them). */
+export const STEP_TOOL_NAMES = [
+	'insrc_analyze',
+	'insrc_analyze_step',
+	'insrc_workflow_step',
+	'insrc_build_step',
+	'insrc_review_step',
+	'insrc_code_review_step',
+	'insrc_triage',
+] as const;
+export type StepToolName = typeof STEP_TOOL_NAMES[number];

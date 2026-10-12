@@ -38,25 +38,17 @@ import { resolveRepoPath } from './resolve-repo.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
-import { runWithSamplerContext, runWithClientProviderContext } from '../analyze/context/shaper-provider.js';
 import type { AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { getLogger } from '../shared/logger.js';
 
-import { handleAnalyzeStep } from '../daemon/steps/analyze-step/handler.js';
-import { handleWorkflowStep } from '../daemon/steps/workflow-step/handler.js';
-import { handleBuildStep } from '../daemon/steps/build-step/handler.js';
-import { handleReviewStep } from '../daemon/steps/review-step/handler.js';
-import { DEFAULT_DEPS as CODE_REVIEW_STEP_DEFAULT_DEPS, handleCodeReviewStep } from '../daemon/steps/code-review-step/handler.js';
-import { handleTriageStep } from '../daemon/steps/triage-step/handler.js';
 import { handleDocgen } from './docgen/handler.js';
-import { runAnalyzeOneShot } from '../daemon/steps/analyze-oneshot.js';
 import { stepClientOf } from '../shared/step-context.js';
-import { makeSamplerFromMcpServer } from './sampling-bridge.js';
-import {
-	startRun, pollRun, abortRun, approveWorkflow, type UnaryRpcDeps,
-	reviewArtifactStream, codeReviewStream, fetchCodeReviewGrounding, fetchCodeReviewFreshness, resolveRepoForCwd,
-} from './daemon-stream.js';
-import { installStepDaemonClient } from '../daemon/steps/daemon-client.js';
+import type { StepToolName } from '../shared/step-context.js';
+import { forwardStep } from './forward-step.js';
+import type { StepMcpEnvelope } from './forward-step.js';
+import { mcpProgressSink } from './progress-forward.js';
+import type { ProgressEvent } from '../shared/types.js';
+import { startRun, pollRun, abortRun, approveWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
 import type { WorkflowProgress } from '../daemon/workflow-rpc.js';
 import { WORKFLOW_NAMES } from '../workflow/types.js';
 import type { ZodRawShape } from 'zod';
@@ -192,15 +184,6 @@ export function buildInsrcMcpServerWithRegistry(): {
 	server: McpServer;
 	schemaRegistry: InsrcToolSchemaRegistry;
 } {
-	// The step handlers still run in this process until the tools become
-	// forwarders (Story s11, t9): they reach the daemon over its socket.
-	installStepDaemonClient({
-		reviewArtifactStream:     (params, opts) => reviewArtifactStream(params, opts),
-		codeReviewStream:         (params, opts) => codeReviewStream(params, opts),
-		fetchCodeReviewGrounding: (params) => fetchCodeReviewGrounding(params),
-		fetchCodeReviewFreshness: (params) => fetchCodeReviewFreshness(params),
-		resolveRepoForCwd:        (cwd) => resolveRepoForCwd(cwd),
-	});
 	const server = new McpServer(SERVER_INFO, {
 		capabilities: {
 			tools:     {},
@@ -234,6 +217,26 @@ export function buildInsrcMcpServerWithRegistry(): {
 		});
 		return result;
 	}) as typeof server.registerTool;
+
+	// The seven step tools run in the daemon (Story s11): each call is forwarded
+	// over step.call with this process's cwd, INSRC_REPO and the calling client,
+	// and the daemon's reply is returned unchanged. Progress is relayed only when
+	// the client sent a progress token.
+	const forward = (
+		tool:    StepToolName,
+		rawArgs: unknown,
+		extra:   { _meta?: { progressToken?: string | number | undefined } | undefined; sendNotification: (n: never) => Promise<void> },
+	): Promise<StepMcpEnvelope> => {
+		const client = stepClientOf(detectClientProvider(server.server.getClientVersion()?.name));
+		const token  = extra._meta?.progressToken;
+		const sink   = token !== undefined
+			? mcpProgressSink((n) => extra.sendNotification(n as never), token)
+			: undefined;
+		return forwardStep(tool, rawArgs, {
+			...(client !== undefined ? { client } : {}),
+			...(sink !== undefined ? { onProgress: (data: unknown) => sink(progressEventOf(data)) } : {}),
+		});
+	};
 
 	registerAndRecord(
 		'insrc_analyze',
@@ -269,15 +272,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 			},
 			inputSchema: ANALYZE_INPUT,
 		},
-		async (rawArgs, _extra) => {
-			const args = rawArgs as {
-				repo?:   string;
-				focus:   string;
-				target?: 'code' | 'docs' | 'data' | 'infra' | 'generic';
-				scope?:  'XS' | 'S' | 'M' | 'L' | 'XL';
-			};
-			return handleAnalyze(server, args);
-		},
+		async (rawArgs, extra) => forward('insrc_analyze', rawArgs, extra),
 	);
 
 	// -------------------------------------------------------------------
@@ -412,7 +407,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.optional(),
 			},
 		},
-		async (rawArgs, _extra) => handleAnalyzeStep(rawArgs),
+		async (rawArgs, extra) => forward('insrc_analyze_step', rawArgs, extra),
 	);
 
 	// -------------------------------------------------------------------
@@ -531,7 +526,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.optional(),
 			},
 		},
-		async (rawArgs, _extra) => handleWorkflowStep(rawArgs),
+		async (rawArgs, extra) => forward('insrc_workflow_step', rawArgs, extra),
 	);
 
 	// -------------------------------------------------------------------
@@ -617,7 +612,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.optional(),
 			},
 		},
-		async (rawArgs, _extra) => handleBuildStep(rawArgs),
+		async (rawArgs, extra) => forward('insrc_build_step', rawArgs, extra),
 	);
 
 	// -------------------------------------------------------------------
@@ -709,7 +704,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.optional(),
 			},
 		},
-		async (rawArgs, _extra) => handleReviewStep(rawArgs),
+		async (rawArgs, extra) => forward('insrc_review_step', rawArgs, extra),
 	);
 
 	// -------------------------------------------------------------------
@@ -792,13 +787,9 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.optional(),
 			},
 		},
-		async (rawArgs, _extra) => {
-			// The invoking client rides along so a daemon review (code this session
-			// wrote) can fall back to that CLI when no provider is configured.
-			const kind = detectClientProvider(server.server.getClientVersion()?.name);
-			const client = stepClientOf(kind);
-			return handleCodeReviewStep(rawArgs, client !== undefined ? { ...CODE_REVIEW_STEP_DEFAULT_DEPS, client } : CODE_REVIEW_STEP_DEFAULT_DEPS);
-		},
+		// The invoking client rides along (in the forwarded context) so a daemon
+		// review of code this session wrote can fall back to that CLI.
+		async (rawArgs, extra) => forward('insrc_code_review_step', rawArgs, extra),
 	);
 
 	// -------------------------------------------------------------------
@@ -858,7 +849,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.optional(),
 			},
 		},
-		async (rawArgs, _extra) => handleTriageStep(rawArgs),
+		async (rawArgs, extra) => forward('insrc_triage', rawArgs, extra),
 	);
 
 	// -------------------------------------------------------------------
@@ -1265,32 +1256,8 @@ async function dispatchWorkflowRun(
  * closes. Used by `bin/insrc-mcp`.
  */
 export async function runInsrcMcpStdio(): Promise<void> {
-	// TEMPORARY: this process still reads the live graph store in-process
-	// (the analyze step, some daemon builtins). Story s11 of Epic c2ba6fa6
-	// moves that into the daemon and deletes this call.
-	(await import('../db/graph/store.js')).declareLiveStoreReaderUntilS11();
-
-	// Register the unified tool set + data drivers BEFORE serving any
-	// tool call. The analyze framework's freeform.probe fallback needs
-	// the read-only tool surface at runtime; without this the shaper
-	// crashes with ReadOnlyToolRegistryMismatch listing every allow-
-	// listed tool as unregistered (observed 2026-07-11 when the docs
-	// adherence-check plan fell back to freeform.probe on the Ollama
-	// path). Mirrors what the main daemon does at boot -- see
-	// daemon/index.ts phase 6b/6c.
-	const [
-		{ registerBuiltinTools },
-		{ registerBuiltinDataDrivers },
-		{ registerWorkflowRunners },
-	] = await Promise.all([
-		import('../daemon/tools/builtins/index.js'),
-		import('../daemon/db/drivers/index.js'),
-		import('../workflow/index.js'),
-	]);
-	registerBuiltinTools();
-	registerBuiltinDataDrivers();
-	registerWorkflowRunners();
-
+	// The step tools run in the daemon (Story s11): this process registers no
+	// builtin tools, data drivers or workflow runners, and opens no store.
 	const server = buildInsrcMcpServer();
 	const transport = new StdioServerTransport();
 	await server.connect(transport);
@@ -1299,46 +1266,17 @@ export async function runInsrcMcpStdio(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// insrc_analyze handler
-// ---------------------------------------------------------------------------
-
-async function handleAnalyze(
-	server: McpServer,
-	args:   {
-		repo?:   string;
-		focus:   string;
-		target?: 'code' | 'docs' | 'data' | 'infra' | 'generic';
-		scope?:  'XS' | 'S' | 'M' | 'L' | 'XL';
-	},
-): Promise<{
-	content:  { type: 'text'; text: string }[];
-	isError?: boolean;
-}> {
-	// Provider routing for the analyze pipeline:
-	//   1. Client declared `sampling` -> route inner calls back to it.
-	//   2. Else default to the CLI that invoked us (Claude Code ->
-	//      cli-claude, Codex -> cli-codex) so `claude`/`codex` power the
-	//      shaper without any config. An explicit config `shaperProvider`
-	//      still overrides this (handled in buildShaperProvider).
-	//   3. Unknown client -> the analyze factory's config default.
-	const clientCaps = server.server.getClientCapabilities();
-	const samplingSupported = clientCaps?.sampling !== undefined;
-	const clientDefault = detectClientProvider(server.server.getClientVersion()?.name);
-	return runAnalyzeOneShot(args, {
-		clientName: server.server.getClientVersion()?.name,
-		samplingSupported,
-		clientDefault,
-		wrap: <T>(fn: () => Promise<T>): Promise<T> => samplingSupported
-			? runWithSamplerContext(makeSamplerFromMcpServer(server.server), [], fn)
-			: clientDefault !== undefined
-				? runWithClientProviderContext(clientDefault, fn)
-				: fn(),
-	});
-}
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** A progress frame's data as a progress event: a ProgressEvent is passed as it
+ *  is, anything else becomes a stage event labelled with its text. */
+function progressEventOf(data: unknown): ProgressEvent {
+	const d = data as Partial<ProgressEvent> | null | undefined;
+	if (d !== null && typeof d === 'object' && (d.kind === 'stage' || d.kind === 'token')) return d as ProgressEvent;
+	const label = typeof data === 'string' ? data : JSON.stringify(data);
+	return { kind: 'stage', operation: 'workflow.run', stageId: 'step', stageLabel: label, index: 0, total: null };
+}
 
 /** Map an MCP client's initialize `clientInfo.name` to the CLI shaper
  *  provider it implies: Claude Code → 'cli-claude', Codex → 'cli-codex'.

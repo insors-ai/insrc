@@ -11,8 +11,11 @@
  *
  * Resolution order:
  *   1. explicit non-empty `repo` argument      (caller knows best — wins outright)
- *   2. the registered repo whose path contains process.cwd()  (per-session workspace)
- *   3. INSRC_REPO env                          (headless/cron fallback, unchanged)
+ *   2. the registered repo whose path contains the caller's cwd  (per-session workspace)
+ *   3. the caller's INSRC_REPO                 (headless/cron fallback, unchanged)
+ *
+ * Inside a step call the caller's cwd and INSRC_REPO come from the step
+ * context; outside one, from this process (see src/shared/step-context.ts).
  *   4. undefined                               (callers raise their existing no-repo error)
  *
  * Why this fixes cross-repo use: the MCP stdio server is spawned per-session
@@ -29,10 +32,11 @@
  */
 
 import { resolveRepoForCwd } from '../../mcp/daemon-stream.js';
+import { stepCwd, stepEnvRepo } from '../../shared/step-context.js';
 
 /** Test seam: inject the CWD-containment lookup + the CWD value so the
  *  precedence can be exercised without a live daemon. Defaults are the real
- *  daemon IPC call and `process.cwd()`. */
+ *  daemon IPC call and the step context's cwd (process.cwd() outside one). */
 export interface ResolveRepoDeps {
 	readonly resolveForCwd?: ((cwd: string) => Promise<string | null>) | undefined;
 	readonly cwd?: string | undefined;
@@ -53,9 +57,7 @@ export async function resolveRepoPath(explicit: string | undefined, deps: Resolv
 	// CWD-containment match against the live registry (daemon-side). Rejection
 	// (daemon down) propagates by design — see module header.
 	const resolveForCwd = deps.resolveForCwd ?? _resolveForCwdOverride ?? resolveRepoForCwd;
-	const match = await resolveForCwd(deps.cwd ?? process.cwd());
+	const match = await resolveForCwd(deps.cwd ?? stepCwd());
 	if (match !== null && match.length > 0) return match;
-	const env = process.env['INSRC_REPO'];
-	if (env !== undefined && env.length > 0) return env;
-	return undefined;
+	return stepEnvRepo();
 }

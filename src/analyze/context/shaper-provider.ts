@@ -153,6 +153,11 @@ export function runWithClientProviderContext<T>(
 	return clientProviderContextStorage.run({ kind }, fn);
 }
 
+/** The kind set by runWithClientProviderContext around the current call, if any. */
+export function currentClientProviderKind(): AnalyzeShaperProviderKind | undefined {
+	return clientProviderContextStorage.getStore()?.kind;
+}
+
 // ---------------------------------------------------------------------------
 // RoutingSeamContext (Epic per-role-per-step, Story S005 — sc6).
 //

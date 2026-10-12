@@ -56,6 +56,7 @@ import type {
 	DimensionResult,
 	ReviewDimension,
 } from '../../../workflow/code-review/types.js';
+import { stepClient, stepEnvRepo } from '../../../shared/step-context.js';
 import { StateTokenNotFound, loadState, releaseState, saveState } from './state-store.js';
 import type {
 	CodeReviewStepError,
@@ -128,6 +129,13 @@ export const DEFAULT_DEPS: CodeReviewStepDeps = {
 	now:            () => Date.now(),
 	freshnessTimeoutMs: readFreshnessTimeoutMs,
 };
+
+/** `deps` with the step context's client, as it is ('claude' | 'codex'); `deps`
+ *  unchanged outside a step call or when the caller's client is unknown. */
+export function withStepClient(deps: CodeReviewStepDeps): CodeReviewStepDeps {
+	const client = stepClient();
+	return client !== undefined ? { ...deps, client } : deps;
+}
 
 /** A read-only stand-in provider. On the controller path the injected judges
  *  return the supplied judgements without ever calling the provider, so it is
@@ -253,7 +261,8 @@ async function handleStart(
 		if (typeof step.storyId !== 'string' || step.storyId.length === 0) {
 			return errorResult('bad-input', 'insrc_code_review_step: `storyId` is required for phase=start.', false);
 		}
-		const r = step.repo !== undefined && step.repo.length > 0 ? step.repo : process.env['INSRC_REPO'];
+		// The caller's INSRC_REPO: the step context's inside a step call, this process's outside one.
+		const r = step.repo !== undefined && step.repo.length > 0 ? step.repo : stepEnvRepo();
 		if (r === undefined || r.length === 0) {
 			return errorResult('no-repo', 'insrc_code_review_step: no repo (pass `repo` or set INSRC_REPO).', false);
 		}

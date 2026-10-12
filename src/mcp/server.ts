@@ -50,6 +50,7 @@ import { DEFAULT_DEPS as CODE_REVIEW_STEP_DEFAULT_DEPS, handleCodeReviewStep } f
 import { handleTriageStep } from '../daemon/steps/triage-step/handler.js';
 import { handleDocgen } from './docgen/handler.js';
 import { runAnalyzeOneShot } from '../daemon/steps/analyze-oneshot.js';
+import { stepClientOf } from '../shared/step-context.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';
 import { startRun, pollRun, abortRun, approveWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
 import type { WorkflowProgress } from '../daemon/workflow-rpc.js';
@@ -782,7 +783,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 			// The invoking client rides along so a daemon review (code this session
 			// wrote) can fall back to that CLI when no provider is configured.
 			const kind = detectClientProvider(server.server.getClientVersion()?.name);
-			const client = kind === 'cli-claude' ? 'claude' as const : kind === 'cli-codex' ? 'codex' as const : undefined;
+			const client = stepClientOf(kind);
 			return handleCodeReviewStep(rawArgs, client !== undefined ? { ...CODE_REVIEW_STEP_DEFAULT_DEPS, client } : CODE_REVIEW_STEP_DEFAULT_DEPS);
 		},
 	);
@@ -918,7 +919,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 			// Ollama. Threaded into the START path only; per-repo + global config
 			// still take precedence downstream (buildShaperProvider).
 			const kind   = detectClientProvider(server.server.getClientVersion()?.name);
-			const client = kind === 'cli-claude' ? 'claude' : kind === 'cli-codex' ? 'codex' : undefined;
+			const client = stepClientOf(kind);
 			return handleWorkflowRun(rawArgs, {}, client);
 		},
 	);

@@ -7,7 +7,8 @@
     "updatedAt": "2026-10-11T15:15:38.139Z",
     "authoredBy": "controller",
     "standalone": true,
-    "approvedAt": "2026-10-11T15:15:38.855Z"
+    "approvedAt": "2026-10-11T15:15:38.855Z",
+    "epicSlug": "standalone-features-cannot-built-task-task"
   },
   "body": {
     "tasks": [

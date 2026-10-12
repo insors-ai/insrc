@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791799151348-psz4g9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-12T09:59:43.165Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 31804,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "96f66552d63b2c6e",
+    "epicSlug": "bug-test-vs-code-chat-cli",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Make the cli-adapter process-group test portable to macOS",
+    "reproduction": "1. On macOS, on main (a66eae5a), run the VS Code plugin suite: `cd vscode-plugin && npx tsx --test 'src/**/__tests__/*.test.ts'` (Node 22).\n2. Observed: 'cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group' in vscode-plugin/src/chat/__tests__/cli-adapter.test.ts fails with ENOENT: no such file or directory, open '/proc/<pid>/stat'.\n\nExpected: the test passes on macOS as well as Linux, and the shell it spawns is always stopped before the test ends.",
+    "rootCause": "The second half of the test exercises the real spawner. It starts `sh -c 'sleep 30 & wait'` through nodeSpawner and then checks that the child leads its own process group by reading `/proc/${pid}/stat` and parsing the group id from it. /proc/<pid>/stat exists only on Linux. The test's only platform guard returns early on win32, so on macOS the read throws ENOENT. Because the throw happens before `proc.kill('SIGTERM')`, the test never stops the spawned shell (read from the code order; no leftover process was observed); it is left to exit when its `sleep 30` ends. The test was added on 2026-10-12 in 38001c26. The product code it checks (the detached, own-group spawn in vscode-plugin/src/chat/cli-adapter.ts) is not implicated.",
+    "fixIntent": "The group-leader check must work on every POSIX platform the team develops on, or be skipped explicitly with a diagnostic where it cannot be checked, rather than failing. Whatever happens in the test, the process it spawns must be stopped before the test ends."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts:300-309",
+      "quotedText": "if (process.platform === 'win32') return t.diagnostic('process groups are POSIX-only'); const proc = nodeSpawner('sh', ['-c', 'sleep 30 & wait'], ...); ... const stat = readFileSync(`/proc/${pid}/stat`, 'utf8'); ... proc.kill('SIGTERM');"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1148-1160",
+      "quotedText": "Off Windows the CLI leads its own process group (detached) ... detached: ownGroup,"
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "plugin suite run on a66eae5a (macOS), 2026-10-12",
+      "quotedText": "not ok 180 - cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group ... error: \"ENOENT: no such file or directory, open '/proc/14407/stat'\""
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "git log -1 -- vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+      "quotedText": "38001c26 2026-10-12 11:30:08 feat(build): S001/t2 mark each approval request with where it is answered"
+    }
+  ]
+}

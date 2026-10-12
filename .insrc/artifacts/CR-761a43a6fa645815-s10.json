@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "761a43a6fa645815",
-    "storyId": "s10"
+    "storyId": "s10",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
   },
   "body": {
     "kind": "code-review",

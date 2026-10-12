@@ -94,7 +94,8 @@
       "reviewedAt": "2026-08-05T06:39:23.464Z",
       "model": "client"
     },
-    "approvedAt": "2026-08-05T06:42:56.650Z"
+    "approvedAt": "2026-08-05T06:42:56.650Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
   },
   "body": {
     "scope": "L",

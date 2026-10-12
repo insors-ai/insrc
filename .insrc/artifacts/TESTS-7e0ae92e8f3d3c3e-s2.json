@@ -4,14 +4,14 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T05:34:02.160Z"
+    "updatedAt": "2026-10-12T05:52:59.906Z"
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "152a7c48",
-        "ranAt": "2026-10-12T04:54:28.333Z",
+        "commit": "16df4f8a",
+        "ranAt": "2026-10-12T05:49:13.408Z",
         "testsPassed": true,
         "tests": [
           {
@@ -46,7 +46,7 @@
             "file": "src/design/corpus/sources/__tests__/contracts.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 594,
+            "durationMs": 520,
             "titles": [
               {
                 "title": "source-schema preserves exact sc3 shapes and rejects invalid identities and fields",
@@ -63,8 +63,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "7fd440ce",
-        "ranAt": "2026-10-12T04:59:13.470Z",
+        "commit": "16df4f8a",
+        "ranAt": "2026-10-12T05:50:00.228Z",
         "testsPassed": true,
         "tests": [
           {
@@ -112,7 +112,7 @@
             "file": "src/design/corpus/sources/__tests__/eligibility.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 578,
+            "durationMs": 505,
             "titles": [
               {
                 "title": "mixed-eligibility admits only reviewed exact-file profiles with complete evidence",
@@ -237,8 +237,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "fd652b27",
-        "ranAt": "2026-10-12T05:08:05.626Z",
+        "commit": "16df4f8a",
+        "ranAt": "2026-10-12T05:50:34.978Z",
         "testsPassed": true,
         "tests": [
           {
@@ -286,7 +286,7 @@
             "file": "src/design/corpus/sources/__tests__/reader-limits.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 829,
+            "durationMs": 768,
             "titles": [
               {
                 "title": "reader-safety bounds aggregate source and shared evidence bytes and counts",
@@ -307,8 +307,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "93251dac",
-        "ranAt": "2026-10-12T05:17:51.666Z",
+        "commit": "16df4f8a",
+        "ranAt": "2026-10-12T05:51:23.784Z",
         "testsPassed": true,
         "tests": [
           {
@@ -356,7 +356,7 @@
             "file": "src/design/corpus/sources/__tests__/lineage.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 509,
+            "durationMs": 508,
             "titles": [
               {
                 "title": "lineage-closure retains every source and transformation for derived outputs",
@@ -447,8 +447,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "21319c59",
-        "ranAt": "2026-10-12T05:28:48.875Z",
+        "commit": "16df4f8a",
+        "ranAt": "2026-10-12T05:52:06.335Z",
         "testsPassed": true,
         "tests": [
           {
@@ -496,7 +496,7 @@
             "file": "src/design/corpus/sources/__tests__/assessment.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 491,
+            "durationMs": 567,
             "titles": [
               {
                 "title": "eligibility-binding reconstructs obligations and rejects modified candidate metadata",
@@ -517,8 +517,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "693088dc",
-        "ranAt": "2026-10-12T05:34:02.160Z",
+        "commit": "16df4f8a",
+        "ranAt": "2026-10-12T05:52:59.906Z",
         "testsPassed": true,
         "tests": [
           {
@@ -568,7 +568,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "plans/reviews/design-intelligence-di1-s2-final-verification.txt: unabridged 58/58 corpus TAP output and npm run build output; broader full-suite failures recorded separately."
+              "evidence": "plans/reviews/design-intelligence-di1-s2-review-fixes-verification.txt: unabridged 58/58 corpus TAP and npm run build after review fixes; broader repository failures remain documented separately."
             }
           }
         ],
@@ -577,7 +577,7 @@
             "file": "src/design/corpus/sources/__tests__/acceptance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 670,
+            "durationMs": 667,
             "titles": [
               {
                 "title": "candidate-roundtrip admits only eligible material and exports complete notices",
@@ -594,7 +594,7 @@
             "file": "src/design/corpus/sources/__tests__/isolation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1244,
+            "durationMs": 1215,
             "titles": [
               {
                 "title": "pure-boundary executes pure source modules with I/O forbidden",

@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## t1
 
-Run at 2026-10-12T04:54:28.333Z on commit `152a7c48`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-12T05:49:13.408Z on commit `16df4f8a`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: source-schema preserves exact sc3 shapes and rejects invalid identities and fields**
 
@@ -26,11 +26,11 @@ Run at 2026-10-12T04:54:28.333Z on commit `152a7c48`. Tests check: **passed**. 2
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/design/corpus/sources/__tests__/contracts.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/design/corpus/sources/__tests__/contracts.test.ts` | 0 | 2 | 0.5 s |  |
 
 ## t2
 
-Run at 2026-10-12T04:59:13.470Z on commit `7fd440ce`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-12T05:50:00.228Z on commit `16df4f8a`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: mixed-eligibility admits only reviewed exact-file profiles with complete evidence**
 
@@ -54,7 +54,7 @@ Run at 2026-10-12T04:59:13.470Z on commit `7fd440ce`. Tests check: **passed**. 3
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/design/corpus/sources/__tests__/eligibility.test.ts` | 0 | 3 | 0.6 s |  |
+| `src/design/corpus/sources/__tests__/eligibility.test.ts` | 0 | 3 | 0.5 s |  |
 
 ## t3
 
@@ -98,7 +98,7 @@ Run at 2026-10-12T05:04:07.092Z on commit `5a036847`. Tests check: **passed**. 5
 
 ## t4
 
-Run at 2026-10-12T05:08:05.626Z on commit `fd652b27`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-12T05:50:34.978Z on commit `16df4f8a`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: reader-safety bounds aggregate source and shared evidence bytes and counts**
 
@@ -126,7 +126,7 @@ Run at 2026-10-12T05:08:05.626Z on commit `fd652b27`. Tests check: **passed**. 3
 
 ## t5
 
-Run at 2026-10-12T05:17:51.666Z on commit `93251dac`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-12T05:51:23.784Z on commit `16df4f8a`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: lineage-closure retains every source and transformation for derived outputs**
 
@@ -182,7 +182,7 @@ Run at 2026-10-12T05:22:43.937Z on commit `da79b06a`. Tests check: **passed**. 3
 
 ## t7
 
-Run at 2026-10-12T05:28:48.875Z on commit `21319c59`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-12T05:52:06.335Z on commit `16df4f8a`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: eligibility-binding reconstructs obligations and rejects modified candidate metadata**
 
@@ -206,11 +206,11 @@ Run at 2026-10-12T05:28:48.875Z on commit `21319c59`. Tests check: **passed**. 3
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/design/corpus/sources/__tests__/assessment.test.ts` | 0 | 3 | 0.5 s |  |
+| `src/design/corpus/sources/__tests__/assessment.test.ts` | 0 | 3 | 0.6 s |  |
 
 ## t8
 
-Run at 2026-10-12T05:34:02.160Z on commit `693088dc`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-12T05:52:59.906Z on commit `16df4f8a`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: candidate-roundtrip admits only eligible material and exports complete notices**
 
@@ -232,7 +232,7 @@ Run at 2026-10-12T05:34:02.160Z on commit `693088dc`. Tests check: **passed**. 3
 
 **smoke: strict-build compiles source eligibility and passes the full corpus regression suite**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: plans/reviews/design-intelligence-di1-s2-final-verification.txt: unabridged 58/58 corpus TAP output and npm run build output; broader full-suite failures recorded separately.
+Reported by the builder, not run by the gate: **pass**. Evidence: plans/reviews/design-intelligence-di1-s2-review-fixes-verification.txt: unabridged 58/58 corpus TAP and npm run build after review fixes; broader repository failures remain documented separately.
 
 **Files run**
 

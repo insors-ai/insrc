@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -157,3 +157,25 @@ Run at 2026-10-12T06:15:07.976Z on commit `283285a0`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 118 | 1.9 s |  |
+
+## t6
+
+Run at 2026-10-12T06:17:50.408Z on commit `ecac0875`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a user-typed message while requests are queued records each as rejected, clears the queue, resets the grant chain and runs as a normal turn**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a user-typed message while requests are queued records each as rejected, clears the queue, resets the grant chain and runs as a normal turn | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: a live provider with a queued in-turn request, then the user types a message: decide(turnId, requestId, 'deny') is called before the new turn starts, and the request gets a rejected chip**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a live provider with a queued in-turn request, then the user types a message: decide(turnId, requestId, 'deny') is called before the new turn starts, and the request gets a rejected chip | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 120 | 1.9 s |  |

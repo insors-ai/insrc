@@ -5,7 +5,9 @@
     "epicHash": "f900cf34c0342d4f",
     "storyId": "s4",
     "createdAt": "2026-08-06T00:00:00.000Z",
-    "approvedAt": "2026-08-06T08:57:51.059Z"
+    "approvedAt": "2026-08-06T08:57:51.059Z",
+    "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z"
   },
   "body": {
     "focus": "MCP section — connected socket clients (debug-status IPC) + per-client MCP registration in the Debug pane",

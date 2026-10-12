@@ -6,7 +6,9 @@
     "storyId": "s2",
     "createdAt": "2026-08-06T07:10:00.000Z",
     "updatedAt": "2026-08-06T07:10:00.000Z",
-    "approvedAt": "2026-08-06T07:08:07.398Z"
+    "approvedAt": "2026-08-06T07:08:07.398Z",
+    "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z"
   },
   "body": {
     "focus": "Daemon status card (sc1 consumer): DaemonCardModel + DebugService.daemonStatus + DaemonSection swapped into DebugPane",

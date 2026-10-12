@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "f900cf34c0342d4f",
-    "storyId": "s1"
+    "storyId": "s1",
+    "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982"
   },
   "body": {
     "kind": "code-review",

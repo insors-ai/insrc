@@ -22,7 +22,8 @@
     "storyId": "s2",
     "lldRunId": "wf-1785934499823-xtpgmp",
     "lldEffectiveHash": "ddca67745f5ce27a72fd98622c88c10523b7fb157faee13556f302030c37eece",
-    "approvedAt": "2026-08-06T06:48:01.444Z"
+    "approvedAt": "2026-08-06T06:48:01.444Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z"
   },
   "body": {
     "tasks": [

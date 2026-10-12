@@ -235,6 +235,21 @@
       "reviewedAt": "2026-10-12T10:10:12.557Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-12T10:16:33.753Z",
+    "rangeBase": "13b2b8b0331125efb55c2e8ec17238f74093ec9e",
+    "reviewOverride": {
+      "reason": "User override (2026-10-12): the review's findings are accepted and carried into the plan as explicit tasks. (1) Only the submit-turn caller takes the pending attachments; the grant re-run and the selection continuation pass none and only get readDirs, with a host test that both leave the pending list untouched. (2) The host's submit-turn case supersedes queued approvals when the text is non-blank OR the session has pending attachments, covered by the blank-text host test. (3) The protocol invariant is reworded to what is true: the new kinds are added to the two type lists and the protocol test asserts each by name; the lists are not exhaustive today (approval-position is missing) and this Story does not rely on that. (4) The session and its pending list are captured before the wait for in-flight attachment writes and the turn runs on that session; a chat switch or a second submit during the wait is specified and tested. Decisions recorded by the user: limits are 20 MB per file and 10 attachments per message, pasted images PNG/JPEG/GIF/WebP, documents of any type; drag-and-drop and image previews in the transcript are out of scope. Codex was checked after the design was written (codex-cli 0.162.1): with only the paths in the prompt and no extra flag it answered from an image and a text file outside its working directory, so the codex argv stays unchanged.",
+      "at": "2026-10-12T10:16:33.753Z"
+    },
+    "questionResolutions": {
+      "q70a38cf1": {
+        "question": "How does the codex CLI take an image or a file? It is not installed on the machine this was designed on, so the design passes the attached paths in the prompt and leaves the codex argv unchanged. Options: leave as designed and verify on a machine with codex; or add a per-image flag for codex once its CLI is checked.",
+        "status": "resolved",
+        "choice": "Keep as designed, verify later",
+        "rationale": "Already verified on 2026-10-12 with codex-cli 0.162.1 after the user installed it: with only the attached paths in the prompt and no extra flag, run from a directory that did not hold the files, it answered with the image's colour and the text file's content. Codex also has -i/--image, which the design does not need; the codex argv stays unchanged.",
+        "resolvedAt": "2026-10-12T10:16:52.242Z"
+      }
     }
   },
   "body": {

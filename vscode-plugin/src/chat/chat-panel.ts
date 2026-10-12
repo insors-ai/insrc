@@ -472,7 +472,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const title = sanitizeTitle(raw);
     if (title === '') return;
     target.title = title;
-    deps.store.save(target);
+    trySave(target);
     postHistory(); // refresh the history dropdown with the LLM-derived name
   };
 

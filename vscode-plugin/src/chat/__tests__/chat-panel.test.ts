@@ -2738,6 +2738,44 @@ test('a save failing at the end of a turn is logged; the turn still ends cleanly
   procs[0]!.exitNow();
 });
 
+test('a save failing while the derived title is stored is logged, never an unhandled rejection, and the history is still refreshed', async () => {
+  const fc = fakeChannel();
+  const warns: string[] = [];
+  const rejections: unknown[] = [];
+  const onRejection = (e: unknown): void => { rejections.push(e); };
+  process.on('unhandledRejection', onRejection);
+  const base = createInMemoryChatSessionStore();
+  let failSaves = false;
+  const store = {
+    ...base,
+    save: (s: Parameters<typeof base.save>[0]) => {
+      if (failSaves) throw new Error('disk full');
+      base.save(s);
+    },
+  };
+  let titled = false;
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    logger: { warn: (m) => warns.push(m), error: () => {} },
+    deriveTitle: async () => { failSaves = true; titled = true; return 'Derived Name'; },
+  });
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'hi' }));
+    await waitFor(() => titled);
+    const listsBefore = historyLists(fc).length;
+    await new Promise((r) => setTimeout(r, 20));
+    assert.deepEqual(rejections, [], 'the failing save is not an unhandled rejection');
+    assert.match(warns.join('\n'), /not saved: disk full/);
+    assert.ok(historyLists(fc).length > listsBefore, 'the history dropdown is still refreshed');
+  } finally {
+    process.off('unhandledRejection', onRejection);
+  }
+});
+
 test('a failing save of a selection or permission outcome is logged and the run still continues', async () => {
   const fc = fakeChannel();
   const warns: string[] = [];

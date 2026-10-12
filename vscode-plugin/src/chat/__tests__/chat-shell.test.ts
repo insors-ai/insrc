@@ -37,7 +37,7 @@ interface Shell {
   el: (id: string) => BodyStub;
 }
 /** `attach` gives the host its attachment seams, so the shell has the attach controls. */
-function runShell(opts: { attach?: boolean } = {}): Shell {
+function runShell(opts: { attach?: boolean | undefined } = {}): Shell {
   let html = '';
   const channel: ChatPanelChannel = { setHtml: (h) => { html = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} };
   const adapter: StreamAdapter = { async *run(): AsyncIterable<TurnEvent> {}, cancel: () => {}, decide: () => {}, capabilities: { resume: true } };
@@ -180,7 +180,7 @@ test('the shell script bounds the view of a long active session: rows past the l
 const ofType = (v: Shell, type: string): Array<Record<string, unknown>> => v.sent.filter((m) => m['type'] === type);
 const byClass = (root: BodyStub, cls: string): BodyStub[] => allOf(root).filter((n) => n.className.split(/\s+/).includes(cls));
 /** A paste event over clipboard items; counts preventDefault calls. */
-function pasteEvent(items: Array<{ kind: string; type: string; file?: { type: string; name: string; dataUrl: string } }>): { event: Record<string, unknown>; prevented: () => number } {
+function pasteEvent(items: Array<{ kind: string; type: string; file?: { type: string; name: string; dataUrl: string } | undefined }>): { event: Record<string, unknown>; prevented: () => number } {
   let prevented = 0;
   return {
     prevented: () => prevented,

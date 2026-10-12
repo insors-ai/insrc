@@ -12,7 +12,12 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { crc32, deflateSync } from 'node:zlib';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe } from '../cli-adapter.js';
+import type { ProviderId } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 
 const LIVE = process.env['INSRC_LIVE_TESTS'] === '1';
@@ -71,4 +76,74 @@ test('live: claude auto mode runs a tool prompt without blocking (bypass flag ac
   const terminal = events.at(-1);
   assert.ok(terminal && (terminal.kind === 'done' || terminal.kind === 'error'), 'auto mode terminates (no permission block)');
   assert.ok(!events.some((e) => e.kind === 'approval-request'), 'auto mode raises no approval-request');
+});
+
+// ---- Story E2026101259da3204:S001: attachments reach the real CLIs ----
+//
+// The chat host hands a turn its attached files as absolute paths in the prompt and, for claude,
+// the session's attachments directory as readDirs (--add-dir). These run that request through
+// the production adapter and spawner against a directory outside cwd, and require the answer to
+// come from the files: the image's colour and a code word that appears nowhere but in the text file.
+
+/** A solid-colour 64x64 PNG, built here so the test needs no fixture file. */
+function solidPng(rgb: readonly [number, number, number]): Buffer {
+  const size = 64;
+  const row = Buffer.concat([Buffer.from([0]), Buffer.alloc(size * 3, Buffer.from(rgb))]);
+  const chunk = (type: string, data: Buffer): Buffer => {
+    const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
+    const len = Buffer.alloc(4);
+    len.writeUInt32BE(data.length);
+    const sum = Buffer.alloc(4);
+    sum.writeUInt32BE(crc32(body) >>> 0);
+    return Buffer.concat([len, body, sum]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(size, 0);
+  header.writeUInt32BE(size, 4);
+  header.set([8, 2, 0, 0, 0], 8); // 8 bits per channel, RGB
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(Buffer.concat(Array.from({ length: size }, () => row)))),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
+/** Runs one turn that attaches a red image and a text file, and returns what the assistant said. */
+async function attachedTurn(provider: ProviderId): Promise<{ answer: string; events: TurnEvent[] }> {
+  const dir = mkdtempSync(join(tmpdir(), 'insrc-live-attachments-'));
+  try {
+    writeFileSync(join(dir, '1-colour.png'), solidPng([255, 0, 0]));
+    writeFileSync(join(dir, '2-secret.txt'), 'The code word is PERIWINKLE-4471.\n');
+    // The prompt as the chat host builds it: the user's text, then the block of absolute paths.
+    const prompt = [
+      'What colour is the image, and what is the code word in the text file? Answer in one short line.',
+      '',
+      'Attached files (read them with your file tools):',
+      join(dir, '1-colour.png'),
+      join(dir, '2-secret.txt'),
+    ].join('\n');
+    const reg = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe });
+    const events: TurnEvent[] = [];
+    // cwd is this repository, which does not hold the files (codex only runs inside a git repository).
+    for await (const ev of reg.get(provider).run({ provider, prompt, cwd: process.cwd(), permissionMode: 'manual', readDirs: [dir] })) events.push(ev);
+    return { events, answer: events.map((e) => (e.kind === 'assistant-delta' ? e.text : '')).join('') };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('live claude: with the argv the adapter builds for a request with readDirs, a prompt naming an image and a text file in that directory is answered from their content', { skip: !LIVE || !defaultBinaryProbe('claude') }, async () => {
+  const { answer, events } = await attachedTurn('claude');
+  assert.deepEqual(events.filter((e) => e.kind === 'approval-request'), [], 'reading the attachments directory needs no approval');
+  assert.equal(events.at(-1)?.kind, 'done');
+  assert.match(answer, /PERIWINKLE-4471/, 'the text file was read');
+  assert.match(answer, /\bred\b/i, 'the image was read');
+});
+
+test('live codex: with the argv the adapter builds, a prompt naming an image and a text file in the attachments directory is answered from their content', { skip: !LIVE || !defaultBinaryProbe('codex') }, async () => {
+  const { answer, events } = await attachedTurn('codex');
+  assert.equal(events.at(-1)?.kind, 'done');
+  assert.match(answer, /PERIWINKLE-4471/, 'the text file was read');
+  assert.match(answer, /\bred\b/i, 'the image was read');
 });

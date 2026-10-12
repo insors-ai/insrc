@@ -3781,7 +3781,7 @@ interface AttachHarness {
   sendAndWait(type: string, extra?: Record<string, unknown>): Promise<{ sessionId: string; items: Array<Record<string, unknown>>; error?: string }>;
 }
 /** A chat host with the attachment seams: the real store over an in-memory file seam, a scripted dialog and a recording opener. */
-function attachHarness(opts: { adapter?: StreamAdapter; wrapStore?: (store: AttachmentStore) => AttachmentStore } = {}): AttachHarness {
+function attachHarness(opts: { adapter?: StreamAdapter | undefined; wrapStore?: ((store: AttachmentStore) => AttachmentStore) | undefined } = {}): AttachHarness {
   const fc = fakeChannel();
   const fake = fakeAttachmentFs();
   const real = createAttachmentStore({ root: ATT_ROOT, fs: fake.fs });

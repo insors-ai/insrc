@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 26 pass, 0 fail, 0 skipped, 1 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -179,3 +179,34 @@ Run at 2026-10-12T06:17:50.408Z on commit `ecac0875`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 120 | 1.9 s |  |
+
+## t7
+
+Run at 2026-10-12T06:20:06.387Z on commit `f45c06ca`. Tests check: **failed**. 2 pass, 0 fail, 0 skipped, 1 not found; 0 reported by the builder and not run by the gate.
+
+named test cases that did not pass: not found: 'approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before' in vscode-plugin/src/chat/__tests__/render-registry.test.ts
+
+**unit: approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| not found | approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` |
+
+**integration: a request joining the queue while the head is shown updates the shown card in place (one card per requestId)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a request joining the queue while the head is shown updates the shown card in place (one card per requestId) | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: reloading the webview while requests are queued re-posts the head card, and deciding it continues the queue**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reloading the webview while requests are queued re-posts the head card, and deciding it continues the queue | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 122 | 2 s |  |
+| `vscode-plugin/src/chat/__tests__/render-registry.test.ts` | 0 | 34 | 0.4 s |  |

@@ -19,7 +19,8 @@
       "adapter": "github",
       "storyRef": "insors-ai/insrc#42",
       "pushedAt": "2026-07-20T10:57:16.200Z"
-    }
+    },
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z"
   },
   "body": {
     "hldContextSlice": {

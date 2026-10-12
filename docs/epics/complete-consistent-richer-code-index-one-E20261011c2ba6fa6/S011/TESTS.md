@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 63 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 68 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -200,3 +200,38 @@ Run at 2026-10-12T11:51:53.497Z on commit `f4298fae`. Tests check: **passed**. 1
 | `src/workflow/code-review/__tests__/diagram-conditional.test.ts` | 0 | 7 | 0.5 s |  |
 | `src/workflow/code-review/__tests__/functional-coverage-conditional.test.ts` | 0 | 5 | 0.5 s |  |
 | `src/workflow/code-review/__tests__/ux-conditional.test.ts` | 0 | 8 | 0.5 s |  |
+
+## t6
+
+Run at 2026-10-12T11:58:13.894Z on commit `141bf9d7`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: resolveRepoPath inside a step.call uses the context's cwd and envRepo, not the process's; outside one it keeps process defaults**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | resolveRepoPath inside a step call uses the context's cwd and envRepo, not the process's; outside one it keeps process defaults | `src/daemon/steps/__tests__/step-context.test.ts` |
+| pass | the code-review handler's repo fallback reads the context's INSRC_REPO inside a step call and the process's outside one | `src/daemon/steps/__tests__/step-context.test.ts` |
+
+**unit: scope directoryOf: a bare file name inside a step.call resolves against the context's cwd, and outside one against process.cwd()**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | scope directoryOf: a bare file name inside a step call resolves against the context's cwd, and outside one against process.cwd() | `src/daemon/steps/__tests__/step-context.test.ts` |
+
+**unit: client identity: the context holds 'claude' / 'codex'; the code-review deps receive it as is and the one-shot analyze converts it to 'cli-claude' / 'cli-codex'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | client identity: the context holds 'claude' / 'codex'; the code-review deps receive it as is and the one-shot analyze converts it to 'cli-claude' / 'cli-codex' | `src/daemon/steps/__tests__/step-context.test.ts` |
+
+**unit: step context isolation: two concurrent contexts each see their own cwd and client**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | step context isolation: two concurrent contexts each see their own cwd and client | `src/daemon/steps/__tests__/step-context.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/step-context.test.ts` | 0 | 5 | 0.8 s |  |

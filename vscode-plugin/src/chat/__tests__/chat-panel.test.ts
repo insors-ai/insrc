@@ -14,6 +14,8 @@ import { transcriptPagerWebviewSource } from '../transcript-pager.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import { createFileChatSessionStore, ROWS_SUFFIX } from '../session-file-store.js';
 import { fakeSessionFs } from './fake-session-fs.js';
+import { createAttachmentStore, MAX_ATTACHMENT_BYTES, type AttachmentStore } from '../attachment-store.js';
+import { fakeAttachmentFs, type FakeAttachmentFs } from './fake-attachment-fs.js';
 import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, RunOptions } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import { markerFor, WAITING_LABEL } from '../markers.js';
@@ -3756,4 +3758,285 @@ test("the chat panel run over the file store: a turn's saves append only that tu
   await waitFor(() => dones() === 4);
   await settle();
   assert.deepEqual(diskRows(id), JSON.parse(JSON.stringify(store.get(id)!.transcript)), 'the rows the failed saves missed are written once by a later save');
+});
+
+// ---- Story E2026101259da3204:S001 t5: the host's pending attachments ----
+
+const ATT_ROOT = '/home/u/.insrc/chat-attachments';
+const PNG5 = Buffer.from([1, 2, 3, 4, 5]).toString('base64');
+
+interface AttachHarness {
+  fc: FakeChannel;
+  fake: FakeAttachmentFs;
+  store: AttachmentStore;
+  sessions: ReturnType<typeof createInMemoryChatSessionStore>;
+  runs: TurnRequest[];
+  opened: string[];
+  errors: string[];
+  /** What the next file dialog returns: paths, or an error to reject with. */
+  pick: { next: readonly string[] | Error; calls: number };
+  /** Every attachments-pending posted so far. */
+  pendings(): Array<{ sessionId: string; items: Array<Record<string, unknown>>; error?: string }>;
+  /** Sends a message and waits for the attachments-pending it causes. */
+  sendAndWait(type: string, extra?: Record<string, unknown>): Promise<{ sessionId: string; items: Array<Record<string, unknown>>; error?: string }>;
+}
+/** A chat host with the attachment seams: the real store over an in-memory file seam, a scripted dialog and a recording opener. */
+function attachHarness(opts: { adapter?: StreamAdapter; wrapStore?: (store: AttachmentStore) => AttachmentStore } = {}): AttachHarness {
+  const fc = fakeChannel();
+  const fake = fakeAttachmentFs();
+  const real = createAttachmentStore({ root: ATT_ROOT, fs: fake.fs });
+  const store = opts.wrapStore ? opts.wrapStore(real) : real;
+  const sessions = createInMemoryChatSessionStore();
+  const runs: TurnRequest[] = [];
+  const opened: string[] = [];
+  const errors: string[] = [];
+  const pick: AttachHarness['pick'] = { next: [], calls: 0 };
+  const adapter = opts.adapter ?? scriptedAdapter(
+    [{ kind: 'assistant-delta', turnId: 't1', text: 'ok' }, { kind: 'done', turnId: 't1', ok: true, sessionId: 'native-1' }],
+    { onRun: (r) => runs.push(r) },
+  );
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: sessions,
+    cwd: () => '/repo',
+    logger: { warn: () => {}, error: (m) => errors.push(m) },
+    attachments: {
+      store,
+      pickFiles: async () => {
+        pick.calls++;
+        if (pick.next instanceof Error) throw pick.next;
+        return pick.next;
+      },
+      open: (path) => opened.push(path),
+    },
+  });
+  host.open();
+  const pendings: AttachHarness['pendings'] = () => posted(fc, 'attachments-pending') as unknown as ReturnType<AttachHarness['pendings']>;
+  return {
+    fc, fake, store, sessions, runs, opened, errors, pick, pendings,
+    async sendAndWait(type, extra = {}) {
+      const before = pendings().length;
+      fc.send(env(type, extra));
+      await waitFor(() => pendings().length > before);
+      return pendings().at(-1)!;
+    },
+  };
+}
+const attFiles = (h: AttachHarness): string[] => [...h.fake.files.keys()].filter((p) => p.startsWith(ATT_ROOT)).sort();
+
+test("host: attach-image and pick-attachments add to the active session's pending list and post attachments-pending; remove-attachment removes one; errors are posted as one sentence and the list is unchanged", async () => {
+  const h = attachHarness();
+  const sid = activeId(h.fc);
+  const dir = `${ATT_ROOT}/${sid}`;
+  // The session state comes with an empty pending list.
+  assert.deepEqual(h.pendings(), [{ type: 'attachments-pending', sessionId: sid, items: [] }]);
+
+  const pasted = await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'shot.png', clientId: 'c1' });
+  assert.deepEqual(pasted, { type: 'attachments-pending', sessionId: sid, items: [{ id: '1-shot.png', name: 'shot.png', kind: 'image', size: 5, clientId: 'c1' }] });
+  assert.deepEqual([...h.fake.files.get(`${dir}/1-shot.png`)!], [1, 2, 3, 4, 5]);
+
+  h.fake.files.set('/src/a.txt', new Uint8Array(3));
+  h.fake.files.set('/src/b.pdf', new Uint8Array(7));
+  h.pick.next = ['/src/a.txt', '/src/b.pdf'];
+  const picked = await h.sendAndWait('pick-attachments');
+  assert.deepEqual(picked.items, [
+    { id: '1-shot.png', name: 'shot.png', kind: 'image', size: 5, clientId: 'c1' },
+    { id: '2-a.txt', name: 'a.txt', kind: 'file', size: 3 },
+    { id: '3-b.pdf', name: 'b.pdf', kind: 'file', size: 7 },
+  ]);
+  assert.equal(picked.error, undefined);
+  assert.deepEqual(attFiles(h), [`${dir}/1-shot.png`, `${dir}/2-a.txt`, `${dir}/3-b.pdf`]);
+  // No posted item carries a path.
+  for (const p of h.pendings()) for (const item of p.items) assert.ok(!('path' in item));
+
+  const removed = await h.sendAndWait('remove-attachment', { attachmentId: '2-a.txt' });
+  assert.deepEqual(removed.items.map((i) => i['id']), ['1-shot.png', '3-b.pdf']);
+  assert.deepEqual(attFiles(h), [`${dir}/1-shot.png`, `${dir}/3-b.pdf`]);
+
+  // Each failure: one sentence, and the list stays as it was.
+  const kept = ['1-shot.png', '3-b.pdf'];
+  const failing = async (type: string, extra: Record<string, unknown>, sentence: RegExp): Promise<void> => {
+    const res = await h.sendAndWait(type, extra);
+    assert.match(res.error ?? '', sentence);
+    assert.deepEqual(res.items.map((i) => i['id']), kept, `list unchanged after ${sentence}`);
+    assert.deepEqual(attFiles(h), [`${dir}/1-shot.png`, `${dir}/3-b.pdf`]);
+  };
+  await failing('attach-image', { mime: 'image/svg+xml', dataBase64: PNG5, name: 'a.svg' }, /^The pasted item is not a supported image \(PNG, JPEG, GIF or WebP\)\.$/);
+  await failing('attach-image', { mime: 'image/png', dataBase64: '!!!!' }, /^The pasted item is not a supported image\.$/);
+  h.fake.failOn = (c) => (c.op === 'writeFile' ? new Error('ENOSPC') : undefined);
+  await failing('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'full.png' }, /^full\.png could not be attached: ENOSPC$/);
+  h.fake.failOn = undefined;
+  assert.ok(h.errors.some((e) => /could not attach full\.png: ENOSPC/.test(e)), 'a failing write is logged');
+  h.fake.dirs.add('/src/folder');
+  h.pick.next = ['/src/folder'];
+  await failing('pick-attachments', {}, /^folder is not a readable file\.$/);
+  h.pick.next = new Error('dialog broke');
+  await failing('pick-attachments', {}, /^The file dialog could not be opened: dialog broke$/);
+
+  // One bad file in a pick does not stop the others.
+  h.pick.next = ['/src/missing.txt', '/src/a.txt'];
+  const mixed = await h.sendAndWait('pick-attachments');
+  assert.match(mixed.error ?? '', /^missing\.txt is not a readable file\.$/);
+  assert.deepEqual(mixed.items.map((i) => i['name']), ['shot.png', 'b.pdf', 'a.txt']);
+
+  // A malformed message changes nothing and posts nothing.
+  const count = h.pendings().length;
+  h.fc.send(env('attach-image', { mime: 'image/png' }));
+  h.fc.send(env('attach-image', { mime: 7, dataBase64: PNG5 }));
+  h.fc.send(env('remove-attachment', {}));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(h.pendings().length, count);
+});
+
+test("host: ready, new-chat and open-chat post each session's own pending list; an unknown or foreign attachment id in remove or open does nothing; open-attachment opens the resolved path of a row's or a pending attachment", async () => {
+  const h = attachHarness();
+  const rowFile = { id: '7-old.pdf', name: 'old.pdf', kind: 'file' as const, size: 9, path: `${ATT_ROOT}/elsewhere/7-old.pdf` };
+  const one = h.sessions.draft('claude');
+  one.transcript.push({ role: 'user', text: 'earlier', at: '2026-10-12T00:00:00.000Z', attachments: [rowFile] });
+  h.sessions.save(one);
+  const two = h.sessions.create('claude');
+
+  assert.deepEqual((await h.sendAndWait('open-chat', { chatId: one.id })).items, []);
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'one.png' });
+  const inTwo = await h.sendAndWait('open-chat', { chatId: two.id });
+  assert.deepEqual([inTwo.sessionId, inTwo.items], [two.id, []]);
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'two.png' });
+
+  // Back in the first chat: its own chip, not the other's.
+  const back = await h.sendAndWait('open-chat', { chatId: one.id });
+  assert.deepEqual([back.sessionId, back.items.map((i) => i['id'])], [one.id, ['1-one.png']]);
+  // A rebuilt webview asks again and gets the same list.
+  const again = await h.sendAndWait('ready');
+  assert.deepEqual([again.sessionId, again.items.map((i) => i['id'])], [one.id, ['1-one.png']]);
+  // The pending list is posted after the session state it belongs to.
+  const types = h.fc.posted.map((m) => m.payload.type);
+  assert.ok(types.lastIndexOf('attachments-pending') > types.lastIndexOf('session-restored'));
+
+  // An id the host did not issue for this chat: nothing removed, nothing opened, nothing posted.
+  const count = h.pendings().length;
+  const files = attFiles(h);
+  for (const bad of ['1-two.png', '9-nope.png', `../${two.id}/1-two.png`, `${ATT_ROOT}/${two.id}/1-two.png`, '/etc/passwd', '', 7, null]) {
+    h.fc.send(env('remove-attachment', { attachmentId: bad }));
+    h.fc.send(env('open-attachment', { attachmentId: bad }));
+  }
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(h.pendings().length, count);
+  assert.deepEqual(attFiles(h), files);
+  assert.deepEqual(h.opened, []);
+  assert.deepEqual(h.fake.ops('rm'), []);
+
+  // A pending attachment and one on a sent message open at the path the host holds.
+  h.fc.send(env('open-attachment', { attachmentId: '1-one.png' }));
+  h.fc.send(env('open-attachment', { attachmentId: '7-old.pdf' }));
+  assert.deepEqual(h.opened, [`${ATT_ROOT}/${one.id}/1-one.png`, rowFile.path]);
+
+  // A new chat starts with none, and the other chats keep theirs.
+  const fresh = await h.sendAndWait('new-chat', { provider: 'claude' });
+  assert.notEqual(fresh.sessionId, one.id);
+  assert.deepEqual(fresh.items, []);
+  assert.deepEqual((await h.sendAndWait('open-chat', { chatId: two.id })).items.map((i) => i['id']), ['1-two.png']);
+  // An attachment still being written when the chat is switched lands on the chat it was pasted in.
+  h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'late.png' }));
+  const switched = await h.sendAndWait('open-chat', { chatId: one.id });
+  assert.deepEqual(switched.items.map((i) => i['id']), ['1-one.png']);
+  await waitFor(() => h.fake.files.has(`${ATT_ROOT}/${two.id}/2-late.png`));
+  assert.deepEqual((await h.sendAndWait('open-chat', { chatId: two.id })).items.map((i) => i['id']), ['1-two.png', '2-late.png']);
+});
+
+test('host without the attachments seams: the shell has no attach button or chip row and the four messages are ignored', async () => {
+  const fc = fakeChannel();
+  const warns: string[] = [];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    logger: { warn: (m) => warns.push(m), error: (m) => warns.push(m) },
+  });
+  host.open();
+  const before = fc.posted.length;
+  assert.doesNotThrow(() => {
+    fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'shot.png' }));
+    fc.send(env('pick-attachments'));
+    fc.send(env('remove-attachment', { attachmentId: '1-shot.png' }));
+    fc.send(env('open-attachment', { attachmentId: '1-shot.png' }));
+  });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(fc.posted.length, before, 'nothing is posted for an attachment message');
+  // The session state is posted as before, with no pending list.
+  fc.send(env('ready'));
+  fc.send(env('new-chat', { provider: 'claude' }));
+  assert.deepEqual(posted(fc, 'attachments-pending'), []);
+  assert.deepEqual(warns, []);
+  assert.doesNotMatch(fc.html(), /insrc-attach/);
+});
+
+test('host: an attach-image whose base64 length implies more than the limit is refused without decoding and without calling the store', async () => {
+  let storeCalls = 0;
+  const h = attachHarness({
+    wrapStore: (s) => ({ ...s, addBytes: (id, input) => { storeCalls++; return s.addBytes(id, input); } }),
+  });
+  // One byte over the limit, as base64 text (4 characters per 3 bytes).
+  const over = 'A'.repeat(((MAX_ATTACHMENT_BYTES + 3) / 3) * 4);
+  assert.ok((over.length * 3) / 4 > MAX_ATTACHMENT_BYTES);
+  const realFrom = Buffer.from;
+  let decodes = 0;
+  (Buffer as unknown as { from: unknown }).from = (...args: unknown[]): unknown => {
+    if (args[1] === 'base64') decodes++;
+    return (realFrom as (...a: unknown[]) => unknown).apply(Buffer, args);
+  };
+  try {
+    const res = await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: over, name: 'huge.png' });
+    assert.equal(res.error, 'huge.png is larger than the 20 MB limit.');
+    assert.deepEqual(res.items, []);
+    assert.equal(decodes, 0, 'the oversize text is never decoded');
+    assert.equal(storeCalls, 0, 'the store is never called');
+    assert.deepEqual(h.fake.calls, []);
+    // An unnamed paste is described, not left blank.
+    assert.equal((await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: over })).error, 'The pasted image is larger than the 20 MB limit.');
+    // A paste within the limit is decoded once and stored.
+    const ok = await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'ok.png' });
+    assert.deepEqual(ok.items.map((i) => i['id']), ['1-ok.png']);
+    assert.equal(decodes, 1);
+    assert.equal(storeCalls, 1);
+  } finally {
+    (Buffer as unknown as { from: unknown }).from = realFrom;
+  }
+});
+
+test('host: a dismissed dialog posts nothing, and a pick over the limit keeps the first ten and posts one error sentence', async () => {
+  const h = attachHarness();
+  const start = h.pendings().length;
+  h.pick.next = [];
+  h.fc.send(env('pick-attachments'));
+  await waitFor(() => h.pick.calls === 1);
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(h.pendings().length, start, 'a dismissed dialog posts nothing');
+  assert.deepEqual(h.fake.calls, []);
+
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'first.png' });
+  const paths = Array.from({ length: 12 }, (_, i) => `/src/f${i}.txt`);
+  for (const p of paths) h.fake.files.set(p, new Uint8Array(1));
+  h.pick.next = paths;
+  const res = await h.sendAndWait('pick-attachments');
+  assert.equal(res.items.length, 10);
+  assert.deepEqual(res.items.map((i) => i['name']), ['first.png', ...paths.slice(0, 9).map((p) => p.slice(5))]);
+  assert.equal(res.error, 'Only 10 files can be attached to one message; 3 files were not attached.');
+  assert.equal(attFiles(h).length, 10);
+
+  // A full list takes nothing more, by paste or by pick.
+  const paste = await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'extra.png' });
+  assert.equal(paste.error, 'Only 10 files can be attached to one message; extra.png was not attached.');
+  h.pick.next = ['/src/f11.txt'];
+  const more = await h.sendAndWait('pick-attachments');
+  assert.equal(more.error, 'Only 10 files can be attached to one message; 1 file was not attached.');
+  assert.equal(more.items.length, 10);
+  assert.equal(attFiles(h).length, 10);
+
+  // Removing one makes room for one.
+  await h.sendAndWait('remove-attachment', { attachmentId: '1-first.png' });
+  const refill = await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'extra.png' });
+  assert.equal(refill.error, undefined);
+  assert.equal(refill.items.length, 10);
 });

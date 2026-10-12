@@ -18,6 +18,7 @@ import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from './render-reg
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, CHAT_MARKDOWN_TOKENS } from './markdown-style.js';
 import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
+import { AttachmentRefused, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE, type AttachmentRef, type AttachmentStore } from './attachment-store.js';
 // S001 (bugfix): classifyPermissionDenial is the pure classifier that tells a tool-permission gate
 // apart from a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial, type ProviderRegistry, type ProviderId } from './cli-adapter.js';
@@ -101,6 +102,19 @@ export interface ChatPanelHostDeps {
   readonly processStartTime?: ((pid: number) => number | undefined) | undefined;
   /** Whether a pid is alive (another window's extension host owning a saved cursor). */
   readonly isAlive?: ((pid: number) => boolean) | undefined;
+  /**
+   * Story E2026101259da3204:S001: pasting images and attaching documents. The store keeps the
+   * files; `pickFiles` (the file dialog, resolving with the chosen paths, none when dismissed)
+   * and `open` (show a file) are the two VS Code calls, injected so this module stays free of the
+   * vscode module. Absent -> no attach button, no chip row, and the attachment messages are ignored.
+   */
+  readonly attachments?: ChatAttachmentDeps | undefined;
+}
+
+export interface ChatAttachmentDeps {
+  readonly store: AttachmentStore;
+  pickFiles(): Promise<readonly string[]>;
+  open(path: string): void;
 }
 
 export { DEFAULT_TURN_LOCK_TIMEOUT_MS };
@@ -178,6 +192,81 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const post = (msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
     channel.postMessage(envelope(msg));
+  };
+
+  // Story E2026101259da3204:S001: the attachments waiting to go with each session's next message,
+  // in the order they were added. Held here and not in the webview, so a rebuilt webview and a
+  // chat switch lose nothing (a window reload does). `clientId` is the webview's own name for a
+  // pasted image, echoed back so it can show the thumbnail it holds.
+  const att = deps.attachments;
+  interface PendingAttachment {
+    readonly ref: AttachmentRef;
+    readonly clientId?: string | undefined;
+  }
+  const pendingAttachments = new Map<string, PendingAttachment[]>();
+  // One chain of changes per session: adds and removes run one after another, so the limit is
+  // checked against the list as it really is.
+  const attachmentWork = new Map<string, Promise<void>>();
+  const pendingOf = (sessionId: string): PendingAttachment[] => {
+    let list = pendingAttachments.get(sessionId);
+    if (list === undefined) {
+      list = [];
+      pendingAttachments.set(sessionId, list);
+    }
+    return list;
+  };
+  /** Tells the webview a session's pending list; nothing is posted for a session that is not shown. */
+  const postPending = (sessionId: string, error?: string): void => {
+    if (att === undefined || session === undefined || session.id !== sessionId) return;
+    post({
+      type: 'attachments-pending',
+      sessionId,
+      items: (pendingAttachments.get(sessionId) ?? []).map((p) => ({
+        id: p.ref.id,
+        name: p.ref.name,
+        kind: p.ref.kind,
+        size: p.ref.size,
+        ...(p.clientId !== undefined ? { clientId: p.clientId } : {}),
+      })),
+      ...(error !== undefined ? { error } : {}),
+    });
+  };
+  const TOO_MANY = `Only ${MAX_ATTACHMENTS_PER_MESSAGE} files can be attached to one message`;
+  /** The sentence shown for a failed add: the store's own for a refusal, else the failure logged and named. */
+  const attachError = (name: string, err: unknown): string => {
+    if (err instanceof AttachmentRefused) return err.message;
+    const message = err instanceof Error ? err.message : String(err);
+    log.error(`[chat] could not attach ${name}: ${message}`);
+    return `${name} could not be attached: ${message}`;
+  };
+  /**
+   * Queues a change to a session's pending list behind the ones already running. The change
+   * returns the error sentences to show (none when all went well) and whether to post at all.
+   */
+  const changePending = (sessionId: string, change: (list: PendingAttachment[]) => Promise<{ readonly post: boolean; readonly errors: readonly string[] }>): void => {
+    const run = async (): Promise<void> => {
+      let result: { readonly post: boolean; readonly errors: readonly string[] };
+      try {
+        result = await change(pendingOf(sessionId));
+      } catch (err: unknown) {
+        result = { post: true, errors: [attachError('The attachment', err)] };
+      }
+      if (result.post) postPending(sessionId, result.errors.length > 0 ? result.errors.join(' ') : undefined);
+    };
+    attachmentWork.set(sessionId, (attachmentWork.get(sessionId) ?? Promise.resolve()).then(run));
+  };
+  /** The bytes a base64 text decodes to, from its length alone. */
+  const base64Bytes = (text: string): number => Math.floor((text.length * 3) / 4) - (text.endsWith('==') ? 2 : text.endsWith('=') ? 1 : 0);
+  /** An attachment of the active session by the id the host issued: one pending, or one on a sent message. */
+  const findAttachment = (s: ChatSession, attachmentId: string): AttachmentRef | undefined => {
+    const pending = (pendingAttachments.get(s.id) ?? []).find((p) => p.ref.id === attachmentId);
+    if (pending !== undefined) return pending.ref;
+    for (const row of s.transcript) {
+      if (row.role !== 'user' || row.attachments === undefined) continue;
+      const hit = row.attachments.find((a) => a.id === attachmentId);
+      if (hit !== undefined) return hit;
+    }
+    return undefined;
   };
 
   // S006: the EditGovernor (inline diff + auto/review + revert). The CHAT surface
@@ -444,6 +533,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (session === undefined) session = deps.store.draft(available[0]!);
     permissionMode = modeOf(session); // S001 (bugfix): adopt the active session's persisted mode
     postRestored(session);
+    postPending(session.id); // the rebuilt webview gets the chips it had
     // ISSUE-6a811b8a: session-restored cleared the webview, including the shown approval card;
     // post the queue head again (once) with its position so the queue can still be answered.
     shownApproval = undefined;
@@ -957,6 +1047,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         session = deps.store.draft(msg.provider);
         permissionMode = modeOf(session);
         postRestored(session);
+        postPending(session.id);
         postHistory(); // refresh the dropdown (the draft is not yet listed until it has a message)
         return;
       }
@@ -976,6 +1067,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         session = s;
         permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
         postRestored(s);
+        postPending(s.id); // each chat shows its own pending attachments
         postHistory(); // S005: keep the dropdown selection/order in sync
         followLiveTurn(s);
         return;
@@ -1085,6 +1177,98 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // Continue the run with a synthesized user message naming the choice. suppressEcho so the
         // synthetic prompt is not echoed as a user bubble — only the resolved selection chip marks it.
         void runTurn(`Selected: ${labels.join(', ')}`, undefined, { suppressEcho: true });
+        return;
+      }
+      case 'attach-image': {
+        // Story E2026101259da3204:S001: a pasted image, as base64. It joins the pending list of
+        // the session that was active when it was pasted.
+        if (att === undefined || session === undefined) return;
+        if (typeof msg.mime !== 'string' || typeof msg.dataBase64 !== 'string') return;
+        const { mime, dataBase64 } = msg;
+        const name = typeof msg.name === 'string' ? msg.name : '';
+        const clientId = typeof msg.clientId === 'string' ? msg.clientId : undefined;
+        const sessionId = session.id;
+        changePending(sessionId, async (list) => {
+          const shown = name.trim() === '' ? 'The pasted image' : name;
+          if (list.length >= MAX_ATTACHMENTS_PER_MESSAGE) return { post: true, errors: [`${TOO_MANY}; ${shown} was not attached.`] };
+          // Judged from the text's length, so an oversize paste is never decoded.
+          const size = base64Bytes(dataBase64);
+          if (size > MAX_ATTACHMENT_BYTES) {
+            return { post: true, errors: [`${shown} is larger than the ${MAX_ATTACHMENT_BYTES / (1024 * 1024)} MB limit.`] };
+          }
+          const bytes = Buffer.from(dataBase64, 'base64');
+          if (bytes.length === 0 || bytes.length !== size) return { post: true, errors: ['The pasted item is not a supported image.'] };
+          try {
+            list.push({ ref: await att.store.addBytes(sessionId, { name, mime, bytes }), clientId });
+          } catch (err: unknown) {
+            return { post: true, errors: [attachError(shown, err)] };
+          }
+          return { post: true, errors: [] };
+        });
+        return;
+      }
+      case 'pick-attachments': {
+        // The file dialog is the host's own, so no path ever comes from the webview. It is not
+        // part of the session's chain of changes: nothing waits on a dialog left open.
+        if (att === undefined || session === undefined) return;
+        const sessionId = session.id;
+        void (async (): Promise<void> => {
+          let paths: readonly string[];
+          try {
+            paths = await att.pickFiles();
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            log.error(`[chat] the file dialog failed: ${message}`);
+            changePending(sessionId, async () => ({ post: true, errors: [`The file dialog could not be opened: ${message}`] }));
+            return;
+          }
+          if (paths.length === 0) return; // dismissed: nothing changes, nothing is posted
+          changePending(sessionId, async (list) => {
+            const errors: string[] = [];
+            const room = Math.max(0, MAX_ATTACHMENTS_PER_MESSAGE - list.length);
+            for (const path of paths.slice(0, room)) {
+              try {
+                list.push({ ref: await att.store.addFile(sessionId, path) });
+              } catch (err: unknown) {
+                errors.push(attachError(path.split(/[\\/]/).pop() ?? path, err));
+              }
+            }
+            const left = paths.length - Math.min(paths.length, room);
+            if (left > 0) errors.push(`${TOO_MANY}; ${left} ${left === 1 ? 'file was' : 'files were'} not attached.`);
+            return { post: true, errors };
+          });
+        })();
+        return;
+      }
+      case 'remove-attachment': {
+        // Only an id in the active session's pending list; anything else does nothing.
+        if (att === undefined || session === undefined || typeof msg.attachmentId !== 'string') return;
+        const { attachmentId } = msg;
+        const sessionId = session.id;
+        changePending(sessionId, async (list) => {
+          const at = list.findIndex((p) => p.ref.id === attachmentId);
+          if (at === -1) return { post: false, errors: [] };
+          list.splice(at, 1);
+          try {
+            await att.store.remove(sessionId, attachmentId);
+          } catch (err: unknown) {
+            // The chip is gone either way; the start-up sweep takes a file left behind.
+            log.warn(`[chat] could not remove attachment ${attachmentId}: ${err instanceof Error ? err.message : String(err)}`);
+          }
+          return { post: true, errors: [] };
+        });
+        return;
+      }
+      case 'open-attachment': {
+        // The id is resolved against the active session; the path opened is the host's own.
+        if (att === undefined || session === undefined || typeof msg.attachmentId !== 'string') return;
+        const ref = findAttachment(session, msg.attachmentId);
+        if (ref === undefined) return;
+        try {
+          att.open(ref.path);
+        } catch (err: unknown) {
+          log.warn(`[chat] could not open attachment ${ref.id}: ${err instanceof Error ? err.message : String(err)}`);
+        }
         return;
       }
       default:

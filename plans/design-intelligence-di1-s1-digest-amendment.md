@@ -1,6 +1,6 @@
 # DI1 S001 candidate identity amendment
 
-Status: revised HLD approved in chat and recorded on 2026-10-11; S001 LLD rebased, independently reviewed and corrected, with effective review PASS and zero unresolved blocking findings. Implementation and BUILD completion remain withheld pending explicit detailed-design approval and refreshed PLAN.
+Status: revised HLD, LLD and refreshed PLAN approved. The digest correction is implemented and all affected daemon build gates pass. Fresh independent Claude Opus daemon code review completed with WARN (0 HIGH, 4 MED, 4 LOW) under degraded grounding. The stale-roadmap finding is corrected; missing review-context evidence remains documented. BUILD completion remains unapproved.
 
 ## Defect in the approved formula
 
@@ -25,7 +25,7 @@ The approved canonical JSON serialization, record identity, raw-file hashing, re
 - Recompute independent candidate/review/release golden vectors; record identity vectors remain unchanged.
 - Rerun the corpus suite, strict build, affected insrc gates and independent code review before presenting BUILD completion approval.
 
-The latest code already fixes specimen references to metadata, live-input validation, unsafe control characters and Unicode path collisions. Those fixes do not change this candidate digest formula and therefore do not resolve the gap by themselves.
+The corrected code binds the complete manifest, preserves staged coverage path/mediaType, rejects noncomputable identities, and invalidates stale role/metadata assessments. It also preserves earlier specimen, snapshot, control-character and Unicode-collision fixes.
 
 ## Malformed coverage membership and upstream alignment
 

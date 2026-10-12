@@ -1,0 +1,69 @@
+<!-- insrc:artifact BUILD-7e0ae92e8f3d3c3e-s2 -->
+
+# Build (plan-driven) — Story s2
+
+**Standalone:** no  ·  **Created:** 2026-10-12T04:54:28.333Z  ·  **Updated:** 2026-10-12T06:27:03.586Z
+
+**Commit:** 965fac4f
+
+## Summary
+
+Implement reviewed pinned source ingestion, provenance, deterministic notices and candidate eligibility. All 58 corpus tests and strict build pass; broader suite has documented baseline/native-process and timing failures.
+
+## Tasks validated
+
+- ✓ `t1`
+- ✓ `t2`
+- ✓ `t3`
+- ✓ `t4`
+- ✓ `t5`
+- ✓ `t6`
+- ✓ `t7`
+- ✓ `t8`
+
+**Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
+
+## Changes
+
+- `.insrc/artifacts/CR-7e0ae92e8f3d3c3e-s2.json` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/S002/CR.md` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/design-intelligence-di1-s2-build.md` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/design-intelligence-implementation.md` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-closure-verification.txt` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-final-review-verification.txt` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-final-verification.txt` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-initial-code-review.json` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-review-fixes-verification.txt` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-second-code-review.json` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-t1-verification.txt` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-t2-verification.txt` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-t3-verification.txt` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-t4-verification.txt` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-t5-initial-gate.json` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-t5-verification.txt` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-t6-verification.txt` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-t7-verification.txt` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `plans/reviews/design-intelligence-di1-s2-third-code-review.json` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/README.md` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/acceptance.test.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/assessment-fixtures.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/assessment.test.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/contracts.test.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/eligibility.test.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/fixtures.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/git-fixtures.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/git-reader.test.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/isolation.test.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/lineage.test.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/notices.test.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/__tests__/reader-limits.test.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/assessment.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/contracts.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/eligibility.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/git-reader.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/index.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/lineage.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/notices.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/policy.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/stage.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)
+- `src/design/corpus/sources/validation-primitives.ts` — **insrc-build** (2026-10-12T06:27:03.586Z)

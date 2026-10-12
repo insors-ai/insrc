@@ -27,3 +27,31 @@ test('digest chain excludes self fields and binds content and review separately'
   assert.equal(candidateContentDigest({ ...manifest, files: manifest.files.map(f => f.path === 'coverage.json' ? { ...f, digest: 'e'.repeat(64) } : f) }), candidate);
   assert.notEqual(candidateContentDigest({ ...manifest, files: manifest.files.map(f => f.path !== 'coverage.json' ? { ...f, digest: 'e'.repeat(64) } : f) }), candidate);
 });
+
+test('candidate identity binds every non-cyclic manifest field without mutating input', () => {
+  const original = manifestFixture(); const before = structuredClone(original);
+  const digest = candidateContentDigest(original);
+  const mutations: ((m: ReleaseManifest) => void)[] = [
+    m => { m.label += ' changed'; }, m => { m.maintainer += ' changed'; },
+    m => { m.createdAt = '2026-10-12T00:00:00.000Z'; },
+    m => { m.sourceManifestPath = 'other-sources.json'; }, m => { m.noticesPath = 'other-notices.txt'; },
+    m => { m.coveragePath = 'other-coverage.json'; m.files[1]!.path = m.coveragePath; },
+    m => { m.records[0]!.recordId = 'test:other'; }, m => { m.records[0]!.recordVersion = 'e'.repeat(64); },
+    m => { m.records[0]!.path = 'records/other.json'; }, m => { m.records[0]!.digest = 'e'.repeat(64); },
+    m => { m.files[0]!.path = 'records/other.json'; }, m => { m.files[0]!.digest = 'e'.repeat(64); },
+    m => { m.files[0]!.mediaType = 'text/plain'; }, m => { m.files[1]!.mediaType = 'text/plain'; },
+  ];
+  for (const mutate of mutations) { const changed = structuredClone(original); mutate(changed); assert.notEqual(candidateContentDigest(changed), digest); }
+  // The schema currently admits only version 1; the hash must still bind the slot.
+  assert.notEqual(candidateContentDigest({ ...original, schemaVersion: 2 } as unknown as ReleaseManifest), digest);
+  for (const field of ['releaseId', 'reviewDigest'] as const) assert.equal(candidateContentDigest({ ...original, [field]: 'f'.repeat(64) }), digest);
+  assert.deepEqual(original, before);
+  const two = { ...original, records: [...original.records, { ...original.records[0]!, recordId: 'test:another' }] };
+  assert.equal(candidateContentDigest(two), candidateContentDigest({ ...two, records: [...two.records].reverse(), files: [...two.files].reverse() }));
+});
+
+test('candidate identity is not computable for missing or duplicate coverage entries', () => {
+  const manifest = manifestFixture();
+  assert.equal(candidateContentDigest({ ...manifest, files: manifest.files.filter(f => f.path !== manifest.coveragePath) }), '');
+  assert.equal(candidateContentDigest({ ...manifest, files: [...manifest.files, { ...manifest.files[1]! }] }), '');
+});

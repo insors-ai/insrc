@@ -116,3 +116,23 @@ test('release validation snapshots manifest and bytes and rejects C1 controls', 
   }
   assert.equal(isPortablePath('examples/\u0085.json'), false);
 });
+
+test('malformed coverage membership preserves missing and duplicate diagnostics', () => {
+  for (const duplicate of [false, true]) {
+    const candidate = packageFixture();
+    const coverage = candidate.manifest.files.find(f => f.path === candidate.manifest.coveragePath)!;
+    candidate.manifest.files = duplicate ? [...candidate.manifest.files, { ...coverage }] : candidate.manifest.files.filter(f => f.path !== coverage.path);
+    // An empty binding must not be mistaken for a valid review when no identity exists.
+    const envelope = { candidateContentDigest: '', fixtureReview: 'complete' };
+    const payload = bytes(envelope);
+    candidate.files = candidate.files.map(f => f.path === coverage.path ? { ...f, bytes: payload } : f);
+    candidate.manifest.files = candidate.manifest.files.map(f => f.path === coverage.path ? { ...f, digest: hashBytes(payload) } : f);
+    candidate.manifest.reviewDigest = reviewContentDigest(envelope);
+    candidate.manifest.releaseId = releaseContentDigest(candidate.manifest);
+    const result = validateRelease(candidate); assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.ok(result.issues.some(i => duplicate ? i.code === 'inventory.invalid' && i.path.startsWith('/manifest/files/') : i.code === 'reference.missing' && i.path === '/manifest/coveragePath'));
+      assert.ok(result.issues.some(i => i.code === 'review.stale'));
+    }
+  }
+});

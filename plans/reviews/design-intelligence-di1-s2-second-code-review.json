@@ -1,0 +1,170 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791784576567-a9tv5m",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-12T05:56:16.666Z",
+    "model": "claude:opus",
+    "elapsedMs": 227379,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s2",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "plans/design-intelligence-di1-s2-build.md",
+        "plans/design-intelligence-implementation.md",
+        "plans/reviews/design-intelligence-di1-s2-final-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-initial-code-review.json",
+        "plans/reviews/design-intelligence-di1-s2-review-fixes-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t1-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t2-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t3-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t4-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t5-initial-gate.json",
+        "plans/reviews/design-intelligence-di1-s2-t5-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t6-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t7-verification.txt",
+        "src/design/corpus/README.md",
+        "src/design/corpus/sources/__tests__/acceptance.test.ts",
+        "src/design/corpus/sources/__tests__/assessment-fixtures.ts",
+        "src/design/corpus/sources/__tests__/assessment.test.ts",
+        "src/design/corpus/sources/__tests__/contracts.test.ts",
+        "src/design/corpus/sources/__tests__/eligibility.test.ts",
+        "src/design/corpus/sources/__tests__/fixtures.ts",
+        "src/design/corpus/sources/__tests__/git-fixtures.ts",
+        "src/design/corpus/sources/__tests__/git-reader.test.ts",
+        "src/design/corpus/sources/__tests__/isolation.test.ts",
+        "src/design/corpus/sources/__tests__/lineage.test.ts",
+        "src/design/corpus/sources/__tests__/notices.test.ts",
+        "src/design/corpus/sources/__tests__/reader-limits.test.ts",
+        "src/design/corpus/sources/assessment.ts",
+        "src/design/corpus/sources/contracts.ts",
+        "src/design/corpus/sources/eligibility.ts",
+        "src/design/corpus/sources/git-reader.ts",
+        "src/design/corpus/sources/index.ts",
+        "src/design/corpus/sources/lineage.ts",
+        "src/design/corpus/sources/notices.ts",
+        "src/design/corpus/sources/policy.ts",
+        "src/design/corpus/sources/stage.ts",
+        "src/design/corpus/sources/validation-primitives.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/policy.ts:15",
+            "message": "profileDecision never recognizes a compound license expression. A licenseId string such as 'MIT OR Apache-2.0' is admitted as soon as some category lists the same string and the profile sets termsResolved=true. The test 'mixed-eligibility requires explicit font and compound-license decisions' shows exactly this: the profile keeps licenseIds ['MIT OR Apache-2.0'], the file is admitted, and the unresolved OR expression flows unchanged into SourceFile.licenseIds and NOTICE. The code requires a reviewed category, but it never requires the profile to settle the expression into an unambiguous resolved identifier. So an expression is only blocked when no category happens to list it, not because it is an unsupported expression.",
+            "expectationRef": "LLD 'Reviewed source policy v1': 'unsupported expression ... yields unresolved ... unresolved OR/AND/exception expressions require a maintainer to supply an unambiguous reviewed profile'; profile binds 'resolved license identifiers'. PLAN t2 ac1: 'compound expressions require explicit reviewed decisions'."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "plans/reviews/design-intelligence-di1-s2-review-fixes-verification.txt:1",
+            "message": "Present but unverified. All 25 promised node:test cases appear verbatim in the changed test files: contracts, eligibility, git-reader, reader-limits, lineage, notices, assessment, acceptance and isolation. The committed TAP logs (final-verification.txt and review-fixes-verification.txt) record 58/58 passing under Node 22.23.2. However, no build record was supplied in this grounding, so the pass-state cannot be confirmed. These tests are present, not missing; this finding does not claim they pass.",
+            "expectationRef": "all 25 promised S002 node:test cases",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "plans/reviews/design-intelligence-di1-s2-final-verification.txt:330",
+            "message": "Promised smoke test 'strict-build compiles source eligibility and passes the full corpus regression suite' is not a node:test case. Its only evidence is the logged `npm run build` output plus the 58-test corpus TAP run. Both are recorded as passing, but they cannot be verified without a build record. The recorded full-repository sweep has 14 failures: the SQLite overflow, 12 SIGABRT files and a DaemonSection timing failure. The promise says corpus suite, not repository suite, so this is a caveat on the evidence, not a missing test.",
+            "expectationRef": "strict-build compiles source eligibility and passes the full corpus regression suite",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/stage.ts:21",
+            "message": "stageLocalSources has its own preflight and acquisition branches, and none is directly exercised by the changed tests. Untested: the AcquisitionBudget count overflow across multiple inputs during preflight; the 'No remaining source-byte budget' early return; the post-acquisition byte charge failure; and rejection of a non-absolute localRepository. acceptance.test.ts only covers the success path and the unsafe-path-before-I/O case. The aggregate-budget regressions added in the review fixes call evaluateSourceImports and readPinnedSources, not this orchestrator. The shared AcquisitionBudget class is reached through evaluateSourceImports, but stage.ts's caller-lowered limits and per-input byte budget are not.",
+            "expectationRef": "stageLocalSources aggregate budget / input validation branches",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/assessment.ts:17",
+            "message": "Every changed symbol has an empty testsReaching list. Grounding here is diff-only and is known to be hollow for newly created files, so the empty lists are not treated as evidence of a not-exercised gap and no HIGH breach is raised. The changed test files import and call every production export: assessEligibility, prepareEligibilityCandidate, evaluateSourceImports, stageSources, requiredSourcePaths, snapshotBlobs (indirectly), readPinnedSources, createGitRunner, runGitBinary, gitEnvironment, validateOutputLineage, bindLineageToManifest, classifyPackageFiles, validatePackagedLineage, lineageBytes, assembleSourceMetadata, the decode* functions, sourceIdentity, isUtcDate, pathCollisionKey, isPortablePath and stageLocalSources. The fixes from the earlier review also have direct tests: no-close and error-no-close child failures, the request deadline, hostile review inputs, closure overflow, empty font conditions, and inferred derived-binding declarations.",
+            "expectationRef": "testsReaching (degraded grounding)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/notices.ts:30",
+            "message": "assembleSourceMetadata is exported through the pure barrel and returns a ValidationResult, but it takes `stages` without checking them. It calls `sourceIdentity(...)` on each profile's evidence path, and that call throws CorpusInputError when given a non-portable path or a non-canonical repo/revision. It also dereferences `admitted.profile.licenseEvidence` directly. A StagedSources value built by hand instead of by stageSources therefore throws out of a function that should return failure(...). In-tree callers only pass stageSources output, which has already been checked, so this is currently safe. classifyPackageFiles and validateOutputLineage take stages through collectSources and share the same unguarded path. Fix: wrap the evidence loop in try/catch and return a problem(...) instead.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/assessment.ts:87",
+            "message": "The same input is snapshotted and staged several times. assessEligibility calls reviewSnapshot, which copies every blob. It then calls evaluateSourceImports(review), which runs reviewSnapshot again on the snapshot, then snapshotBlobs on each import, and then stageSources, which runs snapshotBlobs once more. That is four copies of each acquired blob. prepareEligibilityCandidate does this whole chain (evaluateSourceImports plus assembleSourceMetadata), and then calls assessEligibility at the end, which repeats all of it. Up to the 64 MiB bound, that means about eight full copies of the source bytes and repeated canonicalJson of the policy. Fix: have an internal helper take an already-snapshotted review, and let the public entry points snapshot once.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/eligibility.ts:92",
+            "message": "The evidence-invalidation fixed point loops `while (changed)` over every required path on each pass. One pass can demote only one link of a dependency chain, so the worst case is O(n²·e) over up to 10,000 paths. Propagating through a reverse-dependency worklist (evidence path → dependants) would demote each path once, with the same result.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/lineage.ts:96",
+            "message": "classifyPackageFiles works out the set of evidence paths itself, from profile.licenseEvidence/noticeEvidence via evidencePath(ref.digest). assembleSourceMetadata builds the same set when it emits the evidence files. If one copy changes (for example, a new evidence kind is added to only one), classification and the reconstructed metadata will disagree, and assessment will fail candidates that are actually valid. Fix: extract one helper that returns evidence path → source IDs and call it from both.",
+            "counterpartRef": "assembleSourceMetadata",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/lineage.ts:60",
+            "message": "For a derived binding with no modifications, line 60 (`modificationNoticeRequired && derived && !modifications.length`) adds an issue once per contributing source. The unconditional check on line 62 then adds the same issue again for the binding. Line 60 can never be the only check that fires, so it is dead as a guard, and it adds duplicate diagnostics.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/lineage.ts:100",
+            "message": "classifyPackageFiles first runs `pathIssues(roles)` (line 94). It then pushes `pathIssues([...roles, ...evidence.keys()])`, which checks the role paths again. A collision between two role paths, such as sourceManifestPath and noticesPath, is therefore reported twice. Fix: run only the combined check.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 10
+    }
+  }
+}

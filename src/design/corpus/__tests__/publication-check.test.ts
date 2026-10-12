@@ -33,3 +33,47 @@ test('publication preserves deterministic diagnostics and reports only computabl
   const accessors = [{ get stage() { calls++; return 'eligibility'; } }];
   assert.equal(checkPublication(candidate, accessors).eligible, false); assert.equal(calls, 0);
 });
+
+test('role reassignment and metadata changes invalidate previously successful assessments', () => {
+  const original = packageFixture();
+  const assessments = ['eligibility', 'coverage'].map(stage => ({ stage, candidateContentDigest: candidateContentDigest(original.manifest), passed: true, issues: [] }));
+  assert.equal(checkPublication(original, assessments).eligible, true);
+  const changes = [
+    { sourceManifestPath: original.manifest.noticesPath, noticesPath: original.manifest.sourceManifestPath },
+    { maintainer: 'another maintainer' }, { label: 'another release' }, { createdAt: '2026-10-12T00:00:00.000Z' },
+    { files: original.manifest.files.map(f => ({ ...f, mediaType: 'text/plain' })) },
+    { records: original.manifest.records.map(r => ({ ...r, path: 'records/changed.json' })) },
+  ];
+  for (const change of changes) {
+    const manifest = { ...original.manifest, ...change };
+    manifest.releaseId = releaseContentDigest(manifest);
+    const result = checkPublication({ ...original, manifest }, assessments);
+    assert.equal(result.eligible, false);
+    assert.equal(result.issues.filter(i => i.code === 'assessment.stale').length, 2);
+    assert.ok(result.issues.some(i => i.code === 'review.stale'));
+    assert.equal(result.manifestDigest, manifest.releaseId);
+  }
+});
+
+test('noncomputable coverage membership makes every assessment stale but preserves manifest identity', () => {
+  for (const duplicate of [false, true]) {
+    const candidate = packageFixture();
+    const digest = candidateContentDigest(candidate.manifest);
+    const assessments = ['eligibility', 'coverage'].map(stage => ({ stage, candidateContentDigest: digest, passed: true, issues: [] }));
+    const coverage = candidate.manifest.files.find(f => f.path === candidate.manifest.coveragePath)!;
+    candidate.manifest.files = duplicate ? [...candidate.manifest.files, { ...coverage }] : candidate.manifest.files.filter(f => f.path !== coverage.path);
+    candidate.manifest.releaseId = releaseContentDigest(candidate.manifest);
+    assert.equal(candidateContentDigest(candidate.manifest), '');
+    const result = checkPublication(candidate, assessments);
+    assert.equal(result.eligible, false); assert.equal(result.manifestDigest, candidate.manifest.releaseId);
+    assert.equal(result.issues.filter(i => i.code === 'assessment.stale').length, assessments.length);
+    assert.ok(result.issues.some(i => duplicate ? i.code === 'inventory.invalid' : i.code === 'reference.missing'));
+  }
+});
+
+test('invalid release fallback hashes a detached manifest without live property reads', () => {
+  const candidate = packageFixture(); let reads = 0;
+  const manifest = new Proxy(candidate.manifest, { get() { reads++; throw new Error('Live manifest read'); } });
+  const result = checkPublication({ ...candidate, manifest, files: [] }, []);
+  assert.equal(result.eligible, false); assert.equal(result.manifestDigest, candidate.manifest.releaseId); assert.equal(reads, 0);
+});

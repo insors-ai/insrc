@@ -1,0 +1,27 @@
+T007: three planned assessment cases passed including final assembly helper; typecheck passed.
+Full Node22 sweep:
+  ...
+1..4943
+# tests 5370
+# suites 106
+# pass 5229
+# fail 13
+# cancelled 0
+# skipped 125
+# todo 3
+# duration_ms 62741.728958
+Failures:
+not ok 169 - src/daemon/__tests__/analyze-rpc.test.ts
+not ok 176 - src/daemon/__tests__/code-review-rpc.test.ts
+not ok 197 - src/daemon/__tests__/workflow-review-rpc.test.ts
+    not ok 12 - temporalTrend recovers slope/intercept/R² via expression-based regression (Phase 5g.1)
+not ok 1874 - SqliteDriver (via pool)
+not ok 326 - src/mcp/__tests__/analyze-step-handler.test.ts
+not ok 328 - src/mcp/__tests__/analyze-step-narrow.test.ts
+not ok 329 - src/mcp/__tests__/analyze-step-scope.test.ts
+not ok 357 - src/mcp/review-step/__tests__/review-step-routing.test.ts
+not ok 358 - src/mcp/review-step/__tests__/review-step.test.ts
+not ok 429 - src/workflow/__tests__/spec-review-approve.test.ts
+not ok 514 - src/workflow/review/__tests__/review.test.ts
+not ok 515 - src/workflow/review/__tests__/same-party-refusal.test.ts
+not ok 518 - src/workflow/review/__tests__/template-review.test.ts

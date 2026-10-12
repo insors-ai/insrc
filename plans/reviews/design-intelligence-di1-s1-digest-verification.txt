@@ -1,0 +1,232 @@
+S001 digest verification, final code commit 4f03c64e
+
+FULL SUITE before final release/preflight regressions:
+# tests 5450
+# pass 5321
+# fail 1
+# cancelled 0
+# skipped 125
+# todo 3
+# duration_ms 67345.296958
+Sole failure: src/daemon/db/__tests__/sqlite-driver.test.ts temporalTrend; ERR_SQLITE_ERROR integer overflow; sqlite.ts:344 and rdbms-common.ts:1937. This reproduces the pre-existing baseline failure.
+
+FINAL CORPUS SUITE:
+TAP version 13
+# Subtest: ac1 incomplete or stale guidance cannot pass the record to manifest preflight
+ok 1 - ac1 incomplete or stale guidance cannot pass the record to manifest preflight
+  ---
+  duration_ms: 31.903917
+  type: 'test'
+  ...
+# Subtest: ac2 exact evidence preserves complete records and pins independently calculated digest vectors
+ok 2 - ac2 exact evidence preserves complete records and pins independently calculated digest vectors
+  ---
+  duration_ms: 2.88325
+  type: 'test'
+  ...
+# Subtest: canonical golden bytes and SHA256 match independent vectors
+ok 3 - canonical golden bytes and SHA256 match independent vectors
+  ---
+  duration_ms: 1.108083
+  type: 'test'
+  ...
+# Subtest: canonical input rejects unsafe JSON without invoking accessors
+ok 4 - canonical input rejects unsafe JSON without invoking accessors
+  ---
+  duration_ms: 0.433833
+  type: 'test'
+  ...
+# Subtest: canonical depth and byte limits fail explicitly
+ok 5 - canonical depth and byte limits fail explicitly
+  ---
+  duration_ms: 11.736292
+  type: 'test'
+  ...
+# Subtest: canonical limits reject invalid caller configuration
+ok 6 - canonical limits reject invalid caller configuration
+  ---
+  duration_ms: 0.208125
+  type: 'test'
+  ...
+# Subtest: closed schemas preserve original fixtures for every guidance kind
+ok 7 - closed schemas preserve original fixtures for every guidance kind
+  ---
+  duration_ms: 6.594875
+  type: 'test'
+  ...
+# Subtest: closed schemas reject missing fields unknown nested fields and invalid enums
+ok 8 - closed schemas reject missing fields unknown nested fields and invalid enums
+  ---
+  duration_ms: 10.743792
+  type: 'test'
+  ...
+# Subtest: evidence and manifest schemas require pinned identities without coercion
+ok 9 - evidence and manifest schemas require pinned identities without coercion
+  ---
+  duration_ms: 1.691042
+  type: 'test'
+  ...
+# Subtest: release availability is closed and validates every lifecycle state
+ok 10 - release availability is closed and validates every lifecycle state
+  ---
+  duration_ms: 0.345458
+  type: 'test'
+  ...
+# Subtest: digest chain excludes self fields and binds content and review separately
+ok 11 - digest chain excludes self fields and binds content and review separately
+  ---
+  duration_ms: 6.241667
+  type: 'test'
+  ...
+# Subtest: candidate identity binds every non-cyclic manifest field without mutating input
+ok 12 - candidate identity binds every non-cyclic manifest field without mutating input
+  ---
+  duration_ms: 6.917375
+  type: 'test'
+  ...
+# Subtest: candidate identity is not computable for missing or duplicate coverage entries
+ok 13 - candidate identity is not computable for missing or duplicate coverage entries
+  ---
+  duration_ms: 0.234084
+  type: 'test'
+  ...
+# Subtest: manifest requires exact inventory portable paths and regular files
+ok 14 - manifest requires exact inventory portable paths and regular files
+  ---
+  duration_ms: 56.270708
+  type: 'test'
+  ...
+# Subtest: manifest validates exact record references and rejects duplicate self and cyclic relations
+ok 15 - manifest validates exact record references and rejects duplicate self and cyclic relations
+  ---
+  duration_ms: 6.192167
+  type: 'test'
+  ...
+# Subtest: manifest detects tampering across raw record candidate review and release hashes
+ok 16 - manifest detects tampering across raw record candidate review and release hashes
+  ---
+  duration_ms: 3.502333
+  type: 'test'
+  ...
+# Subtest: manifest format limits and accessor boundaries fail explicitly
+ok 17 - manifest format limits and accessor boundaries fail explicitly
+  ---
+  duration_ms: 2.635625
+  type: 'test'
+  ...
+# Subtest: manifest overrides and diagnostic pointers identify actual candidate fields
+ok 18 - manifest overrides and diagnostic pointers identify actual candidate fields
+  ---
+  duration_ms: 2.838
+  type: 'test'
+  ...
+# Subtest: specimens cannot reference metadata records or unbound coverage bytes
+ok 19 - specimens cannot reference metadata records or unbound coverage bytes
+  ---
+  duration_ms: 2.065292
+  type: 'test'
+  ...
+# Subtest: coverage decode errors and Unicode-equivalent inventory paths are rejected
+ok 20 - coverage decode errors and Unicode-equivalent inventory paths are rejected
+  ---
+  duration_ms: 1.289959
+  type: 'test'
+  ...
+# Subtest: release validation snapshots manifest and bytes and rejects C1 controls
+ok 21 - release validation snapshots manifest and bytes and rejects C1 controls
+  ---
+  duration_ms: 0.552917
+  type: 'test'
+  ...
+# Subtest: malformed coverage membership preserves missing and duplicate diagnostics
+ok 22 - malformed coverage membership preserves missing and duplicate diagnostics
+  ---
+  duration_ms: 1.734666
+  type: 'test'
+  ...
+# Subtest: compiled corpus imports and checks valid and invalid candidates without external IO
+ok 23 - compiled corpus imports and checks valid and invalid candidates without external IO
+  ---
+  duration_ms: 1004.883459
+  type: 'test'
+  ...
+# Subtest: publication requires exactly one successful current assessment per downstream stage
+ok 24 - publication requires exactly one successful current assessment per downstream stage
+  ---
+  duration_ms: 29.298458
+  type: 'test'
+  ...
+# Subtest: publication preserves deterministic diagnostics and reports only computable manifest identity
+ok 25 - publication preserves deterministic diagnostics and reports only computable manifest identity
+  ---
+  duration_ms: 12.388375
+  type: 'test'
+  ...
+# Subtest: role reassignment and metadata changes invalidate previously successful assessments
+ok 26 - role reassignment and metadata changes invalidate previously successful assessments
+  ---
+  duration_ms: 16.18325
+  type: 'test'
+  ...
+# Subtest: noncomputable coverage membership makes every assessment stale but preserves manifest identity
+ok 27 - noncomputable coverage membership makes every assessment stale but preserves manifest identity
+  ---
+  duration_ms: 4.245333
+  type: 'test'
+  ...
+# Subtest: invalid release fallback hashes a detached manifest without live property reads
+ok 28 - invalid release fallback hashes a detached manifest without live property reads
+  ---
+  duration_ms: 1.212959
+  type: 'test'
+  ...
+# Subtest: record roundtrip preserves all fields and rejects stale incomplete or draft reviews
+ok 29 - record roundtrip preserves all fields and rejects stale incomplete or draft reviews
+  ---
+  duration_ms: 10.641875
+  type: 'test'
+  ...
+# Subtest: record completeness and platform examples fail closed
+ok 30 - record completeness and platform examples fail closed
+  ---
+  duration_ms: 23.003
+  type: 'test'
+  ...
+# Subtest: authorship branches preserve attribution and require justified provenance
+ok 31 - authorship branches preserve attribution and require justified provenance
+  ---
+  duration_ms: 8.212
+  type: 'test'
+  ...
+# Subtest: conditional domain payloads compose and color references must resolve
+ok 32 - conditional domain payloads compose and color references must resolve
+  ---
+  duration_ms: 3.038333
+  type: 'test'
+  ...
+# Subtest: record validation uses an independent descriptor snapshot and checks reviewed drafts
+ok 33 - record validation uses an independent descriptor snapshot and checks reviewed drafts
+  ---
+  duration_ms: 0.702333
+  type: 'test'
+  ...
+1..33
+# tests 33
+# suites 0
+# pass 33
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1210.27075
+
+FINAL STRICT BUILD:
+npm warn Unknown project config "target". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "runtime". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "disturl". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @insrc/backend@0.2.1 build
+> tsc && node copy-assets.mjs
+
+[copy-assets] copied prompts/ -> /Users/subhagho/work/projects/insors/insrc/out/prompts
+[copy-assets] copied assets/ -> /Users/subhagho/work/projects/insors/insrc/out/assets

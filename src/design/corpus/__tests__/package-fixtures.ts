@@ -19,9 +19,10 @@ export function packageFixture(records: GuidanceRecord[] = [sealRecord(recordFix
     files: files.map(file => ({ path: file.path, digest: hashBytes(file.bytes), mediaType: file.path.endsWith('.json') ? 'application/json' : 'text/plain' })),
     sourceManifestPath: 'sources.json', noticesPath: 'NOTICE.txt', coveragePath: 'coverage.json', reviewDigest: '0'.repeat(64),
   };
+  base.files.push({ path: base.coveragePath, digest: '0'.repeat(64), mediaType: 'application/json' });
   const envelope = { candidateContentDigest: candidateContentDigest(base), fixtureReview: 'complete' };
   const coverage = { path: 'coverage.json', kind: 'regular' as const, bytes: bytes(envelope) }; files.push(coverage);
-  const reviewed = { ...base, files: [...base.files, { path: coverage.path, digest: hashBytes(coverage.bytes), mediaType: 'application/json' }], reviewDigest: reviewContentDigest(envelope) };
+  const reviewed = { ...base, files: base.files.map(file => file.path === coverage.path ? { ...file, digest: hashBytes(coverage.bytes) } : file), reviewDigest: reviewContentDigest(envelope) };
   return { manifest: { ...reviewed, releaseId: releaseContentDigest(reviewed) }, files };
 }
 export function relatedRecords(): GuidanceRecord[] {

@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1791734933958-hfovhm",
+    "runId": "wf-1791742955928-l4wxfo",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-11T16:10:45.216Z",
+    "createdAt": "2026-10-11T18:23:37.170Z",
     "epicCreatedAt": "2026-10-11T14:48:29.528Z",
     "attribution": {
       "outputs": [
@@ -15,22 +15,22 @@
         }
       ]
     },
-    "elapsedMs": 111244,
+    "elapsedMs": 61221,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "7e0ae92e8f3d3c3e",
     "epicSlug": "di1-open-source-design-corpus-retrieval",
     "storyId": "s1",
-    "lldRunId": "wf-1791734517458-d81b91",
-    "lldEffectiveHash": "335cb7e3dd53d14964950d1a2d9336c8c8a0cfa28307646a8fd410b62e535262",
+    "lldRunId": "wf-1791741779633-uhhxjy",
+    "lldEffectiveHash": "a20e4da9408dfea954d2ef18bb08b0d7eaad28b1155c8f8eead228779aaf2088",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-11T16:16:11.482Z",
-    "rangeBase": "9c01ab3577589743de872269013c15fad05f99c4"
+    "approvedAt": "2026-10-11T18:58:04.744Z",
+    "rangeBase": "2574915245f291455822b1f3afa07f6436777574"
   },
   "body": {
     "summary": {
-      "audience": "technical",
-      "prose": "Build the corpus's foundational schemas, deterministic identities and pure validation pipeline. Tests will prove incomplete or stale content cannot pass preflight and that valid records retain their full design rationale and provenance. Ingestion, curation and runtime services remain later stories."
+      "prose": "Correct candidate identity so manifest metadata changes invalidate prior assessments. Preserve the pure corpus contracts, define missing/duplicate coverage behavior, and prove the digest chain with independent vectors and stale-assessment regressions before fresh daemon code review.",
+      "audience": "technical"
     },
     "tasks": [
       {
@@ -59,7 +59,7 @@
       {
         "id": "t2",
         "title": "Implement canonical bytes and digest chain",
-        "summary": "Add canonical.ts with bounded pure canonical serialization and record/candidate/review/release hashes in the exact approved order. Pin golden fixtures from explicit canonical bytes and independently computed SHA-256 values. Keep raw-file hashes distinct from canonical semantic digests.",
+        "summary": "Update canonical.ts to hash the complete validated manifest snapshot except the three cyclic digest slots; preserve canonical JSON, record identity and raw byte rules. Stage coverage path/mediaType before hashing, independently regenerate candidate/review/release vectors and update digest documentation.",
         "size": "M",
         "order": 2,
         "dependsOn": [
@@ -67,8 +67,9 @@
         ],
         "acceptanceChecks": [
           "Key order and manifest inventory order do not affect identity; meaningful record-array order does.",
-          "recordVersion excludes only recordVersion/review; candidate excludes manifest and coverage envelope; release hashes manifest without releaseId.",
-          "Invalid Unicode, non-JSON values, accessors, cycles, oversized input and non-finite/unsafe numbers are rejected before unbounded traversal or content hashing."
+          "recordVersion excludes recordVersion/review; candidate excludes only releaseId, reviewDigest and the unique coverage file digest. All other fields, including coverage path/mediaType, bind assessments; records/files sort by ID/version and path. Release hashes manifest without releaseId.",
+          "Invalid Unicode, non-JSON values, accessors, cycles, oversized input and non-finite/unsafe numbers are rejected before unbounded traversal or content hashing.",
+          "Zero/multiple coverage matches yield empty candidate identity; never omit all matches or choose arbitrarily. Tests cover every non-cyclic metadata field and all three exclusions."
         ],
         "derivedFrom": [
           "c3",
@@ -133,7 +134,8 @@
           "Manifest record pairs match decoded bytes; relations resolve exactly, with duplicate/self/cyclic references rejected.",
           "Verify file, record, candidate, review and release digests; no manifest self hash or final releaseId in coverage.",
           "Format limits return explicit issues instead of silently truncating records or inventory.",
-          "Coverage is inspected only as canonical JSON for digest/candidate binding; no licensing allowlist or editorial coverage algorithm is implemented."
+          "Coverage is inspected only as canonical JSON for digest/candidate binding; no licensing allowlist or editorial coverage algorithm is implemented.",
+          "Malformed coverage membership remains ineligible: zero matches preserves reference.missing, duplicates inventory.invalid, and no computable candidate is invented."
         ],
         "derivedFrom": [
           "c2",
@@ -161,7 +163,8 @@
           "Missing, duplicate, failed, stale or contradictory assessments yield eligible=false with stable issues; matching successful fixtures yield eligible=true.",
           "PublicationCheck.manifestDigest is canonical manifest hash when computable, otherwise empty; errors do not fabricate hashes.",
           "Imports and calls perform no file/DB/network/provider access or catalog writes; no runtime approval claims are made.",
-          "Only sc1/sc2 foundational surfaces are exported; no ingestion, retrieval, settings or publication mutations are added."
+          "Only sc1/sc2 foundational surfaces are exported; no ingestion, retrieval, settings or publication mutations are added.",
+          "Changing source/notices roles without changing bytes and resealing releaseId rejects old coverage and both assessments. Missing/duplicate coverage entries mark every supplied assessment stale while preserving independently computable manifestDigest."
         ],
         "derivedFrom": [
           "c2",
@@ -178,7 +181,7 @@
       {
         "id": "t6",
         "title": "Verify contract coverage and strict build integration",
-        "summary": "Complete the LLD acceptance matrix with cross-module contract tests, run the focused corpus suite and TypeScript build, and smoke-import compiled out/design/corpus/index.js without daemon/DB/provider setup. Record results for independent post-build review; preserve unrelated changes.",
+        "summary": "Run current-source isolated import and preflight, corpus regressions, strict build and affected insrc gates. Independently recompute development goldens, retaining the record golden, and obtain fresh daemon code review before S001 completion.",
         "size": "S",
         "order": 6,
         "dependsOn": [
@@ -189,7 +192,8 @@
           "Focused unit/contract tests and npm run build pass, or unrelated pre-existing failures are isolated and reported accurately.",
           "Compiled import has no live-store/provider requirements; no test touches live ~/.insrc data.",
           "Diff remains within S001 modules/tests and tracked artifacts; no completion is claimed before build validation and independent code review.",
-          "An isolated process exercises valid and invalid preflight with external I/O instrumented or forbidden; asserts no filesystem writes, network/provider calls or live-store creation."
+          "An isolated process exercises valid and invalid preflight with external I/O instrumented or forbidden; asserts no filesystem writes, network/provider calls or live-store creation.",
+          "Rerun t2/t4/t5/t6 gates against corrected source; include t1/t3 tests in focused suite. Fresh daemon review covers final corpus commit range, with no dirty-ledger scope substitution."
         ],
         "derivedFrom": [
           "c5",
@@ -259,6 +263,13 @@
         ]
       },
       {
+        "lldStrategyItem": "candidate-metadata-binding: role paths, attribution, timestamp, schema and all record/file metadata affect candidate identity; only three cyclic digest positions are excluded",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
         "lldStrategyItem": "record-roundtrip: all identity/version/relation/rationale/provenance fields retained",
         "coveredByTaskIds": [
           "t3",
@@ -274,6 +285,21 @@
       {
         "lldStrategyItem": "publication-composition: missing/duplicate/failed/stale assessments always block; valid fixed assessments pass",
         "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "stale-role-assessment: swap sourceManifestPath/noticesPath with unchanged bytes, reseal only releaseId, and prove preflight rejects the old envelope and assessments",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "noncomputable-candidate: zero and duplicate coverage entries produce empty candidate identity, ineligible preflight and assessment.stale for every supplied assessment; independently recomputed manifestDigest remains available",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
           "t5"
         ]
       },
@@ -295,32 +321,32 @@
     {
       "id": "c1",
       "kind": "prior-artifact",
-      "ref": "LLD s1 contractDetails GuidanceRecord and dataModelChanges GuidanceRecord/EvidenceRef (LLD.md:41,112,122)"
+      "ref": "LLD s1 contractDetails GuidanceRecord and dataModelChanges GuidanceRecord/EvidenceRef"
     },
     {
       "id": "c2",
       "kind": "prior-artifact",
-      "ref": "LLD s1 contractDetails ReleaseManifest/PublicationCheck and interactionWithShared sc2 (LLD.md:65,87,137)"
+      "ref": "LLD s1 contractDetails ReleaseManifest/PublicationCheck and interactionWithShared sc2"
     },
     {
       "id": "c3",
       "kind": "prior-artifact",
-      "ref": "LLD s1 dataModelChanges Canonical digest format v1 (LLD.md:132)"
+      "ref": "LLD s1 dataModelChanges Canonical digest format v1"
     },
     {
       "id": "c4",
       "kind": "prior-artifact",
-      "ref": "LLD s1 errorPaths and dataModelChanges ValidationIssue (LLD.md:127,144)"
+      "ref": "LLD s1 errorPaths and dataModelChanges ValidationIssue"
     },
     {
       "id": "c5",
       "kind": "prior-artifact",
-      "ref": "LLD s1 testStrategy acceptanceMapping and testLevels (LLD.md:190)"
+      "ref": "LLD s1 testStrategy acceptanceMapping and testLevels"
     },
     {
       "id": "c6",
       "kind": "prior-artifact",
-      "ref": "LLD s1 hldContextSlice boundary and adjacentBoundaries; testStrategy smoke integration (LLD.md:24,190)"
+      "ref": "LLD s1 hldContextSlice boundary and adjacentBoundaries; testStrategy smoke integration"
     }
   ]
 }

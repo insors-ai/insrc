@@ -1,0 +1,12 @@
+T003: five planned integration cases passed; npx tsc --noEmit passed.
+Full Node22 suite; sole failure is existing SQLite temporalTrend integer overflow:
+  ...
+1..5040
+# tests 5467
+# suites 106
+# pass 5338
+# fail 1
+# cancelled 0
+# skipped 125
+# todo 3
+# duration_ms 69709.53625

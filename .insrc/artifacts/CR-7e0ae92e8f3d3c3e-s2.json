@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791786178492-v551z5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-12T06:22:58.618Z",
+    "model": "claude:opus",
+    "elapsedMs": 125935,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s2",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "plans/design-intelligence-di1-s2-build.md",
+        "plans/design-intelligence-implementation.md",
+        "plans/reviews/design-intelligence-di1-s2-closure-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-final-review-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-final-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-initial-code-review.json",
+        "plans/reviews/design-intelligence-di1-s2-review-fixes-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-second-code-review.json",
+        "plans/reviews/design-intelligence-di1-s2-t1-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t2-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t3-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t4-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t5-initial-gate.json",
+        "plans/reviews/design-intelligence-di1-s2-t5-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t6-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-t7-verification.txt",
+        "plans/reviews/design-intelligence-di1-s2-third-code-review.json",
+        "src/design/corpus/README.md",
+        "src/design/corpus/sources/__tests__/acceptance.test.ts",
+        "src/design/corpus/sources/__tests__/assessment-fixtures.ts",
+        "src/design/corpus/sources/__tests__/assessment.test.ts",
+        "src/design/corpus/sources/__tests__/contracts.test.ts",
+        "src/design/corpus/sources/__tests__/eligibility.test.ts",
+        "src/design/corpus/sources/__tests__/fixtures.ts",
+        "src/design/corpus/sources/__tests__/git-fixtures.ts",
+        "src/design/corpus/sources/__tests__/git-reader.test.ts",
+        "src/design/corpus/sources/__tests__/isolation.test.ts",
+        "src/design/corpus/sources/__tests__/lineage.test.ts",
+        "src/design/corpus/sources/__tests__/notices.test.ts",
+        "src/design/corpus/sources/__tests__/reader-limits.test.ts",
+        "src/design/corpus/sources/assessment.ts",
+        "src/design/corpus/sources/contracts.ts",
+        "src/design/corpus/sources/eligibility.ts",
+        "src/design/corpus/sources/git-reader.ts",
+        "src/design/corpus/sources/index.ts",
+        "src/design/corpus/sources/lineage.ts",
+        "src/design/corpus/sources/notices.ts",
+        "src/design/corpus/sources/policy.ts",
+        "src/design/corpus/sources/stage.ts",
+        "src/design/corpus/sources/validation-primitives.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "plans/reviews/design-intelligence-di1-s2-closure-verification.txt:1",
+            "message": "Present but unverified. All 25 promised node:test cases exist verbatim as test titles in the changed test files. contracts.test.ts has source-schema and validation-parity. eligibility.test.ts has the 3 mixed-eligibility cases. git-reader.test.ts has the 2 pinned-reader cases and 3 reader-safety cases. reader-limits.test.ts has 3 reader-safety cases. lineage.test.ts has 3 lineage-closure cases. notices.test.ts has 3 notice-closure cases. assessment.test.ts has the 2 eligibility-binding cases and acyclic-staging. acceptance.test.ts has the 2 candidate-roundtrip cases. isolation.test.ts has pure-boundary. The committed TAP log for the latest correction records 58/58 corpus tests passing under Node 22.23.2. No build record was supplied in this grounding, so I cannot confirm the pass-state. These tests are present, not missing; this finding does not assert that they pass.",
+            "expectationRef": "all 25 promised S002 node:test cases",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "plans/reviews/design-intelligence-di1-s2-closure-verification.txt:360",
+            "message": "The promised smoke test 'strict-build compiles source eligibility and passes the full corpus regression suite' is not a node:test case. Its only evidence is the logged `npm run build` output plus the 58-test corpus TAP run. Both are recorded as passing, but neither can be verified without a build record. The promise covers the corpus suite, not the whole repository. The documented failures in the full-repository sweep are disclosed separately: the SQLite overflow, the SIGABRT test files and the DaemonSection timing failure. So this is a caveat on the evidence, not a missing test.",
+            "expectationRef": "strict-build compiles source eligibility and passes the full corpus regression suite",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/assessment.ts:1",
+            "message": "Every changed symbol has an empty testsReaching list. The grounding here is diff-only: file-level 'diff:' entities, and hollow hunks for index.ts, lineage.ts, notices.ts, policy.ts, stage.ts and validation-primitives.ts. Empty edges on newly created files are therefore not evidence of an exercise gap, and no HIGH breach is raised. The changed test files visibly import and call the production entry points: assessEligibility, prepareEligibilityCandidate, evaluateSourceImports, stageSources, requiredSourcePaths, readPinnedSources, createGitRunner, runGitBinary, gitEnvironment, the lineage functions, assembleSourceMetadata, stageLocalSources, decode*, sourceIdentity, isCanonicalRepositoryUrl, isUtcDate, pathCollisionKey and isPortablePath. The latest corrections are also exercised directly. notices.test.ts asserts that assembleSourceMetadata rejects an unused admitted source, using an empty lineage. acceptance.test.ts covers the batch deadline, including external-listener cleanup. lineage.test.ts covers lineage role, record and output collisions and duplicate inventory. reader-limits.test.ts covers the pre-aborted and invalid-bounds runner cases. contracts.test.ts covers the SSH, credential, query, fragment and percent-encoded URL rejections.",
+            "expectationRef": "testsReaching (degraded diff grounding)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/eligibility.ts:77",
+            "message": "stageSources runs decodeSourcePolicy on the whole policy every time it is called. evaluateReviewedImports (assessment.ts:53) has already decoded that policy, and assessEligibility decodes it once more at assessment.ts:87, yet stageSources is still called once per import. reviewSnapshot allows up to CORPUS_LIMITS.files imports, and an import with empty paths and no blobs passes the budget. So a review with 10,000 imports and 10,000 profiles re-runs snapshotJson, the ajv check and the identities/pathIssues work about 10^8 times. That happens in both assessEligibility and prepareEligibilityCandidate, which calls assessEligibility again. The earlier review's fix only removed the review/blob re-snapshotting; the policy is still decoded again for each import. Fix: add an internal stageSources variant that takes an already-decoded SourcePolicy and call it from evaluateReviewedImports.",
+            "counterpartRef": "evaluateReviewedImports",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/design/corpus/sources/assessment.ts:116",
+            "message": "assessEligibility wraps the whole reconstruction (validateRelease, evaluateReviewedImports, assembleSourceMetadata, classifyPackageFiles, validatePackagedLineage) in one catch-all. The catch turns any exception into passed:false with the generic issue 'schema.invalid /eligibility: Expected bounded candidate and reviewed source inputs.' A defect inside one of those helpers, such as a TypeError from a missed undefined, therefore looks like bad caller input, and the real cause is discarded. Because this fails closed, it is safe, but it makes regressions in the pure helpers hard to diagnose. Fix: catch only the typed CorpusInputError/SourceReaderError cases, or keep a distinct internal-error diagnostic code.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 4
+    }
+  }
+}

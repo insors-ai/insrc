@@ -1,0 +1,1005 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791786529879-oye9s2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-12T06:40:38.659Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 708764,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "epicSlug": "di1-open-source-design-corpus-retrieval",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1791738717329-ylatwv",
+    "hldEffectiveHash": "a20e4da9408dfea954d2ef18bb08b0d7eaad28b1155c8f8eead228779aaf2088",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "DEF S003/ac1 (reviewed coverage inventory for Web, Mobile-iOS and Mobile-Android across the ten PRD domains) is designed as a 30-cell rubric over CORPUS_DOMAINS × UiType, with human editorial review of every passing cell.",
+          "evidence": "DEF.md:104 lists the ten domains and three platforms. contracts.ts:8-11 defines exactly those 10 CORPUS_DOMAINS and UI types 'web'|'mobile-ios'|'mobile-android'. HLD.md:48 requires that publication reject any missing cell, gap cell or failed evaluation, and that human editorial review assess every passing cell. LLD §2.1/§3.2 require 30 cells, reject gaps and duplicates, and require a matching human decision for each pass cell. [files: docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/DEF.md, src/design/corpus/contracts.ts, docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "DEF S003/ac2 (unreviewed generated/inferred content is never presented as published source-authored guidance) is designed: inferred authorship survives review, and drafts cannot ship. Installation and retrieval, which belong to S004/S005, are not built here.",
+          "evidence": "DEF.md:105 states ac2. LLD §3.5 keeps provenance.authorship='inferred' after review, and §3.7 keeps installation, catalog and default state with S004/S005. validate.ts:81-82 already rejects non-reviewed records in publication mode, so the 'drafts cannot ship' path reuses an existing check. [files: docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/DEF.md, src/design/corpus/validate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S001's candidateContentDigest omits only releaseId, reviewDigest and the digest of the single coveragePath entry, and returns '' when that entry is missing or duplicated. This makes it safe to fill a placeholder coverage digest after computing the candidate digest.",
+          "evidence": "canonical.ts:96-106: `if (coverage.length !== 1) return '';` then deletes releaseId, reviewDigest and coverage[0].digest before hashing. This matches the normative order in HLD.md:42. [files: src/design/corpus/canonical.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing coverage-envelope check in validateRelease is opaque except for the candidate binding, the reviewDigest and a ban on releaseId self-references. Strict sc4 semantics therefore have to come from S003.",
+          "evidence": "validate.ts:273-301 (validateCoverageEnvelope) only checks envelope.candidateContentDigest === candidateDigest, scans for any 'releaseId' key or value equal to manifest.releaseId, and compares reviewContentDigest(envelope) to manifest.reviewDigest. [files: src/design/corpus/validate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An inferred record keeps its label after review as long as it carries an explicit author and rationale.",
+          "evidence": "validate.ts:41-45 accepts authorship 'inferred' without sourceRefs only when the rationale matches /\\bindependently\\s+(?:authored|inferred|developed)\\b/i. Otherwise it raises provenance.incomplete. The design is consistent with this, but the seed authors need to know about the regex: an inferred record whose rationale lacks that phrase and has no sourceRefs will fail S001. [files: src/design/corpus/validate.ts]",
+          "action": "Optionally state the S001 rationale-phrase requirement for inferred seed records in §3.5/§3.6.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Reused S001/S002 surfaces exist with the stated shapes: StageAssessment {stage:'eligibility'|'coverage',candidateContentDigest,passed,issues}, checkPublication(candidate: unknown, assessments: unknown): PublicationCheck, prepareEligibilityCandidate(manifest, outputs, review) returning ValidationResult<EligibilityCandidate>, reviewContentDigest, releaseContentDigest, and CORPUS_LIMITS (10,000 files / 64 MiB / depth 64 / 1 MiB record).",
+          "evidence": "contracts.ts:57-60 STAGE_ASSESSMENT_SCHEMA; validate.ts:308 `export function checkPublication(candidate: unknown, assessments: unknown): PublicationCheck`; sources/assessment.ts:124 prepareEligibilityCandidate, which returns {manifest, files, assessment} and requires exactly one coverage entry (line 129); canonical.ts:5 `CORPUS_LIMITS = { recordBytes: 1024*1024, packageBytes: 64*1024*1024, files: 10_000, depth: 64 }`; canonical.ts:107-114 the digest helpers. [files: src/design/corpus/contracts.ts, src/design/corpus/validate.ts, src/design/corpus/sources/assessment.ts, src/design/corpus/canonical.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The CoverageReport/CoverageCell types and the coverage/ modules are new and do not already exist in code.",
+          "evidence": "A grep for CoverageReport|CoverageCell under src/design/corpus returned no matches. The only coverage logic is S001's opaque envelope check in validate.ts:274. The sc4 shape in the LLD matches HLD.md:119-120 exactly. [files: src/design/corpus/validate.ts, docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The listed call sites (assessment-fixtures.ts:37, acceptance.test.ts) and the stated harness cover what the new pure coverage modules need. In particular, the existing isolation test does not already compile a coverage/ directory, so S003 must add its own harness.",
+          "evidence": "assessment-fixtures.ts:34-40 finalizeFixture is the current coverage-fill pattern; S003's finalizer replaces its fixture-only envelope. sources/__tests__/isolation.test.ts:20 compiles only `src/design/corpus/*.ts` and `src/design/corpus/sources/*.ts`, and corpus/index.ts re-exports only contracts/canonical/validate. A separate coverage/index.ts entry plus a 'fresh compiled pure module harness' (LLD §7 smoke) is therefore needed and is stated. No production caller exists yet; S004 consumes the coverage modules later. [files: src/design/corpus/sources/__tests__/assessment-fixtures.ts, src/design/corpus/sources/__tests__/isolation.test.ts, src/design/corpus/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Packaged S003 evaluation, specimen and editorial files can carry S002 original/inferred lineage without changing S002 contracts.",
+          "evidence": "sources/contracts.ts:37-38 ORIGINAL_OUTPUT_SCHEMA allows authorship 'original'|'inferred' with author and rationale. OUTPUT_BINDING_SCHEMA (32-34) allows 'imported'|'derived' with sourceIds. assessment-fixtures.ts:18-24 shows a candidate with an empty imports list and all outputs declared as originals, which matches the LLD's 'original/inferred-only seed' edge case. [files: src/design/corpus/sources/contracts.ts, src/design/corpus/sources/__tests__/assessment-fixtures.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Assessment against the final candidate stays bound across the placeholder → real coverage digest transition, because candidateContentDigest excludes the coverage entry digest and reviewDigest. Re-running eligibility on the final candidate therefore yields the same digest.",
+          "evidence": "canonical.ts:100-102 deletes releaseId, reviewDigest and the coverage entry's digest. sources/assessment.ts:63-71 structuralCandidate replaces the coverage bytes with a private envelope, so assessEligibility does not depend on S003's coverage content. isolation.test.ts:70-77 shows assessEligibility on a finalized manifest binds the same candidateContentDigest and passes checkPublication. [files: src/design/corpus/canonical.ts, src/design/corpus/sources/assessment.ts, src/design/corpus/sources/__tests__/isolation.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S003 leaves sc1/sc2/sc3 and S004/S005 ownership unchanged. Placing the final reviewed package under src/assets/design-corpus/ while keeping drafts outside src/assets is consistent with the HLD.",
+          "evidence": "HLD.md:34: 'Author eligible ... records and notices under proposed src/assets/design-corpus/. Existing copy-assets.mjs copies src/assets recursively ... Ship only a validated reviewed release, never candidate downloads.' copy-assets.mjs:28 `const DIRS = ['prompts', 'assets'];` copies recursively. Keeping drafts in design/corpus-seed/v1 is a stricter reading that ensures drafts are not shipped. HLD.md:205 assigns bundled-package installation to S004, and the LLD §3.7 hands it off and does not install. [files: docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/HLD.md, copy-assets.mjs]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every diagnostic code the error paths name (inventory.invalid, domain.invalid, schema.invalid, reference.missing, review.stale, digest.mismatch, provenance.incomplete, review.required, assessment.failed, path.invalid, limit.exceeded) exists in the closed S001 ISSUE_CODES set. No new code is needed, and none would be accepted by STAGE_ASSESSMENT_SCHEMA.",
+          "evidence": "contracts.ts:53-55 ISSUE_CODES contains all eleven. VALIDATION_ISSUE_SCHEMA (line 56) is a closed union, and checkPublication decodes assessments against it (validate.ts:332). [files: src/design/corpus/contracts.ts, src/design/corpus/validate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A noncomputable candidate identity returns a ValidationResult failure rather than a malformed StageAssessment, mirroring S002.",
+          "evidence": "sources/assessment.ts:76-78: assessEligibility returns failure(inventory.invalid) when candidateContentDigest is ''. checkPublication marks every assessment assessment.stale when contentDigest is empty (validate.ts:342). [files: src/design/corpus/sources/assessment.ts, src/design/corpus/validate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Both S003 acceptance criteria map to named tests, and the stated framework (node:test + node:assert/strict under tsx, fresh-compiled isolation harness) matches existing corpus tests.",
+          "evidence": "LLD §7 maps ac1 to coverage-matrix, evaluation-binding, seed-coverage and seed-bundle, and ac2 to editorial-binding and two candidate-coverage tests, which together cover the HLD.md:48 verification matrix for S003. Existing tests use node:test with node:assert/strict (isolation.test.ts:2-3) and a temporary-dir tsc compile with I/O denied (isolation.test.ts:11-86). [files: src/design/corpus/sources/__tests__/isolation.test.ts, docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 14,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-12T06:40:55.215Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-12T06:45:43.406Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "S003 adds a reviewed seed corpus and a pure coverage gate for all ten design domains on Web, iOS and Android. Concrete positive/misuse specimens and reproducible evaluation evidence accompany the guidance. Human editorial decisions remain explicit and content-bound; generated drafts cannot become reviewed or bundled merely because validation passes."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose immutable release packages with a daemon-owned catalog and rebuildable retrieval indexes. Shared contracts below are proposed additions, not existing APIs. Corpus data is global public knowledge, independent of registered source repositories; DI2 owns project-private guideline storage and DI3 owns authoring workflows.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "Coverage and editorial review evidence",
+          "purpose": "Publication requires actual reviewed domain/platform combinations and content-bound review, not a record count.",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "interfaceSketch": "interface CoverageCell { domain: string; uiType: UiType; records: { recordId: string; recordVersion: string }[]; evaluationCases: string[]; status: 'pass' | 'gap'; reviewer: string; notes: string; }\ninterface CoverageReport { schemaVersion: 1; candidateContentDigest: string; cells: CoverageCell[]; crossPlatformCases: { id: string; status: 'pass' | 'fail'; evidence: string[] }[]; }",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Corpus record and pinned evidence identity",
+          "purpose": "Common immutable record, provenance and release identity across all stories and DI2/DI3.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "interfaceSketch": "type UiType = 'web' | 'mobile-ios' | 'mobile-android';\ntype GuidanceKind = 'foundation' | 'pattern' | 'style-recipe';\ninterface EvidenceRef { releaseId: string; recordId: string; recordVersion: string; }\ninterface Provenance { authorship: 'original' | 'derived' | 'imported' | 'inferred'; author: string; sourceRefs: string[]; modificationNotes: string[]; }\ninterface Applicability { uiTypes: UiType[]; suitableConditions: string[]; contraindications: string[]; units: string[]; }\ninterface GuidanceRecord { schemaVersion: 1; recordId: string; recordVersion: string; title: string; domains: string[]; kind: GuidanceKind; guidanceClass: 'requirement' | 'convention' | 'heuristic' | 'preference'; explanation: string; rationale: string; problem: string; tradeoffs: string[]; checks: { check: string; requiredInputs: string[]; exceptions: string[]; limits: string[] }[]; noMeasurableChecksRationale?: string | undefined; domainPayload: { color?: { roles: { name: string; value: string }[]; pairings: { foregroundRole: string; backgroundRole: string; usage: string }[] } | undefined; layout?: { contentPriority: string[]; adaptationRules: { condition: string; rule: string }[] } | undefined; style?: { composition: string; typography: string; color: string; interaction: string } | undefined; }; applicability: Applicability; examples: { kind: 'example' | 'misuse'; contentRef: string; uiType: UiType }[]; relations: { kind: 'compatible' | 'conflicting' | 'prerequisite' | 'alternative'; recordId: string; recordVersion: string }[]; provenance: Provenance; review: { status: 'draft' | 'reviewed'; reviewer: string; contentDigest: string; reviewedAt: string }; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Release manifest and publication gate",
+          "purpose": "s1 establishes envelopes and gates used by import, curation, query and maintenance; s2 implements ingestion. Publication requires nonempty problem/tradeoffs, checks with explicit limits (or an explicit no-measurable-check rationale), and domainPayload.color/layout/style for corresponding color/layout/style records. Semantic roles and pairings must reference declared roles; examples and misuse examples must be present for every declared platform. Domain validation rejects an empty placeholder.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "interfaceSketch": "interface ReleaseManifest { schemaVersion: 1; releaseId: string; label: string; createdAt: string; maintainer: string; records: { recordId: string; recordVersion: string; path: string; digest: string }[]; files: { path: string; digest: string; mediaType: string }[]; sourceManifestPath: string; noticesPath: string; coveragePath: string; reviewDigest: string; }\ninterface ValidationIssue { code: string; path: string; message: string; }\ninterface PublicationCheck { eligible: boolean; issues: ValidationIssue[]; manifestDigest: string; }\ninterface ReleaseAvailability { releaseId: string; state: 'published' | 'deprecated' | 'withdrawn'; reason?: string | undefined; catalogGeneration: number; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "File-level source eligibility and attribution",
+          "purpose": "Keep file licenses, exact upstream revisions and notices with every derived asset; repository license alone never admits content.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "interfaceSketch": "interface SourceFile { sourceId: string; repositoryUrl: string; revision: string; path: string; digest: string; licenseIds: string[]; licenseTextRefs: string[]; noticeRefs: string[]; attribution: string[]; modifications: string[]; retrievedAt: string; eligibility: 'eligible' | 'excluded' | 'unresolved'; eligibilityReason: string; reviewedBy: string; }\ninterface SourceManifest { schemaVersion: 1; policyVersion: string; files: SourceFile[]; }\ninterface ImportReport { admitted: string[]; excluded: { path: string; reason: string }[]; unresolved: string[]; }",
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Own authored seed records, declarative specimens and reviewed coverage across ten domains and three UI types. A release names its maintainer/reviewer; unknown source sufficiency cannot be counted as coverage."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Own canonical schema, version/hash specification, publication validation interfaces and fixtures. This is the nearest ancestor for all shared identity/release contracts; storage and curator UI are not implied."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Own source adapters, local staging extraction, allowlist policy implementation and reproducible notices. Adapter specifics stay private; no unreviewed source contents enter published assets."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5",
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Own daemon package reader, catalog read adapter, deterministic filtering/ranking, local embedding cache, cursor implementation and thin MCP read tools. Keep ranking weights and cache format private and versioned. Basic validated bundled-package installation is included so retrieval is independently testable. Includes the single-sourced config-catalog entry, typed config exposure, settings/reconciliation verification and catalog contract-test update. Owns vscode-plugin/package.json setting mirror and verification of the unchanged catalog-driven JetBrains SettingsView.kt, validated by manifest/catalog parity and settings render/round-trip checks. Sole owner of catalog file layout, serialized atomic commit, receipts and recovery via sc7. Basic installation and maintenance use exactly this writer."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc7"
+          ],
+          "internal": "Own update staging, atomic publish/default switch, withdrawal overlays, recovery, release diffs and cross-release regression evaluation. Consume existing reader contracts; never change DI2 guideline state. Uses sc7 for all catalog/default/availability changes; owns upstream update policy and diff orchestration only, not a second writer or recovery implementation."
+        }
+      ],
+      "rolloutPhase": "C — Reviewed seed corpus",
+      "nonFunctional": {
+        "performance": "For a representative 1,000-record seed fixture, measure warm query p95 <=500 ms excluding local embedding inference; report embedding latency separately. This is a target, not a benchmark claim. If exceeded, optimize indexing without dropping eligible candidates; complete-result quality takes precedence. Cold index building is resumable and serial.",
+        "security": "Only eligible reviewed material is distributed. Validate all package paths and sizes, reject executable specimen content and remote includes; escape rendering. No arbitrary URL fetching at query time. Unknown hard constraints return gaps. Do not mix project-private data into the public corpus or embedding index.",
+        "observability": "Log release ID, query mode, eligible/matched counts, filter/gap reasons, index fingerprint and validation codes; avoid storing user query/brief text by default. Expose install/index health and explicit degraded retrieval, rather than silent fallback.",
+        "durability": "Immutable package bytes plus atomic catalog and append-only availability events. Rebuild derived indexes on checksum/model mismatch. Inject crashes between each publication boundary; old release remains readable or a newly complete release becomes visible, never partial content. Retain pinned references across rollback; policy withdrawal returns tombstones."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "CoverageReport",
+          "signature": "interface CoverageCell { domain: string; uiType: UiType; records: { recordId: string; recordVersion: string }[]; evaluationCases: string[]; status: 'pass' | 'gap'; reviewer: string; notes: string; }\ninterface CoverageReport { schemaVersion: 1; candidateContentDigest: string; cells: CoverageCell[]; crossPlatformCases: { id: string; status: 'pass' | 'fail'; evidence: string[] }[]; }",
+          "parameters": [],
+          "returns": {
+            "type": "CoverageReport",
+            "meaning": "Exact sc4 v1 envelope; one cell for each of the 30 domain/UI-type pairs, plus the mandatory cross-platform case set. Report claims require independent assessment."
+          },
+          "errors": [
+            {
+              "type": "ValidationIssue[]",
+              "condition": "Malformed, duplicate, missing, stale, unsupported or unreviewed evidence produces sorted existing sc2 issues."
+            }
+          ],
+          "preconditions": [
+            "Unknown input is snapshotted using bounded canonical JSON before strict closed-schema decode; no coercion/defaults/extra fields.",
+            "Domain labels come from S001 CORPUS_DOMAINS and UI types from sc1. A nonempty computable candidateContentDigest is mandatory.",
+            "Report creation does not authorize publication or editorial approval."
+          ],
+          "postconditions": [
+            "Exact HLD fields retained. Cells canonically sorted by domain order then UI type; record pairs/case IDs sorted, unique and resolved locally.",
+            "Every pass cell references applicable reviewed record versions, at least one matching domain/platform evaluation and a matching explicit human editorial decision. Gaps remain gaps; zero or duplicate cells never count as coverage.",
+            "crossPlatformCases has exactly the six required v1 IDs; every pass includes local case-result paths. No releaseId/self-reference in coverage."
+          ]
+        },
+        {
+          "name": "StageAssessment",
+          "signature": "interface StageAssessment { stage: 'eligibility' | 'coverage'; candidateContentDigest: string; passed: boolean; issues: ValidationIssue[]; }",
+          "parameters": [],
+          "returns": {
+            "type": "ValidationResult<StageAssessment>",
+            "meaning": "S003 produces stage='coverage' only, from an independently checked complete in-memory candidate and separately supplied reviewed editorial inputs."
+          },
+          "errors": [
+            {
+              "type": "ValidationResult failure",
+              "condition": "Invalid manifest or noncomputable candidate identity prevents constructing an assessment."
+            },
+            {
+              "type": "StageAssessment passed=false",
+              "condition": "Computable candidate has invalid coverage, missing review, failed cases, stale references or unsafe specimens."
+            }
+          ],
+          "preconditions": [
+            "Consume S001 candidateContentDigest/validateRelease and S002 eligibility without changing their contracts.",
+            "Coverage review inputs are maintainer-controlled, passed separately from package contents; packaged reviewer strings or pass booleans are not approval tokens."
+          ],
+          "postconditions": [
+            "Passing assessment binds the exact candidate and has no issues. Coverage assessment alone is insufficient: final preflight requires independent passing eligibility too.",
+            "No persistence/catalog/default/retrieval/project-guideline mutation; no LLM invocation in pure validation."
+          ]
+        },
+        {
+          "name": "checkPublication",
+          "signature": "function checkPublication(candidate: unknown, assessments: unknown): PublicationCheck;",
+          "parameters": [
+            {
+              "name": "candidate",
+              "type": "unknown",
+              "purpose": "Final complete sc2 package after coverage bytes and release seal exist.",
+              "optional": false
+            },
+            {
+              "name": "assessments",
+              "type": "unknown",
+              "purpose": "Exactly one fresh eligibility and one fresh coverage assessment from internal evaluators.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PublicationCheck",
+            "meaning": "Unchanged S001 preflight result; a candidate can be handed to later installation/publication only when eligible."
+          },
+          "errors": [
+            {
+              "type": "PublicationCheck.issues",
+              "condition": "Any structure, review, digest or assessment failure keeps eligible=false."
+            }
+          ],
+          "preconditions": [
+            "S003 calls the existing function; it does not replace the gate or trust serialized assessments."
+          ],
+          "postconditions": [
+            "Successful preflight is not installation, publication or human approval."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Coverage schemas and pure assessment modules",
+        "change": "new",
+        "details": "Proposed new files src/design/corpus/coverage/{contracts,rubric,specimens,evaluate,assessment,finalize,index}.ts. Closed TypeBox/AJV schemas, detached JSON/byte snapshots, existing ValidationIssue codes and CORPUS_LIMITS (10,000 files; 64 MiB package; depth 64; 1 MiB record/specimen/case/decision file). Export pure decode/validate/assess/finalize operations through coverage/index.ts; implementation names are local design choices, not new HLD contracts. Inputs to the assessor are (candidate: unknown, reviewedEditorial: unknown); output ValidationResult<StageAssessment>. Finalization input is an S002 EligibilityCandidate, a proposed CoverageReport, exact coverage evidence files already in its inventory, and independently supplied EligibilityReview/editorial review inputs; result is ValidationResult<{candidate: ReleaseCandidate; eligibility: StageAssessment; coverage: StageAssessment; publication: PublicationCheck}>. No I/O imports in this entry.",
+        "callSites": []
+      },
+      {
+        "entity": "Versioned coverage rubric",
+        "change": "new",
+        "details": "Internal immutable v1 rubric enumerates the exact ten imported domain labels and three UI types. 30 cells required; each pass references >=1 record whose domains and applicability include that pair, plus >=1 case result specifically targeting that pair. Every published record must appear in each applicable declared domain/UI pair, and all referenced records/versions must exist exactly once in candidate inventory. Rubric checks context/problem/tradeoffs, domain-specific payload, concrete positive/misuse examples, platform adaptations, claims/check limits, provenance, stereotype avoidance and semantic usefulness. One record may cover several cells only when its substantive guidance and specimens support each; counts alone never prove quality. Six mandatory cross-platform IDs: responsive-navigation, text-scaling-localization, input-focus-touch, semantic-color-modes, reduced-motion-state, consent-error-recovery. Their ordered definitions and digests live in code and are serialized into candidate case evidence; unknown/missing/duplicate IDs or definition digest mismatch fail.",
+        "callSites": []
+      },
+      {
+        "entity": "Declarative specimen v1",
+        "change": "new",
+        "details": "Each specimen is bounded UTF-8 application/json with exact shape {schemaVersion:1,id:string,uiType:UiType,kind:'example'|'misuse',title:string,description:string,panels:{id:string,label:string,elements:{id:string,role:'text'|'control'|'group'|'status'|'swatch',label:string,state:'default'|'focus'|'disabled'|'loading'|'empty'|'error'|'selected'|'success',order:integer,unit:'px'|'pt'|'dp'|'sp'|'relative',value:number|null,foregroundRole:string|null,backgroundRole:string|null}[]}[],tokens:{name:string,value:string}[],annotations:string[]}. Nonempty panels/elements; IDs unique within document, integer order >=0, finite value >=0 when supplied, IDs/labels/text bounded; tokens refer to simple literal design values, never executable markup. No generic attribute bags, URLs, paths, code/CSS/HTML/event hooks or remote includes. Text is inert and escaped by any review renderer; no browser execution/rendering is required for validation. Examples must match record reference kind and UI type; layout priority/adaptation, palette roles/pairs, typography roles and control-state examples are mandatory in their relevant cells. Numeric platform units are explicit; descriptive specimens do not claim device-rendering fidelity or accessibility certification.",
+        "callSites": []
+      },
+      {
+        "entity": "Evaluation definitions and results",
+        "change": "new",
+        "details": "Local files under evaluation/ with exact closed schemas. Definition {schemaVersion:1,id,kind:'cell'|'cross-platform',targets:{domain,uiType}[],recordRefs:{recordId,recordVersion}[],specimenPaths:string[],checks:{id,kind:'reference-integrity'|'example-misuse-pair'|'explicit-units'|'semantic-role-pairing'|'state-coverage'|'editorial',requirement:string}[]}. Result {schemaVersion:1,caseId,definitionDigest,subjectDigest,observations:{checkId,status:'pass'|'fail'|'needs-review',evidencePaths:string[],notes:string}[]}. subjectDigest = hashCanonical({definitionDigest, sorted exact recordId/recordVersion pairs, sorted specimen path/rawDigest pairs}); no candidate/review/final-release digest. Only closed deterministic checks are evaluated in code; editorial checks remain needs-review until supplied matching human decision. Recompute deterministic observations from bytes, never trust result.pass. Every referenced evidence path must be portable, inventoried, present, semantically the expected specimen/case-result role and digest-correct. Exactly one observation per definition check; reject unused/unknown/duplicate checks and extra stale results. Cross-platform definitions target all three UI types and have explicit platform-specific positive/misuse evidence, not one shared screenshot.",
+        "callSites": []
+      },
+      {
+        "entity": "Human editorial decision dossier",
+        "change": "new",
+        "details": "Closed internal schema {schemaVersion:1,rubricVersion:'1',maintainer:string,decisions:{subjectKind:'record'|'cell'|'case',subjectId:string,subjectDigest:string,decision:'approve'|'reject',reviewer:string,reviewedAt:string,notes:string}[]}. Maintainer/reviewer/notes nonblank and exact UTC timestamps; no implicit clock. Record subjects use sc1 recordContentDigest plus sorted referenced specimen path/rawDigest pairs; cell subjects use domain/UI pair, exact referenced record versions, case definition/result raw digests and rubricVersion; case subjects use definition and specimen/record digests plus deterministic observations (no dossier/report/manifest self-digests). The packaged editorial/decisions.json must byte-canonically match a separately supplied, explicitly human-approved dossier. S001 record.review contentDigest remains recordVersion, reviewer/date must match its human record decision. Every cell/case editor must approve exact subject digest. Unknown subjects, missing approvals, rejected/stale/conflicting/duplicate decisions fail. Neither the agent, a generator, tests nor a code-review verdict can stamp human decisions. During build present the actual records, specimens, rubric/results and reviewer identity for explicit human editorial approval; never treat LLD/PLAN approval as seed-content approval. Machine-generated advice stays provenance.authorship='inferred' after review, with explicit author/rationale and S002 original/inferred lineage; imported/derived content retains exact upstream attribution. Review attestations are local trust inputs, not cryptographic identity proof.",
+        "callSites": []
+      },
+      {
+        "entity": "Seed content and authoring inventory",
+        "change": "new",
+        "details": "Authoring drafts/roster/evaluation definitions/blank review checklist live under design/corpus-seed/v1/ (outside src/assets). Target all 30 cells with substantive foundation/pattern records plus at least three coherent style recipes expressing composition, typography, color, interaction, conditions and tradeoffs; names are discovery aids, never industry stereotypes. The initial roster specifies positive/misuse specimens for each applicable platform, including lightweight palette, typography, component-state and layout examples. Prefer independently written guidance and original specimens; agent-generated guidance is labelled inferred, not third-party authored. No existing OSS catalog is copied. Any imported excerpts/assets must pass S002 file-level policy, pinned identity and full lineage/notices; unverified rights or source sufficiency cannot fill a cell. Normative platform/numeric claims need current primary-source verification during authoring plus eligible attribution, or are scoped as nonnormative heuristics with explicit limits. Named human maintainer must review content before final release assets exist.",
+        "callSites": []
+      },
+      {
+        "entity": "Non-cyclic assembly and bundled handoff",
+        "change": "new",
+        "details": "1 Author record content/specimens/definitions and deterministic observations; collect explicit human record/cell/case decisions against the precisely defined acyclic subjects. 2 Set reviewed record metadata from approved decisions; compute exact output bytes and complete S002 lineage for records, specimens, evaluation files and editorial dossier. No output may silently change authorship or escape lineage. 3 Call S002 prepareEligibilityCandidate with all noncoverage bytes and exactly one declared application/json coverage file entry with placeholder digest. 4 Compute candidateContentDigest; build exact sc4 report using approved cells/cases and that digest. 5 Serialize canonical coverage bytes, set its raw inventory digest, compute reviewContentDigest(report), then releaseContentDigest(manifest); no report/dossier/case file may depend on the final release ID. 6 Independently reassess eligibility on the final candidate; run S001 validateRelease plus S003 semantic coverage assessment and unchanged checkPublication. Any failure returns no eligible package. Only after actual human review and passing gates copy the final immutable package to proposed src/assets/design-corpus/releases/<releaseId>/ plus a versioned bundled descriptor {schemaVersion:1,releaseId,manifestPath}; this is checked-in distribution data, not daemon installation/catalog mutation. Separate local maintainer verification tooling may read package files, but pure entry remains I/O-free; it refuses symlink/path/bounds violations and executes no specimens. copy-assets.mjs already ships assets, so no draft content goes there. S004 consumes the final package/descriptor and owns installed catalog state; S005 owns publish/default/withdrawal lifecycle. If human editorial approval is absent, drafts/tests may be ready but S003 completion and bundled release remain withheld.",
+        "callSites": [
+          "src/design/corpus/sources/__tests__/assessment-fixtures.ts:37",
+          "src/design/corpus/sources/__tests__/acceptance.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Reuse exact GuidanceRecord/UiType/Provenance and record identity/review semantics; validate every referenced version and specimen applicability. Generated/inferred authorship is never upgraded by editorial review."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Reuse bounded canonical hashing, manifest validation, ValidationResult/StageAssessment and checkPublication. Coverage finalization fills the one intentionally deferred coverage digest and review/release seals; never changes the approved digest projection."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Use S002 source eligibility, complete included-source closure, original/inferred/imported/derived lineage and deterministic notices for all distributed outputs, including S003 editorial/evaluation files. No new source adapter or eligibility policy implementation."
+      },
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "Implement exact closed CoverageCell/Report plus strict 30-cell semantics, required cross-platform cases, safe specimens, independent evidence reconstruction and content-bound human editorial decisions. Supply stage='coverage' for later install/publication gates."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Missing or duplicate coverage pair",
+          "detection": "Build exact keys from CORPUS_DOMAINS × UiType and compare to decoded cells; duplicates cannot replace missing pairs.",
+          "response": "inventory.invalid; coverage passed=false; list missing/duplicate pairs.",
+          "userImpact": "The maintainer sees explicit gaps rather than a completeness claim.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unsupported domain, platform or case definition",
+          "detection": "Closed enum/schema validation and exact required case-ID/definitionDigest comparison.",
+          "response": "domain.invalid/schema.invalid/reference.missing; no passing assessment.",
+          "userImpact": "Correct the versioned coverage inputs.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Stale record/specimen/case/editorial evidence",
+          "detection": "Resolve all record pairs and role-constrained paths against validated candidate bytes; recompute raw and canonical subject digests and compare reviewed dossier.",
+          "response": "review.stale/digest.mismatch/provenance.incomplete with exact evidence path.",
+          "userImpact": "Affected content needs fresh evaluation and explicit editorial review.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Self-approved, missing, rejected or conflicting human review",
+          "detection": "Require a separately supplied trusted dossier to canonically equal the packaged dossier, exact subject set and approve decisions; compare reviewer/time with record.review and cell claims.",
+          "response": "review.required or review.stale; no automatic stamps or code-review substitution.",
+          "userImpact": "Candidate remains a draft until actual human decisions are supplied.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Failed or fabricated case pass",
+          "detection": "Re-evaluate deterministic checks; exact observation set and subject digest required; human-only checks need matching explicit human decision; cross-platform case failure blocks coverage.",
+          "response": "assessment.failed; preserve original failed/needs-review evidence.",
+          "userImpact": "Evidence cannot be laundered through a pass label.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unsafe specimen or external evidence",
+          "detection": "Closed specimen schema, bounded parser, local path/role checks, finite numeric validation and no executable/remote fields; maintainer file reader rejects symlinks before reading.",
+          "response": "schema.invalid/path.invalid/limit.exceeded; never execute or fetch content.",
+          "userImpact": "Replace with safe declarative local evidence.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Malformed candidate or coverage membership",
+          "detection": "S001 manifest decode and candidateContentDigest find zero/multiple matching coverage entries or other structural errors.",
+          "response": "ValidationResult failure when digest is not computable; no malformed StageAssessment.",
+          "userImpact": "Repair inventory before review/finalization.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Eligibility failure during finalization",
+          "detection": "Re-run S002 assessment and S001 final validation; reject unused sources or changed lineage/notices like any other candidate.",
+          "response": "Return no eligible package; keep structured eligibility issues.",
+          "userImpact": "Source approval and coverage approval remain separate gates.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Generated authorship rewritten or draft shipped",
+          "detection": "Compare exact authored provenance and trusted reviewed content; publication-mode record validation rejects drafts; release-handoff check scans bundled descriptor/files and requires reviewed seed.",
+          "response": "provenance.incomplete/review.required; packaging fails.",
+          "userImpact": "Inferred advice remains labelled inferred and unreviewed drafts cannot ship.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An original/inferred-only seed has no upstream sources.",
+          "expected": "Use S002 empty source inventory and explicit original/inferred output declarations; do not invent upstream attribution. Human review and coverage still required."
+        },
+        {
+          "input": "One record legitimately spans multiple domains/UI types.",
+          "expected": "It can count in each declared pair only with substantive applicable guidance, platform-matching example/misuse specimens, target-specific cases and human approval for each cell."
+        },
+        {
+          "input": "A subjective style preference has no universal numerical pass threshold.",
+          "expected": "Use explicit heuristic/preference classification and check limits or noMeasurableChecksRationale; deterministic integrity checks plus human review decide coverage, without inventing certification."
+        },
+        {
+          "input": "A reviewed inferred suggestion passes every check.",
+          "expected": "It remains inferred with author/rationale visible, never relabelled imported or source-authored."
+        },
+        {
+          "input": "Equivalent inventory/report ordering or shared evidence paths.",
+          "expected": "Canonical deterministic ordering and deliberate reference deduplication preserve identities; duplicate cell/record/decision identities are rejected."
+        },
+        {
+          "input": "Human editorial review is not yet available.",
+          "expected": "Persist draft authoring/review material outside shipped assets; tests can use explicitly synthetic decisions, but production release handoff and S003 completion remain pending."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Preserve exact sc1/sc2 identities, corrected candidate digest exclusions and independent eligibility/coverage gates.",
+          "source": "c1"
+        },
+        {
+          "text": "S002 remains sole source-eligibility/lineage/notices owner; S004/S005 remain installation/publication/catalog owners.",
+          "source": "c2"
+        },
+        {
+          "text": "Human editorial review and inferred-authorship preservation are required independently of automated validation.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "Existing scoped src/design/corpus/**/__tests__/*.test.ts use node:test and node:assert/strict with tsx under supported Node 22; direct source fallback establishes this because the requested analyzer/test.locate run returned no usable bundle. Follow those test files, with strict TypeScript build and fresh-compiled I/O isolation; no test-framework change.",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Closed schemas and exact sc4 shape.",
+          "subjects": [
+            "coverage-schema preserves sc4 and rejects malformed duplicate or unsupported inputs"
+          ],
+          "fixturesNeeded": [
+            "Valid 30-cell report; unknown fields; coercion attempts; getters/proxies; bound violations."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Matrix and precise evidence/approval semantics.",
+          "subjects": [
+            "coverage-matrix rejects missing gap duplicate or inapplicable domain-platform cells",
+            "evaluation-binding rejects stale definitions records specimens and fabricated results",
+            "editorial-binding requires explicit matching human decisions and preserves inferred authorship",
+            "specimen-safety rejects executable remote malformed and unbounded content",
+            "coverage-determinism preserves canonical identities and stable diagnostics"
+          ],
+          "fixturesNeeded": [
+            "Thirty-cell positive fixture; six cross-platform cases with platform-specific specimens; synthetic named human decisions clearly labelled test-only; focused mutation table."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Actual composed candidate and digest lifecycle.",
+          "subjects": [
+            "candidate-coverage finalizes without hash cycles and rejects stale assessments",
+            "candidate-coverage withholds draft rejected or relabelled inferred guidance",
+            "seed-coverage proves all domain-platform cells and mandatory cross-platform cases"
+          ],
+          "fixturesNeeded": [
+            "S001/S002 candidate composition; original/inferred and eligible-derived variants; exact record/specimen/evidence mutations; reviewed actual seed dossier after explicit human approval."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Pure boundaries and shipped package evidence.",
+          "subjects": [
+            "coverage-isolation compiles pure modules and assesses candidates with I/O forbidden",
+            "seed-bundle ships only reviewed eligible immutable content with complete notices",
+            "strict-build compiles coverage and passes the full corpus regression suite"
+          ],
+          "fixturesNeeded": [
+            "Fresh compiled pure module harness matching existing isolation tests; separate local file reader; built out/assets package compared byte-for-byte with reviewed source; durable corpus TAP/build logs."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "coverage-matrix rejects missing gap duplicate or inapplicable domain-platform cells",
+            "evaluation-binding rejects stale definitions records specimens and fabricated results",
+            "seed-coverage proves all domain-platform cells and mandatory cross-platform cases",
+            "seed-bundle ships only reviewed eligible immutable content with complete notices"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "editorial-binding requires explicit matching human decisions and preserves inferred authorship",
+            "candidate-coverage withholds draft rejected or relabelled inferred guidance",
+            "candidate-coverage finalizes without hash cycles and rejects stale assessments"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Flat sc4 report with curated case sidecars",
+        "oneLineSummary": "Keep sc4 unchanged and resolve typed evaluation/editorial evidence from candidate-bound local files.",
+        "approach": "CoverageReport remains the HLD envelope. A fixed versioned rubric, local declarative specimens, per-case results and explicit human editorial decisions supply evidence. A pure validator reconstructs 30 domain/platform cells and mandatory cross-platform cases, then returns a digest-bound coverage StageAssessment. A separate deterministic candidate finalizer composes S001/S002 and never installs/publishes.",
+        "pros": [
+          "Exact sc4 compatibility and clear package handoff.",
+          "Independent content checks and human approvals are explicit.",
+          "Pure bounded assessment fits implemented S001/S002 composition."
+        ],
+        "cons": [
+          "Sidecar references and separate editorial decisions require exact binding.",
+          "Human review is a real release gate, not automatic coverage generation."
+        ],
+        "costEstimate": "M",
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "satisfies",
+            "notes": "Explicit 30-cell matrix and independently validated local cases."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies",
+            "notes": "Human review remains explicit; authorship is not rewritten."
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc1 without shape changes."
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc2 without shape changes."
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc3 without shape changes."
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc4 without shape changes."
+          },
+          {
+            "constraintId": "k1",
+            "verdict": "satisfies",
+            "notes": "S002 eligibility and full attribution remain required. [[c2]]"
+          },
+          {
+            "constraintId": "k2",
+            "verdict": "satisfies",
+            "notes": "Three framework-independent UI types; no project state mutation. [[c3]]"
+          },
+          {
+            "constraintId": "k3",
+            "verdict": "satisfies",
+            "notes": "Pure local data gates; any authoring provider uses existing sequential CLI-only abstraction, with explicit human editorial review. [[c3]]"
+          }
+        ]
+      },
+      {
+        "id": "a2",
+        "name": "Authoring dossier compiled to sc4",
+        "oneLineSummary": "A richer internal authoring document produces records, cases and sc4 evidence.",
+        "approach": "A structured authoring dossier owns proposed records, platform adaptations and human review decisions; a compiler expands it into unchanged GuidanceRecords, declarative specimens and CoverageReport. The same pure validator independently checks generated candidate evidence against the dossier and approved rubric.",
+        "pros": [
+          "Authoring can group shared ideas across platforms.",
+          "Less manual duplication in a larger corpus."
+        ],
+        "cons": [
+          "Introduces another content representation and compiler semantics.",
+          "More round-trip/aliasing failure modes in the first seed."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Useful later for scale; extra authoring compiler not necessary for seed acceptance.",
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "partial",
+            "notes": "Coverage can be satisfied, but compiler/merge reconciliation adds unproven behavior."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies",
+            "notes": "Human review remains explicit; authorship is not rewritten."
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc1 without shape changes."
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc2 without shape changes."
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc3 without shape changes."
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc4 without shape changes."
+          },
+          {
+            "constraintId": "k1",
+            "verdict": "satisfies",
+            "notes": "S002 eligibility and full attribution remain required. [[c2]]"
+          },
+          {
+            "constraintId": "k2",
+            "verdict": "satisfies",
+            "notes": "Three framework-independent UI types; no project state mutation. [[c3]]"
+          },
+          {
+            "constraintId": "k3",
+            "verdict": "satisfies",
+            "notes": "Pure local data gates; any authoring provider uses existing sequential CLI-only abstraction, with explicit human editorial review. [[c3]]"
+          }
+        ]
+      },
+      {
+        "id": "a3",
+        "name": "Separate platform dossiers with a release matrix",
+        "oneLineSummary": "Author three platform-specific seed dossiers and merge their reviewed cells into sc4.",
+        "approach": "Each platform dossier independently identifies reviewed records/examples/evaluation evidence for ten domains. Release assembly combines them into the unchanged sc4 report and checks cross-platform cases across the dossiers. Sc1/sc2/sc3 continue to own identities, eligibility and release preflight.",
+        "pros": [
+          "Platform responsibilities are explicit.",
+          "Natural independent review by platform editors."
+        ],
+        "cons": [
+          "Shared foundations can drift between dossiers.",
+          "Cross-platform editorial evidence needs additional merge reconciliation."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Platform clarity is useful but duplicated foundations increase reconciliation work.",
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "partial",
+            "notes": "Coverage can be satisfied, but compiler/merge reconciliation adds unproven behavior."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies",
+            "notes": "Human review remains explicit; authorship is not rewritten."
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc1 without shape changes."
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc2 without shape changes."
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc3 without shape changes."
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies",
+            "notes": "Consumes/preserves sc4 without shape changes."
+          },
+          {
+            "constraintId": "k1",
+            "verdict": "satisfies",
+            "notes": "S002 eligibility and full attribution remain required. [[c2]]"
+          },
+          {
+            "constraintId": "k2",
+            "verdict": "satisfies",
+            "notes": "Three framework-independent UI types; no project state mutation. [[c3]]"
+          },
+          {
+            "constraintId": "k3",
+            "verdict": "satisfies",
+            "notes": "Pure local data gates; any authoring provider uses existing sequential CLI-only abstraction, with explicit human editorial review. [[c3]]"
+          }
+        ]
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "participants": [
+        {
+          "id": "author",
+          "label": "Curator / generated drafts"
+        },
+        {
+          "id": "editor",
+          "label": "Human editorial reviewer"
+        },
+        {
+          "id": "source",
+          "label": "S002 eligibility"
+        },
+        {
+          "id": "coverage",
+          "label": "S003 coverage"
+        },
+        {
+          "id": "gate",
+          "label": "S001 preflight"
+        },
+        {
+          "id": "bundle",
+          "label": "Reviewed package for S004"
+        }
+      ],
+      "messages": [
+        {
+          "from": "author",
+          "to": "editor",
+          "label": "Exact records, specimens, case observations and review subjects"
+        },
+        {
+          "from": "editor",
+          "to": "author",
+          "label": "Explicit content-bound decisions; no automatic approval",
+          "kind": "return"
+        },
+        {
+          "from": "author",
+          "to": "source",
+          "label": "Reviewed noncoverage bytes + lineage + coverage placeholder"
+        },
+        {
+          "from": "source",
+          "to": "coverage",
+          "label": "Eligible candidate and separate trusted editorial dossier"
+        },
+        {
+          "from": "coverage",
+          "to": "gate",
+          "label": "Canonical sc4 report, finalized hashes and fresh stage assessments"
+        },
+        {
+          "from": "gate",
+          "to": "bundle",
+          "label": "Eligible immutable package only; no catalog mutation"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/S003/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/HLD.md:42",
+      "quotedText": "Digest dependency order (normative)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/S002/LLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/HLD.md:48",
+      "quotedText": "human editorial review assesses quality of every passing cell"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/design/corpus/contracts.ts:8"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/design/corpus/validate.ts:274"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/design/corpus/sources/__tests__/assessment-fixtures.ts:37"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/plans/design-intelligence-prd.md:80"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/DEF.md:94"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "copy-assets.mjs:28"
+    },
+    {
+      "id": "c10",
+      "kind": "stakeholder",
+      "ref": "Conversation: include lightweight palette, typography, component-state and layout examples; project-level guideline sets per Web/iOS/Android, not per-page design."
+    }
+  ]
+}

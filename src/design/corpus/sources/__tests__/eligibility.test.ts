@@ -1,0 +1,85 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { hashBytes } from '../../canonical.js';
+import { decodeSourceManifest } from '../contracts.js';
+import { stageSources } from '../eligibility.js';
+import { sourceFixture, makeBytes } from './fixtures.js';
+
+test('mixed-eligibility admits only reviewed exact-file profiles with complete evidence', () => {
+  const f = sourceFixture(), input = structuredClone(f); const result = stageSources(f.policy, f.request, f.blobs);
+  assert.equal(result.ok, true); if (!result.ok) return;
+  assert.deepEqual(result.value.report, { admitted: ['good.txt'], excluded: [{ path: 'excluded.txt', reason: 'Synthetic fixture decision' }], unresolved: ['unknown.txt'] });
+  assert.deepEqual(result.value.admitted.map(s => s.source.path), ['LICENSE', 'good.txt']);
+  assert.equal(decodeSourceManifest({ schemaVersion: 1, policyVersion: result.value.policyVersion, files: result.value.admitted.map(s => s.source) }).ok, true);
+  assert.deepEqual(f, input); result.value.admitted[0]!.bytes.fill(0); assert.deepEqual(f, input);
+  assert.equal(stageSources(f.policy, f.request, [...f.blobs, f.blobs[0]]).ok, false);
+  assert.equal(stageSources(f.policy, { ...f.request, paths: ['bad%path'] }, []).ok, false);
+  assert.equal(stageSources(f.policy, f.request, f.blobs.slice(1)).ok, false);
+  const absentReview = structuredClone(f); absentReview.policy.profiles[0]!.reviewedBy = '';
+  const absent = stageSources(absentReview.policy, absentReview.request, absentReview.blobs);
+  assert.equal(absent.ok && absent.value.report.unresolved.includes('good.txt'), true);
+  const blocked = stageSources({ ...f.policy, repositories: [] }, f.request, f.blobs);
+  assert.equal(blocked.ok && blocked.value.report.excluded.length, 3);
+  assert.equal(blocked.ok && blocked.value.admitted.length, 0);
+  let reads = 0; assert.equal(stageSources(f.policy, f.request, [{ path: 'good.txt', get bytes() { reads++; return makeBytes('bad'); } }]).ok, false); assert.equal(reads, 0);
+});
+test('mixed-eligibility propagates stale evidence without rejecting independent eligible files', () => {
+  const f = sourceFixture();
+  const independent = structuredClone(f.policy.profiles[0]!);
+  independent.path = 'independent.txt'; independent.digest = hashBytes('Independent fixture');
+  independent.licenseEvidence = [{ path: 'LICENSE2', digest: hashBytes('Second synthetic license') }];
+  const license = { ...structuredClone(independent), path: 'LICENSE2', digest: hashBytes('Second synthetic license') };
+  f.policy.profiles.push(independent, license); f.request.paths.push(independent.path);
+  f.blobs.push({ path: independent.path, bytes: makeBytes('Independent fixture') }, { path: 'LICENSE2', bytes: makeBytes('Second synthetic license') });
+  const staleFile = structuredClone(f); staleFile.blobs.find(b => b.path === 'good.txt')!.bytes = makeBytes('Changed file');
+  const r1 = stageSources(staleFile.policy, staleFile.request, staleFile.blobs);
+  assert.equal(r1.ok && r1.value.report.unresolved.includes('good.txt'), true);
+  f.blobs.find(b => b.path === 'LICENSE')!.bytes = makeBytes('Changed evidence');
+  const r2 = stageSources(f.policy, f.request, f.blobs); assert.equal(r2.ok, true); if (!r2.ok) return;
+  assert.deepEqual(r2.value.report.admitted, ['independent.txt']);
+  assert.deepEqual(r2.value.admitted.map(a => a.source.path), ['LICENSE2', 'independent.txt']);
+  const reordered = stageSources({ ...f.policy, profiles: [...f.policy.profiles].reverse() }, { ...f.request, paths: [...f.request.paths].reverse() }, [...f.blobs].reverse());
+  assert.deepEqual(reordered, r2);
+  const chain = sourceFixture(), bytes = makeBytes('Chain node');
+  for (let i = 0; i < 100; i++) {
+    const path = `chain${String(i).padStart(3, '0')}`;
+    chain.policy.profiles.push({ ...structuredClone(chain.policy.profiles[0]!), path, digest: hashBytes(bytes),
+      licenseEvidence: [{ path: i === 99 ? 'LICENSE' : `chain${String(i + 1).padStart(3, '0')}`, digest: i === 99 ? chain.policy.profiles[0]!.licenseEvidence[0]!.digest : hashBytes(bytes) }] });
+    chain.blobs.push({ path, bytes });
+  }
+  chain.request.paths.push('chain000');
+  assert.equal(stageSources(chain.policy, chain.request, chain.blobs).ok, true);
+  chain.blobs.find(blob => blob.path === 'LICENSE')!.bytes = makeBytes('Stale tail');
+  const propagated = stageSources(chain.policy, chain.request, chain.blobs);
+  assert.equal(propagated.ok && propagated.value.report.unresolved.includes('chain000'), true);
+  assert.equal(propagated.ok && propagated.value.admitted.length, 0);
+});
+test('mixed-eligibility requires explicit font and compound-license decisions', () => {
+  const empty = sourceFixture();
+  empty.policy.categories[0]!.id = 'font'; empty.policy.categories[0]!.conditions = [];
+  for (const profile of empty.policy.profiles) { profile.category = 'font'; profile.conditions = []; }
+  const decision = stageSources(empty.policy, empty.request, empty.blobs);
+  assert.equal(decision.ok && decision.value.report.admitted.length, 0);
+
+  for (const category of ['font', 'compound']) {
+    const f = sourceFixture(); const profile = f.policy.profiles[0]!;
+    profile.category = category; profile.licenseIds = category === 'font' ? ['OFL-1.1'] : ['MIT OR Apache-2.0'];
+    const absent = stageSources(f.policy, f.request, f.blobs); assert.equal(absent.ok && absent.value.report.unresolved.includes('good.txt'), true);
+    f.policy.categories.push({ id: category, licenseIds: [...profile.licenseIds], conditions: ['Explicit redistribution conditions'], reviewedBy: 'Category reviewer' });
+    profile.conditions.push('Explicit redistribution conditions'); profile.termsResolved = false;
+    const unknown = stageSources(f.policy, f.request, f.blobs); assert.equal(unknown.ok && unknown.value.report.unresolved.includes('good.txt'), true);
+    profile.termsResolved = true;
+    if (category === 'compound') {
+      for (const expression of ['MIT OR Apache-2.0', 'MIT AND Apache-2.0', 'Apache-2.0 WITH LLVM-exception', '(MIT)']) {
+        profile.licenseIds = [expression]; f.policy.categories.at(-1)!.licenseIds = [expression];
+        const unresolved = stageSources(f.policy, f.request, f.blobs);
+        assert.equal(unresolved.ok && unresolved.value.report.unresolved.includes('good.txt'), true);
+      }
+      // The maintainer records the chosen identifier and applicable obligations explicitly.
+      profile.licenseIds = ['MIT']; f.policy.categories.at(-1)!.licenseIds = ['MIT'];
+      profile.reason = 'Reviewed MIT alternative selected from upstream dual license';
+    }
+    const resolved = stageSources(f.policy, f.request, f.blobs); assert.equal(resolved.ok && resolved.value.report.admitted.includes('good.txt'), true);
+  }
+});

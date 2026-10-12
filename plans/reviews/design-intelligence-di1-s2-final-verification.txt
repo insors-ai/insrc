@@ -1,0 +1,478 @@
+Final S002 corpus tests, Node 22.23.2
+
+TAP version 13
+# Subtest: ac1 incomplete or stale guidance cannot pass the record to manifest preflight
+ok 1 - ac1 incomplete or stale guidance cannot pass the record to manifest preflight
+  ---
+  duration_ms: 45.39
+  type: 'test'
+  ...
+# Subtest: ac2 exact evidence preserves complete records and pins independently calculated digest vectors
+ok 2 - ac2 exact evidence preserves complete records and pins independently calculated digest vectors
+  ---
+  duration_ms: 18.721334
+  type: 'test'
+  ...
+# Subtest: canonical golden bytes and SHA256 match independent vectors
+ok 3 - canonical golden bytes and SHA256 match independent vectors
+  ---
+  duration_ms: 5.145583
+  type: 'test'
+  ...
+# Subtest: canonical input rejects unsafe JSON without invoking accessors
+ok 4 - canonical input rejects unsafe JSON without invoking accessors
+  ---
+  duration_ms: 3.685875
+  type: 'test'
+  ...
+# Subtest: canonical depth and byte limits fail explicitly
+ok 5 - canonical depth and byte limits fail explicitly
+  ---
+  duration_ms: 14.606625
+  type: 'test'
+  ...
+# Subtest: canonical limits reject invalid caller configuration
+ok 6 - canonical limits reject invalid caller configuration
+  ---
+  duration_ms: 6.447167
+  type: 'test'
+  ...
+# Subtest: closed schemas preserve original fixtures for every guidance kind
+ok 7 - closed schemas preserve original fixtures for every guidance kind
+  ---
+  duration_ms: 33.709458
+  type: 'test'
+  ...
+# Subtest: closed schemas reject missing fields unknown nested fields and invalid enums
+ok 8 - closed schemas reject missing fields unknown nested fields and invalid enums
+  ---
+  duration_ms: 8.85975
+  type: 'test'
+  ...
+# Subtest: evidence and manifest schemas require pinned identities without coercion
+ok 9 - evidence and manifest schemas require pinned identities without coercion
+  ---
+  duration_ms: 0.532708
+  type: 'test'
+  ...
+# Subtest: release availability is closed and validates every lifecycle state
+ok 10 - release availability is closed and validates every lifecycle state
+  ---
+  duration_ms: 0.222083
+  type: 'test'
+  ...
+# Subtest: digest chain excludes self fields and binds content and review separately
+ok 11 - digest chain excludes self fields and binds content and review separately
+  ---
+  duration_ms: 3.0045
+  type: 'test'
+  ...
+# Subtest: candidate identity binds every non-cyclic manifest field without mutating input
+ok 12 - candidate identity binds every non-cyclic manifest field without mutating input
+  ---
+  duration_ms: 16.258542
+  type: 'test'
+  ...
+# Subtest: candidate identity is not computable for missing or duplicate coverage entries
+ok 13 - candidate identity is not computable for missing or duplicate coverage entries
+  ---
+  duration_ms: 0.17425
+  type: 'test'
+  ...
+# Subtest: manifest requires exact inventory portable paths and regular files
+ok 14 - manifest requires exact inventory portable paths and regular files
+  ---
+  duration_ms: 79.847542
+  type: 'test'
+  ...
+# Subtest: manifest validates exact record references and rejects duplicate self and cyclic relations
+ok 15 - manifest validates exact record references and rejects duplicate self and cyclic relations
+  ---
+  duration_ms: 13.171375
+  type: 'test'
+  ...
+# Subtest: manifest detects tampering across raw record candidate review and release hashes
+ok 16 - manifest detects tampering across raw record candidate review and release hashes
+  ---
+  duration_ms: 4.987333
+  type: 'test'
+  ...
+# Subtest: manifest format limits and accessor boundaries fail explicitly
+ok 17 - manifest format limits and accessor boundaries fail explicitly
+  ---
+  duration_ms: 10.086959
+  type: 'test'
+  ...
+# Subtest: manifest overrides and diagnostic pointers identify actual candidate fields
+ok 18 - manifest overrides and diagnostic pointers identify actual candidate fields
+  ---
+  duration_ms: 1.786792
+  type: 'test'
+  ...
+# Subtest: specimens cannot reference metadata records or unbound coverage bytes
+ok 19 - specimens cannot reference metadata records or unbound coverage bytes
+  ---
+  duration_ms: 2.06775
+  type: 'test'
+  ...
+# Subtest: coverage decode errors and Unicode-equivalent inventory paths are rejected
+ok 20 - coverage decode errors and Unicode-equivalent inventory paths are rejected
+  ---
+  duration_ms: 4.731542
+  type: 'test'
+  ...
+# Subtest: release validation snapshots manifest and bytes and rejects C1 controls
+ok 21 - release validation snapshots manifest and bytes and rejects C1 controls
+  ---
+  duration_ms: 2.285709
+  type: 'test'
+  ...
+# Subtest: malformed coverage membership preserves missing and duplicate diagnostics
+ok 22 - malformed coverage membership preserves missing and duplicate diagnostics
+  ---
+  duration_ms: 2.746708
+  type: 'test'
+  ...
+# Subtest: compiled corpus imports and checks valid and invalid candidates without external IO
+ok 23 - compiled corpus imports and checks valid and invalid candidates without external IO
+  ---
+  duration_ms: 1325.740375
+  type: 'test'
+  ...
+# Subtest: publication requires exactly one successful current assessment per downstream stage
+ok 24 - publication requires exactly one successful current assessment per downstream stage
+  ---
+  duration_ms: 53.508083
+  type: 'test'
+  ...
+# Subtest: publication preserves deterministic diagnostics and reports only computable manifest identity
+ok 25 - publication preserves deterministic diagnostics and reports only computable manifest identity
+  ---
+  duration_ms: 10.385625
+  type: 'test'
+  ...
+# Subtest: role reassignment and metadata changes invalidate previously successful assessments
+ok 26 - role reassignment and metadata changes invalidate previously successful assessments
+  ---
+  duration_ms: 7.226709
+  type: 'test'
+  ...
+# Subtest: noncomputable coverage membership makes every assessment stale but preserves manifest identity
+ok 27 - noncomputable coverage membership makes every assessment stale but preserves manifest identity
+  ---
+  duration_ms: 2.308667
+  type: 'test'
+  ...
+# Subtest: invalid release fallback hashes a detached manifest without live property reads
+ok 28 - invalid release fallback hashes a detached manifest without live property reads
+  ---
+  duration_ms: 0.656333
+  type: 'test'
+  ...
+# Subtest: record roundtrip preserves all fields and rejects stale incomplete or draft reviews
+ok 29 - record roundtrip preserves all fields and rejects stale incomplete or draft reviews
+  ---
+  duration_ms: 14.76775
+  type: 'test'
+  ...
+# Subtest: record completeness and platform examples fail closed
+ok 30 - record completeness and platform examples fail closed
+  ---
+  duration_ms: 57.986542
+  type: 'test'
+  ...
+# Subtest: authorship branches preserve attribution and require justified provenance
+ok 31 - authorship branches preserve attribution and require justified provenance
+  ---
+  duration_ms: 7.027834
+  type: 'test'
+  ...
+# Subtest: conditional domain payloads compose and color references must resolve
+ok 32 - conditional domain payloads compose and color references must resolve
+  ---
+  duration_ms: 5.541375
+  type: 'test'
+  ...
+# Subtest: record validation uses an independent descriptor snapshot and checks reviewed drafts
+ok 33 - record validation uses an independent descriptor snapshot and checks reviewed drafts
+  ---
+  duration_ms: 3.444792
+  type: 'test'
+  ...
+# Subtest: candidate-roundtrip admits only eligible material and exports complete notices
+ok 34 - candidate-roundtrip admits only eligible material and exports complete notices
+  ---
+  duration_ms: 311.19275
+  type: 'test'
+  ...
+# Subtest: candidate-roundtrip validates original-only and multi-source derived packages
+ok 35 - candidate-roundtrip validates original-only and multi-source derived packages
+  ---
+  duration_ms: 22.38
+  type: 'test'
+  ...
+# Subtest: eligibility-binding reconstructs obligations and rejects modified candidate metadata
+ok 36 - eligibility-binding reconstructs obligations and rejects modified candidate metadata
+  ---
+  duration_ms: 86.337959
+  type: 'test'
+  ...
+# Subtest: eligibility-binding rejects role swaps stale profiles and changed output evidence
+ok 37 - eligibility-binding rejects role swaps stale profiles and changed output evidence
+  ---
+  duration_ms: 59.998708
+  type: 'test'
+  ...
+# Subtest: acyclic-staging assesses before coverage finalization and rejects missing or duplicate coverage
+ok 38 - acyclic-staging assesses before coverage finalization and rejects missing or duplicate coverage
+  ---
+  duration_ms: 25.075458
+  type: 'test'
+  ...
+# Subtest: source-schema preserves exact sc3 shapes and rejects invalid identities and fields
+ok 39 - source-schema preserves exact sc3 shapes and rejects invalid identities and fields
+  ---
+  duration_ms: 30.053709
+  type: 'test'
+  ...
+# Subtest: validation-parity matches S001 path collision and UTC timestamp behavior
+ok 40 - validation-parity matches S001 path collision and UTC timestamp behavior
+  ---
+  duration_ms: 50.693333
+  type: 'test'
+  ...
+# Subtest: mixed-eligibility admits only reviewed exact-file profiles with complete evidence
+ok 41 - mixed-eligibility admits only reviewed exact-file profiles with complete evidence
+  ---
+  duration_ms: 31.191375
+  type: 'test'
+  ...
+# Subtest: mixed-eligibility propagates stale evidence without rejecting independent eligible files
+ok 42 - mixed-eligibility propagates stale evidence without rejecting independent eligible files
+  ---
+  duration_ms: 1.977958
+  type: 'test'
+  ...
+# Subtest: mixed-eligibility requires explicit font and compound-license decisions
+ok 43 - mixed-eligibility requires explicit font and compound-license decisions
+  ---
+  duration_ms: 1.393667
+  type: 'test'
+  ...
+# Subtest: pinned-reader preserves binary commit bytes despite worktree and branch changes
+ok 44 - pinned-reader preserves binary commit bytes despite worktree and branch changes
+  ---
+  duration_ms: 282.6715
+  type: 'test'
+  ...
+# Subtest: pinned-reader rejects missing commits paths and corrupt object framing
+ok 45 - pinned-reader rejects missing commits paths and corrupt object framing
+  ---
+  duration_ms: 133.340083
+  type: 'test'
+  ...
+# Subtest: reader-safety rejects selected unsafe paths before I/O and ignores unselected paths
+ok 46 - reader-safety rejects selected unsafe paths before I/O and ignores unselected paths
+  ---
+  duration_ms: 84.247166
+  type: 'test'
+  ...
+# Subtest: reader-safety rejects symlinks and submodules and leaves LFS unresolved
+ok 47 - reader-safety rejects symlinks and submodules and leaves LFS unresolved
+  ---
+  duration_ms: 143.341708
+  type: 'test'
+  ...
+# Subtest: reader-safety prevents replacement filters lazy fetch and config-driven commands
+ok 48 - reader-safety prevents replacement filters lazy fetch and config-driven commands
+  ---
+  duration_ms: 160.041916
+  type: 'test'
+  ...
+# Subtest: pure-boundary executes pure source modules with I/O forbidden
+ok 49 - pure-boundary executes pure source modules with I/O forbidden
+  ---
+  duration_ms: 1054.288291
+  type: 'test'
+  ...
+# Subtest: lineage-closure retains every source and transformation for derived outputs
+ok 50 - lineage-closure retains every source and transformation for derived outputs
+  ---
+  duration_ms: 15.315833
+  type: 'test'
+  ...
+# Subtest: lineage-closure rejects unbound specimens inconsistent provenance and stale outputs
+ok 51 - lineage-closure rejects unbound specimens inconsistent provenance and stale outputs
+  ---
+  duration_ms: 3.326292
+  type: 'test'
+  ...
+# Subtest: lineage-closure requires explicit original and inferred output declarations
+ok 52 - lineage-closure requires explicit original and inferred output declarations
+  ---
+  duration_ms: 1.390792
+  type: 'test'
+  ...
+# Subtest: notice-closure preserves exact evidence bytes and all source obligations
+ok 53 - notice-closure preserves exact evidence bytes and all source obligations
+  ---
+  duration_ms: 17.512666
+  type: 'test'
+  ...
+# Subtest: notice-closure deduplicates shared evidence without losing attribution
+ok 54 - notice-closure deduplicates shared evidence without losing attribution
+  ---
+  duration_ms: 3.502291
+  type: 'test'
+  ...
+# Subtest: notice-closure produces stable expected bytes and rejects invalid evidence text
+ok 55 - notice-closure produces stable expected bytes and rejects invalid evidence text
+  ---
+  duration_ms: 1.875375
+  type: 'test'
+  ...
+# Subtest: reader-safety bounds aggregate source and shared evidence bytes and counts
+ok 56 - reader-safety bounds aggregate source and shared evidence bytes and counts
+  ---
+  duration_ms: 165.449
+  type: 'test'
+  ...
+# Subtest: reader-safety cancels timed-out aborted and failed children without admitted bytes
+ok 57 - reader-safety cancels timed-out aborted and failed children without admitted bytes
+  ---
+  duration_ms: 78.110791
+  type: 'test'
+  ...
+# Subtest: reader-safety rejects truncated or oversized stdout and stderr without leaks
+ok 58 - reader-safety rejects truncated or oversized stdout and stderr without leaks
+  ---
+  duration_ms: 69.9
+  type: 'test'
+  ...
+1..58
+# tests 58
+# suites 0
+# pass 58
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2075.939292
+
+Strict build
+
+npm warn Unknown project config "target". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "runtime". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "disturl". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @insrc/backend@0.2.1 build
+> tsc && node copy-assets.mjs
+
+[copy-assets] copied prompts/ -> /Users/subhagho/work/projects/insors/insrc/out/prompts
+[copy-assets] copied assets/ -> /Users/subhagho/work/projects/insors/insrc/out/assets
+
+Full Node22 regression sweep:
+  ...
+1..4946
+# tests 5373
+# suites 106
+# pass 5231
+# fail 14
+# cancelled 0
+# skipped 125
+# todo 3
+# duration_ms 64471.75575
+Failures:
+not ok 1346 - reachable model renders running + uptime + socket + version/pid + repos with index state
+not ok 169 - src/daemon/__tests__/analyze-rpc.test.ts
+not ok 176 - src/daemon/__tests__/code-review-rpc.test.ts
+not ok 197 - src/daemon/__tests__/workflow-review-rpc.test.ts
+    not ok 12 - temporalTrend recovers slope/intercept/R² via expression-based regression (Phase 5g.1)
+not ok 1874 - SqliteDriver (via pool)
+not ok 328 - src/mcp/__tests__/analyze-step-handler.test.ts
+not ok 330 - src/mcp/__tests__/analyze-step-narrow.test.ts
+not ok 331 - src/mcp/__tests__/analyze-step-scope.test.ts
+not ok 359 - src/mcp/review-step/__tests__/review-step-routing.test.ts
+not ok 360 - src/mcp/review-step/__tests__/review-step.test.ts
+not ok 431 - src/workflow/__tests__/spec-review-approve.test.ts
+not ok 516 - src/workflow/review/__tests__/review.test.ts
+not ok 517 - src/workflow/review/__tests__/same-party-refusal.test.ts
+not ok 520 - src/workflow/review/__tests__/template-review.test.ts
+
+Isolated DaemonSection retry:
+TAP version 13
+# Subtest: reachable model renders running + uptime + socket + version/pid + repos with index state
+ok 1 - reachable model renders running + uptime + socket + version/pid + repos with index state
+  ---
+  duration_ms: 37.686042
+  type: 'test'
+  ...
+# Subtest: unreachable model renders a single stopped/unreachable line and no running fields
+ok 2 - unreachable model renders a single stopped/unreachable line and no running fields
+  ---
+  duration_ms: 28.560541
+  type: 'test'
+  ...
+# Subtest: zero-repo reachable model renders repo-count 0 with no per-repo rows
+ok 3 - zero-repo reachable model renders repo-count 0 with no per-repo rows
+  ---
+  duration_ms: 29.243208
+  type: 'test'
+  ...
+# Subtest: version/pid lines are omitted when those optional fields are undefined
+ok 4 - version/pid lines are omitted when those optional fields are undefined
+  ---
+  duration_ms: 27.64225
+  type: 'test'
+  ...
+# Subtest: orphan area (POSIX) renders scan rows as recommendations
+ok 5 - orphan area (POSIX) renders scan rows as recommendations
+  ---
+  duration_ms: 28.850083
+  type: 'test'
+  ...
+# Subtest: orphan area: empty scan renders the no-orphans line
+ok 6 - orphan area: empty scan renders the no-orphans line
+  ---
+  duration_ms: 27.352375
+  type: 'test'
+  ...
+# Subtest: orphan area: select pid + kill opens ConfirmPrompt; Yes kills EXACTLY the selection + shows outcomes
+ok 7 - orphan area: select pid + kill opens ConfirmPrompt; Yes kills EXACTLY the selection + shows outcomes
+  ---
+  duration_ms: 114.739792
+  type: 'test'
+  ...
+# Subtest: orphan area: choosing No never calls killOrphans and dismisses the prompt
+ok 8 - orphan area: choosing No never calls killOrphans and dismisses the prompt
+  ---
+  duration_ms: 113.068292
+  type: 'test'
+  ...
+# Subtest: orphan area: a kill request with an empty selection is inert
+ok 9 - orphan area: a kill request with an empty selection is inert
+  ---
+  duration_ms: 58.8635
+  type: 'test'
+  ...
+# Subtest: orphan area: multi-select across rows kills exactly both chosen pids
+ok 10 - orphan area: multi-select across rows kills exactly both chosen pids
+  ---
+  duration_ms: 212.878459
+  type: 'test'
+  ...
+# Subtest: orphan area (non-POSIX) renders the not-supported line with no scan/kill control
+ok 11 - orphan area (non-POSIX) renders the not-supported line with no scan/kill control
+  ---
+  duration_ms: 57.121542
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1097.614292

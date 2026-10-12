@@ -1,0 +1,48 @@
+T005: three planned lineage cases passed; typecheck passed.
+Full Node22 suite; sole failure is existing SQLite temporalTrend integer overflow:
+  ...
+1..5046
+# tests 5473
+# suites 106
+# pass 5344
+# fail 1
+# cancelled 0
+# skipped 125
+# todo 3
+# duration_ms 65189.629083
+
+Correction run:
+  ...
+1..4994
+# tests 5421
+# suites 106
+# pass 5283
+# fail 10
+# cancelled 0
+# skipped 125
+# todo 3
+# duration_ms 64852.599625
+Reduced-concurrency retry: all nine process aborts reproduced.
+Baseline commit fd652b27 (before T005)
+TAP version 13
+# Subtest: src/mcp/__tests__/analyze-step-handler.test.ts
+not ok 1 - src/mcp/__tests__/analyze-step-handler.test.ts
+  ---
+  duration_ms: 658.052792
+  type: 'test'
+  location: '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-s2-baseline-azqf4fa1/src/mcp/__tests__/analyze-step-handler.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: ~
+  signal: 'SIGABRT'
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 663.543291

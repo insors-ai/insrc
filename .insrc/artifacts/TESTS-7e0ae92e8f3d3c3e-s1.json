@@ -4,7 +4,7 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s1",
     "createdAt": "2026-10-11T16:19:17.663Z",
-    "updatedAt": "2026-10-11T17:05:06.349Z",
+    "updatedAt": "2026-10-11T19:03:47.398Z",
     "epicSlug": "di1-open-source-design-corpus-retrieval"
   },
   "body": {
@@ -74,8 +74,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "a8fbd5b8",
-        "ranAt": "2026-10-11T16:23:41.898Z",
+        "commit": "25749152",
+        "ranAt": "2026-10-11T18:59:41.977Z",
         "testsPassed": true,
         "tests": [
           {
@@ -97,6 +97,11 @@
                 "file": "src/design/corpus/__tests__/canonical.test.ts",
                 "title": "canonical depth and byte limits fail explicitly",
                 "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/canonical.test.ts",
+                "title": "canonical limits reject invalid caller configuration",
+                "result": "pass"
               }
             ],
             "files": []
@@ -110,6 +115,16 @@
                 "file": "src/design/corpus/__tests__/digest-chain.test.ts",
                 "title": "digest chain excludes self fields and binds content and review separately",
                 "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/digest-chain.test.ts",
+                "title": "candidate identity binds every non-cyclic manifest field without mutating input",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/digest-chain.test.ts",
+                "title": "candidate identity is not computable for missing or duplicate coverage entries",
+                "result": "pass"
               }
             ],
             "files": []
@@ -120,7 +135,7 @@
             "file": "src/design/corpus/__tests__/canonical.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 441,
+            "durationMs": 544,
             "titles": [
               {
                 "title": "canonical golden bytes and SHA256 match independent vectors",
@@ -133,6 +148,10 @@
               {
                 "title": "canonical depth and byte limits fail explicitly",
                 "result": "pass"
+              },
+              {
+                "title": "canonical limits reject invalid caller configuration",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -141,10 +160,18 @@
             "file": "src/design/corpus/__tests__/digest-chain.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 375,
+            "durationMs": 713,
             "titles": [
               {
                 "title": "digest chain excludes self fields and binds content and review separately",
+                "result": "pass"
+              },
+              {
+                "title": "candidate identity binds every non-cyclic manifest field without mutating input",
+                "result": "pass"
+              },
+              {
+                "title": "candidate identity is not computable for missing or duplicate coverage entries",
                 "result": "pass"
               }
             ],
@@ -238,8 +265,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "2477a0c8",
-        "ranAt": "2026-10-11T17:05:06.349Z",
+        "commit": "cb78619d",
+        "ranAt": "2026-10-11T19:01:02.453Z",
         "testsPassed": true,
         "tests": [
           {
@@ -281,6 +308,16 @@
                 "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
                 "title": "coverage decode errors and Unicode-equivalent inventory paths are rejected",
                 "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
+                "title": "release validation snapshots manifest and bytes and rejects C1 controls",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
+                "title": "malformed coverage membership preserves missing and duplicate diagnostics",
+                "result": "pass"
               }
             ],
             "files": []
@@ -291,7 +328,7 @@
             "file": "src/design/corpus/__tests__/manifest-validation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 514,
+            "durationMs": 554,
             "titles": [
               {
                 "title": "manifest requires exact inventory portable paths and regular files",
@@ -324,6 +361,10 @@
               {
                 "title": "release validation snapshots manifest and bytes and rejects C1 controls",
                 "result": "pass"
+              },
+              {
+                "title": "malformed coverage membership preserves missing and duplicate diagnostics",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -332,8 +373,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "25c394f9",
-        "ranAt": "2026-10-11T16:30:23.311Z",
+        "commit": "839b36d5",
+        "ranAt": "2026-10-11T19:02:20.370Z",
         "testsPassed": true,
         "tests": [
           {
@@ -350,6 +391,21 @@
                 "file": "src/design/corpus/__tests__/publication-check.test.ts",
                 "title": "publication preserves deterministic diagnostics and reports only computable manifest identity",
                 "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/publication-check.test.ts",
+                "title": "role reassignment and metadata changes invalidate previously successful assessments",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/publication-check.test.ts",
+                "title": "noncomputable coverage membership makes every assessment stale but preserves manifest identity",
+                "result": "pass"
+              },
+              {
+                "file": "src/design/corpus/__tests__/publication-check.test.ts",
+                "title": "invalid release fallback hashes a detached manifest without live property reads",
+                "result": "pass"
               }
             ],
             "files": []
@@ -360,7 +416,7 @@
             "file": "src/design/corpus/__tests__/publication-check.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 470,
+            "durationMs": 539,
             "titles": [
               {
                 "title": "publication requires exactly one successful current assessment per downstream stage",
@@ -368,6 +424,18 @@
               },
               {
                 "title": "publication preserves deterministic diagnostics and reports only computable manifest identity",
+                "result": "pass"
+              },
+              {
+                "title": "role reassignment and metadata changes invalidate previously successful assessments",
+                "result": "pass"
+              },
+              {
+                "title": "noncomputable coverage membership makes every assessment stale but preserves manifest identity",
+                "result": "pass"
+              },
+              {
+                "title": "invalid release fallback hashes a detached manifest without live property reads",
                 "result": "pass"
               }
             ],
@@ -377,8 +445,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "b58f5240",
-        "ranAt": "2026-10-11T16:55:01.488Z",
+        "commit": "4f03c64e",
+        "ranAt": "2026-10-11T19:03:47.398Z",
         "testsPassed": true,
         "tests": [
           {
@@ -402,7 +470,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "/tmp/di1-s1-build.log; npm run build completed tsc and copy-assets successfully on 2026-10-11."
+              "evidence": "/tmp/di1-digest-final-build.log: npm run build passed against commit 4f03c64e; /tmp/di1-digest-final.log: 33 corpus tests passed."
             }
           },
           {
@@ -429,7 +497,7 @@
             "file": "src/design/corpus/__tests__/acceptance-coverage.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 497,
+            "durationMs": 547,
             "titles": [
               {
                 "title": "ac1 incomplete or stale guidance cannot pass the record to manifest preflight",
@@ -446,7 +514,7 @@
             "file": "src/design/corpus/__tests__/module-isolation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1030,
+            "durationMs": 1019,
             "titles": [
               {
                 "title": "compiled corpus imports and checks valid and invalid candidates without external IO",

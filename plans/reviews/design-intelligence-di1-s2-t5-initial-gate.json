@@ -1,0 +1,116 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t5",
+    "passed": false,
+    "checks": [
+      {
+        "check": "Each output path+digest binds full contributing source ID union and reviewer/transformation/modification records; imported copies equal upstream digest, derived bytes use independently checked output digests.",
+        "satisfied": true,
+        "evidence": "OUTPUT_BINDING_SCHEMA (contracts.ts:32-35) carries path, digest, sourceIds (minItems 1), transformation, modifications and reviewedBy. lineage.ts:51 recomputes hashBytes(file.bytes) and compares it with the declared digest. lineage.ts:58 requires an imported binding's digest to equal each referenced source digest. Source modification obligations are carried over (lineage.ts:59-62). Nothing checks that a derived binding names the FULL contributor union; that is only enforced indirectly, through record sourceRefs equality."
+      },
+      {
+        "check": "Record sourceRefs/modificationNotes agree with bindings; original/inferred content requires explicit author/rationale declarations; metadata/evidence explicitly categorized; an original record label cannot hide unbound third-party specimens.",
+        "satisfied": false,
+        "evidence": "sourceRefs and modificationNotes are compared as sets against the output binding plus its specimen bindings (lineage.ts:70-71). For original and inferred outputs, author and rationale must match the declaration (lineage.ts:74-75). An undeclared example contentRef fails (lineage.ts:68). However, nothing categorizes metadata or evidence: the doc comment at lineage.ts:38 says 'Caller partitions metadata/evidence separately', and the Lineage schema has no metadata or evidence category at all. No test covers a record whose specimens are undeclared, or an original-labelled record that carries a bound third-party example."
+      },
+      {
+        "check": "Missing contributors, unbound outputs, stale bytes, unresolved references, conflicting declarations and path collisions fail; deterministic lineage bytes are in manifest.files with no candidate/final digest embedded.",
+        "satisfied": false,
+        "evidence": "Unbound outputs, stale bytes and unresolved source IDs fail (lineage.ts:50, 51, 57; tested at test.ts:33-37). Path collisions go through decodeLineage pathIssues (contracts.ts:116). The schema rejects additional properties such as candidateContentDigest (contracts.test.ts:39). But no code places the lineage bytes in manifest.files: lineageBytes (lineage.ts:36) is defined and LINEAGE_PATH exists, but nothing adds sources/lineage.json to any manifest's files, and no test checks it. Missing contributors on a derived binding with no record are not detected."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "Two acceptance checks are not met. The lineage bytes are never placed in manifest.files, and metadata and evidence are not explicitly categorized: the code hands that split to the caller. The closure logic and its tests are otherwise real.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "npx tsc --noEmit",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 4453,
+        "outputTail": "\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n"
+      },
+      "tests": {
+        "ok": true,
+        "command": "npx tsx --test --test-force-exit --test-reporter=tap src/design/corpus/sources/__tests__/lineage.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 535,
+        "outputTail": "TAP version 13\n# Subtest: lineage-closure retains every source and transformation for derived outputs\nok 1 - lineage-closure retains every source and transformation for derived outputs\n  ---\n  duration_ms: 6.004625\n  type: 'test'\n  ...\n# Subtest: lineage-closure rejects unbound specimens inconsistent provenance and stale outputs\nok 2 - lineage-closure rejects unbound specimens inconsistent provenance and stale outputs\n  ---\n  duration_ms: 1.516291\n  type: 'test'\n  ...\n# Subtest: lineage-closure requires explicit original and inferred output declarations\nok 3 - lineage-closure requires explicit original and inferred output declarations\n  ---\n  duration_ms: 0.320916\n  type: 'test'\n  ...\n1..3\n# tests 3\n# suites 0\n# pass 3\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 273.815958\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n",
+        "files": [
+          {
+            "file": "src/design/corpus/sources/__tests__/lineage.test.ts",
+            "command": "npx tsx --test --test-force-exit --test-reporter=tap src/design/corpus/sources/__tests__/lineage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 535,
+            "titles": [
+              {
+                "title": "lineage-closure retains every source and transformation for derived outputs",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "lineage-closure rejects unbound specimens inconsistent provenance and stale outputs",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "lineage-closure requires explicit original and inferred output declarations",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_design_corpus_sources___tests___lineage.test.ts.1791781915474.51338.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "lineage-closure retains every source and transformation for derived outputs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/lineage.test.ts",
+                "title": "lineage-closure retains every source and transformation for derived outputs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "lineage-closure rejects unbound specimens inconsistent provenance and stale outputs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/lineage.test.ts",
+                "title": "lineage-closure rejects unbound specimens inconsistent provenance and stale outputs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "lineage-closure requires explicit original and inferred output declarations",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/lineage.test.ts",
+                "title": "lineage-closure requires explicit original and inferred output declarations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/S002/TESTS.md"
+    }
+  },
+  "passed": false
+}

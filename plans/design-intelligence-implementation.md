@@ -89,7 +89,7 @@ This plan is the program-level roadmap. Use insrc triage and turn-by-turn `defin
 
 | Planned epic | Tracking status | Artifact |
 | --- | --- | --- |
-| DI1 Open source design corpus and retrieval | DEF, HLD and S001 LLD approved; S001 PLAN ready for approval | [DEF E202610117e0ae92e](../docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/DEF.md) |
+| DI1 Open source design corpus and retrieval | S001 BUILD approved with code-review WARN retained; S002 LLD/PLAN approved; all eight S002 build gates passed; independent code review pending | [DEF E202610117e0ae92e](../docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/DEF.md) |
 | DI2 Project guideline identity and versioned lifecycle | Defined with 5 stories; independent review blocked; not approved | [DEF E202610114abafc9d](../docs/epics/di2-project-guideline-identity-versioned-lifecycle-E202610114abafc9d/DEF.md) |
 | DI3 Guideline creation revision and agent reuse | Defined with 6 stories; independent review blocked; not approved | [DEF E20261011b452bdbf](../docs/epics/di3-guideline-creation-revision-agent-reuse-E20261011b452bdbf/DEF.md) |
 
@@ -97,7 +97,9 @@ Triage routed each subsystem to `define`. Scope assessment compared the existing
 
 The user selected lightweight palette/type/component/layout examples alongside written guidelines on 11 October 2026. This decision is recorded through the insrc question-resolution surface for DI3. It resolves specimen scope, not approval of the epic definitions. No implementation completion has been recorded.
 
-## Review follow-up
+## Historical review follow-up
+
+The entries below are chronological snapshots, superseded by the current status at the end of this document.
 
 DI1 independent daemon review returned BLOCK with 13 MED and 1 LOW findings. Several findings reflect incomplete probe evidence rather than absent content: direct file checks confirm `docs/plans/design-intelligence-prd.md:127` contains the cited sourcing heading, `plans/design-intelligence-implementation.md:23` contains the DI1 heading, and `AGENTS.md:11`, `:12`, `:122`, and `:135` state the cited accuracy, CLI-only cloud, sequential-provider, and daemon-ownership rules. The review reports zero results for patterns containing inline case flags and some repository-wide probes; the exact probe failure cause has not been diagnosed.
 
@@ -136,3 +138,19 @@ Independent code review exposed an omission in the approved candidate hash formu
 The correction also requires HLD alignment: the old projection was normative there. A revised HLD has been authored through insrc, preserving shared shapes and ownership, and is under independent review. It defines missing/duplicate coverage membership as noncomputable candidate identity. Next approval is the corrected HLD, then the matching LLD/PLAN refresh and implementation.
 
 The corrected HLD's two independent-review findings have now been fixed and resolved through the framework with evidence notes. Effective verdict PASS, no override or approval. It is ready for explicit approval. All 27 corpus tests pass under Node 22; the new candidate hash formula is still pending HLD/LLD/PLAN approval and implementation.
+
+
+### Current status — 12 October 2026
+
+The corrected HLD, S001 LLD and refreshed PLAN are approved. Candidate hashing and malformed coverage/preflight handling are implemented in `cb78619d`, `839b36d5` and `4f03c64e`; all affected insrc gates pass. Final corpus tests: 33 passed; strict build passed. The full suite has one known unrelated SQLite temporalTrend overflow failure.
+
+The fresh Claude Opus daemon code review completed with WARN (0 HIGH, 4 MED, 4 LOW), using degraded diff grounding because the index stayed stale. Its three coverage MED findings concern missing evidence in the review context; daemon task-gate evidence remains recorded in BUILD/TESTS. Its stale-roadmap MED finding is corrected here. The user explicitly approved S001 BUILD completion on 12 October at 04:44:27 UTC, without review override; the WARN verdict remains recorded. S002's LLD was independently reviewed and corrected: both MED findings and the LOW path-grammar clarification are resolved through the framework, effective PASS with no override or deferral. The user approved it in the same turn. No artifacts were skipped.
+
+The six-step insrc plan workflow produced [S002 PLAN](../docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/S002/PLAN.md): eight ordered tasks for schemas, reviewed eligibility, pinned Git acquisition, reader limits, lineage, notices, candidate assessment and acceptance/isolation verification. All 12 LLD test subjects map verbatim to tasks; dependency order and citation coverage were checked. The user approved PLAN on 12 October at 04:49:42 UTC. All eight S002 implementation tasks passed their daemon gates; 58 corpus tests and the strict build pass. Independent daemon code review is complete: WARN (0 HIGH, 1 MED, 4 LOW), with no adherence or convention findings. The MED concerns BUILD evidence missing from review grounding; remaining LOWs are evidence caveats, repeated policy-validation cost and generic internal-error diagnostics. All review corrections passed their task gates and the 58-test corpus/build checks. The user explicitly approved S002 BUILD completion on 12 October at 06:27:03.788 UTC. insrc recorded approval without review override and skipped no artifacts; S002 is complete. See [S002 build verification](design-intelligence-di1-s2-build.md). Real third-party source imports have not started.
+
+
+## S003 — reviewed seed corpus and editorial coverage
+
+After S002 completion, the eight-step insrc design.story workflow produced [S003 LLD](../docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/S003/LLD.md) and its [sequence diagram](../docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/S003/sequence-diagram.html). It preserves sc1/sc2/sc3 and implements exact sc4 coverage: 30 domain/UI-type cells, six cross-platform evaluations, safe declarative positive/misuse specimens, content-bound human editorial decisions, and an acyclic candidate-finalization handoff. Lightweight palette, typography, component-state and layout examples are included. Draft authoring stays outside bundled assets, and generated guidance remains labelled inferred after review. Installation, retrieval, publication/catalog mutation and project guidelines remain later-story scope.
+
+The requested analyzer recipes returned no usable result during the bounded wait; the design records that limitation and uses scoped direct source evidence. Independent Claude Opus daemon design review completed on 12 October 2026 at 06:40:55.215 UTC with PASS: all 14 premises hold, zero blocking and zero unverified. The tool's LOW count of 14 denotes held checklist premises, not 14 outstanding defects. No review override was applied. The user explicitly approved S003 LLD on 12 October 2026 at 06:45:43.406 UTC; insrc skipped no artifacts. The six-step plan workflow produced [S003 PLAN](../docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/S003/PLAN.md): twelve ordered tasks covering pure validation, seed authoring, actual human editorial review, immutable bundling and verification. All twelve LLD test subjects map verbatim to task tests; dependency order and citation coverage are checked. PLAN awaits explicit approval before implementation. LLD/PLAN approval does not constitute human editorial approval of future seed content.

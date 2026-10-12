@@ -2,7 +2,7 @@
 
 Date: 11 October 2026. Scope: sc1/sc2 corpus contracts, deterministic identities, pure record/release validation and publication preflight. No source import, corpus curation, retrieval service, project guidelines, or catalog mutation is implemented by this story.
 
-The user approved the S001 PLAN. All six tasks passed their insrc validation gates; BUILD completion requires the independent code-review result and a separate user approval.
+The user approved S001 BUILD completion on 12 October 2026 at 04:44:27 UTC after the independent daemon review. All six tasks passed their insrc validation gates. The code-review WARN remains recorded without override; the chronology below preserves the earlier gates and evidence limitations.
 
 ## Implementation
 
@@ -14,7 +14,9 @@ The user approved the S001 PLAN. All six tasks passed their insrc validation gat
 
 Task commits: `a8fbd5b8`, `26634ca9`, `a03cbac1`, `25c394f9`, `90971c1f`, `bdbb7267`. Review fixes: `5d835fcb`.
 
-## Verification
+## Historical verification before digest correction
+
+Counts below belong to earlier commits and are superseded by the final 33-test result in the digest-correction section. The 24-test entry precedes the snapshot regressions that raised the suite to 27; the digest correction raised it to 33. No tests were removed.
 
 - All six insrc task gates: PASS, including daemon-run mapped tests and strict typecheck.
 - `npm run build`: PASS ([saved build log](reviews/design-intelligence-di1-s1-build.log)).
@@ -78,3 +80,34 @@ Final focused rerun under Node 22: 27 passed, zero failed. Shared contract shape
 The user's explicit approval was recorded on the corrected HLD at 2026-10-11T18:02:53.157Z. No artifacts were skipped. The eight-step design.story workflow regenerated S001's LLD against that approved HLD, retaining sc1/sc2 interfaces and adjacent boundaries. It now defines empty internal candidate identity for zero/multiple coverage entries, stale results for every supplied assessment, and independently computable manifestDigest. The test strategy adds those regressions and requires a staged coverage path/mediaType entry before candidate hashing. Independent LLD review is running; LLD approval, PLAN refresh, implementation and final code review remain outstanding.
 
 The independent LLD review completed with one MED finding: the missing coverage entry already reports reference.missing, whereas duplicates report inventory.invalid. The LLD now preserves those distinct existing diagnostics. The framework recorded this actual correction as resolved (no override/deferral); effective review PASS with zero remaining blocking findings. The LLD's base run matches the newly approved HLD. The revised LLD is ready for explicit approval; implementation still uses the old digest formula and BUILD remains incomplete.
+
+### Digest correction implemented — 12 October 2026 (Kolkata)
+
+The user approved the revised LLD and refreshed PLAN. Implementation commits:
+
+- `cb78619d`: complete-manifest candidate identity with exactly three cyclic exclusions; staged coverage entry, metadata regressions and independently recomputed golden vectors.
+- `839b36d5`: a noncomputable candidate cannot match an empty coverage binding; missing/duplicate inventory diagnostics retained.
+- `4f03c64e`: stale role/metadata assessment regressions, missing/duplicate coverage preflight, and detached manifest fallback.
+
+The daemon passed the revised t2, t4, t5 and t6 gates. Final focused suite: 33 passed, zero failed (`/tmp/di1-digest-final.log`); strict build passed (`/tmp/di1-digest-final-build.log`). The full suite at the digest correction ran 5,450 tests: 5,321 passed, one failed, 125 skipped, three todo. Its sole failure is the already observed SQLite temporalTrend integer overflow at sqlite.ts:344/rdbms-common.ts:1937 (`/tmp/di1-digest-full.log`). Subsequent release/preflight changes passed their daemon gates and the final full corpus suite.
+
+Independent Python canonicalization/hash recomputation preserved the record golden and produced candidate `5691f92a44d349401cadc1627ad74e4abd71488a0e288f0eb1636ca6ab627571`, review `d14f50250c702486cdef9238d977a33b4dc3c0ddb7fb35b4772d630d7dffaeab`, and release `9bfd98dbd4d2db3c4a4f197d1212ed90d432067d528a755a206ae6acb581acc3`.
+
+Fresh code review was requested through insrc, with the committed change range and no dirty-source substitution. The daemon waited for its stale index, then failed because its Claude CLI session quota was exhausted (reported reset: 1:40 a.m. Kolkata). No fresh review was recorded. The previous CR does not certify these corrections, and BUILD is not approved or complete. A Codex-provider alternative was offered to the user; no provider settings have been changed.
+
+S002 design has started through the eight-step design.story workflow. Its draft LLD covers reviewed file-level policy, bounded local pinned Git extraction, source-to-output lineage and deterministic notices. It remains unreviewed/unapproved, with no S002 implementation or real source imports.
+
+
+### Fresh independent review retry — 12 October 2026
+
+After quota became available, Claude Opus in the insrc daemon completed S001 code review: WARN, 0 HIGH / 4 MED / 4 LOW. Grounding is degraded because the index stayed stale. Three MED coverage findings report that the review context omitted BUILD evidence and usable hunks; they are not failing tests or identified digest defects. The actual daemon-run task checks remain in BUILD/TESTS, and the final test/build output is preserved in [durable verification evidence](reviews/design-intelligence-di1-s1-digest-verification.txt). The review's MED stale-roadmap finding is corrected in the program roadmap. Historical counts above are now explicitly marked as superseded. The HTML/Markdown PRD parity concern is retained as a LOW maintenance observation; neither PRD was changed in this correction.
+
+This records the review faithfully; it does not convert WARN to PASS, claim the missing graph evidence exists, or approve BUILD. S001 completion remains a separate user approval gate.
+
+
+S002's subsequent independent design review found two MED ambiguities (private-helper reuse and digest-mismatch failure scope) plus one LOW path-grammar clarification. The LLD now specifies local primitives with S001 behavioral parity tests, per-file unresolved outcomes for stale reviewed digests, request failure for acquisition-integrity errors, and pre-I/O rejection of any explicitly selected non-portable path. All three were corrected and resolved through the framework: effective PASS, no override/deferral, no approval.
+
+
+### Completion approved; S002 planning
+
+The user explicitly approved both S001 BUILD and the corrected S002 LLD on 12 October 2026. The insrc approval tool stamped both artifacts, skipped none and retained S001 code-review WARN. The [S002 PLAN](../docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/S002/PLAN.md) now contains eight ordered tasks and complete mappings for all 12 LLD test subjects. Its separate approval gate remains pending before S002 implementation.

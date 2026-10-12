@@ -1,0 +1,12 @@
+T004: three planned lifecycle tests and five reader regressions passed; typecheck passed.
+Full Node22 suite; sole failure is existing SQLite temporalTrend integer overflow:
+  ...
+1..5043
+# tests 5470
+# suites 106
+# pass 5341
+# fail 1
+# cancelled 0
+# skipped 125
+# todo 3
+# duration_ms 66813.591375

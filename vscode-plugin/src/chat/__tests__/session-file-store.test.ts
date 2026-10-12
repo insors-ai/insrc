@@ -8,9 +8,9 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createFileChatSessionStore, HEAD_SUFFIX, ROWS_SUFFIX } from '../session-file-store.js';
+import { createFileChatSessionStore, HEAD_SUFFIX, migrateChatSessionsFromMemento, ROWS_SUFFIX } from '../session-file-store.js';
 import { sessionFileName } from '../session-output.js';
-import type { ChatSession, ChatSessionStore, TranscriptEntry } from '../session-store.js';
+import { createMementoChatSessionStore, INDEX_KEY, SESSION_PREFIX, type ChatSession, type ChatSessionStore, type MementoLike, type TranscriptEntry } from '../session-store.js';
 import { fakeSessionFs, type FakeSessionFs } from './fake-session-fs.js';
 
 const ROOT = '/sessions';
@@ -532,4 +532,199 @@ test('a save after the store cut back a torn last line appends and does not repl
   store.save(s);
   assert.equal(rowsFileReplaced(fake, s.id), false);
   assert.deepEqual(texts(rowsOnDisk(fake, s.id)), ['one', 'two', 'three', 'from the first store']);
+});
+
+// --- the one-time move out of globalState ---------------------------------------------------------
+
+/** A Map-backed memento that records its reads and writes, with sessions the Memento store wrote. */
+function oldState(): { memento: MementoLike; map: Map<string, unknown>; reads: string[]; writes: Array<[string, unknown]>; store: ChatSessionStore } {
+  const map = new Map<string, unknown>();
+  const reads: string[] = [];
+  const writes: Array<[string, unknown]> = [];
+  const quiet: MementoLike = { get: <T>(k: string) => map.get(k) as T | undefined, update: (k, v) => { if (v === undefined) map.delete(k); else map.set(k, v); } };
+  const memento: MementoLike = {
+    get: <T>(k: string) => { reads.push(k); return map.get(k) as T | undefined; },
+    update: (k, v) => { writes.push([k, v]); if (v === undefined) map.delete(k); else map.set(k, v); },
+  };
+  let tick = 0;
+  const store = createMementoChatSessionStore({ memento: quiet, now: () => new Date(Date.UTC(2026, 0, 1, 0, 0, ++tick)).toISOString(), genId: () => `m${++nextId}` });
+  return { memento, map, reads, writes, store };
+}
+/** A session in the old store with `n` rows, the last at `at`. */
+function oldSession(old: { store: ChatSessionStore }, title: string, n: number, at: string): ChatSession {
+  const s = old.store.create('claude');
+  s.title = title;
+  for (let i = 0; i < n; i++) s.transcript.push({ role: i % 2 === 0 ? 'user' : 'assistant', text: `${title} ${i}`, at: i === n - 1 ? at : '2026-02-01T00:00:00.000Z' });
+  old.store.save(s);
+  return s;
+}
+
+test('the migration writes each indexed session\'s files, reads them back equal, then removes its memento key and the index; the store then lists and returns every session as the memento store did', () => {
+  const old = oldState();
+  const a = oldSession(old, 'alpha', 3, '2026-02-02T00:00:00.000Z');
+  const b = oldSession(old, 'beta', 5, '2026-02-04T00:00:00.000Z');
+  const c = old.store.create('codex'); // no rows
+  b.mode = 'auto';
+  b.nativeSessionId = 'native-b';
+  b.liveTurn = { cursor: { turnId: 't', generation: 1, offset: 9 }, ownerHostPid: 5 };
+  old.store.save(b);
+  const listBefore = old.store.list();
+  const sessionsBefore = [a, b, c].map((s) => JSON.parse(JSON.stringify(old.store.get(s.id))) as ChatSession);
+  const fake = fakeSessionFs();
+  const infos: string[] = [];
+  const result = migrateChatSessionsFromMemento({ memento: old.memento, root: ROOT, fs: fake.fs, logger: { warn: () => {}, info: (m) => infos.push(m) } });
+  assert.deepEqual(result, { migrated: 3, kept: [] });
+  assert.match(infos.join('\n'), /3 chat session\(s\) moved/);
+  // Every key is gone from the memento, and the index with them.
+  assert.deepEqual([...old.map.keys()], []);
+  assert.deepEqual(old.writes.map((w) => w[0]).sort(), [INDEX_KEY, ...[a, b, c].map((s) => SESSION_PREFIX + s.id)].sort());
+  assert.ok(old.writes.every((w) => w[1] === undefined));
+  // Each session's key was removed only after its files were written and read back.
+  for (const s of [a, b, c]) {
+    const head = headPath(s.id);
+    const lastRead = fake.calls.map((x, i) => (x.op === 'readText' && x.path === head ? i : -1)).filter((i) => i >= 0).at(-1)!;
+    const lastWrite = fake.calls.map((x, i) => (x.op === 'rename' && x.to === head ? i : -1)).filter((i) => i >= 0).at(-1)!;
+    assert.ok(lastWrite >= 0 && lastRead > lastWrite, `${s.title}: read back after it was written`);
+  }
+  assert.ok(fake.ops('rename').every((x) => x.path.endsWith('.tmp')), 'every file is written through a temporary file');
+  const order = fake.ops('rename').map((x) => x.to);
+  assert.ok(order.indexOf(rowsPath(a.id)) < order.indexOf(headPath(a.id)), 'rows before head');
+  // The file store lists and returns what the memento store did.
+  const store = createFileChatSessionStore({ root: ROOT, fs: fake.fs });
+  assert.deepEqual(store.list(), listBefore);
+  for (const before of sessionsBefore) assert.deepEqual(store.get(before.id), before);
+});
+
+test('a session whose write or read-back fails is left in the memento untouched, stays in the index and is returned in kept, and the others are still migrated', () => {
+  const old = oldState();
+  const a = oldSession(old, 'alpha', 2, '2026-02-02T00:00:00.000Z');
+  const b = oldSession(old, 'beta', 2, '2026-02-03T00:00:00.000Z');
+  const c = oldSession(old, 'gamma', 2, '2026-02-04T00:00:00.000Z');
+  const d = oldSession(old, 'delta', 2, '2026-02-05T00:00:00.000Z');
+  const before = new Map([...old.map].map(([k, v]) => [k, JSON.stringify(v)]));
+  const fake = fakeSessionFs();
+  const warns: string[] = [];
+  // beta's rows cannot be written; gamma's head does not read back; delta's rows read back short.
+  let deltaRead = 0;
+  fake.failOn = (call) => {
+    if (call.op === 'writeText' && call.path.startsWith(rowsPath(b.id))) return new Error('disk full');
+    if (call.op === 'readText' && call.path === headPath(c.id)) return new Error('EIO');
+    return undefined;
+  };
+  const realRead = fake.fs.readText;
+  (fake.fs as { readText: typeof realRead }).readText = (path) => {
+    const text = realRead(path);
+    if (path === rowsPath(d.id) && text !== undefined && ++deltaRead >= 1) return text.split('\n').slice(0, 1).join('\n') + '\n';
+    return text;
+  };
+  let result: ReturnType<typeof migrateChatSessionsFromMemento> | undefined;
+  assert.doesNotThrow(() => { result = migrateChatSessionsFromMemento({ memento: old.memento, root: ROOT, fs: fake.fs, logger: { warn: (m) => warns.push(m) } }); });
+  assert.deepEqual(result, { migrated: 1, kept: [b.id, c.id, d.id] });
+  // The three that failed are untouched in the memento and still indexed; alpha is gone from it.
+  for (const s of [b, c, d]) assert.equal(JSON.stringify(old.map.get(SESSION_PREFIX + s.id)), before.get(SESSION_PREFIX + s.id), `${s.title} is untouched`);
+  assert.equal(old.map.has(SESSION_PREFIX + a.id), false);
+  assert.deepEqual(old.map.get(INDEX_KEY), [b.id, c.id, d.id]);
+  assert.deepEqual(old.writes.map((w) => w[0]).sort(), [INDEX_KEY, SESSION_PREFIX + a.id].sort(), 'no failed session\'s key was written');
+  assert.ok(warns.some((w) => w.includes(b.id) && /disk full/.test(w)));
+  assert.ok(warns.some((w) => w.includes(c.id)));
+  assert.ok(warns.some((w) => w.includes(d.id) && /does not read back equal/.test(w)));
+  // The next start, with the faults gone, migrates the rest.
+  fake.failOn = undefined;
+  (fake.fs as { readText: typeof realRead }).readText = realRead;
+  const again = migrateChatSessionsFromMemento({ memento: old.memento, root: ROOT, fs: fake.fs });
+  assert.deepEqual(again, { migrated: 3, kept: [] });
+  assert.deepEqual([...old.map.keys()], []);
+  const store = createFileChatSessionStore({ root: ROOT, fs: fake.fs });
+  assert.deepEqual(store.list().map((x) => x.title), ['delta', 'gamma', 'beta', 'alpha']);
+  for (const s of [a, b, c, d]) assert.equal(store.get(s.id)?.transcript.length, 2);
+});
+
+test('a session whose files already hold a prefix of the memento\'s rows gets the missing rows appended and its memento key removed; one whose files hold more rows than the memento is left as it is on disk and its key removed; one that disagrees is changed in neither place and returned in kept', () => {
+  const old = oldState();
+  const behind = oldSession(old, 'behind', 2, '2026-02-02T00:00:00.000Z');
+  const ahead = oldSession(old, 'ahead', 2, '2026-02-03T00:00:00.000Z');
+  const split = oldSession(old, 'split', 2, '2026-02-04T00:00:00.000Z');
+  const fake = fakeSessionFs();
+  assert.deepEqual(migrateChatSessionsFromMemento({ memento: old.memento, root: ROOT, fs: fake.fs }), { migrated: 3, kept: [] });
+  // A window on the previous plugin version writes the sessions to globalState again:
+  // `behind` with two more rows than the files; `ahead` unchanged while the files gained a row;
+  // `split` with a different second row than the files.
+  const files = createFileChatSessionStore({ root: ROOT, fs: fake.fs });
+  const more: TranscriptEntry[] = [say('late 1'), say('late 2')];
+  old.store.save({ ...behind, title: 'behind, renamed', transcript: [...behind.transcript, ...more] });
+  old.store.save(ahead);
+  const aheadOnDisk = files.get(ahead.id)!;
+  aheadOnDisk.transcript.push(say('written by the new version'));
+  files.save(aheadOnDisk);
+  old.store.save({ ...split, transcript: [split.transcript[0]!, say('a different second row')] });
+  const splitRowsBefore = fake.files.get(rowsPath(split.id));
+  const splitMementoBefore = JSON.stringify(old.map.get(SESSION_PREFIX + split.id));
+  const aheadRowsBefore = fake.files.get(rowsPath(ahead.id));
+  const aheadHeadBefore = fake.files.get(headPath(ahead.id));
+  fake.clear();
+  old.writes.length = 0;
+  const warns: string[] = [];
+  const result = migrateChatSessionsFromMemento({ memento: old.memento, root: ROOT, fs: fake.fs, logger: { warn: (m) => warns.push(m) } });
+  assert.deepEqual(result, { migrated: 2, kept: [split.id] });
+  // behind: the two missing rows are appended (the file is not replaced) and the head follows.
+  assert.deepEqual(fake.ops('appendText').map((x) => [x.path, x.data]), [[rowsPath(behind.id), more.map((r) => `${JSON.stringify(r)}\n`).join('')]]);
+  assert.equal(rowsFileReplaced(fake, behind.id), false);
+  const reread = createFileChatSessionStore({ root: ROOT, fs: fake.fs });
+  assert.deepEqual(texts(reread.get(behind.id)!.transcript), ['behind 0', 'behind 1', 'late 1', 'late 2']);
+  assert.equal(reread.get(behind.id)!.title, 'behind, renamed');
+  assert.equal(old.map.has(SESSION_PREFIX + behind.id), false);
+  // ahead: nothing on disk changes, and its key is removed.
+  assert.equal(fake.files.get(rowsPath(ahead.id)), aheadRowsBefore);
+  assert.equal(fake.files.get(headPath(ahead.id)), aheadHeadBefore);
+  assert.equal(old.map.has(SESSION_PREFIX + ahead.id), false);
+  // split: neither copy is changed, it stays indexed and is in kept.
+  assert.equal(fake.files.get(rowsPath(split.id)), splitRowsBefore);
+  assert.equal(JSON.stringify(old.map.get(SESSION_PREFIX + split.id)), splitMementoBefore);
+  assert.deepEqual(old.map.get(INDEX_KEY), [split.id]);
+  assert.ok(warns.some((w) => w.includes(split.id) && /disagree at row 1/.test(w)));
+  assert.deepEqual(fake.calls.filter((x) => x.op !== 'stat' && x.op !== 'readText' && (x.path.includes(sessionFileName(split.id)) || (x.to ?? '').includes(sessionFileName(split.id)))), [], 'no write of any kind for the disagreeing session');
+});
+
+test('the migration with no index, or run a second time, reads no session, writes nothing and returns no kept id; an entry isSession rejects is kept and logged', () => {
+  // No index at all.
+  const empty = oldState();
+  const fake = fakeSessionFs();
+  assert.deepEqual(migrateChatSessionsFromMemento({ memento: empty.memento, root: ROOT, fs: fake.fs }), { migrated: 0, kept: [] });
+  assert.deepEqual(empty.reads, [INDEX_KEY], 'only the index is looked at');
+  assert.deepEqual(empty.writes, []);
+  assert.deepEqual(fake.calls, [], 'no file call');
+  // An index that is not a list, and a memento that throws: nothing happens, nothing throws.
+  empty.map.set(INDEX_KEY, 'not a list');
+  assert.deepEqual(migrateChatSessionsFromMemento({ memento: empty.memento, root: ROOT, fs: fake.fs }), { migrated: 0, kept: [] });
+  const throwing: MementoLike = { get: () => { throw new Error('state unavailable'); }, update: () => {} };
+  assert.deepEqual(migrateChatSessionsFromMemento({ memento: throwing, root: ROOT, fs: fake.fs }), { migrated: 0, kept: [] });
+  assert.deepEqual(fake.calls, []);
+
+  // A second run after a full migration.
+  const old = oldState();
+  oldSession(old, 'alpha', 2, '2026-02-02T00:00:00.000Z');
+  assert.deepEqual(migrateChatSessionsFromMemento({ memento: old.memento, root: ROOT, fs: fake.fs }), { migrated: 1, kept: [] });
+  const filesAfterFirst = new Map(fake.files);
+  fake.clear();
+  old.reads.length = 0;
+  old.writes.length = 0;
+  assert.deepEqual(migrateChatSessionsFromMemento({ memento: old.memento, root: ROOT, fs: fake.fs }), { migrated: 0, kept: [] });
+  assert.deepEqual(old.reads, [INDEX_KEY], 'no session is read');
+  assert.deepEqual(old.writes, []);
+  assert.deepEqual(fake.calls, []);
+  assert.deepEqual(new Map(fake.files), filesAfterFirst);
+
+  // Entries that are not sessions are kept, logged, and do not stop the others.
+  const mixed = oldState();
+  const good = oldSession(mixed, 'good', 1, '2026-02-02T00:00:00.000Z');
+  mixed.map.set(SESSION_PREFIX + 'broken', { id: 'broken', provider: 'claude' });
+  mixed.map.set(SESSION_PREFIX + 'wrong-id', { ...good, id: 'someone-else' });
+  mixed.map.set(INDEX_KEY, ['broken', good.id, 'gone', 'wrong-id', 42]);
+  const warns: string[] = [];
+  const result = migrateChatSessionsFromMemento({ memento: mixed.memento, root: ROOT, fs: fake.fs, logger: { warn: (m) => warns.push(m) } });
+  assert.deepEqual(result, { migrated: 1, kept: ['broken', 'gone', 'wrong-id'] });
+  assert.deepEqual(mixed.map.get(INDEX_KEY), ['broken', 'gone', 'wrong-id']);
+  assert.deepEqual(mixed.map.get(SESSION_PREFIX + 'broken'), { id: 'broken', provider: 'claude' }, 'left as it was');
+  for (const id of ['broken', 'gone', 'wrong-id']) assert.ok(warns.some((w) => w.includes(`stored session ${id} is not a session record`)), `${id} is logged`);
+  assert.equal(fake.files.has(headPath('broken')), false);
 });

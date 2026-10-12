@@ -22,14 +22,18 @@
  * throws, as trySaveSession expects.
  */
 import { appendFileSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, truncateSync, writeFileSync } from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
 import type { ProviderId } from './cli-adapter.js';
 import { sessionFileName } from './session-output.js';
 import {
+  INDEX_KEY,
+  SESSION_PREFIX,
   isSession,
   updatedAtOf,
   type ChatSession,
   type ChatSessionStore,
   type ChatSummary,
+  type MementoLike,
   type TranscriptEntry,
 } from './session-store.js';
 
@@ -409,4 +413,132 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
     },
     save,
   };
+}
+
+export interface MigrationLogger extends FileStoreLogger {
+  info?(msg: string): void;
+}
+
+export interface MigrationDeps {
+  /** Where the sessions were kept: context.globalState, read through the Memento store's keys. */
+  readonly memento: MementoLike;
+  /** The directory the file store uses. */
+  readonly root: string;
+  readonly fs?: SessionFilesFs;
+  readonly logger?: MigrationLogger;
+}
+
+export interface MigrationResult {
+  /** Sessions now in files and removed from the memento. */
+  readonly migrated: number;
+  /** Ids of the sessions left in the memento: their output files must be kept meanwhile. */
+  readonly kept: readonly string[];
+}
+
+/** A value as it reads back from JSON, so two records compare by what a file can hold. */
+const plain = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
+const sameRow = (a: TranscriptEntry, b: TranscriptEntry): boolean => isDeepStrictEqual(plain(a), plain(b));
+
+/**
+ * Moves the sessions the Memento store kept in globalState into the file store's files, once.
+ *
+ * For each indexed session: with no head on disk its rows and then its head are written; with a
+ * head whose rows are a prefix of the memento's, the missing rows are appended; when the memento's
+ * rows are a prefix of the files' (the files are newer) nothing is written. The files are then
+ * read back and compared with the memento's copy, and ONLY THEN is its memento key removed.
+ *
+ * A session whose copies disagree, whose write or read-back fails, or that is not a session, is
+ * left in the memento untouched, logged, and returned in `kept`; the next start tries it again.
+ * Never throws. With no index it does nothing.
+ */
+export function migrateChatSessionsFromMemento(deps: MigrationDeps): MigrationResult {
+  const fs = deps.fs ?? nodeSessionFilesFs;
+  const log = deps.logger;
+  let ids: string[];
+  try {
+    const raw = deps.memento.get<unknown>(INDEX_KEY);
+    if (!Array.isArray(raw)) return { migrated: 0, kept: [] };
+    ids = raw.filter((x): x is string => typeof x === 'string');
+  } catch (err) {
+    log?.warn(`[chat] the stored chat index could not be read: ${err instanceof Error ? err.message : String(err)}`);
+    return { migrated: 0, kept: [] };
+  }
+
+  /** Sets a memento key; a write that fails later is logged, never an unhandled rejection. */
+  const setKey = (key: string, value: unknown): void => {
+    void Promise.resolve(deps.memento.update(key, value)).catch((err: unknown) => {
+      log?.warn(`[chat] stored key ${key} not updated: ${err instanceof Error ? err.message : String(err)}`);
+    });
+  };
+
+  /** Whether the session is in the files, with every row and field of the memento's copy. */
+  const migrateOne = (id: string): boolean => {
+    const stored = deps.memento.get<unknown>(SESSION_PREFIX + id);
+    if (!isSession(stored) || stored.id !== id) {
+      log?.warn(`[chat] stored session ${id} is not a session record; left in place`);
+      return false;
+    }
+    const want = stored.transcript;
+    const p = sessionPaths(deps.root, id);
+    fs.mkdir(deps.root);
+    if (fs.stat(p.head) === undefined) {
+      // Not in the files yet. The head goes last, so a session that has a head has its rows.
+      writeWhole(fs, p.rows, rowLines(want));
+      writeWhole(fs, p.head, JSON.stringify(headOf(stored, updatedAtOf(stored))));
+    } else {
+      // Already there (another window migrated it, or an older version wrote it again since).
+      const have = readRows(fs, p.rows, log).rows;
+      const shared = Math.min(have.length, want.length);
+      for (let i = 0; i < shared; i++) {
+        if (!sameRow(have[i]!, want[i]!)) {
+          log?.warn(`[chat] stored session ${id} and its files disagree at row ${i}; neither is changed`);
+          return false;
+        }
+      }
+      if (have.length < want.length) {
+        fs.appendText(p.rows, rowLines(want.slice(have.length)));
+        writeWhole(fs, p.head, JSON.stringify(headOf(stored, updatedAtOf(stored))));
+      }
+    }
+    // Read back, and compare with the memento's copy before anything is removed from it.
+    const head = readHead(fs, p.head);
+    if (head === undefined || head.id !== id) {
+      log?.warn(`[chat] stored session ${id}: its head file does not read back; left in place`);
+      return false;
+    }
+    const got = readRows(fs, p.rows, log).rows;
+    const rowsMatch = got.length >= want.length && want.every((r, i) => sameRow(got[i]!, r));
+    // With the same rows the whole session must match; with more rows the files are newer, and
+    // their head is the newer one too.
+    const fieldsMatch =
+      got.length > want.length || isDeepStrictEqual(plain(sessionOf(head, got)), plain(sessionOf(headOf(stored, ''), [...want])));
+    if (!rowsMatch || !fieldsMatch) {
+      log?.warn(`[chat] stored session ${id} does not read back equal from its files; left in place`);
+      return false;
+    }
+    return true;
+  };
+
+  const kept: string[] = [];
+  let migrated = 0;
+  for (const id of ids) {
+    let ok = false;
+    try {
+      ok = migrateOne(id);
+      if (ok) setKey(SESSION_PREFIX + id, undefined);
+    } catch (err) {
+      ok = false;
+      log?.warn(`[chat] stored session ${id} not migrated: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    if (ok) migrated++;
+    else kept.push(id);
+  }
+  try {
+    if (kept.length === 0) setKey(INDEX_KEY, undefined);
+    else if (kept.length !== ids.length) setKey(INDEX_KEY, kept);
+  } catch (err) {
+    log?.warn(`[chat] the stored chat index could not be updated: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  log?.info?.(`[chat] ${migrated} chat session(s) moved to ${deps.root}${kept.length > 0 ? `; ${kept.length} left in place` : ''}`);
+  return { migrated, kept };
 }

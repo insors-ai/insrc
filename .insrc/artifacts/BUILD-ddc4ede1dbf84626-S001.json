@@ -4,11 +4,12 @@
     "epicHash": "ddc4ede1dbf84626",
     "storyId": "S001",
     "createdAt": "2026-10-12T07:35:29.855Z",
-    "updatedAt": "2026-10-12T08:09:31.883Z",
+    "updatedAt": "2026-10-12T08:19:18.794Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:11:33.406Z",
-    "epicSlug": "page-dev-chat-transcript-show-latest"
+    "epicSlug": "page-dev-chat-transcript-show-latest",
+    "approvedAt": "2026-10-12T08:19:19.405Z"
   },
   "body": {
     "tasks": [
@@ -52,110 +53,124 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/CR-ddc4ede1dbf84626-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T08:19:18.794Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/PLAN-ddc4ede1dbf84626-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fake-dom.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fake-dom.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/render-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/transcript-pager.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/transcript-window.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T08:09:31.883Z"
+        "timestamp": "2026-10-12T08:19:18.794Z"
       }
     ],
-    "commit": "71a032d3"
+    "commit": "5ffdeb6a"
   }
 }

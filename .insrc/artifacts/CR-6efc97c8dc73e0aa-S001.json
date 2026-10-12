@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "6efc97c8dc73e0aa",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "add-kotlin-supported-source-language-indexer",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

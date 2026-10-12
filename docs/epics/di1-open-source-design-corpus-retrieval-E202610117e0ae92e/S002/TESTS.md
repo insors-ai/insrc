@@ -126,7 +126,7 @@ Run at 2026-10-12T05:08:05.626Z on commit `fd652b27`. Tests check: **passed**. 3
 
 ## t5
 
-Run at 2026-10-12T05:11:55.474Z on commit `5c5ced74`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-12T05:17:51.666Z on commit `93251dac`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: lineage-closure retains every source and transformation for derived outputs**
 

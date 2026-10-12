@@ -4,7 +4,7 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T05:11:55.474Z"
+    "updatedAt": "2026-10-12T05:17:51.666Z"
   },
   "body": {
     "tasks": [
@@ -307,8 +307,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "5c5ced74",
-        "ranAt": "2026-10-12T05:11:55.474Z",
+        "commit": "93251dac",
+        "ranAt": "2026-10-12T05:17:51.666Z",
         "testsPassed": true,
         "tests": [
           {
@@ -356,7 +356,7 @@
             "file": "src/design/corpus/sources/__tests__/lineage.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 535,
+            "durationMs": 509,
             "titles": [
               {
                 "title": "lineage-closure retains every source and transformation for derived outputs",

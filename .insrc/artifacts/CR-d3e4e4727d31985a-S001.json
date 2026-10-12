@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "d3e4e4727d31985a",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "change-triage-buildnextcall-src-mcp-triage",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

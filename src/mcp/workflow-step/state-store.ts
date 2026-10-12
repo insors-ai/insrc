@@ -6,13 +6,13 @@
 /**
  * Server-side state store for `insrc_workflow_step`.
  *
- * Structurally identical to `mcp/analyze-step/state-store.ts` —
+ * Structurally identical to `daemon/steps/analyze-step/state-store.ts` —
  * same 22-char opaque tokens, same LRU + TTL sweep, same
  * `StateTokenNotFound` semantics. Kept module-local (not shared
  * with analyze) because the state payload shape differs and the
  * TTLs / capacities may drift in the future.
  *
- * See docstring in `mcp/analyze-step/state-store.ts` for the full
+ * See docstring in `daemon/steps/analyze-step/state-store.ts` for the full
  * rationale on why we store server-side rather than round-tripping
  * a blob through the outer LLM.
  */

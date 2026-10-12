@@ -14,7 +14,7 @@
 
 import { appendFileSync } from 'node:fs';
 
-import { getLogger } from '../../shared/logger.js';
+import { getLogger } from '../../../shared/logger.js';
 import { handleBundle } from './phases/bundle.js';
 import { handleNarrow } from './phases/narrow.js';
 import { handlePlan } from './phases/plan.js';

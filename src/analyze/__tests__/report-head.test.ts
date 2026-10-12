@@ -17,8 +17,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { AnalyzeGroundingFailedError, _flattenBundleForTest as flattenBundle } from '../../daemon/workflow-rpc.js';
-import { prepareAnswerTurn } from '../../mcp/analyze-step/answer-turn.js';
-import { renderAnalyzeFailure, renderBundleAsMarkdown } from '../../mcp/bundle-md.js';
+import { prepareAnswerTurn } from '../../daemon/steps/analyze-step/answer-turn.js';
+import { renderAnalyzeFailure, renderBundleAsMarkdown } from '../../daemon/steps/bundle-md.js';
 import type { AnalyzeContextBundle, ClassifiedIntent } from '../../shared/analyze-types.js';
 import {
 	buildCompleteness, completenessHeadLine, isAnswerReport, renderCompletenessLine, renderMeasureLine, renderReportHead,

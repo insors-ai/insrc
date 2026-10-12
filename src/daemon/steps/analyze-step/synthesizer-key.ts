@@ -15,8 +15,8 @@
  * enough: it's what powers the "map me a module" flagship intent.
  */
 
-import type { SynthesizerPromptKey } from '../../analyze/context/synthesizer.js';
-import type { AnalyzeTarget } from '../../shared/analyze-types.js';
+import type { SynthesizerPromptKey } from '../../../analyze/context/synthesizer.js';
+import type { AnalyzeTarget } from '../../../shared/analyze-types.js';
 
 export function pickSynthesizerKey(target: AnalyzeTarget): SynthesizerPromptKey {
 	switch (target) {

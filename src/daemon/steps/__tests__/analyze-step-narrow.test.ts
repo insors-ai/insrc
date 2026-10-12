@@ -21,7 +21,7 @@ import { after as afterAll } from 'node:test';
 import { mkdtempSync as mkdtempSyncRaw, rmSync as rmSyncForStore } from 'node:fs';
 import { tmpdir as tmpdirForStore } from 'node:os';
 import { join as joinForStore } from 'node:path';
-import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
+import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 
 // This file reaches the graph store through code that takes no path. Give it a
 // temporary one: the store at the default path belongs to the daemon alone
@@ -34,7 +34,7 @@ afterAll(async () => {
 });
 import assert from 'node:assert/strict';
 
-import type { ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import { handleAnalyzeStep } from '../analyze-step/handler.js';
 import {
 	assertStage,

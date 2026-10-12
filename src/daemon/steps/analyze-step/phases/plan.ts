@@ -29,11 +29,11 @@
 import {
 	finalizeDecompose,
 	DecomposerSchemaUnrecoverable,
-} from '../../../analyze/context/decomposer.js';
+} from '../../../../analyze/context/decomposer.js';
 import { prepareAnswerTurn } from '../answer-turn.js';
-import { measureLookupResults } from '../../../analyze/measure.js';
-import { stepPlan } from '../../../analyze/explore/index.js';
-import { getLogger } from '../../../shared/logger.js';
+import { measureLookupResults } from '../../../../analyze/measure.js';
+import { stepPlan } from '../../../../analyze/explore/index.js';
+import { getLogger } from '../../../../shared/logger.js';
 
 import {
 	assertStage,

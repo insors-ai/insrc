@@ -36,7 +36,7 @@ import { fileURLToPath } from 'node:url';
 import { upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import { addRepo } from '../../../db/repos.js';
-import { renderBundleAsMarkdown } from '../../../mcp/bundle-md.js';
+import { renderBundleAsMarkdown } from '../../../daemon/steps/bundle-md.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import { PATHS } from '../../../shared/paths.js';
 import type { Entity } from '../../../shared/types.js';

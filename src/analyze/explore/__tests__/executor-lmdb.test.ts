@@ -23,7 +23,7 @@ import {
 	_overrideRunnerForTest,
 } from '../executor.js';
 import { executePlan, stepPlan } from '../executor.js';
-import { handleAnalyzeStep } from '../../../mcp/analyze-step/handler.js';
+import { handleAnalyzeStep } from '../../../daemon/steps/analyze-step/handler.js';
 import type {
 	Exploration,
 	ExplorationOutput,

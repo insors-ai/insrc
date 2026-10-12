@@ -18,8 +18,8 @@
  *     drop citation blocks. The bundle's discipline is the point.
  */
 
-import { completenessHeadLine, isAnswerReport, renderReportHead } from '../analyze/completeness.js';
-import type { AnalyzeContextBundle, BundleLayerName } from '../analyze/context/types.js';
+import { completenessHeadLine, isAnswerReport, renderReportHead } from '../../analyze/completeness.js';
+import type { AnalyzeContextBundle, BundleLayerName } from '../../analyze/context/types.js';
 
 const LAYER_HEADINGS: Readonly<Record<BundleLayerName, string>> = {
 	system:    '## System',

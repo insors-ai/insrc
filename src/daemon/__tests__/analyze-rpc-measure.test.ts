@@ -34,8 +34,8 @@ import { makeEntityId } from '../../indexer/parser/base.js';
 import type { AnalyzeScope, AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type { Entity, IpcStreamMessage, LLMProvider } from '../../shared/types.js';
 import { renderCompletenessLine, renderMeasureLine } from '../../analyze/completeness.js';
-import { renderBundleAsMarkdown } from '../../mcp/bundle-md.js';
-import { oneShotRunParams } from '../../mcp/server.js';
+import { renderBundleAsMarkdown } from '../steps/bundle-md.js';
+import { oneShotRunParams } from '../steps/analyze-oneshot.js';
 import { _setClassifierForTest, buildRun, classify, plan, planDepthScope, runStart } from '../analyze-rpc.js';
 import { _groundingForTest, _groundingIntentForTest } from '../workflow-rpc.js';
 

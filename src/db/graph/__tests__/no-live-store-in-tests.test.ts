@@ -71,9 +71,9 @@ test('three daemon request tests, found by the same search, create nothing at th
 
 test('the MCP step and review tests, found by the full audit, create nothing at the default path', () => {
 	for (const file of [
-		'src/mcp/__tests__/analyze-step-handler.test.ts',
-		'src/mcp/__tests__/analyze-step-narrow.test.ts',
-		'src/mcp/__tests__/analyze-step-scope.test.ts',
+		'src/daemon/steps/__tests__/analyze-step-handler.test.ts',
+		'src/daemon/steps/__tests__/analyze-step-narrow.test.ts',
+		'src/daemon/steps/__tests__/analyze-step-scope.test.ts',
 		'src/mcp/review-step/__tests__/review-step-routing.test.ts',
 		'src/mcp/review-step/__tests__/review-step.test.ts',
 		'src/workflow/__tests__/spec-review-approve.test.ts',

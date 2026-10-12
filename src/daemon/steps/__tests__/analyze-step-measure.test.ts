@@ -19,17 +19,17 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { renderCompletenessLine, renderMeasureLine } from '../../analyze/completeness.js';
-import { _setSynthesizerPromptPathForTest } from '../../analyze/context/synthesizer.js';
-import { getNarrowRunner, _getRunnersForTest, _overrideRunnerForTest } from '../../analyze/explore/executor.js';
-import type { Exploration, ExplorationPlan, ExplorationRunner } from '../../analyze/explore/types.js';
-import { measureLookupResults } from '../../analyze/measure.js';
-import { getDb } from '../../db/client.js';
-import { upsertEntities } from '../../db/entities.js';
-import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
-import { addRepo } from '../../db/repos.js';
-import type { AnalyzeScope } from '../../shared/analyze-types.js';
-import type { Entity, EntityKind } from '../../shared/types.js';
+import { renderCompletenessLine, renderMeasureLine } from '../../../analyze/completeness.js';
+import { _setSynthesizerPromptPathForTest } from '../../../analyze/context/synthesizer.js';
+import { getNarrowRunner, _getRunnersForTest, _overrideRunnerForTest } from '../../../analyze/explore/executor.js';
+import type { Exploration, ExplorationPlan, ExplorationRunner } from '../../../analyze/explore/types.js';
+import { measureLookupResults } from '../../../analyze/measure.js';
+import { getDb } from '../../../db/client.js';
+import { upsertEntities } from '../../../db/entities.js';
+import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
+import { addRepo } from '../../../db/repos.js';
+import type { AnalyzeScope } from '../../../shared/analyze-types.js';
+import type { Entity, EntityKind } from '../../../shared/types.js';
 import { handleBundle } from '../analyze-step/phases/bundle.js';
 import { handleNarrow } from '../analyze-step/phases/narrow.js';
 import { handlePlan } from '../analyze-step/phases/plan.js';

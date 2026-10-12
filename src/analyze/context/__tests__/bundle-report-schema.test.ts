@@ -87,7 +87,7 @@ test('the model-facing schema has neither meta nor report at both sites, on the 
 	assert.throws(() => finalizeSynthesize({ ...LAYERS, report: REPORT }), SynthesizerSchemaUnrecoverable);
 });
 
-test('no source file under src/mcp/analyze-step writes a literal schema version', () => {
+test('no source file under src/daemon/steps/analyze-step writes a literal schema version', () => {
 	const files: string[] = [];
 	const walk = (dir: string): void => {
 		for (const name of readdirSync(dir)) {
@@ -97,7 +97,7 @@ test('no source file under src/mcp/analyze-step writes a literal schema version'
 			else if (name.endsWith('.ts')) files.push(full);
 		}
 	};
-	walk(join(SRC, 'mcp', 'analyze-step'));
+	walk(join(SRC, 'daemon', 'steps', 'analyze-step'));
 	assert.ok(files.length >= 6, 'the step tool\'s source files were found');
 
 	const literal = /schemaVersion\s*:\s*\d/;
@@ -108,6 +108,6 @@ test('no source file under src/mcp/analyze-step writes a literal schema version'
 	assert.equal(literal.test('schemaVersion: SCHEMA_VERSION,'), false);
 	// And the two phases that stamp a version refer to the constant.
 	for (const phase of ['start.ts', 'bundle.ts']) {
-		assert.match(readFileSync(join(SRC, 'mcp', 'analyze-step', 'phases', phase), 'utf8'), /schemaVersion:\s*SCHEMA_VERSION/, phase);
+		assert.match(readFileSync(join(SRC, 'daemon', 'steps', 'analyze-step', 'phases', phase), 'utf8'), /schemaVersion:\s*SCHEMA_VERSION/, phase);
 	}
 });

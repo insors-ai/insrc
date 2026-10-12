@@ -38,19 +38,18 @@ import { resolveRepoPath } from './resolve-repo.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
-import { buildRun } from '../daemon/analyze-rpc.js';
 import { runWithSamplerContext, runWithClientProviderContext } from '../analyze/context/shaper-provider.js';
 import type { AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { getLogger } from '../shared/logger.js';
 
-import { handleAnalyzeStep } from './analyze-step/handler.js';
+import { handleAnalyzeStep } from '../daemon/steps/analyze-step/handler.js';
 import { handleWorkflowStep } from './workflow-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
 import { handleReviewStep } from './review-step/handler.js';
 import { DEFAULT_DEPS as CODE_REVIEW_STEP_DEFAULT_DEPS, handleCodeReviewStep } from './code-review-step/handler.js';
 import { handleTriageStep } from './triage-step/handler.js';
 import { handleDocgen } from './docgen/handler.js';
-import { renderAnalyzeFailure, renderBundleAsMarkdown } from './bundle-md.js';
+import { runAnalyzeOneShot } from '../daemon/steps/analyze-oneshot.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';
 import { startRun, pollRun, abortRun, approveWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
 import type { WorkflowProgress } from '../daemon/workflow-rpc.js';
@@ -1289,28 +1288,6 @@ export async function runInsrcMcpStdio(): Promise<void> {
 // insrc_analyze handler
 // ---------------------------------------------------------------------------
 
-/**
- * The run-level request the one-shot tool sends for a call.
- *
- * The intent carries no size: the context builder measures the request. A
- * size the caller stated is passed on as `sizeHint`, never as the size, and
- * with none stated no size is sent at all.
- */
-export function oneShotRunParams(
-	args:     { readonly focus: string; readonly target?: 'code' | 'docs' | 'data' | 'infra' | 'generic'; readonly scope?: 'XS' | 'S' | 'M' | 'L' | 'XL' },
-	repoPath: string,
-	runId:    string,
-) {
-	const intent = {
-		target:    args.target ?? 'code',
-		focused:   true,
-		focus:     args.focus,
-		scopeRef:  { kind: 'workspace', value: repoPath },
-		reasoning: `MCP invocation: ${args.focus}`,
-	};
-	return { runId, intent, ...(args.scope !== undefined ? { sizeHint: args.scope } : {}) };
-}
-
 async function handleAnalyze(
 	server: McpServer,
 	args:   {
@@ -1323,24 +1300,7 @@ async function handleAnalyze(
 	content:  { type: 'text'; text: string }[];
 	isError?: boolean;
 }> {
-	// Resolve the repo path: explicit param > CWD-contained registered repo >
-	// INSRC_REPO env > fail (session-aware; see resolve-repo.ts).
-	const repoPath = await resolveRepoPath(args.repo);
-	if (repoPath === undefined) {
-		return errorResult(
-			'no repo -- pass the `repo` param or set INSRC_REPO in the ' +
-			'MCP server\'s environment. The insrc daemon must have this repo ' +
-			'registered (see `insrc repo add`).',
-		);
-	}
-
-	// Assemble the intent. This mirrors the shape the daemon's
-	// `analyze.context.buildRun` RPC accepts (see daemon/analyze-rpc.ts).
-	const runId  = `mcp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-	const rpcParams = oneShotRunParams(args, repoPath, runId);
-	const intent = rpcParams.intent;
-
-	// Provider routing for the in-process analyze pipeline:
+	// Provider routing for the analyze pipeline:
 	//   1. Client declared `sampling` -> route inner calls back to it.
 	//   2. Else default to the CLI that invoked us (Claude Code ->
 	//      cli-claude, Codex -> cli-codex) so `claude`/`codex` power the
@@ -1350,42 +1310,16 @@ async function handleAnalyze(
 	const clientCaps = server.server.getClientCapabilities();
 	const samplingSupported = clientCaps?.sampling !== undefined;
 	const clientDefault = detectClientProvider(server.server.getClientVersion()?.name);
-
-	log.info(
-		{
-			runId,
-			repoPath,
-			target: intent.target,
-			sizeHint: args.scope ?? '(none)',
-			focus:  intent.focus.slice(0, 80),
-			client: server.server.getClientVersion()?.name ?? '(unknown)',
-			samplingSupported,
-			clientDefault: clientDefault ?? '(none)',
-		},
-		'insrc_analyze: dispatching',
-	);
-
-	const rpc = samplingSupported
-		? runWithSamplerContext(
-			makeSamplerFromMcpServer(server.server),
-			[],
-			() => buildRun(rpcParams),
-		)
-		: clientDefault !== undefined
-			? runWithClientProviderContext(clientDefault, () => buildRun(rpcParams))
-			: buildRun(rpcParams);
-
-	const result = await rpc;
-	if (!result.ok) {
-		// A failure after the lookups ran carries their report: the completeness
-		// line and the failed step's reason are printed with the code and message.
-		return errorResult(renderAnalyzeFailure(result.error));
-	}
-
-	const markdown = renderBundleAsMarkdown(result.bundle);
-	return {
-		content: [{ type: 'text', text: markdown }],
-	};
+	return runAnalyzeOneShot(args, {
+		clientName: server.server.getClientVersion()?.name,
+		samplingSupported,
+		clientDefault,
+		wrap: <T>(fn: () => Promise<T>): Promise<T> => samplingSupported
+			? runWithSamplerContext(makeSamplerFromMcpServer(server.server), [], fn)
+			: clientDefault !== undefined
+				? runWithClientProviderContext(clientDefault, fn)
+				: fn(),
+	});
 }
 
 // ---------------------------------------------------------------------------

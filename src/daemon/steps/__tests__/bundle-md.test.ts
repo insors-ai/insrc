@@ -7,8 +7,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { COMPLETENESS_NOT_RECORDED, renderCompletenessLine, type AnswerReport } from '../../analyze/completeness.js';
-import type { AnalyzeContextBundle } from '../../analyze/context/types.js';
+import { COMPLETENESS_NOT_RECORDED, renderCompletenessLine, type AnswerReport } from '../../../analyze/completeness.js';
+import type { AnalyzeContextBundle } from '../../../analyze/context/types.js';
 import { renderBundleAsMarkdown } from '../bundle-md.js';
 
 function makeBundle(overrides?: Partial<AnalyzeContextBundle>): AnalyzeContextBundle {

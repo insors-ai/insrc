@@ -11,9 +11,9 @@
  * See docs/plans/mcp-multi-turn-analyze.md for the full protocol design.
  */
 
-import type { ExecutedExploration, ExplorationPlan } from '../../analyze/explore/index.js';
-import type { BundleMeta } from '../../analyze/context/types.js';
-import type { AnswerReport } from '../../analyze/completeness.js';
+import type { ExecutedExploration, ExplorationPlan } from '../../../analyze/explore/index.js';
+import type { BundleMeta } from '../../../analyze/context/types.js';
+import type { AnswerReport } from '../../../analyze/completeness.js';
 
 // ---------------------------------------------------------------------------
 // Input phases

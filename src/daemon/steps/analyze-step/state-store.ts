@@ -41,7 +41,7 @@
 
 import { randomBytes } from 'node:crypto';
 
-import { getLogger } from '../../shared/logger.js';
+import { getLogger } from '../../../shared/logger.js';
 import type { StepStatePayload } from './state.js';
 
 const log = getLogger('mcp:analyze-step:state-store');

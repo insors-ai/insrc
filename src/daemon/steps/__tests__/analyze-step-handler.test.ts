@@ -16,7 +16,7 @@ import { after as afterAll } from 'node:test';
 import { mkdtempSync as mkdtempSyncRaw, rmSync as rmSyncForStore } from 'node:fs';
 import { tmpdir as tmpdirForStore } from 'node:os';
 import { join as joinForStore } from 'node:path';
-import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
+import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 
 // This file reaches the graph store through code that takes no path. Give it a
 // temporary one: the store at the default path belongs to the daemon alone
@@ -30,7 +30,7 @@ afterAll(async () => {
 import assert from 'node:assert/strict';
 
 import { handleAnalyzeStep } from '../analyze-step/handler.js';
-import { _setResolveForCwdForTests } from '../resolve-repo.js';
+import { _setResolveForCwdForTests } from '../../../mcp/resolve-repo.js';
 import type {
 	StepOutputEmitBundle,
 	StepOutputEmitPlan,

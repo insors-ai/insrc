@@ -24,8 +24,8 @@
  * the one-shot cache.
  */
 
-import type { AnalyzeContextBundle } from '../../analyze/context/types.js';
-import type { ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { AnalyzeContextBundle } from '../../../analyze/context/types.js';
+import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 
 export interface StepCacheLookupArgs {
 	readonly repoPath:       string;

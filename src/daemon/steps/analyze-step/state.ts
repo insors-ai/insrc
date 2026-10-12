@@ -28,14 +28,14 @@
  * See state-store.ts for the store's TTL + LRU eviction contract.
  */
 
-import type { AnalyzeScope, ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { AnalyzeScope, ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type {
 	ExecutedPlan,
 	ExplorationPlan,
 	ExplorationType,
 	StepPlanResumeState,
-} from '../../analyze/explore/index.js';
-import type { SynthesizerPromptKey } from '../../analyze/context/synthesizer.js';
+} from '../../../analyze/explore/index.js';
+import type { SynthesizerPromptKey } from '../../../analyze/context/synthesizer.js';
 
 import { loadState, replaceState, saveState, StateTokenNotFound } from './state-store.js';
 

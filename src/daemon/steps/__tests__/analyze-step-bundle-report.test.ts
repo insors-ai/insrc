@@ -7,9 +7,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildCompleteness, renderCompletenessLine } from '../../analyze/completeness.js';
-import type { ExecutedPlan, ExplorationPlan } from '../../analyze/explore/types.js';
-import type { ClassifiedIntent } from '../../shared/analyze-types.js';
+import { buildCompleteness, renderCompletenessLine } from '../../../analyze/completeness.js';
+import type { ExecutedPlan, ExplorationPlan } from '../../../analyze/explore/types.js';
+import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import { handleBundle } from '../analyze-step/phases/bundle.js';
 import { encodeState, STATE_VERSION, type StepStatePayload } from '../analyze-step/state.js';
 import type { StepInputBundle, StepOutputDone, StepOutputError } from '../analyze-step/types.js';

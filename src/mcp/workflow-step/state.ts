@@ -8,7 +8,7 @@
  * actual state server-side (keyed by a 22-char opaque token) and
  * hands the token to the outer LLM to echo verbatim across turns.
  *
- * See `mcp/analyze-step/state.ts` for the V1→V2 story behind the
+ * See `daemon/steps/analyze-step/state.ts` for the V1→V2 story behind the
  * token approach.
  */
 

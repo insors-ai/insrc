@@ -13,9 +13,9 @@
  * drives the later phases.
  */
 
-import { resolveScopeForTarget } from '../../analyze/context/scope.js';
-import type { ResolvedScope, ScopeDeps } from '../../analyze/context/scope.js';
-import type { ClassifiedIntent } from '../../shared/analyze-types.js';
+import { resolveScopeForTarget } from '../../../analyze/context/scope.js';
+import type { ResolvedScope, ScopeDeps } from '../../../analyze/context/scope.js';
+import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 
 /**
  * Today the start phase always builds a workspace scope, which every

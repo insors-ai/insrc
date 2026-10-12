@@ -11,7 +11,7 @@ import { after as afterAll } from 'node:test';
 import { mkdtempSync as mkdtempSyncRaw, rmSync as rmSyncForStore } from 'node:fs';
 import { tmpdir as tmpdirForStore } from 'node:os';
 import { join as joinForStore } from 'node:path';
-import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
+import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 
 // This file reaches the graph store through code that takes no path. Give it a
 // temporary one: the store at the default path belongs to the daemon alone
@@ -24,12 +24,12 @@ afterAll(async () => {
 });
 import assert from 'node:assert/strict';
 
-import type { LoadedConnections } from '../../daemon/db/config.js';
-import { ScopeKindTargetMismatchError } from '../../analyze/context/invariants.js';
-import type { ScopeDeps } from '../../analyze/context/scope.js';
-import { prepareDecompose } from '../../analyze/context/decomposer.js';
-import type { AnalyzeTarget, ClassifiedIntent } from '../../shared/analyze-types.js';
-import type { RegisteredRepo } from '../../shared/types.js';
+import type { LoadedConnections } from '../../db/config.js';
+import { ScopeKindTargetMismatchError } from '../../../analyze/context/invariants.js';
+import type { ScopeDeps } from '../../../analyze/context/scope.js';
+import { prepareDecompose } from '../../../analyze/context/decomposer.js';
+import type { AnalyzeTarget, ClassifiedIntent } from '../../../shared/analyze-types.js';
+import type { RegisteredRepo } from '../../../shared/types.js';
 import { handleAnalyzeStep } from '../analyze-step/handler.js';
 import { stepScope } from '../analyze-step/scope.js';
 import { decodeState, encodeState, STATE_VERSION, type StepStatePayload } from '../analyze-step/state.js';
@@ -50,7 +50,7 @@ function deps(): ScopeDeps & { calls: string[] } {
 	};
 }
 
-/** The intent the start phase builds (src/mcp/analyze-step/phases/start.ts). */
+/** The intent the start phase builds (src/daemon/steps/analyze-step/phases/start.ts). */
 function startIntent(target: AnalyzeTarget, repoPath = REPO): ClassifiedIntent {
 	return {
 		target,

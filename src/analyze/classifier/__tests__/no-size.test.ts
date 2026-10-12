@@ -112,7 +112,7 @@ test('a source scan finds no call that picks a size with a model and no literal 
 	assert.ok(read('config/config-catalog.ts').includes("'analyze.scope.pick'"), 'the catalog retires the role id');
 
 	// --- The four places that set M before: no literal size is assigned or defaulted there. ---
-	const places = ['mcp/server.ts', 'mcp/analyze-step/phases/start.ts', 'daemon/workflow-rpc.ts', 'analyze/explore/freeform-probe.ts'];
+	const places = ['daemon/steps/analyze-oneshot.ts', 'daemon/steps/analyze-step/phases/start.ts', 'daemon/workflow-rpc.ts', 'analyze/explore/freeform-probe.ts'];
 	const assigned = new RegExp(`\\bscope\\s*[:=]\\s*'${SIZE}'`);
 	const defaulted = new RegExp(`\\?\\?\\s*'${SIZE}'`);
 	for (const rel of places) {
@@ -125,8 +125,8 @@ test('a source scan finds no call that picks a size with a model and no literal 
 	assert.ok(assigned.test("\t\tscope:     'M',") && assigned.test("scope = 'XL'"));
 	assert.ok(defaulted.test("const scope  = input.scope  ?? 'M';") && defaulted.test("args.scope ?? 'M'"));
 	// And each place still handles the size in some way, so the scan is not passing on an emptied file.
-	assert.ok(code(read('mcp/server.ts')).includes('sizeHint'));
-	assert.ok(code(read('mcp/analyze-step/phases/start.ts')).includes('measureResolvedScope'));
+	assert.ok(code(read('daemon/steps/analyze-oneshot.ts')).includes('sizeHint'));
+	assert.ok(code(read('daemon/steps/analyze-step/phases/start.ts')).includes('measureResolvedScope'));
 	assert.ok(code(read('daemon/workflow-rpc.ts')).includes('UnsizedIntent'));
 	assert.ok(code(read('analyze/explore/freeform-probe.ts')).includes('measureOwnRequest'));
 });

@@ -16,20 +16,20 @@
  *    and seed the state blob with stage='awaiting_plan'.
  */
 
-import { prepareDecompose } from '../../../analyze/context/decomposer.js';
-import { resolveRepoPath } from '../../resolve-repo.js';
-import { resolveRepoLastIndexedAt } from '../../../analyze/context/driver.js';
+import { prepareDecompose } from '../../../../analyze/context/decomposer.js';
+import { resolveRepoPath } from '../../../../mcp/resolve-repo.js';
+import { resolveRepoLastIndexedAt } from '../../../../analyze/context/driver.js';
 import { renderBundleAsMarkdown } from '../../bundle-md.js';
 import { readBundleForStep } from '../cache-lookup.js';
 import { encodeState, STATE_VERSION, type StepStatePayload } from '../state.js';
 import { stepScope } from '../scope.js';
 import { pickSynthesizerKey } from '../synthesizer-key.js';
 import type { StepInputStart, StepOutputDone, StepOutputEmitPlan } from '../types.js';
-import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
-import { measureResolvedScope } from '../../../analyze/measure.js';
-import type { UnsizedIntent } from '../../../analyze/measure.js';
-import { getLogger } from '../../../shared/logger.js';
-import { SCHEMA_VERSION } from '../../../analyze/context/schema.js';
+import type { ClassifiedIntent } from '../../../../shared/analyze-types.js';
+import { measureResolvedScope } from '../../../../analyze/measure.js';
+import type { UnsizedIntent } from '../../../../analyze/measure.js';
+import { getLogger } from '../../../../shared/logger.js';
+import { SCHEMA_VERSION } from '../../../../analyze/context/schema.js';
 
 const log = getLogger('mcp:analyze-step:start');
 

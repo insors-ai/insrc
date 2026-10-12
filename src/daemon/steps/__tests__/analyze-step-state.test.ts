@@ -11,7 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import type { ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import {
 	assertStage,
 	decodeState,

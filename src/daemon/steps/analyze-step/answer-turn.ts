@@ -15,11 +15,11 @@
  * measure, its measure line.
  */
 
-import { renderReportHead } from '../../analyze/completeness.js';
-import { prepareSynthesize, SynthesizerPromptMissingError } from '../../analyze/context/synthesizer.js';
-import { reportFromLookups } from '../../analyze/explore/answer-report.js';
-import type { ExecutedPlan } from '../../analyze/explore/types.js';
-import type { RequestMeasure } from '../../analyze/measure.js';
+import { renderReportHead } from '../../../analyze/completeness.js';
+import { prepareSynthesize, SynthesizerPromptMissingError } from '../../../analyze/context/synthesizer.js';
+import { reportFromLookups } from '../../../analyze/explore/answer-report.js';
+import type { ExecutedPlan } from '../../../analyze/explore/types.js';
+import type { RequestMeasure } from '../../../analyze/measure.js';
 import type { StepErrorData } from './types.js';
 
 /** The step tool's code for an answer prompt that is missing after the lookups ran. */

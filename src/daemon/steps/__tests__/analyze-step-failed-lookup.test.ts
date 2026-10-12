@@ -13,16 +13,16 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { stepPlan } from '../../analyze/explore/executor.js';
-import { getNarrowRunner } from '../../analyze/explore/index.js';
-import type { Exploration, ExplorationOutput, ExplorationPlan, FailedExplorationOutput } from '../../analyze/explore/types.js';
-import { getDb } from '../../db/client.js';
-import { upsertEntities } from '../../db/entities.js';
-import { getCachedExploration } from '../../db/exploration-cache.js';
-import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
-import { addRepo } from '../../db/repos.js';
-import type { ClassifiedIntent } from '../../shared/analyze-types.js';
-import type { Entity, EntityKind } from '../../shared/types.js';
+import { stepPlan } from '../../../analyze/explore/executor.js';
+import { getNarrowRunner } from '../../../analyze/explore/index.js';
+import type { Exploration, ExplorationOutput, ExplorationPlan, FailedExplorationOutput } from '../../../analyze/explore/types.js';
+import { getDb } from '../../../db/client.js';
+import { upsertEntities } from '../../../db/entities.js';
+import { getCachedExploration } from '../../../db/exploration-cache.js';
+import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
+import { addRepo } from '../../../db/repos.js';
+import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
+import type { Entity, EntityKind } from '../../../shared/types.js';
 import { handleNarrow } from '../analyze-step/phases/narrow.js';
 import { decodeState, encodeState, STATE_VERSION, type StepStatePayload } from '../analyze-step/state.js';
 import type { StepInputNarrow, StepOutputEmitBundle, StepOutputEmitNarrow, StepOutputError } from '../analyze-step/types.js';

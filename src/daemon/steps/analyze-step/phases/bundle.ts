@@ -24,9 +24,9 @@
 import {
 	finalizeSynthesize,
 	SynthesizerSchemaUnrecoverable,
-} from '../../../analyze/context/synthesizer.js';
-import { SCHEMA_VERSION } from '../../../analyze/context/schema.js';
-import { getLogger } from '../../../shared/logger.js';
+} from '../../../../analyze/context/synthesizer.js';
+import { SCHEMA_VERSION } from '../../../../analyze/context/schema.js';
+import { getLogger } from '../../../../shared/logger.js';
 
 import { renderBundleAsMarkdown } from '../../bundle-md.js';
 import {
@@ -46,10 +46,10 @@ import type {
 	BundleLayerName,
 	BundleMeta,
 	ShaperId,
-} from '../../../analyze/context/types.js';
-import type { BundleLayers } from '../../../analyze/context/driver.js';
-import { reportFromLookups } from '../../../analyze/explore/answer-report.js';
-import { measureLookupResults } from '../../../analyze/measure.js';
+} from '../../../../analyze/context/types.js';
+import type { BundleLayers } from '../../../../analyze/context/driver.js';
+import { reportFromLookups } from '../../../../analyze/explore/answer-report.js';
+import { measureLookupResults } from '../../../../analyze/measure.js';
 
 const log = getLogger('mcp:analyze-step:bundle');
 

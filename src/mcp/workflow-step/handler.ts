@@ -5,7 +5,7 @@
 
 /**
  * Top-level dispatcher for `insrc_workflow_step`. Mirrors the shape
- * of `mcp/analyze-step/handler.ts`.
+ * of `daemon/steps/analyze-step/handler.ts`.
  */
 
 import { appendFileSync } from 'node:fs';

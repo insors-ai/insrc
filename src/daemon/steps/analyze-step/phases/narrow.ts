@@ -24,14 +24,14 @@
  *    return emit_bundle.
  */
 
-import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
-import { failedOutput, getNarrowRunner, stepPlan } from '../../../analyze/explore/index.js';
-import type { Exploration, ExplorationOutput } from '../../../analyze/explore/index.js';
-import { putCachedExploration } from '../../../db/exploration-cache.js';
-import { getLogger } from '../../../shared/logger.js';
+import { validateAgainstSchema } from '../../../../agent/providers/structured-output.js';
+import { failedOutput, getNarrowRunner, stepPlan } from '../../../../analyze/explore/index.js';
+import type { Exploration, ExplorationOutput } from '../../../../analyze/explore/index.js';
+import { putCachedExploration } from '../../../../db/exploration-cache.js';
+import { getLogger } from '../../../../shared/logger.js';
 import { stepScope } from '../scope.js';
 import { prepareAnswerTurn } from '../answer-turn.js';
-import { measureLookupResults } from '../../../analyze/measure.js';
+import { measureLookupResults } from '../../../../analyze/measure.js';
 
 import {
 	assertStage,

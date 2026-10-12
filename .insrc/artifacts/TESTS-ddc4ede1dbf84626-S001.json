@@ -4,7 +4,7 @@
     "epicHash": "ddc4ede1dbf84626",
     "storyId": "S001",
     "createdAt": "2026-10-12T07:35:29.855Z",
-    "updatedAt": "2026-10-12T07:57:44.563Z",
+    "updatedAt": "2026-10-12T08:00:24.231Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:11:33.406Z",
     "epicSlug": "page-dev-chat-transcript-show-latest"
@@ -1140,6 +1140,93 @@
               },
               {
                 "title": "registry forgetPendingIn drops the pending tool entries whose node is given, and a later result for one renders as its own row",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "31ac8a7f",
+        "ranAt": "2026-10-12T08:00:24.231Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pager reset: a restore sets the first held index and total and ends at the bottom",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+                "title": "pager reset: a restore sets the first held index and total and ends at the bottom",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 351,
+            "titles": [
+              {
+                "title": "a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held",
+                "result": "pass"
+              },
+              {
+                "title": "a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom",
+                "result": "pass"
+              },
+              {
+                "title": "one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row",
+                "result": "pass"
+              },
+              {
+                "title": "pager reset: a restore sets the first held index and total and ends at the bottom",
                 "result": "pass"
               }
             ],

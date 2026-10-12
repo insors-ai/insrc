@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -136,3 +136,37 @@ Run at 2026-10-12T07:57:44.563Z on commit `2884a6f5`. Tests check: **passed**. 3
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/fake-dom.test.ts` | 0 | 3 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` | 0 | 70 | 0.3 s |  |
+
+## t5
+
+Run at 2026-10-12T08:00:24.231Z on commit `31ac8a7f`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: pager reset: a restore sets the first held index and total and ends at the bottom**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pager reset: a restore sets the first held index and total and ends at the bottom | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` | 0 | 4 | 0.4 s |  |

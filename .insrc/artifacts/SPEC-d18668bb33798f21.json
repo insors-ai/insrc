@@ -32,7 +32,8 @@
       "reviewedAt": "2026-09-22T10:18:06.585Z",
       "model": "client"
     },
-    "approvedAt": "2026-09-22T10:18:24.620Z"
+    "approvedAt": "2026-09-22T10:18:24.620Z",
+    "standalone": true
   },
   "body": {
     "category": "design",

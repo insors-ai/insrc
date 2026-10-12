@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "c5824e17eccf0c14",
-    "storyId": "s3"
+    "storyId": "s3",
+    "epicSlug": "make-workflow-framework-s-generated-artifact",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z"
   },
   "body": {
     "kind": "code-review",

@@ -22,6 +22,7 @@ import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode }
 // apart from a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial, type ProviderRegistry, type ProviderId } from './cli-adapter.js';
 import { createApprovalQueue, type ApprovalResolution } from './approval-queue.js';
+import { pageBefore } from './transcript-window.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type TurnSink } from './turn-lifecycle.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
@@ -211,17 +212,30 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // S005: (re)post the extension-local chat history so the webview history-dropdown stays current.
   const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
 
+  // Story E20261012ddc4ede1:S001: post a live event with the absolute transcript index of the row
+  // it wrote (none for an event that writes no row), so the webview knows which row each node is.
+  const postLive = (event: TurnEvent, rowIndex: number | undefined): void =>
+    post({ type: 'turn-event', event, ...(rowIndex !== undefined ? { rowIndex } : {}) });
+
+  // Story E20261012ddc4ede1:S001: every session-restored goes through here, with the absolute
+  // index of its first row and the transcript's total row count.
+  const postRestored = (s: ChatSession): void =>
+    post({ type: 'session-restored', sessionId: s.id, transcript: s.transcript, mode: permissionMode, firstIndex: 0, total: s.transcript.length });
+
   // S003 (dev-chat ux polish): record a resolved permission decision. Mirrors the tool-result
   // dual persist+render path (appendEvent): emit it LIVE as a turn-event the webview renders via the
   // registry (a resolved chip), AND persist it STRUCTURALLY as a role:'permission-outcome' transcript
   // row (+ save) so a restored session shows the decided chip instead of the live-only approval card.
   const recordPermissionOutcome = (toolName: string, approved: boolean, requestId: string): void => {
     const decision: 'approved' | 'rejected' = approved ? 'approved' : 'rejected';
-    post({ type: 'turn-event', event: { kind: 'permission-outcome', turnId: `perm-${requestId}`, toolName, decision } });
+    // Story E20261012ddc4ede1:S001: write the row first, so the event carries its row index.
+    let rowIndex: number | undefined;
     if (session !== undefined) {
       session.transcript.push({ role: 'permission-outcome', toolName, decision, at: now() });
-      trySave(session);
+      rowIndex = session.transcript.length - 1;
     }
+    postLive({ kind: 'permission-outcome', turnId: `perm-${requestId}`, toolName, decision }, rowIndex);
+    if (session !== undefined) trySave(session);
   };
 
   // ISSUE-6a811b8a: where a request is answered. The adapters set it; a request without it is
@@ -365,11 +379,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // STRUCTURALLY as a role:'selection-outcome' transcript row (+ save) so a restored session shows the
   // decided chip instead of the live-only widget. `chosen` carries the LABELS (host-resolved from ids).
   const recordSelectionOutcome = (requestId: string, chosen: readonly string[]): void => {
-    post({ type: 'turn-event', event: { kind: 'selection-outcome', turnId: `sel-${requestId}`, chosen } });
+    // Story E20261012ddc4ede1:S001: write the row first, so the event carries its row index.
+    let rowIndex: number | undefined;
     if (session !== undefined) {
       session.transcript.push({ role: 'selection-outcome', chosen: [...chosen], at: now() });
-      trySave(session);
+      rowIndex = session.transcript.length - 1;
     }
+    postLive({ kind: 'selection-outcome', turnId: `sel-${requestId}`, chosen }, rowIndex);
+    if (session !== undefined) trySave(session);
   };
 
   // S001 (bugfix): (re)send the full view state to the webview. Called on every 'ready' handshake
@@ -391,14 +408,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     turns.follow(s, {
       onEvent: (ev) => {
         // A followed turn's approval requests go through the queue like a live one's.
+        // Story E20261012ddc4ede1:S001: write the row first, then post the event with the row's
+        // index. The write does not depend on whether the session is shown.
+        const rowIndex = appendEvent(s, ev);
         if (!disposed && session === s) {
           if (ev.kind === 'approval-request') {
             followedTurns.add(ev.turnId);
             enqueueApproval(ev);
-          } else post({ type: 'turn-event', event: ev });
+          } else postLive(ev, rowIndex);
           if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
         }
-        appendEvent(s, ev);
       },
       onEnd: () => {
         if (session !== s) return;
@@ -420,7 +439,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // to history; it enters the store only on the first turn (runTurn's save).
     if (session === undefined) session = deps.store.draft(available[0]!);
     permissionMode = modeOf(session); // S001 (bugfix): adopt the active session's persisted mode
-    post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript, mode: permissionMode });
+    postRestored(session);
     // ISSUE-6a811b8a: session-restored cleared the webview, including the shown approval card;
     // post the queue head again (once) with its position so the queue can still be answered.
     shownApproval = undefined;
@@ -776,7 +795,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // suppressEcho so the internal "Approved — run exactly this now: …" prompt is NOT echoed as a
     // user bubble (only the resolved permission-outcome chip is shown). A normal submit still echoes.
     if (opts?.suppressEcho !== true) {
-      post({ type: 'user-row', text: prompt, key: `r${s.transcript.length - 1}` });
+      post({ type: 'user-row', text: prompt, key: `r${s.transcript.length - 1}`, rowIndex: s.transcript.length - 1 });
     }
     // S005: name the chat from its FIRST user prompt (clipped) so the history dropdown
     // rows are distinguishable; a whitespace-only prompt is already rejected above, so
@@ -806,9 +825,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       },
       onEvent: (ev) => {
         // ISSUE-6a811b8a: an approval-request is queued, not posted; only the queue head is shown.
+        // Story E20261012ddc4ede1:S001: write the row first, then post the event with its index.
+        const rowIndex = appendEvent(s, ev);
         if (ev.kind === 'approval-request') enqueueApproval(ev);
-        else post({ type: 'turn-event', event: ev });
-        appendEvent(s, ev);
+        else postLive(ev, rowIndex);
         // ISSUE-6a811b8a: the turn's end lets its batch of turn-ended requests complete.
         if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
         // S004 (dev-chat ux polish): remember a surfaced selection request's options (keyed by
@@ -835,16 +855,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     await turns.start(s, req, sink);
   }
 
-  function appendEvent(s: ChatSession, ev: TurnEvent): void {
+  // Returns the absolute transcript index of the row the event wrote, or undefined when it wrote none.
+  function appendEvent(s: ChatSession, ev: TurnEvent): number | undefined {
     if (ev.kind === 'assistant-delta') {
       s.transcript.push({ role: 'assistant', text: ev.text, at: now() });
-      return;
+      return s.transcript.length - 1;
     }
     // 'status' is a transient progress tick (thinking/streaming/tool/editing): it is
     // rendered LIVE in the webview (from the posted turn-event) but NOT persisted —
     // persisting every tick would bloat the durable transcript and replay as noise on
     // restore. The durable lifecycle facts (tool-call/file-edit/done/error) ARE kept.
-    if (ev.kind === 'status') return;
+    if (ev.kind === 'status') return undefined;
     // S001 (dev-chat ux polish): a tool result persists STRUCTURALLY as a role:'tool-result' row
     // (command + output), not as a flat marker — so a restored transcript re-renders the command
     // + collapsed output legibly. markerFor returns null for it, so this branch owns its persistence.
@@ -855,7 +876,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         output: ev.output,
         at: now(),
       });
-      return;
+      return s.transcript.length - 1;
     }
     // Durable markers are single-sourced through markerFor — the SAME mapper the webview
     // uses — so a host row and its live marker never drift. done now persists a marker row
@@ -865,7 +886,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // each marker's glyph + phosphor tone (identical to live) instead of plain text.
     if (marker !== null) {
       s.transcript.push({ role: 'marker', text: marker.label, cssClass: marker.cssClass, at: now() });
+      return s.transcript.length - 1;
     }
+    return undefined;
   }
 
   function handleMessage(message: unknown): void {
@@ -910,7 +933,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // repeatedly starting/abandoning new chats never leaves empty sessions behind.
         session = deps.store.draft(msg.provider);
         permissionMode = modeOf(session);
-        post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript, mode: permissionMode });
+        postRestored(session);
         postHistory(); // refresh the dropdown (the draft is not yet listed until it has a message)
         return;
       }
@@ -929,9 +952,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         dropQueuedApprovals(); // ISSUE-6a811b8a: a chat switch drops the waiting requests
         session = s;
         permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
-        post({ type: 'session-restored', sessionId: s.id, transcript: s.transcript, mode: permissionMode });
+        postRestored(s);
         postHistory(); // S005: keep the dropdown selection/order in sync
         followLiveTurn(s);
+        return;
+      }
+      case 'load-older': {
+        // Story E20261012ddc4ede1:S001: the page of rows ending just before `before`. A request for
+        // a session that is no longer the active one (the user switched chats) is ignored.
+        if (typeof msg.sessionId !== 'string' || !Number.isInteger(msg.before)) return;
+        if (session === undefined || session.id !== msg.sessionId) return;
+        const page = pageBefore(session.transcript, msg.before);
+        const before = Math.min(Math.max(0, msg.before), session.transcript.length);
+        post({ type: 'transcript-page', sessionId: session.id, before, firstIndex: page.firstIndex, rows: [...page.rows], total: session.transcript.length });
         return;
       }
       case 'set-edit-mode': {

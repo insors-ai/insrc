@@ -7,6 +7,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createChatPanelHost, type ChatPanelChannel, type ChatEditGovernanceDeps } from '../chat-panel.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, RunOptions } from '../cli-adapter.js';
@@ -3246,4 +3247,223 @@ test('reloading the webview while requests are queued re-posts the head card, an
   assert.equal(approvalCards(fc).at(-1)!.requestId, 'k3', 'deciding it continues the queue');
   fc.send(env('permission-decision', { requestId: 'k3', decision: 'deny' }));
   assert.deepEqual(outcomes(fc).map((o) => o.toolName), ['Edit', 'Write', 'Bash']);
+});
+
+// ---- Story E20261012ddc4ede1:S001: the transcript is paged ---------------------------
+
+/** A stored claude session of `turns` whole turns: a user row, then `perTurn - 1` assistant rows. */
+function longSession(turns: number, perTurn: number): { store: ReturnType<typeof createInMemoryChatSessionStore>; id: string; rows: number } {
+  const store = createInMemoryChatSessionStore();
+  const s = store.create('claude');
+  for (let t = 0; t < turns; t++) {
+    s.transcript.push({ role: 'user', text: `q${t}`, at: 't' });
+    for (let k = 1; k < perTurn; k++) s.transcript.push({ role: 'assistant', text: `a${t}.${k}`, at: 't' });
+  }
+  store.save(s);
+  return { store, id: s.id, rows: s.transcript.length };
+}
+const posted = (fc: FakeChannel, type: string): Array<Record<string, unknown>> => fc.posted.filter((m) => m.payload.type === type).map((m) => m.payload);
+const activeId = (fc: FakeChannel): string => posted(fc, 'session-restored').at(-1)!['sessionId'] as string;
+
+test('live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 't1', phase: 'thinking' },
+    { kind: 'assistant-delta', turnId: 't1', text: 'hello' },
+    { kind: 'tool-call', turnId: 't1', tool: 'Bash', command: 'ls' },
+    { kind: 'tool-result', turnId: 't1', command: 'ls', output: 'a\nb' },
+    { kind: 'selection-request', turnId: 't1', requestId: 'sel-1', prompt: 'Pick', options: [{ id: 'a', label: 'Alpha' }] },
+    inTurn('P1', 'Bash'),
+  ];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ codex: scriptedAdapter(evs, { hang: true }) }, ['codex']), store, cwd: () => '/repo' });
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'go' }));
+    await waitFor(() => approvalCards(fc).length === 1);
+    fc.send(env('permission-decision', { requestId: 'P1', decision: 'deny' }));
+    fc.send(env('selection-decision', { requestId: 'sel-1', selected: ['a'] }));
+    await waitFor(() => turnEvents(fc).some((e) => e.kind === 'selection-outcome'));
+    const transcript = store.get(activeId(fc))!.transcript;
+    const roleOf: Record<string, string> = { 'assistant-delta': 'assistant', 'tool-call': 'marker', 'tool-result': 'tool-result', 'permission-outcome': 'permission-outcome', 'selection-outcome': 'selection-outcome' };
+    const live = posted(fc, 'turn-event');
+    const seenKinds: string[] = [];
+    for (const m of live) {
+      const kind = (m['event'] as TurnEvent).kind;
+      const want = roleOf[kind];
+      if (want === undefined) {
+        assert.equal(m['rowIndex'], undefined, `${kind} writes no row and carries no rowIndex`);
+        continue;
+      }
+      seenKinds.push(kind);
+      assert.equal(typeof m['rowIndex'], 'number', `${kind} carries a rowIndex`);
+      assert.equal(transcript[m['rowIndex'] as number]?.role, want, `${kind} points at its own row`);
+    }
+    for (const k of Object.keys(roleOf)) assert.ok(seenKinds.includes(k), `a ${k} row was posted`);
+    assert.ok(live.some((m) => (m['event'] as TurnEvent).kind === 'status'), 'a status event was posted');
+    assert.ok(live.some((m) => (m['event'] as TurnEvent).kind === 'approval-request'), 'an approval-request was posted');
+    // The user row: its rowIndex is the index its key already carries.
+    const echo = posted(fc, 'user-row')[0]!;
+    assert.deepEqual([echo['rowIndex'], echo['key']], [0, 'r0']);
+    assert.equal(transcript[0]!.role, 'user');
+    // Indexes are distinct and increasing in post order.
+    const idx = live.map((m) => m['rowIndex']).filter((x): x is number => typeof x === 'number');
+    assert.deepEqual(idx, [...idx].sort((a, b) => a - b));
+    assert.equal(new Set(idx).size, idx.length);
+  } finally {
+    fc.fireDispose();
+  }
+});
+
+test('write-then-post order: when each live row is posted, the transcript already holds it at that index', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [
+    { kind: 'assistant-delta', turnId: 't1', text: 'one' },
+    { kind: 'tool-result', turnId: 't1', command: 'ls', output: 'x' },
+    refused('W1', 'Edit'),
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  const id = activeId(fc);
+  // At the moment of each post, read the row the message names.
+  const atPost: Array<{ kind: string; rowIndex: number; lengthThen: number; roleThen: string | undefined }> = [];
+  const orig = fc.channel.postMessage;
+  fc.channel.postMessage = (m: unknown) => {
+    const p = (m as { payload: Record<string, unknown> }).payload;
+    if (p['type'] === 'turn-event' && typeof p['rowIndex'] === 'number') {
+      const t = store.get(id)?.transcript ?? [];
+      atPost.push({ kind: (p['event'] as TurnEvent).kind, rowIndex: p['rowIndex'], lengthThen: t.length, roleThen: t[p['rowIndex']]?.role });
+    }
+    return orig(m);
+  };
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'W1', decision: 'deny' }));
+  assert.deepEqual(atPost.map((a) => a.kind), ['assistant-delta', 'tool-result', 'done', 'permission-outcome']);
+  for (const a of atPost) {
+    assert.equal(a.rowIndex, a.lengthThen - 1, `${a.kind}: the row was the last one written when it was posted`);
+    assert.ok(a.roleThen !== undefined, `${a.kind}: the transcript already held the row`);
+  }
+});
+
+// The plan names this check "a turn followed for a session that is not shown still writes its rows
+// and posts nothing". That state cannot be reached: a chat switch or a closed panel aborts the
+// follow at once (turn-lifecycle detach), so no event is delivered for a session that is not
+// shown. What holds, and is pinned here: a followed row is written before it is posted; once the
+// user switches away the follow delivers nothing more (posts nothing, writes nothing: the rest is
+// read again on the next resume); and in the code the write stays outside the "is it shown" guard,
+// so it never depends on that guard.
+test('a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard', async () => {
+  const { store, id } = storeWithLiveTurn(1);
+  const fc = fakeChannel();
+  let switched = false;
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {},
+    async *resume(): AsyncIterable<TurnEvent> {
+      yield { kind: 'assistant-delta', turnId: 't1', text: 'while shown' };
+      fc.send(env('new-chat', { provider: 'claude' })); // the user switches to a new chat
+      switched = true;
+      yield { kind: 'assistant-delta', turnId: 't1', text: 'after the switch' };
+    },
+    cancel: async () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 2, isAlive: (pid) => pid === 2 });
+  // At the moment a followed row is posted, the transcript already holds it.
+  const lengthAtPost: number[] = [];
+  const orig = fc.channel.postMessage;
+  fc.channel.postMessage = (m: unknown) => {
+    const pl = (m as { payload: Record<string, unknown> }).payload;
+    if (pl['type'] === 'turn-event' && typeof pl['rowIndex'] === 'number') lengthAtPost.push(store.get(id)!.transcript.length);
+    return orig(m);
+  };
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  await waitFor(() => switched);
+  await new Promise((r) => setTimeout(r, 30));
+  const deltas = posted(fc, 'turn-event').filter((m) => (m['event'] as TurnEvent).kind === 'assistant-delta');
+  assert.deepEqual(deltas.map((m) => [(m['event'] as { text: string }).text, m['rowIndex']]), [['while shown', 2]], 'the row posted while shown carries its index; nothing is posted after the switch');
+  assert.deepEqual(lengthAtPost, [3], 'the row was already written when it was posted');
+  const texts = store.get(id)!.transcript.filter((r) => r.role === 'assistant').map((r) => (r as { text: string }).text);
+  assert.deepEqual(texts, ['started', 'while shown'], 'the stopped follow writes nothing more; the rest is left for the next resume');
+  assert.ok(store.get(id)!.liveTurn !== undefined, 'the cursor is kept, so the turn can be followed again');
+
+  // Structure: in the followed-turn sink the write comes first and is not inside the guard.
+  const src = readFileSync(new URL('../chat-panel.ts', import.meta.url), 'utf8');
+  const sink = src.slice(src.indexOf('turns.follow(s, {'), src.indexOf('onEnd: () => {', src.indexOf('turns.follow(s, {')));
+  const write = sink.indexOf('const rowIndex = appendEvent(s, ev);');
+  const guard = sink.indexOf('if (!disposed && session === s) {');
+  assert.ok(write !== -1 && guard !== -1 && write < guard, 'appendEvent runs before, and outside, the shown-session guard');
+});
+
+test('load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0', async () => {
+  const { store, id, rows } = longSession(50, 20); // 1,000 rows, a user row every 20
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  const all = store.get(id)!.transcript;
+  let before = 900;
+  const got: unknown[][] = [];
+  while (before > 0) {
+    const n = posted(fc, 'transcript-page').length;
+    fc.send(env('load-older', { sessionId: id, before }));
+    const pages = posted(fc, 'transcript-page');
+    assert.equal(pages.length, n + 1, 'exactly one page per request');
+    const page = pages.at(-1)!;
+    assert.deepEqual([page['sessionId'], page['before'], page['total']], [id, before, rows]);
+    const first = page['firstIndex'] as number;
+    assert.deepEqual(page['rows'], all.slice(first, before), 'the rows end just before `before`');
+    assert.equal(all[first]!.role, 'user', 'the page starts at a turn start');
+    assert.ok(first < before && before - first <= 200);
+    got.unshift(page['rows'] as unknown[]);
+    before = first;
+  }
+  assert.deepEqual(got.flat(), all.slice(0, 900), 'walking back reaches index 0 with no row skipped or repeated');
+  // Nothing older than index 0: an empty page whose firstIndex equals before.
+  fc.send(env('load-older', { sessionId: id, before: 0 }));
+  const last = posted(fc, 'transcript-page').at(-1)!;
+  assert.deepEqual([last['before'], last['firstIndex'], last['rows']], [0, 0, []]);
+});
+
+test('load-older for another session id, or with a malformed before or sessionId, posts nothing', async () => {
+  const { store, id } = longSession(20, 20);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  const n = fc.posted.length;
+  fc.send(env('load-older', { sessionId: 'some-other-session', before: 100 }));
+  fc.send(env('load-older', { sessionId: id, before: '100' }));
+  fc.send(env('load-older', { sessionId: id, before: 12.5 }));
+  fc.send(env('load-older', { sessionId: id }));
+  fc.send(env('load-older', { sessionId: 7, before: 100 }));
+  fc.send(env('load-older', { before: 100 }));
+  assert.equal(fc.posted.length, n, 'none of them is answered');
+  // The user switched chats while a request was in flight: the old session's request is ignored.
+  fc.send(env('new-chat', { provider: 'claude' }));
+  const m = fc.posted.length;
+  fc.send(env('load-older', { sessionId: id, before: 100 }));
+  assert.equal(fc.posted.length, m);
+});
+
+test('session-restored carries firstIndex 0 and total while the whole transcript is still sent', async () => {
+  const { store, id, rows } = longSession(3, 4);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  const draft = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual([draft['firstIndex'], draft['total'], (draft['transcript'] as unknown[]).length], [0, 0, 0], 'an empty draft');
+  fc.send(env('open-chat', { chatId: id }));
+  const opened = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual([opened['sessionId'], opened['firstIndex'], opened['total'], (opened['transcript'] as unknown[]).length], [id, 0, rows, rows]);
+  fc.send(env('ready'));
+  const again = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual([again['sessionId'], again['firstIndex'], again['total']], [id, 0, rows]);
+  fc.send(env('new-chat', { provider: 'claude' }));
+  const fresh = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual([fresh['firstIndex'], fresh['total']], [0, 0]);
 });

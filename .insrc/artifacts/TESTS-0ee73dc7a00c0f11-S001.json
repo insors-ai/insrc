@@ -5,7 +5,9 @@
     "storyId": "S001",
     "createdAt": "2026-10-10T06:23:16.048Z",
     "updatedAt": "2026-10-10T06:23:16.048Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "bug-analyze-planner-gives-plan-task",
+    "epicCreatedAt": "2026-10-09T14:43:15.174Z"
   },
   "body": {
     "tasks": [

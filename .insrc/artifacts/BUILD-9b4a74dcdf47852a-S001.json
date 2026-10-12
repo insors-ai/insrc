@@ -9,7 +9,8 @@
     "standalone": true,
     "sizeClass": "feature",
     "triageRationale": "One cohesive story under a single design: the build step's validate phase and check planner, the tool's input shape, a new record with its renderer, and the build record's link to it.",
-    "approvedAt": "2026-10-08T19:35:47.339Z"
+    "approvedAt": "2026-10-08T19:35:47.339Z",
+    "epicSlug": "add-test-record-artifact-build-flow"
   },
   "body": {
     "tasks": [

@@ -10,7 +10,9 @@
     "schemaVersion": 1,
     "epicHash": "9b4a74dcdf47852a",
     "storyId": "S001",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "add-test-record-artifact-build-flow",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

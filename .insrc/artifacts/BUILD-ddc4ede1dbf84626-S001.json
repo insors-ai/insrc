@@ -4,7 +4,7 @@
     "epicHash": "ddc4ede1dbf84626",
     "storyId": "S001",
     "createdAt": "2026-10-12T07:35:29.855Z",
-    "updatedAt": "2026-10-12T07:35:29.855Z",
+    "updatedAt": "2026-10-12T07:36:33.075Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:11:33.406Z",
@@ -15,9 +15,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "Adds transcript-window.ts: latestWindow and pageBefore cut a page by one rule (100 rows back from the end of the range, then back to the nearest user row within 100 more, else the plain cut), with `before` clamped. PAGE_ROWS is a fixed constant. Nothing uses the module yet.",
+    "summary": "protocol.ts gains the optional firstIndex/total on session-restored, optional rowIndex on turn-event and user-row, the load-older and transcript-page messages, and their entries in the two type lists. Types only; no behaviour changes.",
     "testRecord": {
       "md": "docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/TESTS.md"
     },
@@ -27,9 +31,37 @@
           "file": ".insrc/artifacts/PLAN-ddc4ede1dbf84626-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T07:35:29.855Z"
+        "timestamp": "2026-10-12T07:36:33.075Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:36:33.075Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:36:33.075Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:36:33.075Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/transcript-window.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T07:36:33.075Z"
       }
     ],
-    "commit": "f14226ea"
+    "commit": "c995dd34"
   }
 }

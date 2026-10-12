@@ -9,7 +9,8 @@
     "authoredBy": "controller",
     "triageRationale": "bugfix (small): one module (the plugin's delivery board), approach chosen with the user; issue then build, no LLD.",
     "updatedAt": "2026-10-10T12:20:39.036Z",
-    "approvedAt": "2026-10-10T12:20:39.390Z"
+    "approvedAt": "2026-10-10T12:20:39.390Z",
+    "epicSlug": "delivery-board-vs-code-plugin-group"
   },
   "body": {
     "focus": "ISSUE-7bc6e476 (bugfix, small: issue then build). Group the delivery board's Epics screen by stage: each epic in the stage box of its least-advanced story (Complete only when every story is complete), the same six collapsible boxes and open/hint/fold rules as the board and Issues screens, the reader's open/closed choice kept across a refresh, and epics with no stories in a 'No stories yet' note after the boxes; rows, search, Needs attention, counts and opening an epic unchanged. Make the app bar's Refresh an icon-only button with the accessible name 'Refresh' and a tooltip; CSP, text-only rendering and theme colours unchanged.",

@@ -4,7 +4,7 @@
     "epicHash": "c96a97a204fac22b",
     "storyId": "S001",
     "createdAt": "2026-10-12T09:10:47.854Z",
-    "updatedAt": "2026-10-12T09:10:47.854Z",
+    "updatedAt": "2026-10-12T09:14:01.747Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:26:48.214Z",
     "epicSlug": "every-save-chat-session-rewrites-its"
@@ -140,6 +140,144 @@
               },
               {
                 "title": "INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf are exported from session-store.ts and are the keys and checks the memento store itself uses",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "1c71c3f5",
+        "ranAt": "2026-10-12T09:14:01.747Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a save of a session with new rows appends exactly those rows to the rows file and replaces the head; the bytes written do not grow with the rows already stored (1,000 stored rows, one new row)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+                "title": "a save of a session with new rows appends exactly those rows to the rows file and replaces the head; the bytes written do not grow with the rows already stored (1,000 stored rows, one new row)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a save with no new rows writes the head only",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+                "title": "a save with no new rows writes the head only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a draft writes nothing until its first save, which writes its rows and then its head; create() saves at once",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+                "title": "a draft writes nothing until its first save, which writes its rows and then its head; create() saves at once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "get returns the saved session with every row variant, editMode, mode, nativeSessionId and liveTurn unchanged, and the same object on a second call without reading the files again",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+                "title": "get returns the saved session with every row variant, editMode, mode, nativeSessionId and liveTurn unchanged, and the same object on a second call without reading the files again",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "list reads head files only, never a rows file, and returns id, provider, title and updatedAt sorted by updatedAt descending",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+                "title": "list reads head files only, never a rows file, and returns id, provider, title and updatedAt sorted by updatedAt descending",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a damaged head reads as no session and is left out of list; a rows file with a torn last line is read without it and cut back before the next append; a bad line in the middle is skipped",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+                "title": "a damaged head reads as no session and is left out of list; a rows file with a torn last line is read without it and cut back before the next append; a bad line in the middle is skipped",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an id with characters outside A-Za-z0-9_- is stored under sessionFileName(id) and read back with its real id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+                "title": "an id with characters outside A-Za-z0-9_- is stored under sessionFileName(id) and read back with its real id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 297,
+            "titles": [
+              {
+                "title": "a save of a session with new rows appends exactly those rows to the rows file and replaces the head; the bytes written do not grow with the rows already stored (1,000 stored rows, one new row)",
+                "result": "pass"
+              },
+              {
+                "title": "a save with no new rows writes the head only",
+                "result": "pass"
+              },
+              {
+                "title": "a draft writes nothing until its first save, which writes its rows and then its head; create() saves at once",
+                "result": "pass"
+              },
+              {
+                "title": "get returns the saved session with every row variant, editMode, mode, nativeSessionId and liveTurn unchanged, and the same object on a second call without reading the files again",
+                "result": "pass"
+              },
+              {
+                "title": "list reads head files only, never a rows file, and returns id, provider, title and updatedAt sorted by updatedAt descending",
+                "result": "pass"
+              },
+              {
+                "title": "a damaged head reads as no session and is left out of list; a rows file with a torn last line is read without it and cut back before the next append; a bad line in the middle is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "an id with characters outside A-Za-z0-9_- is stored under sessionFileName(id) and read back with its real id",
                 "result": "pass"
               }
             ],

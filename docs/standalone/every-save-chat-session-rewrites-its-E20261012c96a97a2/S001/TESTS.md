@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -21,3 +21,55 @@ Run at 2026-10-12T09:10:47.854Z on commit `fff8f095`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/session-store.test.ts` | 0 | 26 | 0.3 s |  |
+
+## t2
+
+Run at 2026-10-12T09:14:01.747Z on commit `1c71c3f5`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: a save of a session with new rows appends exactly those rows to the rows file and replaces the head; the bytes written do not grow with the rows already stored (1,000 stored rows, one new row)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a save of a session with new rows appends exactly those rows to the rows file and replaces the head; the bytes written do not grow with the rows already stored (1,000 stored rows, one new row) | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: a save with no new rows writes the head only**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a save with no new rows writes the head only | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: a draft writes nothing until its first save, which writes its rows and then its head; create() saves at once**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a draft writes nothing until its first save, which writes its rows and then its head; create() saves at once | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: get returns the saved session with every row variant, editMode, mode, nativeSessionId and liveTurn unchanged, and the same object on a second call without reading the files again**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | get returns the saved session with every row variant, editMode, mode, nativeSessionId and liveTurn unchanged, and the same object on a second call without reading the files again | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: list reads head files only, never a rows file, and returns id, provider, title and updatedAt sorted by updatedAt descending**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | list reads head files only, never a rows file, and returns id, provider, title and updatedAt sorted by updatedAt descending | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: a damaged head reads as no session and is left out of list; a rows file with a torn last line is read without it and cut back before the next append; a bad line in the middle is skipped**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a damaged head reads as no session and is left out of list; a rows file with a torn last line is read without it and cut back before the next append; a bad line in the middle is skipped | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: an id with characters outside A-Za-z0-9_- is stored under sessionFileName(id) and read back with its real id**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an id with characters outside A-Za-z0-9_- is stored under sessionFileName(id) and read back with its real id | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` | 0 | 7 | 0.3 s |  |

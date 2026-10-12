@@ -4,7 +4,7 @@
     "epicHash": "c96a97a204fac22b",
     "storyId": "S001",
     "createdAt": "2026-10-12T09:10:47.854Z",
-    "updatedAt": "2026-10-12T09:10:47.854Z",
+    "updatedAt": "2026-10-12T09:14:01.747Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:26:48.214Z",
@@ -15,9 +15,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "session-store.ts now exports INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf unchanged, and its header and the liveTurn comment say sessions are kept in files under ~/.insrc/chat-sessions. No behaviour changed; one test pins the exports against what the memento store itself writes and accepts.",
+    "summary": "New session-file-store.ts: the SessionFilesFs seam with its node implementation, and createFileChatSessionStore keeping each session as a head file and an append-only rows file. A save appends the rows the session object has not yet written and replaces the head through a temporary file and a rename; get reads once and hands back the same object while the files are unchanged; list reads heads only. The tests run over a new in-memory fake that records every file call. The rules for several windows, whole-file writes, failing writes and the session cap are task 3 and are not in this commit.",
     "testRecord": {
       "md": "docs/standalone/every-save-chat-session-rewrites-its-E20261012c96a97a2/S001/TESTS.md"
     },
@@ -27,9 +31,44 @@
           "file": ".insrc/artifacts/PLAN-c96a97a204fac22b-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:10:47.854Z"
+        "timestamp": "2026-10-12T09:14:01.747Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fake-session-fs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T09:14:01.747Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T09:14:01.747Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/session-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T09:14:01.747Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/session-file-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T09:14:01.747Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/session-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T09:14:01.747Z"
       }
     ],
-    "commit": "fff8f095"
+    "commit": "1c71c3f5"
   }
 }

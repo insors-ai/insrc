@@ -6,7 +6,9 @@
     "createdAt": "2026-10-09T05:31:55.478Z",
     "updatedAt": "2026-10-09T06:17:22.401Z",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-09T06:17:22.984Z"
+    "approvedAt": "2026-10-09T06:17:22.984Z",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z"
   },
   "body": {
     "tasks": [

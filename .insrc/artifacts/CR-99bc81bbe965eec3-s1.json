@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "99bc81bbe965eec3",
-    "storyId": "s1"
+    "storyId": "s1",
+    "epicSlug": "bug-insrc-build-step-returns-unresolved",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

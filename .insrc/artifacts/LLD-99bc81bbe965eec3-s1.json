@@ -18,7 +18,7 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "99bc81bbe965eec3",
-    "epicSlug": "lld-bugfix-scope-structural-label-build",
+    "epicSlug": "bug-insrc-build-step-returns-unresolved",
     "storyId": "s1",
     "hldBaseRunId": "wf-1790664980219-t9lfhg",
     "hldEffectiveHash": "a7c7f317f01b03c50c10075f87b0835585d48af2d769aa473c648e9ad5ec5b53",

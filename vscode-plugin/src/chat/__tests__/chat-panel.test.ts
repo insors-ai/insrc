@@ -8,7 +8,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { Script } from 'node:vm';
 import { createChatPanelHost, type ChatPanelChannel, type ChatEditGovernanceDeps } from '../chat-panel.js';
+import { transcriptPagerWebviewSource } from '../transcript-pager.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, RunOptions } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
@@ -770,7 +772,7 @@ test('S001 shell: session-restored replay routes through the sc1 registry (keyed
   // (keyed by transcript index) after reg.resetKeys(); the stored cssClass is carried by
   // toViewModel (marker rows -> fallback with the class) into the widened line(s,cls) writer.
   assert.match(html, /reg\.resetKeys\(\)/, 'restore resets the reconciliation map before replaying');
-  assert.match(html, /reg\.appendKeyed\(reg\.toViewModel\(x\),'r'\+i\)/, 'restore replays keyed via the sc1 registry');
+  assert.match(html, /reg\.appendKeyed\(reg\.toViewModel\(x\),'r'\+\(_first\+i\)\)/, 'restore replays keyed via the sc1 registry, by absolute transcript index');
   assert.doesNotMatch(html, /forEach\(x=>line\(x\.text\)\)/, 'the classless replay is gone');
   // The cssClass is still delivered through the widened writer (via the fallback renderer).
   assert.match(html, /function line\(s,cls\)/, 'the widened writer is unchanged');
@@ -1146,7 +1148,7 @@ test('S001 (74bc0120) ac1/ac2/ac3: the lock starts closed and is settled at all 
   assert.match(html, /var provLocked=true;/, 'the lock is initialised CLOSED');
   // ac1 + ac2 — derived from the replayed transcript, so an empty chat unlocks and a chat with
   // rows locks, re-derived per session rather than latching.
-  assert.match(html, /setProvLock\(\(\(m\.transcript\|\|\[\]\)\.length\)>0\);/, 'session-restored settles the lock from the replayed row count');
+  assert.match(html, /setProvLock\(_total>0\);/, "session-restored settles the lock from the session's total row count");
   // The active session appearing in the PERSISTED history proves it has context (draft() only
   // enters the store on first save).
   assert.match(html, /if\(_ac\)setProvLock\(true\);/, 'history-list re-settles the lock for the active session');
@@ -1168,7 +1170,8 @@ test('S001 (74bc0120) regression: the lock is additive — the surrounding handl
   // The control's meaning when usable is untouched: a change still starts a NEW chat.
   assert.match(html, /ps\.addEventListener\('change',function\(\)\{if\(ps\.value\)\{vs\.postMessage\(\{v:1,payload:\{type:'new-chat',provider:ps\.value\}\}\);\}\}\);/, 'a provider change still posts new-chat');
   // session-restored still clears, resets keys and replays; history-list still re-syncs the value.
-  assert.match(html, /reg\.resetKeys\(\);\(m\.transcript\|\|\[\]\)\.forEach/, 'session-restored still resets keys and replays the transcript');
+  assert.match(html, /t\.textContent='';reg\.resetKeys\(\);var _rows=m\.transcript\|\|\[\]/, 'session-restored still clears, resets keys and replays the transcript');
+  assert.match(html, /_rows\.forEach\(function\(x,i\)/, 'every posted row is replayed');
   assert.match(html, /if\(_ac&&_ac\.provider\)\{ps\.value=_ac\.provider;\}/, 'history-list still re-syncs the provider value');
 });
 
@@ -3466,4 +3469,55 @@ test('session-restored carries firstIndex 0 and total while the whole transcript
   fc.send(env('new-chat', { provider: 'claude' }));
   const fresh = posted(fc, 'session-restored').at(-1)!;
   assert.deepEqual([fresh['firstIndex'], fresh['total']], [0, 0]);
+});
+
+test('the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total', () => {
+  const html = fidelityHtml();
+  // The pager source is embedded once, built on the transcript element with the bar and the host channel, and given the registry.
+  assert.equal(html.split(transcriptPagerWebviewSource()).length - 1, 1, 'the pager source is embedded once');
+  assert.match(html, /\(t,\{bar:document\.getElementById\('insrc-older'\),post:function\(p\)\{vs\.postMessage\(\{v:1,payload:p\}\);\}\}\);/, 'built on the transcript, the bar and the host channel');
+  assert.match(html, /<div id="insrc-older" role="button"/, 'the bar element exists');
+  assert.ok(html.indexOf('<div id="insrc-older"') < html.indexOf('<div id="insrc-term"'), 'above the transcript');
+  assert.ok(html.indexOf('const pager=') < html.indexOf('const reg='), 'the pager is created before the registry');
+  assert.match(html, /pager\.attach\(reg\);/, 'and handed the registry afterwards');
+  // Every append goes through the pager.
+  assert.match(html, /function line\(s,cls\)\{const d=document\.createElement\('div'\);if\(cls\)d\.className=cls;d\.textContent=s;return pager\.append\(d\);\}/, 'line() appends through the pager');
+  assert.match(html, /box\.appendChild\(bar\);\}pager\.append\(box\);\}/, 'renderDiff appends through the pager');
+  assert.match(html, /if\(_c\)\{pager\.append\(_c\);\}/, 'the approval card appends through the pager');
+  assert.doesNotMatch(html, /(?<![\w$])t\.appendChild\(/, 'nothing appends to the transcript element directly');
+  // Restore: reset, then replay with absolute keys, each row stamped with its index.
+  assert.match(html, /pager\.reset\(cur,_first,_total\);_rows\.forEach\(function\(x,i\)\{pager\.track\(_first\+i,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(x\),'r'\+\(_first\+i\)\);\}\);\}\);/);
+  assert.match(html, /_first=typeof m\.firstIndex==='number'\?m\.firstIndex:0/, 'a restore with no firstIndex starts at 0');
+  // An older page goes to prepend; live rows are tracked (stamped, then trimmed) with their row index.
+  assert.match(html, /else if\(m\.type==='transcript-page'\)\{pager\.prepend\(m\);\}/);
+  assert.match(html, /if\(m\.type==='turn-event'\)\{const ev=m\.event;pager\.track\(m\.rowIndex,function\(\)\{/);
+  assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text\}\),m\.key\);\}\);\}/);
+  assert.match(html, /pager\.track\(undefined,function\(\)\{renderDiff\(/, 'a diff card is tracked too');
+  assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);trimIfNeeded\(\);\}\}/, 'track stamps the new nodes and then trims');
+  assert.match(html, /setProvLock\(_total>0\);/, 'the provider lock settles from total');
+});
+
+test("the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin", () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo', genNonce: () => 'FIXEDNONCE' });
+  host.open();
+  const html = fc.html();
+  assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'exactly one inline script');
+  assert.match(html, /<script nonce="FIXEDNONCE">/);
+  assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
+  // The one script still parses as JavaScript with the pager embedded in it.
+  const body = html.slice(html.indexOf('>', html.indexOf('<script nonce=')) + 1, html.lastIndexOf('</script>'));
+  assert.doesNotThrow(() => new Script(body), 'the inline script is valid JavaScript');
+  // Scroll position: only the pager writes it.
+  const pagerSrc = transcriptPagerWebviewSource();
+  const withoutPager = html.split(pagerSrc).join('');
+  assert.ok(withoutPager.length < html.length);
+  assert.doesNotMatch(withoutPager, /scrollTop\s*=[^=]/, 'no scrollTop write outside the pager');
+  assert.match(pagerSrc, /term\.scrollTop=/, 'the pager is where it is written');
+  // The pager itself: no innerHTML, no remote origin, no vscode reference.
+  assert.doesNotMatch(pagerSrc, /innerHTML|https?:\/\/|acquireVsCodeApi|\bimport\b/);
+  // The rest of the shell keeps its markdown guard and loads nothing remote.
+  assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
+  assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded');
+  assert.doesNotMatch(html, /asWebviewUri/);
 });

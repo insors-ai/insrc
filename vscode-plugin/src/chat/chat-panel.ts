@@ -23,6 +23,7 @@ import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode }
 import { classifyPermissionDenial, type ProviderRegistry, type ProviderId } from './cli-adapter.js';
 import { createApprovalQueue, type ApprovalResolution } from './approval-queue.js';
 import { pageBefore } from './transcript-window.js';
+import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type TurnSink } from './turn-lifecycle.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
@@ -508,6 +509,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // subtle top gradient. Replaces the former inset .pad wrapper so progress/input are full bars.
       `#insrc-term{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:16px 14px;white-space:pre-wrap;word-break:break-word;color:var(--fg);background:radial-gradient(1200px 300px at 50% -10%,rgba(56,189,248,.05),transparent 60%),var(--panel);}` +
       `#insrc-term>div{white-space:pre-wrap;}` +
+      // Story E20261012ddc4ede1:S001: the 'load earlier' bar above the transcript. The pager shows
+      // it (with the count of older rows) only while rows older than the first held one exist.
+      `#insrc-older{flex:0 0 auto;padding:5px 14px;text-align:center;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);cursor:pointer;}` +
+      `#insrc-older:hover{color:var(--fg);}` +
       `.insrc-term__marker--pending{color:var(--muted);}.insrc-term__marker--pending::before{color:var(--magenta)!important;margin-right:.55em;}` +
       `.insrc-term__marker--tool{color:var(--accent2);}.insrc-term__marker--tool::before{color:var(--accent2)!important;margin-right:.55em;}` +
       `.insrc-term__marker--edit{color:var(--fg);}.insrc-term__marker--edit::before{color:var(--amber)!important;margin-right:.55em;}` +
@@ -616,12 +621,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `const t=document.getElementById('insrc-term');` +
       // S004: line() widened to carry an optional sc1 marker class (className only; still textContent, no innerHTML).
       // S001 sc1: line() now RETURNS its appended node so the fallback RowRenderer can hand it back from renderRow.
-      `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;t.appendChild(d);t.scrollTop=t.scrollHeight;return d;}` +
+      // Story E20261012ddc4ede1:S001: the transcript pager, single-sourced with transcript-pager.ts.
+      // Every node joins the transcript through pager.append, which follows to the bottom only
+      // when the view was already there; nothing else writes the transcript's scroll position.
+      `const pager=(${transcriptPagerWebviewSource()})(t,{bar:document.getElementById('insrc-older'),post:function(p){vs.postMessage({v:1,payload:p});}});` +
+      `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;return pager.append(d);}` +
       // S004: the marker mapper, single-sourced with the host markerFor (markers.ts), embedded in THIS one nonce'd script.
       `const markerFor=${markerWebviewSource()};` +
       // S001 sc1: the render registry, single-sourced with render-registry.ts, embedded in THIS one nonce'd script.
       // line() is pre-registered as the 'fallback' renderer; t4/S003/S004 register the concrete row renderers.
       `const reg=(${renderRegistryWebviewSource()})(document,line);` +
+      `pager.attach(reg);` +
       // S004 ac2: the approval card's approve/deny buttons post a permission-decision the host
       // relays to the live turn's CLI (adapter.decide). Wired once via the sc1 decision sink.
       `reg.onApprovalDecision(function(requestId,decision){vs.postMessage({v:1,payload:{type:'permission-decision',requestId:requestId,decision:decision}});});` +
@@ -676,7 +686,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // renderDiff: one row per hunk line via textContent (no innerHTML); add/remove/context
       // class by the +/-/space prefix computeDiff wrote. In review mode append accept/reject
       // buttons that post edit-decision for this path.
-      `function renderDiff(path,diff,review){var box=document.createElement('div');box.className=${JSON.stringify(diffCls)};var hdr=document.createElement('div');hdr.className='insrc-diff-path';hdr.textContent=path;box.appendChild(hdr);var hunks=(diff&&diff.hunks)||[];hunks.forEach(function(h){(h.lines||[]).forEach(function(ln){var d=document.createElement('div');var c=ln.charAt(0);d.className=c==='+'?'insrc-diff-add':c==='-'?'insrc-diff-del':'insrc-diff-ctx';d.textContent=ln;box.appendChild(d);});});if(review){var bar=document.createElement('div');bar.className='insrc-diff-actions';var ok=document.createElement('button');ok.textContent='accept';ok.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:true}});bar.remove();});var no=document.createElement('button');no.textContent='reject';no.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:false}});bar.remove();});bar.appendChild(ok);bar.appendChild(no);box.appendChild(bar);}t.appendChild(box);t.scrollTop=t.scrollHeight;}` +
+      `function renderDiff(path,diff,review){var box=document.createElement('div');box.className=${JSON.stringify(diffCls)};var hdr=document.createElement('div');hdr.className='insrc-diff-path';hdr.textContent=path;box.appendChild(hdr);var hunks=(diff&&diff.hunks)||[];hunks.forEach(function(h){(h.lines||[]).forEach(function(ln){var d=document.createElement('div');var c=ln.charAt(0);d.className=c==='+'?'insrc-diff-add':c==='-'?'insrc-diff-del':'insrc-diff-ctx';d.textContent=ln;box.appendChild(d);});});if(review){var bar=document.createElement('div');bar.className='insrc-diff-actions';var ok=document.createElement('button');ok.textContent='accept';ok.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:true}});bar.remove();});var no=document.createElement('button');no.textContent='reject';no.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:false}});bar.remove();});bar.appendChild(ok);bar.appendChild(no);box.appendChild(bar);}pager.append(box);}` +
       // S001 sc1/t4: the live turn-event append routes through reg.renderRow(reg.toViewModel(ev)).
       // assistant-delta -> assistant-text row (its actual text, ac2); tool-call -> tool-command row
       // (the real command inline, ac3). Every other kind keeps the sc1 marker path (markerFor ->
@@ -685,29 +695,37 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // transcript row — rapid phase changes update the one widget in place. assistant-delta/tool-call
       // still render via the sc1 view-model (S001); other markers still append. done/error hides the
       // widget + returns the button to ▶ (ac2). The host status-skip is untouched (lc1/k4).
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result'||ev.kind==='permission-outcome'||ev.kind==='selection-request'||ev.kind==='selection-outcome')){reg.renderRow(reg.toViewModel(ev));}` +
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;pager.track(m.rowIndex,function(){if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result'||ev.kind==='permission-outcome'||ev.kind==='selection-request'||ev.kind==='selection-outcome')){reg.renderRow(reg.toViewModel(ev));}` +
       // S004 ac1: a live approval-request renders the in-chat approve/deny card (the renderer
       // builds a detached node, so the handler appends it) — never a silent block.
-      `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName,position:ev.position,total:ev.total}});if(_c){t.appendChild(_c);t.scrollTop=t.scrollHeight;}}` +
-      `else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}` +
+      `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName,position:ev.position,total:ev.total}});if(_c){pager.append(_c);}}` +
+      `else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}});` +
       `if(ev&&(ev.kind==='done'||ev.kind==='error')){setRunning(false);hideProgress();}}` +
       // S006: an edit-prompt carries the computed diff + the HOST's review flag -> render it
       // (+ accept/reject controls only when the host says review; never gated on local state).
       // ISSUE-6a811b8a: more requests queued behind the shown card — update its '1 of N' in place.
       `else if(m.type==='approval-position'){reg.approvalPosition(m.requestId,m.position,m.total);}` +
-      `else if(m.type==='edit-prompt'){renderDiff(m.path,m.diff,m.review===true);}` +
+      `else if(m.type==='edit-prompt'){pager.track(undefined,function(){renderDiff(m.path,m.diff,m.review===true);});}` +
+      // Story E20261012ddc4ede1:S001: an older page the reader asked for; the pager puts it above
+      // the held rows and keeps the reader's place (a page it did not ask for is discarded).
+      `else if(m.type==='transcript-page'){pager.prepend(m);}` +
       // S001 ac1/lc1: the live user-row echo — reconciled to ONE row via its stable key.
-      `else if(m.type==='user-row'){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text}),m.key);}` +
+      `else if(m.type==='user-row'){pager.track(m.rowIndex,function(){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text}),m.key);});}` +
       // S005: session-restored CLEARS the terminal before replaying (so switching chats
       // does not append onto the prior chat's view) + tracks the active id for the dropdown.
       // S001 t5: the replay routes through the sc1 registry (reg.appendKeyed(reg.toViewModel(x)))
       // keyed by transcript index, so it single-sources rendering with the live path and carries
       // each row's stored cssClass (marker rows -> fallback with the class), and resetKeys() clears
       // the reconciliation map for the fresh replay.
-      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();(m.transcript||[]).forEach(function(x,i){reg.appendKeyed(reg.toViewModel(x),'r'+i);});hs.value=cur;setRunning(false);hideProgress();` +
+      // Story E20261012ddc4ede1:S001: the posted rows are a window of the transcript starting at
+      // absolute index firstIndex (0 when absent); each row is keyed and stamped by its absolute index.
+      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();` +
+      `var _rows=m.transcript||[],_first=typeof m.firstIndex==='number'?m.firstIndex:0,_total=typeof m.total==='number'?m.total:_first+_rows.length;` +
+      `pager.reset(cur,_first,_total);` +
+      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});hs.value=cur;setRunning(false);hideProgress();` +
       // S001 (bugfix): reflect the session's persisted mode in the mode control (follows the session).
       `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}` +
-      `setProvLock(((m.transcript||[]).length)>0);}` +
+      `setProvLock(_total>0);}` +
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
       // S001 (74bc0120): the active session appearing in the PERSISTED history is itself proof of
       // context — session-store's draft() only enters the store on its first save, i.e. once the
@@ -754,6 +772,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `</div>` +
       // Full-width bars (mock): the scrolling transcript, then the live progress bar, then the input
       // bar — each a flex:0 band with its own top border + inset ground, NOT inset inside a .pad.
+      // Story E20261012ddc4ede1:S001: the 'load earlier' bar (the pager fills and shows it).
+      `<div id="insrc-older" role="button" tabindex="0" aria-label="load earlier messages"></div>` +
       `<div id="insrc-term" class="term"></div>` +
       // S002 ac3: the single animated progress widget above the input (live-only). Mock: 3 blinking
       // dots + a label + a right-aligned elapsed timer; hidden until a turn runs.

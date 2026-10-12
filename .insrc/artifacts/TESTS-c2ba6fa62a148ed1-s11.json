@@ -1,0 +1,253 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s11",
+    "createdAt": "2026-10-12T11:26:17.849Z",
+    "updatedAt": "2026-10-12T11:26:57.256Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "9f1697eb",
+        "ranAt": "2026-10-12T11:26:57.256Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review stream module: ReviewStreamError from src/shared/review-stream.ts is the same class daemon-stream.ts exports, and the routing tests pass unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/review-stream.test.ts",
+                "title": "review stream module: ReviewStreamError from src/shared/review-stream.ts is the same class daemon-stream.ts exports, and the routing tests pass unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/review-step/__tests__/review-step-routing.test.ts",
+                "title": "T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/review-step/__tests__/review-step-routing.test.ts",
+                "title": "T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/code-review-step/__tests__/routing.test.ts",
+                "title": "T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/code-review-step/__tests__/routing.test.ts",
+                "title": "T11 the tool waits 30 minutes: with a daemon that never answers it fails when that limit fires",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/code-review-step/__tests__/routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 684,
+            "titles": [
+              {
+                "title": "T10 code of controller author with fresh grounding is sent to the daemon (full) and returns done with its verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T10 code of unknown author with fresh grounding is sent to the daemon (full) and returns done with its verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "title": "T10 the invoking client is passed to the daemon when the tool knows it",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a stale index returns confirm_wait and asks no daemon; the author is not even read yet",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a declined wait asks the daemon with the degraded mode, and the tool does not assemble the diff itself",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an accepted wait that never becomes fresh asks the daemon with the degraded mode",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an accepted wait that becomes fresh asks the daemon with the full mode, and never returns emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "T17 fresh grounding with no symbols asks the daemon with the degraded mode",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an unavailable freshness check and unavailable grounding each return their own error and ask no daemon",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped",
+                "result": "pass"
+              },
+              {
+                "title": "an older daemon that ignored the degraded mode is an error, not a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "an older daemon that stamped no reviewer is an error, not a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (unreachable) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (daemon-error) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (unknown-method) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (timeout) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (failed) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 the tool waits 30 minutes: with a daemon that never answers it fails when that limit fires",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the judgements phase refuses controller-authored code and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 an unknown author does not stop the judgements phase (only a known controller author does)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/review-step/__tests__/review-step-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 503,
+            "titles": [
+              {
+                "title": "T9 a DEF of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a LLD of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a HLD of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a DEF of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a LLD of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a HLD of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "title": "T9 an older artifact with no author field is routed by its attribution labels",
+                "result": "pass"
+              },
+              {
+                "title": "T11 the tool waits 31 minutes for a design (HLD, LLD) and 90 minutes for a DEF",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (unreachable) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (daemon-error) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (unknown-method) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (closed) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (failed) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the findings phase refuses a controller-authored LLD and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the findings phase refuses a controller-authored HLD and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the verdicts phase refuses a controller-authored DEF and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, and so does findings on an LLD",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/review-stream.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 426,
+            "titles": [
+              {
+                "title": "review stream module: ReviewStreamError from src/shared/review-stream.ts is the same class daemon-stream.ts exports, and the routing tests pass unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

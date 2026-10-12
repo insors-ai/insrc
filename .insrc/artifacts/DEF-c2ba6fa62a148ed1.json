@@ -1565,6 +1565,15 @@
             "operationalizes": [
               "k2"
             ]
+          },
+          {
+            "id": "ac7",
+            "given": "a process that is not the daemon (a test, a script, a client session's MCP server or any tool)",
+            "when": "it asks to open the live vector store (the ~/.insrc/lance directory, reached directly, by a relative path or through a symbolic link)",
+            "then": "it is refused with a named error before the directory is created or connected, while a temporary path set for a test opens as before, so only the daemon ever opens the live vector store, as Story s4 made true of the graph store",
+            "operationalizes": [
+              "k2"
+            ]
           }
         ],
         "localConstraints": [
@@ -1989,6 +1998,16 @@
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
         },
         "comment": "Stakeholder decision, 2026-10-11: the temporary allowance that lets the MCP server open the live store until Story s11 is kept, and its removal is a required part of Story s11 (a new acceptance criterion ac6, requirement and local constraint on s11 in the definition).",
+        "kind": "comment"
+      },
+      {
+        "id": "86c392af",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-12T11:20:36.148Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md"
+        },
+        "comment": "Amended 2026-10-12 by the stakeholder's decision at the start of the plan for Story s11: s11 gains acceptance criterion ac7, that only the daemon opens the live vector store (~/.insrc/lance) and any other process is refused before the directory is created or connected. It records decision D4 of the s11 design (the vector store gets the owner rule Story s4 gave the graph store), which went beyond s11's six criteria; the stakeholder chose to amend the definition now rather than after the build.",
         "kind": "comment"
       }
     ]

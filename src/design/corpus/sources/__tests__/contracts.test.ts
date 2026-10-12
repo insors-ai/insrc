@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeSourceManifest, decodeSourcePolicy, decodeImportReport, decodeLineage } from '../contracts.js';
-import { isPortablePath, isUtcDate, pathCollisionKey, sourceIdentity } from '../validation-primitives.js';
+import { isCanonicalRepositoryUrl, isPortablePath, isUtcDate, pathCollisionKey, sourceIdentity } from '../validation-primitives.js';
 import { validateGuidanceRecord, validateRelease } from '../../validate.js';
 import { packageFixture } from '../../__tests__/package-fixtures.js';
 import { recordFixture, sealRecord } from '../../__tests__/fixtures.js';
@@ -12,6 +12,9 @@ const file = () => ({ sourceId: sourceIdentity(url, revision, 'file.txt'), repos
   licenseIds: ['MIT'], licenseTextRefs: ['evidence/license.txt'], noticeRefs: [], attribution: ['Fixture author'], modifications: [],
   retrievedAt: '2026-10-12T00:00:00Z', eligibility: 'eligible', eligibilityReason: 'Synthetic reviewed fixture', reviewedBy: 'Reviewer' });
 test('source-schema preserves exact sc3 shapes and rejects invalid identities and fields', () => {
+  assert.equal(isCanonicalRepositoryUrl('ssh://example.org/repository'), true);
+  for (const invalid of ['https://user:secret@example.org/repo', 'ssh://git@example.org/repo', 'https://example.org/repo?q=x',
+    'https://example.org/repo#ref', 'https://example.org/re%70o']) assert.equal(isCanonicalRepositoryUrl(invalid), false);
   const input = { schemaVersion: 1, policyVersion: 'test-v1', files: [file()] };
   const decoded = decodeSourceManifest(input); assert.equal(decoded.ok, true);
   if (decoded.ok) { assert.deepEqual(decoded.value, input); assert.notEqual(decoded.value, input); }

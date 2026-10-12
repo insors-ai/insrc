@@ -27,9 +27,12 @@ export function decodeSourceRequest(input: unknown): ValidationResult<SourceRequ
   const issues = pathIssues(value.paths, '/paths');
   return issues.length ? failure(issues) : { ok: true, value: value as SourceRequest };
 }
+function profilesForRequest(policy: SourcePolicy, request: SourceRequest): Map<string, ReviewedProfile> {
+  return new Map(policy.profiles.filter(p => p.repositoryUrl === request.repositoryUrl && p.revision === request.revision).map(p => [p.path, p]));
+}
 /** Enumerate only exact requested paths and their declared evidence; no directory scanning. */
 export function requiredSourcePaths(policy: SourcePolicy, request: SourceRequest): ValidationResult<string[]> {
-  const profiles = new Map(policy.profiles.filter(p => p.repositoryUrl === request.repositoryUrl && p.revision === request.revision).map(p => [p.path, p]));
+  const profiles = profilesForRequest(policy, request);
   const paths = new Set(request.paths), queue = [...paths];
   for (let i = 0; i < queue.length; i++) {
     if (paths.size > CORPUS_LIMITS.files) return failure([problem('limit.exceeded', '/paths', 'Evidence closure exceeds file limit.')]);
@@ -82,7 +85,7 @@ export function stageSources(policyInput: unknown, requestInput: unknown, acquir
   if (blobs.size !== required.value.length || required.value.some(path => !blobs.has(path))) {
     return failure([problem('reference.missing', '/blobs', 'Acquisition must contain exactly the requested evidence closure.')]);
   }
-  const profiles = new Map(policy.profiles.filter(p => p.repositoryUrl === request.repositoryUrl && p.revision === request.revision).map(p => [p.path, p]));
+  const profiles = profilesForRequest(policy, request);
   const decisions = new Map<string, PolicyDecision>();
   const digests = new Map([...blobs].map(([path, blob]) => [path, hashBytes(blob.bytes)]));
   for (const path of required.value) {

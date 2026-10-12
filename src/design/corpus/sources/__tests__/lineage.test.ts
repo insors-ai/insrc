@@ -25,6 +25,15 @@ test('lineage-closure retains every source and transformation for derived output
     const reordered = structuredClone(f.lineage); reordered.bindings[0]!.sourceIds.reverse();
     assert.deepEqual(lineageBytes(reordered), lineageBytes(checked.value));
   }
+  for (const role of ['sourceManifestPath', 'noticesPath', 'coveragePath'] as const) {
+    const bad = packageFixture().manifest; bad[role] = 'sources/lineage.json'; assert.equal(bindLineageToManifest(bad, f.lineage).ok, false);
+  }
+  const recordConflict = packageFixture().manifest; recordConflict.records[0]!.path = 'sources/lineage.json';
+  assert.equal(bindLineageToManifest(recordConflict, f.lineage).ok, false);
+  const outputConflict = structuredClone(f.lineage); outputConflict.bindings[0]!.path = 'sources/lineage.json';
+  assert.equal(bindLineageToManifest(packageFixture().manifest, outputConflict).ok, false);
+  const duplicate = packageFixture().manifest; duplicate.files.push({ ...duplicate.files[0]! });
+  assert.equal(bindLineageToManifest(duplicate, f.lineage).ok, false);
   const bound = bindLineageToManifest(packageFixture().manifest, f.lineage); assert.equal(bound.ok, true);
   if (bound.ok) {
     assert.equal(bound.value.file.path, 'sources/lineage.json');

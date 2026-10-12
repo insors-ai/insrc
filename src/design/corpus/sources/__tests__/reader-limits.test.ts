@@ -49,6 +49,13 @@ test('reader-safety bounds aggregate source and shared evidence bytes and counts
   } finally { f.dispose(); }
 });
 test('reader-safety cancels timed-out aborted and failed children without admitted bytes', async () => {
+  const never = processFixture('hang'), already = new AbortController(); already.abort();
+  await assert.rejects(never.run([], new Uint8Array(), { ...options, signal: already.signal }), /cancelled/);
+  assert.equal(never.child.stdin.writableEnded, false);
+  for (const patch of [{ stdoutLimit: 0 }, { stderrLimit: 0 }, { timeoutMs: 30001 }]) {
+    await assert.rejects(never.run([], new Uint8Array(), { ...options, ...patch }), /Invalid Git process bounds/);
+  }
+  assert.equal(never.child.stdin.writableEnded, false);
   for (const behavior of ['hang', 'exit', 'spawn', 'stream', 'no-close', 'error-no-close'] as const) {
     const f = processFixture(behavior), abort = new AbortController();
     await assert.rejects(f.run(['cat-file', '--batch'], new Uint8Array(), { ...options, signal: abort.signal }), error => {

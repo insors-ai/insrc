@@ -1,6 +1,8 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { getEventListeners } from 'node:events';
+import { runGitBinary } from '../git-reader.js';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { hashBytes } from '../../canonical.js';
@@ -47,6 +49,16 @@ test('candidate-roundtrip admits only eligible material and exports complete not
     assert.equal(!exhausted.ok && exhausted.issues[0]!.message, 'No remaining source-byte budget.');
     const short = await stageLocalSources(f.policy, inputs, { limits: { bytes: exactBytes * 2 - 1 } });
     assert.equal(!short.ok && short.issues[0]!.code, 'limit.exceeded'); assert.equal('value' in short, false);
+    const external = new AbortController(); let observed: AbortSignal | undefined; let commits = 0;
+    const batch = await stageLocalSources(f.policy, inputs, { signal: external.signal, limits: { requestTimeoutMs: 1000 },
+      run: async (args, input, options) => {
+        observed = options.signal;
+        if (Buffer.from(input).toString().trim() === f.request.revision && ++commits === 2) return new Promise(() => {});
+        return runGitBinary(args, input, options);
+      } });
+    assert.equal(!batch.ok && batch.issues[0]!.message, 'Source staging deadline exceeded.');
+    assert.equal(commits, 2);
+    assert.equal(getEventListeners(external.signal, 'abort').length, 0); assert.ok(observed?.aborted);
   } finally { git.dispose(); }
 });
 test('candidate-roundtrip validates original-only and multi-source derived packages', () => {

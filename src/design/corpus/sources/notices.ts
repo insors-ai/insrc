@@ -22,6 +22,18 @@ export function assembleSourceMetadata(stages: readonly StagedSources[], lineage
     const collected = collectSources(stages); if (!collected.ok) return collected;
     const sources = collected.value, byId = new Map(sources.map(source => [source.source.sourceId, source]));
     const lineage = canonicalLineage(decoded.value);
+    const included = new Set(lineage.bindings.flatMap(binding => binding.sourceIds)), queue = [...included];
+    for (let i = 0; i < queue.length; i++) {
+      const source = byId.get(queue[i]!);
+      if (!source) return failure([problem('reference.missing', '/lineage', 'Included output refers to an absent eligible source.')]);
+      for (const ref of [...source.profile.licenseEvidence, ...source.profile.noticeEvidence]) {
+        const id = sourceIdentity(source.source.repositoryUrl, source.source.revision, ref.path);
+        if (!included.has(id)) { included.add(id); queue.push(id); }
+      }
+    }
+    if (sources.some(source => !included.has(source.source.sourceId))) {
+      return failure([problem('provenance.incomplete', '/sources', 'Remove staged sources not used by outputs or their evidence closure.')]);
+    }
     if (stages.some(stage => stage.policyVersion !== options.policyVersion)) return failure([problem('provenance.incomplete', '/policyVersion', 'Metadata policy version differs from evaluated inputs.')]);
     const manifest: SourceManifest = { schemaVersion: 1, policyVersion: options.policyVersion, files: sources.map(source => source.source) };
     const checked = decodeSourceManifest(manifest); if (!checked.ok) return checked;

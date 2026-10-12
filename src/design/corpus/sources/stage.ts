@@ -6,7 +6,7 @@ import type { ValidationResult } from '../contracts.js';
 import { decodeSourcePolicy } from './contracts.js';
 import { decodeSourceRequest, requiredSourcePaths, stageSources } from './eligibility.js';
 import type { SourceRequest, StagedSources } from './eligibility.js';
-import { readPinnedSources } from './git-reader.js';
+import { readPinnedSources, READER_LIMITS } from './git-reader.js';
 import type { ReaderOptions } from './git-reader.js';
 import type { SourceAcquisition } from './assessment.js';
 import { AcquisitionBudget, failure, problem } from './validation-primitives.js';
@@ -15,6 +15,22 @@ export interface LocalSourceRequest { readonly localRepository: string; readonly
 export interface LocalStaging { readonly stages: StagedSources[]; readonly imports: SourceAcquisition[]; }
 /** No durable writes: return snapshots for independent assessment and later package installation. */
 export async function stageLocalSources(policyInput: unknown, inputs: readonly LocalSourceRequest[], options: ReaderOptions = {}): Promise<ValidationResult<LocalStaging>> {
+  const timeout = options.limits?.requestTimeoutMs ?? READER_LIMITS.requestTimeoutMs;
+  if (!Number.isSafeInteger(timeout) || timeout < 1 || timeout > READER_LIMITS.requestTimeoutMs) return failure([problem('limit.exceeded', '/limits', 'Invalid staging deadline.')]);
+  const cancellation = new AbortController();
+  const onAbort = () => cancellation.abort('cancelled');
+  options.signal?.addEventListener('abort', onAbort, { once: true });
+  if (options.signal?.aborted) onAbort();
+  const timer = setTimeout(() => cancellation.abort('deadline'), timeout);
+  try {
+    if (cancellation.signal.aborted) return failure([problem('inventory.invalid', '/acquisition', 'Source staging cancelled.')]);
+    const result = await stageWithinDeadline(policyInput, inputs, { ...options, signal: cancellation.signal });
+    if (cancellation.signal.aborted) return failure([problem(cancellation.signal.reason === 'deadline' ? 'limit.exceeded' : 'inventory.invalid',
+      '/acquisition', cancellation.signal.reason === 'deadline' ? 'Source staging deadline exceeded.' : 'Source staging cancelled.')]);
+    return result;
+  } finally { clearTimeout(timer); options.signal?.removeEventListener('abort', onAbort); }
+}
+async function stageWithinDeadline(policyInput: unknown, inputs: readonly LocalSourceRequest[], options: ReaderOptions): Promise<ValidationResult<LocalStaging>> {
   const policy = decodeSourcePolicy(policyInput); if (!policy.ok) return policy;
   if (!Array.isArray(inputs) || inputs.length > CORPUS_LIMITS.files) return failure([problem('limit.exceeded', '/inputs', 'Import count exceeds limit.')]);
   const requests: { localRepository: string; request: SourceRequest; paths: string[] }[] = [];

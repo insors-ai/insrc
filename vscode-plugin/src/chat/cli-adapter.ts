@@ -481,7 +481,10 @@ const claudeMapper: ProviderMapper = {
   id: 'claude',
   resume: true,
   buildArgs(req: TurnRequest): string[] {
-    const args = ['-p', req.prompt, '--output-format=stream-json', '--verbose'];
+    // ISSUE-65cb63f7: the prompt goes LAST, after `--`, so the CLI's option parser
+    // never reads it as a flag (a prompt starting with '-' was rejected as an
+    // unknown option). `-p` is the print-mode switch; the prompt is positional.
+    const args = ['-p', '--output-format=stream-json', '--verbose'];
     if (req.resume) args.push('--resume', req.resume.nativeSessionId);
     // S004: permission-mode flags (k3, verified spike 7100435). Undefined => no flag,
     // byte-identical argv to today (k2). review => host answers prompts (approval cards);
@@ -495,6 +498,8 @@ const claudeMapper: ProviderMapper = {
     // S001 (bugfix): the manual/edit-auto grant re-run pre-allows the approved tool so the resumed
     // action proceeds instead of denying again. Space-separated names after --allowedTools.
     if (req.allowedTools && req.allowedTools.length > 0) args.push('--allowedTools', ...req.allowedTools);
+    // `--` also ends the variadic --allowedTools list, so the prompt is never taken for a tool name.
+    args.push('--', req.prompt);
     return args;
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
@@ -654,9 +659,10 @@ const codexMapper: ProviderMapper = {
     // S004: auto => bypass approvals+sandbox so the agent never blocks (k3, spike 7100435);
     // review => codex's default on-request approval routing (no extra flag); undefined =>
     // byte-identical argv to today (k2). The flag goes before the prompt (positional).
+    // ISSUE-65cb63f7: `--` ends the options, so a prompt starting with '-' stays the prompt.
     const auto = req.permissionMode === 'auto' ? ['--dangerously-bypass-approvals-and-sandbox'] : [];
-    if (req.resume) return ['exec', 'resume', req.resume.nativeSessionId, '--json', ...auto, req.prompt];
-    return ['exec', '--json', ...auto, req.prompt];
+    if (req.resume) return ['exec', 'resume', req.resume.nativeSessionId, '--json', ...auto, '--', req.prompt];
+    return ['exec', '--json', ...auto, '--', req.prompt];
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
     const trimmed = line.trim();

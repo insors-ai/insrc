@@ -4,7 +4,7 @@
     "epicHash": "6a811b8acca60ac5",
     "storyId": "S001",
     "createdAt": "2026-10-12T05:58:45.405Z",
-    "updatedAt": "2026-10-12T06:20:06.387Z",
+    "updatedAt": "2026-10-12T06:47:31.425Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-04T09:55:12.152Z",
     "epicSlug": "bug-vs-code-dev-chat-approvals"
@@ -2587,9 +2587,9 @@
       },
       {
         "taskId": "t7",
-        "commit": "f45c06ca",
-        "ranAt": "2026-10-12T06:20:06.387Z",
-        "testsPassed": false,
+        "commit": "88db0f22",
+        "ranAt": "2026-10-12T06:47:31.425Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before",
@@ -2599,7 +2599,7 @@
               {
                 "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
                 "title": "approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before",
-                "result": "not found"
+                "result": "pass"
               }
             ],
             "files": []
@@ -2636,7 +2636,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1959,
+            "durationMs": 1923,
             "titles": [
               {
                 "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",
@@ -3133,7 +3133,7 @@
             "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 385,
+            "durationMs": 273,
             "titles": [
               {
                 "title": "renderRow dispatches to a registered renderer for its kind",
@@ -3270,12 +3270,147 @@
               {
                 "title": "S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — long single line",
                 "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a short assistant row still renders in full, uncollapsed",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-b1c7c1bc (counterpart): the assistant carve-out does NOT disable collapsing for tool rows",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t6: the 'approval' renderer builds an icon-only approve/deny card via className/textContent",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t6: card buttons invoke the registered decision sink with (requestId, decision)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac1: approving the card adds the resolved (approved) class and REMOVES the actions element",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac1: denying the card adds the resolved (rejected) class and REMOVES the actions element",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: toViewModel maps a live permission-outcome event and its replayed twin to the SAME vm (dual-input)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: the permission-outcome renderer draws a non-actionable tool + decided badge chip (green approved)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: a rejected permission-outcome reuses the red deny tint",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t6: an approval card with no decision sink registered does not throw on click",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): marked renders GFM tables (thead/tbody/th/td), ordered lists, and blockquotes",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a table-only response still renders as a table (marked GFM)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): toViewModel maps a live selection-request event to the card view-model (prompt/options/multi/requestId on meta)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): toViewModel maps a live selection-outcome event and its replayed twin to the SAME vm (dual-input)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): the selection-request renderer draws radio controls for single-select",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): the selection-request renderer draws checkbox controls for multi-select",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): confirm is disabled until >=1 is chosen; a single pick posts exactly one selection-decision with the id",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): single-select — picking a second option replaces the first (radio semantics)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): multi-select — two checkboxes both submit; a zero-chosen confirm posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): duplicate option ids still render distinctly (keyed by index) and both are selectable",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-request card with no decision sink registered does not throw on confirm",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): the selection-outcome renderer draws a non-actionable chip listing the chosen labels",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a session-restored replay renders the resolved chip; the pending selection-request card does NOT re-surface",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a tool-result attaches to its tool row — the command is drawn ONCE",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: results pair by command; a command-less result takes the oldest pending row",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: an unpaired tool-result (no pending row) still renders its standalone row",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a long command collapses via the chevron; a short one stays inline",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a replayed tool marker + tool-result reconcile to ONE row showing the real command",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: resetKeys drops pending tool rows so a new replay never attaches to a cleared row",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: an id-carrying result pairs ONLY with its call — an Edit result (no tool row) stays standalone",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a done/error marker settles pending rows so a later turn's result never attaches upstream",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: the stacked-result rule outranks the base .insrc-toolrow rule emitted after it",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a user row settles pending rows (cancelled turn, replay) so results never attach across turns",
+                "result": "pass"
+              },
+              {
+                "title": "approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before",
+                "result": "pass"
               }
             ],
             "otherFailures": []
           }
-        ],
-        "note": "named test cases that did not pass: not found: 'approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before' in vscode-plugin/src/chat/__tests__/render-registry.test.ts"
+        ]
       }
     ]
   }

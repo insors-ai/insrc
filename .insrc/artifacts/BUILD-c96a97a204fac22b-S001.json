@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c96a97a204fac22b",
+    "storyId": "S001",
+    "createdAt": "2026-10-12T09:10:47.854Z",
+    "updatedAt": "2026-10-12T09:10:47.854Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-12T07:26:48.214Z",
+    "epicSlug": "every-save-chat-session-rewrites-its"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "session-store.ts now exports INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf unchanged, and its header and the liveTurn comment say sessions are kept in files under ~/.insrc/chat-sessions. No behaviour changed; one test pins the exports against what the memento store itself writes and accepts.",
+    "testRecord": {
+      "md": "docs/standalone/every-save-chat-session-rewrites-its-E20261012c96a97a2/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-c96a97a204fac22b-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T09:10:47.854Z"
+      }
+    ],
+    "commit": "fff8f095"
+  }
+}

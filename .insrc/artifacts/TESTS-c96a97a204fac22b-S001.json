@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c96a97a204fac22b",
+    "storyId": "S001",
+    "createdAt": "2026-10-12T09:10:47.854Z",
+    "updatedAt": "2026-10-12T09:10:47.854Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-12T07:26:48.214Z",
+    "epicSlug": "every-save-chat-session-rewrites-its"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "fff8f095",
+        "ranAt": "2026-10-12T09:10:47.854Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf are exported from session-store.ts and are the keys and checks the memento store itself uses",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-store.test.ts",
+                "title": "INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf are exported from session-store.ts and are the keys and checks the memento store itself uses",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/session-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 293,
+            "titles": [
+              {
+                "title": "draft(): an in-memory session NOT persisted until saved (no empty chats in history)",
+                "result": "pass"
+              },
+              {
+                "title": "round-trip: create/append/save then get/list reflect it",
+                "result": "pass"
+              },
+              {
+                "title": "corrupt/missing entry degrades to undefined / [] (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "append to a missing session is a no-op (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "k3: writes go ONLY to the injected memento, under the insrc.chat.* namespace",
+                "result": "pass"
+              },
+              {
+                "title": "list sorts by updatedAt descending",
+                "result": "pass"
+              },
+              {
+                "title": "S005: save() with maxSessions=N keeps at most N; oldest evicted, blob gone",
+                "result": "pass"
+              },
+              {
+                "title": "S005: eviction never removes the id being saved / active session even when oldest",
+                "result": "pass"
+              },
+              {
+                "title": "S005: unset maxSessions preserves the unbounded S003 behaviour",
+                "result": "pass"
+              },
+              {
+                "title": "S005: an updated (first-prompt) title round-trips through get()/list()",
+                "result": "pass"
+              },
+              {
+                "title": "S005: maxSessions <= 0 is treated as unbounded (never wipes the active session)",
+                "result": "pass"
+              },
+              {
+                "title": "S008: a marker row cssClass round-trips through append/save -> get() (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "S008: an older session whose marker rows lack cssClass still validates + restores unchanged (ac3, no migration)",
+                "result": "pass"
+              },
+              {
+                "title": "S008: user/assistant rows never carry a cssClass",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a tool-result row (command + output) round-trips through the memento store intact",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a command-less tool-result row round-trips (command absent) in the in-memory store",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a tool-result row does not disturb a mixed transcript replay (order + other rows intact)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 (ux polish): a permission-outcome row (toolName + decision) round-trips through the memento store intact",
+                "result": "pass"
+              },
+              {
+                "title": "S003 (ux polish): a rejected permission-outcome round-trips through the in-memory store",
+                "result": "pass"
+              },
+              {
+                "title": "S003 (ux polish): a permission-outcome row does not disturb a mixed transcript replay (order intact)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-outcome row (chosen labels) round-trips through the memento store intact",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a single-choice selection-outcome round-trips through the in-memory store",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-outcome row does not disturb a mixed transcript replay (order intact)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: editMode defaults to auto on create and a review update round-trips through save()/get()",
+                "result": "pass"
+              },
+              {
+                "title": "liveTurn round-trips through the store, a session without it loads unchanged, and eviction calls onEvict with the evicted id",
+                "result": "pass"
+              },
+              {
+                "title": "INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf are exported from session-store.ts and are the keys and checks the memento store itself uses",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

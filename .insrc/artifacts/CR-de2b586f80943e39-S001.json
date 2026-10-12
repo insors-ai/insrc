@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "de2b586f80943e39",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "insrc-build-step-cannot-address-any",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

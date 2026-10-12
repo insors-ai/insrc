@@ -1,13 +1,14 @@
 {
   "meta": {
     "workflow": "build",
-    "standalone": false,
+    "standalone": true,
     "epicHash": "3e701ba812813029",
     "storyId": "S001",
     "createdAt": "2026-08-04T17:57:23.168Z",
     "updatedAt": "2026-08-04T17:57:23.168Z",
     "sizeClass": "small",
-    "approvedAt": "2026-08-04T17:59:56.962Z"
+    "approvedAt": "2026-08-04T17:59:56.962Z",
+    "epicSlug": "specartifact-md-json-path-resolution-jsonpathformd"
   },
   "body": {
     "commit": "4dd1e6e",

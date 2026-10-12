@@ -6,7 +6,8 @@
     "createdAt": "2026-10-04T08:50:42.280Z",
     "updatedAt": "2026-10-04T08:50:42.280Z",
     "standalone": true,
-    "sizeClass": "small"
+    "sizeClass": "small",
+    "epicSlug": "vs-code-plugin-lock-insrc-chat"
   },
   "body": {
     "tasks": [

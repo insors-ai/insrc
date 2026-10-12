@@ -66,6 +66,7 @@ interface Registry {
   resetKeys(): void;
   onApprovalDecision(cb: (requestId: string, decision: 'approve' | 'deny') => void): void;
   onSelectionDecision(cb: (requestId: string, selected: string[]) => void): void;
+  onAttachmentOpen(cb: (attachmentId: string) => void): void;
   forgetKeysBefore(index: number): void;
   withIsolatedPending<T>(fn: () => T): T;
   forgetPendingIn(nodes: FakeNode[]): void;
@@ -263,6 +264,10 @@ test('parity: eval(webview toViewModel) equals host toViewModel for every sample
     { kind: 'selection-request', turnId: 't', requestId: 's2', prompt: 'Pick many', options: [{ id: 'a', label: 'A' }], multi: true },
     { kind: 'selection-outcome', turnId: 't', chosen: ['A'] },
     { role: 'selection-outcome', chosen: ['A', 'B'], at: 't' },
+    // Story E2026101259da3204:S001: a user row with files, with blank text, and with an empty list.
+    { role: 'user', text: 'see', at: 't', attachments: [{ id: '1-a.png', name: 'a.png', kind: 'image', size: 10, path: '/d/1-a.png' }] },
+    { role: 'user', text: '', at: 't', attachments: [{ id: '2-b.pdf', name: 'b.pdf', kind: 'file', size: 2048, path: '/d/2-b.pdf' }] },
+    { role: 'user', text: 'none', at: 't', attachments: [] },
   ];
   for (const s of samples) {
     assert.deepEqual(reg.toViewModel(s), toViewModel(s), `webview/host toViewModel drift on ${JSON.stringify(s)}`);
@@ -996,4 +1001,87 @@ test('registry forgetPendingIn drops the pending tool entries whose node is give
   assert.notEqual(rc, c);
   assert.ok(rc.className.includes('insrc-msg--toolresult'));
   reg.forgetPendingIn([]); // nothing given: nothing dropped, no throw
+});
+
+// ---- Story E2026101259da3204:S001 t4: attachment chips on the user row ----
+
+/** Every node of a tree, in document order. */
+function allNodes(node: FakeNode): FakeNode[] {
+  return [node, ...node.children.flatMap(allNodes)];
+}
+
+test("render registry: a user row with attachments renders a chip per attachment with textContent only, a click calls the open sink with the attachment's id, and a row without attachments renders as today", () => {
+  const image = { id: '1-shot.png', name: 'shot <b>.png', kind: 'image' as const, size: 2048, path: '/d/1-shot.png' };
+  const doc = { id: '2-n.pdf', name: 'né (v2).pdf', kind: 'file' as const, size: 5 * 1024 * 1024, path: '/d/2-n.pdf' };
+  const tiny = { id: '3-t.txt', name: 't.txt', kind: 'file' as const, size: 12, path: '/d/3-t.txt' };
+  const withFiles: TranscriptEntry = { role: 'user', text: 'look at these', at: 't', attachments: [image, doc, tiny] };
+
+  // The view-model carries the attachments; one without them is exactly today's.
+  assert.deepEqual(toViewModel(withFiles), { kind: 'user', role: 'user', text: 'look at these', collapsible: true, meta: { attachments: [image, doc, tiny] } });
+  assert.deepEqual(toViewModel({ role: 'user', text: 'hi', at: 't' }), { kind: 'user', role: 'user', text: 'hi', collapsible: true });
+  assert.deepEqual(toViewModel({ role: 'user', text: 'hi', at: 't', attachments: [] }), { kind: 'user', role: 'user', text: 'hi', collapsible: true });
+
+  const { reg } = makeRegistry();
+  assert.deepEqual(reg.toViewModel(withFiles), toViewModel(withFiles));
+  const row = reg.renderRow(toViewModel(withFiles))!;
+  const bubble = findByClass(row, 'insrc-bubble')!;
+
+  // The text, then one chip per attachment: glyph, name and size, each set as text.
+  assert.equal(findByClass(bubble, 'insrc-bubble__text')!.textContent, 'look at these');
+  const chips = findByClass(bubble, 'insrc-attchips')!.children;
+  assert.equal(chips.length, 3);
+  assert.deepEqual(chips.map((c) => c.children.map((x) => x.textContent)), [
+    ['\u25a8', 'shot <b>.png', '2.0 KB'],
+    ['\u25a4', 'né (v2).pdf', '5.0 MB'],
+    ['\u25a4', 't.txt', '12 B'],
+  ]);
+  assert.match(chips[0]!.className, /insrc-attchip--image/);
+  assert.match(chips[1]!.className, /insrc-attchip--file/);
+  // Nothing in the row is built from markup, loads an image, or shows a path.
+  for (const n of allNodes(row)) {
+    assert.equal(n.innerHTML, undefined, 'no innerHTML on a user row');
+    assert.notEqual(n.tag, 'img');
+    assert.equal(n.attrs['src'], undefined);
+    assert.ok(!(n.textContent || '').includes('/d/'), 'the stored path is not shown');
+  }
+
+  // A click names the attachment by its id; before a sink is set it does nothing.
+  assert.doesNotThrow(() => chips[0]!.click());
+  const opened: string[] = [];
+  reg.onAttachmentOpen((id) => opened.push(id));
+  chips[1]!.click();
+  chips[0]!.click();
+  assert.deepEqual(opened, ['2-n.pdf', '1-shot.png']);
+
+  // Blank text with a file: the chips alone, no empty text element.
+  const blank = reg.renderRow(toViewModel({ role: 'user', text: '', at: 't', attachments: [image] }))!;
+  assert.equal(findByClass(blank, 'insrc-bubble__text'), undefined);
+  assert.equal(findByClass(blank, 'insrc-attchips')!.children.length, 1);
+
+  // A long message with files still collapses its text, and the chips stay outside the collapse.
+  const long = reg.renderRow(toViewModel({ role: 'user', text: 'a\nb\nc\nd\ne', at: 't', attachments: [image] }))!;
+  const collapse = findByClass(long, 'insrc-collapse')!;
+  assert.ok(findByClass(collapse, 'insrc-bubble__text'));
+  assert.equal(findByClass(collapse, 'insrc-attchips'), undefined);
+  assert.ok(findByClass(long, 'insrc-attchips'));
+
+  // A row without attachments is rendered as before: the text on the bubble, no chip row.
+  const shape = (n: FakeNode): unknown => ({ tag: n.tag, className: n.className, textContent: n.textContent, children: n.children.map(shape) });
+  const plain = reg.renderRow({ kind: 'user', role: 'user', text: 'hi', collapsible: true })!;
+  assert.deepEqual(shape(plain), {
+    tag: 'div',
+    className: 'insrc-msg insrc-msg--user',
+    textContent: '',
+    children: [
+      { tag: 'div', className: 'insrc-who insrc-who--user', textContent: '', children: [
+        { tag: 'span', className: 'insrc-wholabel', textContent: 'you', children: [] },
+        { tag: 'span', className: 'insrc-glyph', textContent: '\u276f', children: [] },
+      ] },
+      { tag: 'div', className: 'insrc-bubble insrc-bubble--user', textContent: 'hi', children: [] },
+    ],
+  });
+  assert.deepEqual(shape(reg.renderRow(toViewModel({ role: 'user', text: 'hi', at: 't', attachments: [] }))!), shape(plain));
+  // An assistant row never shows chips, whatever its meta holds.
+  const assistant = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: 'yo', collapsible: true, meta: { attachments: [image] } })!;
+  assert.equal(findByClass(assistant, 'insrc-attchips'), undefined);
 });

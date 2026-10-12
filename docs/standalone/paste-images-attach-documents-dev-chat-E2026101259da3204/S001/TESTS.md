@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -67,3 +67,26 @@ Run at 2026-10-12T10:26:41.260Z on commit `a6d0523c`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` | 0 | 78 | 1 s |  |
+
+## t3
+
+Run at 2026-10-12T10:27:54.366Z on commit `d4b9cda4`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: protocol: the four new webview messages and attachments-pending are in the type lists, and user-row carries attachments**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | protocol: the four new webview messages and attachments-pending are in the type lists, and user-row carries attachments | `vscode-plugin/src/chat/__tests__/protocol.test.ts` |
+
+**unit: session file store: a user row with attachments round-trips unchanged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | session file store: a user row with attachments round-trips unchanged | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/protocol.test.ts` | 0 | 9 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` | 0 | 19 | 0.3 s |  |

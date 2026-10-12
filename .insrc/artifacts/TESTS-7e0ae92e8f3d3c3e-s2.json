@@ -4,7 +4,7 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T04:59:13.470Z"
+    "updatedAt": "2026-10-12T05:04:07.092Z"
   },
   "body": {
     "tasks": [
@@ -124,6 +124,110 @@
               },
               {
                 "title": "mixed-eligibility requires explicit font and compound-license decisions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "5a036847",
+        "ranAt": "2026-10-12T05:04:07.092Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "pinned-reader preserves binary commit bytes despite worktree and branch changes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/git-reader.test.ts",
+                "title": "pinned-reader preserves binary commit bytes despite worktree and branch changes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pinned-reader rejects missing commits paths and corrupt object framing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/git-reader.test.ts",
+                "title": "pinned-reader rejects missing commits paths and corrupt object framing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reader-safety rejects selected unsafe paths before I/O and ignores unselected paths",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/git-reader.test.ts",
+                "title": "reader-safety rejects selected unsafe paths before I/O and ignores unselected paths",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reader-safety rejects symlinks and submodules and leaves LFS unresolved",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/git-reader.test.ts",
+                "title": "reader-safety rejects symlinks and submodules and leaves LFS unresolved",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reader-safety prevents replacement filters lazy fetch and config-driven commands",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/git-reader.test.ts",
+                "title": "reader-safety prevents replacement filters lazy fetch and config-driven commands",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/sources/__tests__/git-reader.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1278,
+            "titles": [
+              {
+                "title": "pinned-reader preserves binary commit bytes despite worktree and branch changes",
+                "result": "pass"
+              },
+              {
+                "title": "pinned-reader rejects missing commits paths and corrupt object framing",
+                "result": "pass"
+              },
+              {
+                "title": "reader-safety rejects selected unsafe paths before I/O and ignores unselected paths",
+                "result": "pass"
+              },
+              {
+                "title": "reader-safety rejects symlinks and submodules and leaves LFS unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "reader-safety prevents replacement filters lazy fetch and config-driven commands",
                 "result": "pass"
               }
             ],

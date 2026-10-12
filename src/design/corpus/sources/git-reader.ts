@@ -28,9 +28,13 @@ export function gitEnvironment(): NodeJS.ProcessEnv {
 }
 export const GIT_READ_ARGS = ['--no-replace-objects', '--literal-pathspecs', '-c', 'protocol.allow=never',
   '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null', '-c', 'core.attributesFile=/dev/null'] as const;
-export const runGitBinary: BinaryGitRunner = (args, input, options) => new Promise((resolve, reject) => {
+export const createGitRunner = (spawnProcess: typeof spawn = spawn): BinaryGitRunner => (args, input, options) => new Promise((resolve, reject) => {
+  if (![options.stdoutLimit, options.stderrLimit, options.timeoutMs].every(v => Number.isSafeInteger(v) && v > 0)
+    || options.stdoutLimit > CORPUS_LIMITS.packageBytes + 192 || options.stderrLimit > 65536 || options.timeoutMs > 30000) {
+    reject(new SourceReaderError('limit.exceeded', 'Invalid Git process bounds.')); return;
+  }
   if (options.signal?.aborted) { reject(new SourceReaderError('inventory.invalid', 'Source acquisition cancelled.')); return; }
-  const child = spawn('git', [...GIT_READ_ARGS, ...args], { cwd: options.cwd, env: gitEnvironment(), shell: false,
+  const child = spawnProcess('git', [...GIT_READ_ARGS, ...args], { cwd: options.cwd, env: gitEnvironment(), shell: false,
     stdio: ['pipe', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
   const chunks: Buffer[] = []; let stdoutBytes = 0, stderrBytes = 0;
   let failed: SourceReaderError | undefined;
@@ -54,6 +58,8 @@ export const runGitBinary: BinaryGitRunner = (args, input, options) => new Promi
     if (stderrBytes > options.stderrLimit) stop(new SourceReaderError('limit.exceeded', 'Git diagnostics exceed byte limit.'));
   });
   child.on('error', () => { failed ??= new SourceReaderError('inventory.invalid', 'Cannot acquire local Git objects.'); });
+  child.stdout.on('error', () => stop(new SourceReaderError('inventory.invalid', 'Git output stream failed.')));
+  child.stderr.on('error', () => stop(new SourceReaderError('inventory.invalid', 'Git diagnostics stream failed.')));
   child.stdin.on('error', () => stop(new SourceReaderError('inventory.invalid', 'Git input stream failed.')));
   child.on('close', code => {
     clearTimeout(timer); options.signal?.removeEventListener('abort', abort);
@@ -64,7 +70,13 @@ export const runGitBinary: BinaryGitRunner = (args, input, options) => new Promi
   });
   child.stdin.end(input);
 });
+export const runGitBinary = createGitRunner();
+export interface ReaderLimits { files: number; bytes: number; metadataBytes: number; timeoutMs: number; stderrBytes: number; }
+export const READER_LIMITS: Readonly<ReaderLimits> = Object.freeze({ files: CORPUS_LIMITS.files, bytes: CORPUS_LIMITS.packageBytes,
+  metadataBytes: CORPUS_LIMITS.packageBytes, timeoutMs: 30000, stderrBytes: 65536 });
 export interface ReaderOptions {
+  /** May only lower hard limits. A controlled test/maintainer seam, never a policy bypass. */
+  readonly limits?: Partial<ReaderLimits> | undefined;
   readonly run?: BinaryGitRunner | undefined;
   readonly signal?: AbortSignal | undefined;
 }
@@ -103,20 +115,38 @@ function treeEntry(tree: Uint8Array, name: string, oidBytes: number): { mode: st
 /** Reads only object database bytes. The caller supplies the complete selected/evidence path set. */
 export async function readPinnedSources(localRepository: string, requestInput: unknown, options: ReaderOptions = {}): Promise<ValidationResult<AcquiredBlob[]>> {
   const decoded = decodeSourceRequest(requestInput); if (!decoded.ok) return decoded;
-  if (!isAbsolute(localRepository)) return failure([problem('path.invalid', '/localRepository', 'Expected absolute local repository path.')]);
+  if (typeof localRepository !== 'string' || !isAbsolute(localRepository)) return failure([problem('path.invalid', '/localRepository', 'Expected absolute local repository path.')]);
   const request = decoded.value, run = options.run ?? runGitBinary;
+  const limits = { ...READER_LIMITS, ...options.limits };
+  for (const key of Object.keys(READER_LIMITS) as (keyof typeof READER_LIMITS)[]) {
+    if (!Number.isSafeInteger(limits[key]) || limits[key] < 1 || limits[key] > READER_LIMITS[key]) {
+      return failure([problem('limit.exceeded', '/limits', 'Reader limits may only lower positive hard bounds.')]);
+    }
+  }
+  if (request.paths.length > limits.files || request.paths.some(path => Buffer.byteLength(path) > 16384 || path.split('/').length > CORPUS_LIMITS.depth)) {
+    return failure([problem('limit.exceeded', '/paths', 'Selected path count, length or depth exceeds limits.')]);
+  }
+  let total = 0, metadataBytes = 0;
+  const metadata = new Map<string, Uint8Array>();
   const get = async (oid: string, kind: 'commit' | 'tree' | 'blob'): Promise<Uint8Array> => {
     if (options.signal?.aborted) throw new SourceReaderError('inventory.invalid', 'Source acquisition cancelled.');
+    const cached = metadata.get(oid); if (kind !== 'blob' && cached) return cached;
+    const remaining = kind === 'blob' ? limits.bytes - total : limits.metadataBytes - metadataBytes;
     const response = await run(['cat-file', '--batch'], Buffer.from(`${oid}\n`), { cwd: localRepository,
-      stdoutLimit: CORPUS_LIMITS.packageBytes + 192, stderrLimit: 65536, timeoutMs: 30000, signal: options.signal });
-    return decodeObject(response, oid, kind);
+      stdoutLimit: remaining + 192, stderrLimit: limits.stderrBytes, timeoutMs: limits.timeoutMs, signal: options.signal });
+    if (response.byteLength > remaining + 192) throw new SourceReaderError('limit.exceeded', 'Git response exceeds remaining budget.');
+    const bytes = decodeObject(response, oid, kind);
+    if (bytes.byteLength > remaining) throw new SourceReaderError('limit.exceeded', 'Acquired objects exceed remaining budget.');
+    if (kind === 'blob') total += bytes.byteLength;
+    else { metadataBytes += bytes.byteLength; metadata.set(oid, bytes); }
+    return bytes;
   };
   try {
     const commit = await get(request.revision, 'commit');
     const header = Buffer.from(commit.subarray(0, 80)).toString('ascii');
     const root = new RegExp(`^tree ([a-f0-9]{${request.revision.length}})\\n`).exec(header)?.[1];
     if (!root) throw new SourceReaderError('inventory.invalid', 'Pinned commit has no valid root tree.');
-    const blobs: AcquiredBlob[] = []; let total = 0;
+    const blobs: AcquiredBlob[] = [];
     for (const path of [...request.paths].sort(compareText)) {
       const segments = path.split('/'); let treeOid = root;
       for (const [i, segment] of segments.entries()) {
@@ -126,8 +156,7 @@ export async function readPinnedSources(localRepository: string, requestInput: u
           treeOid = entry.oid;
         } else {
           if (!['100644', '100755'].includes(entry.mode)) throw new SourceReaderError('inventory.invalid', 'Only regular Git blobs may be selected.');
-          const bytes = await get(entry.oid, 'blob'); total += bytes.byteLength;
-          if (total > CORPUS_LIMITS.packageBytes) throw new SourceReaderError('limit.exceeded', 'Aggregate source bytes exceed limit.');
+          const bytes = await get(entry.oid, 'blob');
           blobs.push({ path, bytes });
         }
       }

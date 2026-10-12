@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -55,3 +55,43 @@ Run at 2026-10-12T04:59:13.470Z on commit `7fd440ce`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/design/corpus/sources/__tests__/eligibility.test.ts` | 0 | 3 | 0.6 s |  |
+
+## t3
+
+Run at 2026-10-12T05:04:07.092Z on commit `5a036847`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: pinned-reader preserves binary commit bytes despite worktree and branch changes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pinned-reader preserves binary commit bytes despite worktree and branch changes | `src/design/corpus/sources/__tests__/git-reader.test.ts` |
+
+**integration: pinned-reader rejects missing commits paths and corrupt object framing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pinned-reader rejects missing commits paths and corrupt object framing | `src/design/corpus/sources/__tests__/git-reader.test.ts` |
+
+**integration: reader-safety rejects selected unsafe paths before I/O and ignores unselected paths**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reader-safety rejects selected unsafe paths before I/O and ignores unselected paths | `src/design/corpus/sources/__tests__/git-reader.test.ts` |
+
+**integration: reader-safety rejects symlinks and submodules and leaves LFS unresolved**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reader-safety rejects symlinks and submodules and leaves LFS unresolved | `src/design/corpus/sources/__tests__/git-reader.test.ts` |
+
+**integration: reader-safety prevents replacement filters lazy fetch and config-driven commands**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reader-safety prevents replacement filters lazy fetch and config-driven commands | `src/design/corpus/sources/__tests__/git-reader.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/design/corpus/sources/__tests__/git-reader.test.ts` | 0 | 5 | 1.3 s |  |

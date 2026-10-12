@@ -27,3 +27,13 @@ Added a separate `git-reader.ts` I/O entry. It verifies full commit, tree and bl
 All five planned integration tests passed and TypeScript checking passed. Tests include dirty worktree/branch movement, corrupt framing, missing objects, replacement refs, filter/fsmonitor configuration and a missing promisor object with a blocked transport.
 
 T003 full suite: 5,467 tests, 5,338 passed, one known SQLite overflow failure, 125 skipped, three todo. Log: `/tmp/di1-s2-t3-full.log`.
+
+T003 daemon validation passed every acceptance check and all five mapped tests. Commit: `5a036847`.
+
+## T004 — bounded acquisition lifecycle
+
+Reader limits can only lower the hard limits: 10,000 selected paths, 64 MiB source/evidence bytes, a separate 64 MiB metadata cache, 64 KiB stderr and 30 seconds per child. Source paths are bounded by length/depth before I/O. Shared evidence paths are deduplicated by the closure builder; distinct upstream paths remain separate identities and count separately even if bytes match. Verified commit/tree objects are cached within the bounded request.
+
+Controlled process tests prove exact/over-limit behavior, failure without admitted output, kill-on-timeout/cancellation/output overflow, stream/spawn/exit failures and removal of abort listeners. Three planned limit tests plus the five pinned-reader tests pass. TypeScript checking passes. Full-suite evidence will follow.
+
+T004 full suite: 5,470 tests, 5,341 passed, one known SQLite overflow failure, 125 skipped, three todo. Log: `/tmp/di1-s2-t4-full.log`.

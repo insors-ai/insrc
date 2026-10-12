@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-12T05:32:00.687Z  ·  **Updated:** 2026-10-12T05:33:13.637Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-12T05:32:00.687Z  ·  **Updated:** 2026-10-12T05:35:35.400Z
 
-**Commit:** 6d0ea41f
+**Commit:** ec0dd3c7
 
 ## Scope
 
@@ -30,7 +30,9 @@ The chat's claude and codex argv builders now put every flag first and the promp
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-65cb63f7186f84fa.json` — **insrc-build** (2026-10-12T05:33:13.637Z)
-- `docs/standalone/pass-chat-prompts-claude-codex-clis-E2026101265cb63f7/ISSUE.md` — **insrc-build** (2026-10-12T05:33:13.637Z)
-- `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` — **insrc-build** (2026-10-12T05:33:13.637Z)
-- `vscode-plugin/src/chat/cli-adapter.ts` — **insrc-build** (2026-10-12T05:33:13.637Z)
+- `.insrc/artifacts/CR-65cb63f7186f84fa-S001.json` — **insrc-build** (2026-10-12T05:35:35.400Z)
+- `.insrc/artifacts/ISSUE-65cb63f7186f84fa.json` — **insrc-build** (2026-10-12T05:35:35.400Z)
+- `docs/standalone/pass-chat-prompts-claude-codex-clis-E2026101265cb63f7/ISSUE.md` — **insrc-build** (2026-10-12T05:35:35.400Z)
+- `docs/standalone/pass-chat-prompts-claude-codex-clis-E2026101265cb63f7/S001/CR.md` — **insrc-build** (2026-10-12T05:35:35.400Z)
+- `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` — **insrc-build** (2026-10-12T05:35:35.400Z)
+- `vscode-plugin/src/chat/cli-adapter.ts` — **insrc-build** (2026-10-12T05:35:35.400Z)

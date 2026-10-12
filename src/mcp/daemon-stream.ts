@@ -28,8 +28,20 @@ import type { RunStatus } from '../daemon/workflow-run-registry.js';
 import type { WorkflowApproveResult } from '../workflow/gates.js';
 import type { DocGenOutcome, RenderedDocumentShell, SerializableDocTypeRegistration } from '../docgen/types.js';
 import type { InsrcGuideResult } from '../daemon/guide-sections.js';
-import type { CodeReviewArtifact, CodeReviewGrounding } from '../workflow/code-review/types.js';
+import type { CodeReviewGrounding } from '../workflow/code-review/types.js';
 import type { WorkflowReviewDone } from '../daemon/workflow-review-rpc.js';
+import { ReviewStreamError } from '../shared/review-stream.js';
+import type {
+	CodeReviewStreamParams, CodeReviewStreamResult, ReviewArtifactStreamParams, ReviewStreamFailure, ReviewStreamOpts,
+} from '../shared/review-stream.js';
+
+// Moved to src/shared/review-stream.ts (Epic c2ba6fa6, Story s11) so the
+// daemon's in-process review client can use them too; re-exported here so
+// existing importers are unchanged.
+export { ReviewStreamError } from '../shared/review-stream.js';
+export type {
+	CodeReviewStreamParams, CodeReviewStreamResult, ReviewArtifactStreamParams, ReviewStreamFailure, ReviewStreamOpts,
+} from '../shared/review-stream.js';
 
 const log = getLogger('mcp:workflow-run');
 
@@ -390,35 +402,6 @@ export function guideList(
 // and report a timeout. These helpers treat a plain line as final.
 // ---------------------------------------------------------------------------
 
-/** Why a review request did not produce a review. */
-export type ReviewStreamFailure =
-	| 'unreachable'      // the daemon is not running
-	| 'unknown-method'   // the daemon is older than this request
-	| 'daemon-error'     // the daemon answered with an error (frame or plain line)
-	| 'closed'           // the connection ended before a final frame
-	| 'timeout'          // the wait limit passed
-	| 'protocol'         // a line that is not valid for a stream request
-	| 'aborted';
-
-export class ReviewStreamError extends Error {
-	constructor(
-		readonly failure: ReviewStreamFailure,
-		message: string,
-		/** The `reason` the daemon attached to its error frame, when it gave one. */
-		readonly reason?: string | undefined,
-	) {
-		super(message);
-		this.name = 'ReviewStreamError';
-	}
-}
-
-export interface ReviewStreamOpts {
-	/** How long to wait for the final frame. */
-	readonly timeoutMs: number;
-	readonly onFrame?:  ((stream: 'progress' | 'delta', data: unknown) => void) | undefined;
-	readonly signal?:   AbortSignal | undefined;
-}
-
 export interface ReviewStreamDeps {
 	readonly connect?:    (() => Socket) | undefined;
 	/** Injected timer, so a test can fire the wait limit without waiting for it. */
@@ -529,12 +512,6 @@ function reviewStreamRequest<T>(
 	});
 }
 
-export interface ReviewArtifactStreamParams {
-	/** The artifact's `.md` path. */
-	readonly artifactPath: string;
-	readonly repo?:        string | undefined;
-}
-
 /** Ask the daemon to review an existing design artifact (`workflow.review`). */
 export function reviewArtifactStream(
 	params: ReviewArtifactStreamParams,
@@ -545,20 +522,6 @@ export function reviewArtifactStream(
 		artifactPath: params.artifactPath,
 		...(params.repo !== undefined ? { repo: params.repo } : {}),
 	}, opts, deps);
-}
-
-export interface CodeReviewStreamParams {
-	readonly repo?:    string | undefined;
-	readonly epicHash: string;
-	readonly storyId:  string;
-	readonly client?:  'claude' | 'codex' | undefined;
-	/** How the daemon should ground the review. Omitted means `full`. */
-	readonly groundingMode?: 'full' | 'degraded' | undefined;
-}
-
-export interface CodeReviewStreamResult {
-	readonly runId:    string;
-	readonly artifact: CodeReviewArtifact;
 }
 
 /** Ask the daemon to review a Story's code (`codeReview.run`). */

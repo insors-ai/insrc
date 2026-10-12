@@ -64,7 +64,7 @@ Run at 2026-10-12T07:36:33.075Z on commit `c995dd34`. Tests check: **passed**. 1
 
 ## t3
 
-Run at 2026-10-12T07:40:33.173Z on commit `8fa23116`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-12T07:55:35.663Z on commit `72fc12d2`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none**
 
@@ -78,7 +78,7 @@ Run at 2026-10-12T07:40:33.173Z on commit `8fa23116`. Tests check: **passed**. 6
 | :--- | :--- | :--- |
 | pass | write-then-post order: when each live row is posted, the transcript already holds it at that index | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
 
-**integration: a turn followed for a session that is not shown still writes its rows and posts nothing**
+**integration: a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
@@ -106,4 +106,4 @@ Run at 2026-10-12T07:40:33.173Z on commit `8fa23116`. Tests check: **passed**. 6
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 128 | 2 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 128 | 1.9 s |  |

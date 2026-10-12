@@ -4,7 +4,7 @@
     "epicHash": "ddc4ede1dbf84626",
     "storyId": "S001",
     "createdAt": "2026-10-12T07:35:29.855Z",
-    "updatedAt": "2026-10-12T07:40:33.173Z",
+    "updatedAt": "2026-10-12T07:55:35.663Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:11:33.406Z",
     "epicSlug": "page-dev-chat-transcript-show-latest"
@@ -181,8 +181,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "8fa23116",
-        "ranAt": "2026-10-12T07:40:33.173Z",
+        "commit": "72fc12d2",
+        "ranAt": "2026-10-12T07:55:35.663Z",
         "testsPassed": true,
         "tests": [
           {
@@ -212,7 +212,7 @@
             "files": []
           },
           {
-            "name": "a turn followed for a session that is not shown still writes its rows and posts nothing",
+            "name": "a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard",
             "level": "integration",
             "source": "mapping",
             "cases": [
@@ -269,7 +269,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1963,
+            "durationMs": 1907,
             "titles": [
               {
                 "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",

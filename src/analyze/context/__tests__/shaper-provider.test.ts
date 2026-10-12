@@ -14,7 +14,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { CliProvider } from '../../../agent/providers/cli-provider.js';
-import { McpSamplingProvider } from '../../../agent/providers/mcp-sampling-provider.js';
 import { OllamaProvider } from '../../../agent/providers/ollama.js';
 import type { AnalyzeConfig } from '../../../config/analyze.js';
 import { buildShaperProvider, isOllamaModelId, resolveShaperKind, runWithClientProviderContext } from '../shaper-provider.js';
@@ -129,37 +128,6 @@ test('shaperProvider=cli-* is idempotent -- repeated calls return distinct insta
 });
 
 // ---------------------------------------------------------------------------
-// Sampler override (MCP-integration path)
-// ---------------------------------------------------------------------------
-
-test('sampler override wins over cfg.shaperProvider=ollama', () => {
-	const sampler = async () => ({ role: 'assistant' as const, content: '' });
-	const p = buildShaperProvider(makeCfg({ shaperProvider: 'ollama' }), { sampler });
-	assert.ok(p instanceof McpSamplingProvider);
-});
-
-test('sampler override wins even when shaperProvider=cli-claude', () => {
-	// MCP-integrated requests never subprocess-spawn a CLI; the
-	// sampler always beats the config.
-	const sampler = async () => ({ role: 'assistant' as const, content: '' });
-	const p = buildShaperProvider(makeCfg({ shaperProvider: 'cli-claude' }), { sampler });
-	assert.ok(p instanceof McpSamplingProvider);
-});
-
-test('sampler override forwards modelHints into the provider', () => {
-	const sampler = async () => ({ role: 'assistant' as const, content: '' });
-	const p = buildShaperProvider(
-		makeCfg({ shaperProvider: 'ollama' }),
-		{ sampler, modelHints: ['claude-haiku-4-5'] },
-	);
-	assert.ok(p instanceof McpSamplingProvider);
-	// modelHints is internal; we verify via a behavioural probe -- the
-	// hint should appear in a request the provider forwards to the
-	// sampler. The provider's own test file covers that path in detail;
-	// here we only care that the factory wired the option through.
-});
-
-// ---------------------------------------------------------------------------
 // Client-inferred default (Claude Code / Codex invoking the MCP server)
 // ---------------------------------------------------------------------------
 
@@ -181,12 +149,6 @@ test('ambient runWithClientProviderContext supplies the default', async () => {
 	assert.ok(p instanceof CliProvider);
 	// outside the context, the config default (ollama) applies again
 	assert.ok(buildShaperProvider(cfg) instanceof OllamaProvider);
-});
-
-test('sampler still beats a clientDefault', () => {
-	const sampler = async () => ({ role: 'assistant' as const, content: '' });
-	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: false });
-	assert.ok(buildShaperProvider(cfg, { sampler, clientDefault: 'cli-claude' }) instanceof McpSamplingProvider);
 });
 
 // ---------------------------------------------------------------------------
@@ -233,8 +195,3 @@ test('repoOverride beats the clientDefault in buildShaperProvider', () => {
 	assert.ok(buildShaperProvider(cfg, { repoOverride: 'ollama', clientDefault: 'cli-claude' }) instanceof OllamaProvider);
 });
 
-test('sampler still beats a repoOverride', () => {
-	const sampler = async () => ({ role: 'assistant' as const, content: '' });
-	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: false });
-	assert.ok(buildShaperProvider(cfg, { sampler, repoOverride: 'cli-claude' }) instanceof McpSamplingProvider);
-});

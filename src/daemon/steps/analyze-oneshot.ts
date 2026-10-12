@@ -5,10 +5,9 @@
 
 /**
  * The one-shot analyze tool's body (`insrc_analyze`), moved out of the MCP
- * server into the daemon's step tree (Epic c2ba6fa6, Story s11). Behaviour is
- * unchanged: the caller wraps the run in its provider context (today the MCP
- * server: its sampler or the invoking client's CLI). With no wrap given, the
- * run is wrapped in the step context's client, converted to 'cli-claude' |
+ * server into the daemon's step tree (Epic c2ba6fa6, Story s11). A caller may
+ * wrap the run in its own provider context; with no wrap given, the run is
+ * wrapped in the step context's client, converted to 'cli-claude' |
  * 'cli-codex' for runWithClientProviderContext.
  */
 

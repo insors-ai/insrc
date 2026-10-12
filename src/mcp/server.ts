@@ -11,26 +11,14 @@
  * the deterministic exploration + synthesizer pipeline over the
  * `insrc_analyze` tool.
  *
- * The server runs IN PROCESS: it links the analyze module directly,
- * reads from the same LMDB the main daemon writes to, and threads
- * the calling client's `sampling/createMessage` capability through
- * to the shaper factory via a request-scoped
- * `runWithSamplerContext` scope. That means:
- *
- *   - No inner `claude --print` subprocess spawn (which would nest
- *     Claude inside Claude). The outer client's LLM session powers
- *     every inner analyze call.
- *   - No RPC bridge to the main daemon for LLM work; the analyze
- *     pipeline runs where the tool call arrives.
- *
- * The client's capability declaration at initialize decides which
- * path drives inner LLM calls:
- *
- *   - Client declares `sampling` -> use MCP sampling
- *   - Client doesn't declare sampling -> fall back to
- *     `AnalyzeConfig.shaperProvider` (subprocess CliProvider or
- *     Ollama). This lets the same binary work with clients that
- *     don't yet support sampling.
+ * The step tools (analyze, analyze_step, workflow_step, build_step,
+ * review_step, code_review_step, triage) run in the insrc daemon: each call
+ * here is forwarded over the daemon's `step.call` request with this process's
+ * working directory, INSRC_REPO and the calling client (see forward-step.ts),
+ * and the daemon's reply is returned unchanged. This process opens no store
+ * and runs no analysis itself (Epic c2ba6fa6, Story s11). Inner model calls are
+ * made by the daemon, through the CLI of the calling client when no provider
+ * is configured.
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -188,8 +176,6 @@ export function buildInsrcMcpServerWithRegistry(): {
 		capabilities: {
 			tools:     {},
 			resources: {},
-			// We do not declare `sampling` -- that's a CLIENT capability;
-			// the server merely uses it when the client declares it.
 		},
 	});
 

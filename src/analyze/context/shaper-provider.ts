@@ -23,9 +23,7 @@
  * unaffected: freeform.probe + classification + task modes still
  * spin their own OllamaProvider because `CliProvider.supportsTools
  * === false` -- the CLI wrappers can't drive a multi-turn tool loop.
- * A future revision may route those through MCP sampling instead;
- * for now they remain Ollama-only regardless of this factory's
- * output.
+ * They remain Ollama-only regardless of this factory's output.
  *
  * The factory reads config on every call rather than caching so a
  * mid-process config change (via _resetAnalyzeConfigCacheForTests
@@ -40,10 +38,6 @@ import type { RoleId } from '../../config/role-taxonomy.js';
 import type { RoleRouter } from './role-router.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import { CliProvider } from '../../agent/providers/cli-provider.js';
-import {
-	McpSamplingProvider,
-	type SamplingCallback,
-} from '../../agent/providers/mcp-sampling-provider.js';
 import { OllamaProvider } from '../../agent/providers/ollama.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
@@ -51,22 +45,13 @@ import type { LLMProvider } from '../../shared/types.js';
 const log = getLogger('analyze:context:shaper-provider');
 
 /**
- * Optional per-request overrides. The MCP server layer sets
- * `sampler` when it wants the daemon's inner LLM calls to route back
- * to the calling client via `sampling/createMessage`. When present,
- * the sampler always wins over `cfg.shaperProvider` -- MCP-integrated
- * requests should never subprocess-spawn a CLI or hit local Ollama.
- * Callers who want the config default explicitly can pass `undefined`.
+ * Optional per-request overrides of the configured provider.
  */
 export interface ShaperProviderOverrides {
-	readonly sampler?: SamplingCallback | undefined;
-	/** Optional model-preference hints forwarded on every sampling
-	 *  request. Ignored when `sampler` is undefined. */
-	readonly modelHints?: readonly string[] | undefined;
-	/** Highest-priority NON-sampler signal: a repo-scoped provider pinned via
+	/** Highest-priority signal: a repo-scoped provider pinned via
 	 *  `models.byRepo[repoPath].shaperProvider` (resolved by the caller
 	 *  through `resolveRepoShaperProvider`). Wins over the global config default
-	 *  and the per-run `clientDefault`. Only the active sampler beats it. */
+	 *  and the per-run `clientDefault`. */
 	readonly repoOverride?: AnalyzeShaperProviderKind | undefined;
 	/** Provider to use when NEITHER a per-repo override NOR an explicit global
 	 *  `cfg.shaperProvider` is set — the per-run caller, set by the MCP server
@@ -79,7 +64,7 @@ export interface ShaperProviderOverrides {
 	 *  narrow calls but too short for a workflow's full-artifact synthesize;
 	 *  the daemon workflow runner passes a generous value. Ignored for Ollama. */
 	readonly cliTimeoutMs?: number | undefined;
-	/** HIGHEST-priority non-sampler runner, set by the S003 RoleRouter from a
+	/** HIGHEST-priority runner, set by the S003 RoleRouter from a
 	 *  resolved capability tier. Fed into `resolveShaperKind` as its top-priority
 	 *  `roleResolved` input so the tier's runner wins over repo/global/client
 	 *  signals while the k1 CLI/Ollama admission stays in one place. Absent for
@@ -90,49 +75,6 @@ export interface ShaperProviderOverrides {
 	 *  non-core tier pin a CLI/Ollama model the single `shaperModel` cannot
 	 *  express. Absent for every legacy caller. */
 	readonly roleModel?: string | undefined;
-}
-
-/**
- * Request-scoped storage for the sampler. The MCP server wraps each
- * incoming tool call in `runWithSamplerContext(...)` so every LLM
- * call site downstream automatically picks up the sampler without
- * every runner having to accept + thread an `overrides` argument.
- *
- * This is the SAME mechanism the factory uses when an explicit
- * `overrides` arg is passed -- `buildShaperProvider` prefers the
- * explicit arg but falls back to the ALS-stored context so the
- * common case (MCP handler enters `runWithSamplerContext`, downstream
- * code just calls `buildShaperProvider(cfg)`) works without further
- * plumbing.
- */
-interface SamplerContext {
-	readonly sampler:    SamplingCallback;
-	readonly modelHints: readonly string[];
-}
-
-const samplerContextStorage = new AsyncLocalStorage<SamplerContext>();
-
-/**
- * Run `fn` with a sampler installed on the ambient async context.
- * Any `buildShaperProvider(cfg)` call inside the callback (or in any
- * async task spawned from it) picks up the sampler automatically.
- * The context is torn down when `fn` returns / throws.
- */
-export function runWithSamplerContext<T>(
-	sampler:    SamplingCallback,
-	modelHints: readonly string[],
-	fn:         () => Promise<T>,
-): Promise<T> {
-	return samplerContextStorage.run({ sampler, modelHints }, fn);
-}
-
-/**
- * Peek at the current sampler context (undefined when we're outside
- * a `runWithSamplerContext` scope). Exported for tests + the MCP
- * server's logging.
- */
-export function currentSamplerContext(): SamplerContext | undefined {
-	return samplerContextStorage.getStore();
 }
 
 /**
@@ -218,15 +160,10 @@ export function resolveRoleProvider(
 }
 
 /**
- * Pure resolution of the effective shaper KIND across the non-sampler signals,
- * in strict priority order:
+ * Pure resolution of the effective shaper KIND, in strict priority order:
  *
  *   per-repo override > explicit global config > per-run caller > 'ollama'
- *
- * The sampler (when active) sits ABOVE all of these and is handled in
- * `buildShaperProvider` before this function is consulted — it routes to
- * `McpSamplingProvider` rather than a KIND, so it is not represented here.
- *
+ * *
  * `globalExplicit` is `cfg.shaperProvider` ONLY when the operator explicitly
  * set `models.tiers.core.runner` (i.e. `cfg.shaperProviderExplicit`);
  * otherwise pass `undefined` so a defaulted-'ollama' global does not pre-empt
@@ -267,12 +204,7 @@ export function isOllamaModelId(model: string): boolean {
  * Return the `LLMProvider` implementation the analyze framework
  * should use for its structured-output calls.
  *
- * Priority order:
- *   1. `overrides.sampler` -> `McpSamplingProvider` (explicit MCP override)
- *   2. ambient `runWithSamplerContext` sampler -> `McpSamplingProvider`
- *      (implicit MCP override; how the server threads the sampler
- *      through the analyze pipeline without touching every runner)
- *   3. effective KIND via `resolveShaperKind`:
+ * The effective KIND via `resolveShaperKind`:
  *        per-repo override > explicit global config > per-run caller > 'ollama'
  *      cli-claude / cli-codex -> `CliProvider`; 'ollama' -> `OllamaProvider`.
  *
@@ -283,28 +215,7 @@ export function buildShaperProvider(
 	cfg:       AnalyzeConfig,
 	overrides?: ShaperProviderOverrides,
 ): LLMProvider {
-	if (overrides?.sampler !== undefined) {
-		log.info(
-			{ modelHints: overrides.modelHints ?? [] },
-			'shaper provider: routing through McpSamplingProvider (explicit override)',
-		);
-		return new McpSamplingProvider({
-			sampler: overrides.sampler,
-			...(overrides.modelHints !== undefined ? { modelHints: overrides.modelHints } : {}),
-		});
-	}
-	const ambient = samplerContextStorage.getStore();
-	if (ambient !== undefined) {
-		log.info(
-			{ modelHints: ambient.modelHints },
-			'shaper provider: routing through McpSamplingProvider (ambient context)',
-		);
-		return new McpSamplingProvider({
-			sampler:    ambient.sampler,
-			modelHints: ambient.modelHints,
-		});
-	}
-	// Effective provider (non-sampler): per-repo override > explicit global
+	// Effective provider: per-repo override > explicit global
 	// config > per-run caller (arg or ambient client-provider context) >
 	// 'ollama'. See resolveShaperKind.
 	const clientDefault = overrides?.clientDefault ?? clientProviderContextStorage.getStore()?.kind;
@@ -357,8 +268,8 @@ export function buildShaperProvider(
  * indexing over many docs, so it must NOT inherit the interactive
  * `shaperProvider` (which the operator may have pinned to a cloud CLI, or which
  * the per-run MCP client sets) — that would spawn a `claude`/`codex` subprocess
- * per doc, serial + quota-burning. This ignores the sampler + client-provider
- * ambient contexts entirely and builds strictly from `cfg.summariser*`,
+ * per doc, serial + quota-burning. This ignores the client-provider ambient
+ * context entirely and builds strictly from `cfg.summariser*`,
  * defaulting to LOCAL `ollama` (`qwen3.6:27b`, a MoE). Only if the operator
  * explicitly sets `models.tiers.cheap.runner` to a `cli-*` does it use
  * a CLI.

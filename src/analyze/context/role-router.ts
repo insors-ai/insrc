@@ -169,8 +169,7 @@ export function resolveRole(
 /** Build the concrete provider for an already-resolved role. Feeds the tier's
  *  runner/model through ShaperProviderOverrides so a mid/cheap CLI tier can pin
  *  a concrete model (e.g. sonnet/haiku) that cfg.shaperModel alone cannot
- *  express; the ambient sampler + legacy precedence inside buildShaperProvider
- *  are untouched. */
+ *  express; the legacy precedence inside buildShaperProvider is untouched. */
 function materialize(internal: InternalResolution, cfg: AnalyzeConfig, deps: RoleRouterDeps): ResolvedProvider {
 	const provider = buildShaperProvider(cfg, {
 		...(deps.repoOverride  !== undefined ? { repoOverride:  deps.repoOverride  } : {}),

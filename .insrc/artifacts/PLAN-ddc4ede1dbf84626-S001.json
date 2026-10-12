@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1791790055459-xn0ej9",
+    "runId": "wf-1791790915490-o0iuuv",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-10-12T07:31:16.613Z",
+    "createdAt": "2026-10-12T07:45:23.977Z",
     "epicCreatedAt": "2026-10-12T07:11:33.406Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 221149,
+    "elapsedMs": 208482,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "ddc4ede1dbf84626",
@@ -24,14 +24,12 @@
     "storyId": "S001",
     "lldRunId": "wf-1791789281233-4pjafm",
     "lldEffectiveHash": "6baf2b20634668cba1ab830641c3494930088dd0e4f2f8e66cfced203c6d0c00",
-    "authoredBy": "controller",
-    "approvedAt": "2026-10-12T07:34:34.277Z",
-    "rangeBase": "f5a8228aeec635b757271d126bb3940e04a49e51"
+    "authoredBy": "controller"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Eight tasks, each leaving the test suite green. First the pieces nothing depends on yet: the page-cutting rule, the message shapes, and the registry and test-fixture additions. Then the host starts writing each row before posting it with its index and answers requests for older pages, while the webview pager is built and tested on its own in two steps. Only then is the pager embedded in the chat shell, and last the host switches to sending just the latest window when a chat opens."
+      "prose": "Eight tasks, each leaving the test suite green. First the pieces nothing depends on yet: the page-cutting rule, the message shapes, and the registry and test-fixture additions. Then the host starts writing each row before posting it with its index and answers requests for older pages, while the webview pager is built and tested on its own in two steps. Only then is the pager embedded in the chat shell, and last the host switches to sending just the latest window when a chat opens. This is the plan as amended on 2026-10-12: one check of task 3 described a state that cannot occur and now states what the code does."
     },
     "tasks": [
       {
@@ -101,7 +99,7 @@
       {
         "id": "t3",
         "title": "Host: write-then-post with row indexes, and answer load-older",
-        "summary": "In chat-panel.ts make appendEvent return the index of the row it wrote; in the run sink and the followed-turn sink call appendEvent first and post second with `rowIndex` (appendEvent stays outside the followed sink's `!disposed && session === s` guard); in recordPermissionOutcome and recordSelectionOutcome push first and post with `rowIndex` (none when there is no session); add `rowIndex` to runTurn's user-row. Add the `load-older` handler: validate sessionId and before, ignore a request for a session that is not active, and post one transcript-page cut by pageBefore. session-restored still carries the whole transcript, now with firstIndex 0 and total; any existing deep-equality assertion on that payload is updated here.",
+        "summary": "In chat-panel.ts make appendEvent return the index of the row it wrote; in the run sink and the followed-turn sink call appendEvent first and post second with `rowIndex` (in the followed sink the write stays before and outside the `!disposed && session === s` guard); in recordPermissionOutcome and recordSelectionOutcome push first and post with `rowIndex` (none when there is no session); add `rowIndex` to runTurn's user-row. Add the `load-older` handler: validate sessionId and before, ignore a request for a session that is not active, and post one transcript-page cut by pageBefore. session-restored still carries the whole transcript, now with firstIndex 0 and total; any existing deep-equality assertion on that payload is updated here. AMENDED: the earlier check that a turn followed for a session that is not shown 'still writes its rows' described a state that cannot occur, because a chat switch or a closed panel aborts the follow at once; it is replaced by what the code does.",
         "size": "M",
         "order": 3,
         "dependsOn": [
@@ -111,7 +109,7 @@
         "acceptanceChecks": [
           "Every persisted live row (assistant, marker, tool-result, user, permission outcome, selection outcome) is posted with the absolute index of a row the transcript already holds; status and approval-request carry none",
           "The rows written to the transcript are unchanged",
-          "A turn followed for a session that is not shown still writes its rows and posts nothing",
+          "A followed turn's row is written before it is posted with its index; after a chat switch the follow stops, posting and writing nothing more (the rest is read again on the next resume, as before this change); in the followed-turn sink the write is before and outside the shown-session guard",
           "load-older for the active session answers one transcript-page ending just before `before`; repeated requests walk back to 0",
           "load-older for another session id, or with a malformed before or sessionId, posts nothing",
           "session-restored carries firstIndex 0 and total, and the existing session-restored assertions pass"
@@ -120,7 +118,8 @@
           "c1",
           "c2",
           "c3",
-          "c5"
+          "c5",
+          "c8"
         ],
         "tests": [
           {
@@ -133,7 +132,7 @@
           },
           {
             "level": "integration",
-            "name": "a turn followed for a session that is not shown still writes its rows and posts nothing"
+            "name": "a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard"
           },
           {
             "level": "integration",
@@ -550,6 +549,12 @@
       "kind": "stakeholder",
       "ref": "LLD S001 open questions, resolved by the user 2026-10-12",
       "quotedText": "fixed sizes no settings"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/turn-lifecycle.ts (plan amendment approved by the user 2026-10-12: a chat switch or a closed panel aborts the follow, so no event is delivered for a session that is not shown)",
+      "quotedText": "following?.ctl.abort(); // a resumed turn: its process is not ours to stop here"
     }
   ]
 }

@@ -4,7 +4,7 @@
     "epicHash": "c96a97a204fac22b",
     "storyId": "S001",
     "createdAt": "2026-10-12T09:10:47.854Z",
-    "updatedAt": "2026-10-12T09:20:05.206Z",
+    "updatedAt": "2026-10-12T09:21:45.177Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:26:48.214Z",
     "epicSlug": "every-save-chat-session-rewrites-its"
@@ -566,6 +566,118 @@
               },
               {
                 "title": "the migration with no index, or run a second time, reads no session, writes nothing and returns no kept id; an entry isSession rejects is kept and logged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "923ae9c7",
+        "ranAt": "2026-10-12T09:21:45.177Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+                "title": "extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 252,
+            "titles": [
+              {
+                "title": "extension.ts gates the chat command on insrc.chat.enabled (config read)",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts constructs createChatPanelHost with the real injected vscode seams + memento store",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host + protocol + store modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes the chat command + the insrc.chat.enabled config (default on)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: package.json contributes insrc.chat.diffView (string enum chat|editor, default chat)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects editGovernance seams",
+                "result": "pass"
+              },
+              {
+                "title": "S006: the edit-governor module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: package.json contributes insrc.chat.lockGroup (boolean, default true, machine scope)",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: extension.ts wires thin seams into createChatGroupLock and attaches it in the one panel adapter",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: the module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "S007: package.json contributes the insrc.chat.docsReview command",
+                "result": "pass"
+              },
+              {
+                "title": "S007: extension.ts wires the docs-review host inside the chat gate over the shared client",
+                "result": "pass"
+              },
+              {
+                "title": "S007: the docs-review host + client modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the chat opens from an editor/title icon, NOT an Activity Bar container",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the real insrc icon SVGs exist, are non-empty, and ship in the .vsix",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: extension.ts opens the chat as an editor-tab panel + gates the icon, docs-review intact",
+                "result": "pass"
+              },
+              {
+                "title": "the extension passes a file-backed lock registry and the turnLockTimeoutMs setting",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)",
+                "result": "pass"
+              },
+              {
+                "title": "the extension builds a session output on ~/.insrc/chat-output, passes it to the provider registry, and wires onEvict and the start-up sweep",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids",
                 "result": "pass"
               }
             ],

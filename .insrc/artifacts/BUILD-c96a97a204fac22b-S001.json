@@ -4,7 +4,7 @@
     "epicHash": "c96a97a204fac22b",
     "storyId": "S001",
     "createdAt": "2026-10-12T09:10:47.854Z",
-    "updatedAt": "2026-10-12T09:20:05.206Z",
+    "updatedAt": "2026-10-12T09:21:45.177Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:26:48.214Z",
@@ -27,9 +27,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "migrateChatSessionsFromMemento, in session-file-store.ts, moves each indexed session from the memento into the store's files: it writes rows then head when no head exists, appends the missing rows when the files hold a prefix, writes nothing when the files hold more, then reads the files back and compares them with the memento's copy before it removes the memento key. A session that fails, disagrees or is not a session is left untouched, logged and returned in kept; the index is rewritten to the kept ids or removed. A memento write that fails later is logged rather than left as an unhandled rejection. Nothing calls the migration yet; that is task 5.",
+    "summary": "extension.ts now runs migrateChatSessionsFromMemento over context.globalState first, builds the chat store with createFileChatSessionStore over join(PATHS.insrc, 'chat-sessions') with the same cap of 200 and the same onEvict, and gives the output sweep the store's ids plus the ids the migration left in globalState. It no longer constructs the Memento store. The wiring test's pinned assertions were updated and one test added for the order and the keep set. The migration is synchronous and runs once at activation; its cost on the user's real 29.6 MB state has not been measured yet.",
     "testRecord": {
       "md": "docs/standalone/every-save-chat-session-rewrites-its-E20261012c96a97a2/S001/TESTS.md"
     },
@@ -39,44 +43,58 @@
           "file": ".insrc/artifacts/PLAN-c96a97a204fac22b-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:20:05.206Z"
+        "timestamp": "2026-10-12T09:21:45.177Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T09:21:45.177Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fake-session-fs.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:20:05.206Z"
+        "timestamp": "2026-10-12T09:21:45.177Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:20:05.206Z"
+        "timestamp": "2026-10-12T09:21:45.177Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/session-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:20:05.206Z"
+        "timestamp": "2026-10-12T09:21:45.177Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/session-file-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:20:05.206Z"
+        "timestamp": "2026-10-12T09:21:45.177Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/session-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:20:05.206Z"
+        "timestamp": "2026-10-12T09:21:45.177Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T09:21:45.177Z"
       }
     ],
-    "commit": "38ce31e0"
+    "commit": "923ae9c7"
   }
 }

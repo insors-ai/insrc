@@ -5,7 +5,7 @@
 import { promises as fs, statSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
-import { searchAccess } from '../file/helpers.js';
+import { searchAccess, refuseLiveStoreFile } from '../file/helpers.js';
 
 export type ListDirKind = 'file' | 'directory' | 'symlink' | 'other';
 
@@ -52,6 +52,7 @@ export const searchListDirTool: Tool = {
       return { output: '[search:list-dir] missing path', format: 'text', success: false, error: 'no path' };
     }
     const root = resolve(pathArg);
+    refuseLiveStoreFile(root);
     const recursive = input['recursive'] === true;
     const includeHidden = input['includeHidden'] === true;
     const limit = Math.min(Math.max(1, typeof input['limit'] === 'number' ? input['limit'] : DEFAULT_LIMIT), MAX_LIMIT);

@@ -9,7 +9,7 @@
 import { promises as fs, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
-import { searchAccess } from '../file/helpers.js';
+import { searchAccess, refuseLiveStoreFile } from '../file/helpers.js';
 
 export interface SearchGlobData {
   pattern: string;
@@ -46,6 +46,7 @@ export const searchGlobTool: Tool = {
       return { output: '[search:glob] missing pattern', format: 'text', success: false, error: 'no pattern' };
     }
     const cwd = typeof input['cwd'] === 'string' ? resolve(input['cwd']) : process.cwd();
+    refuseLiveStoreFile(cwd);
     const limit = Math.min(Math.max(1, typeof input['limit'] === 'number' ? input['limit'] : DEFAULT_LIMIT), MAX_LIMIT);
     const includeHidden = input['includeHidden'] === true;
 

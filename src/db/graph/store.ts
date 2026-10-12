@@ -348,6 +348,17 @@ function resolvedStorePath(path: string, depth = 0): string {
 	try { return join(realpathSync(dirname(abs)), basename(abs)); } catch { return abs; }
 }
 
+/**
+ * True when `path`, with symbolic links resolved, is the live store's data
+ * file or its lock file. Opening and closing a second descriptor on the lock
+ * file inside the daemon drops the daemon's lock on it (Story s4).
+ */
+export function isLiveStoreFile(path: string): boolean {
+	const p = resolvedStorePath(path);
+	const live = resolvedStorePath(PATHS.lmdb);
+	return p === live || p === `${live}-lock`;
+}
+
 /** Throws `LmdbStoreNotOwnerError` when `path` is the live store and this
  *  process has made neither declaration. */
 function assertMayOpen(path: string): void {

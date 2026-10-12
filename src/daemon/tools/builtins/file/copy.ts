@@ -5,7 +5,7 @@
 import { promises as fs } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, FS_MOVE_ACCESS } from './helpers.js';
+import { str, fail, refuseLiveStoreFile, LiveStoreFileRefusedError, FS_MOVE_ACCESS } from './helpers.js';
 
 export interface FileCopyData {
   from: string;
@@ -35,6 +35,15 @@ export const fileCopyTool: Tool = {
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const from = str(input, 'from') ? resolve(str(input, 'from')!) : '(missing)';
     const to = str(input, 'to') ? resolve(str(input, 'to')!) : '(missing)';
+    // The store's own files are refused here as in execute (Story s4).
+    const refused = [from, to].find(p => p !== '(missing)' && isRefused(p));
+    if (refused !== undefined) {
+      return {
+        title: 'file_copy',
+        content: new LiveStoreFileRefusedError(refused).message,
+        actions: [{ name: 'skip', label: 'Skip' }],
+      };
+    }
     return {
       title: 'file_copy',
       content: [
@@ -56,6 +65,8 @@ export const fileCopyTool: Tool = {
     if (!from || !to) { return fail('file_copy', 'from and to required'); }
     const src = resolve(from);
     const dst = resolve(to);
+    refuseLiveStoreFile(src);
+    refuseLiveStoreFile(dst);
     const recursive = input['recursive'] !== false;
     const overwrite = input['overwrite'] === true;
     const mkdirp = input['mkdirp'] !== false;
@@ -72,7 +83,8 @@ export const fileCopyTool: Tool = {
       catch (err) { return fail('file_copy', `mkdir failed: ${(err as Error).message}`); }
     }
 
-    try { await fs.cp(src, dst, { recursive, force: overwrite }); }
+    // A copied directory never takes the store's own files with it (Story s4).
+    try { await fs.cp(src, dst, { recursive, force: overwrite, filter: p => !isRefused(p) }); }
     catch (err) { return fail('file_copy', `copy failed: ${(err as Error).message}`); }
 
     const data: FileCopyData = { from: src, to: dst, recursive, overwritten };
@@ -84,3 +96,7 @@ export const fileCopyTool: Tool = {
     };
   },
 };
+
+function isRefused(path: string): boolean {
+  try { refuseLiveStoreFile(path); return false; } catch { return true; }
+}

@@ -2,6 +2,7 @@
  * Shared helpers for file:* tools.
  */
 
+import { isLiveStoreFile } from '../../../../db/graph/store.js';
 import { resolve } from 'node:path';
 import type { ToolInput, ToolResult } from '../../types.js';
 import type { AccessPolicy } from '../../../../shared/access.js';
@@ -101,7 +102,28 @@ export function str(input: ToolInput, key: string): string | undefined {
 export function resolvePath(input: ToolInput, key = 'path'): string | undefined {
   const raw = str(input, key);
   if (!raw) { return undefined; }
-  return resolve(raw);
+  const path = resolve(raw);
+  refuseLiveStoreFile(path);
+  return path;
+}
+
+/**
+ * A file tool was asked to touch the live graph store's data or lock file.
+ * Reading them is never useful, and opening and closing a descriptor on the
+ * lock file inside the daemon drops the daemon's lock on it (Epic c2ba6fa6,
+ * Story s4).
+ */
+export class LiveStoreFileRefusedError extends Error {
+  constructor(readonly path: string) {
+    super(`Refusing to touch '${path}': it is the insrc graph store's own file, which only the store may open.`);
+    this.name = 'LiveStoreFileRefusedError';
+  }
+}
+
+/** Throws `LiveStoreFileRefusedError` when `path`, with symbolic links
+ *  resolved, is the live store's data file or lock file. */
+export function refuseLiveStoreFile(path: string): void {
+  if (isLiveStoreFile(path)) throw new LiveStoreFileRefusedError(path);
 }
 
 export function fail(id: string, msg: string): ToolResult {

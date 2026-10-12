@@ -12,6 +12,8 @@ import { Script } from 'node:vm';
 import { createChatPanelHost, type ChatPanelChannel, type ChatEditGovernanceDeps } from '../chat-panel.js';
 import { transcriptPagerWebviewSource } from '../transcript-pager.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
+import { createFileChatSessionStore, ROWS_SUFFIX } from '../session-file-store.js';
+import { fakeSessionFs } from './fake-session-fs.js';
 import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, RunOptions } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import { markerFor, WAITING_LABEL } from '../markers.js';
@@ -3687,4 +3689,71 @@ test('the stored session is unchanged by paging: after restores and page loads t
   win.length = 0;
   assert.equal(store.get(id)!.transcript.length, 1000);
   assert.equal(JSON.stringify(store.get(id)), original);
+});
+
+test("the chat panel run over the file store: a turn's saves append only that turn's rows, a restored session shows the same rows, and a failing save is logged without breaking the turn", async () => {
+  const fake = fakeSessionFs();
+  const warns: string[] = [];
+  const store = createFileChatSessionStore({ root: '/sessions', fs: fake.fs });
+  const adapter = scriptedAdapter([
+    { kind: 'assistant-delta', turnId: 't', text: 'an answer' },
+    { kind: 'done', turnId: 't', ok: true },
+  ]);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', logger: { warn: (m) => warns.push(m), error: () => {} } });
+  host.open();
+  const dones = (): number => turnEvents(fc).filter((e) => e.kind === 'done').length;
+  const settle = (): Promise<void> => new Promise((r) => setTimeout(r, 20));
+  const diskRows = (id: string): unknown[] =>
+    (fake.files.get(`/sessions/${id}${ROWS_SUFFIX}`) ?? '').split('\n').filter((l) => l !== '').map((l) => JSON.parse(l) as unknown);
+
+  // The first turn: the draft becomes a session whose rows are on disk.
+  fc.send(env('submit-turn', { text: 'first question' }));
+  await waitFor(() => dones() === 1);
+  await settle();
+  const id = store.list()[0]!.id;
+  const afterFirst = store.get(id)!.transcript.length;
+  assert.ok(afterFirst >= 2, 'the question and the answer');
+  assert.deepEqual(diskRows(id), JSON.parse(JSON.stringify(store.get(id)!.transcript)));
+
+  // The second turn: every save appends, and what is appended is exactly that turn's rows.
+  fake.clear();
+  fc.send(env('submit-turn', { text: 'second question' }));
+  await waitFor(() => dones() === 2);
+  await settle();
+  const session = store.get(id)!;
+  const turnRows = session.transcript.slice(afterFirst);
+  assert.ok(turnRows.length >= 2);
+  const appended = fake.ops('appendText');
+  assert.ok(appended.every((c) => c.path === `/sessions/${id}${ROWS_SUFFIX}`));
+  assert.equal(appended.map((c) => c.data).join(''), turnRows.map((r) => `${JSON.stringify(r)}\n`).join(''), "only that turn's rows are appended, each once");
+  assert.deepEqual(fake.calls.filter((c) => (c.op === 'rename' && c.to === `/sessions/${id}${ROWS_SUFFIX}`) || ((c.op === 'writeText' || c.op === 'truncate') && c.path === `/sessions/${id}${ROWS_SUFFIX}`)), [], 'the rows file is never rewritten');
+  assert.ok(fake.ops('rename').length >= 1, 'the head is replaced');
+  assert.deepEqual(diskRows(id), JSON.parse(JSON.stringify(session.transcript)));
+
+  // A window reload: a new host over a new store on the same files shows the same rows.
+  const fc2 = fakeChannel();
+  const store2 = createFileChatSessionStore({ root: '/sessions', fs: fake.fs });
+  createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: adapter }, ['claude']), store: store2, cwd: () => '/repo' }).open();
+  fc2.send(env('open-chat', { chatId: id }));
+  const restored = posted(fc2, 'session-restored').filter((r) => r['sessionId'] === id).at(-1)!;
+  assert.deepEqual(restored['transcript'], diskRows(id), 'the restored session shows the rows on disk');
+  assert.equal(restored['total'], session.transcript.length);
+  assert.deepEqual((posted(fc2, 'history-list').at(-1)!['chats'] as Array<{ id: string }>).map((c) => c.id), [id]);
+
+  // A save that fails is logged, the turn still ends cleanly, and a later save writes the rows.
+  fake.failOn = (c) => (c.op === 'appendText' ? new Error('disk full') : undefined);
+  const errorsBefore = turnEvents(fc).filter((e) => e.kind === 'error').length;
+  fc.send(env('submit-turn', { text: 'third question' }));
+  await waitFor(() => dones() === 3);
+  await settle();
+  assert.equal(turnEvents(fc).filter((e) => e.kind === 'error').length, errorsBefore, 'no error is shown for a failed save');
+  assert.match(warns.join('\n'), /not saved: disk full/);
+  assert.equal(diskRows(id).length, afterFirst + turnRows.length, 'nothing of the third turn is on disk yet');
+  assert.ok(session.transcript.length > afterFirst + turnRows.length, 'while the session holds its rows');
+  fake.failOn = undefined;
+  fc.send(env('submit-turn', { text: 'fourth question' }));
+  await waitFor(() => dones() === 4);
+  await settle();
+  assert.deepEqual(diskRows(id), JSON.parse(JSON.stringify(store.get(id)!.transcript)), 'the rows the failed saves missed are written once by a later save');
 });

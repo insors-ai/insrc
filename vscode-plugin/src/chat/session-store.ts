@@ -3,8 +3,9 @@
  *
  * The persisted ChatSession record + the store interface every chat surface reads
  * (S005 history/provider, S006 edit-mode). Chat history is kept EXTENSION-LOCAL
- * (k3): the real binding is over a vscode Memento (context.globalState /
- * workspaceState) — never the daemon graph/config store, and no local-JSON file.
+ * (k3), never in the daemon graph/config store. The extension keeps it in files under
+ * ~/.insrc/chat-sessions (session-file-store.ts); the Memento binding below is the store the
+ * tests build on, and its keys are what the one-time migration out of globalState reads.
  * A missing/corrupt entry degrades to empty rather than throwing (durability NFR).
  *
  * vscode-free: the store depends only on the structural {@link MementoLike} shape,
@@ -79,8 +80,9 @@ export interface ChatSession {
   transcript: TranscriptEntry[];
   /**
    * Story E202610101d04e560:S001: while a turn's output segment (session-output.ts) has not been
-   * fully handled, where the panel got to. Sessions live in globalState, shared by every window,
-   * so ownerHostPid names the extension host following it. Optional for back-compat.
+   * fully handled, where the panel got to. Sessions are kept in files under ~/.insrc/chat-sessions,
+   * shared by every window, so ownerHostPid names the extension host following it. Optional for
+   * back-compat.
    */
   liveTurn?: LiveTurn;
 }
@@ -135,10 +137,13 @@ export interface MementoStoreDeps {
   readonly onEvict?: ((sessionId: string) => void) | undefined;
 }
 
-const INDEX_KEY = 'insrc.chat.index';
-const SESSION_PREFIX = 'insrc.chat.session.';
+/** The Memento key of the session id list, least recently saved first. */
+export const INDEX_KEY = 'insrc.chat.index';
+/** The Memento key prefix of one session's record; the session id follows it. */
+export const SESSION_PREFIX = 'insrc.chat.session.';
 
-function isSession(v: unknown): v is ChatSession {
+/** Whether a stored value has the fields every session record must carry. */
+export function isSession(v: unknown): v is ChatSession {
   if (typeof v !== 'object' || v === null) return false;
   const s = v as Record<string, unknown>;
   return (
@@ -151,7 +156,8 @@ function isSession(v: unknown): v is ChatSession {
   );
 }
 
-function updatedAtOf(s: ChatSession): string {
+/** When a session last changed: its last row's time, or its creation time when it has no row. */
+export function updatedAtOf(s: ChatSession): string {
   const last = s.transcript[s.transcript.length - 1];
   return last?.at ?? s.createdAt;
 }

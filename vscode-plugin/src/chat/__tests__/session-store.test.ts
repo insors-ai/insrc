@@ -323,3 +323,33 @@ test('liveTurn round-trips through the store, a session without it loads unchang
   store.create('claude'); // evicts 'old'
   assert.deepEqual(evicted, ['old']);
 });
+
+test('INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf are exported from session-store.ts and are the keys and checks the memento store itself uses', async () => {
+  const mod = await import('../session-store.js');
+  assert.equal(mod.INDEX_KEY, 'insrc.chat.index');
+  assert.equal(mod.SESSION_PREFIX, 'insrc.chat.session.');
+  // The store writes under exactly these keys.
+  const map = new Map<string, unknown>();
+  const store = mod.createMementoChatSessionStore({
+    memento: { get: <T>(k: string) => map.get(k) as T | undefined, update: (k: string, v: unknown) => { map.set(k, v); } },
+    now: () => '2026-01-01T00:00:00.000Z',
+    genId: () => 'one',
+  });
+  const s = store.create('claude');
+  assert.deepEqual([...map.keys()].sort(), [mod.INDEX_KEY, mod.SESSION_PREFIX + 'one'].sort());
+  assert.deepEqual(map.get(mod.INDEX_KEY), ['one']);
+  // isSession accepts what the store wrote and rejects what its get() rejects.
+  assert.equal(mod.isSession(map.get(mod.SESSION_PREFIX + 'one')), true);
+  for (const bad of [null, 'x', {}, { ...s, transcript: 'no' }, { ...s, editMode: 'other' }, { ...s, id: 1 }]) {
+    assert.equal(mod.isSession(bad), false);
+    map.set(mod.SESSION_PREFIX + 'one', bad);
+    assert.equal(store.get('one'), undefined, 'get() rejects the same value');
+  }
+  // updatedAtOf is the time list() reports: the last row's, else the creation time.
+  map.set(mod.SESSION_PREFIX + 'one', s);
+  assert.equal(mod.updatedAtOf(s), s.createdAt);
+  assert.equal(store.list()[0]!.updatedAt, mod.updatedAtOf(s));
+  s.transcript.push({ role: 'user', text: 'hi', at: '2026-02-02T00:00:00.000Z' });
+  assert.equal(mod.updatedAtOf(s), '2026-02-02T00:00:00.000Z');
+  assert.equal(store.list()[0]!.updatedAt, '2026-02-02T00:00:00.000Z');
+});

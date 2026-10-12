@@ -52,7 +52,7 @@ import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
 import { createChatPanelHost, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
 import { createFileSessionLocks } from './chat/session-lock.js';
 import { createChatGroupLock } from './chat/group-lock.js';
-import { createMementoChatSessionStore } from './chat/session-store.js';
+import { createFileChatSessionStore, migrateChatSessionsFromMemento } from './chat/session-file-store.js';
 import { createSessionOutput } from './chat/session-output.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitle } from './chat/cli-adapter.js';
 import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
@@ -437,20 +437,27 @@ export function activate(context: vscode.ExtensionContext): void {
   // registered outside the gate, can receive it.
   let docsReviewHost: DocsReviewHost | undefined;
   if (chatEnabled) {
-    // S005: cap extension-local chat history (k3) so globalState does not grow unbounded
-    // (the S003 L4 follow-up). save() evicts the oldest non-active sessions beyond this.
+    // Chat sessions are kept in files under ~/.insrc/chat-sessions (ISSUE-c96a97a2): VS Code stores
+    // all of an extension's globalState as one value, so a session kept there was rewritten whole,
+    // with every other session, on each save. Sessions still in globalState are moved to the files
+    // first; one that could not be moved stays there and is tried again at the next start.
+    // S005: the history is capped; save() evicts the oldest non-active sessions beyond the cap.
     // Each chat session's CLI output goes to ONE rolling file under ~/.insrc/chat-output (turns
     // are segments in it), so nothing is lost when a turn runs long or the window reloads. A
     // session's files go with it when the store evicts it; stale files are swept at start.
     const chatOutput = createSessionOutput({ root: join(PATHS.insrc, 'chat-output'), logger: panelLog });
-    const chatStore = createMementoChatSessionStore({
-      memento: context.globalState,
+    const chatSessionsRoot = join(PATHS.insrc, 'chat-sessions');
+    const migratedChats = migrateChatSessionsFromMemento({ memento: context.globalState, root: chatSessionsRoot, logger: panelLog });
+    const chatStore = createFileChatSessionStore({
+      root: chatSessionsRoot,
+      logger: panelLog,
       maxSessions: 200,
       onEvict: (id) => void chatOutput.remove(id).catch((e: unknown) => panelLog.warn(`chat output of ${id} not removed: ${String(e)}`)),
     });
     const chatProviders = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput });
     void chatOutput
-      .sweep({ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: new Set(chatStore.list().map((c) => c.id)) })
+      // A session the migration left in globalState is not in the store yet: its output files are kept too.
+      .sweep({ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: new Set([...chatStore.list().map((c) => c.id), ...migratedChats.kept]) })
       .catch((e: unknown) => panelLog.warn(`chat output sweep failed: ${String(e)}`));
 
     // S006: edit-governance seams. All model access stays via the user's CLIs (k2); the

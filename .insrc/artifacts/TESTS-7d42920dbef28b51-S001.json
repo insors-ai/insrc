@@ -5,7 +5,8 @@
     "storyId": "S001",
     "createdAt": "2026-10-11T18:07:28.997Z",
     "updatedAt": "2026-10-11T18:19:06.269Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "docs-migrator-leaves-stale-labels-json"
   },
   "body": {
     "tasks": [

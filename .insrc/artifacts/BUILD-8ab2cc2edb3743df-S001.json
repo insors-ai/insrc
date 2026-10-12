@@ -7,7 +7,9 @@
     "updatedAt": "2026-10-10T12:31:30.435Z",
     "authoredBy": "controller",
     "standalone": true,
-    "approvedAt": "2026-10-10T12:31:30.666Z"
+    "approvedAt": "2026-10-10T12:31:30.666Z",
+    "epicSlug": "bug-plan-tree-analyze-run-when",
+    "epicCreatedAt": "2026-10-09T14:36:42.809Z"
   },
   "body": {
     "tasks": [

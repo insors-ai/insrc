@@ -10,7 +10,10 @@
     "schemaVersion": 1,
     "epicHash": "8ab2cc2edb3743df",
     "storyId": "S001",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "bug-plan-tree-analyze-run-when",
+    "epicCreatedAt": "2026-10-09T14:36:42.809Z",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

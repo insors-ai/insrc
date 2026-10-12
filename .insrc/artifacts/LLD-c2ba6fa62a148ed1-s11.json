@@ -38,9 +38,21 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The six acceptance criteria of S011 (ac1\u2013ac6) are each designed and mapped, and nothing listed as a non-goal is built.",
-          "evidence": "DEF.md:362-367 defines ac1 (steps run in the daemon, same result, no descriptor in MCP), ac2 (token survives MCP restart), ac3 (named unreachable/too-old errors), ac4 (MCP import scan opens neither store), ac5 (prompt/schema/state unchanged), ac6 (declaration deleted, refused, scan test). Each has a section in \u00a72/\u00a74 and a row in the \u00a75 acceptance mapping. The vector-store owner rule (D4) goes beyond ac4, which only asks for a static scan. The design names it as a stakeholder decision and raises a definition amendment in \u00a79, so the extra scope is stated openly. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
+          "premise": "The design covers s11's acceptance criteria ac1-ac5 (EXT-\u2026-s11) and ac6 / S011:FR001 (removal of the MCP server's temporary store allowance), each mapped in \u00a75.",
+          "evidence": "EXT.md:18-22 lists ac1-ac5 (step tools run in the daemon with the same result; a token survives an MCP restart; named errors when the daemon is unreachable or too old; the MCP import graph opens no store; prompt/schema/state pass through). DEF.md:115 has S011:FR001 'temporary allowance \u2026 is removed', and DEF.md:404 records the stakeholder's ac6. LLD \u00a72.2/2.3/2.7, \u00a73.2, and the \u00a75 acceptance table cover all six. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/EXT.md, docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
           "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Dropping MCP sampling (D3) and adding the vector-store owner rule (D4) go beyond the defined criteria.",
+          "evidence": "ac4 already requires that nothing in the MCP import graph opens 'the graph store or the vector store'. The getLanceConn owner rule (D4) widens that from the MCP server's code to every process; the LLD flags this itself in \u00a79 as needing an amendment. The sampling removal is a stakeholder decision (D3), and ac5 speaks about step prompts, not the one-shot analyzer's inner calls. No non-goal in DEF.md \u00a73 is built.",
+          "action": "Resolve the \u00a79 open question (amend the Story's criteria with D4) before approval so the extra rule is tracked.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -50,8 +62,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The daemon review wait at review-step/phases/start.ts:151 passes only { timeoutMs }, and ReviewStreamOpts.signal exists but is never filled.",
-          "evidence": "start.ts:151 has `(deps.reviewByDaemon ?? reviewArtifactStream)({ artifactPath: a.mdPath, repo: a.repo }, { timeoutMs })`. daemon-stream.ts:415-420 declares `readonly signal?: AbortSignal`, and reviewStreamRequest honours it at :455-457. [files: src/mcp/review-step/phases/start.ts, src/mcp/daemon-stream.ts]",
+          "premise": "Today the review wait (review-step/phases/start.ts:151) and the code-review wait (code-review-step/handler.ts:689) pass only { timeoutMs }, and ReviewStreamOpts.signal exists but is never filled.",
+          "evidence": "start.ts:151: `(deps.reviewByDaemon ?? reviewArtifactStream)({ artifactPath: a.mdPath, repo: a.repo }, { timeoutMs })`. handler.ts:689: `{ timeoutMs: DAEMON_CODE_REVIEW_WAIT_MS }`. daemon-stream.ts:419 declares `readonly signal?: AbortSignal`. [files: src/mcp/review-step/phases/start.ts, src/mcp/code-review-step/handler.ts, src/mcp/daemon-stream.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -62,8 +74,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The code-review handler falls back to process.env.INSRC_REPO at handler.ts:256 and calls the daemon code-review wait at :689 with only { timeoutMs: DAEMON_CODE_REVIEW_WAIT_MS }.",
-          "evidence": "handler.ts:256 has `const r = step.repo !== undefined && step.repo.length > 0 ? step.repo : process.env['INSRC_REPO'];`. handler.ts:689 has `{ timeoutMs: DAEMON_CODE_REVIEW_WAIT_MS },`. A grep of src/mcp finds no other production read of process.cwd()/INSRC_REPO besides resolve-repo.ts:55/57. [files: src/mcp/code-review-step/handler.ts, src/mcp/resolve-repo.ts]",
+          "premise": "The daemon's stream server gives each stream an AbortSignal that fires when the socket closes, and it answers an unknown stream method with a plain 'unknown method: \u2026' line.",
+          "evidence": "server.ts:215 sends `{ id, error: `unknown method: ${request.method}` }`. server.ts:220-226 aborts the controller on socket 'close'/'error'. server.ts:241 calls `handler(request.params, sendStream, abortController.signal)`. The workflow.review and codeReview.run stream handlers pass that signal into their runs (workflow-review-rpc.ts:104, code-review-rpc.ts:125), so the cancellation chain is real. [files: src/daemon/server.ts, src/daemon/workflow-review-rpc.ts, src/daemon/code-review-rpc.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -73,24 +85,12 @@
           "ref": "current-behaviour",
           "item": "current-behaviour",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "detectClientProvider (server.ts:1399-1405) returns 'cli-claude' | 'cli-codex'; the code-review registration converts it at :786; the one-shot analyze uses sampling when the client supports it, otherwise runWithClientProviderContext(clientDefault) at :1375.",
-          "evidence": "server.ts:1399-1405 returns 'cli-codex'/'cli-claude'. :785-786 converts to 'claude'/'codex'. :1368-1376 has `samplingSupported ? runWithSamplerContext(makeSamplerFromMcpServer(...)) : clientDefault !== undefined ? runWithClientProviderContext(clientDefault, ...) : buildRun(...)`. A second conversion site at :921-922 (insrc_workflow_run) stays in the MCP process and is unaffected. [files: src/mcp/server.ts]",
-          "action": "none",
+          "severity": "MED",
+          "premise": "The in-daemon review client keeps reviewStreamRequest's failure behaviour 'exactly', with an aborted signal failing as ReviewStreamError('closed').",
+          "evidence": "daemon-stream.ts:455: `function onAbort(): void { failWith('aborted', `${method}: aborted by client`); }`. Today an abort gives failure 'aborted', not 'closed'; 'closed' is the socket-close case (:528). The callers key retryability and the error code off this value: start.ts:142 `RETRYABLE = new Set(['unreachable','closed','timeout'])` and start.ts:172 `code: `daemon-review-${failure}``, with the same pattern at handler.ts:669/723. Mapping an abort to 'closed' changes the code and makes it retryable. [files: src/mcp/daemon-stream.ts, src/mcp/review-step/phases/start.ts, src/mcp/code-review-step/handler.ts]",
+          "action": "Map an aborted signal to ReviewStreamError('aborted') in the in-daemon client, as today, or state the change on purpose and update the equivalence test.",
           "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.4",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The four multi-turn state stores use 100 entries LRU and a 1 h TTL by last touch, with a 'server restarted' miss message.",
-          "evidence": "analyze/workflow/review/code-review state-store.ts each define `MAX_ENTRIES = 100` and `TTL_MS = 60 * 60 * 1_000`, sweep on touchedAt, and say '... not found: server restarted, TTL expired, ...' (e.g. workflow-step/state-store.ts:27-28,56). [files: src/mcp/analyze-step/state-store.ts, src/mcp/workflow-step/state-store.ts, src/mcp/review-step/state-store.ts, src/mcp/code-review-step/state-store.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "new-versus-reuse.1",
@@ -98,8 +98,8 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "getLanceConn has no owner check today. The owner declaration to reuse (declareLiveStoreOwner) exists and is called only by the daemon entry point. isLiveStoreOwnerDeclared and LanceStoreNotOwnerError are new.",
-          "evidence": "conn.ts:56-80 creates the directory and connects with no check. store.ts:319-325 keeps `_ownsLiveStore` with no exported getter. The only production call is daemon/index.ts:117 `declareLiveStoreOwner();`. Every non-test getLanceConn caller is under src/db/lance or src/db/client.ts. config/store.ts (config-vec) is imported by value only from daemon/index.ts, so the new rule refuses no production process other than MCP. [files: src/db/lance/conn.ts, src/db/graph/store.ts, src/daemon/index.ts]",
+          "premise": "The four multi-turn state stores have 100-entry LRU and 1 h TTL limits and a 'server restarted' miss message, and they move unchanged.",
+          "evidence": "MAX_ENTRIES = 100 and TTL_MS = 60*60*1_000 appear in analyze-step, workflow-step, review-step and code-review-step state-store.ts. Each miss message contains 'not found: server restarted, TTL expired' (e.g. workflow-step/state-store.ts:56). [files: src/mcp/analyze-step/state-store.ts, src/mcp/workflow-step/state-store.ts, src/mcp/review-step/state-store.ts, src/mcp/code-review-step/state-store.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -110,9 +110,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "An in-daemon client can call the daemon's own handler functions for repo.resolveForCwd, codeReview.grounding, codeReview.freshness, codeReview.run and workflow.review in-process with the (params, send, signal) shape.",
-          "evidence": "The two stream handlers delegate to exported module functions: daemon/index.ts:1877-1887 call `codeReviewRunStart(params, send, signal)` (code-review-rpc.js) and `workflowReviewStart(params, send, signal)` (workflow-review-rpc.js), so they can be called directly. The three unary handlers are inline closures in the handler map (index.ts:615, 752, 772). The step host needs that map passed in, or the bodies pulled out, which the design does not state but which is feasible. [files: src/daemon/index.ts]",
-          "action": "State whether the step host receives the daemon's handler maps or the unary bodies are extracted into exported functions.",
+          "premise": "getLanceConn has no owner check today; setLanceConnPath exists for tests; the owner declaration to reuse is declareLiveStoreOwner, called by the daemon entry; DaemonUnreachableError and DaemonTooOldError are new.",
+          "evidence": "conn.ts:56-80 runs mkdirSync and lancedb.connect with no check, and conn.ts:42 has setLanceConnPath. lancedb.connect appears only in conn.ts. daemon/index.ts:117 calls declareLiveStoreOwner(). No class DaemonUnreachableError or DaemonTooOldError exists under src (ipc-client.ts only classifies ENOENT/ECONNREFUSED at :77). No worker_threads in the daemon would be refused by the new rule. [files: src/db/lance/conn.ts, src/daemon/index.ts, src/shared/ipc-client.ts]",
+          "action": "none",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -121,12 +121,12 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "Deleting the reader declaration touches only store.ts, server.ts:1258, the store-child 'declare-reader' command (:259-260) and live-store-owner.test.ts (:32, :138, :147-163).",
-          "evidence": "grep finds a fifth user that the design does not list: src/db/graph/__tests__/live-store-refusal.test.ts:61-65 says `// The permitted reader is let in beside the owner.` and sends `c.send({ op: 'declare-reader' })`, expecting `{ ok: true }` and then a successful open. The design deletes the store-child 'declare-reader' command, so this test breaks. It is not in the inventory and has no stated replacement (for example, asserting that a third process is refused). [files: src/db/graph/__tests__/live-store-refusal.test.ts, src/db/graph/__tests__/helpers/store-child.ts]",
-          "action": "Add live-store-refusal.test.ts:61-66 to \u00a72.7 and turn its reader case into a refusal case.",
+          "severity": "LOW",
+          "premise": "The list of importers outside src/mcp that must be repointed to src/daemon/steps is complete.",
+          "evidence": "A grep for imports of analyze-step, workflow-step, build-step, review-step, code-review-step, triage-step, bundle-md, sampling-bridge and progress-forward outside src/mcp found exactly the files the LLD lists: workflow-rpc.ts:46, analyze-rpc-measure.test.ts:37-38 (bundle-md and oneShotRunParams from mcp/server.js), answer-step-failed-callers.test.ts, report-head.test.ts, executor-lmdb.test.ts, completeness.live.test.ts, lookup-measure.test.ts, the three code-review conditional tests, and mcp-sampling-provider.test.ts.",
+          "action": "none",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "change-sites.2",
@@ -134,9 +134,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "With an in-daemon client of 'the same function shapes', no moved module imports daemon-stream.ts and the handlers behave the same.",
-          "evidence": "The moved handlers depend on more than the four functions. review-step/phases/start.ts:27 and code-review-step/handler.ts:33-34 also import the class ReviewStreamError and the types ReviewStreamOpts, CodeReviewStreamParams and CodeReviewStreamResult. Both handlers branch on `err instanceof ReviewStreamError ? err.failure : 'failed'` (start.ts:166, handler.ts:719), and handler.ts:698 throws one itself. Their routing tests (review-step-routing.test.ts:171-175, code-review-step routing.test.ts:228-265) pin per-failure behaviour: 'timeout'/'closed'/'unreachable' are retryable, and reason 'diff-unavailable' drives the code-review diff fallback. In daemon-stream.ts:452-528 these failures come from the socket client: the timer gives 'timeout', a closed socket gives 'closed', and an error frame's reason gives 'daemon-error'+reason. The design does not say where ReviewStreamError moves to. It also does not say that the in-process client must enforce timeoutMs itself and turn an 'error' frame from the collected send into ReviewStreamError('daemon-error', error, reason). Without both, the timeout and diff-fallback paths silently change, which breaks ac1's 'same result'. [files: src/mcp/daemon-stream.ts, src/mcp/review-step/phases/start.ts, src/mcp/code-review-step/handler.ts]",
-          "action": "Move ReviewStreamError and the opts/params types to a module both sides can import (e.g. src/shared). Specify that the in-daemon client keeps the timeout and the failure/reason mapping of reviewStreamRequest, and add equivalence tests for the timeout and 'diff-unavailable' paths.",
+          "premise": "The handlers' reads of the MCP process's cwd and INSRC_REPO are confined to resolveRepoPath, the code-review fallback at handler.ts:256 and the one-shot analyze, so the StepCallContext covers them.",
+          "evidence": "In src/mcp, all handler reads go through resolveRepoPath (workflow-step start/resolve-question/review-deferred, triage start, build implement/validate, review start, analyze start) or through handler.ts:256. But code the moved analyze path reaches also reads the process's cwd: src/analyze/context/scope.ts:180 `return dir === '' || dir === '.' ? process.cwd() : dir;` (directoryOf, for a bare file name). Inside the daemon this resolves against the daemon's cwd, not the caller's. [files: src/analyze/context/scope.ts]",
+          "action": "Add scope.ts directoryOf to the context's readers (read StepCallContext.cwd when inside a step.call), or state that a bare relative file scope is resolved against the daemon's cwd.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -146,9 +146,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "resolve-repo.ts stays in src/mcp and the moved handlers use a daemon-side copy (\u00a72.4, \u00a73.3).",
-          "evidence": "The design contradicts itself. \u00a72.4 and \u00a73.3 say 'resolve-repo.ts does NOT move: it stays for docgen and approve'. Migration step 1 says 'Move the handler directories, the one-shot analyze body, bundle-md and resolve-repo from src/mcp to src/daemon/steps'. Following step 1 breaks src/mcp/docgen/handler.ts and server.ts:1121 (insrc_workflow_approve), which still import ./resolve-repo.js, or forces them to import src/daemon/steps, which the ac4 import-graph test forbids. [files: src/mcp/resolve-repo.ts, src/mcp/server.ts, src/mcp/docgen/handler.ts]",
-          "action": "Fix migration step 1: copy resolveRepoPath into src/daemon/steps and leave src/mcp/resolve-repo.ts in place.",
+          "premise": "The in-daemon client 'calls the registry's handler functions in-process' (workflow.review, codeReview.run/grounding/freshness, repo.resolveForCwd).",
+          "evidence": "No accessible registry exists to call. The handler maps are object literals built inline in src/daemon/index.ts ('repo.resolveForCwd' :615, 'codeReview.grounding' :752, 'codeReview.freshness' :772, 'codeReview.run' :1877, 'workflow.review' :1884) and held privately by the server (server.ts:81 `private readonly streamHandlers`). Nothing exports them. The LLD names no change site for how the step host gets them (for example, passing the maps into the step host at construction in index.ts). [files: src/daemon/index.ts, src/daemon/server.ts]",
+          "action": "Name the wiring: build the in-daemon client in daemon/index.ts from the same handler maps passed to the server (or extract those handlers into importable modules), and list index.ts as a call site.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -158,9 +158,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The list of importers outside src/mcp that must be repointed is complete.",
-          "evidence": "Grepping for mcp/(analyze-step|workflow-step|build-step|review-step|code-review-step|triage-step|bundle-md|server|resolve-repo) outside src/mcp finds the files \u00a73.3 lists, plus src/workflow/review/calibration.ts:74-77, daemon/__tests__/workflow-review-rpc.test.ts:51 and workflow/review/__tests__/template-review.test.ts:108. Those three only carry the path as string data (calibration anchors at 'src/mcp/server.ts:419'). They are not imports, and server.ts stays. Note: calibration.ts:77 records the source line at server.ts:419 as `handleWorkflowStep(rawArgs)`, which the forwarder change will alter; this is worth checking if the calibration probe re-reads the source. [files: src/workflow/review/calibration.ts]",
-          "action": "Check whether calibration.ts's anchor on server.ts:419 is re-probed against live source; if it is, update it.",
+          "premise": "Deleting the reader allowance touches store.ts (_mayReadLiveStore, declareLiveStoreReaderUntilS11), its one call in server.ts:1258, the store-child 'declare-reader' command and the reader cases of the two tests.",
+          "evidence": "grep finds store.ts:320/333-335/365/372, server.ts:1258, store-child.ts:81/259-260, live-store-refusal.test.ts:63 and live-store-owner.test.ts:32/138/149. The LLD covers all of them. Also in store.ts but not named: assertMayOpen (:365) and resetLiveStoreDeclarationsForTests (:372) reference _mayReadLiveStore. Both are in the file being edited and the compiler will flag them. Note that the existing scan (live-store-owner.test.ts:154) skips __tests__.",
+          "action": "Optional: mention assertMayOpen and resetLiveStoreDeclarationsForTests in \u00a72.7.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -169,12 +169,12 @@
           "ref": "data-compatibility",
           "item": "data-compatibility",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "During the mixed-version window, an old MCP server (session not yet restarted) against the new daemon 'is refused the live stores once the reader allowance is gone, so its store-touching tools fail with LmdbStoreNotOwnerError'.",
-          "evidence": "The allowance is a module variable in the MCP process's own loaded code. store.ts:320 `let _mayReadLiveStore = false;`, :333-335 sets it, and server.ts:1258 calls it at startup. The check is in-process: store.ts:364-367 `if (_ownsLiveStore || _mayReadLiveStore) return;`. Deleting the function from the source and updating the daemon does nothing to an MCP process already running the old code. That process keeps its flag and goes on opening the live graph store, and the live vector store, since its conn.ts has no rule. The window is not an error window. It is exactly the second-opener hazard Story s4 found (lock loss \u2192 semaphores removed) and lasts until every session restarts. The design's claim and its 'update order keeps the window short' reasoning rest on a refusal that does not happen. [files: src/db/graph/store.ts, src/mcp/server.ts]",
-          "action": "Correct the backward-compat text. Either make session restarts a required part of step 6 (with an lsof check that no non-daemon process holds graph.lmdb before declaring done), or add a daemon-side guard (for example, the daemon refusing step-era work from old clients is not enough; state that the hazard remains until restart).",
+          "severity": "LOW",
+          "premise": "No stored data changes. Mixed versions are handled: a new MCP server against an old daemon gets DaemonTooOldError from the 'unknown method' answer, and an old MCP server keeps its allowance until its session restarts.",
+          "evidence": "The step stores are in-memory Maps (state-store.ts), so moving them rewrites no data. The old daemon answers an unknown stream method with a plain 'unknown method:' line (server.ts:215), which the forwarder detects as reviewStreamRequest does today (daemon-stream.ts:489). The allowance is a module variable (store.ts:320), so the LLD is right that deleting it from the source does not reach a running old MCP process. Step 6 handles this with an lsof check. [files: src/daemon/server.ts, src/db/graph/store.ts]",
+          "action": "none",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "boundaries.1",
@@ -182,8 +182,8 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design changes Story s4's owner rule only as s11 requires (deleting the reader allowance, ac6) and redesigns nothing owned by s1\u2013s10.",
-          "evidence": "The DEF (FR001, ac6) and the stakeholder comment at DEF.md:404 assign removal of the allowance to s11. The s4 scope says 'None of this is consumed by another Story'. The design reuses declareLiveStoreOwner and LmdbStoreNotOwnerError unchanged, and extends the same declaration to getLanceConn under stakeholder decision D4, flagged in \u00a79. It touches no relations, file-commit, entity-index, indexing-refusal, ignore-filter, evidence, subsystem, language or document scope. [files: src/db/graph/store.ts, docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
+          "premise": "The design does not redesign anything owned by s4 or another Story: it only deletes the allowance s4 marked as removed by s11, and reuses s4's owner declaration.",
+          "evidence": "The store.ts:327-331 comment says 'Story s11 \u2026 DELETES this function and its one call (src/mcp/server.ts) \u2014 criterion ac6 of that Story'. The LLD reuses declareLiveStoreOwner and LmdbStoreNotOwnerError (store.ts:168) unchanged. Extending the owner rule to Lance is a new rule rather than a redesign of s4's, and the LLD flags it in \u00a79. [files: src/db/graph/store.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -194,9 +194,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "An older daemon's 'unknown method: step.call' and a client disconnect are both detectable. The request server fires the stream's AbortSignal when the socket closes, and answers an unknown stream method with a plain line.",
-          "evidence": "daemon/server.ts:215 sends `{ id, error: 'unknown method: ...' }` as a plain line with no stream field, and :220-226 abort the stream's AbortController on socket 'close'/'error'. The existing client daemon-stream.ts:485-494 already treats such a plain line as final and classifies 'unknown method' as 'unknown-method', so the forwarder can reuse that pattern for DaemonTooOldError. A forwarder built like runWorkflowStream would instead wait out its timer, as the comment at daemon-stream.ts:385-390 warns. [files: src/daemon/server.ts, src/mcp/daemon-stream.ts]",
-          "action": "Build the forwarder on reviewStreamRequest's plain-line handling, not on runWorkflowStream's.",
+          "premise": "A handler that throws inside the daemon is detectable and produces an error frame the forwarder can turn into an isError envelope.",
+          "evidence": "Even without the step host's own catch, server.ts:242-246 already sends `{ stream: 'error', data: { error: msg, recoverable: true } }` when a stream handler throws and the signal is not aborted. The LLD's step-host catch with code 'step-failed' is detectable on top of that. Note the existing error frame's data has no `code` field, so the forwarder must look for the step host's own frame to tell 'step-unknown-tool' from a generic failure. [files: src/daemon/server.ts]",
+          "action": "none",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -206,21 +206,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each acceptance criterion maps to at least one runnable test.",
-          "evidence": "The \u00a75 acceptance mapping covers each criterion with at least one unit or integration test. ac1 is checked by per-tool golden equivalence plus lsof of the MCP process. ac2 by a forwarder restart test. ac3 by a fake socket returning ENOENT/ECONNREFUSED/unknown-method. ac4 by an import-graph scan with a falsifying fixture. ac5 by byte-identical prompt/schema/state. ac6 by a source scan that builds the name at run time, plus refusal of both stores. Two gaps tie to findings above: there is no equivalence test for the review/code-review timeout and 'diff-unavailable' failure paths through the in-daemon client, and nothing replaces live-store-refusal.test.ts's reader case. [files: src/db/graph/__tests__/live-store-refusal.test.ts, src/mcp/code-review-step/__tests__/routing.test.ts]",
-          "action": "Add tests for the in-daemon client's timeout and error-reason mapping, and replace the reader case in live-store-refusal.test.ts.",
+          "premise": "Each acceptance criterion ac1-ac6 maps to at least one concrete test, including cancellation and the source scan that replaces 'exactly two places'.",
+          "evidence": "The \u00a75 acceptance table maps ac1-ac6 to named unit, integration and smoke tests. The existing scan at live-store-owner.test.ts:147 ('appears at exactly two places') is replaced by an any-occurrence scan that builds the name at run time, and the reader case of live-store-refusal.test.ts:63 is turned into a refusal case. Cancellation is tested by observing the inner run's abort. [files: src/db/graph/__tests__/live-store-owner.test.ts, src/db/graph/__tests__/live-store-refusal.test.ts]",
+          "action": "none",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
         "high": 0,
-        "med": 4,
-        "low": 11,
+        "med": 3,
+        "low": 12,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-12T11:08:49.777Z",
+      "reviewedAt": "2026-10-12T11:14:25.200Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     }
@@ -379,8 +379,8 @@
             "The handler ran inside the daemon under an AsyncLocalStorage scope holding the context, so the code that read process.cwd(), process.env.INSRC_REPO or the MCP client's identity now reads the context.",
             "A state token minted in an earlier step.call, from any MCP process, is accepted by a later one until it expires (1 h) or is evicted (100 entries), as today.",
             "When the requesting socket closes the stream's AbortSignal fires. This is NEW work, not an existing seam: handleReviewStep and handleCodeReviewStep gain an optional signal (in their deps), and pass it to the daemon review wait (review-step/phases/start.ts:151) and the daemon code-review wait (code-review-step/handler.ts:689), which today take only { timeoutMs }. Handlers without a signal run to completion and their reply is discarded.",
-            "Inside the daemon the moved handlers do not connect back to the daemon's own socket. Their calls over src/mcp/daemon-stream.ts today (workflow.review via reviewArtifactStream from review-step/phases/start.ts:27; codeReview.run, codeReview.grounding and codeReview.freshness from code-review-step/handler.ts:33-34) go through an in-daemon client with the same function shapes that calls the registry's handler functions in-process; a stream handler is called as (params, send, signal) with a send that collects its frames.",
-            "The in-daemon client keeps the failure behaviour of reviewStreamRequest (daemon-stream.ts:452-528) exactly: it enforces opts.timeoutMs itself and fails with ReviewStreamError('timeout'); an aborted signal fails with ReviewStreamError('closed'); an 'error' frame becomes ReviewStreamError('daemon-error', error, reason), so reason 'diff-unavailable' still drives the code-review diff fallback; 'unreachable' cannot occur in-process. ReviewStreamError and the types ReviewStreamOpts, ReviewArtifactStreamParams, CodeReviewStreamParams and CodeReviewStreamResult move from daemon-stream.ts to a module both sides import (src/shared/review-stream.ts); daemon-stream.ts re-exports them, so its existing importers are unchanged."
+            "Inside the daemon the moved handlers do not connect back to the daemon's own socket. Their calls over src/mcp/daemon-stream.ts today (workflow.review via reviewArtifactStream from review-step/phases/start.ts:27; codeReview.run, codeReview.grounding and codeReview.freshness from code-review-step/handler.ts:33-34) go through an in-daemon client with the same function shapes that calls the registry's handler functions in-process; a stream handler is called as (params, send, signal) with a send that collects its frames. The wiring: src/daemon/index.ts builds the request handler maps it passes to the IpcServer (the unary map and the stream map, held privately by the server today); it now builds the in-daemon client from those same two maps and hands it to the step host when the host is created, so the client calls exactly the functions the socket would reach. No handler is duplicated or exported one by one.",
+            "The in-daemon client keeps the failure behaviour of reviewStreamRequest (daemon-stream.ts:452-528) exactly: it enforces opts.timeoutMs itself and fails with ReviewStreamError('timeout'); an aborted signal fails with ReviewStreamError('aborted'), as daemon-stream.ts:455 does today, so it keeps its error code 'daemon-review-aborted' and stays non-retryable (start.ts:142, handler.ts:669); an 'error' frame becomes ReviewStreamError('daemon-error', error, reason), so reason 'diff-unavailable' still drives the code-review diff fallback; 'unreachable' cannot occur in-process. ReviewStreamError and the types ReviewStreamOpts, ReviewArtifactStreamParams, CodeReviewStreamParams and CodeReviewStreamResult move from daemon-stream.ts to a module both sides import (src/shared/review-stream.ts); daemon-stream.ts re-exports them, so its existing importers are unchanged."
           ]
         },
         {
@@ -570,13 +570,14 @@
       {
         "entity": "StepCallContext (new, in the daemon's step host)",
         "change": "new",
-        "details": "The per-call context that replaces what the handlers read from the MCP process: { cwd: string; envRepo?: string; client?: 'claude' | 'codex' }. Carried in an AsyncLocalStorage around each handler run; read by resolveRepoPath, by the code-review handler's repo fallback, and by the one-shot analyze, which wraps buildRun in runWithClientProviderContext(client) and no longer in a sampler context (decision D3: MCP sampling is dropped). The one form of the client is 'claude' | 'codex'. The one consumer that needs the other form, the one-shot analyze's runWithClientProviderContext (server.ts:1375 today, which receives 'cli-claude' | 'cli-codex'), converts it back at that one call; CodeReviewStepDeps.client takes it as it is.",
+        "details": "The per-call context that replaces what the handlers read from the MCP process: { cwd: string; envRepo?: string; client?: 'claude' | 'codex' }. Carried in an AsyncLocalStorage around each handler run; read by resolveRepoPath, by the code-review handler's repo fallback, and by the one-shot analyze, which wraps buildRun in runWithClientProviderContext(client) and no longer in a sampler context (decision D3: MCP sampling is dropped). The one form of the client is 'claude' | 'codex'. The one consumer that needs the other form, the one-shot analyze's runWithClientProviderContext (server.ts:1375 today, which receives 'cli-claude' | 'cli-codex'), converts it back at that one call; CodeReviewStepDeps.client takes it as it is. One reader outside src/mcp also uses the process's cwd on the moved analyze path: directoryOf in src/analyze/context/scope.ts:180, which resolves a bare file name against process.cwd(). It reads StepCallContext.cwd when inside a step.call and process.cwd() otherwise, so a bare relative file scope keeps resolving against the caller's directory.",
         "schemaDiff": "+ interface StepCallContext { cwd: string; envRepo?: string | undefined; client?: 'claude' | 'codex' | undefined }\n+ type StepToolName = 'insrc_analyze' | 'insrc_analyze_step' | 'insrc_workflow_step' | 'insrc_build_step' | 'insrc_review_step' | 'insrc_code_review_step' | 'insrc_triage'",
         "callSites": [
-          "src/mcp/resolve-repo.ts",
+          "src/analyze/context/scope.ts",
+          "src/daemon/analyze-rpc.ts",
           "src/mcp/code-review-step/handler.ts",
-          "src/mcp/server.ts",
-          "src/daemon/analyze-rpc.ts"
+          "src/mcp/resolve-repo.ts",
+          "src/mcp/server.ts"
         ]
       },
       {
@@ -602,6 +603,8 @@
           "src/bin/insrc-mcp.ts",
           "src/daemon/__tests__/analyze-rpc-measure.test.ts",
           "src/daemon/__tests__/answer-step-failed-callers.test.ts",
+          "src/daemon/index.ts",
+          "src/daemon/server.ts",
           "src/daemon/workflow-rpc.ts",
           "src/db/graph/__tests__/live-store-refusal.test.ts",
           "src/mcp/daemon-stream.ts",
@@ -756,7 +759,8 @@
             "resolveRepoPath inside a step.call uses the context's cwd and envRepo, not the process's; outside one it keeps process defaults",
             "vector store owner rule: getLanceConn on the live path with no declaration throws LanceStoreNotOwnerError and creates nothing; after declareLiveStoreOwner it opens; a temporary path set with setLanceConnPath opens without a declaration; the live path through a relative path and a symbolic link is refused",
             "source scan: the name declareLiveStoreReaderUntilS11 appears nowhere under src/",
-            "client identity: 'cli-claude' / 'cli-codex' from detectClientProvider reach the context as 'claude' / 'codex', the code-review deps receive 'claude' / 'codex' and the one-shot analyze's runWithClientProviderContext receives 'cli-claude' / 'cli-codex'"
+            "client identity: 'cli-claude' / 'cli-codex' from detectClientProvider reach the context as 'claude' / 'codex', the code-review deps receive 'claude' / 'codex' and the one-shot analyze's runWithClientProviderContext receives 'cli-claude' / 'cli-codex'",
+            "scope directoryOf: a bare file name inside a step.call resolves against the context's cwd, and outside one against process.cwd()"
           ],
           "fixturesNeeded": [
             "a temporary home per test so the live paths are temporary",
@@ -776,7 +780,7 @@
             "import graph (ac4): every module reachable by value imports from src/mcp/**, src/bin/insrc-mcp.ts, apart from src/shared/ipc-client.ts and src/mcp/daemon-stream.ts, imports nothing under src/db, src/analyze or src/daemon/steps; a fixture that adds such an import makes the test fail",
             "cancellation: closing the forwarder's socket during a design-review wait and during a code-review wait aborts the inner run in the daemon (its own abort observed), not only the outer wait",
             "no loopback: during each moved tool's call, the daemon's request server sees no second connection from the daemon's own process (the moved handlers use the in-daemon client)",
-            "in-daemon review client equivalence: a design-review wait that passes timeoutMs fails with ReviewStreamError('timeout') and the same retryable reply as before; a code-review run whose daemon run fails with reason 'diff-unavailable' takes the same diff fallback as before; an 'error' frame becomes ReviewStreamError('daemon-error', error, reason)",
+            "in-daemon review client equivalence: a design-review wait that passes timeoutMs fails with ReviewStreamError('timeout') and the same retryable reply as before; a code-review run whose daemon run fails with reason 'diff-unavailable' takes the same diff fallback as before; an 'error' frame becomes ReviewStreamError('daemon-error', error, reason); an aborted wait fails with ReviewStreamError('aborted') and code 'daemon-review-aborted', not retryable",
             "refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor (replaces the reader case of live-store-refusal.test.ts)"
           ],
           "fixturesNeeded": [

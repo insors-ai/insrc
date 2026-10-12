@@ -5,7 +5,8 @@
     "storyId": "S001",
     "createdAt": "2026-10-12T05:05:01.697Z",
     "updatedAt": "2026-10-12T05:05:01.697Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "stamp-ledger-records-their-work-item"
   },
   "body": {
     "tasks": [

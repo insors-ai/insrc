@@ -771,7 +771,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       : `box.addEventListener('paste',function(e){` +
         `var list=e&&e.clipboardData&&e.clipboardData.items?e.clipboardData.items:[],imgs=[];` +
         `for(var i=0;i<list.length;i++){var it=list[i];if(it&&it.kind==='file'&&typeof it.type==='string'&&it.type.indexOf('image/')===0){var f=it.getAsFile();if(f)imgs.push(f);}}` +
-        `if(imgs.length===0)return;` +
+        // Some clipboards offer the image only as a file, not as an item.
+        `var fl=e&&e.clipboardData&&e.clipboardData.files?e.clipboardData.files:[];` +
+        `if(imgs.length===0){for(var j=0;j<fl.length;j++){if(fl[j]&&typeof fl[j].type==='string'&&fl[j].type.indexOf('image/')===0)imgs.push(fl[j]);}}` +
+        // Nothing to attach. A paste that carries no text either would otherwise do nothing at all,
+        // so say what the clipboard offered.
+        `if(imgs.length===0){var ty=[];var tl=e&&e.clipboardData&&e.clipboardData.types?e.clipboardData.types:[];for(var k=0;k<tl.length;k++)ty.push(String(tl[k]));` +
+        `if(e&&e.clipboardData&&ty.indexOf('text/plain')<0&&ty.indexOf('text/html')<0){attErr.textContent='The clipboard gave this panel no image to paste (it offered: '+(ty.length?ty.join(', '):'nothing')+').';attErr.hidden=false;attBar.hidden=false;}` +
+        `return;}` +
         `e.preventDefault();` +
         `imgs.forEach(function(f){var r=new FileReader();` +
         `r.onload=function(){var url=String(r.result||''),c=url.indexOf(',');if(c<0)return;var cid='p'+(++attSeq);attThumbs[cid]=url;` +

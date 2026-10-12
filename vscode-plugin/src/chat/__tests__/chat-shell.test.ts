@@ -185,7 +185,11 @@ function pasteEvent(items: Array<{ kind: string; type: string; file?: { type: st
   return {
     prevented: () => prevented,
     event: {
-      clipboardData: { items: items.map((i) => ({ kind: i.kind, type: i.type, getAsFile: () => i.file ?? null })) },
+      clipboardData: {
+        items: items.map((i) => ({ kind: i.kind, type: i.type, getAsFile: () => i.file ?? null })),
+        files: items.filter((i) => i.file).map((i) => i.file),
+        types: [...new Set(items.map((i) => (i.kind === 'file' ? 'Files' : i.type)))],
+      },
       preventDefault: () => { prevented++; },
     },
   };
@@ -232,11 +236,25 @@ test('shell script: the attach button posts pick-attachments, an image paste pos
   const sentBefore = v.sent.length;
   const text = pasteEvent([{ kind: 'string', type: 'text/plain' }, { kind: 'string', type: 'text/html' }]);
   fire(box, 'paste', text.event);
+  assert.equal(v.el('insrc-atterr').textContent, '', 'a text paste says nothing');
   const pdf = pasteEvent([{ kind: 'file', type: 'application/pdf', file: { type: 'application/pdf', name: 'a.pdf', dataUrl: 'data:application/pdf;base64,CCCC' } }]);
   fire(box, 'paste', pdf.event);
   assert.doesNotThrow(() => fire(box, 'paste', { preventDefault: () => { throw new Error('must not be prevented'); } }));
   assert.equal(text.prevented() + pdf.prevented(), 0);
   assert.equal(v.sent.length, sentBefore);
+  const errLine = v.el('insrc-atterr') as BodyStub & { hidden?: boolean };
+  assert.equal(errLine.textContent, 'The clipboard gave this panel no image to paste (it offered: Files).', 'a file that is not an image is named as such');
+  // An image offered only as a file (not as an item) is attached too.
+  let filePrevented = 0;
+  fire(box, 'paste', { clipboardData: { items: [], files: [{ type: 'image/png', name: 'f.png', dataUrl: 'data:image/png;base64,FFFF' }], types: ['Files'] }, preventDefault: () => { filePrevented++; } });
+  assert.deepEqual(ofType(v, 'attach-image').at(-1), { type: 'attach-image', mime: 'image/png', dataBase64: 'FFFF', name: 'f.png', clientId: 'p4' });
+  assert.equal(filePrevented, 1);
+  // A paste with neither text nor an image says what the clipboard offered, and is not prevented.
+  fire(box, 'paste', { clipboardData: { items: [], files: [], types: ['application/x-thing'] }, preventDefault: () => { throw new Error('must not be prevented'); } });
+  assert.equal(errLine.textContent, 'The clipboard gave this panel no image to paste (it offered: application/x-thing).');
+  assert.equal(errLine.hidden, false);
+  fire(box, 'paste', { clipboardData: { items: [], files: [], types: [] }, preventDefault: () => {} });
+  assert.equal(errLine.textContent, 'The clipboard gave this panel no image to paste (it offered: nothing).');
 
   // The host's list is drawn as chips: thumbnail or glyph, name, size and a remove control.
   v.msg({

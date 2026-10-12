@@ -7,7 +7,9 @@
     "updatedAt": "2026-10-08T07:16:08.064Z",
     "authoredBy": "controller",
     "standalone": true,
-    "approvedAt": "2026-10-08T07:16:08.179Z"
+    "approvedAt": "2026-10-08T07:16:08.179Z",
+    "epicSlug": "insrc-build-step-validate-s-verdict",
+    "epicCreatedAt": "2026-10-07T12:59:03.938Z"
   },
   "body": {
     "tasks": [

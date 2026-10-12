@@ -226,6 +226,13 @@
         "choice": "Defer a2 but log it as a tracked follow-up now",
         "rationale": "User decision 2026-10-12: \"log this as an issue\". Filed as ISSUE-c96a97a204fac22b; storage stays out of this Story.",
         "resolvedAt": "2026-10-12T07:27:15.637Z"
+      },
+      "qe47b3caf": {
+        "question": "Are fixed sizes acceptable (a page of 100 rows, at most 200 on open, trim an active session above 300 held rows back to about 200), or should they be a setting?",
+        "status": "resolved",
+        "choice": "Fixed sizes as stated",
+        "rationale": "User decision 2026-10-12: \"fixed sizes no settings\".",
+        "resolvedAt": "2026-10-12T07:27:28.810Z"
       }
     }
   },

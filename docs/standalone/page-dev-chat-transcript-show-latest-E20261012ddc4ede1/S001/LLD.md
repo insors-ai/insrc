@@ -383,6 +383,8 @@ The host still posts the whole transcript; the webview keeps the rows as data an
 
 - `qa610cc1d` — Should the stored session also be split into pages (alternative a2), so a save during a turn stops rewriting the whole transcript? This design leaves storage alone; if wanted, it would be a separate tracked change after this one.
   - **resolved**: Defer a2 but log it as a tracked follow-up now — User decision 2026-10-12: "log this as an issue". Filed as ISSUE-c96a97a204fac22b; storage stays out of this Story. _(2026-10-12T07:27:15.637Z)_
+- `qe47b3caf` — Are fixed sizes acceptable (a page of 100 rows, at most 200 on open, trim an active session above 300 held rows back to about 200), or should they be a setting?
+  - **resolved**: Fixed sizes as stated — User decision 2026-10-12: "fixed sizes no settings". _(2026-10-12T07:27:28.810Z)_
 
 ## Citations
 

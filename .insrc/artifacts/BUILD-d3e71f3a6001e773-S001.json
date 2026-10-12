@@ -1,13 +1,14 @@
 {
   "meta": {
     "workflow": "build",
-    "standalone": false,
+    "standalone": true,
     "epicHash": "d3e71f3a6001e773",
     "storyId": "S001",
     "createdAt": "2026-08-04T17:34:06.508Z",
     "updatedAt": "2026-08-04T17:34:06.508Z",
     "sizeClass": "feature",
-    "approvedAt": "2026-08-04T17:37:55.789Z"
+    "approvedAt": "2026-08-04T17:37:55.789Z",
+    "epicSlug": "build-ledger-plan-driven-builds-today"
   },
   "body": {
     "commit": "a2fbe67",

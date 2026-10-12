@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "d3e71f3a6001e773",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "build-ledger-plan-driven-builds-today",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

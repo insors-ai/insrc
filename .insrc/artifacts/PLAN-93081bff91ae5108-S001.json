@@ -19,7 +19,7 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "93081bff91ae5108",
-    "epicSlug": "design-fix-issue-93081bff91ae5108-make-completed",
+    "epicSlug": "build-ledger-record-s-provenance-broken",
     "storyId": "S001",
     "lldRunId": "wf-1790932646998-yl883h",
     "lldEffectiveHash": "16cd7ff49788aeab6cf463a90a9add0593362954daf7c36250b85877648e91ca",
@@ -251,7 +251,8 @@
         "resolvedAt": "2026-10-02T14:17:27.266Z"
       }
     },
-    "approvedAt": "2026-10-02T14:30:42.891Z"
+    "approvedAt": "2026-10-02T14:30:42.891Z",
+    "standalone": true
   },
   "body": {
     "summary": {

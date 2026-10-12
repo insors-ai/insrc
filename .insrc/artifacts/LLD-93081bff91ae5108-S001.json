@@ -18,7 +18,7 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "93081bff91ae5108",
-    "epicSlug": "design-fix-issue-93081bff91ae5108-make-completed",
+    "epicSlug": "build-ledger-record-s-provenance-broken",
     "storyId": "S001",
     "hldBaseRunId": "wf-1790932646998-yl883h",
     "hldEffectiveHash": "16cd7ff49788aeab6cf463a90a9add0593362954daf7c36250b85877648e91ca",

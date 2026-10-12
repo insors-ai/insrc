@@ -9,7 +9,10 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "93081bff91ae5108",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "build-ledger-record-s-provenance-broken",
+    "epicCreatedAt": "2026-10-02T14:11:39.556Z",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

@@ -4,7 +4,7 @@
 
 ## Summary
 
-**Epic:** `design-fix-issue-93081bff91ae5108-make-completed`
+**Epic:** `build-ledger-record-s-provenance-broken`
 **LLD run:** `wf-1790932646998-yl883h`
 **LLD effective hash:** `16cd7ff49788...`
 

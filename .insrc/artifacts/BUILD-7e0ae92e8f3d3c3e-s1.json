@@ -5,7 +5,8 @@
     "storyId": "s1",
     "createdAt": "2026-10-11T16:19:17.663Z",
     "updatedAt": "2026-10-11T17:05:06.349Z",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicSlug": "di1-open-source-design-corpus-retrieval"
   },
   "body": {
     "tasks": [

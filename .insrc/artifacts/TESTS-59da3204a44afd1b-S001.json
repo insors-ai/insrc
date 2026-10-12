@@ -4,7 +4,7 @@
     "epicHash": "59da3204a44afd1b",
     "storyId": "S001",
     "createdAt": "2026-10-12T10:25:29.172Z",
-    "updatedAt": "2026-10-12T10:43:04.770Z",
+    "updatedAt": "2026-10-12T12:17:54.221Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T10:10:09.226Z",
     "epicSlug": "paste-images-attach-documents-dev-chat"
@@ -2386,6 +2386,176 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "35d6a888",
+        "ranAt": "2026-10-12T10:45:00.921Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session's attachments and the start-up sweep uses the same keep set",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+                "title": "extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session's attachments and the start-up sweep uses the same keep set",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 258,
+            "titles": [
+              {
+                "title": "extension.ts gates the chat command on insrc.chat.enabled (config read)",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts constructs createChatPanelHost with the real injected vscode seams + memento store",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host + protocol + store modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes the chat command + the insrc.chat.enabled config (default on)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: package.json contributes insrc.chat.diffView (string enum chat|editor, default chat)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects editGovernance seams",
+                "result": "pass"
+              },
+              {
+                "title": "S006: the edit-governor module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: package.json contributes insrc.chat.lockGroup (boolean, default true, machine scope)",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: extension.ts wires thin seams into createChatGroupLock and attaches it in the one panel adapter",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: the module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "S007: package.json contributes the insrc.chat.docsReview command",
+                "result": "pass"
+              },
+              {
+                "title": "S007: extension.ts wires the docs-review host inside the chat gate over the shared client",
+                "result": "pass"
+              },
+              {
+                "title": "S007: the docs-review host + client modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the chat opens from an editor/title icon, NOT an Activity Bar container",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the real insrc icon SVGs exist, are non-empty, and ship in the .vsix",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: extension.ts opens the chat as an editor-tab panel + gates the icon, docs-review intact",
+                "result": "pass"
+              },
+              {
+                "title": "the extension passes a file-backed lock registry and the turnLockTimeoutMs setting",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)",
+                "result": "pass"
+              },
+              {
+                "title": "the extension builds a session output on ~/.insrc/chat-output, passes it to the provider registry, and wires onEvict and the start-up sweep",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session's attachments and the start-up sweep uses the same keep set",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "bdd0a0ef",
+        "ranAt": "2026-10-12T12:17:54.221Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "live claude: with the argv the adapter builds for a request with readDirs, a prompt naming an image and a text file in that directory is answered from their content",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/insrc-validate-output/attachments-live-claude.ndjson: argv from the adapter (-p --output-format=stream-json --verbose --add-dir /tmp/insrc-live-att/live-session --permission-prompts host -- <prompt>), run from /tmp/insrc-live-cwd; two Read tool calls, result 'The image is red, and the code word is PERIWINKLE-4471.' The image is a solid red PNG and the text file holds that code word."
+            }
+          },
+          {
+            "name": "live codex: with the argv the adapter builds, a prompt naming an image and a text file in the attachments directory is answered from their content",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/insrc-validate-output/attachments-live-codex.ndjson: argv from the adapter (exec --json -- <prompt>), codex-cli 0.162.1. First run from a directory that is not a git repository was refused by codex itself ('Not inside a trusted directory'); second run from /home/subho/work/dev/insors/insrc, which does not hold the files, answered 'The image is red, and the code word is PERIWINKLE-4471.'"
+            }
+          },
+          {
+            "name": "in VS Code: pasting a screenshot and attaching a document show chips, the message shows them after sending, the assistant answers from their content, and a chip click opens the file",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/insrc-validate-output/attachments-t9-smoke.md: after install of 0.5.13 (commit bdd0a0ef) and a reload, the user sent 'paste works, file attach also. check' from the panel with a pasted screenshot and an attached document; the assistant received the attached-files block and read both files; the stored row holds the user's text with the two attachments; the user then confirmed 'yes, click opens in editor'. The user's first attempt, before bdd0a0ef, failed ('Paste is not working')."
+            }
+          },
+          {
+            "name": "whole plugin suite: every test passes apart from the two manifest-catalog tests that failed before this Story",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/insrc-validate-output/attachments-t9-plugin-suite.tap: run on commit bdd0a0ef; 1161 tests, 1155 pass, 4 skipped, 2 fail (not ok 794 and 795, the two manifest-catalog tests in the config suite, failing before this Story)."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 27 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -227,3 +227,41 @@ Run at 2026-10-12T10:43:04.770Z on commit `4c483b3c`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 5 | 0.4 s |  |
+
+## t8
+
+Run at 2026-10-12T10:45:00.921Z on commit `35d6a888`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session's attachments and the start-up sweep uses the same keep set**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session's attachments and the start-up sweep uses the same keep set | `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` | 0 | 21 | 0.3 s |  |
+
+## t9
+
+Run at 2026-10-12T12:17:54.221Z on commit `bdd0a0ef`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: live claude: with the argv the adapter builds for a request with readDirs, a prompt naming an image and a text file in that directory is answered from their content**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-validate-output/attachments-live-claude.ndjson: argv from the adapter (-p --output-format=stream-json --verbose --add-dir /tmp/insrc-live-att/live-session --permission-prompts host -- <prompt>), run from /tmp/insrc-live-cwd; two Read tool calls, result 'The image is red, and the code word is PERIWINKLE-4471.' The image is a solid red PNG and the text file holds that code word.
+
+**live: live codex: with the argv the adapter builds, a prompt naming an image and a text file in the attachments directory is answered from their content**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-validate-output/attachments-live-codex.ndjson: argv from the adapter (exec --json -- <prompt>), codex-cli 0.162.1. First run from a directory that is not a git repository was refused by codex itself ('Not inside a trusted directory'); second run from /home/subho/work/dev/insors/insrc, which does not hold the files, answered 'The image is red, and the code word is PERIWINKLE-4471.'
+
+**smoke: in VS Code: pasting a screenshot and attaching a document show chips, the message shows them after sending, the assistant answers from their content, and a chip click opens the file**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-validate-output/attachments-t9-smoke.md: after install of 0.5.13 (commit bdd0a0ef) and a reload, the user sent 'paste works, file attach also. check' from the panel with a pasted screenshot and an attached document; the assistant received the attached-files block and read both files; the stored row holds the user's text with the two attachments; the user then confirmed 'yes, click opens in editor'. The user's first attempt, before bdd0a0ef, failed ('Paste is not working').
+
+**smoke: whole plugin suite: every test passes apart from the two manifest-catalog tests that failed before this Story**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-validate-output/attachments-t9-plugin-suite.tap: run on commit bdd0a0ef; 1161 tests, 1155 pass, 4 skipped, 2 fail (not ok 794 and 795, the two manifest-catalog tests in the config suite, failing before this Story).

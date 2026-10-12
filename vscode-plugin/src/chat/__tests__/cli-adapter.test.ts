@@ -1300,8 +1300,8 @@ test('65cb63f7: a prompt starting with "-" or "--" reaches claude and codex verb
       { provider: 'claude', lines: CLAUDE_TEXT_TURN },
       { provider: 'claude', lines: CLAUDE_TEXT_TURN, resume: { provider: 'claude', nativeSessionId: 's1' } },
       { provider: 'claude', lines: CLAUDE_TEXT_TURN, grant: true },
-      { provider: 'codex', lines: CLAUDE_TEXT_TURN },
-      { provider: 'codex', lines: CLAUDE_TEXT_TURN, resume: { provider: 'codex', nativeSessionId: 's1' } },
+      { provider: 'codex', lines: CODEX_TEXT_TURN },
+      { provider: 'codex', lines: CODEX_TEXT_TURN, resume: { provider: 'codex', nativeSessionId: 's1' } },
     ];
     for (const c of cases) {
       const { deps, spawner } = depsFor(c.lines as never);

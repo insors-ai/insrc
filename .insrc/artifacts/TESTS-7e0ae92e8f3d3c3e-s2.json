@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s2",
+    "createdAt": "2026-10-12T04:54:28.333Z",
+    "updatedAt": "2026-10-12T04:54:28.333Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "152a7c48",
+        "ranAt": "2026-10-12T04:54:28.333Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "source-schema preserves exact sc3 shapes and rejects invalid identities and fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/contracts.test.ts",
+                "title": "source-schema preserves exact sc3 shapes and rejects invalid identities and fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "validation-parity matches S001 path collision and UTC timestamp behavior",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/contracts.test.ts",
+                "title": "validation-parity matches S001 path collision and UTC timestamp behavior",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/sources/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 594,
+            "titles": [
+              {
+                "title": "source-schema preserves exact sc3 shapes and rejects invalid identities and fields",
+                "result": "pass"
+              },
+              {
+                "title": "validation-parity matches S001 path collision and UTC timestamp behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

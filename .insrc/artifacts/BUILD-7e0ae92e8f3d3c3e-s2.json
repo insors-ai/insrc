@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s2",
+    "createdAt": "2026-10-12T04:54:28.333Z",
+    "updatedAt": "2026-10-12T04:54:28.333Z",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Implement strict sc3 schemas, internal reviewed-policy and lineage contracts, canonical source identities and S001 validation parity. Full suite retains the known unrelated SQLite temporalTrend failure; planned tests and typecheck pass.",
+    "testRecord": {
+      "md": "docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "plans/design-intelligence-di1-s2-build.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T04:54:28.333Z"
+      },
+      {
+        "target": {
+          "file": "plans/reviews/design-intelligence-di1-s2-t1-verification.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T04:54:28.333Z"
+      },
+      {
+        "target": {
+          "file": "src/design/corpus/sources/__tests__/contracts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T04:54:28.333Z"
+      },
+      {
+        "target": {
+          "file": "src/design/corpus/sources/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T04:54:28.333Z"
+      },
+      {
+        "target": {
+          "file": "src/design/corpus/sources/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T04:54:28.333Z"
+      },
+      {
+        "target": {
+          "file": "src/design/corpus/sources/validation-primitives.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T04:54:28.333Z"
+      }
+    ],
+    "commit": "152a7c48"
+  }
+}

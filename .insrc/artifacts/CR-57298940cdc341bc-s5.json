@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "57298940cdc341bc",
-    "storyId": "s5"
+    "storyId": "s5",
+    "epicSlug": "expand-jetbrains-plugin-s-insrc-settings"
   },
   "body": {
     "kind": "code-review",

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s11",
     "createdAt": "2026-10-12T11:26:17.849Z",
-    "updatedAt": "2026-10-12T11:26:57.256Z",
+    "updatedAt": "2026-10-12T11:35:47.361Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -241,6 +241,86 @@
             "titles": [
               {
                 "title": "review stream module: ReviewStreamError from src/shared/review-stream.ts is the same class daemon-stream.ts exports, and the routing tests pass unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "dcecd4d1",
+        "ranAt": "2026-10-12T11:35:47.361Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts",
+                "title": "vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts",
+                "title": "vector store owner rule: the graph store's temporary reader allowance does not open the live vector store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no test opens the live vector store: each repaired test file run in a temporary home leaves no lance directory",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/lance/__tests__/no-live-vector-store-in-tests.test.ts",
+                "title": "no test opens the live vector store: each repaired test file run in a temporary home leaves no lance directory",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/lance/__tests__/no-live-vector-store-in-tests.test.ts",
+                "title": "the check sees a vector store that IS opened at the default path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 975,
+            "titles": [
+              {
+                "title": "vector store owner rule: the graph store's temporary reader allowance does not open the live vector store",
+                "result": "pass"
+              },
+              {
+                "title": "vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/lance/__tests__/no-live-vector-store-in-tests.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 30710,
+            "titles": [
+              {
+                "title": "no test opens the live vector store: each repaired test file run in a temporary home leaves no lance directory",
+                "result": "pass"
+              },
+              {
+                "title": "the check sees a vector store that IS opened at the default path",
                 "result": "pass"
               }
             ],

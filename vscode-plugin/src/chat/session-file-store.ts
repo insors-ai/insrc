@@ -234,16 +234,28 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
   const genId = deps.genId ?? (() => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
   const paths = (id: string): SessionPaths => sessionPaths(deps.root, id);
 
-  /** Per session OBJECT: how many of its leading rows are on disk. */
+  // Only a positive integer is a cap, as in the Memento store; anything else is no cap.
+  const maxSessions = deps.maxSessions !== undefined && deps.maxSessions >= 1 ? Math.floor(deps.maxSessions) : undefined;
+
+  /**
+   * Per session OBJECT: how many of its leading rows are on disk. Kept for as long as the object
+   * lives: neither another window's append nor a get() that hands out a fresh object for the same
+   * id changes it, so an object the callers hold only ever appends its own new rows.
+   */
   const tracked = new WeakMap<ChatSession, { count: number }>();
-  /** Per id: the object get() hands out, and the files' state when this store last left or read them. */
-  const cache = new Map<string, { session: ChatSession; headMtimeMs: number; rowsBytes: number }>();
+  /** Per id: the object get() hands out, and the head's modification time when it was read or written. */
+  const cache = new Map<string, { session: ChatSession; headMtimeMs: number }>();
+  /** Per id: the rows file's size as this store last left or read it (after its own cut-back too). */
+  const rowsSeen = new Map<string, number>();
+  /** Objects saved after another writer appended: they lack that writer's rows, so get() never hands them out again. */
+  const stale = new WeakSet<ChatSession>();
   const warnedHeads = new Set<string>();
 
   const remember = (s: ChatSession, p: SessionPaths): void => {
+    if (stale.has(s)) return;
     const held = cache.get(s.id);
     if (held !== undefined && held.session !== s) return; // another object is the one get() hands out
-    cache.set(s.id, { session: s, headMtimeMs: fs.stat(p.head)?.mtimeMs ?? 0, rowsBytes: fs.stat(p.rows)?.size ?? 0 });
+    cache.set(s.id, { session: s, headMtimeMs: fs.stat(p.head)?.mtimeMs ?? 0 });
   };
 
   const get = (id: string): ChatSession | undefined => {
@@ -255,7 +267,7 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
         return undefined;
       }
       const held = cache.get(id);
-      if (held !== undefined && held.headMtimeMs === headStat.mtimeMs && held.rowsBytes === (fs.stat(p.rows)?.size ?? 0)) {
+      if (held !== undefined && held.headMtimeMs === headStat.mtimeMs && rowsSeen.get(id) === (fs.stat(p.rows)?.size ?? 0)) {
         return held.session;
       }
       const head = readHead(fs, p.head);
@@ -270,7 +282,8 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
       const { rows, bytes } = readRows(fs, p.rows, log);
       const session = sessionOf(head, rows);
       tracked.set(session, { count: rows.length });
-      cache.set(id, { session, headMtimeMs: headStat.mtimeMs, rowsBytes: bytes });
+      rowsSeen.set(id, bytes);
+      cache.set(id, { session, headMtimeMs: headStat.mtimeMs });
       return session;
     } catch (err) {
       log?.warn(`[chat] session ${id} could not be read: ${err instanceof Error ? err.message : String(err)}`);
@@ -278,21 +291,81 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
     }
   };
 
+  /** Removes the sessions with the oldest savedAt beyond the cap, never `keepId`. */
+  const evictBeyondCap = (keepId: string): void => {
+    if (maxSessions === undefined) return;
+    const heads: SessionHead[] = [];
+    for (const name of fs.list(deps.root)) {
+      if (!name.endsWith(HEAD_SUFFIX)) continue;
+      const head = readHead(fs, `${deps.root}/${name}`);
+      if (head !== undefined) heads.push(head);
+    }
+    if (heads.length <= maxSessions) return;
+    const oldestFirst = heads
+      .filter((h) => h.id !== keepId)
+      .sort((a, b) => (a.savedAt < b.savedAt ? -1 : a.savedAt > b.savedAt ? 1 : a.id < b.id ? -1 : 1));
+    for (const head of oldestFirst.slice(0, heads.length - maxSessions)) {
+      const p = paths(head.id);
+      try {
+        fs.remove(p.head); // the head first: a session without a head is not a session
+        fs.remove(p.rows);
+      } catch (err) {
+        log?.warn(`[chat] files of evicted session ${head.id} not removed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      cache.delete(head.id);
+      rowsSeen.delete(head.id);
+      try {
+        deps.onEvict?.(head.id);
+      } catch {
+        /* cleanup is best-effort; eviction itself has happened */
+      }
+    }
+  };
+
   const save = (s: ChatSession): void => {
     const p = paths(s.id);
     fs.mkdir(deps.root);
-    const count = tracked.get(s)?.count ?? 0;
-    const fresh = s.transcript.slice(count);
-    if (fresh.length > 0) {
-      fs.appendText(p.rows, rowLines(fresh));
+    const t = tracked.get(s);
+    const headStat = fs.stat(p.head);
+    const rowsStat = fs.stat(p.rows);
+    const onDisk = rowsStat?.size ?? 0;
+    const seen = rowsSeen.get(s.id) ?? 0;
+    // The rows file is written whole in three cases only, none of which the callers reach in
+    // normal use: an object this store has never tracked, for an id whose files exist; a tracked
+    // object whose transcript is shorter than what it wrote; and a tracked object whose rows are
+    // on disk no longer (the head is gone or the rows file is shorter than this store left it, as
+    // after an eviction), so that the session comes back complete.
+    const whole =
+      t === undefined
+        ? headStat !== undefined || rowsStat !== undefined
+        : s.transcript.length < t.count || (t.count > 0 && (headStat === undefined || onDisk < seen));
+    if (whole) {
+      writeWhole(fs, p.rows, rowLines(s.transcript));
+      tracked.set(s, { count: s.transcript.length });
+    } else {
+      const count = t?.count ?? 0;
+      // A rows file longer than this store left it: another writer appended. This object's new
+      // rows still go after theirs; it lacks their rows, so the next get() must read the files.
+      if (onDisk > seen && rowsSeen.has(s.id)) {
+        stale.add(s);
+        if (cache.get(s.id)?.session === s) cache.delete(s.id);
+      }
+      const fresh = s.transcript.slice(count);
+      if (fresh.length > 0) fs.appendText(p.rows, rowLines(fresh));
       // Advanced as soon as the rows are on disk: a head write that fails below must not make the
       // next save write them again.
       tracked.set(s, { count: s.transcript.length });
-    } else if (!tracked.has(s)) {
-      tracked.set(s, { count });
     }
+    rowsSeen.set(s.id, fs.stat(p.rows)?.size ?? 0);
     writeWhole(fs, p.head, JSON.stringify(headOf(s, now())));
     remember(s, p);
+    if (headStat === undefined) {
+      try {
+        evictBeyondCap(s.id);
+      } catch (err) {
+        log?.warn(`[chat] session cap not applied: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
   };
 
   const draft = (provider: ProviderId): ChatSession => {

@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s2
 
-**Standalone:** no  ·  **Created:** 2026-10-12T04:54:28.333Z  ·  **Updated:** 2026-10-12T04:54:28.333Z
+**Standalone:** no  ·  **Created:** 2026-10-12T04:54:28.333Z  ·  **Updated:** 2026-10-12T04:59:13.470Z
 
-**Commit:** 152a7c48
+**Commit:** 7fd440ce
 
 ## Summary
 
@@ -13,14 +13,20 @@ Implement strict sc3 schemas, internal reviewed-policy and lineage contracts, ca
 ## Tasks validated
 
 - ✓ `t1`
+- ✓ `t2`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `plans/design-intelligence-di1-s2-build.md` — **insrc-build** (2026-10-12T04:54:28.333Z)
-- `plans/reviews/design-intelligence-di1-s2-t1-verification.txt` — **insrc-build** (2026-10-12T04:54:28.333Z)
-- `src/design/corpus/sources/__tests__/contracts.test.ts` — **insrc-build** (2026-10-12T04:54:28.333Z)
-- `src/design/corpus/sources/contracts.ts` — **insrc-build** (2026-10-12T04:54:28.333Z)
-- `src/design/corpus/sources/index.ts` — **insrc-build** (2026-10-12T04:54:28.333Z)
-- `src/design/corpus/sources/validation-primitives.ts` — **insrc-build** (2026-10-12T04:54:28.333Z)
+- `plans/design-intelligence-di1-s2-build.md` — **insrc-build** (2026-10-12T04:59:13.470Z)
+- `plans/reviews/design-intelligence-di1-s2-t1-verification.txt` — **insrc-build** (2026-10-12T04:59:13.470Z)
+- `plans/reviews/design-intelligence-di1-s2-t2-verification.txt` — **insrc-build** (2026-10-12T04:59:13.470Z)
+- `src/design/corpus/sources/__tests__/contracts.test.ts` — **insrc-build** (2026-10-12T04:59:13.470Z)
+- `src/design/corpus/sources/__tests__/eligibility.test.ts` — **insrc-build** (2026-10-12T04:59:13.470Z)
+- `src/design/corpus/sources/__tests__/fixtures.ts` — **insrc-build** (2026-10-12T04:59:13.470Z)
+- `src/design/corpus/sources/contracts.ts` — **insrc-build** (2026-10-12T04:59:13.470Z)
+- `src/design/corpus/sources/eligibility.ts` — **insrc-build** (2026-10-12T04:59:13.470Z)
+- `src/design/corpus/sources/index.ts` — **insrc-build** (2026-10-12T04:59:13.470Z)
+- `src/design/corpus/sources/policy.ts` — **insrc-build** (2026-10-12T04:59:13.470Z)
+- `src/design/corpus/sources/validation-primitives.ts` — **insrc-build** (2026-10-12T04:59:13.470Z)

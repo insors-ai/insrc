@@ -4,7 +4,7 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T04:54:28.333Z"
+    "updatedAt": "2026-10-12T04:59:13.470Z"
   },
   "body": {
     "tasks": [
@@ -54,6 +54,76 @@
               },
               {
                 "title": "validation-parity matches S001 path collision and UTC timestamp behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "7fd440ce",
+        "ranAt": "2026-10-12T04:59:13.470Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "mixed-eligibility admits only reviewed exact-file profiles with complete evidence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/eligibility.test.ts",
+                "title": "mixed-eligibility admits only reviewed exact-file profiles with complete evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "mixed-eligibility propagates stale evidence without rejecting independent eligible files",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/eligibility.test.ts",
+                "title": "mixed-eligibility propagates stale evidence without rejecting independent eligible files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "mixed-eligibility requires explicit font and compound-license decisions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/eligibility.test.ts",
+                "title": "mixed-eligibility requires explicit font and compound-license decisions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/sources/__tests__/eligibility.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 578,
+            "titles": [
+              {
+                "title": "mixed-eligibility admits only reviewed exact-file profiles with complete evidence",
+                "result": "pass"
+              },
+              {
+                "title": "mixed-eligibility propagates stale evidence without rejecting independent eligible files",
+                "result": "pass"
+              },
+              {
+                "title": "mixed-eligibility requires explicit font and compound-license decisions",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -61,3 +61,49 @@ Run at 2026-10-12T07:36:33.075Z on commit `c995dd34`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/protocol.test.ts` | 0 | 8 | 0.3 s |  |
+
+## t3
+
+Run at 2026-10-12T07:40:33.173Z on commit `8fa23116`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: write-then-post order: when each live row is posted, the transcript already holds it at that index**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | write-then-post order: when each live row is posted, the transcript already holds it at that index | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: a turn followed for a session that is not shown still writes its rows and posts nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: load-older for another session id, or with a malformed before or sessionId, posts nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | load-older for another session id, or with a malformed before or sessionId, posts nothing | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: session-restored carries firstIndex 0 and total while the whole transcript is still sent**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | session-restored carries firstIndex 0 and total while the whole transcript is still sent | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 128 | 2 s |  |

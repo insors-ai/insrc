@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791793038248-au9zz8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-12T08:17:18.248Z",
+    "model": "claude:opus",
+    "elapsedMs": 68037,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ddc4ede1dbf84626",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-12T07:11:33.406Z",
+    "epicSlug": "page-dev-chat-transcript-show-latest",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ddc4ede1dbf84626",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+        "vscode-plugin/src/chat/__tests__/fake-dom.test.ts",
+        "vscode-plugin/src/chat/__tests__/fake-dom.ts",
+        "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+        "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+        "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+        "vscode-plugin/src/chat/__tests__/transcript-window.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/protocol.ts",
+        "vscode-plugin/src/chat/render-registry.ts",
+        "vscode-plugin/src/chat/transcript-pager.ts",
+        "vscode-plugin/src/chat/transcript-window.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:3309",
+            "message": "Present but unverified: all 32 promised tests exist by exact title (5 in transcript-window.test.ts, 1 in protocol.test.ts:83, 1 in fake-dom.test.ts:113, 2 in render-registry.test.ts:940/980, 12 in transcript-pager.test.ts:109-346, 11 in chat-panel.test.ts:3309-3667), but no build record was supplied, so none of them can be confirmed passing. I did not run the suite. This is not a missing-test finding; run `npx tsx --test` over vscode-plugin/src/chat/__tests__ to confirm the pass-state before completing the Story.",
+            "expectationRef": "all 32 promised tests (pass-state)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/transcript-window.ts:1",
+            "message": "The testsReaching edges are hollow for the changed production symbols (pageStart, latestWindow, pageBefore, transcriptPagerWebviewSource, postRestored, postLive, appendEvent, followLiveTurn, handleMessage, envelope), because the graph records no edge from anonymous top-level `test(...)` callbacks. I am not reporting these as HIGH not-exercised gaps: a title and import check shows each has tests aimed at it — transcript-window.test.ts has five latestWindow/pageBefore tests, transcript-pager.test.ts:81 evaluates transcriptPagerWebviewSource(), chat-panel.test.ts:3515 asserts the pager is embedded once in the shell, and chat-panel.test.ts:3309-3667 covers the rowIndex writers, load-older handling and the windowed restore. The empty edges are an indexing limit, not evidence of missing coverage; I matched tests by title and import only, without reading the test bodies.",
+            "expectationRef": "testsReaching edges for transcript-window.ts, transcript-pager.ts and chat-panel.ts symbols",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+            "message": "Duplication (test scaffolding): this file keeps its own fake DOM (`FakeNode`, `makeNode(tag)`, `fakeDocument`) while the shared `fake-dom.ts` in the same directory already provides a fake node factory that chat-shell.test.ts and transcript-pager.test.ts use. Two fake DOMs can drift, so a registry behaviour could pass against one and fail against the other. Judged from symbol summaries only: no line number is available and the bodies were not compared.",
+            "counterpartRef": "bodyStub",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+            "message": "Duplication (test scaffolding): the local helpers `line(s, cls?)`, `maxTop()` and the `Registry` interface repeat same-named helpers in sibling tests (`line` and `Registry` in render-registry.test.ts, `maxTop` in chat-shell.test.ts). They could move into the shared `fake-dom.ts`. Not a production risk. Judged from symbol summaries only: no line number is available and the bodies were not compared.",
+            "counterpartRef": "line (vscode-plugin/src/chat/__tests__/render-registry.test.ts)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 3
+    }
+  }
+}

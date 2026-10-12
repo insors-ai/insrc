@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "d5a433047dc3439f",
-    "storyId": "S001"
+    "storyId": "S001",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

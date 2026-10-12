@@ -4,7 +4,7 @@
     "epicHash": "c96a97a204fac22b",
     "storyId": "S001",
     "createdAt": "2026-10-12T09:10:47.854Z",
-    "updatedAt": "2026-10-12T09:17:10.214Z",
+    "updatedAt": "2026-10-12T09:20:05.206Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:26:48.214Z",
@@ -23,9 +23,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "The file store's save now handles several windows, whole-file writes, failing writes and the session cap. It records per id the rows file's size as it last left or read it; when the file has grown another writer appended, so the held object still appends only its own new rows, stays tracked, and is never handed out by get again. The rows file is written whole in three cases only: a never-tracked object for an id whose files exist, a tracked object whose transcript got shorter, and a tracked object whose head is gone or whose rows file is shorter than recorded (as after an eviction), so the session comes back complete. A save that creates a head applies the cap by savedAt, never against the session being saved. Both mutations named in the test titles were run by hand and each made its test fail.",
+    "summary": "migrateChatSessionsFromMemento, in session-file-store.ts, moves each indexed session from the memento into the store's files: it writes rows then head when no head exists, appends the missing rows when the files hold a prefix, writes nothing when the files hold more, then reads the files back and compares them with the memento's copy before it removes the memento key. A session that fails, disagrees or is not a session is left untouched, logged and returned in kept; the index is rewritten to the kept ids or removed. A memento write that fails later is logged rather than left as an unhandled rejection. Nothing calls the migration yet; that is task 5.",
     "testRecord": {
       "md": "docs/standalone/every-save-chat-session-rewrites-its-E20261012c96a97a2/S001/TESTS.md"
     },
@@ -35,44 +39,44 @@
           "file": ".insrc/artifacts/PLAN-c96a97a204fac22b-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:17:10.214Z"
+        "timestamp": "2026-10-12T09:20:05.206Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fake-session-fs.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:17:10.214Z"
+        "timestamp": "2026-10-12T09:20:05.206Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:17:10.214Z"
+        "timestamp": "2026-10-12T09:20:05.206Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/session-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:17:10.214Z"
+        "timestamp": "2026-10-12T09:20:05.206Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/session-file-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:17:10.214Z"
+        "timestamp": "2026-10-12T09:20:05.206Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/session-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T09:17:10.214Z"
+        "timestamp": "2026-10-12T09:20:05.206Z"
       }
     ],
-    "commit": "d73cc765"
+    "commit": "38ce31e0"
   }
 }

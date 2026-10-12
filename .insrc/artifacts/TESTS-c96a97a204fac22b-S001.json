@@ -4,7 +4,7 @@
     "epicHash": "c96a97a204fac22b",
     "storyId": "S001",
     "createdAt": "2026-10-12T09:10:47.854Z",
-    "updatedAt": "2026-10-12T09:17:10.214Z",
+    "updatedAt": "2026-10-12T09:20:05.206Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T07:26:48.214Z",
     "epicSlug": "every-save-chat-session-rewrites-its"
@@ -427,6 +427,145 @@
               },
               {
                 "title": "a save after the store cut back a torn last line appends and does not replace the rows file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "38ce31e0",
+        "ranAt": "2026-10-12T09:20:05.206Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the migration writes each indexed session's files, reads them back equal, then removes its memento key and the index; the store then lists and returns every session as the memento store did",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+                "title": "the migration writes each indexed session's files, reads them back equal, then removes its memento key and the index; the store then lists and returns every session as the memento store did",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a session whose write or read-back fails is left in the memento untouched, stays in the index and is returned in kept, and the others are still migrated",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+                "title": "a session whose write or read-back fails is left in the memento untouched, stays in the index and is returned in kept, and the others are still migrated",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a session whose files already hold a prefix of the memento's rows gets the missing rows appended and its memento key removed; one whose files hold more rows than the memento is left as it is on disk and its key removed; one that disagrees is changed in neither place and returned in kept",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+                "title": "a session whose files already hold a prefix of the memento's rows gets the missing rows appended and its memento key removed; one whose files hold more rows than the memento is left as it is on disk and its key removed; one that disagrees is changed in neither place and returned in kept",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the migration with no index, or run a second time, reads no session, writes nothing and returns no kept id; an entry isSession rejects is kept and logged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+                "title": "the migration with no index, or run a second time, reads no session, writes nothing and returns no kept id; an entry isSession rejects is kept and logged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 305,
+            "titles": [
+              {
+                "title": "a save of a session with new rows appends exactly those rows to the rows file and replaces the head; the bytes written do not grow with the rows already stored (1,000 stored rows, one new row)",
+                "result": "pass"
+              },
+              {
+                "title": "a save with no new rows writes the head only",
+                "result": "pass"
+              },
+              {
+                "title": "a draft writes nothing until its first save, which writes its rows and then its head; create() saves at once",
+                "result": "pass"
+              },
+              {
+                "title": "get returns the saved session with every row variant, editMode, mode, nativeSessionId and liveTurn unchanged, and the same object on a second call without reading the files again",
+                "result": "pass"
+              },
+              {
+                "title": "list reads head files only, never a rows file, and returns id, provider, title and updatedAt sorted by updatedAt descending",
+                "result": "pass"
+              },
+              {
+                "title": "a damaged head reads as no session and is left out of list; a rows file with a torn last line is read without it and cut back before the next append; a bad line in the middle is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "an id with characters outside A-Za-z0-9_- is stored under sessionFileName(id) and read back with its real id",
+                "result": "pass"
+              },
+              {
+                "title": "after another writer has appended to the rows file, the same held session object is saved three times (with a new row, with only a head change, and after a get of its id): every save only appends, the rows file is never replaced, it holds both writers' rows in save order, and the get returns a fresh object with all of them (mutation: untrack the object when the cached copy is dropped)",
+                "result": "pass"
+              },
+              {
+                "title": "an object the store has never tracked, saved for an id whose files exist, replaces the rows file whole through a temporary file and a rename; so does a tracked object whose transcript is shorter than its count",
+                "result": "pass"
+              },
+              {
+                "title": "a failing append or head write makes save throw and leaves the object's count where the rows on disk are, so the next save writes the missing rows once and none twice",
+                "result": "pass"
+              },
+              {
+                "title": "with maxSessions set, a save that creates a new session removes the sessions with the oldest savedAt and their rows files and calls onEvict for each, never the session being saved; a failing remove is logged and the save succeeds; a cap of 0 or less is no cap",
+                "result": "pass"
+              },
+              {
+                "title": "a held session object saved after its files were removed is written whole with its head, get then returns every row, and the cap is applied without removing it (mutation: append only the rows beyond its count)",
+                "result": "pass"
+              },
+              {
+                "title": "a save after the store cut back a torn last line appends and does not replace the rows file",
+                "result": "pass"
+              },
+              {
+                "title": "the migration writes each indexed session's files, reads them back equal, then removes its memento key and the index; the store then lists and returns every session as the memento store did",
+                "result": "pass"
+              },
+              {
+                "title": "a session whose write or read-back fails is left in the memento untouched, stays in the index and is returned in kept, and the others are still migrated",
+                "result": "pass"
+              },
+              {
+                "title": "a session whose files already hold a prefix of the memento's rows gets the missing rows appended and its memento key removed; one whose files hold more rows than the memento is left as it is on disk and its key removed; one that disagrees is changed in neither place and returned in kept",
+                "result": "pass"
+              },
+              {
+                "title": "the migration with no index, or run a second time, reads no session, writes nothing and returns no kept id; an entry isSession rejects is kept and logged",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -119,3 +119,37 @@ Run at 2026-10-12T09:17:10.214Z on commit `d73cc765`. Tests check: **passed**. 6
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` | 0 | 13 | 0.3 s |  |
+
+## t4
+
+Run at 2026-10-12T09:20:05.206Z on commit `38ce31e0`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: the migration writes each indexed session's files, reads them back equal, then removes its memento key and the index; the store then lists and returns every session as the memento store did**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the migration writes each indexed session's files, reads them back equal, then removes its memento key and the index; the store then lists and returns every session as the memento store did | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: a session whose write or read-back fails is left in the memento untouched, stays in the index and is returned in kept, and the others are still migrated**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a session whose write or read-back fails is left in the memento untouched, stays in the index and is returned in kept, and the others are still migrated | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: a session whose files already hold a prefix of the memento's rows gets the missing rows appended and its memento key removed; one whose files hold more rows than the memento is left as it is on disk and its key removed; one that disagrees is changed in neither place and returned in kept**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a session whose files already hold a prefix of the memento's rows gets the missing rows appended and its memento key removed; one whose files hold more rows than the memento is left as it is on disk and its key removed; one that disagrees is changed in neither place and returned in kept | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**unit: the migration with no index, or run a second time, reads no session, writes nothing and returns no kept id; an entry isSession rejects is kept and logged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the migration with no index, or run a second time, reads no session, writes nothing and returns no kept id; an entry isSession rejects is kept and logged | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` | 0 | 17 | 0.3 s |  |

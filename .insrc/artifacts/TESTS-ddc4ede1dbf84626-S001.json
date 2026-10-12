@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "ddc4ede1dbf84626",
+    "storyId": "S001",
+    "createdAt": "2026-10-12T07:35:29.855Z",
+    "updatedAt": "2026-10-12T07:35:29.855Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-12T07:11:33.406Z",
+    "epicSlug": "page-dev-chat-transcript-show-latest"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "f14226ea",
+        "ranAt": "2026-10-12T07:35:29.855Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "latestWindow: a transcript no longer than one page is returned whole with firstIndex 0",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts",
+                "title": "latestWindow: a transcript no longer than one page is returned whole with firstIndex 0",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "latestWindow: a long transcript returns its last page, moved back to the start of the turn when a user row is within one more page, and never more than two pages of rows",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts",
+                "title": "latestWindow: a long transcript returns its last page, moved back to the start of the turn when a user row is within one more page, and never more than two pages of rows",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "latestWindow and pageBefore: with no user row within reach the cut is the plain page; consecutive pages cover every row exactly once",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts",
+                "title": "latestWindow and pageBefore: with no user row within reach the cut is the plain page; consecutive pages cover every row exactly once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pageBefore: before is clamped to 0..length; at 0 it returns no rows and firstIndex 0",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts",
+                "title": "pageBefore: before is clamped to 0..length; at 0 it returns no rows and firstIndex 0",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts",
+                "title": "walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 291,
+            "titles": [
+              {
+                "title": "latestWindow: a transcript no longer than one page is returned whole with firstIndex 0",
+                "result": "pass"
+              },
+              {
+                "title": "latestWindow: a long transcript returns its last page, moved back to the start of the turn when a user row is within one more page, and never more than two pages of rows",
+                "result": "pass"
+              },
+              {
+                "title": "latestWindow and pageBefore: with no user row within reach the cut is the plain page; consecutive pages cover every row exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "pageBefore: before is clamped to 0..length; at 0 it returns no rows and firstIndex 0",
+                "result": "pass"
+              },
+              {
+                "title": "walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "98a6ba6d74975153",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "update-vs-code-jetbrains-plugin-marketplace",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

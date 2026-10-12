@@ -19,7 +19,8 @@
     "schemaVersion": 1,
     "specHash": "b77e3f38969bc8f4",
     "epicSlug": "redesign-brainstorm-elicit-interaction-from-single",
-    "approvedAt": "2026-08-04T14:06:02.558Z"
+    "approvedAt": "2026-08-04T14:06:02.558Z",
+    "standalone": true
   },
   "body": {
     "category": "design",

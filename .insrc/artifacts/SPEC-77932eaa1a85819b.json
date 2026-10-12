@@ -20,7 +20,8 @@
     "specHash": "77932eaa1a85819b",
     "epicSlug": "fully-converged-spec-all-decisions-made",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-11T10:25:45.207Z"
+    "approvedAt": "2026-10-11T10:25:45.207Z",
+    "standalone": true
   },
   "body": {
     "category": "design",

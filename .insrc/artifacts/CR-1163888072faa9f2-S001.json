@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "1163888072faa9f2",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "bug-vscode-plugin-dev-chat-each",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

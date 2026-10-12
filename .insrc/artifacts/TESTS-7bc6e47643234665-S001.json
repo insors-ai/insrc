@@ -5,7 +5,8 @@
     "storyId": "S001",
     "createdAt": "2026-10-10T12:12:19.902Z",
     "updatedAt": "2026-10-10T12:16:01.847Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "delivery-board-vs-code-plugin-group"
   },
   "body": {
     "tasks": [

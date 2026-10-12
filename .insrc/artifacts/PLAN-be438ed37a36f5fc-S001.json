@@ -117,7 +117,8 @@
       "reviewedAt": "2026-09-20T16:06:51.514Z",
       "model": "client"
     },
-    "approvedAt": "2026-09-20T16:26:49.169Z"
+    "approvedAt": "2026-09-20T16:26:49.169Z",
+    "standalone": true
   },
   "body": {
     "tasks": [

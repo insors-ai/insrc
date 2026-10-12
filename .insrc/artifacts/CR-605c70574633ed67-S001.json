@@ -9,7 +9,10 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "605c70574633ed67",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "bug-docs-review-pane-s-opendoc",
+    "epicCreatedAt": "2026-10-01T11:34:59.990Z",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

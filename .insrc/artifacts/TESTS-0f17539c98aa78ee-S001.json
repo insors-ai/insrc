@@ -5,7 +5,9 @@
     "storyId": "S001",
     "createdAt": "2026-10-10T07:36:48.435Z",
     "updatedAt": "2026-10-10T07:53:57.776Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "bug-analyze-planner-plans-adherence-check",
+    "epicCreatedAt": "2026-10-09T14:46:12.867Z"
   },
   "body": {
     "tasks": [

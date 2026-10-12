@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "b29f5fb26f3bd9fe",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "after-daemon-self-update-actually-changes",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

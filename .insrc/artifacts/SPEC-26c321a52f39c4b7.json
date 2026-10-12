@@ -19,7 +19,8 @@
     "schemaVersion": 1,
     "specHash": "26c321a52f39c4b7",
     "epicSlug": "extend-code-graph-trace-through-external",
-    "approvedAt": "2026-08-06T15:41:48.447Z"
+    "approvedAt": "2026-08-06T15:41:48.447Z",
+    "standalone": true
   },
   "body": {
     "category": "design",

@@ -6,7 +6,8 @@
     "createdAt": "2026-10-11T16:19:17.663Z",
     "updatedAt": "2026-10-12T04:44:26.808Z",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-12T04:44:27.101Z"
+    "approvedAt": "2026-10-12T04:44:27.101Z",
+    "epicSlug": "di1-open-source-design-corpus-retrieval"
   },
   "body": {
     "tasks": [

@@ -6,7 +6,9 @@
     "storyId": "s9",
     "createdAt": "2026-08-05T12:00:00.000Z",
     "updatedAt": "2026-08-05T12:00:00.000Z",
-    "approvedAt": "2026-08-05T06:34:29.764Z"
+    "approvedAt": "2026-08-05T06:34:29.764Z",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
   },
   "body": {
     "focus": "Wait for a fresh index before grounding a Story code review (indexing-readiness gate)",

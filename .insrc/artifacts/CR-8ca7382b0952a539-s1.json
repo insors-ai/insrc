@@ -10,7 +10,10 @@
     "schemaVersion": 1,
     "epicHash": "8ca7382b0952a539",
     "storyId": "s1",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "defect-vscode-plugin-src-chat-chat",
+    "epicCreatedAt": "2026-10-10T16:38:40.063Z",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

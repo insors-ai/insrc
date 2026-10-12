@@ -4,7 +4,7 @@
 
 ## Summary
 
-**Epic:** `make-work-item-keep-exactly-one`
+**Epic:** `artifact-docs-folders-fork-per-stage`
 **LLD run:** `wf-1791005831675-z8l0bd`
 **LLD effective hash:** `ac8308537a4b...`
 

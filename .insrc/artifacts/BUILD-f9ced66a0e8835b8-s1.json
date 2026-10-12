@@ -7,7 +7,9 @@
     "updatedAt": "2026-10-08T09:48:23.895Z",
     "authoredBy": "controller",
     "standalone": true,
-    "approvedAt": "2026-10-08T09:48:24.120Z"
+    "approvedAt": "2026-10-08T09:48:24.120Z",
+    "epicSlug": "story-code-review-reviews-wrong-code",
+    "epicCreatedAt": "2026-10-07T13:50:21.158Z"
   },
   "body": {
     "tasks": [

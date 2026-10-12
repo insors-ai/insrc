@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "3a98d27994547262",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "finalizeplan-buildrecordfolderargs-take-work-item-s",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

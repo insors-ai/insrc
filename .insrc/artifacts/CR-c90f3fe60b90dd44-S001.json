@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "c90f3fe60b90dd44",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "harden-workflow-synthesizer-finalize-path-against",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

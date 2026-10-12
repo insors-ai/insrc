@@ -9,7 +9,10 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "792f9324fc43d95c",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "regression-hierarchical-label-resolver-listepichashes-src",
+    "epicCreatedAt": "2026-10-02T20:03:03.910Z",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

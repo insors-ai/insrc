@@ -19,7 +19,8 @@
     "schemaVersion": 1,
     "specHash": "d2ca9d399373a7bb",
     "epicSlug": "add-new-read-only-mcp-tool",
-    "approvedAt": "2026-09-24T10:25:09.172Z"
+    "approvedAt": "2026-09-24T10:25:09.172Z",
+    "standalone": true
   },
   "body": {
     "category": "design",

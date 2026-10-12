@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "74bc0120660d539a",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "two-dev-chat-chrome-changes-1",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

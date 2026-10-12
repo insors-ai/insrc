@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "c71f7106fc41807c",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "lld-state-token-eviction-bugfix-issue",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

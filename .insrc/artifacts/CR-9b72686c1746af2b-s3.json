@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "9b72686c1746af2b",
-    "storyId": "s3"
+    "storyId": "s3",
+    "epicSlug": "harden-insrc-artifact-creation-flows-two"
   },
   "body": {
     "kind": "code-review",

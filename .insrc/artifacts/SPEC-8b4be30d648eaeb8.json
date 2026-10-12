@@ -96,7 +96,8 @@
       "reviewedAt": "2026-08-04T21:14:58.169Z",
       "model": "client"
     },
-    "approvedAt": "2026-08-04T21:19:52.487Z"
+    "approvedAt": "2026-08-04T21:19:52.487Z",
+    "standalone": true
   },
   "body": {
     "category": "requirements",

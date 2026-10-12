@@ -10,7 +10,9 @@
     "schemaVersion": 1,
     "epicHash": "348d4663a4bc17af",
     "storyId": "s1",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "defect-against-e2-6a131558-issue-b2687832",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

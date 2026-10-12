@@ -6,7 +6,8 @@
     "createdAt": "2026-10-02T20:12:15.045Z",
     "updatedAt": "2026-10-03T14:16:21.737Z",
     "standalone": true,
-    "approvedAt": "2026-10-03T14:16:21.946Z"
+    "approvedAt": "2026-10-03T14:16:21.946Z",
+    "epicSlug": "regression-hierarchical-label-resolver-listepichashes-src"
   },
   "body": {
     "tasks": [

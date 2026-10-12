@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "9225688d966a8588",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "re-author-s001-lld-collapsible-sections",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

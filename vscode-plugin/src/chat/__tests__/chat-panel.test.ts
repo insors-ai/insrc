@@ -7,7 +7,10 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { Script } from 'node:vm';
 import { createChatPanelHost, type ChatPanelChannel, type ChatEditGovernanceDeps } from '../chat-panel.js';
+import { transcriptPagerWebviewSource } from '../transcript-pager.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, RunOptions } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
@@ -769,7 +772,7 @@ test('S001 shell: session-restored replay routes through the sc1 registry (keyed
   // (keyed by transcript index) after reg.resetKeys(); the stored cssClass is carried by
   // toViewModel (marker rows -> fallback with the class) into the widened line(s,cls) writer.
   assert.match(html, /reg\.resetKeys\(\)/, 'restore resets the reconciliation map before replaying');
-  assert.match(html, /reg\.appendKeyed\(reg\.toViewModel\(x\),'r'\+i\)/, 'restore replays keyed via the sc1 registry');
+  assert.match(html, /reg\.appendKeyed\(reg\.toViewModel\(x\),'r'\+\(_first\+i\)\)/, 'restore replays keyed via the sc1 registry, by absolute transcript index');
   assert.doesNotMatch(html, /forEach\(x=>line\(x\.text\)\)/, 'the classless replay is gone');
   // The cssClass is still delivered through the widened writer (via the fallback renderer).
   assert.match(html, /function line\(s,cls\)/, 'the widened writer is unchanged');
@@ -1145,7 +1148,7 @@ test('S001 (74bc0120) ac1/ac2/ac3: the lock starts closed and is settled at all 
   assert.match(html, /var provLocked=true;/, 'the lock is initialised CLOSED');
   // ac1 + ac2 — derived from the replayed transcript, so an empty chat unlocks and a chat with
   // rows locks, re-derived per session rather than latching.
-  assert.match(html, /setProvLock\(\(\(m\.transcript\|\|\[\]\)\.length\)>0\);/, 'session-restored settles the lock from the replayed row count');
+  assert.match(html, /setProvLock\(_total>0\);/, "session-restored settles the lock from the session's total row count");
   // The active session appearing in the PERSISTED history proves it has context (draft() only
   // enters the store on first save).
   assert.match(html, /if\(_ac\)setProvLock\(true\);/, 'history-list re-settles the lock for the active session');
@@ -1167,7 +1170,8 @@ test('S001 (74bc0120) regression: the lock is additive — the surrounding handl
   // The control's meaning when usable is untouched: a change still starts a NEW chat.
   assert.match(html, /ps\.addEventListener\('change',function\(\)\{if\(ps\.value\)\{vs\.postMessage\(\{v:1,payload:\{type:'new-chat',provider:ps\.value\}\}\);\}\}\);/, 'a provider change still posts new-chat');
   // session-restored still clears, resets keys and replays; history-list still re-syncs the value.
-  assert.match(html, /reg\.resetKeys\(\);\(m\.transcript\|\|\[\]\)\.forEach/, 'session-restored still resets keys and replays the transcript');
+  assert.match(html, /t\.textContent='';reg\.resetKeys\(\);var _rows=m\.transcript\|\|\[\]/, 'session-restored still clears, resets keys and replays the transcript');
+  assert.match(html, /_rows\.forEach\(function\(x,i\)/, 'every posted row is replayed');
   assert.match(html, /if\(_ac&&_ac\.provider\)\{ps\.value=_ac\.provider;\}/, 'history-list still re-syncs the provider value');
 });
 
@@ -1950,11 +1954,11 @@ test('S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-bl
   assert.equal((outD[0] as { decision: string }).decision, 'rejected');
 });
 
-test('S001 (bugfix): a stale/idless permission-decision (no pendingPerms entry) falls through to adapter.decide (codex/in-turn relay unchanged)', async () => {
+test('S001 (bugfix): an in-turn request is relayed to adapter.decide (codex/in-turn relay); an id the host does not hold still falls through', async () => {
   const fc = fakeChannel();
   const decided: Array<[string, string, string]> = [];
-  // An approval-request WITHOUT a toolName is never added to pendingPerms, so a decision for it
-  // falls through to the live turn's adapter.decide() — the codex / in-turn control-protocol path.
+  // An approval-request WITHOUT a toolName (and no resolution) is answered inside the running turn:
+  // its decision is relayed to the live turn's adapter.decide() — the codex / control-protocol path.
   const evs: TurnEvent[] = [
     { kind: 'status', turnId: 't9', phase: 'tool' },
     { kind: 'approval-request', turnId: 't9', requestId: 'perm-9', title: 'Run', detail: 'echo hi' },
@@ -1966,15 +1970,23 @@ test('S001 (bugfix): a stale/idless permission-decision (no pendingPerms entry) 
     store: createInMemoryChatSessionStore(),
     cwd: () => '/repo',
   });
-  host.open();
-  fc.send(env('submit-turn', { text: 'do it' }));
-  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
-  fc.send(env('permission-decision', { requestId: 'perm-9', decision: 'approve' }));
-  await waitFor(() => decided.length >= 1);
-  assert.deepEqual(decided[0], ['t9', 'perm-9', 'approve'], 'fell through to the live adapter.decide relay (unchanged)');
-  // S003 (ux polish): a stale/no-pending decision records NO outcome (nothing to resolve).
-  assert.ok(!turnEvents(fc).some((e) => e.kind === 'permission-outcome'), 'no outcome recorded for a fall-through decision');
-  fc.fireDispose(); // reap the hanging turn so the test process can exit
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'do it' }));
+    await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
+    fc.send(env('permission-decision', { requestId: 'perm-9', decision: 'approve' }));
+    await waitFor(() => decided.length >= 1);
+    assert.deepEqual(decided[0], ['t9', 'perm-9', 'approve'], 'relayed to the live adapter.decide');
+    // ISSUE-6a811b8a: a decided request records exactly one outcome, whichever path answers it.
+    assert.equal(turnEvents(fc).filter((e) => e.kind === 'permission-outcome').length, 1, 'one outcome for the decided request');
+    // An id the host does not hold (stale card, another window) still falls through, with no outcome.
+    fc.send(env('permission-decision', { requestId: 'perm-unknown', decision: 'deny' }));
+    await waitFor(() => decided.length >= 2);
+    assert.deepEqual(decided[1], ['t9', 'perm-unknown', 'deny'], 'an unknown id falls through to decide()');
+    assert.equal(turnEvents(fc).filter((e) => e.kind === 'permission-outcome').length, 1, 'no outcome for a fall-through decision');
+  } finally {
+    fc.fireDispose(); // reap the hanging turn so the test process can exit
+  }
 });
 
 // ---- S003 (dev-chat ux polish) ac2/ac3/ac4: permission-outcome record + suppressed grant echo ----
@@ -2726,6 +2738,44 @@ test('a save failing at the end of a turn is logged; the turn still ends cleanly
   procs[0]!.exitNow();
 });
 
+test('a save failing while the derived title is stored is logged, never an unhandled rejection, and the history is still refreshed', async () => {
+  const fc = fakeChannel();
+  const warns: string[] = [];
+  const rejections: unknown[] = [];
+  const onRejection = (e: unknown): void => { rejections.push(e); };
+  process.on('unhandledRejection', onRejection);
+  const base = createInMemoryChatSessionStore();
+  let failSaves = false;
+  const store = {
+    ...base,
+    save: (s: Parameters<typeof base.save>[0]) => {
+      if (failSaves) throw new Error('disk full');
+      base.save(s);
+    },
+  };
+  let titled = false;
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    logger: { warn: (m) => warns.push(m), error: () => {} },
+    deriveTitle: async () => { failSaves = true; titled = true; return 'Derived Name'; },
+  });
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'hi' }));
+    await waitFor(() => titled);
+    const listsBefore = historyLists(fc).length;
+    await new Promise((r) => setTimeout(r, 20));
+    assert.deepEqual(rejections, [], 'the failing save is not an unhandled rejection');
+    assert.match(warns.join('\n'), /not saved: disk full/);
+    assert.ok(historyLists(fc).length > listsBefore, 'the history dropdown is still refreshed');
+  } finally {
+    process.off('unhandledRejection', onRejection);
+  }
+});
+
 test('a failing save of a selection or permission outcome is logged and the run still continues', async () => {
   const fc = fakeChannel();
   const warns: string[] = [];
@@ -2791,4 +2841,850 @@ test('a failing edit-governor call is logged, never an unhandled rejection', asy
   } finally {
     process.off('unhandledRejection', onUnhandled);
   }
+});
+
+// ---- ISSUE-6a811b8a: approval requests are asked one at a time --------------------
+
+/** A claude refusal that ended the turn, as the adapter raises it. */
+const refused = (requestId: string, toolName: string, turnId = 't1', extra: Partial<Extract<TurnEvent, { kind: 'approval-request' }>> = {}): TurnEvent => ({
+  kind: 'approval-request', turnId, requestId, title: `Permission: ${toolName}`, detail: `${toolName} needs your permission`, toolName, resolution: 'turn-ended', ...extra,
+});
+const approvalCards = (fc: FakeChannel): Array<Extract<TurnEvent, { kind: 'approval-request' }>> =>
+  turnEvents(fc).filter((e): e is Extract<TurnEvent, { kind: 'approval-request' }> => e.kind === 'approval-request');
+const outcomes = (fc: FakeChannel): Array<Extract<TurnEvent, { kind: 'permission-outcome' }>> =>
+  turnEvents(fc).filter((e): e is Extract<TurnEvent, { kind: 'permission-outcome' }> => e.kind === 'permission-outcome');
+
+test("three requests in one turn: only the first card is posted (with '1 of 3')", async () => {
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [refused('r1', 'Edit'), refused('r2', 'Write'), refused('r3', 'Bash'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit three files' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const cards = approvalCards(fc);
+  assert.equal(cards.length, 1, 'one actionable card, not three');
+  assert.equal(cards[0]!.requestId, 'r1', 'the oldest request');
+  // Posted when the first request arrived; the count follows as the others queue behind it.
+  const positions = fc.posted.filter((m) => m.payload.type === 'approval-position').map((m) => m.payload);
+  const last = positions[positions.length - 1];
+  assert.deepEqual([last?.['requestId'], last?.['position'], last?.['total']], ['r1', 1, 3], "shown as '1 of 3'");
+});
+
+test('a turn followed after reload routes its approval-requests through the queue and its end ends the batch', async () => {
+  const { store, id } = storeWithLiveTurn(1);
+  const { adapter, requests } = resumeAdapter([refused('f1', 'Edit'), refused('f2', 'Write'), { kind: 'done', turnId: 't1', ok: true }]);
+  const followUps: TurnRequest[] = [];
+  adapter.run = async function* (req: TurnRequest): AsyncIterable<TurnEvent> {
+    followUps.push(req);
+    yield { kind: 'done', turnId: 'fu1', ok: true };
+  };
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 2, isAlive: (pid) => pid === 2 });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  await waitFor(() => requests.length === 1);
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['f1'], 'only the first of the followed turn\'s requests is shown');
+  fc.send(env('permission-decision', { requestId: 'f2', decision: 'deny' }));
+  assert.equal(outcomes(fc).length, 0, 'the waiting request cannot be decided early');
+  fc.send(env('permission-decision', { requestId: 'f1', decision: 'approve' }));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['f1', 'f2'], 'the second is shown once the first is decided');
+  assert.equal(followUps.length, 0, 'no follow-up while the batch is still being decided');
+  fc.send(env('permission-decision', { requestId: 'f2', decision: 'approve' }));
+  await waitFor(() => followUps.length === 1);
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(followUps.length, 1, 'the followed turn\'s end completed its batch: exactly one follow-up');
+  assert.deepEqual([...(followUps[0]!.allowedTools ?? [])], ['Edit', 'Write']);
+});
+
+test('Stop with requests queued records each as rejected and clears the queue', async () => {
+  const fc = fakeChannel();
+  const decided: string[] = [];
+  const evs: TurnEvent[] = [refused('s1', 'Edit'), refused('s2', 'Bash')];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { hang: true, onDecide: (_t, r) => decided.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'do two things' }));
+    await waitFor(() => approvalCards(fc).length === 1);
+    fc.send(env('cancel-turn'));
+    assert.deepEqual(outcomes(fc).map((o) => [o.toolName, o.decision]), [['Edit', 'rejected'], ['Bash', 'rejected']], 'each waiting request is recorded as rejected');
+    fc.send(env('permission-decision', { requestId: 's1', decision: 'approve' }));
+    assert.equal(outcomes(fc).length, 2, 'a cleared request is no longer decided by the queue');
+  } finally {
+    fc.fireDispose();
+  }
+
+  // A chat switch drops the queue without outcome rows (the cards were live-only).
+  const fc2 = fakeChannel();
+  const host2 = createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: scriptedAdapter([refused('d1', 'Edit'), refused('d2', 'Bash')], { hang: true }) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  try {
+    host2.open();
+    fc2.send(env('submit-turn', { text: 'do two things' }));
+    await waitFor(() => approvalCards(fc2).length === 1);
+    fc2.send(env('new-chat', { provider: 'claude' }));
+    assert.equal(outcomes(fc2).length, 0, 'no outcome rows for a dropped queue');
+  } finally {
+    fc2.fireDispose();
+  }
+});
+
+test("outcome rows: one role:'permission-outcome' row per decision, in decision order, and no approval-request rows (restore shows only chips)", async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [refused('o1', 'Edit'), refused('o2', 'Write'), refused('o3', 'Bash'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit three files' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  for (const id of ['o1', 'o2', 'o3']) fc.send(env('permission-decision', { requestId: id, decision: 'deny' }));
+  const saved = store.get(store.list()[0]!.id)!;
+  const rows = saved.transcript.filter((r) => r.role === 'permission-outcome') as Array<{ toolName: string; decision: string }>;
+  assert.deepEqual(rows.map((r) => [r.toolName, r.decision]), [['Edit', 'rejected'], ['Write', 'rejected'], ['Bash', 'rejected']], 'one row per decision, in order');
+  assert.ok(!saved.transcript.some((r) => (r as { role: string }).role === 'approval-request'), 'no approval-request rows');
+});
+
+/** An in-turn request (codex / control protocol): the provider waits inside the turn for decide(). */
+const inTurn = (requestId: string, toolName?: string, turnId = 't1'): TurnEvent => ({
+  kind: 'approval-request', turnId, requestId, title: `Approve ${requestId}`, detail: 'run it', resolution: 'in-turn', ...(toolName !== undefined ? { toolName } : {}),
+});
+
+test("the second card is posted only after the first is decided; a decision on a waiting card's id does nothing", async () => {
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [refused('w1', 'Edit'), refused('w2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit two files' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['w1']);
+  fc.send(env('permission-decision', { requestId: 'w2', decision: 'deny' }));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['w1'], 'the waiting card is not shown');
+  assert.equal(outcomes(fc).length, 0, 'and its id decides nothing');
+  fc.send(env('permission-decision', { requestId: 'w1', decision: 'deny' }));
+  assert.equal(outcomes(fc).length, 1, 'the head records exactly one outcome');
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['w1', 'w2'], 'the second card follows the first decision');
+  fc.send(env('permission-decision', { requestId: 'w1', decision: 'approve' }));
+  assert.equal(outcomes(fc).length, 1, 'a decided request cannot be decided again');
+});
+
+test('live-turn provider with two requests: decide() is called for the first before the second card is posted; no follow-up turn is started', async () => {
+  const fc = fakeChannel();
+  const order: string[] = [];
+  const runs: TurnRequest[] = [];
+  const evs: TurnEvent[] = [inTurn('L1'), inTurn('L2')];
+  const adapter = scriptedAdapter(evs, { hang: true, onRun: (r) => runs.push(r), onDecide: (_t, r, d) => order.push(`decide:${r}:${d}`) });
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ codex: adapter }, ['codex']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  const origPost = fc.channel.postMessage;
+  fc.channel.postMessage = (m: unknown) => {
+    const p = (m as { payload: { type: string; event?: TurnEvent } }).payload;
+    if (p.type === 'turn-event' && p.event?.kind === 'approval-request') order.push(`card:${p.event.requestId}`);
+    return origPost(m);
+  };
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'run two commands' }));
+    await waitFor(() => approvalCards(fc).length === 1);
+    await new Promise((r) => setTimeout(r, 20)); // the second request has arrived and is waiting
+    assert.deepEqual(order, ['card:L1'], 'only the first card while it is undecided');
+    fc.send(env('permission-decision', { requestId: 'L1', decision: 'approve' }));
+    assert.deepEqual(order, ['card:L1', 'decide:L1:approve', 'card:L2'], 'relayed before the next card is posted');
+    fc.send(env('permission-decision', { requestId: 'L2', decision: 'deny' }));
+    assert.deepEqual(order.slice(3), ['decide:L2:deny']);
+    await new Promise((r) => setTimeout(r, 20));
+    assert.equal(runs.length, 1, 'no follow-up turn for in-turn requests');
+  } finally {
+    fc.fireDispose();
+  }
+});
+
+test('an in-turn request that carries a toolName is relayed with decide(), not batched (routing by resolution)', async () => {
+  const fc = fakeChannel();
+  const decided: string[] = [];
+  const runs: TurnRequest[] = [];
+  const warns: string[] = [];
+  let throwOnce = true;
+  const adapter = scriptedAdapter([inTurn('T1', 'Bash'), inTurn('T2', 'Edit')], {
+    hang: true,
+    onRun: (r) => runs.push(r),
+    onDecide: (_t, r) => {
+      if (throwOnce) { throwOnce = false; throw new Error('adapter gone'); }
+      decided.push(r);
+    },
+  });
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo', logger: { warn: (m) => warns.push(m), error: () => {} } });
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'do it' }));
+    await waitFor(() => approvalCards(fc).length === 1);
+    // The first relay throws: the decision is logged as undeliverable, still recorded, and the queue advances.
+    fc.send(env('permission-decision', { requestId: 'T1', decision: 'approve' }));
+    assert.ok(warns.some((w) => w.includes('T1')), 'the undeliverable decision is logged');
+    assert.equal(outcomes(fc).length, 1);
+    assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['T1', 'T2'], 'the queue advanced');
+    fc.send(env('permission-decision', { requestId: 'T2', decision: 'approve' }));
+    assert.deepEqual(decided, ['T2'], 'a toolName-carrying in-turn request is relayed');
+    await new Promise((r) => setTimeout(r, 20));
+    assert.equal(runs.length, 1, 'never held for a batch follow-up');
+  } finally {
+    fc.fireDispose();
+  }
+});
+
+/** An adapter whose Nth run() yields the Nth script (later runs just end), recording each request. */
+function sequenceAdapter(scripts: TurnEvent[][]): { adapter: StreamAdapter; runs: TurnRequest[] } {
+  const runs: TurnRequest[] = [];
+  const adapter: StreamAdapter = {
+    async *run(req: TurnRequest): AsyncIterable<TurnEvent> {
+      runs.push(req);
+      const n = runs.length;
+      for (const ev of scripts[n - 1] ?? [{ kind: 'done', turnId: `t${n}`, ok: true }]) {
+        await Promise.resolve();
+        yield ev;
+      }
+    },
+    cancel: () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  return { adapter, runs };
+}
+
+const runsSettled = (): Promise<void> => new Promise((r) => setTimeout(r, 30));
+
+test('approving all three starts exactly one follow-up turn, after the last decision and the turn\'s end, with allowedTools = all three tools and a prompt naming the three approved actions', async () => {
+  const fc = fakeChannel();
+  const { adapter, runs } = sequenceAdapter([[
+    refused('a1', 'Edit'), refused('a2', 'Write'), refused('a3', 'Bash', 't1', { command: 'npm test' }), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ]]);
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit and test' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'a1', decision: 'approve' }));
+  fc.send(env('permission-decision', { requestId: 'a2', decision: 'approve' }));
+  await runsSettled();
+  assert.equal(runs.length, 1, 'no follow-up before the last decision');
+  fc.send(env('permission-decision', { requestId: 'a3', decision: 'approve' }));
+  await waitFor(() => runs.length === 2);
+  await runsSettled();
+  assert.equal(runs.length, 2, 'exactly one follow-up');
+  const fu = runs[1]!;
+  assert.deepEqual([...(fu.allowedTools ?? [])], ['Edit', 'Write', 'Bash']);
+  assert.match(fu.prompt, /the Edit action/);
+  assert.match(fu.prompt, /the Write action/);
+  assert.match(fu.prompt, /run exactly this: npm test/);
+  assert.doesNotMatch(fu.prompt, /Denied/);
+});
+
+test('no approval ever supersedes a running follow-up: turns.start is called once per batch', async () => {
+  const fc = fakeChannel();
+  // Decided before the turn ends: the batch completes at the turn's end, not at each decision.
+  let releaseDone!: () => void;
+  const gate = new Promise<void>((r) => (releaseDone = r));
+  const runs: TurnRequest[] = [];
+  const adapter = scriptedAdapter([refused('b1', 'Edit'), refused('b2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }], { onRun: (r) => runs.push(r), gateBeforeDone: gate });
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'two edits' }));
+  await waitFor(() => approvalCards(fc).length === 1);
+  await runsSettled();
+  fc.send(env('permission-decision', { requestId: 'b1', decision: 'approve' }));
+  fc.send(env('permission-decision', { requestId: 'b2', decision: 'approve' }));
+  await runsSettled();
+  assert.equal(runs.length, 1, 'the turn has not ended: no follow-up yet');
+  releaseDone();
+  await waitFor(() => runs.length === 2);
+  await runsSettled();
+  assert.equal(runs.length, 2, 'one follow-up for the batch (its own events are not refusals, so nothing more)');
+});
+
+test('deny: a denied request gets a rejected chip, the next request is still asked, and the follow-up names it as denied; all denied -> no follow-up and an informational message', async () => {
+  const fc = fakeChannel();
+  const { adapter, runs } = sequenceAdapter([[
+    refused('d1', 'Edit'), refused('d2', 'Bash', 't1', { command: 'rm -rf build' }), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ]]);
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit and clean' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'd2', decision: 'deny' })); // not the head: ignored
+  fc.send(env('permission-decision', { requestId: 'd1', decision: 'approve' }));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['d1', 'd2'], 'the next request is still asked');
+  fc.send(env('permission-decision', { requestId: 'd2', decision: 'deny' }));
+  assert.deepEqual(outcomes(fc).map((o) => o.decision), ['approved', 'rejected'], 'the denied request gets a rejected chip');
+  await waitFor(() => runs.length === 2);
+  assert.deepEqual([...(runs[1]!.allowedTools ?? [])], ['Edit'], 'a denied tool is never granted');
+  assert.match(runs[1]!.prompt, /Denied — do not attempt these:\n- run exactly this: rm -rf build/);
+
+  // All denied: nothing runs, one informational message says so.
+  const fc2 = fakeChannel();
+  const seq2 = sequenceAdapter([[refused('n1', 'Edit'), refused('n2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-2' }]]);
+  const host2 = createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: seq2.adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host2.open();
+  fc2.send(env('submit-turn', { text: 'two edits' }));
+  await waitFor(() => turnEvents(fc2).some((e) => e.kind === 'done'));
+  fc2.send(env('permission-decision', { requestId: 'n1', decision: 'deny' }));
+  fc2.send(env('permission-decision', { requestId: 'n2', decision: 'deny' }));
+  await runsSettled();
+  assert.equal(seq2.runs.length, 1, 'all denied: no follow-up');
+  const info = turnEvents(fc2).filter((e) => e.kind === 'assistant-delta' && e.turnId.startsWith('info-batch-'));
+  assert.equal(info.length, 1, 'one informational message');
+  assert.match((info[0] as { text: string }).text, /No action was approved/);
+});
+
+test('a follow-up that is refused again forms the next batch and its follow-up carries the previous batch\'s grants', async () => {
+  const fc = fakeChannel();
+  const { adapter, runs } = sequenceAdapter([
+    [refused('g1', 'Edit'), refused('g2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
+    [refused('g3', 'Bash', 't2', { command: 'npm test' }), { kind: 'done', turnId: 't2', ok: true, sessionId: 'sess-1' }],
+  ]);
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit then test' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'g1', decision: 'approve' }));
+  fc.send(env('permission-decision', { requestId: 'g2', decision: 'approve' }));
+  await waitFor(() => approvalCards(fc).some((c) => c.requestId === 'g3'));
+  assert.equal(runs.length, 2);
+  fc.send(env('permission-decision', { requestId: 'g3', decision: 'approve' }));
+  await waitFor(() => runs.length === 3);
+  await runsSettled();
+  assert.equal(runs.length, 3, 'one follow-up per batch');
+  assert.deepEqual([...(runs[2]!.allowedTools ?? [])], ['Edit', 'Write', 'Bash'], 'the previous batch\'s grants are kept');
+  assert.equal(runs[2]!.prompt, 'Approved — run exactly this now: npm test', 'a single-request batch keeps the exact-command prompt');
+});
+
+test('a user-typed message while requests are queued records each as rejected, clears the queue, resets the grant chain and runs as a normal turn', async () => {
+  const fc = fakeChannel();
+  const { adapter, runs } = sequenceAdapter([
+    [refused('u1', 'Edit'), refused('u2', 'Write'), refused('u3', 'Bash'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
+    [{ kind: 'assistant-delta', turnId: 't2', text: 'ok' }, { kind: 'done', turnId: 't2', ok: true, sessionId: 'sess-1' }],
+    [refused('u4', 'Grep', 't3'), { kind: 'done', turnId: 't3', ok: true, sessionId: 'sess-1' }],
+  ]);
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'three edits' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'u1', decision: 'approve' })); // Edit joins the grant chain
+  fc.send(env('submit-turn', { text: 'never mind, just say ok' }));
+  assert.deepEqual(outcomes(fc).map((o) => [o.toolName, o.decision]), [['Edit', 'approved'], ['Write', 'rejected'], ['Bash', 'rejected']], 'each waiting request is rejected');
+  fc.send(env('permission-decision', { requestId: 'u2', decision: 'approve' }));
+  assert.equal(outcomes(fc).length, 3, 'the queue is empty');
+  await waitFor(() => runs.length === 2);
+  assert.equal(runs[1]!.prompt, 'never mind, just say ok', 'the message runs as a normal turn');
+  assert.equal(runs[1]!.allowedTools, undefined, 'a normal turn carries no grants');
+  // The typed turn is refused in turn: its follow-up carries only its own grant, not Edit.
+  fc.send(env('submit-turn', { text: 'search' }));
+  await waitFor(() => approvalCards(fc).some((c) => c.requestId === 'u4'));
+  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'done' && e.turnId === 't3').length === 1);
+  fc.send(env('permission-decision', { requestId: 'u4', decision: 'approve' }));
+  await waitFor(() => runs.length === 4);
+  assert.deepEqual([...(runs[3]!.allowedTools ?? [])], ['Grep'], 'grants from before the typed message are gone');
+});
+
+test("a live provider with a queued in-turn request, then the user types a message: decide(turnId, requestId, 'deny') is called before the new turn starts, and the request gets a rejected chip", async () => {
+  const fc = fakeChannel();
+  const order: string[] = [];
+  // The running turn waits inside itself for both answers (as codex does), then ends.
+  let answered!: () => void;
+  const bothAnswered = new Promise<void>((r) => (answered = r));
+  let runNo = 0;
+  const adapter: StreamAdapter = {
+    async *run(req: TurnRequest): AsyncIterable<TurnEvent> {
+      order.push(`run:${req.prompt}`);
+      if (++runNo > 1) {
+        yield { kind: 'done', turnId: 't2', ok: true };
+        return;
+      }
+      yield inTurn('Q1', 'Bash');
+      yield inTurn('Q2');
+      await bothAnswered;
+      yield { kind: 'done', turnId: 't1', ok: true };
+    },
+    cancel: () => {},
+    decide: (t, r, d) => {
+      order.push(`decide:${t}:${r}:${d}`);
+      if (order.filter((o) => o.startsWith('decide:')).length === 2) answered();
+    },
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ codex: adapter }, ['codex']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'run two commands' }));
+    await waitFor(() => approvalCards(fc).length === 1);
+    await new Promise((r) => setTimeout(r, 20));
+    fc.send(env('submit-turn', { text: 'stop, do something else' }));
+    await waitFor(() => order.includes('run:stop, do something else'));
+    const run2 = order.indexOf('run:stop, do something else');
+    assert.ok(order.indexOf('decide:t1:Q1:deny') !== -1 && order.indexOf('decide:t1:Q1:deny') < run2, 'Q1 denied to the provider before the new turn');
+    assert.ok(order.indexOf('decide:t1:Q2:deny') !== -1 && order.indexOf('decide:t1:Q2:deny') < run2, 'Q2 denied to the provider before the new turn');
+    assert.deepEqual(outcomes(fc).map((o) => [o.toolName, o.decision]), [['Bash', 'rejected'], ['Approve Q2', 'rejected']], 'each gets a rejected chip');
+  } finally {
+    fc.fireDispose();
+  }
+});
+
+test('a request joining the queue while the head is shown updates the shown card in place (one card per requestId)', async () => {
+  const fc = fakeChannel();
+  let release!: () => void;
+  const gate = new Promise<void>((r) => (release = r));
+  let runNo = 0;
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {
+      if (++runNo > 1) { yield { kind: 'done', turnId: 't2', ok: true }; return; }
+      yield refused('j1', 'Edit');
+      await gate; // the first card is shown alone before the next request arrives
+      yield refused('j2', 'Write');
+      yield refused('j3', 'Bash');
+      yield { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' };
+    },
+    cancel: () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  assert.match(fc.html(), /m\.type==='approval-position'\)\{reg\.approvalPosition\(m\.requestId,m\.position,m\.total\);\}/, 'the webview updates the shown card in place');
+  assert.match(fc.html(), /position:ev\.position,total:ev\.total/, 'a posted card carries its position into the renderer');
+  fc.send(env('submit-turn', { text: 'three edits' }));
+  await waitFor(() => approvalCards(fc).length === 1);
+  const first = approvalCards(fc)[0]!;
+  assert.equal(first.position, undefined, 'posted alone: no position yet');
+  release();
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['j1'], 'no second card');
+  const positions = fc.posted.filter((m) => m.payload.type === 'approval-position').map((m) => [m.payload['requestId'], m.payload['position'], m.payload['total']]);
+  assert.deepEqual(positions, [['j1', 1, 2], ['j1', 1, 3]], 'the shown card is updated in place as the queue grows');
+  fc.send(env('permission-decision', { requestId: 'j1', decision: 'deny' }));
+  const second = approvalCards(fc)[1]!;
+  assert.deepEqual([second.requestId, second.position, second.total], ['j2', 1, 2], 'the next card is posted with its own position');
+});
+
+test('reloading the webview while requests are queued re-posts the head card, and deciding it continues the queue', async () => {
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [refused('k1', 'Edit'), refused('k2', 'Write'), refused('k3', 'Bash'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'three edits' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'k1', decision: 'deny' }));
+  const before = fc.posted.length;
+  fc.send(env('ready')); // the webview reloaded: its transcript (and the shown card) is gone
+  const after = fc.posted.slice(before).map((m) => m.payload);
+  const restored = after.findIndex((p) => p.type === 'session-restored');
+  const cards = after
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => p.type === 'turn-event' && (p['event'] as TurnEvent).kind === 'approval-request');
+  assert.equal(cards.length, 1, 'exactly one card is posted again');
+  const card = cards[0]!.p['event'] as Extract<TurnEvent, { kind: 'approval-request' }>;
+  assert.ok(restored !== -1 && cards[0]!.i > restored, 'after session-restored (which clears the view)');
+  assert.deepEqual([card.requestId, card.position, card.total], ['k2', 1, 2], 'the head, with its position');
+  fc.send(env('permission-decision', { requestId: 'k2', decision: 'deny' }));
+  assert.equal(approvalCards(fc).at(-1)!.requestId, 'k3', 'deciding it continues the queue');
+  fc.send(env('permission-decision', { requestId: 'k3', decision: 'deny' }));
+  assert.deepEqual(outcomes(fc).map((o) => o.toolName), ['Edit', 'Write', 'Bash']);
+});
+
+// ---- Story E20261012ddc4ede1:S001: the transcript is paged ---------------------------
+
+/** A stored claude session of `turns` whole turns: a user row, then `perTurn - 1` assistant rows. */
+function longSession(turns: number, perTurn: number): { store: ReturnType<typeof createInMemoryChatSessionStore>; id: string; rows: number } {
+  const store = createInMemoryChatSessionStore();
+  const s = store.create('claude');
+  for (let t = 0; t < turns; t++) {
+    s.transcript.push({ role: 'user', text: `q${t}`, at: 't' });
+    for (let k = 1; k < perTurn; k++) s.transcript.push({ role: 'assistant', text: `a${t}.${k}`, at: 't' });
+  }
+  store.save(s);
+  return { store, id: s.id, rows: s.transcript.length };
+}
+const posted = (fc: FakeChannel, type: string): Array<Record<string, unknown>> => fc.posted.filter((m) => m.payload.type === type).map((m) => m.payload);
+const activeId = (fc: FakeChannel): string => posted(fc, 'session-restored').at(-1)!['sessionId'] as string;
+
+test('live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 't1', phase: 'thinking' },
+    { kind: 'assistant-delta', turnId: 't1', text: 'hello' },
+    { kind: 'tool-call', turnId: 't1', tool: 'Bash', command: 'ls' },
+    { kind: 'tool-result', turnId: 't1', command: 'ls', output: 'a\nb' },
+    { kind: 'selection-request', turnId: 't1', requestId: 'sel-1', prompt: 'Pick', options: [{ id: 'a', label: 'Alpha' }] },
+    inTurn('P1', 'Bash'),
+  ];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ codex: scriptedAdapter(evs, { hang: true }) }, ['codex']), store, cwd: () => '/repo' });
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'go' }));
+    await waitFor(() => approvalCards(fc).length === 1);
+    fc.send(env('permission-decision', { requestId: 'P1', decision: 'deny' }));
+    fc.send(env('selection-decision', { requestId: 'sel-1', selected: ['a'] }));
+    await waitFor(() => turnEvents(fc).some((e) => e.kind === 'selection-outcome'));
+    const transcript = store.get(activeId(fc))!.transcript;
+    const roleOf: Record<string, string> = { 'assistant-delta': 'assistant', 'tool-call': 'marker', 'tool-result': 'tool-result', 'permission-outcome': 'permission-outcome', 'selection-outcome': 'selection-outcome' };
+    const live = posted(fc, 'turn-event');
+    const seenKinds: string[] = [];
+    for (const m of live) {
+      const kind = (m['event'] as TurnEvent).kind;
+      const want = roleOf[kind];
+      if (want === undefined) {
+        assert.equal(m['rowIndex'], undefined, `${kind} writes no row and carries no rowIndex`);
+        continue;
+      }
+      seenKinds.push(kind);
+      assert.equal(typeof m['rowIndex'], 'number', `${kind} carries a rowIndex`);
+      assert.equal(transcript[m['rowIndex'] as number]?.role, want, `${kind} points at its own row`);
+    }
+    for (const k of Object.keys(roleOf)) assert.ok(seenKinds.includes(k), `a ${k} row was posted`);
+    assert.ok(live.some((m) => (m['event'] as TurnEvent).kind === 'status'), 'a status event was posted');
+    assert.ok(live.some((m) => (m['event'] as TurnEvent).kind === 'approval-request'), 'an approval-request was posted');
+    // The user row: its rowIndex is the index its key already carries.
+    const echo = posted(fc, 'user-row')[0]!;
+    assert.deepEqual([echo['rowIndex'], echo['key']], [0, 'r0']);
+    assert.equal(transcript[0]!.role, 'user');
+    // Indexes are distinct and increasing in post order.
+    const idx = live.map((m) => m['rowIndex']).filter((x): x is number => typeof x === 'number');
+    assert.deepEqual(idx, [...idx].sort((a, b) => a - b));
+    assert.equal(new Set(idx).size, idx.length);
+  } finally {
+    fc.fireDispose();
+  }
+});
+
+test('write-then-post order: when each live row is posted, the transcript already holds it at that index', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [
+    { kind: 'assistant-delta', turnId: 't1', text: 'one' },
+    { kind: 'tool-result', turnId: 't1', command: 'ls', output: 'x' },
+    refused('W1', 'Edit'),
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  const id = activeId(fc);
+  // At the moment of each post, read the row the message names.
+  const atPost: Array<{ kind: string; rowIndex: number; lengthThen: number; roleThen: string | undefined }> = [];
+  const orig = fc.channel.postMessage;
+  fc.channel.postMessage = (m: unknown) => {
+    const p = (m as { payload: Record<string, unknown> }).payload;
+    if (p['type'] === 'turn-event' && typeof p['rowIndex'] === 'number') {
+      const t = store.get(id)?.transcript ?? [];
+      atPost.push({ kind: (p['event'] as TurnEvent).kind, rowIndex: p['rowIndex'], lengthThen: t.length, roleThen: t[p['rowIndex']]?.role });
+    }
+    return orig(m);
+  };
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'W1', decision: 'deny' }));
+  assert.deepEqual(atPost.map((a) => a.kind), ['assistant-delta', 'tool-result', 'done', 'permission-outcome']);
+  for (const a of atPost) {
+    assert.equal(a.rowIndex, a.lengthThen - 1, `${a.kind}: the row was the last one written when it was posted`);
+    assert.ok(a.roleThen !== undefined, `${a.kind}: the transcript already held the row`);
+  }
+});
+
+// The plan names this check "a turn followed for a session that is not shown still writes its rows
+// and posts nothing". That state cannot be reached: a chat switch or a closed panel aborts the
+// follow at once (turn-lifecycle detach), so no event is delivered for a session that is not
+// shown. What holds, and is pinned here: a followed row is written before it is posted; once the
+// user switches away the follow delivers nothing more (posts nothing, writes nothing: the rest is
+// read again on the next resume); and in the code the write stays outside the "is it shown" guard,
+// so it never depends on that guard.
+test('a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard', async () => {
+  const { store, id } = storeWithLiveTurn(1);
+  const fc = fakeChannel();
+  let switched = false;
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {},
+    async *resume(): AsyncIterable<TurnEvent> {
+      yield { kind: 'assistant-delta', turnId: 't1', text: 'while shown' };
+      fc.send(env('new-chat', { provider: 'claude' })); // the user switches to a new chat
+      switched = true;
+      yield { kind: 'assistant-delta', turnId: 't1', text: 'after the switch' };
+    },
+    cancel: async () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 2, isAlive: (pid) => pid === 2 });
+  // At the moment a followed row is posted, the transcript already holds it.
+  const lengthAtPost: number[] = [];
+  const orig = fc.channel.postMessage;
+  fc.channel.postMessage = (m: unknown) => {
+    const pl = (m as { payload: Record<string, unknown> }).payload;
+    if (pl['type'] === 'turn-event' && typeof pl['rowIndex'] === 'number') lengthAtPost.push(store.get(id)!.transcript.length);
+    return orig(m);
+  };
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  await waitFor(() => switched);
+  await new Promise((r) => setTimeout(r, 30));
+  const deltas = posted(fc, 'turn-event').filter((m) => (m['event'] as TurnEvent).kind === 'assistant-delta');
+  assert.deepEqual(deltas.map((m) => [(m['event'] as { text: string }).text, m['rowIndex']]), [['while shown', 2]], 'the row posted while shown carries its index; nothing is posted after the switch');
+  assert.deepEqual(lengthAtPost, [3], 'the row was already written when it was posted');
+  const texts = store.get(id)!.transcript.filter((r) => r.role === 'assistant').map((r) => (r as { text: string }).text);
+  assert.deepEqual(texts, ['started', 'while shown'], 'the stopped follow writes nothing more; the rest is left for the next resume');
+  assert.ok(store.get(id)!.liveTurn !== undefined, 'the cursor is kept, so the turn can be followed again');
+
+  // Structure: in the followed-turn sink the write comes first and is not inside the guard.
+  const src = readFileSync(new URL('../chat-panel.ts', import.meta.url), 'utf8');
+  const sink = src.slice(src.indexOf('turns.follow(s, {'), src.indexOf('onEnd: () => {', src.indexOf('turns.follow(s, {')));
+  const write = sink.indexOf('const rowIndex = appendEvent(s, ev);');
+  const guard = sink.indexOf('if (!disposed && session === s) {');
+  assert.ok(write !== -1 && guard !== -1 && write < guard, 'appendEvent runs before, and outside, the shown-session guard');
+});
+
+test('load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0', async () => {
+  const { store, id, rows } = longSession(50, 20); // 1,000 rows, a user row every 20
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  const all = store.get(id)!.transcript;
+  let before = 900;
+  const got: unknown[][] = [];
+  while (before > 0) {
+    const n = posted(fc, 'transcript-page').length;
+    fc.send(env('load-older', { sessionId: id, before }));
+    const pages = posted(fc, 'transcript-page');
+    assert.equal(pages.length, n + 1, 'exactly one page per request');
+    const page = pages.at(-1)!;
+    assert.deepEqual([page['sessionId'], page['before'], page['total']], [id, before, rows]);
+    const first = page['firstIndex'] as number;
+    assert.deepEqual(page['rows'], all.slice(first, before), 'the rows end just before `before`');
+    assert.equal(all[first]!.role, 'user', 'the page starts at a turn start');
+    assert.ok(first < before && before - first <= 200);
+    got.unshift(page['rows'] as unknown[]);
+    before = first;
+  }
+  assert.deepEqual(got.flat(), all.slice(0, 900), 'walking back reaches index 0 with no row skipped or repeated');
+  // Nothing older than index 0: an empty page whose firstIndex equals before.
+  fc.send(env('load-older', { sessionId: id, before: 0 }));
+  const last = posted(fc, 'transcript-page').at(-1)!;
+  assert.deepEqual([last['before'], last['firstIndex'], last['rows']], [0, 0, []]);
+});
+
+test('load-older for another session id, or with a malformed before or sessionId, posts nothing', async () => {
+  const { store, id } = longSession(20, 20);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  const n = fc.posted.length;
+  fc.send(env('load-older', { sessionId: 'some-other-session', before: 100 }));
+  fc.send(env('load-older', { sessionId: id, before: '100' }));
+  fc.send(env('load-older', { sessionId: id, before: 12.5 }));
+  fc.send(env('load-older', { sessionId: id }));
+  fc.send(env('load-older', { sessionId: 7, before: 100 }));
+  fc.send(env('load-older', { before: 100 }));
+  assert.equal(fc.posted.length, n, 'none of them is answered');
+  // The user switched chats while a request was in flight: the old session's request is ignored.
+  fc.send(env('new-chat', { provider: 'claude' }));
+  const m = fc.posted.length;
+  fc.send(env('load-older', { sessionId: id, before: 100 }));
+  assert.equal(fc.posted.length, m);
+});
+
+test('session-restored carries firstIndex 0 and total while the whole transcript is still sent', async () => {
+  const { store, id, rows } = longSession(3, 4);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  const draft = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual([draft['firstIndex'], draft['total'], (draft['transcript'] as unknown[]).length], [0, 0, 0], 'an empty draft');
+  fc.send(env('open-chat', { chatId: id }));
+  const opened = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual([opened['sessionId'], opened['firstIndex'], opened['total'], (opened['transcript'] as unknown[]).length], [id, 0, rows, rows]);
+  fc.send(env('ready'));
+  const again = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual([again['sessionId'], again['firstIndex'], again['total']], [id, 0, rows]);
+  fc.send(env('new-chat', { provider: 'claude' }));
+  const fresh = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual([fresh['firstIndex'], fresh['total']], [0, 0]);
+});
+
+test('the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total', () => {
+  const html = fidelityHtml();
+  // The pager source is embedded once, built on the transcript element with the bar and the host channel, and given the registry.
+  assert.equal(html.split(transcriptPagerWebviewSource()).length - 1, 1, 'the pager source is embedded once');
+  assert.match(html, /\(t,\{bar:document\.getElementById\('insrc-older'\),post:function\(p\)\{vs\.postMessage\(\{v:1,payload:p\}\);\}\}\);/, 'built on the transcript, the bar and the host channel');
+  assert.match(html, /<div id="insrc-older" role="button"/, 'the bar element exists');
+  assert.ok(html.indexOf('<div id="insrc-older"') < html.indexOf('<div id="insrc-term"'), 'above the transcript');
+  assert.ok(html.indexOf('const pager=') < html.indexOf('const reg='), 'the pager is created before the registry');
+  assert.match(html, /pager\.attach\(reg\);/, 'and handed the registry afterwards');
+  // Every append goes through the pager.
+  assert.match(html, /function line\(s,cls\)\{const d=document\.createElement\('div'\);if\(cls\)d\.className=cls;d\.textContent=s;return pager\.append\(d\);\}/, 'line() appends through the pager');
+  assert.match(html, /box\.appendChild\(bar\);\}pager\.append\(box\);\}/, 'renderDiff appends through the pager');
+  assert.match(html, /if\(_c\)\{pager\.append\(_c\);\}/, 'the approval card appends through the pager');
+  assert.doesNotMatch(html, /(?<![\w$])t\.appendChild\(/, 'nothing appends to the transcript element directly');
+  // Restore: reset, then replay with absolute keys, each row stamped with its index.
+  assert.match(html, /pager\.reset\(cur,_first,_total\);_rows\.forEach\(function\(x,i\)\{pager\.track\(_first\+i,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(x\),'r'\+\(_first\+i\)\);\}\);\}\);/);
+  assert.match(html, /_first=typeof m\.firstIndex==='number'\?m\.firstIndex:0/, 'a restore with no firstIndex starts at 0');
+  // An older page goes to prepend; live rows are tracked (stamped, then trimmed) with their row index.
+  assert.match(html, /else if\(m\.type==='transcript-page'\)\{pager\.prepend\(m\);\}/);
+  assert.match(html, /if\(m\.type==='turn-event'\)\{const ev=m\.event;pager\.track\(m\.rowIndex,function\(\)\{/);
+  assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text\}\),m\.key\);\}\);\}/);
+  assert.match(html, /pager\.track\(undefined,function\(\)\{renderDiff\(/, 'a diff card is tracked too');
+  assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
+  assert.match(html, /setProvLock\(_total>0\);/, 'the provider lock settles from total');
+});
+
+test("the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin", () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo', genNonce: () => 'FIXEDNONCE' });
+  host.open();
+  const html = fc.html();
+  assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'exactly one inline script');
+  assert.match(html, /<script nonce="FIXEDNONCE">/);
+  assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
+  // The one script still parses as JavaScript with the pager embedded in it.
+  const body = html.slice(html.indexOf('>', html.indexOf('<script nonce=')) + 1, html.lastIndexOf('</script>'));
+  assert.doesNotThrow(() => new Script(body), 'the inline script is valid JavaScript');
+  // Scroll position: only the pager writes it.
+  const pagerSrc = transcriptPagerWebviewSource();
+  const withoutPager = html.split(pagerSrc).join('');
+  assert.ok(withoutPager.length < html.length);
+  assert.doesNotMatch(withoutPager, /scrollTop\s*=[^=]/, 'no scrollTop write outside the pager');
+  assert.match(pagerSrc, /term\.scrollTop=/, 'the pager is where it is written');
+  // The pager itself: no innerHTML, no remote origin, no vscode reference.
+  assert.doesNotMatch(pagerSrc, /innerHTML|https?:\/\/|acquireVsCodeApi|\bimport\b/);
+  // The rest of the shell keeps its markdown guard and loads nothing remote.
+  assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
+  assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded');
+  assert.doesNotMatch(html, /asWebviewUri/);
+});
+
+// ---- Story E20261012ddc4ede1:S001 t8: only the latest window is sent on restore ----
+
+test("opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0", async () => {
+  const { store, id, rows } = longSession(50, 20); // 1,000 rows, a user row every 20
+  const saved = store.get(id)!;
+  saved.mode = 'auto';
+  store.save(saved);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  const m = posted(fc, 'session-restored').at(-1)!;
+  const sent = m['transcript'] as Array<{ role: string }>;
+  const first = m['firstIndex'] as number;
+  assert.equal(rows, 1000);
+  assert.ok(sent.length <= 200 && sent.length >= 100, `one window of rows (${sent.length})`);
+  assert.equal(sent[0]!.role, 'user', 'the window starts at a turn start');
+  assert.equal(first + sent.length, 1000, 'the window ends at the end of the transcript');
+  assert.deepEqual(sent, saved.transcript.slice(first), 'the rows are the latest rows, in order');
+  assert.deepEqual([m['sessionId'], m['total'], m['mode']], [id, 1000, 'auto']);
+  // One long turn (no turn start within reach): the plain last page.
+  const long = longSession(1, 450);
+  const fc2 = fakeChannel();
+  createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store: long.store, cwd: () => '/repo' }).open();
+  fc2.send(env('open-chat', { chatId: long.id }));
+  const m2 = posted(fc2, 'session-restored').at(-1)!;
+  assert.deepEqual([(m2['transcript'] as unknown[]).length, m2['firstIndex'], m2['total']], [100, 350, 450]);
+  // A short session is posted whole.
+  const short = longSession(3, 20);
+  const fc3 = fakeChannel();
+  createChatPanelHost({ createPanel: () => fc3.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store: short.store, cwd: () => '/repo' }).open();
+  fc3.send(env('open-chat', { chatId: short.id }));
+  const m3 = posted(fc3, 'session-restored').at(-1)!;
+  assert.deepEqual([(m3['transcript'] as unknown[]).length, m3['firstIndex'], m3['total']], [60, 0, 60]);
+  assert.deepEqual(m3['transcript'], short.store.get(short.id)!.transcript);
+});
+
+test('ready, new-chat and open-chat post the same windowed session-restored', async () => {
+  const { store, id } = longSession(50, 20);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  const windowOf = (m: Record<string, unknown>): unknown[] => [m['sessionId'], m['firstIndex'], m['total'], (m['transcript'] as unknown[]).length];
+  fc.send(env('open-chat', { chatId: id }));
+  const opened = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual(windowOf(opened), [id, 900, 1000, 100]);
+  // A webview reload: the same window again.
+  fc.send(env('ready'));
+  const reloaded = posted(fc, 'session-restored').at(-1)!;
+  assert.notEqual(reloaded, opened);
+  assert.deepEqual(windowOf(reloaded), windowOf(opened));
+  assert.deepEqual(reloaded['transcript'], opened['transcript']);
+  // A new chat: an empty window through the same path (firstIndex and total present).
+  fc.send(env('new-chat', { provider: 'claude' }));
+  const fresh = posted(fc, 'session-restored').at(-1)!;
+  assert.deepEqual([fresh['firstIndex'], fresh['total'], (fresh['transcript'] as unknown[]).length], [0, 0, 0]);
+  // Back to the long chat: windowed again. Every session-restored carries firstIndex and total.
+  fc.send(env('open-chat', { chatId: id }));
+  assert.deepEqual(windowOf(posted(fc, 'session-restored').at(-1)!), [id, 900, 1000, 100]);
+  for (const m of posted(fc, 'session-restored')) {
+    assert.equal(typeof m['firstIndex'], 'number');
+    assert.equal(typeof m['total'], 'number');
+    assert.ok((m['transcript'] as unknown[]).length <= 200, 'never more than one window');
+  }
+  // A reopened panel (adopt) posts the windowed restore too.
+  const fc2 = fakeChannel();
+  host.adopt(fc2.channel);
+  assert.deepEqual(windowOf(posted(fc2, 'session-restored').at(-1)!), [id, 900, 1000, 100]);
+});
+
+test('a ready after older pages were requested posts the latest window again, with the approval head after it', async () => {
+  const { store, id } = longSession(50, 20);
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [refused('p1', 'Edit'), refused('p2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  // A turn that leaves two approval requests waiting.
+  fc.send(env('submit-turn', { text: 'edit two files' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const total = store.get(id)!.transcript.length; // 1,000 + the user row + the done marker
+  // The reader loads two older pages.
+  fc.send(env('load-older', { sessionId: id, before: 900 }));
+  fc.send(env('load-older', { sessionId: id, before: 800 }));
+  assert.equal(posted(fc, 'transcript-page').length, 2);
+  // The webview reloads: the host posts the LATEST window again, not the pages the reader had loaded.
+  const before = fc.posted.length;
+  fc.send(env('ready'));
+  const after = fc.posted.slice(before).map((m) => m.payload);
+  const restoredAt = after.findIndex((p) => p['type'] === 'session-restored');
+  const r = after[restoredAt]!;
+  const first = r['firstIndex'] as number;
+  assert.deepEqual([r['sessionId'], r['total']], [id, total]);
+  assert.deepEqual(r['transcript'], store.get(id)!.transcript.slice(first), 'the latest rows, to the end of the transcript');
+  assert.ok((r['transcript'] as unknown[]).length <= 200);
+  assert.equal(after.filter((p) => p['type'] === 'transcript-page').length, 0, 'no older page is re-sent');
+  // The approval head is posted again after it, once, with its place in the queue.
+  const cards = after.map((p, i) => ({ p, i })).filter(({ p }) => p['type'] === 'turn-event' && (p['event'] as TurnEvent).kind === 'approval-request');
+  assert.equal(cards.length, 1);
+  assert.ok(cards[0]!.i > restoredAt, 'after session-restored');
+  const card = cards[0]!.p['event'] as Extract<TurnEvent, { kind: 'approval-request' }>;
+  assert.deepEqual([card.requestId, card.position, card.total], ['p1', 1, 2]);
+});
+
+test('the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows', async () => {
+  const { store, id } = longSession(50, 20);
+  const original = JSON.stringify(store.get(id));
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  fc.send(env('ready'));
+  for (let before = 900; before > 0; ) {
+    fc.send(env('load-older', { sessionId: id, before }));
+    before = posted(fc, 'transcript-page').at(-1)!['firstIndex'] as number;
+  }
+  fc.send(env('load-older', { sessionId: id, before: 0 }));
+  fc.send(env('new-chat', { provider: 'claude' }));
+  fc.send(env('open-chat', { chatId: id }));
+  assert.equal(JSON.stringify(store.get(id)), original, 'the stored record is byte-for-byte what it was');
+  // The posted windows and pages are copies: changing one does not touch the stored transcript.
+  const page = posted(fc, 'transcript-page')[0]!['rows'] as unknown[];
+  const win = posted(fc, 'session-restored').at(-1)!['transcript'] as unknown[];
+  page.length = 0;
+  win.length = 0;
+  assert.equal(store.get(id)!.transcript.length, 1000);
+  assert.equal(JSON.stringify(store.get(id)), original);
 });

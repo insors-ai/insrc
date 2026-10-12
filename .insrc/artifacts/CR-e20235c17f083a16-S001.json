@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "e20235c17f083a16",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "artifact-docs-folders-fork-per-stage",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

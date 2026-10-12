@@ -5,7 +5,8 @@
     "storyId": "S001",
     "createdAt": "2026-10-08T18:45:46.904Z",
     "updatedAt": "2026-10-08T18:45:46.904Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "add-test-record-artifact-build-flow"
   },
   "body": {
     "tasks": [

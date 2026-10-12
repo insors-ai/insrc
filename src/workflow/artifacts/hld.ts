@@ -233,7 +233,7 @@ export function renderHldMarkdown(artifact: HldArtifact): string {
 }
 
 /** A short, distinct H1 name for the HLD (prefers the Epic slug). */
-function hldShortName(artifact: HldArtifact): string {
+export function hldShortName(artifact: HldArtifact): string {
 	const slug = (artifact.meta as { epicSlug?: string }).epicSlug;
 	if (typeof slug === 'string' && slug.length > 0) return slug;
 	return firstLine(artifact.body.frameworkSummary);

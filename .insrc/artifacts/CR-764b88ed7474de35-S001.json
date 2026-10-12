@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791781580320-2yxqlw",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-12T05:06:20.330Z",
+    "model": "claude:opus",
+    "elapsedMs": 64616,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "764b88ed7474de35",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-12T04:55:07.994Z",
+    "epicSlug": "stamp-ledger-records-their-work-item",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "764b88ed7474de35",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/__tests__/ledger-record-identity.test.ts",
+        "src/workflow/code-review/runner.ts",
+        "src/workflow/runners/build/__tests__/build-record.test.ts",
+        "src/workflow/runners/build/__tests__/test-record.test.ts",
+        "src/workflow/runners/build/standalone-record.ts",
+        "src/workflow/runners/build/test-record.ts",
+        "src/workflow/storage.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/storage.ts:569",
+            "message": "folderIdentityMeta's return type declares optional properties `epicSlug?: string` and `standalone?: true` without the explicit `| undefined` that the documented strict-optional rule calls for. The sibling signatures changed in this Story (workItemAnchorCreatedAt, workItemKindOf, inheritedStandalone, storyRecordFolderArgs, pathsForWorkflow) all spell optional fields as `?: T | undefined`. Under exactOptionalPropertyTypes the omission still compiles, because the field may be left out but not set to undefined. It is a drift from the stated convention, not a type error.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/ledger-record-identity.test.ts:53",
+            "message": "The tests for the changed behaviour exist but their pass-state is unverified. The graph's testsReaching edges are empty for every symbol, and that is a hollow grounding on newly indexed files, not a real gap. Commit b4c9622d changes only two things: it adds folderIdentityMeta (storage.ts:565) and makes runCodeReview stamp folderIdentityMeta(pa) into the record's meta (runner.ts:201-205). The other storage.ts and runner.ts symbols in the list were not changed in this Story. The new test file exercises both changes: line 53 covers the BUILD record, line 66 covers the TESTS record, and line 76 covers the code-review record through a direct runCodeReview call at line 87. That is where the folderIdentityMeta output gets asserted. No build record was provided, so these tests are present but unverified, not missing.",
+            "expectationRef": "folderIdentityMeta, runCodeReview",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/storage.ts:565",
+            "message": "folderIdentityMeta leaves out epicSlug when there is no label and leaves out standalone unless it is true. Callers spread its result over existing meta, so it can add these keys but never remove them. In persistBuildRecord the base is the merged prior record, so an older epicSlug or standalone:true written by a previous persist stays in the meta even when the work item no longer resolves to it. The meta and the md location could then disagree again. This needs a work item that is relabelled or rerouted between persists, which is rare, so it is noted as an observation and not as a defect seen in practice.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/runner.ts:205",
+            "message": "buildArtifact builds meta and the code then rebuilds it straight away with spreads to add the folder identity. Passing pa into buildArtifact, or merging folderIdentityMeta into the meta literal there, would build the record in one place. This is a layout preference, not a risk.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 4
+    }
+  }
+}

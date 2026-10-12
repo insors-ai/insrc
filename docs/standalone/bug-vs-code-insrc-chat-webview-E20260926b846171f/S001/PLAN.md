@@ -2,7 +2,7 @@
 
 # Plan: E20260926b846171f:S001
 
-**Epic:** `lld-approved-standalone-bugfix-issue-b846171f48d26a25`
+**Epic:** `bug-vs-code-insrc-chat-webview`
 **LLD run:** `wf-1790446816695-8c2jhh`
 **LLD effective hash:** `c90ce092998d...`
 

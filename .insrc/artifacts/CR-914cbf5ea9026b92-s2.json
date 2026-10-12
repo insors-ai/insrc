@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "914cbf5ea9026b92",
-    "storyId": "s2"
+    "storyId": "s2",
+    "epicSlug": "work-framed-approved-spec-proceed-from"
   },
   "body": {
     "kind": "code-review",

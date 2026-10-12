@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "b6c90b3e0240d36c",
-    "storyId": "s3"
+    "storyId": "s3",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "epicCreatedAt": "2026-09-23T17:38:50.877Z"
   },
   "body": {
     "kind": "code-review",

@@ -1657,12 +1657,27 @@ test('a second validate turn of the same Task with no mapping uses the stored on
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
+test('ISSUE-b4b6b835: validate hands the check runner the other TypeScript projects the build touched; a build inside the root project names none', async () => {
+	const repo = mappedRepo();
+	try {
+		const before = await turn(repo, { tests: GOOD_MAPPING });
+		assert.equal(before.plans[0]!.typecheckProjects, undefined, 'nothing outside the root project was touched');
+
+		// A second project appears in the working tree: its own tsconfig.json and a source file.
+		mkdirSync(join(repo, 'plugin/src'), { recursive: true });
+		writeFileSync(join(repo, 'plugin/tsconfig.json'), '{}');
+		writeFileSync(join(repo, 'plugin/src/view.ts'), 'export const v = 1;\n');
+		const after = await turn(repo, {});
+		assert.deepEqual(after.plans[0]!.typecheckProjects, ['plugin']);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 test('a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused', async () => {
 	const repo = mappedRepo([{ level: 'unit', name: T_UNIT }]);
 	// The REAL runner, with node standing in for npx: the result must come from a run.
 	const { runValidationChecks } = await import('../validation-checks.js');
 	const runner = (r: string, plan: ValidationCheckPlan): Promise<ValidationCheckResults> =>
-		runValidationChecks(r, { ...plan, typecheck: ['node', '-e', 'process.exit(0)'], testCommand: ['node', '--experimental-strip-types', '--test', '--test-force-exit'] });
+		runValidationChecks(r, { ...plan, typecheck: ['node', '-e', 'process.exit(0)'], testCommand: ['node', '--experimental-strip-types', '--test-force-exit'] });
 	try {
 		const mapping = [{ name: T_UNIT, cases: [{ file: FILTER_TEST, title: 'narrows by one tag' }, { file: OTHER_TEST, title: 'another case' }] }];
 		const first = await turn(repo, { tests: mapping }, { runner });

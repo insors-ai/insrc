@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "5f34b37c850e4ffb",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "fix-daemon-update-path-so-insrc",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

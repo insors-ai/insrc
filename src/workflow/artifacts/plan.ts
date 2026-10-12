@@ -35,7 +35,7 @@ import { renderFunctionalRequirementsSection } from './functional-definition.js'
 import type { DocumentSummary } from './format/types.js';
 import type { FeedbackRecord } from './provenance/types.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
-import { citationBodyLines, frBodyLines, feedbackBodyLines } from './format/bindings.js';
+import { citationBodyLines, epicLabelLine, frBodyLines, feedbackBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 
 // ---------------------------------------------------------------------------
@@ -118,7 +118,7 @@ export function renderPlanMarkdown(artifact: PlanArtifact): string {
 	const ordered = [...body.tasks].sort((a, b) => a.order - b.order);
 
 	const summaryLines = (): string[] => {
-		const out: string[] = [`**Epic:** \`${meta.epicSlug}\``];
+		const out: string[] = [epicLabelLine(meta.epicSlug)];
 		if (typeof meta.lldRunId === 'string' && meta.lldRunId.length > 0) out.push(`**LLD run:** \`${meta.lldRunId}\``);
 		if (typeof meta.lldEffectiveHash === 'string' && meta.lldEffectiveHash.length > 0) out.push(`**LLD effective hash:** \`${meta.lldEffectiveHash.slice(0, 12)}...\``);
 		if (body.summary?.prose !== undefined && body.summary.prose.length > 0) out.push('', body.summary.prose);

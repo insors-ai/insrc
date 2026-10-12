@@ -91,7 +91,8 @@
     "reviewOverride": {
       "reason": "User approved in chat after being shown the review (0 HIGH, 1 MED, 4 LOW). The 1 MED is a wording inaccuracy, not a design flaw: the id-mapping-source decision says 'YAML frontmatter' but the artifact md files carry no YAML frontmatter — identity is the `<!-- insrc:artifact TYPE-epicHash-storyId -->` marker + the companion .insrc/artifacts/<ID>.json meta (which alone carries createdAt for the E<YYYYMMDD> segment). The decision's INTENT (metadata-authoritative, never the filename, fail-loud) is sound and unchanged. Two carry-forwards recorded for the DEF: (1) correct the id source to marker + companion JSON meta; (2) the chunked-per-epic execution model (per-epic chunked commits within the atomic PR, fix-or-rollback-the-chunk) that could not be a verbatim brainstorm decision.",
       "at": "2026-09-15T16:34:39.188Z"
-    }
+    },
+    "standalone": true
   },
   "body": {
     "category": "requirements",

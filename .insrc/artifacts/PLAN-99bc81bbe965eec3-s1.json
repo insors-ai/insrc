@@ -19,11 +19,12 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "99bc81bbe965eec3",
-    "epicSlug": "lld-bugfix-scope-structural-label-build",
+    "epicSlug": "bug-insrc-build-step-returns-unresolved",
     "storyId": "s1",
     "lldRunId": "wf-1790664980219-t9lfhg",
     "lldEffectiveHash": "a7c7f317f01b03c50c10075f87b0835585d48af2d769aa473c648e9ad5ec5b53",
-    "approvedAt": "2026-09-29T07:15:06.268Z"
+    "approvedAt": "2026-09-29T07:15:06.268Z",
+    "standalone": true
   },
   "body": {
     "tasks": [

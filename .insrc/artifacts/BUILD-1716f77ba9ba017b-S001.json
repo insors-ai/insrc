@@ -6,7 +6,9 @@
     "createdAt": "2026-10-05T09:32:49.002Z",
     "updatedAt": "2026-10-05T11:10:14.432Z",
     "standalone": true,
-    "approvedAt": "2026-10-05T11:10:14.483Z"
+    "approvedAt": "2026-10-05T11:10:14.483Z",
+    "epicSlug": "two-sets-eyes-review-rule-only",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z"
   },
   "body": {
     "tasks": [

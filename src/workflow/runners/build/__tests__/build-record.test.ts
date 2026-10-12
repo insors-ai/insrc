@@ -158,8 +158,11 @@ test('persistStandaloneBuildRecord writes standalone:true json + the SAME md via
 			body: { focus: 'Add a --json flag to the status subcommand.', producesLld: false },
 		};
 		const { json, md } = persistStandaloneBuildRecord(repo, rec);
-		// json is byte-identical to a plain stringify of the record (no prior, no merge additions).
-		assert.equal(readFileSync(json, 'utf8'), JSON.stringify(rec, null, 2) + '\n');
+		// json is byte-identical to a plain stringify of the record (no prior, no merge
+		// additions) plus the folder anchor it is filed under (ISSUE-764b88ed: a
+		// Trivial build with no LLD anchors on its own createdAt and has no label).
+		const stamped = { ...rec, meta: { ...rec.meta, epicCreatedAt: '2026-01-01T00:00:00.000Z' } };
+		assert.equal(readFileSync(json, 'utf8'), JSON.stringify(stamped, null, 2) + '\n');
 		// md is byte-identical to a FROZEN expectation.
 		//
 		// This assertion used to read `renderStandaloneBuildRecordMd(rec)`. That was

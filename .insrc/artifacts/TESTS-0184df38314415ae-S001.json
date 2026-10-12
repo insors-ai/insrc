@@ -5,7 +5,8 @@
     "storyId": "S001",
     "createdAt": "2026-10-11T09:34:09.996Z",
     "updatedAt": "2026-10-11T09:34:09.996Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "show-story-s-planned-tasks-delivery"
   },
   "body": {
     "tasks": [

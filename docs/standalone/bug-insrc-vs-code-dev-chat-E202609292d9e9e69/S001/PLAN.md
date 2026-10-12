@@ -2,7 +2,7 @@
 
 # Plan: E202609292d9e9e69:S001
 
-**Epic:** `lld-dev-chat-approve-bugfix-1`
+**Epic:** `bug-insrc-vs-code-dev-chat`
 **LLD run:** `wf-1790668327465-r1f3aw`
 **LLD effective hash:** `707006cbcfe4...`
 

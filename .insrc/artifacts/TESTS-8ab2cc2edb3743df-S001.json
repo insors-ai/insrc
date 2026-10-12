@@ -5,7 +5,9 @@
     "storyId": "S001",
     "createdAt": "2026-10-10T12:08:41.130Z",
     "updatedAt": "2026-10-10T12:18:03.796Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "bug-plan-tree-analyze-run-when",
+    "epicCreatedAt": "2026-10-09T14:36:42.809Z"
   },
   "body": {
     "tasks": [

@@ -6,7 +6,8 @@
     "storyId": "s3",
     "createdAt": "2026-09-30T08:04:25.863Z",
     "updatedAt": "2026-09-30T08:04:38.037Z",
-    "approvedAt": "2026-09-30T08:04:38.077Z"
+    "approvedAt": "2026-09-30T08:04:38.077Z",
+    "epicSlug": "harden-insrc-artifact-creation-flows-two"
   },
   "body": {
     "tasks": [

@@ -1,11 +1,12 @@
 {
   "meta": {
     "workflow": "build",
-    "standalone": false,
+    "standalone": true,
     "epicHash": "55229bde990589c9",
     "storyId": "S001",
     "createdAt": "2026-09-15T13:48:32.918Z",
-    "approvedAt": "2026-09-15T13:54:17.933Z"
+    "approvedAt": "2026-09-15T13:54:17.933Z",
+    "epicSlug": "make-design-story-lld-plan-workflows"
   },
   "body": {
     "focus": "Make the design.story (LLD) and plan workflows scope-aware of sibling stories",

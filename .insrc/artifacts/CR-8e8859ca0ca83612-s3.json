@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "8e8859ca0ca83612",
-    "storyId": "s3"
+    "storyId": "s3",
+    "epicSlug": "vs-code-dev-chat-ux-polish"
   },
   "body": {
     "kind": "code-review",

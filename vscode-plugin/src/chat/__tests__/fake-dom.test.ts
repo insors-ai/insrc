@@ -109,3 +109,13 @@ test('allOf walks pre-order, root first, and skips text nodes', () => {
   assert.deepEqual(allOf(root).map((n) => n.id), ['root', 'a', 'a1', 'a2', 'b', 'b1']);
   assert.deepEqual(allOf(textNode('alone')), []);
 });
+
+test('fake-dom nodes carry scrollTop, scrollHeight and clientHeight', () => {
+  const el = bodyStub('div');
+  assert.deepEqual([el.scrollTop, el.scrollHeight, el.clientHeight], [0, 0, 0], 'they start at 0');
+  el.scrollHeight = 900;
+  el.clientHeight = 300;
+  el.scrollTop = el.scrollHeight - el.clientHeight;
+  assert.deepEqual([el.scrollTop, el.scrollHeight, el.clientHeight], [600, 900, 300], 'plain numbers a test sets and code reads back');
+  assert.deepEqual([bodyStub('p').scrollTop, textNode('t').scrollHeight], [0, 0], 'each node has its own');
+});

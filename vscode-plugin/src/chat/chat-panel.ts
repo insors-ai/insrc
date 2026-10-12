@@ -21,6 +21,9 @@ import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode }
 // S001 (bugfix): classifyPermissionDenial is the pure classifier that tells a tool-permission gate
 // apart from a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial, type ProviderRegistry, type ProviderId } from './cli-adapter.js';
+import { createApprovalQueue, type ApprovalResolution } from './approval-queue.js';
+import { latestWindow, pageBefore } from './transcript-window.js';
+import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type TurnSink } from './turn-lifecycle.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
@@ -157,13 +160,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // Normalize a session's stored mode (optional/back-compat/corrupt -> 'manual').
   const modeOf = (s: ChatSession | undefined): PermissionMode =>
     s !== undefined && (s.mode === 'edit-auto' || s.mode === 'auto' || s.mode === 'manual') ? s.mode : 'manual';
-  // S001 (bugfix): pending review-mode permission requests, requestId -> the request's grant facts.
-  // Populated when a turn surfaces an approval-request (claude's `system/permission_denied`, which
-  // also ENDS the turn). `toolName` is the tool to pre-allow; `command` (when present) is the exact
-  // command to name in the grant re-run; `blockKind` tells a tool-permission gate (Approve re-runs
-  // with the tool pre-allowed) apart from a working-dir / sandbox-allowlist block (Approve cannot
-  // grant a directory — it posts an informational message instead). Cleared on decision.
-  const pendingPerms = new Map<string, { toolName: string; command?: string; blockKind: 'tool-gate' | 'dir-block' }>();
+  // ISSUE-6a811b8a: the approval queue. Every approval-request a turn raises is queued here and
+  // only the oldest undecided one (the head) is shown as an actionable card; the next is shown once
+  // it is decided. Each request keeps the facts its decision needs: `toolName` (the tool to
+  // pre-allow), `command` (the exact command to name in the grant re-run), `blockKind` (a
+  // tool-permission gate apart from a working-dir / sandbox-allowlist block, which Approve cannot
+  // grant) and `resolution` (a turn that ended on refusal, or the running turn).
+  const approvals = createApprovalQueue();
+  // The requestId of the head card the webview is showing (posted once) and the total it shows.
+  let shownApproval: string | undefined;
+  let shownTotal = 0;
   // S004 (dev-chat ux polish): pending selection requests, requestId -> the widget's options.
   // Populated when a turn surfaces a selection-request (parsed from an `insrc:select` marker),
   // consumed by a selection-decision to map the chosen ids back to labels. Cleared on decision.
@@ -207,16 +213,168 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // S005: (re)post the extension-local chat history so the webview history-dropdown stays current.
   const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
 
+  // Story E20261012ddc4ede1:S001: post a live event with the absolute transcript index of the row
+  // it wrote (none for an event that writes no row), so the webview knows which row each node is.
+  const postLive = (event: TurnEvent, rowIndex: number | undefined): void =>
+    post({ type: 'turn-event', event, ...(rowIndex !== undefined ? { rowIndex } : {}) });
+
+  // Story E20261012ddc4ede1:S001: every session-restored goes through here. Only the latest window
+  // of the transcript is sent (never the whole history), with the absolute index of its first row
+  // and the transcript's total row count; the webview asks for older pages with 'load-older'.
+  const postRestored = (s: ChatSession): void => {
+    const window = latestWindow(s.transcript);
+    post({ type: 'session-restored', sessionId: s.id, transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
+  };
+
   // S003 (dev-chat ux polish): record a resolved permission decision. Mirrors the tool-result
   // dual persist+render path (appendEvent): emit it LIVE as a turn-event the webview renders via the
   // registry (a resolved chip), AND persist it STRUCTURALLY as a role:'permission-outcome' transcript
   // row (+ save) so a restored session shows the decided chip instead of the live-only approval card.
   const recordPermissionOutcome = (toolName: string, approved: boolean, requestId: string): void => {
     const decision: 'approved' | 'rejected' = approved ? 'approved' : 'rejected';
-    post({ type: 'turn-event', event: { kind: 'permission-outcome', turnId: `perm-${requestId}`, toolName, decision } });
+    // Story E20261012ddc4ede1:S001: write the row first, so the event carries its row index.
+    let rowIndex: number | undefined;
     if (session !== undefined) {
       session.transcript.push({ role: 'permission-outcome', toolName, decision, at: now() });
-      trySave(session);
+      rowIndex = session.transcript.length - 1;
+    }
+    postLive({ kind: 'permission-outcome', turnId: `perm-${requestId}`, toolName, decision }, rowIndex);
+    if (session !== undefined) trySave(session);
+  };
+
+  // ISSUE-6a811b8a: where a request is answered. The adapters set it; a request without it is
+  // routed as before the field existed (a request naming a tool was a claude refusal that ended
+  // the turn; any other was answered inside the turn).
+  const resolutionOf = (ev: Extract<TurnEvent, { kind: 'approval-request' }>): ApprovalResolution =>
+    ev.resolution ?? (typeof ev.toolName === 'string' && ev.toolName !== '' ? 'turn-ended' : 'in-turn');
+
+  // ISSUE-6a811b8a: post the queue head as the actionable card, once per request.
+  const showApprovalHead = (): void => {
+    const head = approvals.head();
+    if (head === undefined) {
+      shownApproval = undefined;
+      return;
+    }
+    if (shownApproval === head.request.requestId) {
+      // Requests joined the queue behind the shown card: update its count in place, never a second card.
+      if (head.total !== shownTotal) {
+        shownTotal = head.total;
+        post({ type: 'approval-position', requestId: head.request.requestId, position: head.position, total: head.total });
+      }
+      return;
+    }
+    shownApproval = head.request.requestId;
+    shownTotal = head.total;
+    const r = head.request;
+    post({
+      type: 'turn-event',
+      event: {
+        kind: 'approval-request',
+        turnId: r.turnId,
+        requestId: r.requestId,
+        title: r.title,
+        detail: r.detail,
+        ...(r.toolName !== undefined ? { toolName: r.toolName } : {}),
+        ...(r.command !== undefined ? { command: r.command } : {}),
+        resolution: r.resolution,
+        ...(head.total > 1 ? { position: head.position, total: head.total } : {}),
+      },
+    });
+  };
+
+  // ISSUE-6a811b8a: queue a raised approval-request (instead of posting it) and show the head.
+  const enqueueApproval = (ev: Extract<TurnEvent, { kind: 'approval-request' }>): void => {
+    approvals.enqueue({
+      requestId: ev.requestId,
+      turnId: ev.turnId,
+      title: ev.title,
+      detail: ev.detail,
+      ...(typeof ev.toolName === 'string' && ev.toolName !== '' ? { toolName: ev.toolName } : {}),
+      ...(ev.command !== undefined && ev.command !== '' ? { command: ev.command } : {}),
+      blockKind: classifyPermissionDenial(ev.detail),
+      resolution: resolutionOf(ev),
+    });
+    showApprovalHead();
+  };
+
+  // ISSUE-6a811b8a: Stop. Each request still waiting is recorded as rejected, and the queue cleared.
+  const rejectQueuedApprovals = (): void => {
+    shownApproval = undefined;
+    for (const r of approvals.clear()) recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
+  };
+
+  // ISSUE-6a811b8a: the user typed a message instead of answering. A request the running turn is
+  // waiting on is answered 'deny' first (so the provider stops waiting), then every waiting request
+  // is recorded as rejected and the queue cleared, which also resets the grant chain: a later
+  // follow-up never carries grants from before the typed message.
+  const supersedeQueuedApprovals = (): void => {
+    shownApproval = undefined;
+    for (const r of approvals.clear()) {
+      if (r.resolution === 'in-turn') relayDecision(r.requestId, 'deny');
+      recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
+    }
+  };
+
+  // ISSUE-6a811b8a: a chat switch or the panel closing. The waiting cards were live-only, so the
+  // queue is dropped without outcome rows.
+  const dropQueuedApprovals = (): void => {
+    shownApproval = undefined;
+    approvals.clear();
+  };
+
+  // A self-contained informational assistant message (its own turn id, so it closes itself).
+  const postInfo = (turnId: string, text: string): void => {
+    post({ type: 'turn-event', event: { kind: 'assistant-delta', turnId, text } });
+    post({ type: 'turn-event', event: { kind: 'done', turnId, ok: true } });
+  };
+
+  // ISSUE-6a811b8a: when a turn-ended batch is complete (its turn ended and every request it raised
+  // is decided), run ONE follow-up for it, allowed every tool approved so far (the grant chain). A
+  // single approved request keeps today's exact prompt; several get one prompt naming each approved
+  // action and each denied one, so nothing already decided is asked again. Only one follow-up is
+  // ever started per batch, so no approval can supersede another approval's follow-up.
+  const runCompletedBatch = (): void => {
+    const batch = approvals.takeCompletedBatch();
+    if (batch === undefined) return;
+    const action = (r: { toolName?: string | undefined; command?: string | undefined }): string =>
+      r.command !== undefined && r.command !== '' ? `run exactly this: ${r.command}` : `the ${r.toolName ?? 'tool'} action you requested permission for`;
+    const approved = batch.decisions.filter((d) => d.decision === 'approve' && d.request.blockKind === 'tool-gate').map((d) => d.request);
+    const denied = batch.decisions.filter((d) => d.decision === 'deny').map((d) => d.request);
+    const blocked = batch.decisions.filter((d) => d.decision === 'approve' && d.request.blockKind === 'dir-block').map((d) => d.request);
+    if (approved.length === 0) {
+      // Nothing to run. A single request keeps today's behaviour (its chip says it all); a batch
+      // of several says so once.
+      if (batch.decisions.length > 1) postInfo(`info-batch-${batch.turnId}`, 'No action was approved, so nothing was run.');
+      return;
+    }
+    let prompt: string;
+    if (batch.decisions.length === 1) {
+      const only = approved[0]!;
+      prompt =
+        only.command !== undefined && only.command !== ''
+          ? `Approved — run exactly this now: ${only.command}`
+          : `Approved: please proceed with the ${only.toolName ?? 'tool'} action you requested permission for.`;
+    } else {
+      const lines = ['The permission requests have been decided.', 'Approved — do these now:', ...approved.map((r) => `- ${action(r)}`)];
+      if (denied.length > 0) lines.push('Denied — do not attempt these:', ...denied.map((r) => `- ${action(r)}`));
+      if (blocked.length > 0) lines.push('Still blocked (outside the allowed working directories) — do not attempt these:', ...blocked.map((r) => `- ${action(r)}`));
+      prompt = lines.join('\n');
+    }
+    void runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
+  };
+
+  // A provider that answers in-turn (control-protocol / codex): relay the decision to the LIVE
+  // turn's captured adapter (its own provider, never the current session's — it may have
+  // switched). decide() no-ops on an unknown/stale/dead requestId, so a late click is safe.
+  const relayDecision = (requestId: string, decision: 'approve' | 'deny'): void => {
+    const live = turns.live;
+    if (live === undefined) return;
+    try {
+      deps.providers.get(live.provider).decide(live.turnId, requestId, decision);
+    } catch (err: unknown) {
+      // Adapter gone / provider unavailable: the decision is undeliverable. Never throw; the
+      // decision is still recorded and the queue moves on (ISSUE-6a811b8a).
+      log.warn(`[chat] approval decision for ${requestId} could not be delivered: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -225,11 +383,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // STRUCTURALLY as a role:'selection-outcome' transcript row (+ save) so a restored session shows the
   // decided chip instead of the live-only widget. `chosen` carries the LABELS (host-resolved from ids).
   const recordSelectionOutcome = (requestId: string, chosen: readonly string[]): void => {
-    post({ type: 'turn-event', event: { kind: 'selection-outcome', turnId: `sel-${requestId}`, chosen } });
+    // Story E20261012ddc4ede1:S001: write the row first, so the event carries its row index.
+    let rowIndex: number | undefined;
     if (session !== undefined) {
       session.transcript.push({ role: 'selection-outcome', chosen: [...chosen], at: now() });
-      trySave(session);
+      rowIndex = session.transcript.length - 1;
     }
+    postLive({ kind: 'selection-outcome', turnId: `sel-${requestId}`, chosen }, rowIndex);
+    if (session !== undefined) trySave(session);
   };
 
   // S001 (bugfix): (re)send the full view state to the webview. Called on every 'ready' handshake
@@ -244,16 +405,32 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * host once the owner's extension host is gone (it then takes ownership). Events after the cursor
    * are posted (while the session is shown) and appended; the cursor is cleared at the end.
    */
-  const followLiveTurn = (s: ChatSession): void =>
+  const followLiveTurn = (s: ChatSession): void => {
+    // ISSUE-6a811b8a: the turns this follow raised approval requests for, so its end ends their batch
+    // even when the output ends without a terminal event.
+    const followedTurns = new Set<string>();
     turns.follow(s, {
       onEvent: (ev) => {
-        if (!disposed && session === s) post({ type: 'turn-event', event: ev });
-        appendEvent(s, ev);
+        // A followed turn's approval requests go through the queue like a live one's.
+        // Story E20261012ddc4ede1:S001: write the row first, then post the event with the row's
+        // index. The write does not depend on whether the session is shown.
+        const rowIndex = appendEvent(s, ev);
+        if (!disposed && session === s) {
+          if (ev.kind === 'approval-request') {
+            followedTurns.add(ev.turnId);
+            enqueueApproval(ev);
+          } else postLive(ev, rowIndex);
+          if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
+        }
       },
       onEnd: () => {
-        if (session === s) postHistory();
+        if (session !== s) return;
+        for (const turnId of followedTurns) approvals.endTurn(turnId);
+        runCompletedBatch();
+        postHistory();
       },
     });
+  };
 
   const postInitialState = (): void => {
     post({ type: 'theme', theme });
@@ -266,7 +443,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // to history; it enters the store only on the first turn (runTurn's save).
     if (session === undefined) session = deps.store.draft(available[0]!);
     permissionMode = modeOf(session); // S001 (bugfix): adopt the active session's persisted mode
-    post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript, mode: permissionMode });
+    postRestored(session);
+    // ISSUE-6a811b8a: session-restored cleared the webview, including the shown approval card;
+    // post the queue head again (once) with its position so the queue can still be answered.
+    shownApproval = undefined;
+    showApprovalHead();
     postHistory();
     followLiveTurn(session);
   };
@@ -291,7 +472,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const title = sanitizeTitle(raw);
     if (title === '') return;
     target.title = title;
-    deps.store.save(target);
+    trySave(target);
     postHistory(); // refresh the history dropdown with the LLM-derived name
   };
 
@@ -331,6 +512,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // subtle top gradient. Replaces the former inset .pad wrapper so progress/input are full bars.
       `#insrc-term{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:16px 14px;white-space:pre-wrap;word-break:break-word;color:var(--fg);background:radial-gradient(1200px 300px at 50% -10%,rgba(56,189,248,.05),transparent 60%),var(--panel);}` +
       `#insrc-term>div{white-space:pre-wrap;}` +
+      // Story E20261012ddc4ede1:S001: the 'load earlier' bar above the transcript. The pager shows
+      // it (with the count of older rows) only while rows older than the first held one exist.
+      `#insrc-older{flex:0 0 auto;padding:5px 14px;text-align:center;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);cursor:pointer;}` +
+      `#insrc-older:hover{color:var(--fg);}` +
       `.insrc-term__marker--pending{color:var(--muted);}.insrc-term__marker--pending::before{color:var(--magenta)!important;margin-right:.55em;}` +
       `.insrc-term__marker--tool{color:var(--accent2);}.insrc-term__marker--tool::before{color:var(--accent2)!important;margin-right:.55em;}` +
       `.insrc-term__marker--edit{color:var(--fg);}.insrc-term__marker--edit::before{color:var(--amber)!important;margin-right:.55em;}` +
@@ -439,12 +624,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `const t=document.getElementById('insrc-term');` +
       // S004: line() widened to carry an optional sc1 marker class (className only; still textContent, no innerHTML).
       // S001 sc1: line() now RETURNS its appended node so the fallback RowRenderer can hand it back from renderRow.
-      `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;t.appendChild(d);t.scrollTop=t.scrollHeight;return d;}` +
+      // Story E20261012ddc4ede1:S001: the transcript pager, single-sourced with transcript-pager.ts.
+      // Every node joins the transcript through pager.append, which follows to the bottom only
+      // when the view was already there; nothing else writes the transcript's scroll position.
+      `const pager=(${transcriptPagerWebviewSource()})(t,{bar:document.getElementById('insrc-older'),post:function(p){vs.postMessage({v:1,payload:p});}});` +
+      `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;return pager.append(d);}` +
       // S004: the marker mapper, single-sourced with the host markerFor (markers.ts), embedded in THIS one nonce'd script.
       `const markerFor=${markerWebviewSource()};` +
       // S001 sc1: the render registry, single-sourced with render-registry.ts, embedded in THIS one nonce'd script.
       // line() is pre-registered as the 'fallback' renderer; t4/S003/S004 register the concrete row renderers.
       `const reg=(${renderRegistryWebviewSource()})(document,line);` +
+      `pager.attach(reg);` +
       // S004 ac2: the approval card's approve/deny buttons post a permission-decision the host
       // relays to the live turn's CLI (adapter.decide). Wired once via the sc1 decision sink.
       `reg.onApprovalDecision(function(requestId,decision){vs.postMessage({v:1,payload:{type:'permission-decision',requestId:requestId,decision:decision}});});` +
@@ -499,7 +689,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // renderDiff: one row per hunk line via textContent (no innerHTML); add/remove/context
       // class by the +/-/space prefix computeDiff wrote. In review mode append accept/reject
       // buttons that post edit-decision for this path.
-      `function renderDiff(path,diff,review){var box=document.createElement('div');box.className=${JSON.stringify(diffCls)};var hdr=document.createElement('div');hdr.className='insrc-diff-path';hdr.textContent=path;box.appendChild(hdr);var hunks=(diff&&diff.hunks)||[];hunks.forEach(function(h){(h.lines||[]).forEach(function(ln){var d=document.createElement('div');var c=ln.charAt(0);d.className=c==='+'?'insrc-diff-add':c==='-'?'insrc-diff-del':'insrc-diff-ctx';d.textContent=ln;box.appendChild(d);});});if(review){var bar=document.createElement('div');bar.className='insrc-diff-actions';var ok=document.createElement('button');ok.textContent='accept';ok.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:true}});bar.remove();});var no=document.createElement('button');no.textContent='reject';no.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:false}});bar.remove();});bar.appendChild(ok);bar.appendChild(no);box.appendChild(bar);}t.appendChild(box);t.scrollTop=t.scrollHeight;}` +
+      `function renderDiff(path,diff,review){var box=document.createElement('div');box.className=${JSON.stringify(diffCls)};var hdr=document.createElement('div');hdr.className='insrc-diff-path';hdr.textContent=path;box.appendChild(hdr);var hunks=(diff&&diff.hunks)||[];hunks.forEach(function(h){(h.lines||[]).forEach(function(ln){var d=document.createElement('div');var c=ln.charAt(0);d.className=c==='+'?'insrc-diff-add':c==='-'?'insrc-diff-del':'insrc-diff-ctx';d.textContent=ln;box.appendChild(d);});});if(review){var bar=document.createElement('div');bar.className='insrc-diff-actions';var ok=document.createElement('button');ok.textContent='accept';ok.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:true}});bar.remove();});var no=document.createElement('button');no.textContent='reject';no.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:false}});bar.remove();});bar.appendChild(ok);bar.appendChild(no);box.appendChild(bar);}pager.append(box);}` +
       // S001 sc1/t4: the live turn-event append routes through reg.renderRow(reg.toViewModel(ev)).
       // assistant-delta -> assistant-text row (its actual text, ac2); tool-call -> tool-command row
       // (the real command inline, ac3). Every other kind keeps the sc1 marker path (markerFor ->
@@ -508,27 +698,37 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // transcript row — rapid phase changes update the one widget in place. assistant-delta/tool-call
       // still render via the sc1 view-model (S001); other markers still append. done/error hides the
       // widget + returns the button to ▶ (ac2). The host status-skip is untouched (lc1/k4).
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result'||ev.kind==='permission-outcome'||ev.kind==='selection-request'||ev.kind==='selection-outcome')){reg.renderRow(reg.toViewModel(ev));}` +
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;pager.track(m.rowIndex,function(){if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result'||ev.kind==='permission-outcome'||ev.kind==='selection-request'||ev.kind==='selection-outcome')){reg.renderRow(reg.toViewModel(ev));}` +
       // S004 ac1: a live approval-request renders the in-chat approve/deny card (the renderer
       // builds a detached node, so the handler appends it) — never a silent block.
-      `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName}});if(_c){t.appendChild(_c);t.scrollTop=t.scrollHeight;}}` +
-      `else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}` +
+      `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName,position:ev.position,total:ev.total}});if(_c){pager.append(_c);}}` +
+      `else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}});` +
       `if(ev&&(ev.kind==='done'||ev.kind==='error')){setRunning(false);hideProgress();}}` +
       // S006: an edit-prompt carries the computed diff + the HOST's review flag -> render it
       // (+ accept/reject controls only when the host says review; never gated on local state).
-      `else if(m.type==='edit-prompt'){renderDiff(m.path,m.diff,m.review===true);}` +
+      // ISSUE-6a811b8a: more requests queued behind the shown card — update its '1 of N' in place.
+      `else if(m.type==='approval-position'){reg.approvalPosition(m.requestId,m.position,m.total);}` +
+      `else if(m.type==='edit-prompt'){pager.track(undefined,function(){renderDiff(m.path,m.diff,m.review===true);});}` +
+      // Story E20261012ddc4ede1:S001: an older page the reader asked for; the pager puts it above
+      // the held rows and keeps the reader's place (a page it did not ask for is discarded).
+      `else if(m.type==='transcript-page'){pager.prepend(m);}` +
       // S001 ac1/lc1: the live user-row echo — reconciled to ONE row via its stable key.
-      `else if(m.type==='user-row'){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text}),m.key);}` +
+      `else if(m.type==='user-row'){pager.track(m.rowIndex,function(){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text}),m.key);});}` +
       // S005: session-restored CLEARS the terminal before replaying (so switching chats
       // does not append onto the prior chat's view) + tracks the active id for the dropdown.
       // S001 t5: the replay routes through the sc1 registry (reg.appendKeyed(reg.toViewModel(x)))
       // keyed by transcript index, so it single-sources rendering with the live path and carries
       // each row's stored cssClass (marker rows -> fallback with the class), and resetKeys() clears
       // the reconciliation map for the fresh replay.
-      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();(m.transcript||[]).forEach(function(x,i){reg.appendKeyed(reg.toViewModel(x),'r'+i);});hs.value=cur;setRunning(false);hideProgress();` +
+      // Story E20261012ddc4ede1:S001: the posted rows are a window of the transcript starting at
+      // absolute index firstIndex (0 when absent); each row is keyed and stamped by its absolute index.
+      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();` +
+      `var _rows=m.transcript||[],_first=typeof m.firstIndex==='number'?m.firstIndex:0,_total=typeof m.total==='number'?m.total:_first+_rows.length;` +
+      `pager.reset(cur,_first,_total);` +
+      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});hs.value=cur;setRunning(false);hideProgress();` +
       // S001 (bugfix): reflect the session's persisted mode in the mode control (follows the session).
       `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}` +
-      `setProvLock(((m.transcript||[]).length)>0);}` +
+      `setProvLock(_total>0);}` +
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
       // S001 (74bc0120): the active session appearing in the PERSISTED history is itself proof of
       // context — session-store's draft() only enters the store on its first save, i.e. once the
@@ -575,6 +775,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `</div>` +
       // Full-width bars (mock): the scrolling transcript, then the live progress bar, then the input
       // bar — each a flex:0 band with its own top border + inset ground, NOT inset inside a .pad.
+      // Story E20261012ddc4ede1:S001: the 'load earlier' bar (the pager fills and shows it).
+      `<div id="insrc-older" role="button" tabindex="0" aria-label="load earlier messages"></div>` +
       `<div id="insrc-term" class="term"></div>` +
       // S002 ac3: the single animated progress widget above the input (live-only). Mock: 3 blinking
       // dots + a label + a right-aligned elapsed timer; hidden until a turn runs.
@@ -616,7 +818,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // suppressEcho so the internal "Approved — run exactly this now: …" prompt is NOT echoed as a
     // user bubble (only the resolved permission-outcome chip is shown). A normal submit still echoes.
     if (opts?.suppressEcho !== true) {
-      post({ type: 'user-row', text: prompt, key: `r${s.transcript.length - 1}` });
+      post({ type: 'user-row', text: prompt, key: `r${s.transcript.length - 1}`, rowIndex: s.transcript.length - 1 });
     }
     // S005: name the chat from its FIRST user prompt (clipped) so the history dropdown
     // rows are distinguishable; a whitespace-only prompt is already rejected above, so
@@ -645,18 +847,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (governor !== undefined) await governor.beginTurn({ mode: 'auto', cwd: deps.cwd() });
       },
       onEvent: (ev) => {
-        post({ type: 'turn-event', event: ev });
-        appendEvent(s, ev);
-        // S001 (bugfix): remember what an approval card is asking about, so Approve can re-run the
-        // blocked action concretely (the exact command / tool pre-allowed) — and so a working-dir
-        // block is branched away from the tool-grant path (classifyPermissionDenial).
-        if (ev.kind === 'approval-request' && typeof ev.toolName === 'string' && ev.toolName !== '') {
-          pendingPerms.set(ev.requestId, {
-            toolName: ev.toolName,
-            ...(ev.command !== undefined && ev.command !== '' ? { command: ev.command } : {}),
-            blockKind: classifyPermissionDenial(ev.detail),
-          });
-        }
+        // ISSUE-6a811b8a: an approval-request is queued, not posted; only the queue head is shown.
+        // Story E20261012ddc4ede1:S001: write the row first, then post the event with its index.
+        const rowIndex = appendEvent(s, ev);
+        if (ev.kind === 'approval-request') enqueueApproval(ev);
+        else postLive(ev, rowIndex);
+        // ISSUE-6a811b8a: the turn's end lets its batch of turn-ended requests complete.
+        if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
         // S004 (dev-chat ux polish): remember a surfaced selection request's options (keyed by
         // requestId) so a later selection-decision can map the chosen ids back to labels.
         if (ev.kind === 'selection-request') {
@@ -668,6 +865,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (governor !== undefined && ev.kind === 'file-edit') governor.observe(ev.path).catch((err: unknown) => warnGovernor('observe', err));
       },
       onTerminal: () => {
+        runCompletedBatch(); // ISSUE-6a811b8a: requests decided before the turn ended are now complete
         trySave(s); // persist the turn's transcript rows (an errored turn's too); a failing save never breaks the turn
         if (governor !== undefined) governor.resolveTurn().catch((err: unknown) => warnGovernor('resolveTurn', err));
         postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
@@ -680,16 +878,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     await turns.start(s, req, sink);
   }
 
-  function appendEvent(s: ChatSession, ev: TurnEvent): void {
+  // Returns the absolute transcript index of the row the event wrote, or undefined when it wrote none.
+  function appendEvent(s: ChatSession, ev: TurnEvent): number | undefined {
     if (ev.kind === 'assistant-delta') {
       s.transcript.push({ role: 'assistant', text: ev.text, at: now() });
-      return;
+      return s.transcript.length - 1;
     }
     // 'status' is a transient progress tick (thinking/streaming/tool/editing): it is
     // rendered LIVE in the webview (from the posted turn-event) but NOT persisted —
     // persisting every tick would bloat the durable transcript and replay as noise on
     // restore. The durable lifecycle facts (tool-call/file-edit/done/error) ARE kept.
-    if (ev.kind === 'status') return;
+    if (ev.kind === 'status') return undefined;
     // S001 (dev-chat ux polish): a tool result persists STRUCTURALLY as a role:'tool-result' row
     // (command + output), not as a flat marker — so a restored transcript re-renders the command
     // + collapsed output legibly. markerFor returns null for it, so this branch owns its persistence.
@@ -700,7 +899,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         output: ev.output,
         at: now(),
       });
-      return;
+      return s.transcript.length - 1;
     }
     // Durable markers are single-sourced through markerFor — the SAME mapper the webview
     // uses — so a host row and its live marker never drift. done now persists a marker row
@@ -710,7 +909,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // each marker's glyph + phosphor tone (identical to live) instead of plain text.
     if (marker !== null) {
       s.transcript.push({ role: 'marker', text: marker.label, cssClass: marker.cssClass, at: now() });
+      return s.transcript.length - 1;
     }
+    return undefined;
   }
 
   function handleMessage(message: unknown): void {
@@ -729,11 +930,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         postInitialState();
         return;
       case 'submit-turn':
+        if (typeof msg.text === 'string' && msg.text.trim() !== '') supersedeQueuedApprovals();
         void runTurn(msg.text);
         return;
       case 'cancel-turn':
         // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.
         // Idempotent when no turn is active (stop() no-ops).
+        rejectQueuedApprovals(); // ISSUE-6a811b8a: Stop rejects the requests still waiting
         void turns.stop();
         return;
       case 'new-chat': {
@@ -748,11 +951,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // would paint into the newly-restored session's view (a session-file turn keeps running).
         void turns.detach();
         turns.invalidate();
+        dropQueuedApprovals(); // ISSUE-6a811b8a: a chat switch drops the waiting requests
         // A DRAFT (unsaved): the new chat is not written to history until its first turn, so
         // repeatedly starting/abandoning new chats never leaves empty sessions behind.
         session = deps.store.draft(msg.provider);
         permissionMode = modeOf(session);
-        post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript, mode: permissionMode });
+        postRestored(session);
         postHistory(); // refresh the dropdown (the draft is not yet listed until it has a message)
         return;
       }
@@ -768,11 +972,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         }
         void turns.detach();
         turns.invalidate();
+        dropQueuedApprovals(); // ISSUE-6a811b8a: a chat switch drops the waiting requests
         session = s;
         permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
-        post({ type: 'session-restored', sessionId: s.id, transcript: s.transcript, mode: permissionMode });
+        postRestored(s);
         postHistory(); // S005: keep the dropdown selection/order in sync
         followLiveTurn(s);
+        return;
+      }
+      case 'load-older': {
+        // Story E20261012ddc4ede1:S001: the page of rows ending just before `before`. A request for
+        // a session that is no longer the active one (the user switched chats) is ignored.
+        if (typeof msg.sessionId !== 'string' || !Number.isInteger(msg.before)) return;
+        if (session === undefined || session.id !== msg.sessionId) return;
+        const page = pageBefore(session.transcript, msg.before);
+        const before = Math.min(Math.max(0, msg.before), session.transcript.length);
+        post({ type: 'transcript-page', sessionId: session.id, before, firstIndex: page.firstIndex, rows: [...page.rows], total: session.transcript.length });
         return;
       }
       case 'set-edit-mode': {
@@ -800,53 +1015,42 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // request (no in-turn control channel), so the decision can't be relayed to a live turn —
         // instead, on Approve we re-run the blocked action resuming the session with that tool
         // pre-allowed; on Deny we drop it (the turn already ended as denied).
-        const pending = pendingPerms.get(msg.requestId);
-        if (pending !== undefined) {
-          pendingPerms.delete(msg.requestId);
+        // ISSUE-6a811b8a: a queued request is decided only when it is the head; a waiting one's card
+        // is never shown, so a decision for it (a stale or second webview) is ignored.
+        if (approvals.has(msg.requestId)) {
+          const res = approvals.decide(msg.requestId, msg.decision);
+          if (!res.ok) return;
+          shownApproval = undefined;
+          const decided = res.decided;
           // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
           // live-rendered chip — including the dir-block approve branch, which posts no grant re-run.
-          recordPermissionOutcome(pending.toolName, msg.decision === 'approve', msg.requestId);
-          if (msg.decision === 'approve') {
-            if (pending.blockKind === 'dir-block') {
-              // A working-dir / sandbox-allowlist block: --allowedTools cannot grant a directory,
-              // so DON'T re-run (that produced the confused no-op). Post a self-contained
-              // informational message explaining what actually needs to change — no adapter/argv/
-              // allowlist touched (buildArgs still adds only --allowedTools, never --add-dir).
-              const tid = `info-${msg.requestId}`;
-              post({
-                type: 'turn-event',
-                event: {
-                  kind: 'assistant-delta',
-                  turnId: tid,
-                  text:
-                    `This action was blocked because its path is outside this session's allowed working directories. ` +
-                    `Approving cannot grant it — the directory must be added to the session's allowed working directories first ` +
-                    `(this is a sandbox/workspace setting, not a tool permission).`,
-                },
-              });
-              post({ type: 'turn-event', event: { kind: 'done', turnId: tid, ok: true } });
-            } else if (typeof pending.command === 'string' && pending.command !== '') {
-              // A tool-permission gate WITH a concrete command: re-run naming the EXACT command so the
-              // resumed model has an unambiguous action (not a vague "please proceed" nudge).
-              // S003 (ux polish) ac2: suppressEcho so the synthetic grant prompt is not echoed as a
-              // user bubble — only the resolved permission-outcome chip marks the approval.
-              void runTurn(`Approved — run exactly this now: ${pending.command}`, [pending.toolName], { suppressEcho: true });
-            } else {
-              // A tool-permission gate with no captured command: fall back to today's tool-name phrasing.
-              void runTurn(`Approved: please proceed with the ${pending.toolName} action you requested permission for.`, [pending.toolName], { suppressEcho: true });
-            }
+          recordPermissionOutcome(decided.toolName ?? decided.title, msg.decision === 'approve', msg.requestId);
+          if (decided.resolution === 'in-turn') {
+            relayDecision(msg.requestId, msg.decision);
+            showApprovalHead();
+            return;
           }
+          if (msg.decision === 'approve' && decided.blockKind === 'dir-block') {
+            // A working-dir / sandbox-allowlist block: --allowedTools cannot grant a directory, so it
+            // is never re-run (that produced the confused no-op) and never a grant. Post a
+            // self-contained informational message explaining what actually needs to change — no
+            // adapter/argv/allowlist touched (buildArgs still adds only --allowedTools, never --add-dir).
+            postInfo(
+              `info-${msg.requestId}`,
+              `This action was blocked because its path is outside this session's allowed working directories. ` +
+                `Approving cannot grant it — the directory must be added to the session's allowed working directories first ` +
+                `(this is a sandbox/workspace setting, not a tool permission).`,
+            );
+          }
+          // ISSUE-6a811b8a: a turn-ended decision joins its turn's batch (the queue keeps it); the
+          // follow-up runs once, when the whole batch is decided and its turn has ended.
+          showApprovalHead();
+          runCompletedBatch();
           return;
         }
-        // Otherwise a provider that DOES answer in-turn (control-protocol / codex): relay to the
-        // LIVE turn's captured adapter. decide() no-ops on an unknown/stale/dead requestId.
-        const live = turns.live;
-        if (live === undefined) return;
-        try {
-          deps.providers.get(live.provider).decide(live.turnId, msg.requestId, msg.decision);
-        } catch {
-          /* adapter gone / provider unavailable — the decision is undeliverable, never throw */
-        }
+        // Otherwise an id the host does not hold: relay to the LIVE turn's captured adapter, as
+        // before. decide() no-ops on an unknown/stale/dead requestId.
+        relayDecision(msg.requestId, msg.decision);
         return;
       }
       case 'set-permission-mode': {
@@ -903,6 +1107,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     channel = ch;
     channel.onDidDispose(() => {
       void turns.detach();
+      dropQueuedApprovals();
       disposed = true;
       channel = undefined;
     });
@@ -936,6 +1141,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     },
     dispose(): void {
       void turns.detach();
+      dropQueuedApprovals();
       disposed = true;
       channel?.dispose();
       channel = undefined;

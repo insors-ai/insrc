@@ -4,7 +4,7 @@
 
 ## Summary
 
-**Epic:** `design-correction-issue-85e6a58693579b6d-ux-mock`
+**Epic:** `ux-mock-companion-does-not-produce`
 **LLD run:** `wf-1790856039227-ub48xn`
 **LLD effective hash:** `f3ad96925253...`
 

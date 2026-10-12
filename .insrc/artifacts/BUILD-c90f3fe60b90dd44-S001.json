@@ -7,7 +7,8 @@
     "epicHash": "c90f3fe60b90dd44",
     "storyId": "S001",
     "createdAt": "2026-08-06T13:28:55.521Z",
-    "approvedAt": "2026-08-06T13:40:06.618Z"
+    "approvedAt": "2026-08-06T13:40:06.618Z",
+    "epicSlug": "harden-workflow-synthesizer-finalize-path-against"
   },
   "body": {
     "focus": "Harden the workflow synthesizer finalize path: (1) guard safeDeriveSlug against an undefined focus (orchestrator.ts:1298); (2) deterministically rebuild storyBoundaries[].depends as the exact inverse of consumedByStories in finalizeDesignEpic before checkContractDependencyGraph, so cg3 is satisfied by construction and design.epic never aborts on depends drift. cg1/cg2 unchanged; new reconcileDependsFromConsumers helper in artifacts/hld.ts; amendment applier already consistent.",

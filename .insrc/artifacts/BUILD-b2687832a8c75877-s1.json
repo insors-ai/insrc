@@ -7,7 +7,8 @@
     "updatedAt": "2026-10-09T17:38:28.840Z",
     "authoredBy": "controller",
     "standalone": true,
-    "approvedAt": "2026-10-09T17:38:29.931Z"
+    "approvedAt": "2026-10-09T17:38:29.931Z",
+    "epicSlug": "defect-against-epic-e2-6a131558-vs"
   },
   "body": {
     "tasks": [

@@ -19,7 +19,7 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "85e6a58693579b6d",
-    "epicSlug": "design-correction-issue-85e6a58693579b6d-ux-mock",
+    "epicSlug": "ux-mock-companion-does-not-produce",
     "storyId": "S001",
     "lldRunId": "wf-1790856039227-ub48xn",
     "lldEffectiveHash": "f3ad9692525304bf8ebc03f62ee758203f6d823ea1533c7770071f3ae29b3dd8",
@@ -127,7 +127,8 @@
       "reviewedAt": "2026-10-01T12:34:05.974Z",
       "model": "client"
     },
-    "approvedAt": "2026-10-01T12:35:12.151Z"
+    "approvedAt": "2026-10-01T12:35:12.151Z",
+    "standalone": true
   },
   "body": {
     "summary": {

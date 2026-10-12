@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "238917216d8fd532",
-    "storyId": "s4"
+    "storyId": "s4",
+    "epicSlug": "ide-artifact-review-panel-jetbrains-plugin"
   },
   "body": {
     "kind": "code-review",

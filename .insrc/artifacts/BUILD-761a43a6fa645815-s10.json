@@ -6,7 +6,9 @@
     "storyId": "s10",
     "createdAt": "2026-08-05T07:35:15.073Z",
     "updatedAt": "2026-08-05T07:35:15.073Z",
-    "approvedAt": "2026-08-05T07:53:56.682Z"
+    "approvedAt": "2026-08-05T07:53:56.682Z",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
   },
   "body": {
     "focus": "s10 diff-only degraded fallback: assembleDiffCodeReviewGrounding (working-tree diff, HEAD^ fallback), runCodeReview groundingMode+capVerdictAtWarn, decline branch -> diff-only path",

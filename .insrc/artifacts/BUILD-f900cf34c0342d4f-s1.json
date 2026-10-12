@@ -6,7 +6,8 @@
     "storyId": "s1",
     "createdAt": "2026-08-05T12:52:46.868Z",
     "updatedAt": "2026-08-05T12:55:00.000Z",
-    "approvedAt": "2026-08-05T12:54:23.106Z"
+    "approvedAt": "2026-08-05T12:54:23.106Z",
+    "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982"
   },
   "body": {
     "tasks": [

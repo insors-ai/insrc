@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "97e289e28841db07",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "enrich-docgen-generated-companion-html-artifacts",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

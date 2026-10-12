@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791783221185-8v9bck",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-12T05:33:41.185Z",
+    "model": "claude:opus",
+    "elapsedMs": 43991,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65cb63f7186f84fa",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-12T05:28:21.535Z",
+    "epicSlug": "pass-chat-prompts-claude-codex-clis",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "65cb63f7186f84fa",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/cli-adapter.ts:484",
+            "message": "Present but unverified. The changed behaviour (commit 6d0ea41f) is limited to claudeMapper.buildArgs (cli-adapter.ts:484-503) and codexMapper.buildArgs (cli-adapter.ts:~659-665). Both now put the prompt last, after '--'. The test file exercises this directly: the existing S001/S004 t4 argv assertions were updated, and a new test '65cb63f7: a prompt starting with \"-\" or \"--\" reaches claude and codex verbatim' covers new, resumed, and allowedTools-grant turns for both providers, with prompts starting with '-', '--resume' and '-p'. The supplied testsReaching grounding is hollow: it shows empty edges for nearly every symbol, including methods the test file plainly calls through createProviderRegistry().run, and it doesn't index object-literal mapper methods at all. So the empty edges are an indexing gap, not a coverage gap, and no HIGH is raised from them. Pass-state could not be confirmed: there's no build record, and running the suite was not permitted in this review session. Run `npx tsx --test src/chat/__tests__/cli-adapter.test.ts` from vscode-plugin/ to confirm it passes.",
+            "expectationRef": "claudeMapper.buildArgs / codexMapper.buildArgs (ISSUE-65cb63f7 '--' end-of-options change)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts:1302",
+            "message": "In the new 65cb63f7 regression test, the two codex cases are driven with the CLAUDE_TEXT_TURN fake-process script (cast with `as never`) where CODEX_TEXT_TURN is expected. The test only checks spawner argv, so the assertions still hold today. The risk is that the codex turn may not actually complete as a real codex turn in this test, and the `as never` cast hides the mismatch from the type checker. Use CODEX_TEXT_TURN for the codex cases and drop the cast.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

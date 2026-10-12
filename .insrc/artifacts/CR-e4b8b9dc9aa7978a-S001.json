@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "e4b8b9dc9aa7978a",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "ux-rework-shipped-insrc-project-view",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

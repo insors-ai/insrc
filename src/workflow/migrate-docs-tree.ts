@@ -14,13 +14,17 @@
  * folder (docs/{epics|standalone}/<slug>-E<date><hash8>/[S<nnn>/]<KIND>.md).
  *
  * This module is a THROWAWAY tool that CONSUMES sc1 (deriveWorkItemIdentity) +
- * sc2 (resolveArtifactMdPath / listWorkItems / listArtifactMdPaths). It never
- * touches the hash-flat `.insrc/artifacts` JSON store — only md files move.
+ * sc2 (resolveArtifactMdPath / listWorkItems / listArtifactMdPaths). md files
+ * move; in the `.insrc/artifacts` JSON store only a member whose stored label,
+ * anchor or standalone flag disagrees with its work item is touched, and only
+ * those meta fields change (ISSUE-7d42920d, see {@link MetaRewrite}).
  *
- *   planMigration(repoPath)  — PURE: compute the { moves, linkRewrites, unmappable }
- *                              plan. No disk writes, no git. Safe as a dry-run.
+ *   planMigration(repoPath)  — PURE: compute the { moves, linkRewrites, unmappable,
+ *                              metaRewrites } plan. No disk writes, no git. Safe as
+ *                              a dry-run.
  *   applyMigration(repoPath, plan) — the thin executor: git mv (history), link
- *                              rewrite, post-move validation, per-epic commits.
+ *                              rewrite, post-move validation, then per-epic commits
+ *                              that carry each work item's metadata rewrites.
  *
  * The authoritative artifact SET is the JSON store (hand-written non-artifact
  * docs never appear there, so they are excluded by construction). Each artifact's
@@ -35,6 +39,10 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmdirSync, statSync, 
 import { dirname, join, relative, sep } from 'node:path';
 
 import { getLogger } from '../shared/logger.js';
+import { epicShortName, type DefineArtifact } from './artifacts/define.js';
+import { extendBannerLine, extendTitleLine } from './artifacts/extend.js';
+import { epicLabelLine } from './artifacts/format/bindings.js';
+import { hldShortName, type HldArtifact } from './artifacts/hld.js';
 import { deriveWorkItemIdentity, type WorkItemIdentity } from './id.js';
 import {
 	listArtifactMdPaths,
@@ -83,10 +91,53 @@ export interface Unmappable {
 	readonly reason:     string;
 }
 
+/** One exact whole-line replacement in an artifact md, at its post-move path. */
+export interface MdLabelEdit {
+	/** Absolute md path AFTER the moves (the destination when the md moves). */
+	readonly file: string;
+	/** The label line as the renderer wrote it from the stored meta. */
+	readonly from: string;
+	/** The same line rendered from the realigned meta. */
+	readonly to:   string;
+}
+
+/**
+ * One planned metadata realignment (ISSUE-7d42920d). The moves put every md of a
+ * work item in the folder its group resolved to, but each artifact's stored
+ * label, anchor and standalone flag are what `deriveMdPath` and the next live
+ * write read. A member whose stored values disagree with its group gets one of
+ * these, listing only the fields that change.
+ */
+export interface MetaRewrite {
+	readonly artifactId: string;
+	/** Absolute path of the artifact's `.insrc/artifacts/<id>.json`. */
+	readonly jsonPath:   string;
+	/** Group key, so the rewrite is committed with its work item's chunk. */
+	readonly groupHash:  string;
+	/** The meta fields that change. `standalone` is only ever set to true. */
+	readonly set: {
+		readonly epicSlug?:      string;
+		readonly epicCreatedAt?: string;
+		readonly standalone?:    true;
+	};
+	/** Label lines in the member's md that print the changed slug. */
+	readonly mdEdits:        readonly MdLabelEdit[];
+	/** Label lines the renderer would have printed but the md does not hold
+	 *  exactly once (an older renderer, a custom format, a hand edit). The dry
+	 *  run lists them and applyMigration refuses the plan until the md is fixed
+	 *  by hand: realigning the JSON alone would leave a stale label that no
+	 *  later plan could see. */
+	readonly unmatchedLabelLines: readonly MdLabelEdit[];
+	/** Companion pages of the member whose header still shows the old label.
+	 *  They are not edited — the next finalize regenerates them. */
+	readonly companionNotes: readonly string[];
+}
+
 export interface MigrationPlan {
 	readonly moves:        readonly MigrationMove[];
 	readonly linkRewrites: readonly LinkRewrite[];
 	readonly unmappable:   readonly Unmappable[];
+	readonly metaRewrites: readonly MetaRewrite[];
 }
 
 // ---------------------------------------------------------------------------
@@ -261,6 +312,12 @@ interface Artifact {
 	readonly epicCreatedAt: string | undefined;
 	readonly epicSlug: string | undefined;
 	readonly standalone: boolean;
+	/** The flag exactly as stored, which is what deriveMdPath reads.
+	 *  {@link Artifact.standalone} is forced true for a SPEC, so it cannot tell
+	 *  whether the stored meta needs realigning. */
+	readonly storedStandalone: boolean;
+	/** Absolute path of the artifact's JSON in the store. */
+	readonly jsonPath: string;
 	/** Set only when the md sits in a legacy FLAT dir. Kept separate from
 	 *  {@link Artifact.mdPath} because the slug can be parsed out of a flat
 	 *  FILENAME, which a nested `<KIND>.md` never carries. */
@@ -306,6 +363,110 @@ function lowestOrdinalLld(members: readonly Artifact[]): Artifact | undefined {
 		.sort((a, b) => compareStoryOrdinal(a.storyId ?? '', b.storyId ?? ''))[0];
 }
 
+/** What a work item resolved to, for comparing its members' stored meta. */
+interface GroupResolution {
+	readonly hash: string;
+	/** The label from a real slug source, or undefined when the group fell back
+	 *  to its hash (an absent slug already derives that folder). */
+	readonly slug: string | undefined;
+	readonly anchor: string;
+	/** The folder key the anchor derives, or undefined when it does not parse. */
+	readonly groupSegment: string | undefined;
+	readonly workItemKind: WorkItemKind;
+}
+
+/** The folder segment an anchor derives, or undefined when it does not parse. */
+function segmentOf(hash: string, anchor: string | undefined): string | undefined {
+	if (anchor === undefined) return undefined;
+	try { return deriveWorkItemIdentity(hash, anchor).epicSegment; } catch { return undefined; }
+}
+
+/**
+ * The fields of `m`'s stored meta that disagree with its group, or undefined
+ * when it already matches.
+ *
+ * Anchors are compared by the folder segment they derive, not as raw strings:
+ * the segment uses only the date, so a ledger record written hours after its
+ * LLD, with no stamp of its own, already resolves the right folder.
+ */
+function planMetaRewrite(m: Artifact, g: GroupResolution, mdFile: string, currentMd: string): MetaRewrite | undefined {
+	const set: { epicSlug?: string; epicCreatedAt?: string; standalone?: true } = {};
+	if (g.slug !== undefined && m.epicSlug !== g.slug) set.epicSlug = g.slug;
+	if (g.groupSegment !== undefined && segmentOf(g.hash, m.epicCreatedAt ?? m.createdAt) !== g.groupSegment) {
+		set.epicCreatedAt = g.anchor;
+	}
+	if (g.workItemKind === 'standalone' && !m.storedStandalone) set.standalone = true;
+	if (Object.keys(set).length === 0) return undefined;
+	const relabel = set.epicSlug !== undefined
+		? labelEdits(m, set.epicSlug, mdFile, currentMd)
+		: { mdEdits: [], unmatchedLabelLines: [], companionNotes: [] };
+	return { artifactId: m.id, jsonPath: m.jsonPath, groupHash: g.hash, set, ...relabel };
+}
+
+/**
+ * The md label lines a relabel changes, rebuilt from the stored meta exactly as
+ * the kind's renderer wrote them, and the companion pages left showing the old
+ * label. Only PLAN, LLD, EXT, DEF and HLD print the label; the other kinds get a
+ * JSON-only rewrite. `mdFile` is the md's post-move path; `currentMd` is where
+ * it sits now, read to check that each line is really there exactly once.
+ */
+function labelEdits(
+	m: Artifact, newSlug: string, mdFile: string, currentMd: string,
+): { mdEdits: MdLabelEdit[]; unmatchedLabelLines: MdLabelEdit[]; companionNotes: string[] } {
+	const mdEdits: MdLabelEdit[] = [];
+	const unmatchedLabelLines: MdLabelEdit[] = [];
+	const companionNotes: string[] = [];
+	if (!['PLAN', 'LLD', 'EXT', 'DEF', 'HLD'].includes(m.kind)) return { mdEdits, unmatchedLabelLines, companionNotes };
+	let parsed: { meta?: Record<string, unknown>; body?: Record<string, unknown> };
+	try {
+		parsed = JSON.parse(readFileSync(m.jsonPath, 'utf8')) as typeof parsed;
+	} catch {
+		return { mdEdits, unmatchedLabelLines, companionNotes };   // apply re-reads it and fails loudly
+	}
+	const meta = parsed.meta ?? {};
+	const body = parsed.body ?? {};
+	const oldSlug = meta['epicSlug'];
+	const relabelled = { ...parsed, meta: { ...meta, epicSlug: newSlug }, body };
+	let mdLines: string[];
+	try { mdLines = readFileSync(currentMd, 'utf8').split('\n'); } catch { mdLines = []; }
+	const edit = (from: string, to: string): void => {
+		if (from === to) return;
+		const planned = { file: mdFile, from, to };
+		if (mdLines.filter(l => l === from).length === 1) mdEdits.push(planned);
+		else unmatchedLabelLines.push(planned);
+	};
+	switch (m.kind) {
+		case 'PLAN':
+		case 'LLD':
+			edit(epicLabelLine(oldSlug), epicLabelLine(newSlug));
+			break;
+		case 'EXT': {
+			const title = (body['addedStory'] as { title?: unknown } | undefined)?.title;
+			edit(extendTitleLine(oldSlug, title), extendTitleLine(newSlug, title));
+			edit(extendBannerLine(oldSlug), extendBannerLine(newSlug));
+			break;
+		}
+		case 'DEF':
+			edit(`# Epic: ${epicShortName(parsed as unknown as DefineArtifact)}`, `# Epic: ${epicShortName(relabelled as unknown as DefineArtifact)}`);
+			break;
+		case 'HLD':
+			edit(`# HLD: ${hldShortName(parsed as unknown as HldArtifact)}`, `# HLD: ${hldShortName(relabelled as unknown as HldArtifact)}`);
+			break;
+	}
+	// A companion is a sibling of its md and travels with it (step 2b), so it
+	// sits beside the post-move md. Its header prints the label for an HLD and
+	// an epic Story's LLD; a standalone LLD's header names only the Story.
+	const companions = body['companions'];
+	const headerShowsLabel = m.kind === 'HLD' || (m.kind === 'LLD' && meta['standalone'] !== true);
+	if (headerShowsLabel && Array.isArray(companions)) {
+		for (const c of companions as { relPath?: unknown }[]) {
+			if (typeof c.relPath !== 'string') continue;
+			companionNotes.push(join(dirname(mdFile), c.relPath.slice(c.relPath.lastIndexOf('/') + 1)));
+		}
+	}
+	return { mdEdits, unmatchedLabelLines, companionNotes };
+}
+
 /**
  * Compute the migration plan PURELY — no disk writes, no git. Enumerates the
  * artifact set from `.insrc/artifacts/*.json`, groups by work item, derives one
@@ -317,7 +478,8 @@ export function planMigration(repoPath: string): MigrationPlan {
 	const moves:        MigrationMove[] = [];
 	const linkRewrites: LinkRewrite[]   = [];
 	const unmappable:   Unmappable[]    = [];
-	if (!existsSync(artifactsDir)) return { moves, linkRewrites, unmappable };
+	const metaRewrites: MetaRewrite[]   = [];
+	if (!existsSync(artifactsDir)) return { moves, linkRewrites, unmappable, metaRewrites };
 
 	const flatIndex   = indexFlatMd(repoPath);
 	const nestedIndex = indexNestedMd(repoPath);
@@ -333,7 +495,8 @@ export function planMigration(repoPath: string): MigrationPlan {
 		const id = name.slice(0, -5);
 		const parsed = parseArtifactId(id);
 		if (parsed === null) continue;   // AMD-* / non-docs / malformed → not a relocatable artifact
-		const meta = readMeta(join(artifactsDir, id + '.json'));
+		const jsonPath = join(artifactsDir, id + '.json');
+		const meta = readMeta(jsonPath);
 		artifacts.push({
 			id,
 			kind: parsed.kind,
@@ -343,6 +506,8 @@ export function planMigration(repoPath: string): MigrationPlan {
 			epicCreatedAt: meta.epicCreatedAt,
 			epicSlug: meta.epicSlug,
 			standalone: meta.standalone === true || parsed.kind === 'SPEC',
+			storedStandalone: meta.standalone === true,
+			jsonPath,
 			flatPath: flatIndex.get(id),
 			mdPath:   flatIndex.get(id)
 				?? nestedIndex.byId.get(id)
@@ -431,14 +596,24 @@ export function planMigration(repoPath: string): MigrationPlan {
 
 		// The group's resolved work-item FOLDER, recorded so an orphaned companion
 		// can be placed even when no md of its own is moving (see step 2c).
+		let groupSegment: string | undefined;
 		try {
 			const groupIdentity = deriveWorkItemIdentity(hash, anchor);
+			groupSegment = groupIdentity.epicSegment;
 			segmentRoots.set(groupIdentity.epicSegment, {
 				root: dirname(resolveArtifactMdPath(repoPath, groupIdentity, 'DEF', workItemKind, label)),
 				identity: groupIdentity,
 				groupHash: hash,
 			});
 		} catch { /* an unresolvable group simply contributes no companion target */ }
+
+		// ISSUE-7d42920d — the stored meta each member must carry so that
+		// deriveMdPath, and the next live write, resolve the folder the md is moved
+		// into. Only a member that stays mappable gets one.
+		const realign = (m: Artifact, mdFile: string, currentMd: string = m.mdPath ?? mdFile): void => {
+			const rewrite = planMetaRewrite(m, { hash, slug, anchor, groupSegment, workItemKind }, mdFile, currentMd);
+			if (rewrite !== undefined) metaRewrites.push(rewrite);
+		};
 
 		for (const m of members) {
 			let identity: WorkItemIdentity;
@@ -454,11 +629,11 @@ export function planMigration(repoPath: string): MigrationPlan {
 			if (m.mdPath === undefined) {
 				// No md anywhere — neither flat nor nested. Either already at its
 				// destination (idempotent skip) or the file is simply gone.
-				if (existsSync(to)) continue;
+				if (existsSync(to)) { realign(m, to); continue; }
 				unmappable.push({ artifactId: m.id, reason: `md file not found in a flat or nested docs dir and not at its destination ${relative(repoPath, to)}` });
 				continue;
 			}
-			if (m.mdPath === to) continue;   // already correctly placed
+			if (m.mdPath === to) { realign(m, to); continue; }   // already correctly placed
 
 			const prior = toSeen.get(to);
 			if (prior !== undefined) {
@@ -483,10 +658,14 @@ export function planMigration(repoPath: string): MigrationPlan {
 					'migrate-docs-tree: duplicate render — the destination already holds a different file for this artifact; ' +
 					'leaving BOTH in place (this folder will not converge until one is removed by hand)',
 				);
+				// The render kept is the one at the destination, so its lines are
+				// the ones checked and edited.
+				realign(m, to, to);
 				continue;
 			}
 			toSeen.set(to, m.id);
 			moves.push({ from: m.mdPath, to, kind: m.kind, identity, groupHash: hash });
+			realign(m, to);
 		}
 	}
 
@@ -598,7 +777,7 @@ export function planMigration(repoPath: string): MigrationPlan {
 		}
 	}
 
-	return { moves, linkRewrites, unmappable };
+	return { moves, linkRewrites, unmappable, metaRewrites };
 }
 
 // ---------------------------------------------------------------------------
@@ -654,13 +833,53 @@ function pruneEmptyDirsUpward(repoPath: string, dirs: ReadonlySet<string>): void
 	}
 }
 
+/**
+ * Write one planned metadata rewrite: set only the listed meta fields in the
+ * artifact JSON (store formatting: 2-space indent, trailing newline) and replace
+ * each planned label line in its md. Returns the files written.
+ *
+ * Fails loudly, for the caller's rollback, when the JSON cannot be read, or a
+ * label line is not in the md exactly once — the md changed after planning, and
+ * re-planning is the only safe answer.
+ */
+function applyMetaRewrite(repoPath: string, rw: MetaRewrite): string[] {
+	let parsed: { meta?: unknown };
+	try {
+		parsed = JSON.parse(readFileSync(rw.jsonPath, 'utf8')) as { meta?: unknown };
+	} catch (err) {
+		throw new Error(`migrate-docs-tree: cannot read ${rw.artifactId} to realign its metadata: ${err instanceof Error ? err.message : String(err)}`);
+	}
+	if (typeof parsed !== 'object' || parsed === null || typeof parsed.meta !== 'object' || parsed.meta === null) {
+		throw new Error(`migrate-docs-tree: ${rw.artifactId} has no meta object to realign`);
+	}
+	parsed.meta = { ...parsed.meta, ...rw.set };
+	writeFileSync(rw.jsonPath, JSON.stringify(parsed, null, 2) + '\n', 'utf8');
+	const written = [rw.jsonPath];
+
+	for (const edit of rw.mdEdits) {
+		const lines = readFileSync(edit.file, 'utf8').split('\n');
+		const hits = lines.filter(l => l === edit.from).length;
+		if (hits !== 1) {
+			throw new Error(`migrate-docs-tree: expected the label line exactly once in ${relative(repoPath, edit.file)}, found ${hits}: '${edit.from}'`);
+		}
+		writeFileSync(edit.file, lines.map(l => (l === edit.from ? edit.to : l)).join('\n'), 'utf8');
+		if (!written.includes(edit.file)) written.push(edit.file);
+	}
+	return written;
+}
+
 export function applyMigration(repoPath: string, plan: MigrationPlan): void {
 	if (plan.unmappable.length > 0) {
 		const lines = plan.unmappable.map(u => `  - ${u.artifactId}: ${u.reason}`).join('\n');
 		throw new Error(`migrate-docs-tree: refusing to apply — ${plan.unmappable.length} unmappable artifact(s):\n${lines}`);
 	}
-	if (plan.moves.length === 0) {
-		log.info('migrate-docs-tree: nothing to migrate (already nested)');
+	const unmatched = plan.metaRewrites.flatMap(r => r.unmatchedLabelLines.map(e => ({ id: r.artifactId, e })));
+	if (unmatched.length > 0) {
+		const lines = unmatched.map(({ id, e }) => `  - ${id}: '${e.from}' not found exactly once in ${relative(repoPath, e.file)}`).join('\n');
+		throw new Error(`migrate-docs-tree: refusing to apply — ${unmatched.length} label line(s) to fix by hand first:\n${lines}`);
+	}
+	if (plan.moves.length === 0 && plan.metaRewrites.length === 0) {
+		log.info('migrate-docs-tree: nothing to migrate (already nested and aligned)');
 		return;
 	}
 	// Require a clean working tree so a rollback (git reset --hard) can't discard
@@ -697,17 +916,36 @@ export function applyMigration(repoPath: string, plan: MigrationPlan): void {
 		}
 		validatePostMoveLinks(repoPath);
 
-		// Commit per-epic chunks (reviewable), all staged already by git mv/add.
-		const byGroup = new Map<string, MigrationMove[]>();
-		for (const mv of plan.moves) {
-			const g = byGroup.get(mv.groupHash);
-			if (g === undefined) byGroup.set(mv.groupHash, [mv]); else g.push(mv);
+		// Commit per-epic chunks (reviewable). The moves are staged already by git
+		// mv/add; each work item's metadata rewrites are written and staged just
+		// before its chunk, so the chunk carries the move and the meta together.
+		const byGroup = new Map<string, { moves: MigrationMove[]; rewrites: MetaRewrite[] }>();
+		const groupOf = (hash: string) => {
+			let g = byGroup.get(hash);
+			if (g === undefined) { g = { moves: [], rewrites: [] }; byGroup.set(hash, g); }
+			return g;
+		};
+		for (const mv of plan.moves) groupOf(mv.groupHash).moves.push(mv);
+		for (const rw of plan.metaRewrites) groupOf(rw.groupHash).rewrites.push(rw);
+		for (const [groupHash, { moves, rewrites }] of byGroup) {
+			const paths = new Set(moves.flatMap(m => [m.from, m.to]));
+			for (const rw of rewrites) {
+				for (const written of applyMetaRewrite(repoPath, rw)) {
+					git(repoPath, 'add', written);
+					paths.add(written);
+				}
+			}
+			const message = moves.length > 0
+				? `chore(docs): migrate ${groupHash} artifacts to the nested work-item tree (S003)`
+				: `chore(docs): realign ${groupHash} artifact labels with their work-item folder`;
+			git(repoPath, 'commit', '-m', message, '--', ...paths);
 		}
-		for (const [groupHash, mvs] of byGroup) {
-			const paths = [...new Set(mvs.flatMap(m => [m.from, m.to]))];
-			git(repoPath, 'commit', '-m', `chore(docs): migrate ${groupHash} artifacts to the nested work-item tree (S003)`, '--', ...paths);
+		// A link rewritten in a file that neither moved nor was realigned is still
+		// only staged; commit it so the run leaves a clean tree.
+		if (git(repoPath, 'diff', '--cached', '--name-only').trim().length > 0) {
+			git(repoPath, 'commit', '-m', 'chore(docs): rewrite links to migrated artifacts');
 		}
-		log.info({ moves: plan.moves.length, chunks: byGroup.size }, 'migrate-docs-tree: applied');
+		log.info({ moves: plan.moves.length, metaRewrites: plan.metaRewrites.length, chunks: byGroup.size }, 'migrate-docs-tree: applied');
 	} catch (err) {
 		// Roll back the WHOLE run to the pinned pre-run commit — including any
 		// per-epic chunk commits that already landed — so no partial mix survives (lc1).

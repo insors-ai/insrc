@@ -19,12 +19,14 @@ import { test } from 'node:test';
 import {
 	TEST_RUNNER_ARGV,
 	TYPECHECK_ARGV,
+	owningTypecheckProjects,
 	planTaskCheckPlan,
 	resolveTaskTestFiles,
 	runValidationChecks,
 	smallStandaloneCheckPlan,
 	trivialCheckPlan,
 	type ValidationCheckPlan,
+	withTypecheckProjects,
 } from '../validation-checks.js';
 
 function gitRepo(files: Readonly<Record<string, string>>): string {
@@ -52,11 +54,14 @@ function isAlive(pid: number): boolean {
 	try { process.kill(pid, 0); return true; } catch { return false; }
 }
 
+/** The gate's own test runner flags on plain node, so the runner is exercised without npx. */
+const NODE_TEST_ARGV: readonly string[] = ['node', ...TEST_RUNNER_ARGV.filter(a => a.startsWith('--'))];
+
 /** A plan whose commands are plain node, so the runner is exercised without npx. */
 function nodePlan(over: Partial<ValidationCheckPlan>): ValidationCheckPlan {
 	return {
 		typecheck: ['node', '-e', 'process.exit(0)'],
-		testCommand: ['node', '--test', '--test-force-exit'],
+		testCommand: NODE_TEST_ARGV,
 		testFiles: [], unresolvedTests: [], namedTests: [],
 		typecheckTimeoutMs: 10_000, testTimeoutMs: 20_000,
 		...over,
@@ -128,6 +133,102 @@ test('a test name whose only *.test.ts token is not a leading prefix is unresolv
 		const plan = planTaskCheckPlan(repo, { tests: [{ name }] });
 		assert.deepEqual(plan.testFiles, []);
 		assert.deepEqual(plan.unresolvedTests, [name]);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none', () => {
+	const repo = gitRepo({
+		...TREE,
+		'tsconfig.json':                        '{}',
+		'plugin/tsconfig.json':                 '{}',
+		'plugin/src/view.ts':                   '',
+		'plugin/src/__tests__/view.test.ts':    '',
+		'plugin/tools/inner/tsconfig.json':     '{}',
+		'plugin/tools/inner/gen.tsx':           '',
+		'plugin/README.md':                     '',
+	});
+	const commit = (rel: string, msg: string): void => {
+		writeFileSync(join(repo, rel), `// ${msg}\n`);
+		execFileSync('git', ['add', rel], { cwd: repo });
+		execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', msg], { cwd: repo, stdio: 'ignore' });
+	};
+	try {
+		// The nearest tsconfig.json above each .ts / .tsx file; the root's project and other files name nothing.
+		assert.deepEqual(owningTypecheckProjects(repo, ['plugin/src/view.ts', 'plugin/tools/inner/gen.tsx', 'src/a/x.ts', 'plugin/README.md', 'top.ts']), ['plugin', 'plugin/tools/inner']);
+
+		const head = (): string => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
+		const start = head();
+		const plan = (): ValidationCheckPlan => planTaskCheckPlan(repo, { tests: [{ name: "chain.test.ts: 'b'" }] });
+		// The plan builders themselves name no project: the build's changes are added afterwards.
+		assert.equal(plan().typecheckProjects, undefined);
+		assert.equal(trivialCheckPlan(repo).typecheckProjects, undefined);
+
+		// A commit that touches only the root project: no other project, and the plan is returned as it was.
+		commit('src/b/chain.ts', 'root only');
+		const rootOnly = plan();
+		assert.equal(withTypecheckProjects(repo, rootOnly, start), rootOnly);
+		assert.equal(withTypecheckProjects(repo, rootOnly), rootOnly);
+
+		// A mapped test file inside the plugin names the plugin, whatever the commits touched.
+		const mapped = planTaskCheckPlan(repo, { tests: [{ name: 'the view renders' }] }, [{ name: 'the view renders', cases: [{ file: 'plugin/src/__tests__/view.test.ts', title: 't' }] }]);
+		assert.deepEqual(withTypecheckProjects(repo, mapped, start).typecheckProjects, ['plugin']);
+
+		// A commit that touches a plugin file names the plugin, on any route's plan.
+		commit('plugin/src/view.ts', 'plugin change');
+		assert.deepEqual(withTypecheckProjects(repo, plan()).typecheckProjects, ['plugin']);
+		assert.deepEqual(withTypecheckProjects(repo, trivialCheckPlan(repo)).typecheckProjects, ['plugin']);
+		assert.deepEqual(withTypecheckProjects(repo, smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] })).typecheckProjects, ['plugin']);
+
+		// A build of several commits: the plugin change is no longer the HEAD commit. From the
+		// build's base it is still found; from the HEAD commit alone it is not.
+		commit('src/b/chain.ts', 'root again');
+		assert.deepEqual(withTypecheckProjects(repo, plan(), start).typecheckProjects, ['plugin']);
+		assert.equal(withTypecheckProjects(repo, plan()).typecheckProjects, undefined);
+		const afterPlugin = head();
+
+		// A change not yet committed counts, and so does a new file not yet tracked.
+		writeFileSync(join(repo, 'plugin/tools/inner/gen.tsx'), '// edited\n');
+		assert.deepEqual(withTypecheckProjects(repo, plan(), afterPlugin).typecheckProjects, ['plugin/tools/inner']);
+		execFileSync('git', ['checkout', '-q', '--', 'plugin/tools/inner/gen.tsx'], { cwd: repo });
+		writeFileSync(join(repo, 'plugin/src/new.ts'), '');
+		assert.deepEqual(withTypecheckProjects(repo, plan(), afterPlugin).typecheckProjects, ['plugin']);
+
+		// A base the repository does not have: that listing is skipped and the others still count.
+		assert.deepEqual(withTypecheckProjects(repo, plan(), '0'.repeat(40)).typecheckProjects, ['plugin']);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept', async () => {
+	const repo = gitRepo({ 'tsconfig.json': '{}', 'plugin/tsconfig.json': '{}', 'plugin/marker.txt': 'here', 'other/tsconfig.json': '{}' });
+	try {
+		// The command fails exactly where a marker.txt is: in the plugin, not in the root.
+		const failsInPlugin = ['node', '-e', "const fs=require('fs');if(fs.existsSync('marker.txt')){console.error('TS2345 in the plugin');process.exit(2);}console.log('clean here');"];
+		const bad = await runValidationChecks(repo, nodePlan({ typecheck: failsInPlugin, typecheckProjects: ['other', 'plugin'] }));
+		assert.equal(bad.typecheck.ok, false, 'an error in a named project fails the typecheck although the root is clean');
+		assert.equal(bad.typecheck.exitCode, 2);
+		const lines = bad.typecheck.command.split('\n');
+		assert.equal(lines.length, 3, 'one command per project, the root first');
+		assert.ok(!lines[0]!.startsWith('(cd '));
+		assert.ok(lines[1]!.startsWith('(cd other && node -e '));
+		assert.ok(lines[2]!.startsWith('(cd plugin && node -e '));
+		assert.match(bad.typecheck.outputTail, /TS2345 in the plugin/);
+		assert.match(bad.typecheck.outputTail, /: FAILED\nTS2345|: FAILED\n\nTS2345/);
+		assert.equal((bad.typecheck.outputTail.match(/: clean\n/g) ?? []).length, 2, 'the root and the clean project are reported clean');
+
+		const good = await runValidationChecks(repo, nodePlan({ typecheck: failsInPlugin, typecheckProjects: ['other'] }));
+		assert.equal(good.typecheck.ok, true);
+		assert.equal(good.typecheck.exitCode, 0);
+
+		// With no other project the result is the root's own, as before.
+		const rootOnly = await runValidationChecks(repo, nodePlan({ typecheck: failsInPlugin }));
+		assert.equal(rootOnly.typecheck.ok, true);
+		assert.ok(!rootOnly.typecheck.command.includes('\n') && !rootOnly.typecheck.command.startsWith('(cd '));
+		assert.match(rootOnly.typecheck.outputTail, /^clean here/);
+
+		// A project directory that is gone is a failed check with a note, not a throw.
+		const gone = await runValidationChecks(repo, nodePlan({ typecheck: failsInPlugin, typecheckProjects: ['missing'] }));
+		assert.equal(gone.typecheck.ok, false);
+		assert.match(gone.typecheck.note ?? '', /^missing: could not start/);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -326,11 +427,15 @@ test('runValidationChecks runs each file in its own process, in order, with the 
 		const r = await runValidationChecks(dir, nodePlan({ testFiles: ['a.test.mjs', 'b.test.mjs'] }), {
 			run: (command, args, opts) => { calls.push([command, ...args]); return runInProcessGroup(command, args, opts); },
 		});
-		// One process per file (after the typecheck), in the plan's order, each with the reporter.
-		assert.deepEqual(calls.slice(1), [
-			['node', '--test', '--test-force-exit', '--test-reporter=tap', 'a.test.mjs'],
-			['node', '--test', '--test-force-exit', '--test-reporter=tap', 'b.test.mjs'],
+		// One process per file (after the typecheck), in the plan's order, each with the reporter
+		// writing to a report file of its own.
+		const dest = (c: string[]): string => c.find(a => a.startsWith('--test-reporter-destination='))!.slice('--test-reporter-destination='.length);
+		assert.deepEqual(calls.slice(1).map(c => c.map(a => a.startsWith('--test-reporter-destination=') ? 'DEST' : a)), [
+			['node', '--test-force-exit', '--test-reporter=tap', 'DEST', 'a.test.mjs'],
+			['node', '--test-force-exit', '--test-reporter=tap', 'DEST', 'b.test.mjs'],
 		]);
+		assert.notEqual(dest(calls[1]!), dest(calls[2]!), 'each run has its own report file');
+		assert.ok(!existsSync(dirname(dest(calls[1]!))), 'the report file is removed once read');
 		const files = r.tests.files!;
 		assert.deepEqual(files.map(f => [f.file, f.exitCode, f.timedOut]), [['a.test.mjs', 0, false], ['b.test.mjs', 1, false]]);
 		assert.deepEqual(files[0]!.titles.map(t => `${t.result} ${t.title}`), ['pass alpha passes', 'pass beta passes']);
@@ -338,7 +443,7 @@ test('runValidationChecks runs each file in its own process, in order, with the 
 		assert.deepEqual(files[1]!.titles.map(t => `${t.depth} ${t.result} ${t.title}`), [
 			'0 pass one passes', '0 fail two fails', '0 skipped three is skipped', '1 pass nested passes', '0 pass a suite', '0 fail an unrelated failure',
 		]);
-		assert.equal(r.tests.command, 'node --test --test-force-exit --test-reporter=tap a.test.mjs\nnode --test --test-force-exit --test-reporter=tap b.test.mjs');
+		assert.equal(r.tests.command, calls.slice(1).map(c => c.join(' ')).join('\n'));
 		assert.equal(r.tests.ok, false);
 		assert.equal(r.tests.exitCode, 1);
 		// The tail of the output is still returned for the judge.
@@ -409,9 +514,7 @@ test('a file that times out, and a file not started because the time limit was u
 
 test("a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note", async () => {
 	// A file whose output is far longer than the tail the verdict keeps: its first
-	// test is named, and its second prints two hundred long lines. (Two tests,
-	// not hundreds: `--test-force-exit` drops trailing tests of a file with many,
-	// now and then, and still exits with 0.)
+	// test is named, and its second prints two hundred long lines.
 	const long = "import { test } from 'node:test';\ntest('the first case', () => {});\ntest('a noisy one', () => { for (let i = 0; i < 200; i++) console.log('line ' + i + ' ' + 'x'.repeat(100)); });\n";
 	const dir = runnerDir({ 'long.test.mjs': long });
 	try {
@@ -573,4 +676,51 @@ test("the whole output is still written after the output directory has been remo
 		assert.ok(existsSync(second.outputPath!) && existsSync(third.outputPath!));
 		assert.ok(readdirSync(VALIDATE_OUTPUT_DIR).length >= 2);
 	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('ISSUE-7ba8cf15: a file with many tests is reported in full under the gate\'s runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)', async () => {
+	assert.ok(!TEST_RUNNER_ARGV.includes('--test'), 'the file runs in the runner\'s own process');
+	assert.ok(!NODE_TEST_ARGV.includes('--test'));
+	assert.ok(TEST_RUNNER_ARGV.includes('--test-force-exit'), 'a file that keeps its process alive still ends (ISSUE-b544025d)');
+	const n = 300;
+	let src = "import { test } from 'node:test';\n";
+	for (let i = 0; i < n; i++) src += `test('case ${i}', () => { console.log('${'y'.repeat(200)}'); });\n`;
+	const dir = runnerDir({ 'many.test.mjs': src });
+	try {
+		for (let round = 0; round < 3; round++) {
+			const r = await runValidationChecks(dir, nodePlan({ testFiles: ['many.test.mjs'], namedTests: [mapped('p', [{ file: 'many.test.mjs', title: 'case 0' }, { file: 'many.test.mjs', title: `case ${n - 1}` }])] }));
+			const run = r.tests.files![0]!;
+			assert.equal(run.titles.length, n, `round ${round}: every test is reported`);
+			assert.deepEqual(r.tests.namedTests![0]!.cases.map(c => c.result), ['pass', 'pass'], 'the last case is found');
+			assert.equal(r.tests.ok, true);
+			if (run.outputPath !== undefined) rmSync(run.outputPath, { force: true });
+		}
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('ISSUE-7ba8cf15: in its own process a failing test still fails the file', async () => {
+	const dir = runnerDir({ 'bad.test.mjs': "import { test } from 'node:test';\ntest('fails', () => { throw new Error('boom'); });\n" });
+	try {
+		const r = await runValidationChecks(dir, nodePlan({ testFiles: ['bad.test.mjs'] }));
+		assert.equal(r.tests.exitCode, 1);
+		assert.equal(r.tests.ok, false);
+		const run = r.tests.files![0]!;
+		if (run.outputPath !== undefined) rmSync(run.outputPath, { force: true });
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws', async () => {
+	const dir = runnerDir({ 'ok.test.mjs': "import { test } from 'node:test';\ntest('runs', () => {});\n" });
+	const prev = process.env['TMPDIR'];
+	process.env['TMPDIR'] = join(dir, 'no-such-dir');
+	try {
+		const r = await runValidationChecks(dir, nodePlan({ testFiles: ['ok.test.mjs'] }));
+		const run = r.tests.files![0]!;
+		assert.equal(run.exitCode, null);
+		assert.match(run.note ?? '', /not run: no place for its test report/);
+		assert.equal(r.tests.ok, false);
+	} finally {
+		if (prev === undefined) delete process.env['TMPDIR']; else process.env['TMPDIR'] = prev;
+		rmSync(dir, { recursive: true, force: true });
+	}
 });

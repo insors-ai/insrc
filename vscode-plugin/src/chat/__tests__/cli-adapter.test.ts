@@ -626,31 +626,32 @@ test('S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (
 // ---- S004 t4: permissionMode -> buildArgs review/auto flags -------------------
 
 test('S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)', async () => {
-  const base = ['-p', 'hi', '--output-format=stream-json', '--verbose'];
+  const base = ['-p', '--output-format=stream-json', '--verbose'];
+  const end = ['--', 'hi'];
   // undefined: no permission flag (k2 — byte-identical to today's argv).
   {
     const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
     await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
-    assert.deepEqual(spawner.calls[0]!.args, base);
+    assert.deepEqual(spawner.calls[0]!.args, [...base, ...end]);
   }
   // manual: host answers EVERY prompt; never a bypass or acceptEdits flag.
   {
     const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
     await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' })));
-    assert.deepEqual(spawner.calls[0]!.args, [...base, '--permission-prompts', 'host']);
+    assert.deepEqual(spawner.calls[0]!.args, [...base, '--permission-prompts', 'host', ...end]);
   }
   // edit-auto: auto-accept edits, host answers the rest.
   {
     const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
     await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'edit-auto' })));
-    assert.deepEqual(spawner.calls[0]!.args, [...base, '--permission-mode', 'acceptEdits', '--permission-prompts', 'host']);
+    assert.deepEqual(spawner.calls[0]!.args, [...base, '--permission-mode', 'acceptEdits', '--permission-prompts', 'host', ...end]);
   }
   // auto: bypass all checks, never a host-answered flag.
   {
     const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
     await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'auto' })));
     const args = spawner.calls[0]!.args;
-    assert.deepEqual(args, [...base, '--permission-mode', 'bypassPermissions']);
+    assert.deepEqual(args, [...base, '--permission-mode', 'bypassPermissions', ...end]);
     assert.ok(!args.includes('--permission-prompts'), 'auto never asks the host');
   }
 });
@@ -660,19 +661,19 @@ test('S004 t4: codex buildArgs — undefined/review keep today argv; auto adds -
   {
     const { deps, spawner } = depsFor(CODEX_TEXT_TURN);
     await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', '--', 'hi']);
   }
   // review: codex default on-request approval — no extra flag (same argv as undefined).
   {
     const { deps, spawner } = depsFor(CODEX_TEXT_TURN);
     await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', permissionMode: 'manual' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', '--', 'hi']);
   }
   // auto: bypass flag, placed before the positional prompt.
   {
     const { deps, spawner } = depsFor(CODEX_TEXT_TURN);
     await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', permissionMode: 'auto' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', '--dangerously-bypass-approvals-and-sandbox', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', '--dangerously-bypass-approvals-and-sandbox', '--', 'hi']);
   }
 });
 
@@ -806,8 +807,8 @@ test('S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identica
   const ev = apprOf(await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
   assert.ok(ev, 'an approval-request was emitted');
   assert.equal(ev!.command, undefined, 'no command field when the line carries none');
-  // The event has exactly the pre-fix key set (no stray command key).
-  assert.deepEqual(Object.keys(ev!).sort(), ['detail', 'kind', 'requestId', 'title', 'toolName', 'turnId']);
+  // The event has exactly the pre-fix key set plus resolution (ISSUE-6a811b8a): no stray command key.
+  assert.deepEqual(Object.keys(ev!).sort(), ['detail', 'kind', 'requestId', 'resolution', 'title', 'toolName', 'turnId']);
 });
 
 test('S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)', async () => {
@@ -1289,4 +1290,49 @@ test("resume()'s handed-over process stops the recorded pid's group only while i
   await other!.stop();
   await second;
   assert.deepEqual(signals, [], 'a reused pid is never signalled');
+});
+
+// ---- ISSUE-65cb63f7: a prompt is never parsed as an option ------------------------
+
+test('65cb63f7: a prompt starting with "-" or "--" reaches claude and codex verbatim, after the end-of-options marker', async () => {
+  for (const prompt of ['- MED: openWithContent duplicates openAndGetContent.\n\n- MED: four copies.', '--resume not-a-flag', '-p']) {
+    const cases: Array<{ provider: 'claude' | 'codex'; lines: unknown; resume?: SessionHandle; grant?: boolean }> = [
+      { provider: 'claude', lines: CLAUDE_TEXT_TURN },
+      { provider: 'claude', lines: CLAUDE_TEXT_TURN, resume: { provider: 'claude', nativeSessionId: 's1' } },
+      { provider: 'claude', lines: CLAUDE_TEXT_TURN, grant: true },
+      { provider: 'codex', lines: CODEX_TEXT_TURN },
+      { provider: 'codex', lines: CODEX_TEXT_TURN, resume: { provider: 'codex', nativeSessionId: 's1' } },
+    ];
+    for (const c of cases) {
+      const { deps, spawner } = depsFor(c.lines as never);
+      await collect(createProviderRegistry(deps).get(c.provider).run(REQ({
+        provider: c.provider, prompt,
+        ...(c.resume !== undefined ? { resume: c.resume } : {}),
+        ...(c.grant === true ? { permissionMode: 'manual' as const, allowedTools: ['Write'] } : {}),
+      })));
+      const args = spawner.calls[0]!.args;
+      const label = `${c.provider}${c.resume ? ' resume' : ''}${c.grant ? ' grant' : ''}: ${JSON.stringify(prompt.slice(0, 12))}`;
+      assert.equal(args[args.length - 1], prompt, `${label} — the prompt is the last argument, unchanged`);
+      assert.equal(args[args.length - 2], '--', `${label} — directly after the end-of-options marker`);
+      assert.equal(args.indexOf('--'), args.length - 2, `${label} — the only marker, so every flag precedes it`);
+    }
+  }
+});
+
+// ---- ISSUE-6a811b8a: where an approval request is answered ------------------------
+
+test("claude permission_denied emits resolution 'turn-ended'; control-protocol and codex approval requests emit resolution 'in-turn'", async () => {
+  const denied = JSON.stringify({ type: 'system', subtype: 'permission_denied', tool_name: 'Write', tool_use_id: 'toolu_res_1', message: 'Write needs your permission' });
+  const { deps: d1 } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const turnEnded = apprOf(await collect(createProviderRegistry(d1).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
+  assert.equal(turnEnded?.resolution, 'turn-ended', 'claude refused and ended the turn');
+
+  const { deps: d2 } = depsFor({ lines: CLAUDE_PERMISSION_TURN });
+  const control = apprOf(await collect(createProviderRegistry(d2).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
+  assert.equal(control?.resolution, 'in-turn', 'a control-protocol request waits inside the turn');
+  assert.equal(control?.toolName, 'Bash', 'and it carries a toolName, so toolName cannot tell the two apart');
+
+  const { deps: d3 } = depsFor({ lines: CODEX_PERMISSION_TURN });
+  const codex = apprOf(await collect(createProviderRegistry(d3).get('codex').run(REQ({ provider: 'codex', permissionMode: 'manual' }))));
+  assert.equal(codex?.resolution, 'in-turn', 'a codex approval waits inside the turn');
 });

@@ -19,7 +19,8 @@
     "schemaVersion": 1,
     "specHash": "4a6e7a40b308e164",
     "epicSlug": "provider-filtered-model-picker-model-tiers",
-    "approvedAt": "2026-09-23T11:46:15.794Z"
+    "approvedAt": "2026-09-23T11:46:15.794Z",
+    "standalone": true
   },
   "body": {
     "category": "requirements",

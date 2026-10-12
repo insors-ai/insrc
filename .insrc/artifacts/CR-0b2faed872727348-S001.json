@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "0b2faed872727348",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "standalone-lld-filed-second-work-item",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

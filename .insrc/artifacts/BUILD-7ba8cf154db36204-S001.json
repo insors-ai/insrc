@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "7ba8cf154db36204",
+    "storyId": "S001",
+    "createdAt": "2026-10-12T06:31:54.482Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-12T06:29:42.082Z",
+    "epicSlug": "build-gate-s-test-report-cut",
+    "updatedAt": "2026-10-12T06:57:09.785Z",
+    "approvedAt": "2026-10-12T06:57:09.883Z"
+  },
+  "body": {
+    "focus": "Run each build-gate test file in the gate's own process (no `--test`), keeping `--test-force-exit`, so its TAP report is never truncated (ISSUE-7ba8cf15). Change TEST_RUNNER_ARGV in src/mcp/build-step/validation-checks.ts; add a regression test.",
+    "producesLld": false,
+    "commit": "01ca9641",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "TEST_RUNNER_ARGV drops `--test`, so each file runs in the runner's own process with force-exit kept. The TAP report goes to a per-run file through `--test-reporter-destination`, and the process's own output is appended as TAP comments, so a printed result line is never read as one. Review follow-up: if that report file cannot be created, the file's check now fails with a note instead of the gate throwing. Regression tests cover a 300-test file reported in full, a failing test, and the report directory not being creatable.",
+    "testRecord": {
+      "md": "docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-6a811b8acca60ac5-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T06:57:09.785Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-vs-code-dev-chat-approvals-E202610046a811b8a/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T06:57:09.785Z"
+      }
+    ]
+  }
+}

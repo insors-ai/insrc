@@ -6,7 +6,9 @@
     "createdAt": "2026-10-08T12:12:36.037Z",
     "updatedAt": "2026-10-08T14:19:51.454Z",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-08T14:19:51.732Z"
+    "approvedAt": "2026-10-08T14:19:51.732Z",
+    "epicSlug": "e1-delivery-read-model-daemon-from",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z"
   },
   "body": {
     "tasks": [

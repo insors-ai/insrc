@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "013e816250937aa5",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "mergewithprior-silently-erases-prior-only-meta",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

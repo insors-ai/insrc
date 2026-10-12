@@ -10,7 +10,10 @@
     "schemaVersion": 1,
     "epicHash": "4fb22dc28697cc14",
     "storyId": "S001",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "bug-data-plan-task-names-connection",
+    "epicCreatedAt": "2026-10-09T14:49:25.563Z",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

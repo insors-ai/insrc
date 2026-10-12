@@ -5,7 +5,8 @@
     "storyId": "S001",
     "createdAt": "2026-10-10T15:41:06.406Z",
     "updatedAt": "2026-10-10T16:30:39.608Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "index-never-reconciled-against-files-disk"
   },
   "body": {
     "tasks": [

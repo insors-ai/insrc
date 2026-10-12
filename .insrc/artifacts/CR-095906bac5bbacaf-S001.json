@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "095906bac5bbacaf",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "dev-chat-session-dropdown-history-clock",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

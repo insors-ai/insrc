@@ -64,10 +64,34 @@ export type PermissionMode = 'manual' | 'edit-auto' | 'auto';
 
 /** Host -> webview: render + stream events. */
 export type HostToWebview =
-  | { readonly type: 'turn-event'; readonly event: TurnEvent }
-  | { readonly type: 'session-restored'; readonly sessionId: string; readonly transcript: TranscriptEntry[]; readonly mode?: PermissionMode }
+  // Story E20261012ddc4ede1:S001 (additive): `rowIndex` is the absolute transcript index of the row
+  // this event wrote; absent on an event that writes no row (status, approval-request).
+  | { readonly type: 'turn-event'; readonly event: TurnEvent; readonly rowIndex?: number | undefined }
+  // Story E20261012ddc4ede1:S001 (additive): `transcript` is a window of the session's rows, not
+  // necessarily all of them. `firstIndex` is the absolute index of transcript[0] (absent = 0) and
+  // `total` the number of rows in the whole transcript.
+  | {
+      readonly type: 'session-restored';
+      readonly sessionId: string;
+      readonly transcript: TranscriptEntry[];
+      readonly mode?: PermissionMode;
+      readonly firstIndex?: number | undefined;
+      readonly total?: number | undefined;
+    }
+  // Story E20261012ddc4ede1:S001: the answer to 'load-older': rows [firstIndex, before) of the
+  // session's transcript. `rows` is empty and firstIndex === before when nothing is older.
+  | {
+      readonly type: 'transcript-page';
+      readonly sessionId: string;
+      readonly before: number;
+      readonly firstIndex: number;
+      readonly rows: TranscriptEntry[];
+      readonly total: number;
+    }
   | { readonly type: 'history-list'; readonly chats: ChatSummary[] }
   | { readonly type: 'edit-prompt'; readonly path: string; readonly diff: UnifiedDiff; readonly review?: boolean }
+  // ISSUE-6a811b8a: the shown approval card's place in the queue changed ('1 of N'); update it in place.
+  | { readonly type: 'approval-position'; readonly requestId: string; readonly position: number; readonly total: number }
   | { readonly type: 'docs-list'; readonly artifacts: DocsArtifactSummary[] }
   // S007: one pending artifact's rendered body for the docs-review pane (additive).
   // `commentable` (optional; default true) hides request-changes for artifact kinds the
@@ -146,7 +170,8 @@ export type HostToWebview =
   // S001 sc2 (additive): the live echo of the user's prompt on submit, so it appears
   // during the turn (not only on a later session-restored replay). `key` is the row's
   // stable transcript-index key, so the live echo and its replay reconcile to ONE row (lc1).
-  | { readonly type: 'user-row'; readonly text: string; readonly key: string }
+  // Story E20261012ddc4ede1:S001 (additive): `rowIndex` is the row's absolute transcript index.
+  | { readonly type: 'user-row'; readonly text: string; readonly key: string; readonly rowIndex?: number | undefined }
   | { readonly type: 'theme'; readonly theme: TerminalTheme };
 
 /** Webview -> host: user intents. */
@@ -187,7 +212,10 @@ export type WebviewToHost =
   // (show-after-hide / restore, since the panel has no retainContextWhenHidden). The host
   // (re)sends theme + active session + history in response, so a reloaded webview is always
   // populated instead of racing the not-yet-attached listener with a post-after-setHtml.
-  | { readonly type: 'ready' };
+  | { readonly type: 'ready' }
+  // Story E20261012ddc4ede1:S001: the webview asks for the page of rows that ends just before
+  // absolute transcript index `before` (its first held row). Answered with 'transcript-page'.
+  | { readonly type: 'load-older'; readonly sessionId: string; readonly before: number };
 
 /** The discriminant values of each direction (exported so consumers/tests can assert exhaustiveness). */
 export const HOST_TO_WEBVIEW_TYPES = [
@@ -199,6 +227,7 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'docs-content',
   'user-row',
   'theme',
+  'transcript-page',
 ] as const;
 
 export const WEBVIEW_TO_HOST_TYPES = [
@@ -214,6 +243,7 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'set-permission-mode',
   'selection-decision',
   'ready',
+  'load-older',
 ] as const;
 
 export type HostToWebviewType = (typeof HOST_TO_WEBVIEW_TYPES)[number];

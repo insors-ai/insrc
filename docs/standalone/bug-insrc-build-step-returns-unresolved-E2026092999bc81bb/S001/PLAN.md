@@ -2,7 +2,7 @@
 
 # Plan: E2026092999bc81bb:S001
 
-**Epic:** `lld-bugfix-scope-structural-label-build`
+**Epic:** `bug-insrc-build-step-returns-unresolved`
 **LLD run:** `wf-1790664980219-t9lfhg`
 **LLD effective hash:** `a7c7f317f01b...`
 

@@ -6,7 +6,9 @@
     "storyId": "s8",
     "createdAt": "2026-09-26T00:00:00.000Z",
     "updatedAt": "2026-09-26T00:00:00.000Z",
-    "approvedAt": "2026-09-26T05:20:18.719Z"
+    "approvedAt": "2026-09-26T05:20:18.719Z",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z"
   },
   "body": {
     "commit": "c55210e",

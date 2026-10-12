@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "be438ed37a36f5fc",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "add-new-repo-stats-daemon-ipc",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "1d3bd81c5560de0d",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "precision-hardening-s003-proven-receiver-dataflow",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

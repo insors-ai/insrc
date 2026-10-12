@@ -1,0 +1,286 @@
+<!-- insrc:artifact TESTS-ddc4ede1dbf84626-S001 -->
+
+# Tests: ddc4ede1dbf84626 S001
+
+What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
+
+**Totals:** 37 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+## t1
+
+Run at 2026-10-12T07:35:29.855Z on commit `f14226ea`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: latestWindow: a transcript no longer than one page is returned whole with firstIndex 0**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | latestWindow: a transcript no longer than one page is returned whole with firstIndex 0 | `vscode-plugin/src/chat/__tests__/transcript-window.test.ts` |
+
+**unit: latestWindow: a long transcript returns its last page, moved back to the start of the turn when a user row is within one more page, and never more than two pages of rows**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | latestWindow: a long transcript returns its last page, moved back to the start of the turn when a user row is within one more page, and never more than two pages of rows | `vscode-plugin/src/chat/__tests__/transcript-window.test.ts` |
+
+**unit: latestWindow and pageBefore: with no user row within reach the cut is the plain page; consecutive pages cover every row exactly once**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | latestWindow and pageBefore: with no user row within reach the cut is the plain page; consecutive pages cover every row exactly once | `vscode-plugin/src/chat/__tests__/transcript-window.test.ts` |
+
+**unit: pageBefore: before is clamped to 0..length; at 0 it returns no rows and firstIndex 0**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pageBefore: before is clamped to 0..length; at 0 it returns no rows and firstIndex 0 | `vscode-plugin/src/chat/__tests__/transcript-window.test.ts` |
+
+**unit: walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated | `vscode-plugin/src/chat/__tests__/transcript-window.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/transcript-window.test.ts` | 0 | 5 | 0.3 s |  |
+
+## t2
+
+Run at 2026-10-12T07:36:33.075Z on commit `c995dd34`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', alongside every prior kind**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', alongside every prior kind | `vscode-plugin/src/chat/__tests__/protocol.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/protocol.test.ts` | 0 | 8 | 0.3 s |  |
+
+## t3
+
+Run at 2026-10-12T07:55:35.663Z on commit `72fc12d2`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: write-then-post order: when each live row is posted, the transcript already holds it at that index**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | write-then-post order: when each live row is posted, the transcript already holds it at that index | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: load-older for another session id, or with a malformed before or sessionId, posts nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | load-older for another session id, or with a malformed before or sessionId, posts nothing | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: session-restored carries firstIndex 0 and total while the whole transcript is still sent**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | session-restored carries firstIndex 0 and total while the whole transcript is still sent | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 128 | 1.9 s |  |
+
+## t4
+
+Run at 2026-10-12T07:57:44.563Z on commit `2884a6f5`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` |
+
+**unit: registry forgetPendingIn drops the pending tool entries whose node is given, and a later result for one renders as its own row**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | registry forgetPendingIn drops the pending tool entries whose node is given, and a later result for one renders as its own row | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` |
+
+**unit: fake-dom nodes carry scrollTop, scrollHeight and clientHeight**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | fake-dom nodes carry scrollTop, scrollHeight and clientHeight | `vscode-plugin/src/chat/__tests__/fake-dom.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/fake-dom.test.ts` | 0 | 3 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/render-registry.test.ts` | 0 | 70 | 0.3 s |  |
+
+## t5
+
+Run at 2026-10-12T08:00:24.231Z on commit `31ac8a7f`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: pager reset: a restore sets the first held index and total and ends at the bottom**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pager reset: a restore sets the first held index and total and ends at the bottom | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` | 0 | 4 | 0.4 s |  |
+
+## t6
+
+Run at 2026-10-12T08:03:08.089Z on commit `790f7779`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: returning to the bottom with more than 300 rows held runs the trim from the scroll listener**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | returning to the bottom with more than 300 rows held runs the trim from the scroll listener | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: a row that throws while an older page renders falls back, and following is switched back on afterwards**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a row that throws while an older page renders falls back, and following is switched back on afterwards | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**unit: the 'load earlier' bar is shown only when the first held index is above 0, names the count of older rows, and appears after a trim**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the 'load earlier' bar is shown only when the first held index is above 0, names the count of older rows, and appears after a trim | `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` | 0 | 11 | 0.5 s |  |
+
+## t7
+
+Run at 2026-10-12T08:07:28.254Z on commit `67e6d06e`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+| pass | the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+| pass | the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+| pass | S001 shell: session-restored replay routes through the sc1 registry (keyed, single-sourced, carries the stored class); CSP/one-script/textContent intact | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+| pass | S001 (74bc0120) ac1/ac2/ac3: the lock starts closed and is settled at all three session transitions | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+| pass | S001 (74bc0120) regression: the lock is additive — the surrounding handlers are unchanged | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 130 | 2 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 2 | 0.3 s |  |
+
+## t8
+
+Run at 2026-10-12T08:09:31.883Z on commit `71a032d3`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: ready, new-chat and open-chat post the same windowed session-restored**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ready, new-chat and open-chat post the same windowed session-restored | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: a ready after older pages were requested posts the latest window again, with the approval head after it**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a ready after older pages were requested posts the latest window again, with the approval head after it | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 134 | 2 s |  |

@@ -10,7 +10,9 @@
     "schemaVersion": 1,
     "epicHash": "34b6a247a4828d49",
     "storyId": "S001",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "bug-e1-s1-delivery-graph-builder",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

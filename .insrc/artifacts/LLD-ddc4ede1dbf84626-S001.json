@@ -1,0 +1,1007 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791789281233-4pjafm",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-12T07:19:32.869Z",
+    "epicCreatedAt": "2026-10-12T07:11:33.406Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 291633,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ddc4ede1dbf84626",
+    "epicSlug": "page-dev-chat-transcript-show-latest",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1791789281233-4pjafm",
+    "hldEffectiveHash": "6baf2b20634668cba1ab830641c3494930088dd0e4f2f8e66cfced203c6d0c00",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive story inside the plugin's chat module with real design choices and several tasks: store, protocol, panel host + webview shell, render registry.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The stakeholder request (open is slow on long history; even the active session should page history out) is fully designed: windowed restore, on-demand older pages, and trimming of the active session, with storage left alone.",
+          "evidence": "Today the whole transcript is posted at three sites (chat-panel.ts:423, :913, :932: `post({ type: 'session-restored', sessionId: ..., transcript: session.transcript, mode: permissionMode })`) and the webview replays every row (chat-panel.ts:688). The design replaces exactly that with latestWindow + load-older/transcript-page + trimIfNeeded, and rejects paged storage (a2) as not asked for. No non-goal is built.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The acceptance criteria ac1..ac4 the design maps tests to say what the design assumes they say.",
+          "evidence": "The design is standalone; .insrc/artifacts/LLD-ddc4ede1dbf84626-S001.json contains `ac1`..`ac4` only as criterionId entries in acceptanceMapping (5 matches for ac1|ac2|ac3|ac4|acceptance, all in the mapping), and docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001 holds only LLD.md and the sequence diagram. No document states the criteria's text, so I could only judge coverage against the quoted user request [[c10]].",
+          "action": "State the text of ac1..ac4 in the LLD (or cite the SPEC/triage record that defines them) so the mapping can be checked.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Both event sinks post first and call appendEvent second; in the followed-turn sink appendEvent is outside the `!disposed && session === s` guard; appendEvent returns void.",
+          "evidence": "chat-panel.ts:394-401: the guard block posts (`else post({ type: 'turn-event', event: ev });`) and `appendEvent(s, ev);` follows outside it. chat-panel.ts:809-811 (runTurn sink): `else post({ type: 'turn-event', event: ev }); appendEvent(s, ev);`. chat-panel.ts:838: `function appendEvent(s: ChatSession, ev: TurnEvent): void`. These are the only two callers.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "recordPermissionOutcome and recordSelectionOutcome post before pushing and post even with no session; runTurn pushes the user row before posting it with key r<index>.",
+          "evidence": "chat-panel.ts:220-224: `post({ type: 'turn-event', event: { kind: 'permission-outcome', ...} }); if (session !== undefined) { session.transcript.push(...)`. chat-panel.ts:368-372 is the same for selection-outcome. chat-panel.ts:770-779: `s.transcript.push({ role: 'user', ...})` then `post({ type: 'user-row', text: prompt, key: `r${s.transcript.length - 1}` })` under `suppressEcho !== true`.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "line() forces the view to the bottom on every append, and exactly two other sites append to the terminal and force the scroll (renderDiff and the approval-card branch).",
+          "evidence": "chat-panel.ts:600 `function line(s,cls){...t.appendChild(d);t.scrollTop=t.scrollHeight;return d;}`; chat-panel.ts:660 renderDiff ends `t.appendChild(box);t.scrollTop=t.scrollHeight;`; chat-panel.ts:672 `if(_c){t.appendChild(_c);t.scrollTop=t.scrollHeight;}`. A search for `t\\.appendChild` and `scrollTop` in chat-panel.ts finds no other site, and no other file under vscode-plugin/src writes scrollTop. The registry appends rows only through the `line` it is handed (render-registry.ts:310, :380, :404, :414, :443, :484, :500, :532).",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A tool-result with no pending tool row renders standalone with its stored command, and a user row or done/error marker clears the pending-tool list, so an older page must render with an isolated pending list.",
+          "evidence": "render-registry.ts:443-446: an unpaired result draws `wrap=line('')` with `insrc-toolresult__cmd` when `cmd!==''`. render-registry.ts:389 `register('user',function(vm,host){PEND=[];...` and :379 `if(cc===done||cc===error)PEND=[];`. Without withIsolatedPending, rendering an older page (which starts at a user row) would wipe the live turn's pending tool rows, so the companion the design adds is necessary and correctly motivated.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The paging messages, the index fields and the registry companions are new: nothing equivalent exists today.",
+          "evidence": "protocol.ts:66-152 and :155-192 hold no `load-older`, `transcript-page`, `firstIndex`, `total` (on session-restored) or `rowIndex`; `user-row` is `{ type, text, key }` (protocol.ts:151). The registry's returned object (render-registry.ts:544) exposes register, renderRow, collapsible, toViewModel, appendKeyed, resetKeys, onApprovalDecision, approvalPosition, onSelectionDecision: no forgetKeysBefore or withIsolatedPending. Note for the build: HOST_TO_WEBVIEW_TYPES (protocol.ts:195-204) already omits 'approval-position', and protocol.test.ts imports only WEBVIEW_TO_HOST_TYPES, so the HOST_TO_WEBVIEW_TYPES case is a new kind of test there.",
+          "action": "None required. Optionally add 'approval-position' to HOST_TO_WEBVIEW_TYPES while touching the list, or say it is left out on purpose.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "__tests__/fake-dom.ts can carry the pager tests driving the real registry, needing only scroll metrics added.",
+          "evidence": "fake-dom.ts provides parentNode, firstChild, nextSibling, appendChild, insertBefore (moves an already-parented node, asserts the reference is a child), removeChild, addEventListener plus `fire()` for scroll and click (fake-dom.ts:61-68, :89-91, :138-154); it has no scrollTop, scrollHeight or clientHeight. Two cautions: (1) the registry has never run on this fixture: render-registry.test.ts:24-58 uses its own FakeNode/fakeDocument, so the pager suite will be the first to wrap bodyStub in a `document.createElement`; (2) 'scrollTop grows by exactly the height added' needs scrollHeight to be DERIVED from the children (read-only in the real DOM), which the design does not state.",
+          "action": "In the fixture entry, say how the fake computes scrollHeight (for example a fixed height per child) so the prepend test observes the height added instead of setting it.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The five row writers and the two appendEvent callers are the complete inventory of places that write a transcript row.",
+          "evidence": "A search of vscode-plugin/src (tests excluded) for transcript push/splice/pop/shift finds only chat-panel.ts:222 (permission-outcome), :370 (selection-outcome), :770 (user), :840/:852/:867 (inside appendEvent) and session-store.ts:252 (`append`, which has no caller outside tests). appendEvent is called only at chat-panel.ts:401 and :811. Live posts that write no row (postInfo at :308-311, onError at :830, onWaiting at :798) fall under the design's 'node appended without one takes the latest index seen' rule.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The shell tests that pin the replay need updating only in migration step 6 (switching the restore sites to the latest window); step 5 (embedding the pager) stands on its own.",
+          "evidence": "Step 5 itself changes the three shell strings the suite pins: chat-panel.test.ts:1148 `assert.match(html, /setProvLock\\(\\(\\(m\\.transcript\\|\\|\\[\\]\\)\\.length\\)>0\\);/` (step 5 settles the lock from `total`), chat-panel.test.ts:1170 `/reg\\.resetKeys\\(\\);\\(m\\.transcript\\|\\|\\[\\]\\)\\.forEach/` and the [[c7]] pin `/reg\\.appendKeyed\\(reg\\.toViewModel\\(x\\),'r'\\+i\\)/` (step 5 replays with absolute keys through the pager's reset). Any test pinning line()'s `t.scrollTop=t.scrollHeight` breaks there too. So step 5 leaves the suite red until step 6, and is not rollbackable on its own as stated. [files: vscode-plugin/src/chat/__tests__/chat-panel.test.ts, vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "Move the shell-pin updates (chat-panel.test.ts:757 block, :1148, :1170) into step 5 and keep in step 6 only the tests that assert the whole transcript is posted; name these three pins in the session-restored call-site list.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Transcript rows are only ever appended and a session is one whole record under one key, so an absolute index is stable and older stored sessions need no conversion.",
+          "evidence": "The only mutations of a transcript are pushes (chat-panel.ts:222, :370, :770, :840, :852, :867; session-store.ts:252); nothing splices, truncates or reassigns it. session-store.ts:195 `void memento.update(SESSION_PREFIX + session.id, session);` writes the whole record; the cap at :202-217 evicts whole sessions, never rows. isSession (session-store.ts:141-151) only requires `Array.isArray(s['transcript'])`, so pre-change records load unchanged.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A row that throws while rendering already falls back inside the registry, and malformed inbound messages are already dropped by type checks, so the load-older validation follows an existing pattern.",
+          "evidence": "render-registry.ts:344-347: `try{return r.render(vm,host);}catch(e){try{return REG.fallback.render(vm,host);}catch(_){return null;}}`. handleMessage drops malformed payloads by typeof checks before use: chat-panel.ts:897 `if (typeof msg.provider !== 'string') return;`, :918 `if (typeof msg.chatId !== 'string') return;`, :940, :949. Note renderRow can return null (both renderers threw), so prepend must tolerate a row that produced no node.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "trimIfNeeded's handling is stated for every case, including an active turn with no user row in reach, and the registry state it must forget is complete (only the r<n> keys).",
+          "evidence": "The page rule states its fallback ('with none there, keep the plain cut'); the trim rule says only 'removes the oldest nodes back to a user row leaving about 200' and no edge case covers a single active turn past 300 rows (every assistant-delta, tool-call, tool-result and marker writes a row: chat-panel.ts:840-867). Either the trim never fires there (the active session is not paged out) or it cuts plainly, and then the pending-tool list can still hold a removed node: render-registry.ts:409 `PEND.push({wrap:wrap,box:box,...});if(PEND.length>32)PEND.shift();` is cleared only by a user row or a done/error marker (:379, :389), and a later live result attaches inside that detached node and appends nothing: :437-442 `if(pend){...pend.box.appendChild(...);return pend.wrap;}`. The result would be invisible until the page is reloaded. forgetKeysBefore drops only KEYS. [files: vscode-plugin/src/chat/render-registry.ts, vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "State the trim's cut when no user row is in the removable range (plain cut, as for pages), and have the trim also drop pending-tool entries whose node it removes (so a later result renders standalone); add an edge-case row and a pager test for 'one turn longer than 300 rows'.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of ac1..ac4 maps to at least one named test, and the test conventions and fixtures the strategy relies on exist.",
+          "evidence": "The acceptance mapping names proving tests for all four ids. The conventions are real: protocol.test.ts:14-18 and :49-53 pin an added kind 'alongside every prior kind' (the pattern cited for load-older); chat-panel.test.ts filters `fc.posted` by payload type for session-restored (:623, :749, :2150) over a fake channel; session-store.ts:260 exports createInMemoryChatSessionStore. The trim gap above (a single turn past 300 rows) has no test, which is covered by that finding's action.",
+          "action": "None beyond the test named under error-paths.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 12,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-12T07:19:40.858Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-12T07:25:46.342Z",
+    "rangeBase": "c9d8173c0802dc08cd9ad569b7fd78d112cffc75",
+    "reviewOverride": {
+      "reason": "User override (2026-10-12): the two remaining medium findings are small and are carried into the plan as explicit task requirements instead of a third design pass. (1) The three shell-text pins in chat-panel.test.ts are updated in the same task that embeds the pager. (2) The trim cuts plainly when no user row is in the removable range, drops pending tool entries whose node it removes, and gets an edge-case test for one turn longer than 300 rows. The four acceptance criteria are stated in the plan.",
+      "at": "2026-10-12T07:25:46.342Z"
+    },
+    "questionResolutions": {
+      "qa610cc1d": {
+        "question": "Should the stored session also be split into pages (alternative a2), so a save during a turn stops rewriting the whole transcript? This design leaves storage alone; if wanted, it would be a separate tracked change after this one.",
+        "status": "resolved",
+        "choice": "Defer a2 but log it as a tracked follow-up now",
+        "rationale": "User decision 2026-10-12: \"log this as an issue\". Filed as ISSUE-c96a97a204fac22b; storage stays out of this Story.",
+        "resolvedAt": "2026-10-12T07:27:15.637Z"
+      },
+      "qe47b3caf": {
+        "question": "Are fixed sizes acceptable (a page of 100 rows, at most 200 on open, trim an active session above 300 held rows back to about 200), or should they be a setting?",
+        "status": "resolved",
+        "choice": "Fixed sizes as stated",
+        "rationale": "User decision 2026-10-12: \"fixed sizes no settings\".",
+        "resolvedAt": "2026-10-12T07:27:28.810Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Opening a chat shows only its most recent page of rows; a bar at the top of the transcript (and scrolling to the top) loads the page before it, keeping the reader's place. While a session is active, the view drops its oldest rows once it holds more than a set number and the reader is at the bottom; those rows come back the same way. A new row scrolls the view down only when the reader was already at the bottom. The host sends pages on request and the stored session is not changed."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Page the dev chat transcript: show the latest page, load older pages on demand, page out old rows of the active session"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "postInitialState",
+          "signature": "postInitialState(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Posts theme, then `session-restored` for the active session, then the approval head, the history list, and follows a live turn, as today."
+          },
+          "errors": [],
+          "preconditions": [
+            "A panel channel is attached"
+          ],
+          "postconditions": [
+            "`session-restored` carries only the latest window of the transcript, with `firstIndex` and `total` (see the `session-restored` data-model entry)",
+            "The new-chat and open-chat handlers post `session-restored` through the same helper, so all three sites behave alike"
+          ]
+        },
+        {
+          "name": "appendEvent",
+          "signature": "appendEvent(s: ChatSession, ev: TurnEvent): number | undefined",
+          "parameters": [
+            {
+              "name": "s",
+              "type": "ChatSession",
+              "purpose": "The session whose transcript receives the durable row",
+              "optional": false
+            },
+            {
+              "name": "ev",
+              "type": "TurnEvent",
+              "purpose": "The live event",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "number | undefined",
+            "meaning": "The absolute transcript index of the row the event wrote, or undefined when it wrote none (status, approval-request, permission-outcome, selection-outcome, an unmapped kind). It returned void before."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The rows written are exactly today's rows",
+            "ORDER CHANGE in both callers: each sink now calls appendEvent FIRST and posts the event second, with the returned index as `rowIndex`. Today both post first",
+            "In the followed-turn sink appendEvent stays outside the `!disposed && session === s` guard, so a turn followed for a session that is not shown is still written; only the post stays inside the guard"
+          ]
+        },
+        {
+          "name": "recordPermissionOutcome",
+          "signature": "recordPermissionOutcome(toolName: string, approved: boolean, requestId: string): void",
+          "parameters": [
+            {
+              "name": "toolName",
+              "type": "string",
+              "purpose": "The tool the decided card gated",
+              "optional": false
+            },
+            {
+              "name": "approved",
+              "type": "boolean",
+              "purpose": "The decision",
+              "optional": false
+            },
+            {
+              "name": "requestId",
+              "type": "string",
+              "purpose": "The decided request",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Writes the permission-outcome row and posts its turn-event (unchanged)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "ORDER CHANGE: the row is pushed first, then the turn-event is posted with `rowIndex` = the pushed row's index. With no session the event is posted without `rowIndex`, as today",
+            "recordSelectionOutcome changes the same way"
+          ]
+        },
+        {
+          "name": "recordSelectionOutcome",
+          "signature": "recordSelectionOutcome(requestId: string, chosen: readonly string[]): void",
+          "parameters": [
+            {
+              "name": "requestId",
+              "type": "string",
+              "purpose": "The decided selection request",
+              "optional": false
+            },
+            {
+              "name": "chosen",
+              "type": "readonly string[]",
+              "purpose": "The chosen labels",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Writes the selection-outcome row and posts its turn-event (unchanged)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "ORDER CHANGE: push first, then post with `rowIndex`; no `rowIndex` when there is no session"
+          ]
+        },
+        {
+          "name": "runTurn",
+          "signature": "runTurn(prompt: string, allowedTools?: readonly string[], opts?: { suppressEcho?: boolean | undefined }): Promise<void>",
+          "parameters": [
+            {
+              "name": "prompt",
+              "type": "string",
+              "purpose": "The user's message or a follow-up prompt",
+              "optional": false
+            },
+            {
+              "name": "allowedTools",
+              "type": "readonly string[]",
+              "purpose": "Tools pre-allowed for the turn",
+              "optional": true
+            },
+            {
+              "name": "opts",
+              "type": "{ suppressEcho?: boolean | undefined }",
+              "purpose": "Suppress the user-row echo for a synthetic follow-up",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Runs the turn (unchanged)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The `user-row` it posts gains `rowIndex` (the same index its key `r<n>` already carries). It already pushes before it posts, so no order change"
+          ]
+        },
+        {
+          "name": "line",
+          "signature": "line(s: string, cls?: string): HTMLElement",
+          "parameters": [
+            {
+              "name": "s",
+              "type": "string",
+              "purpose": "The row's text",
+              "optional": false
+            },
+            {
+              "name": "cls",
+              "type": "string",
+              "purpose": "An optional class",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "HTMLElement",
+            "meaning": "The appended node (unchanged)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "SCROLL RULE CHANGE: line() no longer sets `scrollTop = scrollHeight` itself. It appends through the pager's `append(node)`, which scrolls to the bottom only when the view was at the bottom before the append and no older page is being rendered",
+            "The two other sites that append to the terminal and force the scroll (renderDiff and the approval-card branch) append through the same pager call",
+            "A session restore still ends at the bottom"
+          ]
+        },
+        {
+          "name": "appendKeyed",
+          "signature": "appendKeyed(vm: RowViewModel, key: string | null): Node | null",
+          "parameters": [
+            {
+              "name": "vm",
+              "type": "RowViewModel",
+              "purpose": "The row to render",
+              "optional": false
+            },
+            {
+              "name": "key",
+              "type": "string | null",
+              "purpose": "`r<absolute transcript index>` for a replayed or page row; null for an unkeyed row",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Node | null",
+            "meaning": "The rendered node, or the node already rendered for that key (unchanged)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Unchanged behaviour. Replayed rows are now keyed by their ABSOLUTE index (`firstIndex + i`), not by their position in the posted array",
+            "The registry gains two companions used by paging: `forgetKeysBefore(index)` drops the `r<n>` keys below an index so a trimmed row renders again when its page is reloaded, and `withIsolatedPending(fn)` runs a render with an empty pending-tool list and restores the live one afterwards, so an older page never captures or loses a live tool row"
+          ]
+        },
+        {
+          "name": "resetKeys",
+          "signature": "resetKeys(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Clears the key map, the pending tool rows and the approval-card map (unchanged)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Still called on `session-restored`, which also resets the pager's window (first held index, last index, total, loading flag)"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "session-restored (HostToWebview message)",
+        "change": "field-add",
+        "details": "Adds `firstIndex: number` (absolute transcript index of `transcript[0]`) and `total: number` (rows in the whole transcript). `transcript` now holds only the latest window: the last PAGE_ROWS (100) rows, extended back to the start of the turn (the nearest earlier user row) when that is within PAGE_ROWS more rows, so a window is at most 200 rows. A transcript no longer than one page is sent whole with firstIndex 0. A webview that receives no `firstIndex` treats it as 0.",
+        "schemaDiff": "{ type:'session-restored'; sessionId; transcript: TranscriptEntry[]; mode? } -> { ...; firstIndex: number; total: number }",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/protocol.ts",
+          "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        ]
+      },
+      {
+        "entity": "load-older (WebviewToHost message)",
+        "change": "new",
+        "details": "`{ type:'load-older'; sessionId: string; before: number }`: the webview asks for the page that ends just before absolute index `before` (its first held row). Sent when the 'load earlier' bar is clicked or the transcript is scrolled to its top, at most one request at a time. Added to the WebviewToHost union and to WEBVIEW_TO_HOST_TYPES, with a protocol.test.ts case, as cancel-turn and selection-decision were.",
+        "callSites": [
+          "vscode-plugin/src/chat/protocol.ts",
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+        ]
+      },
+      {
+        "entity": "transcript-page (HostToWebview message)",
+        "change": "new",
+        "details": "`{ type:'transcript-page'; sessionId: string; before: number; firstIndex: number; rows: TranscriptEntry[]; total: number }`: rows `[firstIndex, before)` of the active session's transcript, cut by the same page rule as the restore window. `rows` is empty and `firstIndex` equals `before` when nothing is older. The webview applies it only when `sessionId` is the shown session and `before` equals its first held index. Added to the HostToWebview union and to HOST_TO_WEBVIEW_TYPES, with a protocol.test.ts case.",
+        "callSites": [
+          "vscode-plugin/src/chat/protocol.ts",
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+        ]
+      },
+      {
+        "entity": "turn-event and user-row (HostToWebview messages)",
+        "change": "field-add",
+        "details": "Both gain an optional `rowIndex: number`: the absolute transcript index of the row the message wrote. Set by all five writers: appendEvent's two callers (assistant, marker, tool-result rows), recordPermissionOutcome, recordSelectionOutcome and runTurn's user row. Absent on an event that writes no row (status, approval-request) and on an outcome posted with no session. The webview stamps each node it appends with the index it belongs to; a node appended without one takes the latest index seen.",
+        "schemaDiff": "{ type:'turn-event'; event } -> { type:'turn-event'; event; rowIndex?: number }; { type:'user-row'; text; key } -> { ...; rowIndex?: number }",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/protocol.ts"
+        ]
+      },
+      {
+        "entity": "transcript-window (new vscode-free module)",
+        "change": "new",
+        "details": "Pure functions the host uses to cut pages: `latestWindow(transcript, pageRows)` and `pageBefore(transcript, before, pageRows)`, each returning `{ firstIndex, rows }`. One rule for both: start PAGE_ROWS rows before the end of the range, then move the start back to the nearest user row within a further PAGE_ROWS rows; with none there, keep the plain cut. `before` is clamped to 0..length. Exports PAGE_ROWS = 100.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      },
+      {
+        "entity": "transcript-pager (new webview source module)",
+        "change": "new",
+        "details": "The webview's paging logic as an embeddable function source (the pattern render-registry.ts uses), so it is tested against the shared fake DOM. It is created before the registry (the shell's line() needs it) and is handed the registry afterwards. It holds the window state (first held index, last index, total, loading flag, whether a page is being rendered) and exposes: `append(node)`, the single way a node joins the terminal, which follows to the bottom only when the view was at the bottom before the append and no page is being rendered; `reset(firstIndex, total)` for a restore, which ends at the bottom; `stamp(fromChild, rowIndex)` to mark newly appended nodes; `prepend(page)`, which records scrollTop and scrollHeight, renders the page through the registry (keys `r<absolute index>`, pending tool rows isolated, no following), moves the new nodes above the held ones and sets scrollTop to the recorded value plus the height added; `trimIfNeeded()`, which, when more than MAX_HELD_ROWS (300) rows are held and the view is at the bottom, removes the oldest nodes back to a user row leaving about 200 and forgets their keys; a scroll listener that requests an older page at the top and runs the trim when the view returns to the bottom; and the 'load earlier' bar, shown whenever the first held index is above 0, with the count of older rows.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/render-registry.ts"
+        ]
+      },
+      {
+        "entity": "fake-dom.ts (shared test fixture)",
+        "change": "field-add",
+        "details": "The pager's tests reuse `__tests__/fake-dom.ts` (bodyStub and its parent/sibling links, insertBefore, removeChild); no second fake DOM is written. The fixture gains only the scroll metrics the pager reads and writes: scrollTop, scrollHeight and clientHeight.",
+        "callSites": [
+          "vscode-plugin/src/chat/__tests__/fake-dom.ts"
+        ]
+      },
+      {
+        "entity": "ChatSession (stored record)",
+        "change": "invariant-change",
+        "details": "No field changes and no storage change. Invariant relied on: transcript rows are only ever appended, so an absolute row index is stable for the life of a session and can identify a row across pages.",
+        "callSites": [
+          "vscode-plugin/src/chat/session-store.ts",
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A `load-older` arrives for a session that is no longer the active one (the user switched chats while the request was in flight)",
+          "detection": "The host compares the message's `sessionId` with the active session's id",
+          "response": "The host ignores it and posts nothing",
+          "userImpact": "None: the new chat already shows its own latest page",
+          "recoverable": true
+        },
+        {
+          "scenario": "A `load-older` carries a `before` that is not a whole number, or a `sessionId` that is not a string",
+          "detection": "The host checks `typeof sessionId === 'string'` and `Number.isInteger(before)` before using them",
+          "response": "The message is dropped, as other malformed inbound messages are",
+          "userImpact": "None",
+          "recoverable": true
+        },
+        {
+          "scenario": "A `transcript-page` arrives that the webview no longer wants: a duplicate, one for another session, or one whose `before` is not the first held index (the window moved, or a restore happened in between)",
+          "detection": "The pager compares `sessionId` with the shown session and `before` with its first held index",
+          "response": "The page is discarded; the loading flag is cleared only when the page matches the request that set it or a restore reset it",
+          "userImpact": "None: no duplicate or misplaced rows",
+          "recoverable": true
+        },
+        {
+          "scenario": "No `transcript-page` ever answers a `load-older` (the host dropped it as stale)",
+          "detection": "The pager's loading flag is still set when the next `session-restored` arrives, or 5 seconds pass with no page",
+          "response": "The flag is cleared, so the bar and scroll can ask again",
+          "userImpact": "The bar works again after a moment instead of staying stuck",
+          "recoverable": true
+        },
+        {
+          "scenario": "One row of an older page fails to render",
+          "detection": "The registry's renderRow already catches a renderer's throw and falls back to a plain line",
+          "response": "That row falls back; the rest of the page is rendered and moved into place; the pager clears its 'rendering a page' state in a finally, so following is never left switched off",
+          "userImpact": "One row shows as plain text",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A transcript of 0 rows, or no longer than one page",
+          "expected": "`session-restored` carries the whole transcript with firstIndex 0 and total = its length; no 'load earlier' bar is shown and nothing is requested"
+        },
+        {
+          "input": "A transcript of 1,000 rows with a user row every 20 rows",
+          "expected": "The restore window starts at the user row at or before index 900 and holds at most 200 rows; each `load-older` returns the page ending at the first held index, also starting at a user row; repeated loads reach index 0 and the bar disappears"
+        },
+        {
+          "input": "A single turn longer than 200 rows (no user row within reach)",
+          "expected": "The window is the plain last 100 rows; the page before it is the previous 100; no row is skipped or sent twice"
+        },
+        {
+          "input": "`before` is 0, negative, or beyond the transcript length",
+          "expected": "It is clamped to 0..length; at 0 the reply has no rows and firstIndex 0, and the webview hides the bar"
+        },
+        {
+          "input": "A live row arrives while the reader is scrolled up (reading older rows) during a streaming turn",
+          "expected": "The row is appended but the view does not move, and nothing is trimmed, however many rows are held"
+        },
+        {
+          "input": "The reader scrolls back to the bottom with more than 300 rows held",
+          "expected": "The scroll listener runs the trim: the oldest rows are removed back to a user row, leaving about 200, and the bar shows the count of older rows"
+        },
+        {
+          "input": "A live row arrives while the view is at the bottom and more than 300 rows are held",
+          "expected": "The view follows to the bottom, then the oldest rows are trimmed as above; the view stays at the bottom"
+        },
+        {
+          "input": "An older page is prepended while the reader is at the top",
+          "expected": "The page's rows appear above; the row the reader was looking at stays where it was on screen (scrollTop grows by the height added); the view is not moved to the bottom at any point"
+        },
+        {
+          "input": "An older page ends with a tool command whose result is in the held window",
+          "expected": "Cannot arise when pages start at a user row; with a plain cut the result row already rendered on its own with its stored command, and the older page's pending tool row is discarded after the page renders, never attached to a later live result"
+        },
+        {
+          "input": "A live-only card (approval, diff) sits in rows that are trimmed, then the page is reloaded",
+          "expected": "The card is not shown again; decided approvals appear as their outcome chips, as on any restore today. The current approval card is the newest node, so it is never in the trimmed range"
+        },
+        {
+          "input": "The webview reloads (`ready`) while older pages were loaded",
+          "expected": "The view resets to the latest window at the bottom; the approval head is posted again after it (unchanged)"
+        },
+        {
+          "input": "A follow-up turn that suppresses its user echo writes a user row that is never posted",
+          "expected": "The next posted row carries a higher `rowIndex`; stamps stay increasing and the gap is harmless"
+        },
+        {
+          "input": "A permission or selection outcome is recorded when there is no session",
+          "expected": "The event is posted without `rowIndex`; its node takes the latest index seen"
+        },
+        {
+          "input": "A followed turn's events arrive for a session that is not the one shown",
+          "expected": "The rows are still written to that session; nothing is posted (unchanged)"
+        },
+        {
+          "input": "A stored session from before this change",
+          "expected": "Works unchanged: the store is not touched and absolute indexes come from the array positions"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A stored session keeps its shape: one whole record per session key, the transcript an array of the existing row types; nothing in the store is rewritten or converted",
+          "source": "c2"
+        },
+        {
+          "text": "`session-restored` still clears the terminal, resets the registry's keys, replays through `reg.appendKeyed(reg.toViewModel(row), key)`, carries the session's mode and ends at the bottom; it is still posted on open, adopt, `ready`, new-chat and open-chat",
+          "source": "c3"
+        },
+        {
+          "text": "The durable rows are unchanged: the same five writers write the same rows; status and approval-request are not persisted; only the order of write and post changes",
+          "source": "c4"
+        },
+        {
+          "text": "A turn followed for a session that is not shown is still written to that session",
+          "source": "c4"
+        },
+        {
+          "text": "A replayed row and its live echo still reconcile to one node: the user row's live key `r<absolute index>` equals its replay key",
+          "source": "c5"
+        },
+        {
+          "text": "A reader at the bottom still sees each new row scroll into view, as today",
+          "source": "c5"
+        },
+        {
+          "text": "The provider lock still settles from whether the session has any rows (now from `total`, not the posted array's length)",
+          "source": "c7"
+        },
+        {
+          "text": "The shell stays one nonce'd inline script with no innerHTML outside the guarded markdown path and no remote origin",
+          "source": "c7"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through tsx; test files are *.test.ts under __tests__ beside the code (vscode-plugin/src/chat/__tests__)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The page-cutting rule, with no VS Code and no DOM",
+          "subjects": [
+            "latestWindow: a transcript no longer than one page is returned whole with firstIndex 0",
+            "latestWindow: a long transcript returns its last page, moved back to the start of the turn when a user row is within one more page, and never more than two pages of rows",
+            "latestWindow and pageBefore: with no user row within reach the cut is the plain page; consecutive pages cover every row exactly once",
+            "pageBefore: before is clamped to 0..length; at 0 it returns no rows and firstIndex 0",
+            "walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The webview pager on the shared fake DOM, driving the REAL registry through the same line() the shell uses (line() appends through the pager), so scroll behaviour is observed, not assumed",
+          "subjects": [
+            "a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held",
+            "a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, the bar appears, and the view is still at the bottom",
+            "returning to the bottom with more than 300 rows held runs the trim from the scroll listener",
+            "pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders",
+            "pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row",
+            "trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes",
+            "pager reset: a restore sets the first held index and total, ends at the bottom, and shows the 'load earlier' bar only when the first held index is above 0, naming the count of older rows",
+            "pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds",
+            "a row that throws while an older page renders falls back, and following is switched back on afterwards",
+            "registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards"
+          ],
+          "fixturesNeeded": [
+            "__tests__/fake-dom.ts (bodyStub, insertBefore, removeChild), extended with scrollTop, scrollHeight and clientHeight; no second fake DOM"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The protocol inventories",
+          "subjects": [
+            "WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', alongside every prior kind"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The panel host over the in-memory store and a fake channel",
+          "subjects": [
+            "opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0",
+            "ready, new-chat and open-chat post the same windowed session-restored",
+            "load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0",
+            "load-older for another session id, or with a malformed before or sessionId, posts nothing",
+            "live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none",
+            "write-then-post order: when each live row is posted, the transcript already holds it at that index",
+            "a turn followed for a session that is not shown still writes its rows and posts nothing",
+            "the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total",
+            "the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows"
+          ],
+          "fixturesNeeded": [
+            "a seeded in-memory store with a long transcript of whole turns (user row, assistant rows, markers)",
+            "the existing fakeChannel and scriptedAdapter"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0",
+            "ready, new-chat and open-chat post the same windowed session-restored"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0",
+            "pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders",
+            "walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held",
+            "a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, the bar appears, and the view is still at the bottom",
+            "returning to the bottom with more than 300 rows held runs the trim from the scroll listener",
+            "live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "A session is one whole record in VS Code global state with its transcript inline (s1: 'How a session and its transcript are stored'). The host posts the whole transcript in `session-restored` from three sites and the webview replays every row, keyed by its position in the posted array (s1: 'Where the whole transcript is posted and replayed'). The five row writers post before or without an index (s1: 'The five places that write a transcript row and post it live, and their order'). Every appended row forces the view to the bottom and nothing removes rows (s1: 'How rows are appended and scrolled in the webview').",
+      "stateAfter": "The stored record is the same. `session-restored` carries the latest window with `firstIndex` and `total`; the webview asks for older pages with `load-older` and receives `transcript-page`; every live row is written first and posted with `rowIndex`; all appends to the terminal go through the pager, which follows only from the bottom, holds a bounded window keyed by absolute index, and trims its oldest rows while a session is active.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the page-cutting module and its constants; nothing uses it yet",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the new protocol shapes: the optional fields on session-restored, turn-event and user-row, the load-older and transcript-page messages, and their entries in the two type inventories",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Make every live row write-then-post with its row index at the five writers, and have the host answer load-older; the restore still sends the whole transcript, now with firstIndex 0 and total",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the scroll metrics to the shared fake DOM, the registry's paging companions and the webview pager source, with their tests; the shell does not embed the pager yet",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Embed the pager in the shell: route line() and the two other append sites through it, replay with absolute keys, handle transcript-page, stamp and trim live rows, show the bar, settle the provider lock from total",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Switch the three restore sites to the latest window, and update the tests that pinned the whole-transcript replay",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No stored data changes, so sessions written before and after are interchangeable and an older build of the plugin reads them unchanged. The host and its webview shell ship together in one extension build, so there is no mixed-version pair; even so the new message fields are optional and a webview that sees no `firstIndex` treats it as 0. One visible behaviour changes on purpose: a new row no longer pulls a reader who has scrolled up back to the bottom. Reverting the change restores the whole-transcript restore with no clean-up.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Windowed view: the host sends pages, the webview holds a bounded window",
+        "oneLineSummary": "The stored session is unchanged; the host posts only the latest page on restore and older pages on request, and the webview trims its oldest rows as the active session grows.",
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Paged storage plus windowed view",
+        "oneLineSummary": "As a1, and the stored transcript is split into fixed-size pages under their own keys so saves write only the last page.",
+        "costEstimate": "L",
+        "reasonRejected": "Gives everything a1 does and also cheaper saves, but that extra is not what was asked, and it puts existing history at risk through a storage conversion. It can follow as its own tracked change, built on a1's protocol."
+      },
+      {
+        "id": "a3",
+        "name": "Send everything, render lazily in the webview",
+        "oneLineSummary": "The host still posts the whole transcript; the webview keeps the rows as data and renders only a window of them.",
+        "costEstimate": "M",
+        "reasonRejected": "Leaves part of the open cost in place and does not page the active session out of the webview, which the ask names explicitly."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Should the stored session also be split into pages (alternative a2), so a save during a turn stops rewriting the whole transcript? This design leaves storage alone; if wanted, it would be a separate tracked change after this one.",
+      "Are fixed sizes acceptable (a page of 100 rows, at most 200 on open, trim an active session above 300 held rows back to about 200), or should they be a setting?"
+    ],
+    "sequenceDefinition": {
+      "narrative": "How a long chat opens, how an older page is fetched, and how an active session drops its oldest rows.",
+      "participants": [
+        {
+          "id": "reader",
+          "label": "Reader",
+          "description": "The person using the chat panel"
+        },
+        {
+          "id": "webview",
+          "label": "Webview (pager + registry)",
+          "description": "The chat panel's webview: renders rows and owns the window of rows it holds"
+        },
+        {
+          "id": "host",
+          "label": "Panel host",
+          "description": "The extension-side chat panel host, which holds the session and its whole transcript"
+        }
+      ],
+      "messages": [
+        {
+          "from": "reader",
+          "to": "webview",
+          "label": "open a long chat",
+          "kind": "call",
+          "description": "The reader opens or switches to a chat with a long history"
+        },
+        {
+          "from": "host",
+          "to": "webview",
+          "label": "session-restored (latest window, firstIndex, total)",
+          "kind": "call",
+          "description": "The host posts only the latest page of rows with its absolute start index and the total row count"
+        },
+        {
+          "from": "webview",
+          "to": "reader",
+          "label": "latest page + 'load earlier' bar",
+          "kind": "return",
+          "description": "The webview renders the page keyed by absolute index, ends at the bottom, and shows the bar because older rows exist"
+        },
+        {
+          "from": "reader",
+          "to": "webview",
+          "label": "click the bar or scroll to the top",
+          "kind": "call",
+          "description": "The reader asks for earlier rows"
+        },
+        {
+          "from": "webview",
+          "to": "host",
+          "label": "load-older (sessionId, before)",
+          "kind": "call",
+          "description": "The webview requests the page that ends just before its first held row; only one request at a time"
+        },
+        {
+          "from": "host",
+          "to": "webview",
+          "label": "transcript-page (rows, firstIndex, before, total)",
+          "kind": "return",
+          "description": "The host cuts the page by the same rule as the restore window and posts it; a stale request is ignored"
+        },
+        {
+          "from": "webview",
+          "to": "reader",
+          "label": "page prepended, place kept",
+          "kind": "return",
+          "description": "The webview renders the page above the held rows and adjusts the scroll so the reader's place does not move"
+        },
+        {
+          "from": "host",
+          "to": "webview",
+          "label": "turn-event / user-row (rowIndex)",
+          "kind": "call",
+          "description": "During a turn each live row is written first and then posted with its absolute index, which the webview stamps on the nodes it appends"
+        },
+        {
+          "from": "webview",
+          "to": "webview",
+          "label": "follow only from the bottom; trim oldest rows when over 300",
+          "kind": "recurse",
+          "description": "A new row scrolls the view down only if the reader was at the bottom; then, when more than 300 rows are held, the oldest are removed back to a turn start and can be loaded again"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/chat module profile and import graph",
+      "quotedText": "A leaf consumer: in-degree 10 (9 from vscode-plugin/src/extension.ts, 1 from vscode-plugin/src/delivery/board-wiring.ts), out-degree 2."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-store.ts",
+      "quotedText": "void memento.update(SESSION_PREFIX + session.id, session);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts",
+      "quotedText": "post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript, mode: permissionMode });"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts",
+      "quotedText": "else post({ type: 'turn-event', event: ev });"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts",
+      "quotedText": "function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;t.appendChild(d);t.scrollTop=t.scrollHeight;return d;}"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/protocol.ts",
+      "quotedText": "export const WEBVIEW_TO_HOST_TYPES = ["
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+      "quotedText": "assert.match(html, /reg\\.appendKeyed\\(reg\\.toViewModel\\(x\\),'r'\\+i\\)/, 'restore replays keyed via the sc1 registry');"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/fake-dom.ts",
+      "quotedText": "insertBefore(c: BodyStub, ref: BodyStub | null): BodyStub;"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/render-registry.ts",
+      "quotedText": "function appendKeyed(vm,key){if(key==null)return renderRow(vm);if(KEYS[key])return KEYS[key];var n=renderRow(vm);if(n)KEYS[key]=n;return n;}"
+    },
+    {
+      "id": "c10",
+      "kind": "stakeholder",
+      "ref": "user request, 2026-10-12",
+      "quotedText": "Support pagination of chat history, it takes ages to open when chat history is long. - even active session should page out history"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "first review of LLD-ddc4ede1dbf84626-S001 (block: 1 high, 4 medium)",
+      "quotedText": "Every row the registry renders goes through the shell's `line()`, which forces the view to the bottom on each append"
+    }
+  ]
+}

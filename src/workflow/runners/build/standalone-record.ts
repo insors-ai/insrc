@@ -25,7 +25,7 @@ import { dirname } from 'node:path';
 import { getLogger } from '../../../shared/logger.js';
 import { execFileSync } from 'node:child_process';
 
-import { writeAtomic, artifactIdMarker, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs, inheritedStoryStandalone } from '../../storage.js';
+import { writeAtomic, artifactIdMarker, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs, folderIdentityMeta, inheritedStoryStandalone } from '../../storage.js';
 import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bindings.js';
 import type { ChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
 
@@ -67,6 +67,10 @@ export interface BuildRecord {
 		readonly storyId:    string;
 		readonly createdAt:  string;
 		readonly updatedAt?: string | undefined;
+		/** The work item's label and anchor this record is filed under, stamped
+		 *  at persist (ISSUE-764b88ed). Absent on older records. */
+		readonly epicSlug?:      string | undefined;
+		readonly epicCreatedAt?: string | undefined;
 		/** The party that wrote the code. Stamped by the build-step writers;
 		 *  absent on older records, whose author is unknown. */
 		readonly authoredBy?: 'controller' | 'daemon' | undefined;
@@ -252,10 +256,16 @@ export function headShortSha(repoPath: string): string | undefined {
 	}
 }
 
-/** Paths a MERGED record occupies./** Paths a MERGED record occupies. The single derivation both the writer and the
+/** Paths a MERGED record occupies. The single derivation both the writer and the
  *  pre-persist lookup below use, so the two can never disagree about where a
  *  record lives. */
 function pathsForMerged(repoPath: string, merged: BuildRecord): { md: string; json: string } {
+	const fa = folderArgsForMerged(repoPath, merged);
+	return buildArtifactPaths(repoPath, merged.meta.epicHash, merged.meta.storyId, fa.createdAtISO, fa.workItemKind, fa.epicSlug);
+}
+
+/** The work-item folder a MERGED record is filed under. */
+function folderArgsForMerged(repoPath: string, merged: BuildRecord): ReturnType<typeof buildRecordFolderArgs> {
 	// The record's own flag, OR what the work item itself says. The flag alone was
 	// not enough: a record written without it (any writer that could not resolve
 	// the route) was filed under docs/epics/ even though its Story's LLD and ISSUE
@@ -265,8 +275,7 @@ function pathsForMerged(repoPath: string, merged: BuildRecord): { md: string; js
 	// true on the record is never overridden.
 	const standalone = merged.meta.standalone === true
 		|| inheritedStoryStandalone(repoPath, merged.meta.epicHash, merged.meta.storyId) === true;
-	const fa = buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, standalone, merged.meta.createdAt);
-	return buildArtifactPaths(repoPath, merged.meta.epicHash, merged.meta.storyId, fa.createdAtISO, fa.workItemKind, fa.epicSlug);
+	return buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, standalone, merged.meta.createdAt);
 }
 
 /**
@@ -305,7 +314,11 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	const withCommit: BuildRecord = commit !== undefined
 		? { ...rec, body: { ...rec.body, commit } }
 		: rec;
-	const merged = mergeWithPrior(jsonPath, withCommit);
+	const unstamped = mergeWithPrior(jsonPath, withCommit);
+	// Store the folder identity the record is filed under, so its meta and its md
+	// location agree (ISSUE-764b88ed). It is resolved from the work item, never
+	// from the stamp itself, so a re-persist re-derives rather than echoes it.
+	const merged: BuildRecord = { ...unstamped, meta: { ...unstamped.meta, ...folderIdentityMeta(folderArgsForMerged(repoPath, unstamped)) } };
 	writeAtomic(jsonPath, JSON.stringify(merged, null, 2) + '\n');
 	const paths = pathsForMerged(repoPath, merged);
 	// ONE renderer, every route — the former `meta.standalone` ternary is gone.

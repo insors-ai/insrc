@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "0d565a953288f511",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "resolve-jetbrains-marketplace-plugin-verifier-s",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

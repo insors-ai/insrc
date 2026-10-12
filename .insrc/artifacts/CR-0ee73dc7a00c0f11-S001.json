@@ -10,7 +10,10 @@
     "schemaVersion": 1,
     "epicHash": "0ee73dc7a00c0f11",
     "storyId": "S001",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "bug-analyze-planner-gives-plan-task",
+    "epicCreatedAt": "2026-10-09T14:43:15.174Z",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

@@ -9,7 +9,8 @@
     "standalone": true,
     "sizeClass": "small",
     "triageRationale": "One story in one module (vscode-plugin/src/delivery) with the approach already settled by the approved mock.",
-    "approvedAt": "2026-10-11T09:38:49.995Z"
+    "approvedAt": "2026-10-11T09:38:49.995Z",
+    "epicSlug": "show-story-s-planned-tasks-delivery"
   },
   "body": {
     "tasks": [

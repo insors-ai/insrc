@@ -11,7 +11,8 @@
     "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
     "storyId": "s10",
     "standalone": false,
-    "approvedAt": "2026-08-04T16:29:51.697Z"
+    "approvedAt": "2026-08-04T16:29:51.697Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
   },
   "body": {
     "summary": "Back-filled BUILD ledger entry for Story s10 (adaptive decision-at-a-time elicit loop). The build was implemented by hand from the approved PLAN (PLAN-abd1ecf6a5f5063e-s10, review PASS 0H/0M/13L) and committed as bd6042f; this record is its completion ledger entry.",

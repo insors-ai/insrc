@@ -19,7 +19,8 @@
     "schemaVersion": 1,
     "specHash": "0f8ddef9b2d99e8e",
     "epicSlug": "build-vscode-extension-insrc-mirrors-what",
-    "approvedAt": "2026-09-21T16:23:20.687Z"
+    "approvedAt": "2026-09-21T16:23:20.687Z",
+    "standalone": true
   },
   "body": {
     "category": "design",

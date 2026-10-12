@@ -5,7 +5,8 @@
     "storyId": "s1",
     "createdAt": "2026-10-10T17:37:33.094Z",
     "updatedAt": "2026-10-10T17:57:34.617Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "vs-code-plugin-chat-cli-turn"
   },
   "body": {
     "tasks": [

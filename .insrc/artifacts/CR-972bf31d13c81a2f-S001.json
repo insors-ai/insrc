@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "972bf31d13c81a2f",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "auto-fall-back-diff-based-code",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

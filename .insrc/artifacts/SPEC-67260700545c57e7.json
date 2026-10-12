@@ -19,7 +19,8 @@
     "schemaVersion": 1,
     "specHash": "67260700545c57e7",
     "epicSlug": "complete-editor-development-chat-interface-insrc",
-    "approvedAt": "2026-09-25T13:08:32.579Z"
+    "approvedAt": "2026-09-25T13:08:32.579Z",
+    "standalone": true
   },
   "body": {
     "category": "design",

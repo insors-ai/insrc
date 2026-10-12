@@ -6,7 +6,8 @@
     "createdAt": "2026-10-03T11:47:00.658Z",
     "updatedAt": "2026-10-03T12:34:55.212Z",
     "standalone": true,
-    "approvedAt": "2026-10-03T12:34:55.279Z"
+    "approvedAt": "2026-10-03T12:34:55.279Z",
+    "epicSlug": "artifact-docs-folders-fork-per-stage"
   },
   "body": {
     "tasks": [

@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "ad0d45c9d690f8c1",
-    "storyId": "s6"
+    "storyId": "s6",
+    "epicSlug": "build-insrc-vs-code-extension-v1",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z"
   },
   "body": {
     "kind": "code-review",

@@ -19,11 +19,12 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "b846171f48d26a25",
-    "epicSlug": "lld-approved-standalone-bugfix-issue-b846171f48d26a25",
+    "epicSlug": "bug-vs-code-insrc-chat-webview",
     "storyId": "s1",
     "lldRunId": "wf-1790446816695-8c2jhh",
     "lldEffectiveHash": "c90ce092998d69d1fde21c46d51b54f0370fc37d95220ca042825ff02973a522",
-    "approvedAt": "2026-09-27T04:34:35.817Z"
+    "approvedAt": "2026-09-27T04:34:35.817Z",
+    "standalone": true
   },
   "body": {
     "tasks": [

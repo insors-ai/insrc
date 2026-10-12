@@ -5,7 +5,9 @@
     "epicHash": "f900cf34c0342d4f",
     "storyId": "s3",
     "createdAt": "2026-08-06T00:00:00.000Z",
-    "approvedAt": "2026-08-06T08:08:56.206Z"
+    "approvedAt": "2026-08-06T08:08:56.206Z",
+    "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z"
   },
   "body": {
     "focus": "Orphan daemon-process scan + guarded multi-select kill in the Debug pane Daemon section",

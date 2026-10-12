@@ -9,7 +9,8 @@
     "authoredBy": "controller",
     "triageRationale": "bugfix, magnitude small: two local changes in the analyze executor (the task record path and the planner task's failure reason), no design decision open.",
     "updatedAt": "2026-10-10T06:34:14.808Z",
-    "approvedAt": "2026-10-10T06:34:14.971Z"
+    "approvedAt": "2026-10-10T06:34:14.971Z",
+    "epicSlug": "bug-analyzer-s-plan-tree-child"
   },
   "body": {
     "focus": "Fix ISSUE-8f90988572f4d5b2: every task of every plan in a plan tree keeps its own record (a child plan's task records are stored apart from its parent's and its sibling plans'; root records stay where they are; removing a run still removes all of them), and a planner task whose child plan produced no report fails with the child's cause (which child task failed and its reason), keeping the code child-plan-unavailable.",

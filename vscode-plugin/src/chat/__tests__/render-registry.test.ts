@@ -66,6 +66,9 @@ interface Registry {
   resetKeys(): void;
   onApprovalDecision(cb: (requestId: string, decision: 'approve' | 'deny') => void): void;
   onSelectionDecision(cb: (requestId: string, selected: string[]) => void): void;
+  forgetKeysBefore(index: number): void;
+  withIsolatedPending<T>(fn: () => T): T;
+  forgetPendingIn(nodes: FakeNode[]): void;
 }
 function makeRegistry(): { reg: Registry; appended: FakeNode[] } {
   const { document } = fakeDocument();
@@ -903,4 +906,94 @@ test('ISSUE-1163888072faa9f2: a user row settles pending rows (cancelled turn, r
   transcript.forEach((x, i) => reg.appendKeyed(reg.toViewModel(x), 'r' + i));
   assert.equal(appended.length, 3, 'the result draws its own row');
   assert.ok(!allText(appended[0]!).includes('late'), 'the cancelled turn\'s row is untouched');
+});
+
+// ---- ISSUE-6a811b8a: the approval card shows its place in the queue ----
+
+test("approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before", () => {
+  const { reg } = makeRegistry();
+  const plain = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'p0', title: 'Run', detail: 'x' } })!;
+  assert.equal(findByClass(plain, 'insrc-approval__pos'), undefined, 'no position label without position/total');
+  assert.equal(findByClass(plain, 'insrc-approval__title')!.children.length, 0, 'the title is just its text, as before');
+  const single = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'p1', title: 'Run', position: 1, total: 1 } })!;
+  assert.equal(findByClass(single, 'insrc-approval__pos'), undefined, 'a total of 1 shows no label');
+  const queued = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'p2', title: 'Run', position: 1, total: 3 } })!;
+  assert.equal(findByClass(queued, 'insrc-approval__pos')?.textContent, '1 of 3');
+  assert.equal(findByClass(queued, 'insrc-approval__title')?.textContent, 'Run', 'the title text is unchanged');
+
+  // In place: a shown card gains / updates its label; an unknown id changes nothing.
+  const r = reg as unknown as { approvalPosition(id: string, p: number, n: number): boolean };
+  assert.equal(r.approvalPosition('p0', 1, 2), true);
+  assert.equal(findByClass(plain, 'insrc-approval__pos')?.textContent, '1 of 2', 'a card posted alone gains the label when the queue grows');
+  assert.equal(r.approvalPosition('p2', 1, 4), true);
+  assert.equal(findByClass(queued, 'insrc-approval__pos')?.textContent, '1 of 4');
+  assert.equal(r.approvalPosition('nope', 1, 9), false, 'an unknown id is ignored');
+  assert.equal(findByClass(queued, 'insrc-approval__pos')?.textContent, '1 of 4', 'and changes no card');
+});
+
+// ---- Story E20261012ddc4ede1:S001 t4: the registry's paging companions ----
+
+const assistantVm = (text: string) => ({ kind: 'assistant-text', role: 'assistant', text, collapsible: true });
+const toolVm = (cmd: string) => ({ kind: 'tool-command', text: cmd, collapsible: false });
+const resultVm = (cmd: string, output: string) => ({ kind: 'tool-result', text: cmd, collapsible: true, meta: { command: cmd, output } });
+
+test('registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards', () => {
+  const { reg, appended } = makeRegistry();
+  const n3 = reg.appendKeyed(assistantVm('three'), 'r3');
+  const n10 = reg.appendKeyed(assistantVm('ten'), 'r10');
+  const other = reg.appendKeyed(assistantVm('other'), 'x1');
+  const odd = reg.appendKeyed(assistantVm('odd'), 'r2b');
+  reg.forgetKeysBefore(10);
+  // r3 is forgotten: the same key renders a new node. r10 (not below), x1 and r2b (not r<n>) are kept.
+  const again = reg.appendKeyed(assistantVm('three'), 'r3');
+  assert.notEqual(again, n3, 'a forgotten key renders again');
+  assert.equal(reg.appendKeyed(assistantVm('ten'), 'r10'), n10, 'a key at the index is kept');
+  assert.equal(reg.appendKeyed(assistantVm('other'), 'x1'), other, 'a key that is not r<n> is kept');
+  assert.equal(reg.appendKeyed(assistantVm('odd'), 'r2b'), odd, 'a key that only starts like r<n> is kept');
+  assert.ok(n3 !== null && n3.textContent !== undefined, 'the forgotten node itself is untouched');
+
+  // A live tool row is pending. A render inside withIsolatedPending neither sees it nor leaves its own behind.
+  const live = reg.renderRow(toolVm('npm test'))!;
+  const before = appended.length;
+  const out = reg.withIsolatedPending(() => {
+    const standalone = reg.renderRow(resultVm('npm test', 'older output'))!;
+    assert.notEqual(standalone, live, 'inside: the live pending row is not visible, so the result is its own row');
+    reg.renderRow(toolVm('ls')); // a pending row created inside, left unanswered
+    return 'returned';
+  });
+  assert.equal(out, 'returned', 'the callback\'s value is returned');
+  assert.equal(appended.length, before + 2, 'the isolated render appended its own two rows');
+  // Afterwards the live list is back: a result for the live row attaches to it, and the one
+  // created inside is gone, so its result renders standalone.
+  assert.equal(reg.renderRow(resultVm('npm test', 'live output')), live, 'the live pending row is restored');
+  const count = appended.length;
+  const lsResult = reg.renderRow(resultVm('ls', 'x'))!;
+  assert.equal(appended.length, count + 1, 'the pending row created inside did not survive');
+  assert.ok(lsResult.className.includes('insrc-msg--toolresult'));
+
+  // The live list is restored also when the render throws.
+  const live2 = reg.renderRow(toolVm('make'))!;
+  assert.throws(() => reg.withIsolatedPending(() => { throw new Error('boom'); }), /boom/);
+  assert.equal(reg.renderRow(resultVm('make', 'done')), live2, 'restored after a throw');
+});
+
+test('registry forgetPendingIn drops the pending tool entries whose node is given, and a later result for one renders as its own row', () => {
+  const { reg, appended } = makeRegistry();
+  // Call ids pair a result with exactly its own tool row (an id-less result falls back to the oldest row).
+  const tool = (cmd: string, callId: string) => ({ kind: 'tool-command', text: cmd, collapsible: false, meta: { callId } });
+  const result = (cmd: string, callId: string) => ({ kind: 'tool-result', text: cmd, collapsible: true, meta: { command: cmd, output: `out ${cmd}`, callId } });
+  const a = reg.renderRow(tool('cmd-a', 'id-a'))!;
+  const b = reg.renderRow(tool('cmd-b', 'id-b'))!;
+  const c = reg.renderRow(tool('cmd-c', 'id-c'))!;
+  reg.forgetPendingIn([a, c]);
+  const count = appended.length;
+  const ra = reg.renderRow(result('cmd-a', 'id-a'))!;
+  assert.notEqual(ra, a, 'the dropped entry no longer captures its result');
+  assert.ok(ra.className.includes('insrc-msg--toolresult'), 'the result renders as its own row');
+  assert.equal(appended.length, count + 1);
+  assert.equal(reg.renderRow(result('cmd-b', 'id-b')), b, 'an entry that was not given is kept');
+  const rc = reg.renderRow(result('cmd-c', 'id-c'))!;
+  assert.notEqual(rc, c);
+  assert.ok(rc.className.includes('insrc-msg--toolresult'));
+  reg.forgetPendingIn([]); // nothing given: nothing dropped, no throw
 });

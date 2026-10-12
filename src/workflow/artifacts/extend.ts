@@ -51,14 +51,23 @@ export interface ExtendArtifact {
 
 export const EXTEND_SCHEMA_VERSION = 1;
 
+/** The EXT md's title and banner lines, which print the work item's label. The
+ *  docs migration rebuilds them from stored meta to edit them in place. */
+export function extendTitleLine(epicSlug: unknown, storyTitle: unknown): string {
+	return `# Extend: ${String(epicSlug)} — ${String(storyTitle)}`;
+}
+export function extendBannerLine(epicSlug: unknown): string {
+	return `> **Extends Epic \`${String(epicSlug)}\`** — this builds on existing docs + code; no new Epic was created.`;
+}
+
 export function renderExtendMarkdown(a: ExtendArtifact): string {
 	const { meta, body } = a;
 	const lines: string[] = [];
 	lines.push(artifactIdMarker(extendArtifactId(meta.epicHash, meta.storyId)));
 	lines.push('');
-	lines.push(`# Extend: ${meta.epicSlug} — ${body.addedStory.title}`);
+	lines.push(extendTitleLine(meta.epicSlug, body.addedStory.title));
 	lines.push('');
-	lines.push(`> **Extends Epic \`${meta.epicSlug}\`** — this builds on existing docs + code; no new Epic was created.`);
+	lines.push(extendBannerLine(meta.epicSlug));
 	lines.push('');
 	lines.push(`**Scope:** ${body.scope}   ·   **New Story:** \`${meta.storyId}\``);
 	lines.push('');

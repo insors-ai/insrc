@@ -553,6 +553,27 @@ export function storyRecordFolderArgs(
 	return buildRecordFolderArgs(repoPath, epicHash, storyId, standalone, build.createdAt ?? tests.createdAt ?? fallback.ownCreatedAt);
 }
 
+/**
+ * The work-item identity a Story record was filed under, as the meta fields the
+ * path resolver reads back (`epicSlug ?? hash`, `epicCreatedAt ?? createdAt`,
+ * `standalone`). A ledger writer (BUILD, TESTS, CR) resolves its folder from the
+ * work item, not from its own meta; storing what placed it keeps the two in
+ * agreement, so a path derived from the record's meta finds its md
+ * (ISSUE-764b88ed). The label is omitted when the work item has none (the hash
+ * is then the label) and the flag is only ever set to true.
+ */
+export function folderIdentityMeta(fa: {
+	readonly createdAtISO: string;
+	readonly workItemKind: WorkItemKind;
+	readonly epicSlug:     string | undefined;
+}): { readonly epicCreatedAt: string; readonly epicSlug?: string; readonly standalone?: true } {
+	return {
+		epicCreatedAt: fa.createdAtISO,
+		...(fa.epicSlug !== undefined && fa.epicSlug.length > 0 ? { epicSlug: fa.epicSlug } : {}),
+		...(fa.workItemKind === 'standalone' ? { standalone: true as const } : {}),
+	};
+}
+
 /** Absolute path to a canonical artifact JSON from its (hash-based) id. The
  *  JSON store is hash-flat and identity-free, so a caller that only needs to
  *  READ the canonical record — before it knows the artifact's `createdAt` —

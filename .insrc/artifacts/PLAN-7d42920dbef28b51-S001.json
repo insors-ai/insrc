@@ -1,0 +1,385 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791741607089-f3xn82",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-11T18:03:34.120Z",
+    "epicCreatedAt": "2026-10-11T15:17:01.452Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 207029,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7d42920dbef28b51",
+    "epicSlug": "docs-migrator-leaves-stale-labels-json",
+    "storyId": "S001",
+    "lldRunId": "wf-1791738764728-helvp1",
+    "lldEffectiveHash": "631e7cacc5fcf6d06fd25ad17dba3c3ec75fa630ce2005e397c44e455fff3673",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-11T18:06:17.531Z",
+    "rangeBase": "3298a9e8b42aea0cd4574c435dad02d5407f4b14"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this fix teaches the docs migrator to correct each artifact's stored label, date anchor and standalone flag along with moving its markdown. The planner gains a list of exact metadata rewrites and label-line edits that the dry run prints, and the apply step writes them inside the existing per-work-item commits and all-or-nothing rollback. The work closes with a dry run over this repo shown to the user before anything is applied.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "MetaRewrite type, metaRewrites field and exported short-name helpers",
+        "summary": "Add the exported MetaRewrite interface ({ artifactId, jsonPath, groupHash, set: { epicSlug?, epicCreatedAt?, standalone?: true }, mdEdits: { file, from, to }[], companionNotes: string[] }) and `readonly metaRewrites: readonly MetaRewrite[]` on MigrationPlan in src/workflow/migrate-docs-tree.ts; every return site of planMigration returns metaRewrites (empty for now). Export epicShortName (define.ts) and hldShortName (hld.ts) unchanged in behaviour so the planner can rebuild DEF/HLD H1 lines with the renderers' own rule.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "tsc passes; MigrationPlan carries metaRewrites at every planMigration return",
+          "epicShortName and hldShortName are exported and the DEF/HLD renderers' output is unchanged (existing define/hld tests pass)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "t1: MigrationPlan from planMigration carries metaRewrites (empty for a repo with no artifacts)"
+          },
+          {
+            "level": "unit",
+            "name": "t1: epicShortName / hldShortName exported: slug when set, else first sentence / first line"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "planMigration computes per-member field rewrites",
+        "summary": "Inside the group member loop, compare each mappable member of an anchored group against the group: epicSlug set to the label only when the label came from a real slug source (slug !== undefined) and differs from the stored slug; epicCreatedAt set to the group anchor only when deriveWorkItemIdentity(hash, memberAnchor).epicSegment differs from the group's (memberAnchor = epicCreatedAt ?? createdAt; an unparsable or missing member anchor counts as different); standalone: true when the group is standalone and the RAW stored meta.standalone is not true (readMeta surfaces the raw flag separately from the SPEC-forced Artifact.standalone). Members that are unmappable get no rewrite. Emits one MetaRewrite per member with a non-empty `set`, in group order, including already-placed (non-moving) members.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A moved PLAN whose stored slug and day-anchor differ from its LLD head gets set { epicSlug, epicCreatedAt }",
+          "An already-placed stale member gets a rewrite with no move",
+          "Hash-fallback groups plan no epicSlug rewrite",
+          "Same-day unstamped BUILD plans no anchor rewrite; later-day plans one",
+          "Unflagged SPEC and legacy head LLD in a standalone group get only standalone: true; false is never planned",
+          "A consistent repo plans metaRewrites: [] and planning writes nothing"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "planMigration: a moved PLAN whose stored epicSlug and anchor differ from its LLD head gets one metaRewrite setting both"
+          },
+          {
+            "level": "unit",
+            "name": "planMigration: an already-placed member with stale metadata (no move) still gets a metaRewrite"
+          },
+          {
+            "level": "unit",
+            "name": "planMigration: a hash-fallback group gets no epicSlug rewrite; anchor/standalone rewrites still planned"
+          },
+          {
+            "level": "unit",
+            "name": "planMigration: a legacy unflagged head LLD in a standalone group gets only standalone: true; false is never planned"
+          },
+          {
+            "level": "unit",
+            "name": "planMigration: a SPEC with no stored standalone flag in a standalone group gets standalone: true"
+          },
+          {
+            "level": "unit",
+            "name": "planMigration: a same-day unstamped BUILD plans no anchor rewrite; a later-day unstamped BUILD plans epicCreatedAt = group anchor"
+          },
+          {
+            "level": "unit",
+            "name": "planMigration: a consistent repo plans metaRewrites: [] and docs + .insrc stay byte-identical after planning"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "planMigration plans md label-line edits and companion notes",
+        "summary": "For members whose epicSlug is rewritten, plan exact whole-line edits against the md's post-move path (the move's `to`, else its current mdPath), building each old line exactly as the renderer did from the stored meta: PLAN/LLD '**Epic:** `${String(oldSlug)}`' (the literal 'undefined' when no slug was stored) -> new; EXT '# Extend: <old> — <title>' and '> **Extends Epic `<old>`** — ...' -> new; DEF '# Epic: <epicShortName(old)>' and HLD '# HLD: <hldShortName(old)>' -> new, computed by calling the exported helpers on the parsed artifact with old vs new meta. No md edit for BUILD/CR/TESTS/SPEC/ISSUE. For relabelled members carrying body.companions, list each companion relPath in companionNotes (pages are not edited).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "PLAN/LLD get the '**Epic:**' edit at the post-move path, including a member whose old line reads '**Epic:** `undefined`'",
+          "EXT gets both title-line edits; DEF and HLD get the H1 edit, including a slug-less DEF whose old H1 is its first sentence",
+          "BUILD/CR/TESTS rewrites carry no mdEdits",
+          "A relabelled HLD with a companion lists it in companionNotes and plans no edit to the page"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "planMigration: PLAN/LLD get the '**Epic:**' md edit at the post-move path (including an old '`undefined`' line)"
+          },
+          {
+            "level": "unit",
+            "name": "planMigration: BUILD/CR/TESTS get JSON-only rewrites; EXT gets its two title-line edits; DEF and HLD get their H1 edit (slug-less DEF first-sentence H1 -> slug H1)"
+          },
+          {
+            "level": "unit",
+            "name": "planMigration: a relabelled HLD with a companion page plans no edit to the page and lists it in companionNotes"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "applyMigration applies metaRewrites inside the per-group commits and rollback",
+        "summary": "Change the zero-moves early return to require no moves AND no metaRewrites. After link rewrites, for each MetaRewrite: JSON.parse the artifact (error names the artifact), set only the listed meta fields, write back as JSON.stringify(..., null, 2) + '\\n', git add; for each md edit, count exact whole-line matches of `from` in the file (error naming file + line when not exactly one), replace, git add. Commit per group with the moves' paths plus the group's JSON and md paths; groups with only rewrites get a 'chore(docs): realign <hash> artifact labels' commit. With zero moves the vacated set is empty and link validation still runs. All inside the existing try so failures reset --hard to startSha. Narrow the existing '.insrc/artifacts byte-identical after apply' test assertion to consistent members, since stale members are now expected to change.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "After apply, deriveMdPath on every member's stored meta equals its md location and PLAN.md shows the head label",
+          "Only the planned meta fields change; consistent members stay byte-identical (existing byte-identical assertion narrowed accordingly and passing)",
+          "A group's moves and rewrites land in one commit; a rewrite-only group gets its own realign commit",
+          "A rewrite-only plan applies (no early return; prune is a no-op and link validation passes)",
+          "A committed missing label line or corrupt JSON throws the rewrite-step error after an earlier chunk committed, and HEAD + work tree equal the start commit",
+          "Re-planning after apply yields no moves and no metaRewrites"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "applyMigration: after apply, deriveMdPath on every member's stored meta equals where its md sits, and PLAN.md shows the head label"
+          },
+          {
+            "level": "integration",
+            "name": "applyMigration: only the planned meta fields change; a consistent member JSON is byte-identical"
+          },
+          {
+            "level": "integration",
+            "name": "applyMigration: a group's moves, JSON rewrites and md edits land in one commit; a rewrite-only group gets its own realign commit"
+          },
+          {
+            "level": "integration",
+            "name": "applyMigration: a rewrite-only plan still applies (no early return)"
+          },
+          {
+            "level": "integration",
+            "name": "applyMigration: a committed missing label line / corrupt JSON rolls the whole two-group run back to the start commit with the rewrite-step error"
+          },
+          {
+            "level": "integration",
+            "name": "applyMigration: a second plan after apply has no moves and no metaRewrites"
+          },
+          {
+            "level": "integration",
+            "name": "applyMigration: a SPEC realigned to standalone resolves under docs/standalone via deriveMdPath"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "CLI prints metadata rewrites",
+        "summary": "src/bin/insrc-migrate-docs.ts: include the rewrite count in the summary line and print one 'meta' line per MetaRewrite (artifact id and changed fields), an indented line per md edit, and a 'note' line per companion page; the Applied line mentions rewrites.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The dry run prints one line per metadata rewrite with its fields, its md edits and companion notes",
+          "Dry run mutates nothing"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CLI insrc-migrate-docs dry run prints one line per metadata rewrite, its md edits and companion notes, and mutates nothing"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Dry-run the migrator over this repo and review with the user",
+        "summary": "Run insrc-migrate-docs (dry run) over this repo and show the user the planned moves and metadata rewrites before any apply; expected: no moves and no anchor rewrites for same-day ledger records. Apply only on the user's explicit go-ahead.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "The dry-run output is shown to the user and every listed rewrite is explained as a real disagreement",
+          "Nothing is applied without the user's yes"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "t6: dry run of insrc-migrate-docs over this repo shown to the user before any apply"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "planMigration: a moved PLAN whose stored epicSlug and anchor differ from its LLD head gets one metaRewrite setting both, plus the '**Epic:**' md edit at its post-move path",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "planMigration: an already-placed member with stale metadata (no move) still gets a metaRewrite",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "planMigration: a hash-fallback group gets no epicSlug rewrite; anchor/standalone rewrites still planned",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "planMigration: a legacy unflagged head LLD in a standalone group gets only standalone: true; false is never planned",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "planMigration: a SPEC with no stored standalone flag in a standalone group gets standalone: true (raw meta compared, not the in-memory SPEC override), and after apply its deriveMdPath resolves under docs/standalone",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "planMigration: anchors compared by derived folder segment: a same-day unstamped BUILD plans no rewrite; a later-day unstamped BUILD plans epicCreatedAt = group anchor",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "planMigration: BUILD/CR/TESTS members get JSON-only rewrites (no md edit); EXT gets its two title-line edits; DEF and HLD get their H1 edit (slug-less DEF: first-sentence H1 -> slug H1)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "planMigration: a relabelled HLD with a companion page plans no edit to the page and lists it as a note",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "planMigration: a consistent repo plans metaRewrites: [] and stays read-only (docs and .insrc byte-identical after planning)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyMigration: after apply, deriveMdPath on every member's stored meta equals where its md sits, and the PLAN.md header shows the head label",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyMigration: only the planned meta fields change; body, citations, approvedAt and other meta fields are byte-equal; a consistent member's JSON is byte-identical",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyMigration: a group's moves, JSON rewrites and md edits land in one commit; a rewrite-only group gets its own 'realign' commit",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyMigration: a plan with rewrites but no moves still applies (no early return)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyMigration: with two groups, where the second group's md label line was removed (resp. its JSON corrupted) and COMMITTED after planMigration, apply throws the rewrite-step error (asserted by message, not the dirty-tree refusal) after the first group's chunk was committed, and HEAD plus the work tree equal the start commit afterwards",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyMigration: a second plan after apply has no moves and no metaRewrites (idempotent)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "CLI insrc-migrate-docs dry run prints one line per metadata rewrite",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api planMigration (metaRewrites postconditions)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api applyMigration (apply, commit, rollback postconditions)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges (MetaRewrite, MigrationPlan.metaRewrites, JSON-store invariant)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths (error cases, edge cases, invariants)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy (unit + integration subjects, acceptance mapping)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration step 5 (dry run over this repo before any apply)"
+    }
+  ]
+}

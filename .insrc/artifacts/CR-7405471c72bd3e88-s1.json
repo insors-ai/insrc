@@ -10,7 +10,9 @@
     "schemaVersion": 1,
     "epicHash": "7405471c72bd3e88",
     "storyId": "s1",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "defect-delivery-board-shipped-issue-348d4663",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "61d8c73edb68041a",
-    "storyId": "s1"
+    "storyId": "s1",
+    "epicSlug": "integrate-insrc-framework-into-jetbrains-ide"
   },
   "body": {
     "kind": "code-review",

@@ -2,7 +2,7 @@
 
 # LLD: E2026092999bc81bb:S001
 
-**Epic:** `lld-bugfix-scope-structural-label-build`
+**Epic:** `bug-insrc-build-step-returns-unresolved`
 **HLD base run:** `wf-1790664980219-t9lfhg`
 **HLD effective hash:** `a7c7f317f01b...`
 

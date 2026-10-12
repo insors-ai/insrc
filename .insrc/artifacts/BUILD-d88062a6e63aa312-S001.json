@@ -1,12 +1,14 @@
 {
   "meta": {
     "workflow": "build",
-    "standalone": false,
+    "standalone": true,
     "epicHash": "d88062a6e63aa312",
     "storyId": "S001",
     "createdAt": "2026-08-05T00:00:00.000Z",
     "updatedAt": "2026-08-05T00:00:00.000Z",
-    "approvedAt": "2026-08-04T19:35:51.413Z"
+    "approvedAt": "2026-08-04T19:35:51.413Z",
+    "epicSlug": "make-code-review-work-any-subset",
+    "epicCreatedAt": "2026-08-04T19:09:56.031Z"
   },
   "body": {
     "focus": "Make the LLD and plan optional for code review (three modes)",

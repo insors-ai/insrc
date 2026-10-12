@@ -10,7 +10,8 @@
     "schemaVersion": 1,
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s1",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "di1-open-source-design-corpus-retrieval"
   },
   "body": {
     "kind": "code-review",

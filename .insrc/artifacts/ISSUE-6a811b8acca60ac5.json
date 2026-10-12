@@ -20,7 +20,11 @@
     "issueHash": "6a811b8acca60ac5",
     "epicSlug": "bug-vs-code-dev-chat-approvals",
     "standalone": true,
-    "magnitude": "sized"
+    "magnitude": "sized",
+    "approvedAt": "2026-10-12T05:37:56.652Z",
+    "parentRef": {
+      "slug": "bug-vs-code-dev-chat-approvals"
+    }
   },
   "body": {
     "title": "Ask for dev-chat approvals one at a time and wait for each decision before proceeding",

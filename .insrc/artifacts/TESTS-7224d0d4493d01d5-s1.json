@@ -5,7 +5,9 @@
     "storyId": "s1",
     "createdAt": "2026-10-10T14:25:14.014Z",
     "updatedAt": "2026-10-10T14:36:42.231Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "defect-against-epic-e1-2ff0dfda-delivery",
+    "epicCreatedAt": "2026-10-09T16:27:38.957Z"
   },
   "body": {
     "tasks": [

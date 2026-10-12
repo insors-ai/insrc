@@ -9,7 +9,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { WEBVIEW_TO_HOST_TYPES, type WebviewToHost, type WebviewToHostType, type PermissionMode } from '../protocol.js';
+import { HOST_TO_WEBVIEW_TYPES, WEBVIEW_TO_HOST_TYPES, type HostToWebview, type HostToWebviewType, type WebviewToHost, type WebviewToHostType, type PermissionMode } from '../protocol.js';
 
 test("WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)", () => {
   for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc']) {
@@ -76,4 +76,25 @@ test('S004: permission-decision typechecks with optional accepted-but-inert scop
   assert.equal(setMode.type === 'set-permission-mode' ? setMode.mode : undefined, 'review');
   const auto: WebviewToHost = { type: 'set-permission-mode', mode: 'auto' };
   assert.equal(auto.type === 'set-permission-mode' ? auto.mode : undefined, 'auto');
+});
+
+// ---- Story E20261012ddc4ede1:S001 t2: the paging messages ----
+
+test("WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', alongside every prior kind", () => {
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('load-older'));
+  assert.ok(HOST_TO_WEBVIEW_TYPES.includes('transcript-page'));
+  for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc', 'cancel-turn', 'permission-decision', 'set-permission-mode', 'selection-decision', 'ready']) {
+    assert.ok(WEBVIEW_TO_HOST_TYPES.includes(k as WebviewToHostType), `existing kind ${k} still present`);
+  }
+  for (const k of ['turn-event', 'session-restored', 'history-list', 'edit-prompt', 'docs-list', 'docs-content', 'user-row', 'theme']) {
+    assert.ok(HOST_TO_WEBVIEW_TYPES.includes(k as HostToWebviewType), `existing kind ${k} still present`);
+  }
+  // The new shapes typecheck; the added fields are optional, so the old shapes still do too.
+  const ask: WebviewToHost = { type: 'load-older', sessionId: 's1', before: 100 };
+  const page: HostToWebview = { type: 'transcript-page', sessionId: 's1', before: 100, firstIndex: 0, rows: [], total: 250 };
+  const restoredOld: HostToWebview = { type: 'session-restored', sessionId: 's1', transcript: [] };
+  const restoredNew: HostToWebview = { type: 'session-restored', sessionId: 's1', transcript: [], firstIndex: 150, total: 250 };
+  const live: HostToWebview = { type: 'turn-event', event: { kind: 'done', turnId: 't1', ok: true }, rowIndex: 7 };
+  const echo: HostToWebview = { type: 'user-row', text: 'hi', key: 'r3', rowIndex: 3 };
+  assert.deepEqual([ask.type, page.type, restoredOld.type, restoredNew.type, live.type, echo.type], ['load-older', 'transcript-page', 'session-restored', 'session-restored', 'turn-event', 'user-row']);
 });

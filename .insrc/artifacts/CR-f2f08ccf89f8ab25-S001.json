@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "f2f08ccf89f8ab25",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "structured-design-review-template-approved-spec",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

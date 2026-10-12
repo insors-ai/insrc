@@ -10,7 +10,9 @@
     "schemaVersion": 1,
     "epicHash": "2764c29d7ccb66a5",
     "storyId": "S001",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "index-never-reconciled-against-files-disk",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

@@ -7,7 +7,9 @@
     "updatedAt": "2026-10-11T06:38:08.380Z",
     "authoredBy": "controller",
     "standalone": true,
-    "approvedAt": "2026-10-11T06:38:08.712Z"
+    "approvedAt": "2026-10-11T06:38:08.712Z",
+    "epicSlug": "defect-vscode-plugin-src-chat-chat",
+    "epicCreatedAt": "2026-10-10T16:38:40.063Z"
   },
   "body": {
     "tasks": [

@@ -35,7 +35,8 @@
       "reviewedAt": "2026-08-04T12:38:16.965Z",
       "model": "client"
     },
-    "approvedAt": "2026-08-04T12:39:04.757Z"
+    "approvedAt": "2026-08-04T12:39:04.757Z",
+    "standalone": true
   },
   "body": {
     "tasks": [

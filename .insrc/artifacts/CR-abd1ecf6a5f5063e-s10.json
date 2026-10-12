@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "abd1ecf6a5f5063e",
-    "storyId": "s10"
+    "storyId": "s10",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
   },
   "body": {
     "kind": "code-review",

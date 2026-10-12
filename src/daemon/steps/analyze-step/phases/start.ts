@@ -17,7 +17,7 @@
  */
 
 import { prepareDecompose } from '../../../../analyze/context/decomposer.js';
-import { resolveRepoPath } from '../../../../mcp/resolve-repo.js';
+import { resolveRepoPath } from '../../resolve-repo.js';
 import { resolveRepoLastIndexedAt } from '../../../../analyze/context/driver.js';
 import { renderBundleAsMarkdown } from '../../bundle-md.js';
 import { readBundleForStep } from '../cache-lookup.js';

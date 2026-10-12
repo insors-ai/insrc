@@ -43,11 +43,11 @@ import type { AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { getLogger } from '../shared/logger.js';
 
 import { handleAnalyzeStep } from '../daemon/steps/analyze-step/handler.js';
-import { handleWorkflowStep } from './workflow-step/handler.js';
-import { handleBuildStep } from './build-step/handler.js';
+import { handleWorkflowStep } from '../daemon/steps/workflow-step/handler.js';
+import { handleBuildStep } from '../daemon/steps/build-step/handler.js';
 import { handleReviewStep } from './review-step/handler.js';
 import { DEFAULT_DEPS as CODE_REVIEW_STEP_DEFAULT_DEPS, handleCodeReviewStep } from './code-review-step/handler.js';
-import { handleTriageStep } from './triage-step/handler.js';
+import { handleTriageStep } from '../daemon/steps/triage-step/handler.js';
 import { handleDocgen } from './docgen/handler.js';
 import { runAnalyzeOneShot } from '../daemon/steps/analyze-oneshot.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';

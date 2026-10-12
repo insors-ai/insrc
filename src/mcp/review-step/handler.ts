@@ -5,7 +5,7 @@
 
 /**
  * Top-level dispatcher for `insrc_review_step` — the multi-turn review surface
- * for a design artifact. Mirrors `mcp/workflow-step/handler.ts`.
+ * for a design artifact. Mirrors `daemon/steps/workflow-step/handler.ts`.
  *
  * The party that did not author the artifact reviews it; `start` routes by
  * author. Daemon-authored: the controller's loop,

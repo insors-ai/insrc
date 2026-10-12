@@ -15,3 +15,4 @@ They are 9 tests in 4 files; a sweep below is "clean" when nothing else fails.
 | Task | Date | tests | pass | fail | cancelled | skipped | Newly failing |
 | :--- | :--- | ---: | ---: | ---: | ---: | ---: | :--- |
 | t3 | 2026-10-12 | 6666 | 6525 | 4 | 5 | 129 | none |
+| t4 | 2026-10-12 | 6667 | 6526 | 4 | 5 | 129 | none (one source-scan test that read src/mcp/workflow-step/handler.ts by path was repointed and passes; first run 6525/5) |

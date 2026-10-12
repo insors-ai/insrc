@@ -30,7 +30,7 @@ afterAll(async () => {
 import assert from 'node:assert/strict';
 
 import { handleAnalyzeStep } from '../analyze-step/handler.js';
-import { _setResolveForCwdForTests } from '../../../mcp/resolve-repo.js';
+import { _setResolveForCwdForTests } from '../resolve-repo.js';
 import type {
 	StepOutputEmitBundle,
 	StepOutputEmitPlan,

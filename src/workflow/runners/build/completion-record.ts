@@ -7,7 +7,7 @@
  * Completion-side BUILD ledger hook.
  *
  * A plan-driven build writes its BUILD record at the validate phase
- * (src/mcp/build-step/phases/validate.ts), but a CONTROLLER-side build that
+ * (src/daemon/steps/build-step/phases/validate.ts), but a CONTROLLER-side build that
  * skips validate would otherwise complete with no BUILD ledger trace. This hook
  * — called from the approve path BEFORE the artifact is stamped — CREATE-or-MERGES
  * a `BUILD-<epicHash>-<storyId>` record from the current git changed set, reusing

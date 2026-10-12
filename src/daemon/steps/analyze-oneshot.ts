@@ -11,7 +11,7 @@
  */
 
 import { buildRun } from '../analyze-rpc.js';
-import { resolveRepoPath } from '../../mcp/resolve-repo.js';
+import { resolveRepoPath } from './resolve-repo.js';
 import { getLogger } from '../../shared/logger.js';
 import type { AnalyzeShaperProviderKind } from '../../config/analyze.js';
 import { renderAnalyzeFailure, renderBundleAsMarkdown } from './bundle-md.js';

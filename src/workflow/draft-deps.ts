@@ -8,7 +8,7 @@
  *
  * The single place both drive layers (the daemon `workflow.run` path in
  * `daemon/workflow-rpc.ts` and the controller-driven MCP `insrc_workflow_step`
- * path in `mcp/workflow-step/phases/{plan,step}.ts`) resolve the mid-tier
+ * path in `daemon/steps/workflow-step/phases/{plan,step}.ts`) resolve the mid-tier
  * provider that the adaptive `elicit` runner drafts one decision per turn with.
  *
  * Resolution goes through the RoleRouter's `brainstorm.decision.draft` role

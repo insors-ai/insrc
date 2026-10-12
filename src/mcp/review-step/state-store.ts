@@ -6,7 +6,7 @@
 /**
  * Server-side state store for `insrc_review_step`.
  *
- * Structurally identical to `mcp/workflow-step/state-store.ts` — an opaque
+ * Structurally identical to `daemon/steps/workflow-step/state-store.ts` — an opaque
  * 22-char token → server-side run state, with an LRU + TTL sweep. The state
  * itself is NOT round-tripped through the outer LLM; only the token travels
  * in the response `state` field.

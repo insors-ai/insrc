@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s11",
     "createdAt": "2026-10-12T11:26:17.849Z",
-    "updatedAt": "2026-10-12T12:38:44.194Z",
+    "updatedAt": "2026-10-12T12:43:21.695Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -3210,6 +3210,156 @@
             "titles": [
               {
                 "title": "import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "92dd0e52",
+        "ranAt": "2026-10-12T12:43:21.695Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext, and the shaper provider tests pass",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/sampling-retired.test.ts",
+                "title": "sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+                "title": "shaperProvider=ollama returns an OllamaProvider",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+                "title": "shaperProvider=cli-claude returns a CliProvider (claude kind)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+                "title": "clientDefault picks the matching CLI when config does NOT pin a provider",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+                "title": "ambient runWithClientProviderContext supplies the default",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+                "title": "repoOverride beats the clientDefault in buildShaperProvider",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 681,
+            "titles": [
+              {
+                "title": "shaperProvider=ollama returns an OllamaProvider",
+                "result": "pass"
+              },
+              {
+                "title": "shaperProvider=cli-claude returns a CliProvider (claude kind)",
+                "result": "pass"
+              },
+              {
+                "title": "shaperProvider=cli-codex returns a CliProvider",
+                "result": "pass"
+              },
+              {
+                "title": "isOllamaModelId is true for `:`-tagged ids, false for CLI model ids",
+                "result": "pass"
+              },
+              {
+                "title": "cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CLI default)",
+                "result": "pass"
+              },
+              {
+                "title": "cli-claude + a real claude shaperModel → forwarded verbatim",
+                "result": "pass"
+              },
+              {
+                "title": "cli-claude + a role-tier claude model → forwarded (role model wins)",
+                "result": "pass"
+              },
+              {
+                "title": "cli-claude + a role-tier model that is Ollama-shaped → also dropped",
+                "result": "pass"
+              },
+              {
+                "title": "ollama path is unchanged: the Ollama model id is still used",
+                "result": "pass"
+              },
+              {
+                "title": "shaperProvider=ollama honours cfg.shaperModel + cfg.shaper.ollamaNumCtx",
+                "result": "pass"
+              },
+              {
+                "title": "shaperProvider=cli-* is idempotent -- repeated calls return distinct instances",
+                "result": "pass"
+              },
+              {
+                "title": "clientDefault picks the matching CLI when config does NOT pin a provider",
+                "result": "pass"
+              },
+              {
+                "title": "explicit config shaperProvider overrides the clientDefault",
+                "result": "pass"
+              },
+              {
+                "title": "ambient runWithClientProviderContext supplies the default",
+                "result": "pass"
+              },
+              {
+                "title": "resolveShaperKind: per-repo override wins over everything below it",
+                "result": "pass"
+              },
+              {
+                "title": "resolveShaperKind: explicit global wins over the per-run caller",
+                "result": "pass"
+              },
+              {
+                "title": "resolveShaperKind: per-run caller used when repo + global are unset",
+                "result": "pass"
+              },
+              {
+                "title": "resolveShaperKind: ollama when all signals are unset",
+                "result": "pass"
+              },
+              {
+                "title": "repoOverride beats an explicit global config in buildShaperProvider",
+                "result": "pass"
+              },
+              {
+                "title": "repoOverride beats the clientDefault in buildShaperProvider",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/sampling-retired.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 356,
+            "titles": [
+              {
+                "title": "sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 84 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 90 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -335,3 +335,25 @@ Run at 2026-10-12T12:38:44.194Z on commit `10dd8589`. Tests check: **passed**. 6
 | `src/db/graph/__tests__/live-store-owner.test.ts` | 0 | 6 | 0.8 s |  |
 | `src/mcp/__tests__/forward-step.test.ts` | 0 | 3 | 1 s |  |
 | `src/mcp/__tests__/import-graph.test.ts` | 0 | 1 | 0.3 s |  |
+
+## t10
+
+Run at 2026-10-12T12:43:21.695Z on commit `92dd0e52`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext, and the shaper provider tests pass**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext | `src/mcp/__tests__/sampling-retired.test.ts` |
+| pass | shaperProvider=ollama returns an OllamaProvider | `src/analyze/context/__tests__/shaper-provider.test.ts` |
+| pass | shaperProvider=cli-claude returns a CliProvider (claude kind) | `src/analyze/context/__tests__/shaper-provider.test.ts` |
+| pass | clientDefault picks the matching CLI when config does NOT pin a provider | `src/analyze/context/__tests__/shaper-provider.test.ts` |
+| pass | ambient runWithClientProviderContext supplies the default | `src/analyze/context/__tests__/shaper-provider.test.ts` |
+| pass | repoOverride beats the clientDefault in buildShaperProvider | `src/analyze/context/__tests__/shaper-provider.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/shaper-provider.test.ts` | 0 | 20 | 0.7 s |  |
+| `src/mcp/__tests__/sampling-retired.test.ts` | 0 | 1 | 0.4 s |  |

@@ -19,6 +19,7 @@ import { test } from 'node:test';
 import {
 	TEST_RUNNER_ARGV,
 	TYPECHECK_ARGV,
+	owningTypecheckProjects,
 	planTaskCheckPlan,
 	resolveTaskTestFiles,
 	runValidationChecks,
@@ -131,6 +132,82 @@ test('a test name whose only *.test.ts token is not a leading prefix is unresolv
 		const plan = planTaskCheckPlan(repo, { tests: [{ name }] });
 		assert.deepEqual(plan.testFiles, []);
 		assert.deepEqual(plan.unresolvedTests, [name]);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('a plan names the other TypeScript projects that own a changed file or a test file; a build inside the root project names none', () => {
+	const repo = gitRepo({
+		...TREE,
+		'tsconfig.json':                        '{}',
+		'plugin/tsconfig.json':                 '{}',
+		'plugin/src/view.ts':                   '',
+		'plugin/src/__tests__/view.test.ts':    '',
+		'plugin/tools/inner/tsconfig.json':     '{}',
+		'plugin/tools/inner/gen.tsx':           '',
+		'plugin/README.md':                     '',
+	});
+	const commit = (rel: string, msg: string): void => {
+		writeFileSync(join(repo, rel), `// ${msg}\n`);
+		execFileSync('git', ['add', rel], { cwd: repo });
+		execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', msg], { cwd: repo, stdio: 'ignore' });
+	};
+	try {
+		// The nearest tsconfig.json above each .ts / .tsx file; the root's project and other files name nothing.
+		assert.deepEqual(owningTypecheckProjects(repo, ['plugin/src/view.ts', 'plugin/tools/inner/gen.tsx', 'src/a/x.ts', 'plugin/README.md', 'top.ts']), ['plugin', 'plugin/tools/inner']);
+
+		// A commit that touches only the root project: no other project, on every route.
+		commit('src/b/chain.ts', 'root only');
+		assert.equal(trivialCheckPlan(repo).typecheckProjects, undefined);
+		assert.equal(planTaskCheckPlan(repo, { tests: [{ name: "chain.test.ts: 'b'" }] }).typecheckProjects, undefined);
+		assert.equal(smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ["chain.test.ts: 'x'"] }] }).typecheckProjects, undefined);
+
+		// A mapped test file inside the plugin names the plugin, whatever HEAD touched.
+		const mapped = planTaskCheckPlan(repo, { tests: [{ name: 'the view renders' }] }, [{ name: 'the view renders', cases: [{ file: 'plugin/src/__tests__/view.test.ts', title: 't' }] }]);
+		assert.deepEqual(mapped.typecheckProjects, ['plugin']);
+
+		// A commit that touches a plugin file names the plugin on every route.
+		commit('plugin/src/view.ts', 'plugin change');
+		assert.deepEqual(trivialCheckPlan(repo).typecheckProjects, ['plugin']);
+		assert.deepEqual(planTaskCheckPlan(repo, { tests: [{ name: "chain.test.ts: 'b'" }] }).typecheckProjects, ['plugin']);
+		assert.deepEqual(smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] }).typecheckProjects, ['plugin']);
+
+		// A change not yet committed counts too.
+		writeFileSync(join(repo, 'plugin/tools/inner/gen.tsx'), '// edited\n');
+		assert.deepEqual(trivialCheckPlan(repo).typecheckProjects, ['plugin', 'plugin/tools/inner']);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept', async () => {
+	const repo = gitRepo({ 'tsconfig.json': '{}', 'plugin/tsconfig.json': '{}', 'plugin/marker.txt': 'here', 'other/tsconfig.json': '{}' });
+	try {
+		// The command fails exactly where a marker.txt is: in the plugin, not in the root.
+		const failsInPlugin = ['node', '-e', "const fs=require('fs');if(fs.existsSync('marker.txt')){console.error('TS2345 in the plugin');process.exit(2);}console.log('clean here');"];
+		const bad = await runValidationChecks(repo, nodePlan({ typecheck: failsInPlugin, typecheckProjects: ['other', 'plugin'] }));
+		assert.equal(bad.typecheck.ok, false, 'an error in a named project fails the typecheck although the root is clean');
+		assert.equal(bad.typecheck.exitCode, 2);
+		const lines = bad.typecheck.command.split('\n');
+		assert.equal(lines.length, 3, 'one command per project, the root first');
+		assert.ok(!lines[0]!.startsWith('(cd '));
+		assert.ok(lines[1]!.startsWith('(cd other && node -e '));
+		assert.ok(lines[2]!.startsWith('(cd plugin && node -e '));
+		assert.match(bad.typecheck.outputTail, /TS2345 in the plugin/);
+		assert.match(bad.typecheck.outputTail, /: FAILED\nTS2345|: FAILED\n\nTS2345/);
+		assert.equal((bad.typecheck.outputTail.match(/: clean\n/g) ?? []).length, 2, 'the root and the clean project are reported clean');
+
+		const good = await runValidationChecks(repo, nodePlan({ typecheck: failsInPlugin, typecheckProjects: ['other'] }));
+		assert.equal(good.typecheck.ok, true);
+		assert.equal(good.typecheck.exitCode, 0);
+
+		// With no other project the result is the root's own, as before.
+		const rootOnly = await runValidationChecks(repo, nodePlan({ typecheck: failsInPlugin }));
+		assert.equal(rootOnly.typecheck.ok, true);
+		assert.ok(!rootOnly.typecheck.command.includes('\n') && !rootOnly.typecheck.command.startsWith('(cd '));
+		assert.match(rootOnly.typecheck.outputTail, /^clean here/);
+
+		// A project directory that is gone is a failed check with a note, not a throw.
+		const gone = await runValidationChecks(repo, nodePlan({ typecheck: failsInPlugin, typecheckProjects: ['missing'] }));
+		assert.equal(gone.typecheck.ok, false);
+		assert.match(gone.typecheck.note ?? '', /^missing: could not start/);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

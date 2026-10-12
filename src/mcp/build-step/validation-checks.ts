@@ -14,9 +14,9 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup, type ProcessGroupOpts, type ProcessGroupResult } from '../../shared/process-group.js';
@@ -96,6 +96,9 @@ export interface TestFileRun {
 export interface ValidationCheckPlan {
 	/** argv of the typecheck. */
 	readonly typecheck:          readonly string[];
+	/** Repo-relative directories of the other TypeScript projects that own a
+	 *  file the build touched; the typecheck is also run in each. */
+	readonly typecheckProjects?: readonly string[] | undefined;
 	/** argv prefix of the test runner; the test files are appended. */
 	readonly testCommand:        readonly string[];
 	/** Repo-relative test files to run. */
@@ -196,6 +199,45 @@ function basePlan(): Pick<ValidationCheckPlan, 'typecheck' | 'testCommand' | 'ty
 	return { typecheck: TYPECHECK_ARGV, testCommand: TEST_RUNNER_ARGV, typecheckTimeoutMs: TYPECHECK_TIMEOUT_MS, testTimeoutMs: TEST_TIMEOUT_MS };
 }
 
+/** The files the build changed: those of the HEAD commit and any not yet committed. */
+function changedFiles(repoPath: string): string[] {
+	const list = (args: readonly string[]): string[] =>
+		execFileSync('git', args, { cwd: repoPath, encoding: 'utf8' }).split('\n').filter(f => f.length > 0);
+	try {
+		return [
+			...list(['show', '--name-only', '--diff-filter=d', '--format=', 'HEAD']),
+			...list(['diff', '--name-only', '--diff-filter=d', 'HEAD']),
+		];
+	} catch (err) {
+		log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'validate: could not list the changed files');
+		return [];
+	}
+}
+
+/**
+ * The TypeScript projects, other than the repository root's, that own one of
+ * `files`: for each .ts / .tsx file, the nearest directory above it that holds
+ * a tsconfig.json. The root's typecheck does not cover such a project (the VS
+ * Code plugin is one), so the gate runs the typecheck in each as well
+ * (ISSUE-b4b6b835). Repo-relative, sorted.
+ */
+export function owningTypecheckProjects(repoPath: string, files: readonly string[]): string[] {
+	const projects = new Set<string>();
+	for (const file of files) {
+		if (!file.endsWith('.ts') && !file.endsWith('.tsx')) continue;
+		for (let dir = dirname(file); dir !== '.' && dir !== '/' && dir !== ''; dir = dirname(dir)) {
+			if (existsSync(join(repoPath, dir, 'tsconfig.json'))) { projects.add(dir); break; }
+		}
+	}
+	return [...projects].sort();
+}
+
+/** A plan with the projects its test files and the build's changed files belong to. */
+function withTypecheckProjects(repoPath: string, plan: ValidationCheckPlan): ValidationCheckPlan {
+	const projects = owningTypecheckProjects(repoPath, [...plan.testFiles, ...changedFiles(repoPath)]);
+	return projects.length === 0 ? plan : { ...plan, typecheckProjects: projects };
+}
+
 /** The files the builder's cases name for one entry, once each, in order. */
 function filesOfCases(cases: readonly TestCaseRef[]): string[] {
 	return [...new Set(cases.map(c => c.file))];
@@ -231,12 +273,12 @@ export function planTaskCheckPlan(
 ): ValidationCheckPlan {
 	const byName = new Map((mapping ?? []).map(e => [e.name, e]));
 	const namedTests = task.tests.map(t => planNamedTest(repoPath, t, byName.get(t.name)));
-	return {
+	return withTypecheckProjects(repoPath, {
 		...basePlan(), testFiles: sortedUnion(namedTests),
 		unresolvedTests: namedTests.filter(n => n.source === 'none').map(n => n.name),
 		namedTests,
 		...(task.tests.length === 0 ? { noTests: { ok: false, note: 'the plan task names no tests' } } : {}),
-	};
+	});
 }
 
 /** Small standalone build: the test names in its LLD's test strategy. A subject
@@ -253,14 +295,14 @@ export function smallStandaloneCheckPlan(
 	const namedTests = subjects.map(t => planNamedTest(repoPath, t, byName.get(t.name)));
 	const runnable = namedTests.filter(n => n.source === 'mapping' || LEADING_TEST_FILE.test(n.name));
 	if (runnable.length === 0) {
-		return { ...basePlan(), testFiles: [], unresolvedTests: [], namedTests, noTests: { ok: false, note: 'the LLD names no test file' } };
+		return withTypecheckProjects(repoPath, { ...basePlan(), testFiles: [], unresolvedTests: [], namedTests, noTests: { ok: false, note: 'the LLD names no test file' } });
 	}
-	return {
+	return withTypecheckProjects(repoPath, {
 		...basePlan(), testFiles: sortedUnion(namedTests),
 		// Only a subject that NAMES a file and resolves to none is unresolved.
 		unresolvedTests: namedTests.filter(n => n.source === 'none' && LEADING_TEST_FILE.test(n.name)).map(n => n.name),
 		namedTests,
-	};
+	});
 }
 
 /** Trivial standalone build (no LLD): the test files the build commit touched, possibly none. */
@@ -274,11 +316,11 @@ export function trivialCheckPlan(repoPath: string): ValidationCheckPlan {
 		log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'validate: could not list the HEAD commit\'s files');
 	}
 	const testFiles = [...new Set(touched)].sort();
-	return {
+	return withTypecheckProjects(repoPath, {
 		...basePlan(), testFiles, unresolvedTests: [],
 		namedTests: testFiles.map(file => ({ name: file, source: 'touched' as const, cases: [], files: [file] })),
 		...(testFiles.length === 0 ? { noTests: { ok: true, note: 'no tests named for a trivial build' } } : {}),
-	};
+	});
 }
 
 // ---------------------------------------------------------------------------
@@ -304,6 +346,35 @@ async function runOne(repoPath: string, argv: readonly string[], timeoutMs: numb
 		return { ok: false, command: line, exitCode: null, timedOut: true, durationMs: r.durationMs, outputTail: output, note: `timed out after ${Math.round(timeoutMs / 1000)} s` };
 	}
 	return { ok: r.exitCode === 0, command: line, exitCode: r.exitCode, timedOut: false, durationMs: r.durationMs, outputTail: output };
+}
+
+/**
+ * The typecheck of the repository root, then of each other project the plan
+ * names, one after another, as ONE result: clean only when every one is clean,
+ * with each project's command and output kept. A plan that names no other
+ * project gives the root's result unchanged.
+ */
+async function runTypechecks(repoPath: string, plan: ValidationCheckPlan, deps: CheckRunnerDeps): Promise<CheckResult> {
+	const root = await runOne(repoPath, plan.typecheck, plan.typecheckTimeoutMs, deps);
+	const projects = plan.typecheckProjects ?? [];
+	if (projects.length === 0) return root;
+	const runs: { readonly where: string; readonly result: CheckResult }[] = [{ where: '.', result: root }];
+	for (const dir of projects) {
+		const r = await runOne(join(repoPath, dir), plan.typecheck, plan.typecheckTimeoutMs, deps);
+		runs.push({ where: dir, result: { ...r, command: `(cd ${dir} && ${r.command})` } });
+	}
+	const failed = runs.filter(x => !x.result.ok);
+	const notes = runs.filter(x => x.result.note !== undefined).map(x => `${x.where}: ${x.result.note}`);
+	return {
+		ok:         failed.length === 0,
+		command:    runs.map(x => x.result.command).join('\n'),
+		exitCode:   failed.length === 0 ? 0 : failed.find(x => x.result.exitCode !== null)?.result.exitCode ?? null,
+		timedOut:   runs.some(x => x.result.timedOut),
+		durationMs: runs.reduce((sum, x) => sum + x.result.durationMs, 0),
+		// The failed projects' output comes last, so the tail keeps it.
+		outputTail: tail([...runs.filter(x => x.result.ok), ...failed].map(x => `# ${x.result.command}: ${x.result.ok ? 'clean' : 'FAILED'}\n${x.result.outputTail}`).join('\n')),
+		...(notes.length > 0 ? { note: notes.join('; ') } : {}),
+	};
 }
 
 /** Where the whole output of each test file's run is kept, and for how long. */
@@ -438,7 +509,8 @@ function namedResults(named: readonly NamedTestPlan[], runs: readonly TestFileRu
 }
 
 /**
- * Run the typecheck, then the tests, serially, each in its own process group
+ * Run the typecheck (in the root and in each other project the plan names),
+ * then the tests, serially, each in its own process group
  * under its own limit. Never throws: a spawn failure or timeout is a failed
  * CheckResult with a note.
  *
@@ -456,7 +528,7 @@ export async function runValidationChecks(
 	plan: ValidationCheckPlan,
 	deps: CheckRunnerDeps = { run: runInProcessGroup },
 ): Promise<ValidationCheckResults> {
-	const typecheck = await runOne(repoPath, plan.typecheck, plan.typecheckTimeoutMs, deps);
+	const typecheck = await runTypechecks(repoPath, plan, deps);
 
 	const named = plan.namedTests;
 	const reportedFail = named.filter(n => n.reported?.result === 'fail').map(n => n.name);

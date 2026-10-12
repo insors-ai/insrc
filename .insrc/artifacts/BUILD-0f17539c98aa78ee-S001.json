@@ -7,7 +7,9 @@
     "updatedAt": "2026-10-10T10:20:30.601Z",
     "authoredBy": "controller",
     "standalone": true,
-    "approvedAt": "2026-10-10T10:20:30.806Z"
+    "approvedAt": "2026-10-10T10:20:30.806Z",
+    "epicSlug": "bug-analyze-planner-plans-adherence-check",
+    "epicCreatedAt": "2026-10-09T14:46:12.867Z"
   },
   "body": {
     "tasks": [

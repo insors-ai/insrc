@@ -10,7 +10,10 @@
     "schemaVersion": 1,
     "epicHash": "0f17539c98aa78ee",
     "storyId": "S001",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "bug-analyze-planner-plans-adherence-check",
+    "epicCreatedAt": "2026-10-09T14:46:12.867Z",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

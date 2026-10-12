@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791793198775-kqkwhp",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-12T08:20:37.247Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 38471,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "b4b6b835f29fab99",
+    "epicSlug": "type-check-plugin-project-build-gate",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Type-check the plugin project in the build gate",
+    "reproduction": "Run a build task whose files are all under vscode-plugin/ (for example the chat paging story, tasks t1 to t8) and introduce a type error in one of them, such as passing a number where a string is expected in vscode-plugin/src/chat/chat-panel.ts. Validate the task with insrc_build_step. Observed: the gate runs `npx tsc --noEmit` once from the repository root, it exits 0, and the verdict reports `typecheckClean: true`. Expected: the gate type-checks the plugin project too and reports the error. Running `npx tsc --noEmit -p .` inside vscode-plugin/ by hand does report it. The same holds for a type error in a daemon test file: the root project excludes test files, so the gate does not type-check them either.",
+    "rootCause": "The gate's typecheck is one fixed command, `npx tsc --noEmit`, run once in the repository root (c1, c2, c3). That command uses the root tsconfig.json, which includes only the root src/ tree and excludes test files (c4). The VS Code plugin is a separate TypeScript project with its own tsconfig.json under vscode-plugin/ (c5), so no file in it is ever type-checked by the gate, whatever the task changed. The gate has no notion of which TypeScript project owns the files a task touched.",
+    "fixIntent": "Make the gate's typecheck cover the code the task changed: in addition to the root project, type-check every TypeScript project that owns a file the task touched (found from the nearest tsconfig.json above each file), and report the typecheck as clean only when all of them are clean, with each project's command and output in the evidence. A task that touches only root src/ files behaves as it does today. Whether test files excluded by the root project should also be type-checked is recorded here as a related gap and decided at build time, not silently left out."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/mcp/build-step/validation-checks.ts:31",
+      "quotedText": "export const TYPECHECK_ARGV: readonly string[] = ['npx', 'tsc', '--noEmit'];"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/build-step/validation-checks.ts:196",
+      "quotedText": "return { typecheck: TYPECHECK_ARGV, testCommand: TEST_RUNNER_ARGV, typecheckTimeoutMs: TYPECHECK_TIMEOUT_MS, testTimeoutMs: TEST_TIMEOUT_MS };"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/mcp/build-step/validation-checks.ts:459",
+      "quotedText": "const typecheck = await runOne(repoPath, plan.typecheck, plan.typecheckTimeoutMs, deps);"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "tsconfig.json:23",
+      "quotedText": "\"include\": [\n    \"src/**/*.ts\",\n    \"src/**/*.tsx\"\n  ],\n  \"exclude\": [\n    \"**/__tests__/**\",\n    \"**/*.test.ts\"\n  ]"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/tsconfig.json:17",
+      "quotedText": "\"include\": [\n    \"src/**/*.ts\"\n  ],"
+    }
+  ]
+}

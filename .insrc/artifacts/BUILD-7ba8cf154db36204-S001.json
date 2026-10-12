@@ -9,12 +9,13 @@
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-12T06:29:42.082Z",
     "epicSlug": "build-gate-s-test-report-cut",
-    "updatedAt": "2026-10-12T06:38:06.154Z"
+    "updatedAt": "2026-10-12T06:57:09.785Z",
+    "approvedAt": "2026-10-12T06:57:09.883Z"
   },
   "body": {
     "focus": "Run each build-gate test file in the gate's own process (no `--test`), keeping `--test-force-exit`, so its TAP report is never truncated (ISSUE-7ba8cf15). Change TEST_RUNNER_ARGV in src/mcp/build-step/validation-checks.ts; add a regression test.",
     "producesLld": false,
-    "commit": "22db1e9c",
+    "commit": "01ca9641",
     "tasks": [
       {
         "id": "S001",
@@ -31,28 +32,14 @@
           "file": ".insrc/artifacts/BUILD-6a811b8acca60ac5-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:38:06.154Z"
-      },
-      {
-        "target": {
-          "file": ".insrc/artifacts/TESTS-6a811b8acca60ac5-S001.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-12T06:38:06.154Z"
+        "timestamp": "2026-10-12T06:57:09.785Z"
       },
       {
         "target": {
           "file": "docs/standalone/bug-vs-code-dev-chat-approvals-E202610046a811b8a/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:38:06.154Z"
-      },
-      {
-        "target": {
-          "file": "docs/standalone/bug-vs-code-dev-chat-approvals-E202610046a811b8a/S001/TESTS.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-12T06:38:06.154Z"
+        "timestamp": "2026-10-12T06:57:09.785Z"
       }
     ]
   }

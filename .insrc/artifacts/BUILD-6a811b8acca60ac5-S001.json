@@ -4,11 +4,12 @@
     "epicHash": "6a811b8acca60ac5",
     "storyId": "S001",
     "createdAt": "2026-10-12T05:58:45.405Z",
-    "updatedAt": "2026-10-12T06:47:31.425Z",
+    "updatedAt": "2026-10-12T06:57:09.310Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-04T09:55:12.152Z",
-    "epicSlug": "bug-vs-code-dev-chat-approvals"
+    "epicSlug": "bug-vs-code-dev-chat-approvals",
+    "approvedAt": "2026-10-12T06:57:09.759Z"
   },
   "body": {
     "tasks": [
@@ -51,163 +52,177 @@
           "file": ".insrc/artifacts/BUILD-7ba8cf154db36204-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-6a811b8acca60ac5-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/CR-7ba8cf154db36204-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-7ba8cf154db36204.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-6a811b8acca60ac5-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TESTS-7ba8cf154db36204-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": ".insrc/build-start/7ba8cf154db36204-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-vs-code-dev-chat-approvals-E202610046a811b8a/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/S001/CR.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/S001/TESTS.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/__tests__/build-step.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/__tests__/validation-checks.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/validation-checks.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/approval-queue.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/approval-queue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/cli-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/render-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/stream-events.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T06:47:31.425Z"
+        "timestamp": "2026-10-12T06:57:09.310Z"
       }
     ],
-    "commit": "88db0f22"
+    "commit": "01ca9641"
   }
 }

@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-12T06:31:54.482Z  ·  **Updated:** 2026-10-12T06:38:06.154Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-12T06:31:54.482Z  ·  **Updated:** 2026-10-12T06:57:09.785Z
 
-**Commit:** 22db1e9c
+**Commit:** 01ca9641
 
 ## Scope
 
@@ -22,7 +22,5 @@ TEST_RUNNER_ARGV drops `--test`, so each file runs in the runner's own process w
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-6a811b8acca60ac5-S001.json` — **insrc-build** (2026-10-12T06:38:06.154Z)
-- `.insrc/artifacts/TESTS-6a811b8acca60ac5-S001.json` — **insrc-build** (2026-10-12T06:38:06.154Z)
-- `docs/standalone/bug-vs-code-dev-chat-approvals-E202610046a811b8a/S001/BUILD.md` — **insrc-build** (2026-10-12T06:38:06.154Z)
-- `docs/standalone/bug-vs-code-dev-chat-approvals-E202610046a811b8a/S001/TESTS.md` — **insrc-build** (2026-10-12T06:38:06.154Z)
+- `.insrc/artifacts/BUILD-6a811b8acca60ac5-S001.json` — **insrc-build** (2026-10-12T06:57:09.785Z)
+- `docs/standalone/bug-vs-code-dev-chat-approvals-E202610046a811b8a/S001/BUILD.md` — **insrc-build** (2026-10-12T06:57:09.785Z)

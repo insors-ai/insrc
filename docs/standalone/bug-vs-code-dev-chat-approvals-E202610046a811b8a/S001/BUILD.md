@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-12T05:58:45.405Z  ·  **Updated:** 2026-10-12T06:47:31.425Z
+**Standalone:** yes  ·  **Created:** 2026-10-12T05:58:45.405Z  ·  **Updated:** 2026-10-12T06:57:09.310Z
 
-**Commit:** 88db0f22
+**Commit:** 01ca9641
 
 ## Summary
 
@@ -24,26 +24,28 @@ The approval card shows '1 of N' beside its title when more requests are waiting
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `.insrc/artifacts/CR-7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `.insrc/artifacts/ISSUE-7ba8cf154db36204.json` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `.insrc/artifacts/PLAN-6a811b8acca60ac5-S001.json` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `.insrc/artifacts/TESTS-7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `.insrc/build-start/7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/ISSUE.md` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/S001/BUILD.md` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/S001/CR.md` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/S001/TESTS.md` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `src/mcp/build-step/__tests__/build-step.test.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `src/mcp/build-step/__tests__/validation-checks.test.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `src/mcp/build-step/validation-checks.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `vscode-plugin/src/chat/__tests__/approval-queue.test.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `vscode-plugin/src/chat/__tests__/render-registry.test.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `vscode-plugin/src/chat/approval-queue.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `vscode-plugin/src/chat/cli-adapter.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `vscode-plugin/src/chat/render-registry.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
-- `vscode-plugin/src/chat/stream-events.ts` — **insrc-build** (2026-10-12T06:47:31.425Z)
+- `.insrc/artifacts/BUILD-7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `.insrc/artifacts/CR-6a811b8acca60ac5-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `.insrc/artifacts/CR-7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `.insrc/artifacts/ISSUE-7ba8cf154db36204.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `.insrc/artifacts/PLAN-6a811b8acca60ac5-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `.insrc/artifacts/TESTS-7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `.insrc/build-start/7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `docs/standalone/bug-vs-code-dev-chat-approvals-E202610046a811b8a/S001/CR.md` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/ISSUE.md` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/S001/BUILD.md` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/S001/CR.md` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/S001/TESTS.md` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `src/mcp/build-step/__tests__/build-step.test.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `src/mcp/build-step/__tests__/validation-checks.test.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `src/mcp/build-step/validation-checks.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `vscode-plugin/src/chat/__tests__/approval-queue.test.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `vscode-plugin/src/chat/__tests__/render-registry.test.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `vscode-plugin/src/chat/approval-queue.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `vscode-plugin/src/chat/cli-adapter.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `vscode-plugin/src/chat/render-registry.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `vscode-plugin/src/chat/stream-events.ts` — **insrc-build** (2026-10-12T06:57:09.310Z)

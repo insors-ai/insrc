@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "7c219c7471d79496",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "lld-dev-chat-terminal-prompt-fidelity",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -45,3 +45,25 @@ Run at 2026-10-12T10:25:29.172Z on commit `744692cd`. Tests check: **passed**. 5
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/attachment-store.test.ts` | 0 | 5 | 0.3 s |  |
+
+## t2
+
+Run at 2026-10-12T10:26:41.260Z on commit `a6d0523c`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: claude argv: readDirs adds --add-dir with each directory before the permission flags and the prompt stays last after --; without readDirs the argv is byte-identical to today**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | claude argv: readDirs adds --add-dir with each directory before the permission flags and the prompt stays last after --; without readDirs the argv is byte-identical to today | `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` |
+
+**unit: codex argv is unchanged by readDirs**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | codex argv is unchanged by readDirs | `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` | 0 | 78 | 1 s |  |

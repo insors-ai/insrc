@@ -9,7 +9,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HOST_TO_WEBVIEW_TYPES, WEBVIEW_TO_HOST_TYPES, type HostToWebview, type HostToWebviewType, type WebviewToHost, type WebviewToHostType, type PermissionMode } from '../protocol.js';
+import type { TranscriptEntry } from '../session-store.js';
+import { HOST_TO_WEBVIEW_TYPES, WEBVIEW_TO_HOST_TYPES, type PendingAttachmentView, type HostToWebview, type HostToWebviewType, type WebviewToHost, type WebviewToHostType, type PermissionMode } from '../protocol.js';
 
 test("WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)", () => {
   for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc']) {
@@ -97,4 +98,54 @@ test("WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES incl
   const live: HostToWebview = { type: 'turn-event', event: { kind: 'done', turnId: 't1', ok: true }, rowIndex: 7 };
   const echo: HostToWebview = { type: 'user-row', text: 'hi', key: 'r3', rowIndex: 3 };
   assert.deepEqual([ask.type, page.type, restoredOld.type, restoredNew.type, live.type, echo.type], ['load-older', 'transcript-page', 'session-restored', 'session-restored', 'turn-event', 'user-row']);
+});
+
+// ---- Story E2026101259da3204:S001 t3: the attachment messages ----
+
+test('protocol: the four new webview messages and attachments-pending are in the type lists, and user-row carries attachments', () => {
+  // The lists are not checked for exhaustiveness anywhere, so each new kind is asserted by name.
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('attach-image'), "'attach-image' is listed");
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('pick-attachments'), "'pick-attachments' is listed");
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('remove-attachment'), "'remove-attachment' is listed");
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('open-attachment'), "'open-attachment' is listed");
+  assert.ok(HOST_TO_WEBVIEW_TYPES.includes('attachments-pending'), "'attachments-pending' is listed");
+  // Every prior kind is still there, once, and nothing is listed twice.
+  for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc', 'cancel-turn', 'permission-decision', 'set-permission-mode', 'selection-decision', 'ready', 'load-older']) {
+    assert.ok(WEBVIEW_TO_HOST_TYPES.includes(k as WebviewToHostType), `existing kind ${k} still present`);
+  }
+  for (const k of ['turn-event', 'session-restored', 'history-list', 'edit-prompt', 'docs-list', 'docs-content', 'user-row', 'theme', 'transcript-page']) {
+    assert.ok(HOST_TO_WEBVIEW_TYPES.includes(k as HostToWebviewType), `existing kind ${k} still present`);
+  }
+  assert.equal(new Set(WEBVIEW_TO_HOST_TYPES).size, WEBVIEW_TO_HOST_TYPES.length);
+  assert.equal(new Set(HOST_TO_WEBVIEW_TYPES).size, HOST_TO_WEBVIEW_TYPES.length);
+
+  // The new shapes construct; submit-turn is unchanged and carries no attachment.
+  const paste: WebviewToHost = { type: 'attach-image', mime: 'image/png', dataBase64: 'AAAA', name: 'shot.png', clientId: 'c1' };
+  const pasteBare: WebviewToHost = { type: 'attach-image', mime: 'image/png', dataBase64: 'AAAA' };
+  const pick: WebviewToHost = { type: 'pick-attachments' };
+  const remove: WebviewToHost = { type: 'remove-attachment', attachmentId: '1-shot.png' };
+  const open: WebviewToHost = { type: 'open-attachment', attachmentId: '1-shot.png' };
+  const submit: WebviewToHost = { type: 'submit-turn', text: 'hi' };
+  assert.deepEqual(Object.keys(pick), ['type']);
+  assert.deepEqual(Object.keys(submit), ['type', 'text']);
+  assert.deepEqual([paste.type, pasteBare.type, remove.type, open.type], ['attach-image', 'attach-image', 'remove-attachment', 'open-attachment']);
+
+  // A pending attachment is shown without its path.
+  const view: PendingAttachmentView = { id: '1-shot.png', name: 'shot.png', kind: 'image', size: 4, clientId: 'c1' };
+  assert.ok(!('path' in view));
+  const pending: HostToWebview = { type: 'attachments-pending', sessionId: 's1', items: [view] };
+  const refused: HostToWebview = { type: 'attachments-pending', sessionId: 's1', items: [], error: 'big.png is larger than the 20 MB limit.' };
+  assert.equal(pending.type === 'attachments-pending' ? pending.items.length : -1, 1);
+  assert.equal(refused.type === 'attachments-pending' ? refused.error : undefined, 'big.png is larger than the 20 MB limit.');
+
+  // user-row and the stored user row carry attachments; without them each has today's shape.
+  const ref = { id: '1-shot.png', name: 'shot.png', kind: 'image' as const, size: 4, path: '/a/1-shot.png' };
+  const echo: HostToWebview = { type: 'user-row', text: 'look', key: 'r3', rowIndex: 3, attachments: [ref] };
+  const echoPlain: HostToWebview = { type: 'user-row', text: 'look', key: 'r3' };
+  assert.deepEqual(echo.type === 'user-row' ? echo.attachments : undefined, [ref]);
+  assert.deepEqual(Object.keys(echoPlain), ['type', 'text', 'key']);
+  const stored: TranscriptEntry = { role: 'user', text: 'look', at: '2026-10-12T00:00:00.000Z', attachments: [ref] };
+  const storedPlain: TranscriptEntry = { role: 'user', text: 'look', at: '2026-10-12T00:00:00.000Z' };
+  assert.deepEqual(stored.role === 'user' ? stored.attachments : undefined, [ref]);
+  assert.deepEqual(Object.keys(storedPlain), ['role', 'text', 'at']);
 });

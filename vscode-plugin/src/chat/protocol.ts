@@ -14,6 +14,7 @@ import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { TerminalTheme } from './design-tokens.js';
 import type { ProviderId } from './cli-adapter.js';
 import type { TranscriptEntry, ChatSummary } from './session-store.js';
+import type { AttachmentRef } from './attachment-store.js';
 import type { SectionIndex } from './docs-sections.js';
 // S002 sc1: the docs-content variant types its functional record by INDEXING off
 // DocsContent (which itself indexes off the daemon's ArtifactReviewView), so the
@@ -171,7 +172,23 @@ export type HostToWebview =
   // during the turn (not only on a later session-restored replay). `key` is the row's
   // stable transcript-index key, so the live echo and its replay reconcile to ONE row (lc1).
   // Story E20261012ddc4ede1:S001 (additive): `rowIndex` is the row's absolute transcript index.
-  | { readonly type: 'user-row'; readonly text: string; readonly key: string; readonly rowIndex?: number | undefined }
+  // Story E2026101259da3204:S001 (additive): `attachments` is the files the message carries.
+  | {
+      readonly type: 'user-row';
+      readonly text: string;
+      readonly key: string;
+      readonly rowIndex?: number | undefined;
+      readonly attachments?: readonly AttachmentRef[] | undefined;
+    }
+  // Story E2026101259da3204:S001: the attachments waiting to go with a session's next message.
+  // The host owns this list, so a rebuilt webview loses nothing. `error` is one plain sentence
+  // when an attachment was refused or could not be stored.
+  | {
+      readonly type: 'attachments-pending';
+      readonly sessionId: string;
+      readonly items: readonly PendingAttachmentView[];
+      readonly error?: string | undefined;
+    }
   | { readonly type: 'theme'; readonly theme: TerminalTheme };
 
 /** Webview -> host: user intents. */
@@ -215,7 +232,24 @@ export type WebviewToHost =
   | { readonly type: 'ready' }
   // Story E20261012ddc4ede1:S001: the webview asks for the page of rows that ends just before
   // absolute transcript index `before` (its first held row). Answered with 'transcript-page'.
-  | { readonly type: 'load-older'; readonly sessionId: string; readonly before: number };
+  | { readonly type: 'load-older'; readonly sessionId: string; readonly before: number }
+  // Story E2026101259da3204:S001: attachments. No message carries a file path: a pasted image
+  // travels as base64, a document is chosen in the host's own file dialog, and an attachment is
+  // afterwards named only by the id the host issued. `clientId` lets the webview match the chip
+  // to the thumbnail it already holds.
+  | { readonly type: 'attach-image'; readonly mime: string; readonly dataBase64: string; readonly name?: string | undefined; readonly clientId?: string | undefined }
+  | { readonly type: 'pick-attachments' }
+  | { readonly type: 'remove-attachment'; readonly attachmentId: string }
+  | { readonly type: 'open-attachment'; readonly attachmentId: string };
+
+/** A pending attachment as the webview shows it: no path. */
+export interface PendingAttachmentView {
+  readonly id: string;
+  readonly name: string;
+  readonly kind: 'image' | 'file';
+  readonly size: number;
+  readonly clientId?: string | undefined;
+}
 
 /** The discriminant values of each direction (exported so consumers/tests can assert exhaustiveness). */
 export const HOST_TO_WEBVIEW_TYPES = [
@@ -228,6 +262,7 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'user-row',
   'theme',
   'transcript-page',
+  'attachments-pending',
 ] as const;
 
 export const WEBVIEW_TO_HOST_TYPES = [
@@ -244,6 +279,10 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'selection-decision',
   'ready',
   'load-older',
+  'attach-image',
+  'pick-attachments',
+  'remove-attachment',
+  'open-attachment',
 ] as const;
 
 export type HostToWebviewType = (typeof HOST_TO_WEBVIEW_TYPES)[number];

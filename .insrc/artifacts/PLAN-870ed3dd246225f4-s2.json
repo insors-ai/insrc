@@ -99,7 +99,8 @@
       "reviewedAt": "2026-07-31T05:10:46.673Z",
       "model": "client"
     },
-    "approvedAt": "2026-07-31T05:12:32.514Z"
+    "approvedAt": "2026-07-31T05:12:32.514Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z"
   },
   "body": {
     "tasks": [

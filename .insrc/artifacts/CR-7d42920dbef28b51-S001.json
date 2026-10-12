@@ -10,7 +10,10 @@
     "schemaVersion": 1,
     "epicHash": "7d42920dbef28b51",
     "storyId": "S001",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "docs-migrator-leaves-stale-labels-json",
+    "epicCreatedAt": "2026-10-11T15:17:01.452Z",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s11",
     "createdAt": "2026-10-12T11:26:17.849Z",
-    "updatedAt": "2026-10-12T11:35:47.361Z",
+    "updatedAt": "2026-10-12T11:43:13.587Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -321,6 +321,562 @@
               },
               {
                 "title": "the check sees a vector store that IS opened at the default path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "62ccb310",
+        "ranAt": "2026-10-12T11:43:13.587Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "moved analyze tests pass at src/daemon/steps (the analyze-step suite, bundle-md, and the repointed importers and source scans)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-answer-prompt-missing.test.ts",
+                "title": "a missing answer prompt after the lookups ran returns a non-retryable error with the results and the report, from the plan phase and from the narrow phase",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-bundle-report.test.ts",
+                "title": "the step tool's bundle phase attaches the report it derives from its state and rejects an agent-supplied one as 'bundle-schema'",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-failed-lookup.test.ts",
+                "title": "stepPlan with a lookup whose prepare throws records the failed output and goes on to the next lookup (mutation: remove the conversion)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-handler.test.ts",
+                "title": "handler rejects non-object input",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-measure.test.ts",
+                "title": "the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-narrow.test.ts",
+                "title": "state codec round-trips awaiting_narrow with preparedBlob + resumeState",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-scope.test.ts",
+                "title": "step tool start phase: resolved workspace scope, and the pairing test refusing a stand-in scope",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "encodeState + decodeState round-trip preserves every field",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/bundle-md.test.ts",
+                "title": "render includes the meta comment prefix by default",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/__tests__/report-head.test.ts",
+                "title": "every writer of an answer's head (the run context's markdown, both writers of the bundle's markdown, the step tool's answer turn, both writers of the workflow runner, and the plan tree's final report) carries the measure line under the completeness line; the plan tree's merged report carries the run's measure; and a report or a run record stored before the change is read as it is",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/executor-lmdb.test.ts",
+                "title": "executor dispatches to the registered runner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/answer-step-failed-callers.test.ts",
+                "title": "the daemon's error payload, the one-shot tool's message and the workflow runner's step failure carry the report and the reason",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/lookup-measure.test.ts",
+                "title": "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report, as do the step tool's bundle phase and answer turn; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/classifier/__tests__/no-size.test.ts",
+                "title": "a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/bundle-report-schema.test.ts",
+                "title": "no source file under src/daemon/steps/analyze-step writes a literal schema version",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+                "title": "the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/no-live-store-in-tests.test.ts",
+                "title": "the MCP step and review tests, found by the full audit, create nothing at the default path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/__tests__/report-head.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 802,
+            "titles": [
+              {
+                "title": "every writer of an answer's head (the run context's markdown, both writers of the bundle's markdown, the step tool's answer turn, both writers of the workflow runner, and the plan tree's final report) carries the measure line under the completeness line; the plan tree's merged report carries the run's measure; and a report or a run record stored before the change is read as it is",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/classifier/__tests__/no-size.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 584,
+            "titles": [
+              {
+                "title": "the classifier's output schema has no size property and rejects an answer that carries one, the user message built for the classifier names no size among its required fields, and no placeholder size is given to the validator; ClassifiedIntent still has the field",
+                "result": "pass"
+              },
+              {
+                "title": "a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/bundle-report-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 401,
+            "titles": [
+              {
+                "title": "the stored bundle schema accepts a report and the schema version is 2",
+                "result": "pass"
+              },
+              {
+                "title": "the model-facing schema has neither meta nor report at both sites, on the first call and on a later one, and rejects an answer that carries a report",
+                "result": "pass"
+              },
+              {
+                "title": "no source file under src/daemon/steps/analyze-step writes a literal schema version",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/lookup-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 896,
+            "titles": [
+              {
+                "title": "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report, as do the step tool's bundle phase and answer turn; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the builder's cache key leaves out the intent's size and the size hint: a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              },
+              {
+                "title": "the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path; it never takes a default",
+                "result": "pass"
+              },
+              {
+                "title": "the bundle cache key is the same with and without a handed measure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/executor-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1356,
+            "titles": [
+              {
+                "title": "executor dispatches to the registered runner",
+                "result": "pass"
+              },
+              {
+                "title": "executor hands the request's resolved scope to the runner; without one the runner gets none",
+                "result": "pass"
+              },
+              {
+                "title": "stepPlan hands the resolved scope to the runner too",
+                "result": "pass"
+              },
+              {
+                "title": "the step tool's plan phase resolves the scope from the token and runs the lookups there",
+                "result": "pass"
+              },
+              {
+                "title": "unsupported exploration type produces a diagnostic output",
+                "result": "pass"
+              },
+              {
+                "title": "runner throw produces a `failed` output; does not stop the plan",
+                "result": "pass"
+              },
+              {
+                "title": "deterministic exploration is cached across executions",
+                "result": "pass"
+              },
+              {
+                "title": "lastIndexedAt bump invalidates the cache",
+                "result": "pass"
+              },
+              {
+                "title": "readDep exposes prior exploration outputs to later runners",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1011,
+            "titles": [
+              {
+                "title": "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)",
+                "result": "pass"
+              },
+              {
+                "title": "the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              },
+              {
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/answer-step-failed-callers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 636,
+            "titles": [
+              {
+                "title": "the daemon's error payload, the one-shot tool's message and the workflow runner's step failure carry the report and the reason",
+                "result": "pass"
+              },
+              {
+                "title": "a failure with no report is passed on as before: its code and message, and nothing about completeness",
+                "result": "pass"
+              },
+              {
+                "title": "a grounded step gets the flattened findings of a successful request",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-answer-prompt-missing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 746,
+            "titles": [
+              {
+                "title": "a missing answer prompt after the lookups ran returns a non-retryable error with the results and the report, from the plan phase and from the narrow phase",
+                "result": "pass"
+              },
+              {
+                "title": "the step tool's JSON output carries error.data, its message starts with the completeness line, and any other error has no data member",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-bundle-report.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 466,
+            "titles": [
+              {
+                "title": "the step tool's bundle phase attaches the report it derives from its state and rejects an agent-supplied one as 'bundle-schema'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-failed-lookup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1239,
+            "titles": [
+              {
+                "title": "stepPlan with a lookup whose prepare throws records the failed output and goes on to the next lookup (mutation: remove the conversion)",
+                "result": "pass"
+              },
+              {
+                "title": "an agent's answer that fails the lookup's schema is rejected as retryable before finalize is called",
+                "result": "pass"
+              },
+              {
+                "title": "a finalize that throws records the failed output and the run goes on",
+                "result": "pass"
+              },
+              {
+                "title": "no answer at all to capability.reuse-check is accepted and gives a record that is not established",
+                "result": "pass"
+              },
+              {
+                "title": "a finalize that throws, and a prepare that throws, leave no row in the lookup cache (mutation: store before the check)",
+                "result": "pass"
+              },
+              {
+                "title": "a step state minted before the change still resumes",
+                "result": "pass"
+              },
+              {
+                "title": "a plan with two lookups that need a model call pauses again after the first",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 582,
+            "titles": [
+              {
+                "title": "handler rejects non-object input",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects an unknown phase",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects missing phase field",
+                "result": "pass"
+              },
+              {
+                "title": "start returns emit_plan with a state blob + a real prompt",
+                "result": "pass"
+              },
+              {
+                "title": "start with no repo + no INSRC_REPO env → clear no-repo error",
+                "result": "pass"
+              },
+              {
+                "title": "plan phase with a garbage state blob returns wrong-state error",
+                "result": "pass"
+              },
+              {
+                "title": "bundle phase with awaiting_plan state returns wrong-stage error",
+                "result": "pass"
+              },
+              {
+                "title": "envelope is { content: [{type:\"text\", text: JSON}] }",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 727,
+            "titles": [
+              {
+                "title": "the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-narrow.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 594,
+            "titles": [
+              {
+                "title": "state codec round-trips awaiting_narrow with preparedBlob + resumeState",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects phase=narrow with a garbage state blob",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects phase=narrow when state stage is awaiting_plan",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects phase=narrow when explorationId does not match paused exp",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 654,
+            "titles": [
+              {
+                "title": "step tool start phase: resolved workspace scope, and the pairing test refusing a stand-in scope",
+                "result": "pass"
+              },
+              {
+                "title": "step tool plan and narrow phases resolve the scope from a token that has no scope field",
+                "result": "pass"
+              },
+              {
+                "title": "the real start phase builds a workspace scope, for every kind of source, and its prompt names that directory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 453,
+            "titles": [
+              {
+                "title": "encodeState + decodeState round-trip preserves every field",
+                "result": "pass"
+              },
+              {
+                "title": "encodeState mints a short URL-safe base64 token (22 chars, no padding)",
+                "result": "pass"
+              },
+              {
+                "title": "decodeState rejects a bogus token with StepStateDecodeError",
+                "result": "pass"
+              },
+              {
+                "title": "decodeState rejects a token of the wrong shape (too short)",
+                "result": "pass"
+              },
+              {
+                "title": "assertStage passes for a matching stage",
+                "result": "pass"
+              },
+              {
+                "title": "assertStage throws on a stage mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "releaseState drops the entry so a subsequent decodeState fails",
+                "result": "pass"
+              },
+              {
+                "title": "token round-trips a state with an executed plan attached",
+                "result": "pass"
+              },
+              {
+                "title": "analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted",
+                "result": "pass"
+              },
+              {
+                "title": "analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)",
+                "result": "pass"
+              },
+              {
+                "title": "analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/bundle-md.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 297,
+            "titles": [
+              {
+                "title": "render includes the meta comment prefix by default",
+                "result": "pass"
+              },
+              {
+                "title": "meta line can be suppressed via includeMeta=false",
+                "result": "pass"
+              },
+              {
+                "title": "the completeness line is the first line of the rendered answer, and an answer with no report says completeness was not recorded",
+                "result": "pass"
+              },
+              {
+                "title": "render walks the seven layers in order + emits headings",
+                "result": "pass"
+              },
+              {
+                "title": "empty layers are dropped from the rendered output",
+                "result": "pass"
+              },
+              {
+                "title": "layers filter narrows the rendered output",
+                "result": "pass"
+              },
+              {
+                "title": "missing meta renders \"(unset)\" instead of throwing",
+                "result": "pass"
+              },
+              {
+                "title": "meta includes repoIndexedAt when set",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/no-live-store-in-tests.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5921,
+            "titles": [
+              {
+                "title": "the two formerly live-store test files pass against a temporary store and create nothing at the default path",
+                "result": "pass"
+              },
+              {
+                "title": "the review probe test, found by the same search, creates nothing at the default path either",
+                "result": "pass"
+              },
+              {
+                "title": "three daemon request tests, found by the same search, create nothing at the default path",
+                "result": "pass"
+              },
+              {
+                "title": "the MCP step and review tests, found by the full audit, create nothing at the default path",
+                "result": "pass"
+              },
+              {
+                "title": "the check sees a store that IS opened at the default path",
                 "result": "pass"
               }
             ],

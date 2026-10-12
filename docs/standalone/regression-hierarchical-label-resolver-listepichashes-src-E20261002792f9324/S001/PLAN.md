@@ -4,7 +4,7 @@
 
 ## Summary
 
-**Epic:** `lld-revision-supersedes-earlier-pass-whose`
+**Epic:** `regression-hierarchical-label-resolver-listepichashes-src`
 **LLD run:** `wf-1790968373495-kfdah2`
 **LLD effective hash:** `0bb28c0a6d51...`
 

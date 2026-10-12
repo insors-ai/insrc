@@ -18,7 +18,7 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "792f9324fc43d95c",
-    "epicSlug": "lld-revision-supersedes-earlier-pass-whose",
+    "epicSlug": "regression-hierarchical-label-resolver-listepichashes-src",
     "storyId": "S001",
     "hldBaseRunId": "wf-1790968373495-kfdah2",
     "hldEffectiveHash": "0bb28c0a6d51515dc5d9a5e30fbf270f4e935f1496c68c080a2f5405c3ca686f",

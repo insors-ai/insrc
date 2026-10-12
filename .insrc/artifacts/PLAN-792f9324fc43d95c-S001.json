@@ -19,12 +19,13 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "792f9324fc43d95c",
-    "epicSlug": "lld-revision-supersedes-earlier-pass-whose",
+    "epicSlug": "regression-hierarchical-label-resolver-listepichashes-src",
     "storyId": "S001",
     "lldRunId": "wf-1790968373495-kfdah2",
     "lldEffectiveHash": "0bb28c0a6d51515dc5d9a5e30fbf270f4e935f1496c68c080a2f5405c3ca686f",
     "approvedAt": "2026-10-02T20:03:50.884Z",
-    "rangeBase": "5ab9dfd1d2d814ea351fb92ab297b116a6bf140c"
+    "rangeBase": "5ab9dfd1d2d814ea351fb92ab297b116a6bf140c",
+    "standalone": true
   },
   "body": {
     "summary": {

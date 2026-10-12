@@ -19,7 +19,8 @@
     "schemaVersion": 1,
     "specHash": "46b20c2f0459e807",
     "epicSlug": "make-workflow-s-generated-artifact-documents",
-    "approvedAt": "2026-09-27T14:22:52.145Z"
+    "approvedAt": "2026-09-27T14:22:52.145Z",
+    "standalone": true
   },
   "body": {
     "category": "requirements",

@@ -1252,6 +1252,11 @@ async function dispatchWorkflowRun(
  * closes. Used by `bin/insrc-mcp`.
  */
 export async function runInsrcMcpStdio(): Promise<void> {
+	// TEMPORARY: this process still reads the live graph store in-process
+	// (the analyze step, some daemon builtins). Story s11 of Epic c2ba6fa6
+	// moves that into the daemon and deletes this call.
+	(await import('../db/graph/store.js')).declareLiveStoreReaderUntilS11();
+
 	// Register the unified tool set + data drivers BEFORE serving any
 	// tool call. The analyze framework's freeform.probe fallback needs
 	// the read-only tool surface at runtime; without this the shaper

@@ -57,6 +57,8 @@ test('CLI review through the daemon: source roots come through the request and t
 
 	// The "daemon": holds the store (which knows only indexed/) and serves.
 	const daemon = await spawnStoreChild(STORE, { env: { HOME } });
+	// Like the real daemon, the stand-in declares itself the store's owner.
+	assert.deepEqual(await daemon.send({ op: 'declare-owner' }), { ok: true });
 	assert.deepEqual(await daemon.send({ op: 'open' }), { ok: true });
 	assert.deepEqual(await daemon.send({ op: 'seed-repo', repoPath: repo, files: [join(repo, 'indexed', 'widget.ts')] }), { ok: true });
 	const served = await daemon.send({ op: 'daemon-like', logPath: join(HOME, 'daemon.log'), crashLogDir: join(HOME, 'crash') });

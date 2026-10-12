@@ -5,7 +5,8 @@
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
     "updatedAt": "2026-10-11T10:38:18.205Z",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicSlug": "complete-consistent-richer-code-index-one"
   },
   "body": {
     "tasks": [

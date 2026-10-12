@@ -1662,7 +1662,7 @@ test('a stored mapping whose file is gone gives that case not found and a failed
 	// The REAL runner, with node standing in for npx: the result must come from a run.
 	const { runValidationChecks } = await import('../validation-checks.js');
 	const runner = (r: string, plan: ValidationCheckPlan): Promise<ValidationCheckResults> =>
-		runValidationChecks(r, { ...plan, typecheck: ['node', '-e', 'process.exit(0)'], testCommand: ['node', '--experimental-strip-types', '--test', '--test-force-exit'] });
+		runValidationChecks(r, { ...plan, typecheck: ['node', '-e', 'process.exit(0)'], testCommand: ['node', '--experimental-strip-types', '--test-force-exit'] });
 	try {
 		const mapping = [{ name: T_UNIT, cases: [{ file: FILTER_TEST, title: 'narrows by one tag' }, { file: OTHER_TEST, title: 'another case' }] }];
 		const first = await turn(repo, { tests: mapping }, { runner });

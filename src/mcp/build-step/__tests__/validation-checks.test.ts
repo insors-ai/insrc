@@ -52,11 +52,14 @@ function isAlive(pid: number): boolean {
 	try { process.kill(pid, 0); return true; } catch { return false; }
 }
 
+/** The gate's own test runner flags on plain node, so the runner is exercised without npx. */
+const NODE_TEST_ARGV: readonly string[] = ['node', ...TEST_RUNNER_ARGV.filter(a => a.startsWith('--'))];
+
 /** A plan whose commands are plain node, so the runner is exercised without npx. */
 function nodePlan(over: Partial<ValidationCheckPlan>): ValidationCheckPlan {
 	return {
 		typecheck: ['node', '-e', 'process.exit(0)'],
-		testCommand: ['node', '--test', '--test-force-exit'],
+		testCommand: NODE_TEST_ARGV,
 		testFiles: [], unresolvedTests: [], namedTests: [],
 		typecheckTimeoutMs: 10_000, testTimeoutMs: 20_000,
 		...over,
@@ -326,11 +329,15 @@ test('runValidationChecks runs each file in its own process, in order, with the 
 		const r = await runValidationChecks(dir, nodePlan({ testFiles: ['a.test.mjs', 'b.test.mjs'] }), {
 			run: (command, args, opts) => { calls.push([command, ...args]); return runInProcessGroup(command, args, opts); },
 		});
-		// One process per file (after the typecheck), in the plan's order, each with the reporter.
-		assert.deepEqual(calls.slice(1), [
-			['node', '--test', '--test-force-exit', '--test-reporter=tap', 'a.test.mjs'],
-			['node', '--test', '--test-force-exit', '--test-reporter=tap', 'b.test.mjs'],
+		// One process per file (after the typecheck), in the plan's order, each with the reporter
+		// writing to a report file of its own.
+		const dest = (c: string[]): string => c.find(a => a.startsWith('--test-reporter-destination='))!.slice('--test-reporter-destination='.length);
+		assert.deepEqual(calls.slice(1).map(c => c.map(a => a.startsWith('--test-reporter-destination=') ? 'DEST' : a)), [
+			['node', '--test-force-exit', '--test-reporter=tap', 'DEST', 'a.test.mjs'],
+			['node', '--test-force-exit', '--test-reporter=tap', 'DEST', 'b.test.mjs'],
 		]);
+		assert.notEqual(dest(calls[1]!), dest(calls[2]!), 'each run has its own report file');
+		assert.ok(!existsSync(dirname(dest(calls[1]!))), 'the report file is removed once read');
 		const files = r.tests.files!;
 		assert.deepEqual(files.map(f => [f.file, f.exitCode, f.timedOut]), [['a.test.mjs', 0, false], ['b.test.mjs', 1, false]]);
 		assert.deepEqual(files[0]!.titles.map(t => `${t.result} ${t.title}`), ['pass alpha passes', 'pass beta passes']);
@@ -338,7 +345,7 @@ test('runValidationChecks runs each file in its own process, in order, with the 
 		assert.deepEqual(files[1]!.titles.map(t => `${t.depth} ${t.result} ${t.title}`), [
 			'0 pass one passes', '0 fail two fails', '0 skipped three is skipped', '1 pass nested passes', '0 pass a suite', '0 fail an unrelated failure',
 		]);
-		assert.equal(r.tests.command, 'node --test --test-force-exit --test-reporter=tap a.test.mjs\nnode --test --test-force-exit --test-reporter=tap b.test.mjs');
+		assert.equal(r.tests.command, calls.slice(1).map(c => c.join(' ')).join('\n'));
 		assert.equal(r.tests.ok, false);
 		assert.equal(r.tests.exitCode, 1);
 		// The tail of the output is still returned for the judge.
@@ -409,9 +416,7 @@ test('a file that times out, and a file not started because the time limit was u
 
 test("a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note", async () => {
 	// A file whose output is far longer than the tail the verdict keeps: its first
-	// test is named, and its second prints two hundred long lines. (Two tests,
-	// not hundreds: `--test-force-exit` drops trailing tests of a file with many,
-	// now and then, and still exits with 0.)
+	// test is named, and its second prints two hundred long lines.
 	const long = "import { test } from 'node:test';\ntest('the first case', () => {});\ntest('a noisy one', () => { for (let i = 0; i < 200; i++) console.log('line ' + i + ' ' + 'x'.repeat(100)); });\n";
 	const dir = runnerDir({ 'long.test.mjs': long });
 	try {
@@ -572,5 +577,36 @@ test("the whole output is still written after the output directory has been remo
 		assert.equal(existsSync(old), false, 'the old file was pruned');
 		assert.ok(existsSync(second.outputPath!) && existsSync(third.outputPath!));
 		assert.ok(readdirSync(VALIDATE_OUTPUT_DIR).length >= 2);
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('ISSUE-7ba8cf15: a file with many tests is reported in full under the gate\'s runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)', async () => {
+	assert.ok(!TEST_RUNNER_ARGV.includes('--test'), 'the file runs in the runner\'s own process');
+	assert.ok(!NODE_TEST_ARGV.includes('--test'));
+	assert.ok(TEST_RUNNER_ARGV.includes('--test-force-exit'), 'a file that keeps its process alive still ends (ISSUE-b544025d)');
+	const n = 300;
+	let src = "import { test } from 'node:test';\n";
+	for (let i = 0; i < n; i++) src += `test('case ${i}', () => { console.log('${'y'.repeat(200)}'); });\n`;
+	const dir = runnerDir({ 'many.test.mjs': src });
+	try {
+		for (let round = 0; round < 3; round++) {
+			const r = await runValidationChecks(dir, nodePlan({ testFiles: ['many.test.mjs'], namedTests: [mapped('p', [{ file: 'many.test.mjs', title: 'case 0' }, { file: 'many.test.mjs', title: `case ${n - 1}` }])] }));
+			const run = r.tests.files![0]!;
+			assert.equal(run.titles.length, n, `round ${round}: every test is reported`);
+			assert.deepEqual(r.tests.namedTests![0]!.cases.map(c => c.result), ['pass', 'pass'], 'the last case is found');
+			assert.equal(r.tests.ok, true);
+			if (run.outputPath !== undefined) rmSync(run.outputPath, { force: true });
+		}
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('ISSUE-7ba8cf15: in its own process a failing test still fails the file', async () => {
+	const dir = runnerDir({ 'bad.test.mjs': "import { test } from 'node:test';\ntest('fails', () => { throw new Error('boom'); });\n" });
+	try {
+		const r = await runValidationChecks(dir, nodePlan({ testFiles: ['bad.test.mjs'] }));
+		assert.equal(r.tests.exitCode, 1);
+		assert.equal(r.tests.ok, false);
+		const run = r.tests.files![0]!;
+		if (run.outputPath !== undefined) rmSync(run.outputPath, { force: true });
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });

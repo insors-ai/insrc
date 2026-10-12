@@ -14,7 +14,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
@@ -30,8 +30,13 @@ const log = getLogger('build-validate-checks');
 /** The repo's typecheck (CLAUDE.md). */
 export const TYPECHECK_ARGV: readonly string[] = ['npx', 'tsc', '--noEmit'];
 /** The repo's test runner, forced to exit once its tests finish (a test file
- *  whose process would otherwise stay alive still ends: ISSUE-b544025d). */
-export const TEST_RUNNER_ARGV: readonly string[] = ['npx', 'tsx', '--test', '--test-force-exit'];
+ *  whose process would otherwise stay alive still ends: ISSUE-b544025d). The
+ *  file runs in the runner's own process, not under `--test`: there each file
+ *  ran in a child process that force-exited before all of its TAP output reached
+ *  the parent, so the report lost trailing tests (ISSUE-7ba8cf15). One file is
+ *  run per command, so nothing needs `--test`'s file discovery. The report is
+ *  written to a file of its own (see `runTestFile`). */
+export const TEST_RUNNER_ARGV: readonly string[] = ['npx', 'tsx', '--test-force-exit'];
 
 export const TYPECHECK_TIMEOUT_MS = 300_000;
 export const TEST_TIMEOUT_MS      = 600_000;
@@ -43,6 +48,21 @@ const OUTPUT_TAIL_CHARS = 4_000;
 
 /** Added to the test runner's command so each file's run can be read title by title. */
 export const TAP_REPORTER_ARG = '--test-reporter=tap';
+/** Where the TAP report of one run goes: a file of its own, never the process's
+ *  stdout. A test file runs in the runner's own process, so whatever its tests
+ *  print reaches stdout raw; were the report there too, a printed `ok 9 - x`
+ *  would read as a result (ISSUE-7ba8cf15). */
+export const TAP_DESTINATION_ARG = '--test-reporter-destination=';
+
+/** A run's whole output: its TAP report, then everything the process printed as
+ *  TAP comments (as `node --test` reported a test's output), so the reader sees
+ *  only the report's own lines as results. */
+function reportWithPrinted(report: string, printed: string): string {
+	const lines = printed.split('\n');
+	if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+	if (lines.length === 0) return report;
+	return `${report}${report.length > 0 && !report.endsWith('\n') ? '\n' : ''}${lines.map(l => `# ${l}`).join('\n')}\n`;
+}
 
 /** One test the plan (or the design) names, and where its files come from. */
 export interface NamedTestPlan {
@@ -343,17 +363,28 @@ function testRunEnv(): NodeJS.ProcessEnv {
 async function runTestFile(
 	repoPath: string, plan: ValidationCheckPlan, file: string, remainingMs: number, deps: CheckRunnerDeps,
 ): Promise<{ readonly run: TestFileRun; readonly output: string }> {
-	const argv = [...plan.testCommand, TAP_REPORTER_ARG, file];
-	const command = argv.join(' ');
 	if (remainingMs <= 0) {
+		const command = [...plan.testCommand, TAP_REPORTER_ARG, file].join(' ');
 		return { run: { file, command, exitCode: null, timedOut: true, durationMs: 0, titles: [], note: NOTE_LIMIT_USED_UP }, output: '' };
 	}
+	const reportDir = mkdtempSync(join(tmpdir(), 'insrc-validate-report-'));
+	const reportPath = join(reportDir, 'report.tap');
+	const argv = [...plan.testCommand, TAP_REPORTER_ARG, `${TAP_DESTINATION_ARG}${reportPath}`, file];
+	const command = argv.join(' ');
 	const [cmd, ...args] = argv;
 	if (cmd === undefined) {
+		rmSync(reportDir, { recursive: true, force: true });
 		return { run: { file, command, exitCode: null, timedOut: false, durationMs: 0, titles: [], note: 'empty command' }, output: '' };
 	}
-	const r = await deps.run(cmd, args, { cwd: repoPath, timeoutMs: remainingMs, env: testRunEnv() });
-	const output = `${r.stdout}${r.stderr.length > 0 ? `\n${r.stderr}` : ''}`;
+	let r: ProcessGroupResult;
+	let report = '';
+	try {
+		r = await deps.run(cmd, args, { cwd: repoPath, timeoutMs: remainingMs, env: testRunEnv() });
+		try { report = readFileSync(reportPath, 'utf8'); } catch { /* no report: not started, or killed before writing */ }
+	} finally {
+		rmSync(reportDir, { recursive: true, force: true });
+	}
+	const output = reportWithPrinted(report, `${r.stdout}${r.stderr.length > 0 ? `${r.stdout.length > 0 && !r.stdout.endsWith('\n') ? '\n' : ''}${r.stderr}` : ''}`);
 	const notes: string[] = [];
 	if (r.spawnError !== undefined) notes.push(`could not start: ${r.spawnError}`);
 	if (r.timedOut) notes.push(`timed out after ${Math.round(remainingMs / 1000)} s`);

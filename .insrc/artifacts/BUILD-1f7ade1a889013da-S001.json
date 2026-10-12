@@ -6,7 +6,8 @@
     "createdAt": "2026-10-03T19:25:17.913Z",
     "updatedAt": "2026-10-04T04:29:34.742Z",
     "standalone": true,
-    "approvedAt": "2026-10-04T04:29:34.799Z"
+    "approvedAt": "2026-10-04T04:29:34.799Z",
+    "epicSlug": "both-cli-providers-reject-top-level"
   },
   "body": {
     "tasks": [

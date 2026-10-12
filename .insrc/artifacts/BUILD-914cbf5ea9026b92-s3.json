@@ -6,7 +6,9 @@
     "storyId": "s3",
     "createdAt": "2026-08-07T06:16:14.826Z",
     "updatedAt": "2026-08-07T06:16:14.826Z",
-    "approvedAt": "2026-08-07T10:09:02.464Z"
+    "approvedAt": "2026-08-07T10:09:02.464Z",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z"
   },
   "body": {
     "focus": "S003 — outbound HTTP/REST detector: per-language recognizers (TS/JS, Python, Go, Java, Scala) emit unresolved CALLS_HTTP; resolveExternalEndpoints pass resolves via sc2 into externalEndpoint nodes + edges; code-symbol resolver excludes boundary kinds.",

@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-12T09:10:47.854Z  ·  **Updated:** 2026-10-12T09:50:22.245Z
+**Standalone:** yes  ·  **Created:** 2026-10-12T09:10:47.854Z  ·  **Updated:** 2026-10-12T09:54:58.565Z
 
-**Commit:** 5ef06e69
+**Commit:** c57c37fd
 
 ## Summary
 
@@ -23,13 +23,15 @@ Three integration tests: the file store over a real temporary directory with two
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-c96a97a204fac22b-S001.json` — **insrc-build** (2026-10-12T09:50:22.245Z)
-- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-12T09:50:22.245Z)
-- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-10-12T09:50:22.245Z)
-- `vscode-plugin/src/chat/__tests__/fake-session-fs.ts` — **insrc-build** (2026-10-12T09:50:22.245Z)
-- `vscode-plugin/src/chat/__tests__/session-file-store.integration.test.ts` — **insrc-build** (2026-10-12T09:50:22.245Z)
-- `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` — **insrc-build** (2026-10-12T09:50:22.245Z)
-- `vscode-plugin/src/chat/__tests__/session-store.test.ts` — **insrc-build** (2026-10-12T09:50:22.245Z)
-- `vscode-plugin/src/chat/session-file-store.ts` — **insrc-build** (2026-10-12T09:50:22.245Z)
-- `vscode-plugin/src/chat/session-store.ts` — **insrc-build** (2026-10-12T09:50:22.245Z)
-- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-10-12T09:50:22.245Z)
+- `.insrc/artifacts/CR-c96a97a204fac22b-S001.json` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `.insrc/artifacts/PLAN-c96a97a204fac22b-S001.json` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `docs/standalone/every-save-chat-session-rewrites-its-E20261012c96a97a2/S001/CR.md` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `vscode-plugin/src/chat/__tests__/fake-session-fs.ts` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `vscode-plugin/src/chat/__tests__/session-file-store.integration.test.ts` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `vscode-plugin/src/chat/__tests__/session-store.test.ts` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `vscode-plugin/src/chat/session-file-store.ts` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `vscode-plugin/src/chat/session-store.ts` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-10-12T09:54:58.565Z)

@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-12T08:37:15.876Z  ·  **Updated:** 2026-10-12T08:43:14.406Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-12T08:37:15.876Z  ·  **Updated:** 2026-10-12T09:55:02.035Z
 
-**Commit:** 79c6c5ba
+**Commit:** c57c37fd
 
 ## Scope
 
@@ -26,5 +26,5 @@ The validate session now gives each check plan the TypeScript projects, other th
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-b4b6b835f29fab99.json` — **insrc-build** (2026-10-12T08:43:14.406Z)
-- `.insrc/artifacts/ISSUE-c96a97a204fac22b.json` — **insrc-build** (2026-10-12T08:43:14.406Z)
+- `.insrc/artifacts/BUILD-c96a97a204fac22b-S001.json` — **insrc-build** (2026-10-12T09:55:02.035Z)
+- `docs/standalone/every-save-chat-session-rewrites-its-E20261012c96a97a2/S001/BUILD.md` — **insrc-build** (2026-10-12T09:55:02.035Z)

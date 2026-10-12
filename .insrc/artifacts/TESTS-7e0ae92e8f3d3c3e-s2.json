@@ -4,7 +4,7 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T05:52:59.906Z"
+    "updatedAt": "2026-10-12T06:06:19.789Z"
   },
   "body": {
     "tasks": [
@@ -63,8 +63,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "16df4f8a",
-        "ranAt": "2026-10-12T05:50:00.228Z",
+        "commit": "4a48274e",
+        "ranAt": "2026-10-12T06:03:51.822Z",
         "testsPassed": true,
         "tests": [
           {
@@ -112,7 +112,7 @@
             "file": "src/design/corpus/sources/__tests__/eligibility.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 505,
+            "durationMs": 598,
             "titles": [
               {
                 "title": "mixed-eligibility admits only reviewed exact-file profiles with complete evidence",
@@ -307,8 +307,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "16df4f8a",
-        "ranAt": "2026-10-12T05:51:23.784Z",
+        "commit": "4a48274e",
+        "ranAt": "2026-10-12T06:04:28.885Z",
         "testsPassed": true,
         "tests": [
           {
@@ -356,7 +356,7 @@
             "file": "src/design/corpus/sources/__tests__/lineage.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 508,
+            "durationMs": 525,
             "titles": [
               {
                 "title": "lineage-closure retains every source and transformation for derived outputs",
@@ -377,8 +377,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "da79b06a",
-        "ranAt": "2026-10-12T05:22:43.937Z",
+        "commit": "4a48274e",
+        "ranAt": "2026-10-12T06:05:05.768Z",
         "testsPassed": true,
         "tests": [
           {
@@ -426,7 +426,7 @@
             "file": "src/design/corpus/sources/__tests__/notices.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 498,
+            "durationMs": 506,
             "titles": [
               {
                 "title": "notice-closure preserves exact evidence bytes and all source obligations",
@@ -447,8 +447,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "16df4f8a",
-        "ranAt": "2026-10-12T05:52:06.335Z",
+        "commit": "4a48274e",
+        "ranAt": "2026-10-12T06:05:50.979Z",
         "testsPassed": true,
         "tests": [
           {
@@ -496,7 +496,7 @@
             "file": "src/design/corpus/sources/__tests__/assessment.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 567,
+            "durationMs": 576,
             "titles": [
               {
                 "title": "eligibility-binding reconstructs obligations and rejects modified candidate metadata",
@@ -517,8 +517,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "16df4f8a",
-        "ranAt": "2026-10-12T05:52:59.906Z",
+        "commit": "4a48274e",
+        "ranAt": "2026-10-12T06:06:19.789Z",
         "testsPassed": true,
         "tests": [
           {
@@ -568,7 +568,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "plans/reviews/design-intelligence-di1-s2-review-fixes-verification.txt: unabridged 58/58 corpus TAP and npm run build after review fixes; broader repository failures remain documented separately."
+              "evidence": "plans/reviews/design-intelligence-di1-s2-final-review-verification.txt: unabridged 58/58 corpus TAP and npm run build after final review fixes; broader repository failures remain documented separately."
             }
           }
         ],
@@ -577,7 +577,7 @@
             "file": "src/design/corpus/sources/__tests__/acceptance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 667,
+            "durationMs": 811,
             "titles": [
               {
                 "title": "candidate-roundtrip admits only eligible material and exports complete notices",
@@ -594,7 +594,7 @@
             "file": "src/design/corpus/sources/__tests__/isolation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1215,
+            "durationMs": 1281,
             "titles": [
               {
                 "title": "pure-boundary executes pure source modules with I/O forbidden",

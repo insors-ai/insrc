@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 42 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -335,3 +335,28 @@ Run at 2026-10-12T10:21:12.940Z on commit `2550d6ba`. Tests check: **passed**. 7
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/graph/__tests__/live-store-owner.test.ts` | 0 | 6 | 0.7 s |  |
 | `src/db/graph/__tests__/live-store-refusal.test.ts` | 0 | 1 | 0.8 s |  |
+
+## t11
+
+Run at 2026-10-12T10:27:12.069Z on commit `db3df771`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: diagnostic through the tools' route: fs.promises.readFile of the lock file logs one warn line with a stack, once per stack**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diagnostic through the tools' route: fs.promises.readFile of the lock file logs one warn line with a stack, once per stack | `src/daemon/__tests__/store-file-open-diagnostic.test.ts` |
+| pass | the default report is a warn line on the daemon log, with the stack | `src/daemon/__tests__/store-file-open-diagnostic.test.ts` |
+
+**integration: file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link | `src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts` |
+| pass | a file tool call on any other path behaves as before | `src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/store-file-open-diagnostic.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts` | 0 | 2 | 0.5 s |  |

@@ -46,7 +46,8 @@ const { searchGrepTool } = await import('../../search/grep.js');
 const { searchGlobTool } = await import('../../search/glob.js');
 const { searchListDirTool } = await import('../../search/list-dir.js');
 const { searchRecentTool } = await import('../../search/recent.js');
-const { executeTool } = await import('../../../executor.js').catch(() => ({ executeTool: undefined }));
+const { executeTool } = await import('../../../executor.js');
+const { registerTool, getTool } = await import('../../../registry.js');
 import type { Tool, ToolInput, ToolResult } from '../../../types.js';
 
 after(() => {
@@ -111,11 +112,11 @@ test("file tools: each tool's own execute refuses the store file and its lock fi
 		await assertRefused(searchRecentTool, { path: LOCK });
 		await assertRefused(searchGlobTool, { pattern: '*', cwd: LOCK });
 
-		// Through the executor, the refusal is a failed result, not a crash.
-		if (executeTool !== undefined) {
-			const r = await (executeTool as (id: string, input: ToolInput) => Promise<ToolResult>)('file_read', { path: LOCK });
-			assert.equal(r.success, false);
-		}
+		// Through the executor, the refusal is a failed result naming it, not a crash.
+		if (getTool('file_read') === undefined) registerTool(fileReadTool);
+		const r = await (executeTool as (id: string, input: ToolInput) => Promise<ToolResult>)('file_read', { path: LOCK });
+		assert.equal(r.success, false);
+		assert.match(r.error ?? '', /Refusing to touch/, 'the tool ran and refused (not an unknown tool)');
 	} finally { rmSync(scratch, { recursive: true, force: true }); }
 });
 

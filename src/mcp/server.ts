@@ -52,7 +52,11 @@ import { handleDocgen } from './docgen/handler.js';
 import { runAnalyzeOneShot } from '../daemon/steps/analyze-oneshot.js';
 import { stepClientOf } from '../shared/step-context.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';
-import { startRun, pollRun, abortRun, approveWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
+import {
+	startRun, pollRun, abortRun, approveWorkflow, type UnaryRpcDeps,
+	reviewArtifactStream, codeReviewStream, fetchCodeReviewGrounding, fetchCodeReviewFreshness, resolveRepoForCwd,
+} from './daemon-stream.js';
+import { installStepDaemonClient } from '../daemon/steps/daemon-client.js';
 import type { WorkflowProgress } from '../daemon/workflow-rpc.js';
 import { WORKFLOW_NAMES } from '../workflow/types.js';
 import type { ZodRawShape } from 'zod';
@@ -188,6 +192,15 @@ export function buildInsrcMcpServerWithRegistry(): {
 	server: McpServer;
 	schemaRegistry: InsrcToolSchemaRegistry;
 } {
+	// The step handlers still run in this process until the tools become
+	// forwarders (Story s11, t9): they reach the daemon over its socket.
+	installStepDaemonClient({
+		reviewArtifactStream:     (params, opts) => reviewArtifactStream(params, opts),
+		codeReviewStream:         (params, opts) => codeReviewStream(params, opts),
+		fetchCodeReviewGrounding: (params) => fetchCodeReviewGrounding(params),
+		fetchCodeReviewFreshness: (params) => fetchCodeReviewFreshness(params),
+		resolveRepoForCwd:        (cwd) => resolveRepoForCwd(cwd),
+	});
 	const server = new McpServer(SERVER_INFO, {
 		capabilities: {
 			tools:     {},

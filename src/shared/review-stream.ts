@@ -11,7 +11,7 @@
  * c2ba6fa6, Story s11).
  */
 
-import type { CodeReviewArtifact } from '../workflow/code-review/types.js';
+import type { CodeReviewArtifact, CodeReviewGrounding } from '../workflow/code-review/types.js';
 
 /** Why a review request did not produce a review. */
 export type ReviewStreamFailure =
@@ -60,4 +60,32 @@ export interface CodeReviewStreamParams {
 export interface CodeReviewStreamResult {
 	readonly runId:    string;
 	readonly artifact: CodeReviewArtifact;
+}
+
+// ---------------------------------------------------------------------------
+// The code-review grounding and freshness replies, shaped the same way by the
+// socket client and by the daemon's in-process client: a decline, an error or
+// an unreachable daemon is `{ ok: false, reason }`, never a throw.
+// ---------------------------------------------------------------------------
+
+export type CodeReviewGroundingResult = { ok: true; grounding: CodeReviewGrounding } | { ok: false; reason: string };
+export type CodeReviewFreshnessResult = { ok: true; isProcessing: boolean; staleFiles: readonly string[] } | { ok: false; reason: string };
+
+/** The `codeReview.grounding` reply as a result. */
+export function groundingFromReply(res: { ok?: boolean; grounding?: CodeReviewGrounding; reason?: string; error?: string }): CodeReviewGroundingResult {
+	if (res.ok === true && res.grounding !== undefined) return { ok: true, grounding: res.grounding };
+	return { ok: false, reason: res.reason ?? res.error ?? 'code-review grounding unavailable' };
+}
+
+/** The `codeReview.freshness` reply as a result. */
+export function freshnessFromReply(res: { isProcessing?: boolean; staleFiles?: readonly string[]; error?: string }): CodeReviewFreshnessResult {
+	if (res.error === undefined && typeof res.isProcessing === 'boolean') {
+		return { ok: true, isProcessing: res.isProcessing, staleFiles: res.staleFiles ?? [] };
+	}
+	return { ok: false, reason: res.error ?? 'code-review freshness unavailable' };
+}
+
+/** A rejected grounding or freshness request as a result. */
+export function unavailableFromError(err: unknown): { ok: false; reason: string } {
+	return { ok: false, reason: err instanceof Error ? err.message : String(err) };
 }

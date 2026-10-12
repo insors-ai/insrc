@@ -61,7 +61,8 @@ import {
 // `backend offline` via the inline helpers below. Their backing files get deleted
 // in Phase 2-3.
 
-import type { RpcHandler, StreamHandler } from './server.js';
+import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
+import { createInDaemonClient, installStepDaemonClient } from './steps/daemon-client.js';
 import { listModels } from './list-models.js';
 import { makeUpdateHandlers, launchUpdate, readUpdateOutcome } from './update-runner.js';
 import { readInstalledCommit } from './installed-commit.js';
@@ -488,7 +489,10 @@ async function main(): Promise<void> {
 	// socket, short enough that the detached helper's stop+start proceeds
 	// promptly (Story S001 / sc1).
 	const UPDATE_SHUTDOWN_DELAY_MS = 250;
-	const server = new IpcServer({
+	// The request handler maps, built once: the IpcServer serves them over the
+	// socket, and the step handlers call the same functions in-process through
+	// the in-daemon client (Epic c2ba6fa6, Story s11), never over a loopback.
+	const rpcHandlers: RpcHandlers = {
 		'repo.add': async (params) => {
 			const rawPath = (params as { path?: unknown })?.path;
 			let normalisedPath: string;
@@ -1832,7 +1836,8 @@ async function main(): Promise<void> {
 		'prefs.discard':           offlineRpc('prefs.discard'),
 		'prefs.confirm.list':      offlineRpc('prefs.confirm.list'),
 		'prefs.confirm.resolve':   offlineRpc('prefs.confirm.resolve'),
-	}, {
+	};
+	const streamHandlers: StreamHandlers = {
 		// Streaming handlers. All agent-driven streams (chat.send, the
 		// chat.resume variants, handoff.run, meta-task.run, gate.request-
 		// permission) emit a single `error` event and close. `todos.subscribe`
@@ -1902,7 +1907,9 @@ async function main(): Promise<void> {
 			send({ id: 0, stream: 'done', data: { model } });
 			log.info({ model }, 'ollama.pull complete');
 		},
-	});
+	};
+	installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers));
+	const server = new IpcServer(rpcHandlers, streamHandlers);
 
 	// Initialize chat session pool
 	initChatHandlers();

@@ -30,8 +30,9 @@ import type { DocGenOutcome, RenderedDocumentShell, SerializableDocTypeRegistrat
 import type { InsrcGuideResult } from '../daemon/guide-sections.js';
 import type { CodeReviewGrounding } from '../workflow/code-review/types.js';
 import type { WorkflowReviewDone } from '../daemon/workflow-review-rpc.js';
-import { ReviewStreamError } from '../shared/review-stream.js';
+import { freshnessFromReply, groundingFromReply, ReviewStreamError, unavailableFromError } from '../shared/review-stream.js';
 import type {
+	CodeReviewFreshnessResult, CodeReviewGroundingResult,
 	CodeReviewStreamParams, CodeReviewStreamResult, ReviewArtifactStreamParams, ReviewStreamFailure, ReviewStreamOpts,
 } from '../shared/review-stream.js';
 
@@ -316,18 +317,10 @@ export function abortRun(runId: string, deps: UnaryRpcDeps = {}): Promise<{ ok: 
 export function fetchCodeReviewGrounding(
 	params: { repo: string; epicHash: string; storyId: string },
 	deps: UnaryRpcDeps = {},
-): Promise<{ ok: true; grounding: CodeReviewGrounding } | { ok: false; reason: string }> {
+): Promise<CodeReviewGroundingResult> {
 	return unaryRpc<{ ok?: boolean; grounding?: CodeReviewGrounding; reason?: string; error?: string }>(
 		'codeReview.grounding', params, deps,
-	).then(
-		(res) => {
-			if (res.ok === true && res.grounding !== undefined) {
-				return { ok: true as const, grounding: res.grounding };
-			}
-			return { ok: false as const, reason: res.reason ?? res.error ?? 'code-review grounding unavailable' };
-		},
-		(err: unknown) => ({ ok: false as const, reason: err instanceof Error ? err.message : String(err) }),
-	);
+	).then(groundingFromReply, unavailableFromError);
 }
 
 /** Fetch the code-review index-freshness verdict (code-review s9) over the
@@ -339,18 +332,10 @@ export function fetchCodeReviewGrounding(
 export function fetchCodeReviewFreshness(
 	params: { repo: string; epicHash: string; storyId: string; changedFiles: readonly string[] },
 	deps: UnaryRpcDeps = {},
-): Promise<{ ok: true; isProcessing: boolean; staleFiles: readonly string[] } | { ok: false; reason: string }> {
+): Promise<CodeReviewFreshnessResult> {
 	return unaryRpc<{ isProcessing?: boolean; staleFiles?: readonly string[]; error?: string }>(
 		'codeReview.freshness', params, deps,
-	).then(
-		(res) => {
-			if (res.error === undefined && typeof res.isProcessing === 'boolean') {
-				return { ok: true as const, isProcessing: res.isProcessing, staleFiles: res.staleFiles ?? [] };
-			}
-			return { ok: false as const, reason: res.error ?? 'code-review freshness unavailable' };
-		},
-		(err: unknown) => ({ ok: false as const, reason: err instanceof Error ? err.message : String(err) }),
-	);
+	).then(freshnessFromReply, unavailableFromError);
 }
 
 /** Forward a docgen generation request to the daemon `docgen.generate` IPC. The

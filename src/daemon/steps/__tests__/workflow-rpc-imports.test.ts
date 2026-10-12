@@ -54,3 +54,21 @@ test('no file under src/mcp other than server.ts imports src/daemon/steps', () =
 	// The check sees such an import: server.ts has them.
 	assert.ok(importsOf(join(mcpRoot, 'server.ts')).some(p => p.startsWith(steps)));
 });
+
+test('no module under src/daemon/steps imports src/mcp/daemon-stream.ts: the moved handlers reach the daemon through the in-daemon client', () => {
+	const steps = join(DAEMON, 'steps');
+	const daemonStream = normalize(join(DAEMON, '..', 'mcp', 'daemon-stream.js'));
+	const offenders: string[] = [];
+	const walk = (dir: string): void => {
+		for (const name of readdirSync(dir)) {
+			const full = join(dir, name);
+			if (statSync(full).isDirectory()) { if (name !== '__tests__') walk(full); continue; }
+			if (!/\.(ts|tsx)$/.test(name)) continue;
+			if (importsOf(full).includes(daemonStream)) offenders.push(full.slice(steps.length + 1));
+		}
+	};
+	walk(steps);
+	assert.deepEqual(offenders, []);
+	// The check sees such an import: server.ts has one.
+	assert.ok(importsOf(join(DAEMON, '..', 'mcp', 'server.ts')).includes(daemonStream));
+});

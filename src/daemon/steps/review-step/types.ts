@@ -19,7 +19,7 @@
  */
 
 import type { WorkflowReviewDone } from '../../workflow-review-rpc.js';
-import type { ReviewArtifactStreamParams, ReviewStreamOpts } from '../../../mcp/daemon-stream.js';
+import type { ReviewArtifactStreamParams, ReviewStreamOpts } from '../../../shared/review-stream.js';
 import type { DesignIntent, RawTemplateAnswer } from '../../../workflow/review/template.js';
 import type { Claim, Evidence, ReviewReport, ReviewVerdict } from '../../../workflow/review/types.js';
 
@@ -140,6 +140,8 @@ export interface ReviewStepDone {
 export interface ReviewStepDeps {
 	/** Ask the daemon to review an existing design artifact (`workflow.review`). */
 	readonly reviewByDaemon?: ((params: ReviewArtifactStreamParams, opts: ReviewStreamOpts) => Promise<WorkflowReviewDone>) | undefined;
+	/** Aborts the daemon review wait, and with it the review run. */
+	readonly signal?: AbortSignal | undefined;
 }
 
 export interface ReviewStepError {

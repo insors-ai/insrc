@@ -30,8 +30,10 @@ import type { LLMProvider } from '../../../shared/types.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { PATHS } from '../../../shared/paths.js';
 import { resolveCodeReviewSubject } from '../../../workflow/code-review/subject.js';
-import { codeReviewStream, fetchCodeReviewGrounding, fetchCodeReviewFreshness, ReviewStreamError } from '../../../mcp/daemon-stream.js';
-import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../mcp/daemon-stream.js';
+import { ReviewStreamError } from '../../../shared/review-stream.js';
+import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../shared/review-stream.js';
+import { stepDaemonClient } from '../daemon-client.js';
+import type { StepDaemonClient } from '../daemon-client.js';
 import { buildAuthorParty } from '../../../workflow/code-review/author.js';
 import { SamePartyReviewError } from '../../../workflow/review/party.js';
 import type { PartyOrUnknown } from '../../../workflow/review/party.js';
@@ -82,8 +84,8 @@ export function expectedDimensions(subject: CodeReviewSubject): readonly ReviewD
  *  bound, from config). */
 export interface CodeReviewStepDeps {
 	readonly resolveSubject: typeof resolveCodeReviewSubject;
-	readonly fetchGrounding: typeof fetchCodeReviewGrounding;
-	readonly fetchFreshness: typeof fetchCodeReviewFreshness;
+	readonly fetchGrounding: StepDaemonClient['fetchCodeReviewGrounding'];
+	readonly fetchFreshness: StepDaemonClient['fetchCodeReviewFreshness'];
 	/** s10: build the diff-only (degraded) grounding on the decline branch. */
 	readonly assembleDiffGrounding: typeof assembleDiffCodeReviewGrounding;
 	readonly runReview:      typeof runCodeReview;
@@ -98,6 +100,8 @@ export interface CodeReviewStepDeps {
 	readonly reviewByDaemon?: ((params: CodeReviewStreamParams, opts: ReviewStreamOpts) => Promise<CodeReviewStreamResult>) | undefined;
 	/** The invoking MCP client, so the daemon can fall back to that CLI. */
 	readonly client?: 'claude' | 'codex' | undefined;
+	/** Aborts the daemon code-review wait, and with it the review run. */
+	readonly signal?: AbortSignal | undefined;
 }
 
 /** The fixed poll interval for the block-and-poll (an internal constant, NOT a
@@ -120,8 +124,8 @@ function readFreshnessTimeoutMs(): number {
 
 export const DEFAULT_DEPS: CodeReviewStepDeps = {
 	resolveSubject: resolveCodeReviewSubject,
-	fetchGrounding: fetchCodeReviewGrounding,
-	fetchFreshness: fetchCodeReviewFreshness,
+	fetchGrounding: (params) => stepDaemonClient().fetchCodeReviewGrounding(params),
+	fetchFreshness: (params) => stepDaemonClient().fetchCodeReviewFreshness(params),
 	assembleDiffGrounding: assembleDiffCodeReviewGrounding,
 	runReview:      runCodeReview,
 	write:          writeAtomic,
@@ -693,9 +697,9 @@ async function reviewByDaemon(
 	const { repoPath: repo, epicHash, storyId } = subject;
 	log.info({ repo, epicHash, storyId, mode }, 'insrc_code_review_step: not daemon-authored; asking the daemon to review');
 	try {
-		const res = await (deps.reviewByDaemon ?? codeReviewStream)(
+		const res = await (deps.reviewByDaemon ?? stepDaemonClient().codeReviewStream)(
 			{ repo, epicHash, storyId, groundingMode: mode, ...(deps.client !== undefined ? { client: deps.client } : {}) },
-			{ timeoutMs: DAEMON_CODE_REVIEW_WAIT_MS },
+			{ timeoutMs: DAEMON_CODE_REVIEW_WAIT_MS, ...(deps.signal !== undefined ? { signal: deps.signal } : {}) },
 		);
 		// `codeReview.run` is older than the grounding mode and the reviewer stamp, so
 		// a daemon that predates them accepts this request and silently ignores both:

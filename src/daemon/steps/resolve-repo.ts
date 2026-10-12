@@ -24,14 +24,15 @@
  * to the same pinned repo. Consulting the session CWD (matched against the
  * daemon's live multi-repo registry) makes resolution correct per-session.
  *
- * The CWD→repo containment match itself lives daemon-side (`repo.resolveForCwd`
- * IPC), next to the registry that owns the paths — this resolver is a thin
- * async caller. A broken/unreachable daemon surfaces its error here rather than
+ * The CWD→repo containment match itself lives daemon-side (`repo.resolveForCwd`),
+ * next to the registry that owns the paths — this resolver is a thin async
+ * caller, through the installed step daemon client (in the daemon, the
+ * request handler called in-process). A broken/unreachable daemon surfaces its error here rather than
  * silently falling through to INSRC_REPO (a broken daemon must not be misread
  * as "the pinned repo"). See `docs/designs/LLD-make-insrc-mcp-server-s-repo-S001.md`.
  */
 
-import { resolveRepoForCwd } from '../../mcp/daemon-stream.js';
+import { stepDaemonClient } from './daemon-client.js';
 import { stepCwd, stepEnvRepo } from '../../shared/step-context.js';
 
 /** Test seam: inject the CWD-containment lookup + the CWD value so the
@@ -56,7 +57,7 @@ export async function resolveRepoPath(explicit: string | undefined, deps: Resolv
 	if (explicit !== undefined && explicit.length > 0) return explicit;
 	// CWD-containment match against the live registry (daemon-side). Rejection
 	// (daemon down) propagates by design — see module header.
-	const resolveForCwd = deps.resolveForCwd ?? _resolveForCwdOverride ?? resolveRepoForCwd;
+	const resolveForCwd = deps.resolveForCwd ?? _resolveForCwdOverride ?? ((cwd: string) => stepDaemonClient().resolveRepoForCwd(cwd));
 	const match = await resolveForCwd(deps.cwd ?? stepCwd());
 	if (match !== null && match.length > 0) return match;
 	return stepEnvRepo();

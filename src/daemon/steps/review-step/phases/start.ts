@@ -24,7 +24,8 @@ import {
 	TEMPLATE_ANSWER_SCHEMA,
 } from '../../../../workflow/review/index.js';
 import { saveState } from '../state-store.js';
-import { reviewArtifactStream, ReviewStreamError } from '../../../../mcp/daemon-stream.js';
+import { ReviewStreamError } from '../../../../shared/review-stream.js';
+import { stepDaemonClient } from '../../daemon-client.js';
 import type {
 	ReviewStepDeps, ReviewStepDone, ReviewStepEmitClaims, ReviewStepEmitFindings, ReviewStepError, ReviewStepInputStart,
 	ReviewStepStatePayload,
@@ -148,7 +149,10 @@ async function reviewByDaemon(
 	const timeoutMs = isDesignStage(a.stage) ? DESIGN_REVIEW_WAIT_MS : PIPELINE_REVIEW_WAIT_MS;
 	log.info({ stage: a.stage, mdPath: a.mdPath, timeoutMs }, 'insrc_review_step[start]: not daemon-authored; asking the daemon to review');
 	try {
-		const done = await (deps.reviewByDaemon ?? reviewArtifactStream)({ artifactPath: a.mdPath, repo: a.repo }, { timeoutMs });
+		const done = await (deps.reviewByDaemon ?? stepDaemonClient().reviewArtifactStream)(
+			{ artifactPath: a.mdPath, repo: a.repo },
+			{ timeoutMs, ...(deps.signal !== undefined ? { signal: deps.signal } : {}) },
+		);
 		return {
 			next:       'done',
 			verdict:    done.verdict as ReviewStepDone['verdict'],

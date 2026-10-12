@@ -10,7 +10,9 @@
     "schemaVersion": 1,
     "epicHash": "8f90988572f4d5b2",
     "storyId": "S001",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "bug-analyzer-s-plan-tree-child",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

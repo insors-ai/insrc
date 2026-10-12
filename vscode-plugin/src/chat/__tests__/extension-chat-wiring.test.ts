@@ -43,7 +43,7 @@ test('extension.ts constructs createChatPanelHost with the real injected vscode 
   assert.match(channel, /panel\.webview\.onDidReceiveMessage\(/, 'injects the inbound registrar');
   assert.match(channel, /panel\.webview\.postMessage\(message\)\.then\(undefined/, 'injects the fire-and-forget postMessage');
   assert.match(channel, /panel\.onDidDispose\(/, 'injects onDidDispose');
-  assert.match(b, /createMementoChatSessionStore\(\{\s*memento: context\.globalState,\s*maxSessions: \d+,/, 'the sc4 store binds over context.globalState (k3) with a bounded history cap (S005)');
+  assert.match(b, /createFileChatSessionStore\(\{\s*root: chatSessionsRoot,\s*logger: panelLog,\s*maxSessions: \d+,/, 'the sc4 store is the file store, with a bounded history cap (S005)');
   assert.match(b, /createProviderRegistry\(\{ spawn: nodeSpawner, isInstalled: defaultBinaryProbe(, sessionOutput: chatOutput)? \}\)/, 'the sc5 registry over the installed CLIs');
 });
 
@@ -253,6 +253,33 @@ test('the extension builds a session output on ~/.insrc/chat-output, passes it t
   assert.match(b, /const chatOutput = createSessionOutput\(\{ root: join\(PATHS\.insrc, 'chat-output'\), logger: panelLog \}\)/, 'one root under ~/.insrc');
   assert.match(b, /createProviderRegistry\(\{ spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput \}\)/, 'the registry keeps turn output in the session files');
   assert.match(b, /onEvict: \(id\) => void chatOutput\.remove\(id\)/, "an evicted session's files are removed");
-  assert.match(b, /chatOutput\s*\.sweep\(\{ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: new Set\(chatStore\.list\(\)\.map\(\(c\) => c\.id\)\)\s*\}\)/, 'stale files of sessions not in the store are swept at start');
+  assert.match(b, /\.sweep\(\{ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: new Set\(\[\.\.\.chatStore\.list\(\)\.map\(\(c\) => c\.id\), \.\.\.migratedChats\.kept\]\)\s*\}\)/, 'stale files of sessions not in the store are swept at start');
   assert.match(src, /const CHAT_OUTPUT_MAX_AGE_MS = 30 \* 24 \* 60 \* 60 \* 1000;/, '30 days');
+});
+
+test("extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids", () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  assert.match(src, /import \{ createFileChatSessionStore, migrateChatSessionsFromMemento \} from '\.\/chat\/session-file-store\.js';/);
+  // One root for the migration and the store.
+  assert.match(b, /const chatSessionsRoot = join\(PATHS\.insrc, 'chat-sessions'\);/, 'the sessions directory is under ~/.insrc');
+  const migrate = b.indexOf('migrateChatSessionsFromMemento({ memento: context.globalState, root: chatSessionsRoot, logger: panelLog })');
+  const build = b.indexOf('createFileChatSessionStore({');
+  const sweep = b.indexOf('.sweep({');
+  assert.ok(migrate >= 0, 'the migration reads context.globalState and writes to the same root');
+  assert.ok(build > migrate, 'the store is built after the migration');
+  assert.ok(sweep > build, 'the sweep runs after both');
+  // The store: the same root, the cap and the onEvict.
+  const store = /createFileChatSessionStore\(\{([\s\S]*?)\n    \}\);/.exec(b);
+  assert.ok(store, 'the store construction is present');
+  assert.match(store![1]!, /root: chatSessionsRoot,/);
+  assert.match(store![1]!, /maxSessions: 200,/);
+  assert.match(store![1]!, /onEvict: \(id\) => void chatOutput\.remove\(id\)/);
+  // The sweep keeps the store's ids and the ids the migration left in globalState.
+  assert.match(b, /keep: new Set\(\[\.\.\.chatStore\.list\(\)\.map\(\(c\) => c\.id\), \.\.\.migratedChats\.kept\]\)/);
+  // The Memento store is no longer constructed by the extension, and nothing else writes chat keys.
+  assert.equal(src.includes('createMementoChatSessionStore'), false);
+  assert.equal(/insrc\.chat\.(index|session)/.test(src), false);
 });

@@ -4,7 +4,7 @@
     "epicHash": "59da3204a44afd1b",
     "storyId": "S001",
     "createdAt": "2026-10-12T10:25:29.172Z",
-    "updatedAt": "2026-10-12T10:37:43.920Z",
+    "updatedAt": "2026-10-12T10:43:04.770Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-12T10:10:09.226Z",
     "epicSlug": "paste-images-attach-documents-dev-chat"
@@ -2302,6 +2302,84 @@
               },
               {
                 "title": "host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "4c483b3c",
+        "ranAt": "2026-10-12T10:43:04.770Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 369,
+            "titles": [
+              {
+                "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
+                "result": "pass"
+              },
+              {
+                "title": "the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared",
                 "result": "pass"
               }
             ],

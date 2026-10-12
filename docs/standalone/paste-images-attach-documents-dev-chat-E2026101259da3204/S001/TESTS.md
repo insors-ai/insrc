@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -199,3 +199,31 @@ Run at 2026-10-12T10:37:43.920Z on commit `4f93626c`. Tests check: **passed**. 7
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 148 | 2.7 s |  |
+
+## t7
+
+Run at 2026-10-12T10:43:04.770Z on commit `4c483b3c`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+
+**integration: shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+
+**integration: shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 5 | 0.4 s |  |

@@ -58,6 +58,10 @@ export interface BodyStub {
   listeners: Record<string, Array<(e?: unknown) => void>>;
   writes: Write[];
   scrolled: boolean;
+  /** Scroll metrics a test sets and the code under test reads and writes; plain numbers, no layout. */
+  scrollTop: number;
+  scrollHeight: number;
+  clientHeight: number;
   appendChild(c: BodyStub): BodyStub;
   insertBefore(c: BodyStub, ref: BodyStub | null): BodyStub;
   removeChild(c: BodyStub): BodyStub;
@@ -107,7 +111,7 @@ function makeNode(nodeType: 1 | 3, tagName: string, id: string, text: string, ns
   const detachAll = (): void => { for (const c of children) c.parentNode = null; children.length = 0; };
   const n: BodyStub = {
     nodeType, tagName, ns, id, data: '', value: '', style: {}, attrs: {}, children, writes,
-    listeners: {}, scrolled: false, parentNode: null,
+    listeners: {}, scrolled: false, parentNode: null, scrollTop: 0, scrollHeight: 0, clientHeight: 0,
     get tag() { return n.tagName; },
     get className() { return cls; },
     set className(v: string) { cls = v; writes.push({ prop: 'className', value: v }); },

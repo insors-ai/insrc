@@ -541,6 +541,14 @@ export function renderRegistryWebviewSource(): string {
     `var KEYS={};` +
     `function appendKeyed(vm,key){if(key==null)return renderRow(vm);if(KEYS[key])return KEYS[key];var n=renderRow(vm);if(n)KEYS[key]=n;return n;}` +
     `function resetKeys(){KEYS={};PEND=[];APOS={};}` +
-    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,onSelectionDecision:onSelectionDecision};}`
+    // Story E20261012ddc4ede1:S001: the registry's part in paging the transcript. A row trimmed
+    // from the view must render again when its page is reloaded, so its key is forgotten; an older
+    // page renders with its own (empty) pending-tool list, so it never captures or loses a live
+    // tool row; and a pending tool row whose node was trimmed is dropped, so a later result
+    // renders as its own row instead of inside a node that is no longer shown.
+    `function forgetKeysBefore(idx){for(var k in KEYS){if(/^r\\d+$/.test(k)&&Number(k.slice(1))<idx)delete KEYS[k];}}` +
+    `function withIsolatedPending(fn){var live=PEND;PEND=[];try{return fn();}finally{PEND=live;}}` +
+    `function forgetPendingIn(nodes){PEND=PEND.filter(function(p){return nodes.indexOf(p.wrap)<0;});}` +
+    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,forgetKeysBefore:forgetKeysBefore,withIsolatedPending:withIsolatedPending,forgetPendingIn:forgetPendingIn,onSelectionDecision:onSelectionDecision};}`
   );
 }

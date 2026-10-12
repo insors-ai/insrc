@@ -15,10 +15,12 @@ import { test } from 'node:test';
 import { homedir, tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
 
-import { closeGraphStore, getGraphStore } from '../../store.js';
+import { closeGraphStore, declareLiveStoreOwner, getGraphStore } from '../../store.js';
 
 test('opens the store at the default path of a temporary home', async () => {
 	assert.ok(homedir().startsWith(tmpdir()) || homedir().startsWith('/private') || homedir().startsWith('/tmp'), 'never run against a real home');
+	// Only a declared process gets the store at the default path (Story s4, t10).
+	declareLiveStoreOwner();
 	await getGraphStore();
 	await closeGraphStore();
 });

@@ -76,7 +76,14 @@ export type StoreChildCommand =
 	| { op: 'reject-unhandled' }
 	/** Register `repoPath` and index one `file` entity per path in `files`
 	 *  (plus one function entity, which a source-root read must leave out). */
-	| { op: 'seed-repo'; repoPath: string; files: string[] };
+	| { op: 'seed-repo'; repoPath: string; files: string[] }
+	| { op: 'declare-owner' }
+	| { op: 'declare-reader' }
+	/** Spawn a child of THIS process (inheriting its environment), have it
+	 *  open the store at the same path, and answer with that child's reply. */
+	| { op: 'child-open' }
+	/** The paths of the store files this process has open (lsof). */
+	| { op: 'open-store-files' };
 
 export type StoreChildReply =
 	| { ok: true; value?: unknown; settled?: boolean }
@@ -85,7 +92,8 @@ export type StoreChildReply =
 const storePath = process.argv[2];
 if (storePath === undefined) throw new Error('usage: store-child <store path> [raw]');
 const raw = process.argv[3] === 'raw';
-setGraphStorePath(storePath);
+// '-' leaves the store path at its default, the live store of this HOME.
+if (storePath !== '-') setGraphStorePath(storePath);
 
 function die(): never {
 	process.kill(process.pid, 'SIGKILL');
@@ -244,6 +252,22 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 				...(first !== undefined ? [entity(first, 'function', 'notAFile')] : []),
 			] as never);
 			return { ok: true };
+		}
+		case 'declare-owner':
+			(await import('../../store.js')).declareLiveStoreOwner();
+			return { ok: true };
+		case 'declare-reader':
+			(await import('../../store.js')).declareLiveStoreReaderUntilS11();
+			return { ok: true };
+		case 'child-open': {
+			const { spawnStoreChild } = await import('./store-child-driver.js');
+			const child = await spawnStoreChild(storePath as string);
+			try { return { ok: true, value: await child.send({ op: 'open' }) }; } finally { await child.kill(); }
+		}
+		case 'open-store-files': {
+			const { execFileSync } = await import('node:child_process');
+			const out = execFileSync('lsof', ['-p', String(process.pid), '-Fn'], { encoding: 'utf8' });
+			return { ok: true, value: out.split('\n').filter(l => l.includes('graph.lmdb')).map(l => l.slice(1)) };
 		}
 		case 'reject-unhandled':
 			void Promise.reject(new Error('nothing handles this'));

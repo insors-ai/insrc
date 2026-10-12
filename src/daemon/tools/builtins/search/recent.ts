@@ -9,7 +9,7 @@
 import { promises as fs, statSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
-import { searchAccess } from '../file/helpers.js';
+import { searchAccess, refuseLiveStoreFile } from '../file/helpers.js';
 
 export interface RecentEntry {
   path: string;
@@ -48,6 +48,7 @@ export const searchRecentTool: Tool = {
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const root = typeof input['path'] === 'string' ? resolve(input['path']) : process.cwd();
+    refuseLiveStoreFile(root);
     const minutes = Math.max(1, typeof input['minutes'] === 'number' ? input['minutes'] : 60);
     const includeHidden = input['includeHidden'] === true;
     const limit = Math.min(Math.max(1, typeof input['limit'] === 'number' ? input['limit'] : DEFAULT_LIMIT), MAX_LIMIT);

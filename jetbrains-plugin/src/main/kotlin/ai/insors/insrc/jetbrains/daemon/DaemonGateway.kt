@@ -1423,8 +1423,13 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             repoCount = (data["repos"] as? Collection<*>)?.size ?: 0,
             // sc2 (S004): the daemon's installed commit; absent on a pre-S002 daemon -> "".
             installedCommit = (data["installedCommit"] as? String) ?: "",
-            // s4: optional; absent while the store is healthy -> null.
-            storeFailureCause = (data["storeFailure"] as? Map<*, *>)?.get("cause") as? String,
+            // s4: optional; absent while the store is healthy -> null. ANY present
+            // storeFailure object means the store failed: a missing or blank cause
+            // falls back to its kind, so a failure is never shown as healthy.
+            storeFailureCause = (data["storeFailure"] as? Map<*, *>)?.let { f ->
+                (f["cause"] as? String)?.takeIf { it.isNotBlank() }
+                    ?: "the graph store failed (${(f["kind"] as? String)?.takeIf { it.isNotBlank() } ?: "unknown cause"})"
+            },
         )
 
         /**

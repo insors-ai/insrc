@@ -46,6 +46,8 @@ import { collectRepoStats } from './repo-stats.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer } from './server.js';
 import { buildDaemonStatus } from './status.js';
+import { declareLiveStoreOwner } from '../db/graph/store.js';
+import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js';
 import { entitiesForSourceRoots, METHOD_ENTITIES_FOR_SOURCE_ROOTS } from './source-roots-rpc.js';
 import { reportFatal } from './fatal.js';
 import { createShutdown, exitRespectingStoreHealth } from './shutdown.js';
@@ -110,6 +112,13 @@ import * as todosRpc from './todos-rpc.js';
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
+	// 0. This process owns the live graph store; every other process is
+	//    refused it (Epic c2ba6fa6, Story s4).
+	declareLiveStoreOwner();
+	// Log any open of the store's own files in this process, with its stack:
+	// the code that drops the daemon's lock on the store is not identified.
+	installStoreFileOpenDiagnostic();
+
 	// 1. Check for existing daemon
 	if (isAlreadyRunning()) {
 		log.error('already running — exiting');

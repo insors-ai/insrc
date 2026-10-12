@@ -50,8 +50,8 @@
  * `db/graph/{entities,edges,traversal,bulk}.ts` (Phase 2.x).
  */
 
-import { existsSync, mkdirSync, renameSync, rmSync, statSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { existsSync, lstatSync, mkdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
 
 import { open, type Database, type RootDatabase } from 'lmdb';
 
@@ -156,6 +156,22 @@ export class LmdbStoreLocksLostError extends LmdbStoreError {
 			cause,
 		);
 		this.name = 'LmdbStoreLocksLostError';
+	}
+}
+
+/**
+ * This process may not open the live store: only the daemon owns it (and,
+ * until Story s11 of Epic c2ba6fa6, the MCP server may read it). Every other
+ * process that opens and closes the live store can remove the daemon's locks.
+ * Thrown before the library's open is called, so no descriptor is opened.
+ */
+export class LmdbStoreNotOwnerError extends LmdbStoreError {
+	constructor(path: string) {
+		super(
+			`Refusing to open the live graph store at '${path}': only the insrc daemon may open it. ` +
+			`A test must set a temporary store with setGraphStorePath(); any other code must ask the daemon over its socket.`,
+		);
+		this.name = 'LmdbStoreNotOwnerError';
 	}
 }
 
@@ -294,6 +310,69 @@ export function setGraphStorePath(path: string): void {
 }
 
 // ---------------------------------------------------------------------------
+// Who may open the live store
+// ---------------------------------------------------------------------------
+//
+// Module variables, set only by calls: a child process inherits neither, so a
+// test run or a CLI started by the daemon is refused like any other process.
+
+let _ownsLiveStore = false;
+let _mayReadLiveStore = false;          // temporary; removed by Story s11
+
+/** Called once by the daemon's entry point, before anything opens the store. */
+export function declareLiveStoreOwner(): void {
+	_ownsLiveStore = true;
+}
+
+/**
+ * TEMPORARY (Epic c2ba6fa6): the MCP server runs the analyze step and some
+ * daemon builtins in its own process today, and they read the store directly.
+ * Story s11 moves that work into the daemon and DELETES this function and its
+ * one call (src/mcp/server.ts) — criterion ac6 of that Story.
+ */
+export function declareLiveStoreReaderUntilS11(): void {
+	_mayReadLiveStore = true;
+}
+
+/** The path with symbolic links resolved. For a file that does not exist
+ *  yet: a link is followed to its target (even when the target is missing),
+ *  otherwise its directory's resolved path is joined with its name. */
+function resolvedStorePath(path: string, depth = 0): string {
+	const abs = resolve(path);
+	try { return realpathSync(abs); } catch { /* not there yet, or a dangling link */ }
+	if (depth < 16) {
+		try {
+			if (lstatSync(abs).isSymbolicLink()) return resolvedStorePath(resolve(dirname(abs), readlinkSync(abs)), depth + 1);
+		} catch { /* no such entry */ }
+	}
+	try { return join(realpathSync(dirname(abs)), basename(abs)); } catch { return abs; }
+}
+
+/**
+ * True when `path`, with symbolic links resolved, is the live store's data
+ * file or its lock file. Opening and closing a second descriptor on the lock
+ * file inside the daemon drops the daemon's lock on it (Story s4).
+ */
+export function isLiveStoreFile(path: string): boolean {
+	const p = resolvedStorePath(path);
+	const live = resolvedStorePath(PATHS.lmdb);
+	return p === live || p === `${live}-lock`;
+}
+
+/** Throws `LmdbStoreNotOwnerError` when `path` is the live store and this
+ *  process has made neither declaration. */
+function assertMayOpen(path: string): void {
+	if (_ownsLiveStore || _mayReadLiveStore) return;
+	if (resolvedStorePath(path) === resolvedStorePath(PATHS.lmdb)) throw new LmdbStoreNotOwnerError(path);
+}
+
+/** ONLY for tests: forget both declarations. */
+export function resetLiveStoreDeclarationsForTests(): void {
+	_ownsLiveStore = false;
+	_mayReadLiveStore = false;
+}
+
+// ---------------------------------------------------------------------------
 // Store health
 // ---------------------------------------------------------------------------
 
@@ -417,6 +496,8 @@ export async function getGraphStore(): Promise<GraphStore> {
 	if (_health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`opening the store (failed earlier during: ${_health.operation})`);
 	if (_instance !== null) return _instance;
 	if (_initPromise !== null) return _initPromise;
+	// Before anything touches the path: no directory, no lock file, no open.
+	assertMayOpen(_path);
 
 	_initPromise = (async (): Promise<GraphStore> => {
 		const t0 = Date.now();

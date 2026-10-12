@@ -63,6 +63,26 @@ test('the review probe test, found by the same search, creates nothing at the de
 	assertCleanRun('src/workflow/review/__tests__/probe-source-roots.test.ts');
 });
 
+test('three daemon request tests, found by the same search, create nothing at the default path', () => {
+	assertCleanRun('src/daemon/__tests__/analyze-rpc.test.ts');
+	assertCleanRun('src/daemon/__tests__/code-review-rpc.test.ts');
+	assertCleanRun('src/daemon/__tests__/workflow-review-rpc.test.ts');
+});
+
+test('the MCP step and review tests, found by the full audit, create nothing at the default path', () => {
+	for (const file of [
+		'src/mcp/__tests__/analyze-step-handler.test.ts',
+		'src/mcp/__tests__/analyze-step-narrow.test.ts',
+		'src/mcp/__tests__/analyze-step-scope.test.ts',
+		'src/mcp/review-step/__tests__/review-step-routing.test.ts',
+		'src/mcp/review-step/__tests__/review-step.test.ts',
+		'src/workflow/__tests__/spec-review-approve.test.ts',
+		'src/workflow/review/__tests__/review.test.ts',
+		'src/workflow/review/__tests__/same-party-refusal.test.ts',
+		'src/workflow/review/__tests__/template-review.test.ts',
+	]) assertCleanRun(file);
+});
+
 test('the check sees a store that IS opened at the default path', () => {
 	// Falsifies the three assertions above: a file that opens the store with no
 	// path set must be reported, or "created nothing" proves nothing.

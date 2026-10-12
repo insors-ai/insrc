@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -265,3 +265,116 @@ Run at 2026-10-11T10:38:18.205Z on commit `ec94718e`. Tests check: **passed**. 4
 | `src/cli/__tests__/command.test.ts` | 0 | 22 | 0.4 s |  |
 | `src/cli/services/__tests__/review-source-roots-daemon.test.ts` | 0 | 1 | 0.9 s |  |
 | `src/workflow/review/__tests__/source-root-reader.test.ts` | 0 | 4 | 0.5 s |  |
+
+## t9
+
+Run at 2026-10-12T10:09:37.570Z on commit `e28a8a32`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: the two formerly live-store test files pass against a temporary store and create nothing at the default path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the two formerly live-store test files pass against a temporary store and create nothing at the default path | `src/db/graph/__tests__/no-live-store-in-tests.test.ts` |
+| pass | the check sees a store that IS opened at the default path | `src/db/graph/__tests__/no-live-store-in-tests.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/graph/__tests__/no-live-store-in-tests.test.ts` | 0 | 5 | 6.4 s |  |
+
+## t10
+
+Run at 2026-10-12T10:21:12.940Z on commit `2550d6ba`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: owner check: default path with no declaration is refused and no file is created**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owner check: default path with no declaration is refused and no file is created | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**unit: owner check: after the declaration the same open succeeds, also after a close and reopen**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owner check: after the declaration the same open succeeds, also after a close and reopen | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**unit: owner check: a temporary path opens without a declaration**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owner check: a temporary path opens without a declaration | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**unit: owner check: the live path as a relative path and through a symbolic link is refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owner check: the live path as a relative path and through a symbolic link is refused | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**unit: owner check: permitted-reader only opens the live path; neither declaration is refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | owner check: permitted-reader only opens the live path; neither declaration is refused | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**integration: refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused | `src/db/graph/__tests__/live-store-refusal.test.ts` |
+
+**unit: source scan: the permitted-reader function's name appears at exactly two places**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | source scan: the permitted-reader function's name appears at exactly two places | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/graph/__tests__/live-store-owner.test.ts` | 0 | 6 | 0.7 s |  |
+| `src/db/graph/__tests__/live-store-refusal.test.ts` | 0 | 1 | 0.8 s |  |
+
+## t11
+
+Run at 2026-10-12T10:27:12.069Z on commit `db3df771`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: diagnostic through the tools' route: fs.promises.readFile of the lock file logs one warn line with a stack, once per stack**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diagnostic through the tools' route: fs.promises.readFile of the lock file logs one warn line with a stack, once per stack | `src/daemon/__tests__/store-file-open-diagnostic.test.ts` |
+| pass | the default report is a warn line on the daemon log, with the stack | `src/daemon/__tests__/store-file-open-diagnostic.test.ts` |
+
+**integration: file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link | `src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts` |
+| pass | a file tool call on any other path behaves as before | `src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/store-file-open-diagnostic.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts` | 0 | 2 | 0.5 s |  |
+
+## t12
+
+Run at 2026-10-12T10:32:43.828Z on commit `59e44a23`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: installed daemon: an outside script is refused and a daemon write afterwards succeeds**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/smoke.md section 2 (10:30:49 UTC 2026-10-12): LmdbStoreNotOwnerError with no descriptors on the store files, then conversation.saveSession ok, read back, deleted, status storeFailure null
+
+**smoke: installed daemon: restart of a healthy daemon behaves as before**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: S004/smoke.md sections 1 and 3: CLI restart steps [stop,start] with no force-stop; daemon-ctl.sh restart exit 0, 'daemon shut down' in ~1 s, new pid 57247 at d8ce093e, no storeFailure
+
+**smoke: installed daemon: the two formerly live-store test files pass and the log shows no lock-file open from them**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: S004/smoke.md section 4 (10:31:28 UTC): 3 and 16 tests pass with the real home beside daemon pid 57247; lsof shows only the daemon on the store; /tmp/.insrc/daemon.14.log has no 'a file of the graph store was opened' warning

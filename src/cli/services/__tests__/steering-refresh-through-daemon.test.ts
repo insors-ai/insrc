@@ -57,6 +57,8 @@ test('the steering refresh of an update gets the repositories from the daemon an
 
 	// The "daemon": holds the store, in which the repository is registered, and serves repo.list.
 	const daemon = await spawnStoreChild(STORE, { env: { HOME } });
+	// Like the real daemon, the stand-in declares itself the store's owner.
+	assert.deepEqual(await daemon.send({ op: 'declare-owner' }), { ok: true });
 	assert.deepEqual(await daemon.send({ op: 'open' }), { ok: true });
 	assert.deepEqual(await daemon.send({ op: 'seed-repo', repoPath: repo, files: [] }), { ok: true });
 	const served = await daemon.send({ op: 'daemon-like', logPath: join(HOME, 'daemon.log'), crashLogDir: join(HOME, 'crash') });

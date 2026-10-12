@@ -5,7 +5,7 @@
 import { promises as fs } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, FS_MOVE_ACCESS } from './helpers.js';
+import { str, fail, refuseLiveStoreFile, LiveStoreFileRefusedError, FS_MOVE_ACCESS } from './helpers.js';
 
 export interface FileMoveData {
   from: string;
@@ -34,6 +34,15 @@ export const fileMoveTool: Tool = {
     const from = str(input, 'from') ? resolve(str(input, 'from')!) : '(missing)';
     const to = str(input, 'to') ? resolve(str(input, 'to')!) : '(missing)';
     const overwrite = input['overwrite'] === true;
+    // The store's own files are refused here as in execute (Story s4).
+    const refused = [from, to].find(p => p !== '(missing)' && isRefused(p));
+    if (refused !== undefined) {
+      return {
+        title: 'file_move',
+        content: new LiveStoreFileRefusedError(refused).message,
+        actions: [{ name: 'skip', label: 'Skip' }],
+      };
+    }
     return {
       title: 'file_move',
       content: [
@@ -55,6 +64,8 @@ export const fileMoveTool: Tool = {
     if (!from || !to) { return fail('file_move', 'from and to required'); }
     const src = resolve(from);
     const dst = resolve(to);
+    refuseLiveStoreFile(src);
+    refuseLiveStoreFile(dst);
     const overwrite = input['overwrite'] === true;
     const mkdirp = input['mkdirp'] !== false;
 
@@ -95,3 +106,7 @@ export const fileMoveTool: Tool = {
     };
   },
 };
+
+function isRefused(path: string): boolean {
+  try { refuseLiveStoreFile(path); return false; } catch { return true; }
+}

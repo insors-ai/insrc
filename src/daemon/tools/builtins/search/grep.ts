@@ -10,7 +10,8 @@ import { promises as fs, statSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
-import { searchAccess } from '../file/helpers.js';
+import { refuseLiveStoreFile, searchAccess } from '../file/helpers.js';
+import { isLiveStoreFile } from '../../../../db/graph/store.js';
 
 export interface GrepHit {
   path: string;
@@ -102,6 +103,7 @@ export interface GrepSearchOptions {
 export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrepData> {
 	if (opts.pattern.length === 0) throw new Error('runGrepSearch: pattern is required');
 	const root = resolve(opts.root);
+	refuseLiveStoreFile(root);
 	const limit = Math.min(Math.max(1, opts.limit ?? DEFAULT_LIMIT), MAX_LIMIT);
 	const context = typeof opts.context === 'number' ? Math.floor(opts.context) : 0;
 	const rg = await tryRipgrepRaw(opts.pattern, root, {
@@ -143,6 +145,8 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 			const full = join(dir, name);
 			if (entry.isDirectory()) { await walk(full); continue; }
 			if (!entry.isFile()) { continue; }
+			// Never read the store's own files (Story s4).
+			if (isLiveStoreFile(full)) { continue; }
 			if (globRe && !globRe.test(name)) { continue; }
 			const path = relative(root, full);
 			let contents: string;
@@ -206,6 +210,7 @@ export const searchGrepTool: Tool = {
       return { output: '[search:grep] missing pattern', format: 'text', success: false, error: 'no pattern' };
     }
     const root = typeof input['path'] === 'string' ? resolve(input['path']) : process.cwd();
+    refuseLiveStoreFile(root);
     const glob = typeof input['glob'] === 'string' ? input['glob'] : undefined;
     const caseInsensitive = input['caseInsensitive'] === true;
     const multiline = input['multiline'] === true;

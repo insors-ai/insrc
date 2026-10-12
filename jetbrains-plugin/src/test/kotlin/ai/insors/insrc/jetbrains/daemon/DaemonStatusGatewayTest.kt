@@ -1,5 +1,6 @@
 package ai.insors.insrc.jetbrains.daemon
 
+import ai.insors.insrc.jetbrains.ops.storeFailureRow
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -84,16 +85,31 @@ class DaemonStatusGatewayTest {
         val s = (DaemonGatewayImpl(RecordingRpc { _, _ -> DaemonResult(ok = true, data = failed) }).daemonStatus() as DaemonStatusResult.Loaded).status
         assertEquals(cause, s.storeFailureCause)
         assertEquals(0, s.repoCount)
-        assertEquals("Store" to "FAILED — $cause", ai.insors.insrc.jetbrains.ops.storeFailureRow(s))
+        assertEquals("Store" to "FAILED — $cause", storeFailureRow(s))
 
         // A healthy daemon (and one that predates the field) sends no storeFailure.
         val healthy = (DaemonGatewayImpl(RecordingRpc { _, _ -> DaemonResult(ok = true, data = gsonStatus()) }).daemonStatus() as DaemonStatusResult.Loaded).status
         assertNull(healthy.storeFailureCause)
-        assertNull(ai.insors.insrc.jetbrains.ops.storeFailureRow(healthy))
+        assertNull(storeFailureRow(healthy))
 
-        // A malformed field never throws: it reads as absent.
+        // A malformed field never throws: a non-object reads as absent.
         val odd = gsonStatus() + mapOf("storeFailure" to "yes")
         assertNull((DaemonGatewayImpl(RecordingRpc { _, _ -> DaemonResult(ok = true, data = odd) }).daemonStatus() as DaemonStatusResult.Loaded).status.storeFailureCause)
+    }
+
+    @Test
+    fun `a storeFailure object without a usable cause is still shown as a failure`() {
+        fun causeOf(failure: Map<String, Any?>): String? =
+            (DaemonGatewayImpl(RecordingRpc { _, _ -> DaemonResult(ok = true, data = gsonStatus() + mapOf("storeFailure" to failure)) })
+                .daemonStatus() as DaemonStatusResult.Loaded).status.storeFailureCause
+
+        assertEquals("the graph store failed (locks-lost)", causeOf(mapOf("kind" to "locks-lost")))
+        assertEquals("the graph store failed (locks-lost)", causeOf(mapOf("kind" to "locks-lost", "cause" to "  ")))
+        assertEquals("the graph store failed (locks-lost)", causeOf(mapOf("kind" to "locks-lost", "cause" to 42.0)))
+        assertEquals("the graph store failed (unknown cause)", causeOf(emptyMap()))
+        val row = storeFailureRow((DaemonGatewayImpl(RecordingRpc { _, _ -> DaemonResult(ok = true, data = gsonStatus() + mapOf("storeFailure" to emptyMap<String, Any?>())) })
+            .daemonStatus() as DaemonStatusResult.Loaded).status)
+        assertEquals("Store" to "FAILED — the graph store failed (unknown cause)", row)
     }
 
     // ---- Stopped vs Unavailable ---------------------------------------------

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -207,3 +207,36 @@ Run at 2026-10-12T05:28:48.875Z on commit `21319c59`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/design/corpus/sources/__tests__/assessment.test.ts` | 0 | 3 | 0.5 s |  |
+
+## t8
+
+Run at 2026-10-12T05:34:02.160Z on commit `693088dc`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**integration: candidate-roundtrip admits only eligible material and exports complete notices**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | candidate-roundtrip admits only eligible material and exports complete notices | `src/design/corpus/sources/__tests__/acceptance.test.ts` |
+
+**integration: candidate-roundtrip validates original-only and multi-source derived packages**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | candidate-roundtrip validates original-only and multi-source derived packages | `src/design/corpus/sources/__tests__/acceptance.test.ts` |
+
+**smoke: pure-boundary executes pure source modules with I/O forbidden**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pure-boundary executes pure source modules with I/O forbidden | `src/design/corpus/sources/__tests__/isolation.test.ts` |
+
+**smoke: strict-build compiles source eligibility and passes the full corpus regression suite**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: plans/reviews/design-intelligence-di1-s2-final-verification.txt: unabridged 58/58 corpus TAP output and npm run build output; broader full-suite failures recorded separately.
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/design/corpus/sources/__tests__/acceptance.test.ts` | 0 | 2 | 0.7 s |  |
+| `src/design/corpus/sources/__tests__/isolation.test.ts` | 0 | 1 | 1.2 s |  |

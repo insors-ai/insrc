@@ -4,7 +4,7 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T05:28:48.875Z"
+    "updatedAt": "2026-10-12T05:34:02.160Z"
   },
   "body": {
     "tasks": [
@@ -508,6 +508,96 @@
               },
               {
                 "title": "acyclic-staging assesses before coverage finalization and rejects missing or duplicate coverage",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "693088dc",
+        "ranAt": "2026-10-12T05:34:02.160Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "candidate-roundtrip admits only eligible material and exports complete notices",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/acceptance.test.ts",
+                "title": "candidate-roundtrip admits only eligible material and exports complete notices",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "candidate-roundtrip validates original-only and multi-source derived packages",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/acceptance.test.ts",
+                "title": "candidate-roundtrip validates original-only and multi-source derived packages",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pure-boundary executes pure source modules with I/O forbidden",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/isolation.test.ts",
+                "title": "pure-boundary executes pure source modules with I/O forbidden",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "strict-build compiles source eligibility and passes the full corpus regression suite",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "plans/reviews/design-intelligence-di1-s2-final-verification.txt: unabridged 58/58 corpus TAP output and npm run build output; broader full-suite failures recorded separately."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/sources/__tests__/acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 670,
+            "titles": [
+              {
+                "title": "candidate-roundtrip admits only eligible material and exports complete notices",
+                "result": "pass"
+              },
+              {
+                "title": "candidate-roundtrip validates original-only and multi-source derived packages",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/design/corpus/sources/__tests__/isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1244,
+            "titles": [
+              {
+                "title": "pure-boundary executes pure source modules with I/O forbidden",
                 "result": "pass"
               }
             ],

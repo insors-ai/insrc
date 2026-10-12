@@ -83,3 +83,5 @@ The isolation harness initially passed its extra `review` payload into S001's cl
 Final focused corpus result: **58 passed, zero failures/skips** under Node 22.23.2. `npm run build` passed. Full unabridged focused/build output is preserved in `plans/reviews/design-intelligence-di1-s2-final-verification.txt`; full-suite results follow separately.
 
 Final full sweep: 5,373 executed tests, 5,231 passed, 14 failures, 125 skipped, three todo. Failures are the known SQLite overflow, the same 12 unrelated daemon/MCP/review SIGABRT files, and a DaemonSection async-render timing failure. The isolated DaemonSection rerun passed all 11 tests. No full-suite pass is claimed. Full source test/build evidence and the exact failed test list are in the final verification file. Code-review and explicit BUILD approval are still pending.
+
+T008 daemon validation passed all acceptance checks and mapped acceptance/isolation tests; it independently inspected the durable 58-test/build evidence. All eight S002 tasks have passed their insrc gates. T008 commit: `693088dc`. Independent code-review is next; BUILD is not yet approved.

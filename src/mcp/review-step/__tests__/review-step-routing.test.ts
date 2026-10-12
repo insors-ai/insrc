@@ -16,6 +16,21 @@ import { createConnection, createServer, type Socket } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { after as afterAll } from 'node:test';
+import { mkdtempSync as mkdtempSyncRaw, rmSync as rmSyncForStore } from 'node:fs';
+import { tmpdir as tmpdirForStore } from 'node:os';
+import { join as joinForStore } from 'node:path';
+import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
+
+// This file reaches the graph store through code that takes no path. Give it a
+// temporary one: the store at the default path belongs to the daemon alone
+// (Epic c2ba6fa6, Story s4).
+const STORE_DIR = mkdtempSyncRaw(joinForStore(tmpdirForStore(), 'insrc-test-store-'));
+setGraphStorePath(joinForStore(STORE_DIR, 'graph.lmdb'));
+afterAll(async () => {
+	await closeGraphStore();
+	rmSyncForStore(STORE_DIR, { recursive: true, force: true });
+});
 
 import type { WorkflowReviewDone } from '../../../daemon/workflow-review-rpc.js';
 import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../../../workflow/review/template.js';

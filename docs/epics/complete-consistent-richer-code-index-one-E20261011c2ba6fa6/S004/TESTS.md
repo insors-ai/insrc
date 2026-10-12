@@ -285,7 +285,7 @@ Run at 2026-10-12T10:09:37.570Z on commit `e28a8a32`. Tests check: **passed**. 2
 
 ## t10
 
-Run at 2026-10-12T10:18:12.379Z on commit `afd417ad`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-12T10:21:12.940Z on commit `2550d6ba`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: owner check: default path with no declaration is refused and no file is created**
 
@@ -333,5 +333,5 @@ Run at 2026-10-12T10:18:12.379Z on commit `afd417ad`. Tests check: **passed**. 7
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/db/graph/__tests__/live-store-owner.test.ts` | 0 | 6 | 0.8 s |  |
-| `src/db/graph/__tests__/live-store-refusal.test.ts` | 0 | 1 | 0.9 s |  |
+| `src/db/graph/__tests__/live-store-owner.test.ts` | 0 | 6 | 0.7 s |  |
+| `src/db/graph/__tests__/live-store-refusal.test.ts` | 0 | 1 | 0.8 s |  |

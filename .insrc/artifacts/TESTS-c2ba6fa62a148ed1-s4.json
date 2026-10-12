@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s4",
     "createdAt": "2026-10-11T09:49:16.267Z",
-    "updatedAt": "2026-10-12T10:18:12.379Z",
+    "updatedAt": "2026-10-12T10:21:12.940Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1133,8 +1133,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "afd417ad",
-        "ranAt": "2026-10-12T10:18:12.379Z",
+        "commit": "2550d6ba",
+        "ranAt": "2026-10-12T10:21:12.940Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1234,7 +1234,7 @@
             "file": "src/db/graph/__tests__/live-store-owner.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 798,
+            "durationMs": 725,
             "titles": [
               {
                 "title": "owner check: default path with no declaration is refused and no file is created",
@@ -1267,7 +1267,7 @@
             "file": "src/db/graph/__tests__/live-store-refusal.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 865,
+            "durationMs": 818,
             "titles": [
               {
                 "title": "refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused",

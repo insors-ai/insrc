@@ -13,7 +13,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -34,4 +34,23 @@ test('workflow-rpc imports nothing from src/mcp, and takes the workflow step fro
 	assert.ok(resolved.some(p => p.startsWith(join(DAEMON, 'steps', 'workflow-step'))), 'the workflow step comes from src/daemon/steps');
 	// The check sees an import into src/mcp when there is one.
 	assert.ok(importsOf(join(DAEMON, '..', 'mcp', 'server.ts')).some(p => p.startsWith(mcp)));
+});
+
+test('no file under src/mcp other than server.ts imports src/daemon/steps', () => {
+	const mcpRoot = normalize(join(DAEMON, '..', 'mcp'));
+	const steps = join(DAEMON, 'steps');
+	const offenders: string[] = [];
+	const walk = (dir: string): void => {
+		for (const name of readdirSync(dir)) {
+			const full = join(dir, name);
+			if (statSync(full).isDirectory()) { walk(full); continue; }
+			if (!/\.(ts|tsx)$/.test(name)) continue;
+			if (full === join(mcpRoot, 'server.ts')) continue;
+			if (importsOf(full).some(p => p.startsWith(steps))) offenders.push(full.slice(mcpRoot.length + 1));
+		}
+	};
+	walk(mcpRoot);
+	assert.deepEqual(offenders, []);
+	// The check sees such an import: server.ts has them.
+	assert.ok(importsOf(join(mcpRoot, 'server.ts')).some(p => p.startsWith(steps)));
 });

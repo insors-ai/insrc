@@ -13,7 +13,7 @@
  * `VERIFY_SCHEMA` item shape (unchanged) with a required `claimId`.
  */
 
-import { VERIFY_SCHEMA } from '../../workflow/review/index.js';
+import { VERIFY_SCHEMA } from '../../../workflow/review/index.js';
 
 const verifyItem = VERIFY_SCHEMA as { readonly required?: readonly string[]; readonly properties?: Record<string, unknown> };
 

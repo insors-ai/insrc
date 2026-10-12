@@ -16,7 +16,7 @@
  * These assertions pin that already-correct behaviour so a future change cannot
  * silently regress it.
  *
- * Run: npx tsx --test src/mcp/__tests__/peer-state-store-leakfree.test.ts
+ * Run: npx tsx --test src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts
  */
 
 import { test } from 'node:test';

@@ -16,3 +16,4 @@ They are 9 tests in 4 files; a sweep below is "clean" when nothing else fails.
 | :--- | :--- | ---: | ---: | ---: | ---: | ---: | :--- |
 | t3 | 2026-10-12 | 6666 | 6525 | 4 | 5 | 129 | none |
 | t4 | 2026-10-12 | 6667 | 6526 | 4 | 5 | 129 | none (one source-scan test that read src/mcp/workflow-step/handler.ts by path was repointed and passes; first run 6525/5) |
+| t5 | 2026-10-12 | 6661 | 6519 | 5 | 5 | 129 | none from this task: the fifth failure, src/cli/panes/__tests__/MCPSection.test.ts 'the poll interval fires while open and is cleared on unmount (ac2)', is a known timing flake untouched by the task and passed 5 of 5 reruns alone |

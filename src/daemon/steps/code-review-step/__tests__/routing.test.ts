@@ -17,11 +17,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-import { runCodeReview } from '../../../workflow/code-review/runner.js';
-import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../workflow/code-review/types.js';
-import type { PartyOrUnknown } from '../../../workflow/review/party.js';
-import { codeReviewStream, ReviewStreamError } from '../../daemon-stream.js';
-import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../daemon-stream.js';
+import { runCodeReview } from '../../../../workflow/code-review/runner.js';
+import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../../workflow/code-review/types.js';
+import type { PartyOrUnknown } from '../../../../workflow/review/party.js';
+import { codeReviewStream, ReviewStreamError } from '../../../../mcp/daemon-stream.js';
+import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../../mcp/daemon-stream.js';
 import { DAEMON_CODE_REVIEW_WAIT_MS, handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
 import type { CodeReviewStepOutput } from '../types.js';

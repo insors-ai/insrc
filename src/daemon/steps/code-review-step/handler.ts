@@ -5,7 +5,7 @@
 
 /**
  * Top-level dispatcher for `insrc_code_review_step` (code-review S008) — the
- * multi-turn CODE-review surface. Mirrors `mcp/review-step/handler.ts`.
+ * multi-turn CODE-review surface. Mirrors `daemon/steps/review-step/handler.ts`.
  *
  * The party that did not write the code reviews it. `start` reads the author
  * from the Story's BUILD record at the point a review would begin: code the
@@ -25,37 +25,37 @@
  *     byte-identical to the daemon-driven path.
  */
 
-import { getLogger } from '../../shared/logger.js';
-import type { LLMProvider } from '../../shared/types.js';
+import { getLogger } from '../../../shared/logger.js';
+import type { LLMProvider } from '../../../shared/types.js';
 import { existsSync, readFileSync } from 'node:fs';
-import { PATHS } from '../../shared/paths.js';
-import { resolveCodeReviewSubject } from '../../workflow/code-review/subject.js';
-import { codeReviewStream, fetchCodeReviewGrounding, fetchCodeReviewFreshness, ReviewStreamError } from '../daemon-stream.js';
-import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../daemon-stream.js';
-import { buildAuthorParty } from '../../workflow/code-review/author.js';
-import { SamePartyReviewError } from '../../workflow/review/party.js';
-import type { PartyOrUnknown } from '../../workflow/review/party.js';
-import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../../workflow/code-review/grounding.js';
-import { runCodeReview, type CodeReviewRunnerDeps } from '../../workflow/code-review/runner.js';
-import { codeReviewArtifactPaths, writeAtomic } from '../../workflow/storage.js';
-import { codeReviewSubjectPathArgs } from '../../workflow/code-review/subject-paths.js';
-import { LEDGER_EXCLUDE_GLOBS } from '../../workflow/runners/build/changed-files.js';
-import { resolveStoryRangeBase } from '../../workflow/runners/build/range-base.js';
-import { buildAdherencePrompt } from '../../workflow/code-review/dimensions/adherence.js';
-import { buildConventionsPrompt } from '../../workflow/code-review/dimensions/conventions.js';
-import { buildCoveragePrompt } from '../../workflow/code-review/dimensions/coverage.js';
-import { buildQualityPrompt } from '../../workflow/code-review/dimensions/quality.js';
-import { buildFunctionalCoveragePrompt } from '../../workflow/code-review/dimensions/functional-coverage.js';
-import { buildDiagramPrompt } from '../../workflow/code-review/dimensions/diagram/index.js';
-import { buildUxPrompt } from '../../workflow/code-review/dimensions/ux/index.js';
-import { computeExpectedDimensions } from '../../workflow/code-review/expected-dimensions.js';
+import { PATHS } from '../../../shared/paths.js';
+import { resolveCodeReviewSubject } from '../../../workflow/code-review/subject.js';
+import { codeReviewStream, fetchCodeReviewGrounding, fetchCodeReviewFreshness, ReviewStreamError } from '../../../mcp/daemon-stream.js';
+import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../mcp/daemon-stream.js';
+import { buildAuthorParty } from '../../../workflow/code-review/author.js';
+import { SamePartyReviewError } from '../../../workflow/review/party.js';
+import type { PartyOrUnknown } from '../../../workflow/review/party.js';
+import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../../../workflow/code-review/grounding.js';
+import { runCodeReview, type CodeReviewRunnerDeps } from '../../../workflow/code-review/runner.js';
+import { codeReviewArtifactPaths, writeAtomic } from '../../../workflow/storage.js';
+import { codeReviewSubjectPathArgs } from '../../../workflow/code-review/subject-paths.js';
+import { LEDGER_EXCLUDE_GLOBS } from '../../../workflow/runners/build/changed-files.js';
+import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
+import { buildAdherencePrompt } from '../../../workflow/code-review/dimensions/adherence.js';
+import { buildConventionsPrompt } from '../../../workflow/code-review/dimensions/conventions.js';
+import { buildCoveragePrompt } from '../../../workflow/code-review/dimensions/coverage.js';
+import { buildQualityPrompt } from '../../../workflow/code-review/dimensions/quality.js';
+import { buildFunctionalCoveragePrompt } from '../../../workflow/code-review/dimensions/functional-coverage.js';
+import { buildDiagramPrompt } from '../../../workflow/code-review/dimensions/diagram/index.js';
+import { buildUxPrompt } from '../../../workflow/code-review/dimensions/ux/index.js';
+import { computeExpectedDimensions } from '../../../workflow/code-review/expected-dimensions.js';
 import type {
 	CodeReviewGrounding,
 	CodeReviewSubject,
 	DimensionFinding,
 	DimensionResult,
 	ReviewDimension,
-} from '../../workflow/code-review/types.js';
+} from '../../../workflow/code-review/types.js';
 import { StateTokenNotFound, loadState, releaseState, saveState } from './state-store.js';
 import type {
 	CodeReviewStepError,

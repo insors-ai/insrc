@@ -12,7 +12,7 @@
  *   - a subject with neither uxDefinition nor adherence yields exactly the base four
  *     dimensions (byte-shape compatible).
  *
- * Run: npx tsx --test --test-force-exit src/mcp/code-review-step/__tests__/ux-handler.test.ts
+ * Run: npx tsx --test --test-force-exit src/daemon/steps/code-review-step/__tests__/ux-handler.test.ts
  */
 
 import { test } from 'node:test';
@@ -20,11 +20,11 @@ import assert from 'node:assert/strict';
 
 import { handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
-import { runCodeReview } from '../../../workflow/code-review/runner.js';
+import { runCodeReview } from '../../../../workflow/code-review/runner.js';
 import type { CodeReviewStepOutput } from '../types.js';
-import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../workflow/code-review/types.js';
-import type { UxDefinition } from '../../../workflow/artifacts/companion/ux.js';
-import type { AdherenceSelection } from '../../../workflow/artifacts/companion/adherence.js';
+import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../../workflow/code-review/types.js';
+import type { UxDefinition } from '../../../../workflow/artifacts/companion/ux.js';
+import type { AdherenceSelection } from '../../../../workflow/artifacts/companion/adherence.js';
 
 const EPIC = 'e1a2b3c4d5e6f7a8';
 const STORY = 's4';

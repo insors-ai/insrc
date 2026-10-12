@@ -18,8 +18,8 @@
 
 import { appendFileSync } from 'node:fs';
 
-import { getLogger } from '../../shared/logger.js';
-import { SamePartyReviewError } from '../../workflow/review/party.js';
+import { getLogger } from '../../../shared/logger.js';
+import { SamePartyReviewError } from '../../../workflow/review/party.js';
 import { handleClaims } from './phases/claims.js';
 import { handleFindings } from './phases/findings.js';
 import { handleStart } from './phases/start.js';

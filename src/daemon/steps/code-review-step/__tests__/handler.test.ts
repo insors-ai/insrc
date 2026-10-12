@@ -12,11 +12,11 @@ import { join } from 'node:path';
 
 import { handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
-import { runCodeReview } from '../../../workflow/code-review/runner.js';
-import { LEDGER_EXCLUDE_GLOBS } from '../../../workflow/runners/build/changed-files.js';
-import { buildStartRelPath } from '../../../workflow/runners/build/range-base.js';
+import { runCodeReview } from '../../../../workflow/code-review/runner.js';
+import { LEDGER_EXCLUDE_GLOBS } from '../../../../workflow/runners/build/changed-files.js';
+import { buildStartRelPath } from '../../../../workflow/runners/build/range-base.js';
 import type { CodeReviewStepOutput } from '../types.js';
-import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../workflow/code-review/types.js';
+import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../../workflow/code-review/types.js';
 
 // ---- fixtures ----
 
@@ -510,7 +510,7 @@ test('T48: with no resolvable base the degraded review still passes the ledger g
 // error: the diff cannot be read => diff-unavailable, nothing written.
 test('s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write', async () => {
 	reset();
-	const { DiffUnavailableError } = await import('../../../workflow/code-review/grounding.js');
+	const { DiffUnavailableError } = await import('../../../../workflow/code-review/grounding.js');
 	const { deps, writes } = makeDeps({
 		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
 		assembleDiffGrounding: async () => { throw new DiffUnavailableError('not a git repo'); },

@@ -18,10 +18,10 @@
  * Loop: start → emit_claims → claims → emit_verdicts → verdicts → done.
  */
 
-import type { WorkflowReviewDone } from '../../daemon/workflow-review-rpc.js';
-import type { ReviewArtifactStreamParams, ReviewStreamOpts } from '../daemon-stream.js';
-import type { DesignIntent, RawTemplateAnswer } from '../../workflow/review/template.js';
-import type { Claim, Evidence, ReviewReport, ReviewVerdict } from '../../workflow/review/types.js';
+import type { WorkflowReviewDone } from '../../workflow-review-rpc.js';
+import type { ReviewArtifactStreamParams, ReviewStreamOpts } from '../../../mcp/daemon-stream.js';
+import type { DesignIntent, RawTemplateAnswer } from '../../../workflow/review/template.js';
+import type { Claim, Evidence, ReviewReport, ReviewVerdict } from '../../../workflow/review/types.js';
 
 // ---------------------------------------------------------------------------
 // Phases

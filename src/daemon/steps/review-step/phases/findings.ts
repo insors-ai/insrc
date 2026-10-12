@@ -17,14 +17,14 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 
-import { getLogger } from '../../../shared/logger.js';
-import { writeAtomic } from '../../../workflow/storage.js';
+import { getLogger } from '../../../../shared/logger.js';
+import { writeAtomic } from '../../../../workflow/storage.js';
 import {
 	computeReviewVerdict, DEFAULT_BLOCK_ON_SEVERITIES, pendingUserFindings, renderReviewReport, REVIEW_SECTION,
 	reviewTemplateFor, stripReviewSection, tallyFindings, validateTemplateAnswer,
-} from '../../../workflow/review/index.js';
-import type { ReviewReport } from '../../../workflow/review/index.js';
-import { authorPartyOf, SamePartyReviewError } from '../../../workflow/review/party.js';
+} from '../../../../workflow/review/index.js';
+import type { ReviewReport } from '../../../../workflow/review/index.js';
+import { authorPartyOf, SamePartyReviewError } from '../../../../workflow/review/party.js';
 import { loadState, releaseState } from '../state-store.js';
 import type { ReviewStepDone, ReviewStepError, ReviewStepInputFindings } from '../types.js';
 

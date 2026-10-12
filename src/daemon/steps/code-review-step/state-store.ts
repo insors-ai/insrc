@@ -6,7 +6,7 @@
 /**
  * Server-side state store for `insrc_code_review_step` (code-review S008).
  *
- * Structurally identical to `mcp/review-step/state-store.ts` — an opaque
+ * Structurally identical to `daemon/steps/review-step/state-store.ts` — an opaque
  * 22-char token → server-side run state (the resolved subject + grounding),
  * with an LRU + TTL sweep. The state itself is NOT round-tripped through the
  * outer LLM; only the token travels in the response `state` field (ac2).
@@ -14,7 +14,7 @@
 
 import { randomBytes } from 'node:crypto';
 
-import { getLogger } from '../../shared/logger.js';
+import { getLogger } from '../../../shared/logger.js';
 import type { CodeReviewStepStatePayload } from './types.js';
 
 const log = getLogger('mcp:code-review-step:state-store');

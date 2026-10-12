@@ -12,7 +12,7 @@ import { after as afterAll } from 'node:test';
 import { mkdtempSync as mkdtempSyncRaw, rmSync as rmSyncForStore } from 'node:fs';
 import { tmpdir as tmpdirForStore } from 'node:os';
 import { join as joinForStore } from 'node:path';
-import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
+import { closeGraphStore, setGraphStorePath } from '../../../../db/graph/store.js';
 
 // This file reaches the graph store through code that takes no path. Give it a
 // temporary one: the store at the default path belongs to the daemon alone
@@ -24,9 +24,9 @@ afterAll(async () => {
 	rmSyncForStore(STORE_DIR, { recursive: true, force: true });
 });
 
-import { buildExtractPrompt, EXTRACT_SCHEMA } from '../../../workflow/review/extract.js';
-import { buildVerifyPrompt, VERIFY_SCHEMA } from '../../../workflow/review/verify.js';
-import type { Claim, Evidence, ReviewReport } from '../../../workflow/review/types.js';
+import { buildExtractPrompt, EXTRACT_SCHEMA } from '../../../../workflow/review/extract.js';
+import { buildVerifyPrompt, VERIFY_SCHEMA } from '../../../../workflow/review/verify.js';
+import type { Claim, Evidence, ReviewReport } from '../../../../workflow/review/types.js';
 import { handleReviewStep } from '../handler.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 

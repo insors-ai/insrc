@@ -17,14 +17,14 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { resolveRepoPath } from '../../resolve-repo.js';
 
-import { getLogger } from '../../../shared/logger.js';
-import { jsonPathForMd } from '../../../workflow/gates.js';
+import { getLogger } from '../../../../shared/logger.js';
+import { jsonPathForMd } from '../../../../workflow/gates.js';
 import {
 	authorPartyOf, buildExtractPrompt, buildTemplateReviewPrompt, EXTRACT_SCHEMA, isDesignStage, resolveDesignReview, stripReviewSection,
 	TEMPLATE_ANSWER_SCHEMA,
-} from '../../../workflow/review/index.js';
+} from '../../../../workflow/review/index.js';
 import { saveState } from '../state-store.js';
-import { reviewArtifactStream, ReviewStreamError } from '../../daemon-stream.js';
+import { reviewArtifactStream, ReviewStreamError } from '../../../../mcp/daemon-stream.js';
 import type {
 	ReviewStepDeps, ReviewStepDone, ReviewStepEmitClaims, ReviewStepEmitFindings, ReviewStepError, ReviewStepInputStart,
 	ReviewStepStatePayload,

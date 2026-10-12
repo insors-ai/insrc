@@ -17,11 +17,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor, validateTemplateAnswer } from '../../../workflow/review/template.js';
-import type { ReviewTemplate } from '../../../workflow/review/template.js';
-import { handleInsrcSchema } from '../../schema/handler.js';
-import type { InsrcSchemaOk } from '../../schema/schema.js';
-import { buildInsrcMcpServerWithRegistry } from '../../server.js';
+import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor, validateTemplateAnswer } from '../../../../workflow/review/template.js';
+import type { ReviewTemplate } from '../../../../workflow/review/template.js';
+import { handleInsrcSchema } from '../../../../mcp/schema/handler.js';
+import type { InsrcSchemaOk } from '../../../../mcp/schema/schema.js';
+import { buildInsrcMcpServerWithRegistry } from '../../../../mcp/server.js';
 import { handleReviewStep } from '../handler.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 

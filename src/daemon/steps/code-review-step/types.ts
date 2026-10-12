@@ -19,9 +19,9 @@
  * Loop: start → emit_judgements → judgements → done  (or error at any turn).
  */
 
-import type { LLMMessage } from '../../shared/types.js';
-import type { ReviewVerdict } from '../../workflow/review/types.js';
-import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../workflow/code-review/types.js';
+import type { LLMMessage } from '../../../shared/types.js';
+import type { ReviewVerdict } from '../../../workflow/review/types.js';
+import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../../workflow/code-review/types.js';
 
 // ---------------------------------------------------------------------------
 // Phases

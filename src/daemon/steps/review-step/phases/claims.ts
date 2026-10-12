@@ -14,11 +14,11 @@
  * one entry per claim, keyed by claimId.
  */
 
-import { getLogger } from '../../../shared/logger.js';
+import { getLogger } from '../../../../shared/logger.js';
 import {
 	buildVerifyPrompt, gatherEvidence, normalizeClaimsEnvelope, renderEvidence,
-} from '../../../workflow/review/index.js';
-import type { Claim, Evidence } from '../../../workflow/review/types.js';
+} from '../../../../workflow/review/index.js';
+import type { Claim, Evidence } from '../../../../workflow/review/types.js';
 import { VERDICTS_SCHEMA } from '../schema.js';
 import { loadState, updateState } from '../state-store.js';
 import type { ReviewStepEmitVerdicts, ReviewStepInputClaims } from '../types.js';

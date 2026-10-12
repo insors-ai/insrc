@@ -14,7 +14,7 @@
 
 import { randomBytes } from 'node:crypto';
 
-import { getLogger } from '../../shared/logger.js';
+import { getLogger } from '../../../shared/logger.js';
 import type { ReviewStepStatePayload } from './types.js';
 
 const log = getLogger('mcp:review-step:state-store');

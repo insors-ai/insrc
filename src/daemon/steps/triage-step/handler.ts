@@ -5,7 +5,7 @@
 
 /**
  * Top-level dispatcher for `insrc_triage` — the controller-driven size
- * classifier + workflow-entry router. Mirrors `mcp/review-step/handler.ts`.
+ * classifier + workflow-entry router. Mirrors `daemon/steps/review-step/handler.ts`.
  *
  * Loop: start → emit_classification → classify → done. The server is
  * deterministic (build the prompt, validate the emitted result, map size →

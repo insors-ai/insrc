@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "b1c7c1bc57962e97",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "assistant-llm-responses-still-render-default",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

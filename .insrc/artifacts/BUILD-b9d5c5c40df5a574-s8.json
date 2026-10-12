@@ -6,7 +6,9 @@
     "createdAt": "2026-10-09T13:06:19.852Z",
     "updatedAt": "2026-10-09T14:28:43.659Z",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-09T14:28:43.920Z"
+    "approvedAt": "2026-10-09T14:28:43.920Z",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z"
   },
   "body": {
     "tasks": [

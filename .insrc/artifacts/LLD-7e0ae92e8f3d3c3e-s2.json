@@ -229,7 +229,8 @@
         "note": "Made strict v1 selected-path grammar explicit: any requested non-portable path aborts before I/O, while unselected paths have no effect. Added edge case and reader-safety test requirement.",
         "resolvedAt": "2026-10-12T04:35:01.273Z"
       }
-    }
+    },
+    "approvedAt": "2026-10-12T04:44:27.130Z"
   },
   "body": {
     "summary": {

@@ -2,7 +2,7 @@
 
 Date: 11 October 2026. Scope: sc1/sc2 corpus contracts, deterministic identities, pure record/release validation and publication preflight. No source import, corpus curation, retrieval service, project guidelines, or catalog mutation is implemented by this story.
 
-The user approved the S001 PLAN. All six tasks passed their insrc validation gates; BUILD completion requires the independent code-review result and a separate user approval.
+The user approved S001 BUILD completion on 12 October 2026 at 04:44:27 UTC after the independent daemon review. All six tasks passed their insrc validation gates. The code-review WARN remains recorded without override; the chronology below preserves the earlier gates and evidence limitations.
 
 ## Implementation
 
@@ -106,3 +106,8 @@ This records the review faithfully; it does not convert WARN to PASS, claim the 
 
 
 S002's subsequent independent design review found two MED ambiguities (private-helper reuse and digest-mismatch failure scope) plus one LOW path-grammar clarification. The LLD now specifies local primitives with S001 behavioral parity tests, per-file unresolved outcomes for stale reviewed digests, request failure for acquisition-integrity errors, and pre-I/O rejection of any explicitly selected non-portable path. All three were corrected and resolved through the framework: effective PASS, no override/deferral, no approval.
+
+
+### Completion approved; S002 planning
+
+The user explicitly approved both S001 BUILD and the corrected S002 LLD on 12 October 2026. The insrc approval tool stamped both artifacts, skipped none and retained S001 code-review WARN. The [S002 PLAN](../docs/epics/di1-open-source-design-corpus-retrieval-E202610117e0ae92e/S002/PLAN.md) now contains eight ordered tasks and complete mappings for all 12 LLD test subjects. Its separate approval gate remains pending before S002 implementation.

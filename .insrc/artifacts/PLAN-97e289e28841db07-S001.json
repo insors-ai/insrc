@@ -23,7 +23,8 @@
     "storyId": "S001",
     "lldRunId": "wf-1790758777201-f7hi9w",
     "lldEffectiveHash": "97e289e28841db075ead532c72d14cf6c14825ff312de4318d5dd5fae53fce5e",
-    "approvedAt": "2026-09-30T09:33:12.565Z"
+    "approvedAt": "2026-09-30T09:33:12.565Z",
+    "standalone": true
   },
   "body": {
     "summary": {

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 50 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -100,3 +100,65 @@ Run at 2026-10-12T11:43:13.587Z on commit `62ccb310`. Tests check: **passed**. 1
 | `src/daemon/steps/__tests__/analyze-step-state.test.ts` | 0 | 11 | 0.5 s |  |
 | `src/daemon/steps/__tests__/bundle-md.test.ts` | 0 | 8 | 0.3 s |  |
 | `src/db/graph/__tests__/no-live-store-in-tests.test.ts` | 0 | 5 | 5.9 s |  |
+
+## t4
+
+Run at 2026-10-12T11:48:00.943Z on commit `92c6ea9c`. Tests check: **passed**. 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: moved workflow, build and triage tests pass at src/daemon/steps, and workflow-rpc imports nothing from src/mcp**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | T30/T31: two Stories approved in ONE sweep, built in turn — each change log is EXACTLY its own files (build-start file committed with the work) | `src/daemon/steps/build-step/__tests__/build-start.test.ts` |
+| pass | implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref | `src/daemon/steps/build-step/__tests__/build-step.test.ts` |
+| pass | the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it | `src/daemon/steps/build-step/__tests__/render.test.ts` |
+| pass | admitStandaloneBuild: trivial (no LLD) is admitted directly | `src/daemon/steps/build-step/__tests__/standalone-implement.test.ts` |
+| pass | the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' # SKIP' with and without a reason, and skipped for ' # TODO' | `src/daemon/steps/build-step/__tests__/tap-results.test.ts` |
+| pass | a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level | `src/daemon/steps/build-step/__tests__/test-mapping.test.ts` |
+| pass | resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved | `src/daemon/steps/build-step/__tests__/validation-checks.test.ts` |
+| pass | start: returns emit_classification with a schema, prompt, and state token | `src/daemon/steps/triage-step/__tests__/handler.test.ts` |
+| pass | LLD s4 amendment proposal lands as pending AmendmentRecord | `src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts` |
+| pass | t5: a payload carrying BrainstormElicitState round-trips unchanged through save->token->load | `src/daemon/steps/workflow-step/__tests__/brainstorm-state.test.ts` |
+| pass | define workflow: happy path writes artifact to docs/epics/<slug>-E.../DEF.md | `src/daemon/steps/workflow-step/__tests__/define-e2e.test.ts` |
+| pass | define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact | `src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts` |
+| pass | design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../ | `src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts` |
+| pass | design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.../S<nnn>/LLD.md | `src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts` |
+| pass | stub workflow: start → plan → synthesize → done writes artifact | `src/daemon/steps/workflow-step/__tests__/handler.test.ts` |
+| pass | plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>/PLAN.md | `src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts` |
+| pass | start gates on an unresolved HLD open question, returns resolve_questions with options | `src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts` |
+| pass | augmentStandaloneParams: no-op unless standalone===true | `src/daemon/steps/workflow-step/__tests__/standalone-keying.test.ts` |
+| pass | save + load round-trip | `src/daemon/steps/workflow-step/__tests__/state-store.test.ts` |
+| pass | tracker.push: happy path patches Epic meta.tracker with refs | `src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts` |
+| pass | coarse push with pushTasks: execute prompt carries the TASK TIER block + the approved plan tasks | `src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts` |
+| pass | workflow-rpc imports nothing from src/mcp, and takes the workflow step from src/daemon/steps | `src/daemon/steps/__tests__/workflow-rpc-imports.test.ts` |
+| pass | t4: the workflow-step handler phase switch gains NO brainstorm case (new workflow value, not a new phase) | `src/workflow/runners/brainstorm/__tests__/registration.test.ts` |
+| pass | handler rejects non-object input | `src/daemon/steps/__tests__/analyze-step-handler.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/analyze-step-handler.test.ts` | 0 | 8 | 0.8 s |  |
+| `src/daemon/steps/__tests__/workflow-rpc-imports.test.ts` | 0 | 1 | 0.3 s |  |
+| `src/daemon/steps/build-step/__tests__/build-start.test.ts` | 0 | 13 | 4.5 s |  |
+| `src/daemon/steps/build-step/__tests__/build-step.test.ts` | 0 | 63 | 11.1 s |  |
+| `src/daemon/steps/build-step/__tests__/render.test.ts` | 0 | 5 | 0.5 s |  |
+| `src/daemon/steps/build-step/__tests__/standalone-implement.test.ts` | 0 | 5 | 0.5 s |  |
+| `src/daemon/steps/build-step/__tests__/tap-results.test.ts` | 0 | 5 | 0.3 s |  |
+| `src/daemon/steps/build-step/__tests__/test-mapping.test.ts` | 0 | 4 | 0.3 s |  |
+| `src/daemon/steps/build-step/__tests__/validation-checks.test.ts` | 0 | 27 | 7.5 s |  |
+| `src/daemon/steps/triage-step/__tests__/handler.test.ts` | 0 | 17 | 0.5 s |  |
+| `src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts` | 0 | 4 | 0.5 s |  |
+| `src/daemon/steps/workflow-step/__tests__/brainstorm-state.test.ts` | 0 | 4 | 0.4 s |  |
+| `src/daemon/steps/workflow-step/__tests__/define-e2e.test.ts` | 0 | 3 | 0.5 s |  |
+| `src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts` | 0 | 2 | 0.5 s |  |
+| `src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts` | 0 | 6 | 0.5 s |  |
+| `src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts` | 0 | 7 | 0.5 s |  |
+| `src/daemon/steps/workflow-step/__tests__/handler.test.ts` | 0 | 3 | 0.5 s |  |
+| `src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts` | 0 | 4 | 0.5 s |  |
+| `src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts` | 0 | 7 | 0.5 s |  |
+| `src/daemon/steps/workflow-step/__tests__/standalone-keying.test.ts` | 0 | 5 | 0.4 s |  |
+| `src/daemon/steps/workflow-step/__tests__/state-store.test.ts` | 0 | 14 | 0.4 s |  |
+| `src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts` | 0 | 6 | 0.5 s |  |
+| `src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts` | 0 | 4 | 0.5 s |  |
+| `src/workflow/runners/brainstorm/__tests__/registration.test.ts` | 0 | 10 | 0.5 s |  |

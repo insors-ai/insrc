@@ -10,7 +10,7 @@
  * + storage wiring.
  *
  * Run:
- *   npx tsx --test src/insrc/mcp/workflow-step/__tests__/handler.test.ts
+ *   npx tsx --test src/daemon/steps/workflow-step/__tests__/handler.test.ts
  */
 
 import { test } from 'node:test';

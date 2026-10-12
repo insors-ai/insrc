@@ -19,7 +19,7 @@
  * Also: proposal that would fail applier is refused at finalize.
  *
  * Run:
- *   npx tsx --test src/insrc/mcp/workflow-step/__tests__/amendments-e2e.test.ts
+ *   npx tsx --test src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts
  */
 
 import { test } from 'node:test';

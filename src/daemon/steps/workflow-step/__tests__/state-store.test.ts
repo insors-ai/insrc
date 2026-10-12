@@ -7,7 +7,7 @@
  * State-store round-trip tests for the workflow-step MCP tool.
  *
  * Run:
- *   npx tsx --test src/insrc/mcp/workflow-step/__tests__/state-store.test.ts
+ *   npx tsx --test src/daemon/steps/workflow-step/__tests__/state-store.test.ts
  */
 
 import { test } from 'node:test';

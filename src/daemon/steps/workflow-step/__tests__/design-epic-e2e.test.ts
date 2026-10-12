@@ -15,7 +15,7 @@
  *   - InterfaceSketch with function body → hard-fail.
  *
  * Run:
- *   npx tsx --test src/insrc/mcp/workflow-step/__tests__/design-epic-e2e.test.ts
+ *   npx tsx --test src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts
  */
 
 import { test } from 'node:test';

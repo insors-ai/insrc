@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s11",
     "createdAt": "2026-10-12T11:26:17.849Z",
-    "updatedAt": "2026-10-12T11:43:13.587Z",
+    "updatedAt": "2026-10-12T11:48:00.943Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -877,6 +877,1268 @@
               },
               {
                 "title": "the check sees a store that IS opened at the default path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "92c6ea9c",
+        "ranAt": "2026-10-12T11:48:00.943Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "moved workflow, build and triage tests pass at src/daemon/steps, and workflow-rpc imports nothing from src/mcp",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts",
+                "title": "T30/T31: two Stories approved in ONE sweep, built in turn — each change log is EXACTLY its own files (build-start file committed with the work)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+                "title": "implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+                "title": "admitStandaloneBuild: trivial (no LLD) is admitted directly",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/tap-results.test.ts",
+                "title": "the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' # SKIP' with and without a reason, and skipped for ' # TODO'",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/test-mapping.test.ts",
+                "title": "a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/triage-step/__tests__/handler.test.ts",
+                "title": "start: returns emit_classification with a schema, prompt, and state token",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts",
+                "title": "LLD s4 amendment proposal lands as pending AmendmentRecord",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/brainstorm-state.test.ts",
+                "title": "t5: a payload carrying BrainstormElicitState round-trips unchanged through save->token->load",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/define-e2e.test.ts",
+                "title": "define workflow: happy path writes artifact to docs/epics/<slug>-E.../DEF.md",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts",
+                "title": "define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts",
+                "title": "design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts",
+                "title": "design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.../S<nnn>/LLD.md",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/handler.test.ts",
+                "title": "stub workflow: start → plan → synthesize → done writes artifact",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts",
+                "title": "plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>/PLAN.md",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts",
+                "title": "start gates on an unresolved HLD open question, returns resolve_questions with options",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/standalone-keying.test.ts",
+                "title": "augmentStandaloneParams: no-op unless standalone===true",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "save + load round-trip",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+                "title": "tracker.push: happy path patches Epic meta.tracker with refs",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts",
+                "title": "coarse push with pushTasks: execute prompt carries the TASK TIER block + the approved plan tasks",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+                "title": "workflow-rpc imports nothing from src/mcp, and takes the workflow step from src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/brainstorm/__tests__/registration.test.ts",
+                "title": "t4: the workflow-step handler phase switch gains NO brainstorm case (new workflow value, not a new phase)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-handler.test.ts",
+                "title": "handler rejects non-object input",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 760,
+            "titles": [
+              {
+                "title": "handler rejects non-object input",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects an unknown phase",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects missing phase field",
+                "result": "pass"
+              },
+              {
+                "title": "start returns emit_plan with a state blob + a real prompt",
+                "result": "pass"
+              },
+              {
+                "title": "start with no repo + no INSRC_REPO env → clear no-repo error",
+                "result": "pass"
+              },
+              {
+                "title": "plan phase with a garbage state blob returns wrong-state error",
+                "result": "pass"
+              },
+              {
+                "title": "bundle phase with awaiting_plan state returns wrong-stage error",
+                "result": "pass"
+              },
+              {
+                "title": "envelope is { content: [{type:\"text\", text: JSON}] }",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 310,
+            "titles": [
+              {
+                "title": "workflow-rpc imports nothing from src/mcp, and takes the workflow step from src/daemon/steps",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4501,
+            "titles": [
+              {
+                "title": "T30/T31: two Stories approved in ONE sweep, built in turn — each change log is EXACTLY its own files (build-start file committed with the work)",
+                "result": "pass"
+              },
+              {
+                "title": "T32: the build-start file left UNCOMMITTED (untracked) with nothing else dirty — the range is still derived, exact set",
+                "result": "pass"
+              },
+              {
+                "title": "T32 (tracked and modified): a build-start file that is the ONLY dirty tracked path does not stand in for the Story's work",
+                "result": "pass"
+              },
+              {
+                "title": "T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task 1) — the change log is EXACTLY both tasks' files",
+                "result": "pass"
+              },
+              {
+                "title": "T34: the same mid-build approval with the build-start file DELETED before task 2 — no file is written and the base is the pre-change one",
+                "result": "pass"
+              },
+              {
+                "title": "T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild's files",
+                "result": "pass"
+              },
+              {
+                "title": "T36 (plan-driven): implement writes NO BUILD record, and a batch approval then approves none for the Story",
+                "result": "pass"
+              },
+              {
+                "title": "T36 (Small route): implement stamps and writes NO BUILD record; a batch approval approves none",
+                "result": "pass"
+              },
+              {
+                "title": "Trivial route: the first implement stamps HEAD and writes its task-less record; a second implement keeps the stamp",
+                "result": "pass"
+              },
+              {
+                "title": "fail-open: a stamp that cannot be written leaves the implement result unchanged on every route",
+                "result": "pass"
+              },
+              {
+                "title": "a REFUSED implement stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T37: the completion writer excludes a COMMITTED build-start file — exact set",
+                "result": "pass"
+              },
+              {
+                "title": "T38: no resolvable base and a clean tree -> validate writes an EMPTY change log (no substituted range)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11076,
+            "titles": [
+              {
+                "title": "implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref",
+                "result": "pass"
+              },
+              {
+                "title": "implement: does NOT gate on the LLD open questions (resolved at stage-start now)",
+                "result": "pass"
+              },
+              {
+                "title": "implement: unapproved plan returns next=refused with reason plan-unapproved",
+                "result": "pass"
+              },
+              {
+                "title": "implement: a non-task target (a story) is a resolution error",
+                "result": "pass"
+              },
+              {
+                "title": "validate: returns the judge verdict from a stubbed CliProvider review session",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a failing judge verdict gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "validate: persists a plan-driven BUILD ledger record (standalone key ABSENT since t9) recording the task + passed",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a BUILD-record persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone key ABSENT since t9, story task)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record carries the file-level change-log for a non-empty changed set",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a Small build with no resolvable identity → err(no-identity)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record is approvable by the completion gate",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + { target:'s1/t1', epicHash } resolves + proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "validate: multi-epic dir + { target:'s1/t1', epicHash } resolves + returns a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + 's1/t1' WITHOUT epicHash still returns err(unresolved-target)",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION A (INVERTED at t8): a standalone build's persisted md now RENDERS '## Scope' for its body.focus",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION B (INVERTED at t9): a standalone build KEEPS meta.standalone true through validate",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section",
+                "result": "pass"
+              },
+              {
+                "title": "t10 END-TO-END: a trivial-routed build produces ONE record carrying the change set, the summary, the commit, its scope and its route — none of which it could carry before this Story",
+                "result": "pass"
+              },
+              {
+                "title": "t10 AUDIT: all three of t1's characterisations are still here, each carrying the task that INVERTED it — none deleted, none skipped",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION harness: read-only — rev-list --count and status --porcelain unchanged afterwards, and the suite skips cleanly when git is unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the validate writer EXCLUDES its own json + md from its own change-log, keeping the Story's real change",
+                "result": "pass"
+              },
+              {
+                "title": "t6 THE POINT OF THE STORY: a CLEAN tree WITH a stamped base yields the Story's committed change set",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a multi-task Story's change set GROWS across tasks rather than describing only the latest",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a DIRTY tree yields today's working-tree result and does NOT union in the committed range",
+                "result": "pass"
+              },
+              {
+                "title": "t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and substitutes no range",
+                "result": "pass"
+              },
+              {
+                "title": "t6: BOTH writers resolve the SAME base for the same Story — one resolver, not two chains",
+                "result": "pass"
+              },
+              {
+                "title": "t7: a SUPPLIED summary reaches body.summary",
+                "result": "pass"
+              },
+              {
+                "title": "t7: NO summary supplied → the record carries NO summary key (never synthesised from the task list)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: an EMPTY or WHITESPACE-ONLY summary is treated as omitted, not stored as a blank",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the summary input is OPTIONAL — a controller that never supplies it sees no behavioural difference",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a standalone work item gets meta.standalone TRUE on the FIRST write, read from its definition head",
+                "result": "pass"
+              },
+              {
+                "title": "validate: an EPIC-parented work item is unchanged — no flag written, record under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, LLD-only Small story: first write is standalone, sized, and filed beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, no head and no LLD: the route the standalone branch declared is what is written",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate: a caller's declaration does NOT relabel a story whose definition head says otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — completion: an LLD-only story's record is written standalone, beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — a record that never got its flag is still re-rendered beside its story, and resolves by its md path",
+                "result": "pass"
+              },
+              {
+                "title": "validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results",
+                "result": "pass"
+              },
+              {
+                "title": "a judge passed:true with a failing typecheck gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "a judge timeout returns verdict-session-timeout and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "the validate judge is called through runReviewSession with the repo as cwd and a verdict schema",
+                "result": "pass"
+              },
+              {
+                "title": "a judge object without a boolean passed gives unparseable-verdict",
+                "result": "pass"
+              },
+              {
+                "title": "a non-timeout judge error gives verdict-session-failed and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "plan-driven and standalone validate each hand the check runner the plan for their route",
+                "result": "pass"
+              },
+              {
+                "title": "implement and validate return merge-in-progress while a merge is uncommitted",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-b4b6b835: validate hands the check runner the other TypeScript projects the build touched; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails",
+                "result": "pass"
+              },
+              {
+                "title": "the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path",
+                "result": "pass"
+              },
+              {
+                "title": "when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)",
+                "result": "pass"
+              },
+              {
+                "title": "when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)",
+                "result": "pass"
+              },
+              {
+                "title": "a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)",
+                "result": "pass"
+              },
+              {
+                "title": "when the Story's route cannot be resolved, the verdict is returned with a note and neither record is written on that turn",
+                "result": "pass"
+              },
+              {
+                "title": "a stored test record that cannot be read is said so in the verdict, and a stored reported result is not reused once its test is no longer live",
+                "result": "pass"
+              },
+              {
+                "title": "on the standalone routes: a wrong mapping on a small build is refused with 'invalid-test-mapping', a good one is planned by subject, and `tests` is ignored on a trivial build",
+                "result": "pass"
+              },
+              {
+                "title": "builder text in the judge's evidence is kept to one line",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was unresolved-target)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 507,
+            "titles": [
+              {
+                "title": "the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it",
+                "result": "pass"
+              },
+              {
+                "title": "both validate prompts place the given evidence text in an evidence section and ask for the judge verdict shape",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own",
+                "result": "pass"
+              },
+              {
+                "title": "the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 452,
+            "titles": [
+              {
+                "title": "admitStandaloneBuild: trivial (no LLD) is admitted directly",
+                "result": "pass"
+              },
+              {
+                "title": "admitStandaloneBuild: Small with a missing LLD refuses (plan-missing)",
+                "result": "pass"
+              },
+              {
+                "title": "trivial standalone build: admits, renders a scope-driven prompt, and persists a BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "trivial standalone build without a focus is an error (no-scope)",
+                "result": "pass"
+              },
+              {
+                "title": "Small standalone build without an epicHash is an error (no-identity)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/tap-results.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 319,
+            "titles": [
+              {
+                "title": "the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' # SKIP' with and without a reason, and skipped for ' # TODO'",
+                "result": "pass"
+              },
+              {
+                "title": "a title nested in a suite or a subtest is found at its depth by its own title",
+                "result": "pass"
+              },
+              {
+                "title": "TAP's escaping of '#' and backslash in a title is reversed, so the title as declared matches (mutation: compare the raw line)",
+                "result": "pass"
+              },
+              {
+                "title": "a title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped",
+                "result": "pass"
+              },
+              {
+                "title": "output with no TAP version line and no result line is reported as not understood, with no titles",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/test-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 321,
+            "titles": [
+              {
+                "title": "a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level",
+                "result": "pass"
+              },
+              {
+                "title": "a correct mapping with cases, with a reported result on a live test, and with both, is accepted",
+                "result": "pass"
+              },
+              {
+                "title": "text the builder supplies must be one line: a title or evidence with a line break is a fault",
+                "result": "pass"
+              },
+              {
+                "title": "a stored mapping is reused only as far as the rules still allow: a stale name, a reported result on a test that is no longer live or smoke, and a file outside the repository are dropped, without a fault",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7463,
+            "titles": [
+              {
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "a base name under two __tests__ directories resolves to both files",
+                "result": "pass"
+              },
+              {
+                "title": "the plan-driven, small and trivial routes each build the expected check plan",
+                "result": "pass"
+              },
+              {
+                "title": "a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a passing and a failing command give ok true and ok false with their exit codes and output tails",
+                "result": "pass"
+              },
+              {
+                "title": "a command past its limit is reported timedOut and its whole process group, grandchild included, is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a test file that keeps its process alive after its tests pass still finishes under --test-force-exit",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved test name makes tests fail with a note naming it",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+                "result": "pass"
+              },
+              {
+                "title": "with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+                "result": "pass"
+              },
+              {
+                "title": "smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+                "result": "pass"
+              },
+              {
+                "title": "a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+                "result": "pass"
+              },
+              {
+                "title": "a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+                "result": "pass"
+              },
+              {
+                "title": "a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+                "result": "pass"
+              },
+              {
+                "title": "trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it",
+                "result": "pass"
+              },
+              {
+                "title": "a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments",
+                "result": "pass"
+              },
+              {
+                "title": "the whole output is still written after the output directory has been removed, and files older than the retention are pruned",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: a file with many tests is reported in full under the gate's runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: in its own process a failing test still fails the file",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/triage-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 544,
+            "titles": [
+              {
+                "title": "start: returns emit_classification with a schema, prompt, and state token",
+                "result": "pass"
+              },
+              {
+                "title": "start: errors without a focus",
+                "result": "pass"
+              },
+              {
+                "title": "feature → standalone design.story with plan; nextCall pre-fills standalone params",
+                "result": "pass"
+              },
+              {
+                "title": "small → standalone design.story, no plan",
+                "result": "pass"
+              },
+              {
+                "title": "trivial → build (no LLD), routed to insrc_build_step standalone",
+                "result": "pass"
+              },
+              {
+                "title": "epic → define, full chain, no standalone params",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix (small) → issue → build; nextCall enters the issue workflow with the magnitude",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix (sized) → issue → design → plan → build",
+                "result": "pass"
+              },
+              {
+                "title": "classify: rejects a bugfix emitted WITHOUT a magnitude (no unhandled throw)",
+                "result": "pass"
+              },
+              {
+                "title": "classify: rejects an unknown sizeClass emitted by the controller",
+                "result": "pass"
+              },
+              {
+                "title": "classify: rejects a tampered/undecodable state token",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — start with an approved specHash forwards it into the design.story nextCall",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — an epic routed with an approved specHash forwards it into the define call",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — start with an UNAPPROVED spec errors and hands back no state",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — start with a MISSING spec errors and hands back no state",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — without a specHash the nextCall is unchanged (no specHash key anywhere)",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — the triage state token round-trips specHash, and omits it when absent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 536,
+            "titles": [
+              {
+                "title": "LLD s4 amendment proposal lands as pending AmendmentRecord",
+                "result": "pass"
+              },
+              {
+                "title": "Bad amendment proposal is dropped; the LLD still synthesizes",
+                "result": "pass"
+              },
+              {
+                "title": "Approving amendment marks existing LLD stale via effective-hash mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "ack-stale writes staleAckedAt onto LLD meta",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/brainstorm-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 443,
+            "titles": [
+              {
+                "title": "t5: a payload carrying BrainstormElicitState round-trips unchanged through save->token->load",
+                "result": "pass"
+              },
+              {
+                "title": "t5: releaseState frees the token (subsequent load throws StateTokenNotFound)",
+                "result": "pass"
+              },
+              {
+                "title": "t5: loadState for an unknown/expired token still throws unchanged — no brainstorm-specific silent-replace",
+                "result": "pass"
+              },
+              {
+                "title": "t5: BrainstormElicitState has exactly the three sc3 fields",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/define-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 475,
+            "titles": [
+              {
+                "title": "define workflow: happy path writes artifact to docs/epics/<slug>-E.../DEF.md",
+                "result": "pass"
+              },
+              {
+                "title": "define workflow: s4 sb1=missed forces synthesize hard-fail",
+                "result": "pass"
+              },
+              {
+                "title": "define workflow: ungrounded citation fails synthesize",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 467,
+            "titles": [
+              {
+                "title": "define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact",
+                "result": "pass"
+              },
+              {
+                "title": "define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story appended)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 470,
+            "titles": [
+              {
+                "title": "design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses to start without an approved Define",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses without epicHash param",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: s6 sbdry1=missed forces synthesize hard-fail",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses when a Story from Epic is missing from storyBoundaries",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses when interfaceSketch contains a return",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 491,
+            "titles": [
+              {
+                "title": "design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.../S<nnn>/LLD.md",
+                "result": "pass"
+              },
+              {
+                "title": "design.story new-capability: s7 skips, artifact has no Migration section",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: refuses without an approved HLD",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: refuses without epicHash or storyId params",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: unknown shared-contract id fails synthesize",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: migration MISSING for enhancement Epic → hard-fail",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: migration PRESENT for new-capability Epic → hard-fail",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 456,
+            "titles": [
+              {
+                "title": "stub workflow: start → plan → synthesize → done writes artifact",
+                "result": "pass"
+              },
+              {
+                "title": "stub workflow: synthesizer rejects ungrounded citation",
+                "result": "pass"
+              },
+              {
+                "title": "stub workflow: bad state token errors cleanly",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 474,
+            "titles": [
+              {
+                "title": "plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>/PLAN.md",
+                "result": "pass"
+              },
+              {
+                "title": "plan: refuses when the Story LLD is unapproved (gate)",
+                "result": "pass"
+              },
+              {
+                "title": "plan: refuses when the Story LLD is stale with no ack (gate)",
+                "result": "pass"
+              },
+              {
+                "title": "plan: finalize rejects a task graph with a dangling dependsOn",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 530,
+            "titles": [
+              {
+                "title": "start gates on an unresolved HLD open question, returns resolve_questions with options",
+                "result": "pass"
+              },
+              {
+                "title": "resolve_question resolve → HLD meta resolved, then start proceeds to emit_plan",
+                "result": "pass"
+              },
+              {
+                "title": "resolve_question ignore → HLD meta ignored, start proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "resolve_question defer → deferred does NOT re-trigger start, shows in review_deferred",
+                "result": "pass"
+              },
+              {
+                "title": "start proceeds directly when the upstream HLD has no open questions",
+                "result": "pass"
+              },
+              {
+                "title": "synthesize `done` carries the new artifact's still-open questions",
+                "result": "pass"
+              },
+              {
+                "title": "synthesize `done` omits openQuestions when the artifact carries none",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/standalone-keying.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 439,
+            "titles": [
+              {
+                "title": "augmentStandaloneParams: no-op unless standalone===true",
+                "result": "pass"
+              },
+              {
+                "title": "augmentStandaloneParams: standalone mints a 16-char self-hash + default storyId",
+                "result": "pass"
+              },
+              {
+                "title": "augmentStandaloneParams: is deterministic in the runId (same runId → same hash)",
+                "result": "pass"
+              },
+              {
+                "title": "augmentStandaloneParams: preserves a caller-provided epicHash + storyId",
+                "result": "pass"
+              },
+              {
+                "title": "epicKeyFor: a standalone design.story keys by the minted (augmented) epicHash",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 447,
+            "titles": [
+              {
+                "title": "save + load round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "release drops the entry",
+                "result": "pass"
+              },
+              {
+                "title": "load throws on unknown token",
+                "result": "pass"
+              },
+              {
+                "title": "token is URL-safe base64 (no +, /, =)",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: decodeState on an unknown/released token throws code 'not-found' with the plain message",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: decodeState on a structurally-garbage token throws code 'malformed' (distinct from 'not-found')",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: assertStage on a valid token at the wrong stage throws 'wrong-stage' (unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: the WorkflowStateDecodeError code union carries 'not-found' plus the original three",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState: mints a new token, releases the (defined+distinct) previous one — store stays ~1",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState(undefined, ...) behaves exactly like saveState (first-mint: nothing released)",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState is mint-before-release: the new token always exists even as the old is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState never deletes the just-minted token in the degenerate prev===next case",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState LRU: a run of > MAX_ENTRIES turns keeps its active token (never evicted)",
+                "result": "pass"
+              },
+              {
+                "title": "reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 477,
+            "titles": [
+              {
+                "title": "tracker.push: happy path patches Epic meta.tracker with refs",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: checklist failure refuses synthesize + leaves meta untouched",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.sync: happy path merges status + lastSyncedAt into meta.tracker",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.sync: refuses when Epic has no prior tracker refs",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: refuses without epicHash param",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: refuses when Epic is unapproved",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 521,
+            "titles": [
+              {
+                "title": "coarse push with pushTasks: execute prompt carries the TASK TIER block + the approved plan tasks",
+                "result": "pass"
+              },
+              {
+                "title": "coarse push with pushTasks but an UNAPPROVED plan: no TASK TIER (plan excluded)",
+                "result": "pass"
+              },
+              {
+                "title": "coarse push with pushTasks OFF: execute prompt has no task instructions",
+                "result": "pass"
+              },
+              {
+                "title": "coarse push synthesize persists LLM-returned taskRefs onto the plan meta.tracker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/brainstorm/__tests__/registration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 507,
+            "titles": [
+              {
+                "title": "t1: StandaloneBrainstormContext accepts a bare focus string",
+                "result": "pass"
+              },
+              {
+                "title": "t2: brainstormElicitSchema is a valid, ajv-compilable JSON Schema stub",
+                "result": "pass"
+              },
+              {
+                "title": "t3: registerBrainstormRunners is idempotent and resolves the elicit runner",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a duplicate runnerId under workflow brainstorm reproduces executor's duplicate-runner throw",
+                "result": "pass"
+              },
+              {
+                "title": "t3: k10 — the brainstorm runner module never IMPORTS the daemon layer or CALLS the addIdea stub",
+                "result": "pass"
+              },
+              {
+                "title": "t4: brainstorm is a member of the WORKFLOW_NAMES union",
+                "result": "pass"
+              },
+              {
+                "title": "t4: prepareDecompose recognizes brainstorm (not \"not yet supported\") and yields a one-step plan schema",
+                "result": "pass"
+              },
+              {
+                "title": "t4: registerWorkflowRunners() wires registerBrainstormRunners beside the existing register*Runners",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the workflow-step handler phase switch gains NO brainstorm case (new workflow value, not a new phase)",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the triage route table (classify.ts) is not modified to insert brainstorm (ac5)",
                 "result": "pass"
               }
             ],

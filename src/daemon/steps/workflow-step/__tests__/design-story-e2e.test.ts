@@ -20,7 +20,7 @@
  *   - Migration present for new-capability flavor → hard-fail.
  *
  * Run:
- *   npx tsx --test src/insrc/mcp/workflow-step/__tests__/design-story-e2e.test.ts
+ *   npx tsx --test src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts
  */
 
 import { test } from 'node:test';

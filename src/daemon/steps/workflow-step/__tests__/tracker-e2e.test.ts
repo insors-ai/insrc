@@ -20,7 +20,7 @@
  *   - Push refuses when Epic is unapproved (gated at s1 assemble).
  *
  * Run:
- *   npx tsx --test src/insrc/mcp/workflow-step/__tests__/tracker-e2e.test.ts
+ *   npx tsx --test src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts
  */
 
 import { test } from 'node:test';

@@ -6,3 +6,4 @@ export * from './policy.js';
 export * from './eligibility.js';
 export * from './lineage.js';
 export * from './notices.js';
+export * from './assessment.js';

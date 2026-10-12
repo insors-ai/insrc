@@ -61,3 +61,13 @@ Added pure source-manifest, lineage and NOTICE generation. NOTICE is versioned U
 Three planned tests pass, including explicit upstream NOTICE evidence, multiple attributions/modifications, shared-evidence deduplication, independent expected notice bytes, and malformed text rejection. TypeScript checking passes. A full sweep at concurrency 4 is running because the previous default-concurrency sweep exposed unrelated process aborts; reduced-concurrency reruns had also reproduced those aborts.
 
 T006 full suite at concurrency 4: 5,367 executed tests, 5,226 passed, 13 failures (SQLite overflow plus 12 unrelated daemon/MCP/review test-file SIGABRTs), 125 skipped, three todo. Reduced concurrency did not eliminate the broader native process failures; no full-suite pass is claimed. Log: `/tmp/di1-s2-t6-full.log`.
+
+T006 daemon validation passed every acceptance check and all three mapped tests. Commit: `da79b06a`.
+
+## T007 — staging and independent candidate assessment
+
+Added pure `assessment.ts` and separate I/O `stage.ts`. Local staging validates selected/evidence paths before acquisition, enforces combined budgets and returns only admitted-byte snapshots. Assessment recomputes source eligibility from the separately reviewed policy and acquisition bytes, reconstructs expected source/lineage/notice/evidence inventory, checks exact packaged bytes, classifies every output and compares packaged lineage to its reviewed descriptor. It never trusts caller-provided pass flags.
+
+`prepareEligibilityCandidate` assembles output and source metadata bytes against an explicit manifest/coverage-path declaration and refuses to drop declared files. Assessment privately supplies a minimal structural coverage envelope and temporary release seal to S001 validation so all non-cyclic invariants can be checked before S003 coverage completion. Those private bytes are never returned, installed or used to emit a coverage assessment. Final coverage hashing preserves the candidate digest; missing/duplicate coverage membership returns ValidationResult failure instead of an empty assessment binding.
+
+All three planned tests pass, including metadata/role/profile/output/evidence mutations and S001 preflight with explicitly synthetic finalized coverage. TypeScript checking passes. Full sweep `/tmp/di1-s2-t7-full.log`: 5,370 executed tests, 5,229 passed, 13 failures (known SQLite overflow plus the same 12 daemon/MCP/review SIGABRT files), 125 skipped, three todo. The final assembly helper was also checked by the focused suite after wiring; T008 performs the final source/build sweep.

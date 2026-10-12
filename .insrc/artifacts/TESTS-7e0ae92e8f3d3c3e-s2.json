@@ -4,7 +4,7 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T05:17:51.666Z"
+    "updatedAt": "2026-10-12T05:22:43.937Z"
   },
   "body": {
     "tasks": [
@@ -368,6 +368,76 @@
               },
               {
                 "title": "lineage-closure requires explicit original and inferred output declarations",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "da79b06a",
+        "ranAt": "2026-10-12T05:22:43.937Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "notice-closure preserves exact evidence bytes and all source obligations",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/notices.test.ts",
+                "title": "notice-closure preserves exact evidence bytes and all source obligations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "notice-closure deduplicates shared evidence without losing attribution",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/notices.test.ts",
+                "title": "notice-closure deduplicates shared evidence without losing attribution",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "notice-closure produces stable expected bytes and rejects invalid evidence text",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/notices.test.ts",
+                "title": "notice-closure produces stable expected bytes and rejects invalid evidence text",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/sources/__tests__/notices.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 498,
+            "titles": [
+              {
+                "title": "notice-closure preserves exact evidence bytes and all source obligations",
+                "result": "pass"
+              },
+              {
+                "title": "notice-closure deduplicates shared evidence without losing attribution",
+                "result": "pass"
+              },
+              {
+                "title": "notice-closure produces stable expected bytes and rejects invalid evidence text",
                 "result": "pass"
               }
             ],

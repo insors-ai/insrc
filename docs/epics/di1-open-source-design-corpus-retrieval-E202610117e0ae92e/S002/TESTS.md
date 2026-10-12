@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -151,3 +151,31 @@ Run at 2026-10-12T05:17:51.666Z on commit `93251dac`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/design/corpus/sources/__tests__/lineage.test.ts` | 0 | 3 | 0.5 s |  |
+
+## t6
+
+Run at 2026-10-12T05:22:43.937Z on commit `da79b06a`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: notice-closure preserves exact evidence bytes and all source obligations**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | notice-closure preserves exact evidence bytes and all source obligations | `src/design/corpus/sources/__tests__/notices.test.ts` |
+
+**unit: notice-closure deduplicates shared evidence without losing attribution**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | notice-closure deduplicates shared evidence without losing attribution | `src/design/corpus/sources/__tests__/notices.test.ts` |
+
+**unit: notice-closure produces stable expected bytes and rejects invalid evidence text**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | notice-closure produces stable expected bytes and rejects invalid evidence text | `src/design/corpus/sources/__tests__/notices.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/design/corpus/sources/__tests__/notices.test.ts` | 0 | 3 | 0.5 s |  |

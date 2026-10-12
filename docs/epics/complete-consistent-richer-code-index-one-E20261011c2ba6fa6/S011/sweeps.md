@@ -21,3 +21,10 @@ They are 9 tests in 4 files; a sweep below is "clean" when nothing else fails.
 | t7 | 2026-10-12 | 6681 | 6540 | 4 | 5 | 129 | none (no test output mentions the new 'no daemon client is installed' error) |
 | t8 | 2026-10-12 | 6685 | 6542 | 6 | 5 | 129 | none from this task: the two extra failures, src/workflow/delivery/__tests__/handlers.test.ts 'workflow.delivery returns one timestamped snapshot and leaves the store, docs and git untouched' and the delivery-client test seen at t6, both saw a transient .git/objects/maintenance.lock written by git's background maintenance in their temporary repositories; neither file is touched by the task, and both passed 3 of 3 reruns alone |
 | t9 | 2026-10-12 | 6689 | 6545 | 7 | 5 | 129 | none left from this task. Two source scans the task made stale failed and were updated in the task (both files then 9/9): the permitted-reader name now appears only at its definition (src/db/graph/__tests__/live-store-owner.test.ts), and no file under src/mcp, server.ts included, imports src/daemon/steps (src/daemon/steps/__tests__/workflow-rpc-imports.test.ts). The third extra failure is the delivery handlers test's git maintenance.lock flake seen at t8 |
+
+## t9: provenance of the tool-surface golden file
+
+`src/mcp/__tests__/fixtures/tool-surface.golden.json` was regenerated from commit
+`e30638e5` (the last commit before t9) in a separate git worktree, through a real
+MCP client's `listTools` over an in-memory transport. It is byte-identical to the
+committed file: SHA-1 `bba2b5e79921ac1ae54305ad54e692f474058145` for both.

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s11",
     "createdAt": "2026-10-12T11:26:17.849Z",
-    "updatedAt": "2026-10-12T12:21:21.982Z",
+    "updatedAt": "2026-10-12T12:38:44.194Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -3050,6 +3050,166 @@
               },
               {
                 "title": "state store miss: each of the four stores says the daemon was restarted and the run must be started again",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "10dd8589",
+        "ranAt": "2026-10-12T12:38:44.194Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "import graph (ac4): the MCP server's modules reach nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/import-graph.test.ts",
+                "title": "import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+                "title": "no file under src/mcp imports src/daemon/steps: the step tools are forwarded, not run in the MCP server (Story s11, t9)",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "source scan: the permitted-reader function's name appears only at its definition: the MCP server no longer calls it (Story s11, t9)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "MCP tool surface: the twelve tools keep their names, descriptions and input schemas",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "MCP tool surface: the twelve tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 364,
+            "titles": [
+              {
+                "title": "workflow-rpc imports nothing from src/mcp, and takes the workflow step from src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "title": "no file under src/mcp imports src/daemon/steps: the step tools are forwarded, not run in the MCP server (Story s11, t9)",
+                "result": "pass"
+              },
+              {
+                "title": "no module under src/daemon/steps imports src/mcp/daemon-stream.ts: the moved handlers reach the daemon through the in-daemon client",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 755,
+            "titles": [
+              {
+                "title": "owner check: default path with no declaration is refused and no file is created",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: after the declaration the same open succeeds, also after a close and reopen",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: a temporary path opens without a declaration",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: the live path as a relative path and through a symbolic link is refused",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: permitted-reader only opens the live path; neither declaration is refused",
+                "result": "pass"
+              },
+              {
+                "title": "source scan: the permitted-reader function's name appears only at its definition: the MCP server no longer calls it (Story s11, t9)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/forward-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 957,
+            "titles": [
+              {
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "MCP tool surface: the twelve tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/import-graph.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 328,
+            "titles": [
+              {
+                "title": "import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail",
                 "result": "pass"
               }
             ],

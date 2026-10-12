@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 78 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 84 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -296,3 +296,42 @@ Run at 2026-10-12T12:21:21.982Z on commit `0dc044c9`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/__tests__/step-host.test.ts` | 0 | 4 | 1 s |  |
+
+## t9
+
+Run at 2026-10-12T12:38:44.194Z on commit `10dd8589`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs | `src/mcp/__tests__/forward-step.test.ts` |
+
+**unit: forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged | `src/mcp/__tests__/forward-step.test.ts` |
+
+**integration: import graph (ac4): the MCP server's modules reach nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail | `src/mcp/__tests__/import-graph.test.ts` |
+| pass | no file under src/mcp imports src/daemon/steps: the step tools are forwarded, not run in the MCP server (Story s11, t9) | `src/daemon/steps/__tests__/workflow-rpc-imports.test.ts` |
+| pass | source scan: the permitted-reader function's name appears only at its definition: the MCP server no longer calls it (Story s11, t9) | `src/db/graph/__tests__/live-store-owner.test.ts` |
+
+**unit: MCP tool surface: the twelve tools keep their names, descriptions and input schemas**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | MCP tool surface: the twelve tools keep their names, descriptions and input schemas | `src/mcp/__tests__/forward-step.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/workflow-rpc-imports.test.ts` | 0 | 3 | 0.4 s |  |
+| `src/db/graph/__tests__/live-store-owner.test.ts` | 0 | 6 | 0.8 s |  |
+| `src/mcp/__tests__/forward-step.test.ts` | 0 | 3 | 1 s |  |
+| `src/mcp/__tests__/import-graph.test.ts` | 0 | 1 | 0.3 s |  |

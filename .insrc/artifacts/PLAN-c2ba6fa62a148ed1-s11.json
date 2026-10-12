@@ -1,0 +1,612 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791804053159-7y8ttn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-12T11:24:45.125Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 231952,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s11",
+    "lldRunId": "wf-1791802659373-1u5nx9",
+    "lldEffectiveHash": "8ec1c5d92f54afdc0d6aef730ad53d5532a042d9e25ec6621e5ddebe2fabdff2",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this Story is thirteen tasks in four strands. First two small independent changes: the review stream's error type moves to a shared module, and the vector store gets the owner rule with its test repairs. Then the move itself, in three behaviour-preserving slices (analyze, then workflow/build/triage, then review/code-review), followed by the per-call context, the in-daemon client that replaces the loopback calls, and the step host. Last the MCP side: forwarders, the retirement of MCP sampling, the deletion of the reader allowance, proof over a real MCP process, and a shipped daemon checked with every client session restarted."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Move the review stream error and types to a shared module",
+        "summary": "Move ReviewStreamError and the types ReviewStreamOpts, ReviewArtifactStreamParams, CodeReviewStreamParams and CodeReviewStreamResult from src/mcp/daemon-stream.ts to src/shared/review-stream.ts; daemon-stream.ts re-exports them so its importers are unchanged.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/shared/review-stream.ts exports the class and the four types; daemon-stream.ts re-exports them",
+          "the review and code-review routing tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "review stream module: ReviewStreamError from src/shared/review-stream.ts is the same class daemon-stream.ts exports, and the routing tests pass unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Give the vector store the owner rule",
+        "summary": "getLanceConn refuses the live ~/.insrc/lance (resolved through links, relative paths included) with LanceStoreNotOwnerError to a process that has not called declareLiveStoreOwner, before creating or connecting; add isLiveStoreOwnerDeclared to the store module; audit every test file in a temporary home for opens of the live vector store and give each a temporary path. Independent of the move, so it lands early and every later sweep runs with it.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "no declaration: the live path is refused and nothing is created",
+          "after the declaration it opens; a temporary path opens without one; a relative path and a symbolic link to the live path are refused",
+          "the audit finds no test file that leaves ~/.insrc/lance in its temporary home"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused"
+          },
+          {
+            "level": "integration",
+            "name": "no test opens the live vector store: each repaired test file run in a temporary home leaves no lance directory"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Move the analyze step, bundle-md and the one-shot analyze body into the daemon's tree",
+        "summary": "Move src/mcp/analyze-step, bundle-md.ts and the one-shot analyze body with oneShotRunParams to src/daemon/steps with their tests, unchanged in behaviour; repoint the importing test files (report-head, executor-lmdb, answer-step-failed-callers, analyze-rpc-measure, completeness.live, lookup-measure) and the two source-scan tests (no-size, bundle-report-schema). The MCP server calls them from their new location.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "every moved and repointed test passes under Node 22",
+          "the full sweep shows no newly failing test"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "moved analyze tests pass at src/daemon/steps (the analyze-step suite, bundle-md, and the repointed importers and source scans)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Move the workflow, build and triage steps into the daemon's tree",
+        "summary": "Move src/mcp/workflow-step, build-step and triage-step to src/daemon/steps with their tests; add the daemon-side copy of resolveRepoPath there and point the moved handlers at it (src/mcp/resolve-repo.ts stays for docgen and approve); repoint src/daemon/workflow-rpc.ts; update path mentions in comments.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "src/daemon/workflow-rpc.ts imports nothing from src/mcp",
+          "every moved test passes; the full sweep shows no newly failing test"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "moved workflow, build and triage tests pass at src/daemon/steps, and workflow-rpc imports nothing from src/mcp"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Move the review and code-review steps into the daemon's tree",
+        "summary": "Move src/mcp/review-step and code-review-step to src/daemon/steps with their tests; repoint the three code-review conditional tests in src/workflow/code-review/__tests__; they keep calling the daemon through daemon-stream until t7.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "the review and code-review routing tests pass at their new location",
+          "no file under src/mcp other than server.ts imports src/daemon/steps"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "moved review and code-review tests pass at src/daemon/steps, including the routing tests and the three conditional tests"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Carry the caller's cwd, INSRC_REPO and client in a per-call context",
+        "summary": "Add StepCallContext in an AsyncLocalStorage; the daemon-side resolveRepoPath, the code-review handler's repo fallback and directoryOf in src/analyze/context/scope.ts read it inside a call and keep process defaults outside one; the client is held as 'claude' | 'codex' and converted to 'cli-*' only for runWithClientProviderContext in the one-shot analyze.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "inside a context, resolveRepoPath, the code-review fallback and directoryOf use the context's cwd and INSRC_REPO, not the process's",
+          "outside a context they behave as before",
+          "two concurrent contexts never see each other's values"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "resolveRepoPath inside a step.call uses the context's cwd and envRepo, not the process's; outside one it keeps process defaults"
+          },
+          {
+            "level": "unit",
+            "name": "scope directoryOf: a bare file name inside a step.call resolves against the context's cwd, and outside one against process.cwd()"
+          },
+          {
+            "level": "unit",
+            "name": "client identity: the context holds 'claude' / 'codex'; the code-review deps receive it as is and the one-shot analyze converts it to 'cli-claude' / 'cli-codex'"
+          },
+          {
+            "level": "unit",
+            "name": "step context isolation: two concurrent contexts each see their own cwd and client"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Give the moved review handlers an in-daemon client and a signal",
+        "summary": "Build, in src/daemon/index.ts, an in-daemon client from the same unary and stream handler maps passed to the IpcServer, with the shapes of reviewArtifactStream, codeReviewStream, fetchCodeReviewGrounding, fetchCodeReviewFreshness and resolveRepoForCwd, keeping reviewStreamRequest's failure mapping (timeout, aborted, daemon-error with reason). Add an optional signal to handleReviewStep and handleCodeReviewStep and pass it to their waits.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "no module under src/daemon/steps imports src/mcp/daemon-stream.ts",
+          "a timed-out wait gives 'timeout', an aborted one 'aborted', an error frame with reason 'diff-unavailable' takes the diff fallback, as before",
+          "an aborted signal ends the inner review run"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "in-daemon review client equivalence: timeout, aborted (code daemon-review-aborted, not retryable), daemon-error with reason, and the diff-unavailable fallback behave as before"
+          },
+          {
+            "level": "integration",
+            "name": "no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Add the step host: the step.call stream request",
+        "summary": "Register step.call as a stream handler with a table of the seven tools; run the handler under the StepCallContext with the stream's signal; answer with a 'done' frame carrying the envelope unchanged, 'step-unknown-tool' and 'step-failed' error frames. Reword the four moved state stores' miss message to say the daemon was restarted and the run must be started again.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "for each of the seven tools, the reply through step.call deep-equals the reply of the handler called directly on the same temporary store",
+          "unknown tool and throwing handler give the named error frames; a socket close fires the handler's signal",
+          "each state store's miss message names a daemon restart"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message"
+          },
+          {
+            "level": "integration",
+            "name": "equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store"
+          },
+          {
+            "level": "integration",
+            "name": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon"
+          },
+          {
+            "level": "unit",
+            "name": "state store miss: each of the four stores says the daemon was restarted and the run must be started again"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Turn the MCP tools into forwarders",
+        "summary": "The seven tools forward over step.call with the MCP process's cwd, INSRC_REPO and the converted client; DaemonUnreachableError and DaemonTooOldError as isError envelopes; progress relayed only with a progress token. runInsrcMcpStdio stops registering the builtins, data drivers and workflow runners. Add the import-graph test of the MCP server.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "the MCP server's import graph, apart from ipc-client.ts and daemon-stream.ts, reaches nothing under src/db, src/analyze or src/daemon/steps, and a fixture import makes the test fail",
+          "with no daemon every moved tool returns DaemonUnreachableError; against a daemon without step.call, DaemonTooOldError",
+          "the twelve tools keep their names, descriptions and input schemas"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs"
+          },
+          {
+            "level": "unit",
+            "name": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged"
+          },
+          {
+            "level": "integration",
+            "name": "import graph (ac4): the MCP server's modules reach nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail"
+          },
+          {
+            "level": "unit",
+            "name": "MCP tool surface: the twelve tools keep their names, descriptions and input schemas"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Retire the MCP sampling path",
+        "summary": "Delete src/mcp/sampling-bridge.ts, src/agent/providers/mcp-sampling-provider.ts, runWithSamplerContext and the ambient-sampler branch of buildShaperProvider, with their tests (sampling-bridge, mcp-sampling-provider, sampler-context, the sampler cases of shaper-provider); delete progress-forward.ts and its test.",
+        "size": "S",
+        "order": 10,
+        "dependsOn": [
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "no source mentions runWithSamplerContext, the MCP sampling provider or the sampling bridge",
+          "the shaper's other providers' tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext, and the shaper provider tests pass"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Delete the temporary reader allowance",
+        "summary": "Delete declareLiveStoreReaderUntilS11, _mayReadLiveStore and the call in the MCP server; remove the store-child 'declare-reader' command; turn the reader cases of live-store-owner.test.ts and live-store-refusal.test.ts into refusal cases; replace the 'exactly two places' scan with one that fails on any occurrence and builds the name from pieces; run and record the full sweep under Node 22.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t2",
+          "t9",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "the name occurs nowhere under src/",
+          "the MCP server's process is refused the live graph store and the live vector store",
+          "the full sweep is recorded with nothing newly failing"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source scan: the reader declaration's name appears nowhere under src/"
+          },
+          {
+            "level": "integration",
+            "name": "refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor"
+          },
+          {
+            "level": "integration",
+            "name": "ac6: the MCP server's process is refused the live graph store and the live vector store"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Prove the MCP server holds no store and runs survive its restart",
+        "summary": "Integration tests over a real MCP server process (stdio) against a daemon in a temporary home: after one call of each moved tool lsof shows no store file or lance directory in the MCP process; a multi-turn analyze step and workflow step continue through a new MCP process with the same state token; prompts, schemas and state tokens are byte-identical to the in-process replies.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t9",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "lsof of the MCP process shows no graph.lmdb, graph.lmdb-lock or lance path after each tool",
+          "a run continues across an MCP process restart",
+          "the emit_plan / emit_step replies are byte-identical"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool"
+          },
+          {
+            "level": "integration",
+            "name": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token"
+          },
+          {
+            "level": "integration",
+            "name": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies"
+          },
+          {
+            "level": "integration",
+            "name": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Ship and check the installed daemon with every session restarted",
+        "summary": "Push, update and restart the installed daemon, then restart every client session; smoke-check an analysis and a multi-turn step across a session restart; check with lsof that no process but the daemon holds the store files or the lance directory; record the result beside the build.",
+        "size": "S",
+        "order": 13,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t11",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "each smoke check is recorded with what was run and seen",
+          "lsof shows only the daemon on ~/.insrc/graph.lmdb, its lock file and ~/.insrc/lance"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "installed daemon: an analysis through a restarted client session works"
+          },
+          {
+            "level": "smoke",
+            "name": "installed daemon: a multi-turn workflow step continues after the client session's MCP server restarts"
+          },
+          {
+            "level": "smoke",
+            "name": "installed daemon after every client session has restarted: lsof shows only the daemon on the store files and the lance directory"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "step host: a known tool runs its handler under the context and the 'done' frame carries the handler's envelope unchanged (deep-equal); an unknown tool gives an error frame 'step-unknown-tool'; a throwing handler gives 'step-failed' with its message",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "step host context: two concurrent calls with different cwd and client each see their own context inside the handler",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "forwarder: ENOENT and ECONNREFUSED give an isError envelope naming DaemonUnreachableError; 'unknown method: step.call' and 'step-unknown-tool' give DaemonTooOldError; neither runs a handler",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "forwarder: progress frames are relayed only with a progress token; the done envelope is returned unchanged",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveRepoPath inside a step.call uses the context's cwd and envRepo, not the process's; outside one it keeps process defaults",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "vector store owner rule: getLanceConn on the live path with no declaration throws LanceStoreNotOwnerError and creates nothing; after declareLiveStoreOwner it opens; a temporary path set with setLanceConnPath opens without a declaration; the live path through a relative path and a symbolic link is refused",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "source scan: the name declareLiveStoreReaderUntilS11 appears nowhere under src/",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "client identity: 'cli-claude' / 'cli-codex' from detectClientProvider reach the context as 'claude' / 'codex', the code-review deps receive 'claude' / 'codex' and the one-shot analyze's runWithClientProviderContext receives 'cli-claude' / 'cli-codex'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "scope directoryOf: a bare file name inside a step.call resolves against the context's cwd, and outside one against process.cwd()",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "equivalence: each of the seven tools, called through the forwarder and step.call against a daemon in a temporary home, returns the same envelope as the handler called directly in-process for the same input (golden comparison per tool, including the first reply of every multi-turn tool)",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac2 restart: a multi-turn analyze step and a workflow step started through forwarder A continue through forwarder B in a new process after A has exited, with the same state token",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac5 pass-through: the prompt, schema and state fields of an emit_plan / emit_step reply are byte-identical to the in-process reply",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "no store in the MCP process: after one call of each tool through a real MCP server process (stdio) against a daemon in a temporary home, lsof of the MCP process shows no descriptor on graph.lmdb, graph.lmdb-lock or the lance directory",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac3: with no daemon, every step tool returns DaemonUnreachableError and the MCP process opens no store; against a stand-in daemon that does not know step.call, DaemonTooOldError",
+        "coveredByTaskIds": [
+          "t12",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac6: the MCP server's process (no declaration) is refused the live graph store and the live vector store",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "import graph (ac4): every module reachable by value imports from src/mcp/**, src/bin/insrc-mcp.ts, apart from src/shared/ipc-client.ts and src/mcp/daemon-stream.ts, imports nothing under src/db, src/analyze or src/daemon/steps; a fixture that adds such an import makes the test fail",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "cancellation: closing the forwarder's socket during a design-review wait and during a code-review wait aborts the inner run in the daemon (its own abort observed), not only the outer wait",
+        "coveredByTaskIds": [
+          "t8",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "no loopback: during each moved tool's call, the daemon's request server sees no second connection from the daemon's own process (the moved handlers use the in-daemon client)",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "in-daemon review client equivalence: a design-review wait that passes timeoutMs fails with ReviewStreamError('timeout') and the same retryable reply as before; a code-review run whose daemon run fails with reason 'diff-unavailable' takes the same diff fallback as before; an 'error' frame becomes ReviewStreamError('daemon-error', error, reason); an aborted wait fails with ReviewStreamError('aborted') and code 'daemon-review-aborted', not retryable",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor (replaces the reader case of live-store-refusal.test.ts)",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "installed daemon: an analysis through a restarted client session works, and lsof shows only the daemon holding the store files and the lance directory",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "installed daemon: a multi-turn workflow step continues after the client session's MCP server is restarted between turns",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "installed daemon after every client session has restarted: lsof shows no process but the daemon holding ~/.insrc/graph.lmdb, graph.lmdb-lock or ~/.insrc/lance",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s11 contract details"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s11 data model changes"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s11 error paths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s11 test strategy"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s11 migration"
+    }
+  ]
+}

@@ -25,7 +25,7 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { relative } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
-import { artifactIdMarker, artifactJsonPath, storyRecordFolderArgs, testsArtifactId, testsArtifactPaths, writeAtomic } from '../../storage.js';
+import { artifactIdMarker, artifactJsonPath, folderIdentityMeta, storyRecordFolderArgs, testsArtifactId, testsArtifactPaths, writeAtomic } from '../../storage.js';
 
 const log = getLogger('workflow:test-record');
 
@@ -102,6 +102,10 @@ export interface TestRecord {
 		readonly updatedAt:   string;
 		/** The RESOLVED route flag (never a caller's raw declaration); only ever `true`. */
 		readonly standalone?: boolean | undefined;
+		/** The work item's label and anchor this record is filed under, stamped
+		 *  at persist (ISSUE-764b88ed). Absent on older records. */
+		readonly epicSlug?:      string | undefined;
+		readonly epicCreatedAt?: string | undefined;
 	};
 	readonly body: { readonly tasks: readonly TestRecordTask[] };
 }
@@ -186,16 +190,19 @@ export function storedMappingFor(repoPath: string, epicHash: string, storyId: st
 // ---------------------------------------------------------------------------
 
 function pathsFor(repoPath: string, rec: TestRecord): { md: string; json: string } {
-	const { epicHash, storyId } = rec.meta;
-	// The ONE folder derivation every Story record uses: the work item's
-	// definition head, its LLD and its persisted BUILD record decide; this
-	// record's own createdAt and flag are the fallback, for a Story that has
-	// no BUILD record yet.
-	const fa = storyRecordFolderArgs(repoPath, epicHash, storyId, {
+	const fa = folderArgsFor(repoPath, rec);
+	return testsArtifactPaths(repoPath, rec.meta.epicHash, rec.meta.storyId, fa.createdAtISO, fa.workItemKind, fa.epicSlug);
+}
+
+/** The ONE folder derivation every Story record uses: the work item's
+ *  definition head, its LLD and its persisted BUILD record decide; this
+ *  record's own createdAt and flag are the fallback, for a Story that has no
+ *  BUILD record yet. */
+function folderArgsFor(repoPath: string, rec: TestRecord): ReturnType<typeof storyRecordFolderArgs> {
+	return storyRecordFolderArgs(repoPath, rec.meta.epicHash, rec.meta.storyId, {
 		standalone:   rec.meta.standalone,
 		ownCreatedAt: rec.meta.createdAt,
 	});
-	return testsArtifactPaths(repoPath, epicHash, storyId, fa.createdAtISO, fa.workItemKind, fa.epicSlug);
 }
 
 /** The paths of a Story's test record as it is on disk, or as a first write
@@ -232,7 +239,7 @@ export function persistTestRecordTask(
 	const kept = (prior?.body.tasks ?? []).filter(t => t.taskId !== task.taskId);
 	const priorIndex = (prior?.body.tasks ?? []).findIndex(t => t.taskId === task.taskId);
 	const tasks = priorIndex === -1 ? [...kept, task] : [...kept.slice(0, priorIndex), task, ...kept.slice(priorIndex)];
-	const rec: TestRecord = {
+	const unstamped: TestRecord = {
 		meta: {
 			workflow:  'tests',
 			epicHash:  ident.epicHash,
@@ -243,6 +250,9 @@ export function persistTestRecordTask(
 		},
 		body: { tasks },
 	};
+	// Store the folder identity the record is filed under, so its meta and its md
+	// location agree (ISSUE-764b88ed).
+	const rec: TestRecord = { ...unstamped, meta: { ...unstamped.meta, ...folderIdentityMeta(folderArgsFor(repoPath, unstamped)) } };
 	const paths = pathsFor(repoPath, rec);
 	// The json and its document are two files. If the document cannot be written
 	// after the json was, the json is put back as it was (or removed, when it is

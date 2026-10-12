@@ -30,6 +30,7 @@ import {
 	artifactIdMarker,
 	codeReviewArtifactId,
 	codeReviewArtifactPaths,
+	folderIdentityMeta,
 	writeAtomic,
 } from '../storage.js';
 import { codeReviewSubjectPathArgs } from './subject-paths.js';
@@ -197,7 +198,11 @@ export async function runCodeReview(
 		const verdict = foldVerdict(counts, opts.capVerdictAtWarn === true);
 
 		// 4. Build the record.
-		const artifact = buildArtifact(subject, dimensions, verdict, counts, opts, startedAtMs);
+		const built = buildArtifact(subject, dimensions, verdict, counts, opts, startedAtMs);
+		// The record stores the folder identity it is filed under, so its meta and
+		// its md location agree (ISSUE-764b88ed).
+		const pa = codeReviewSubjectPathArgs(subject);
+		const artifact: CodeReviewArtifact = { ...built, meta: { ...built.meta, ...folderIdentityMeta(pa) } };
 
 		// 5. VALIDATE in memory — the last gate before the irreversible write.
 		const invalid = validateArtifact(artifact, judges.map(j => j.dimension));
@@ -206,7 +211,6 @@ export async function runCodeReview(
 		// 6. Finalize: write BOTH files (json load-bearing; md a deterministic
 		//    summary). Validation has already passed, so a write here is never partial.
 		emit({ phase: 'finalize' });
-		const pa = codeReviewSubjectPathArgs(subject);
 		const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, pa.createdAtISO, pa.workItemKind, pa.epicSlug);
 		deps.write(paths.json, JSON.stringify(artifact, null, 2) + '\n');
 		deps.write(paths.md,   renderCodeReviewMd(artifact));

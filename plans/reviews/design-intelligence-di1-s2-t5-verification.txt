@@ -1,0 +1,12 @@
+T005: three planned lineage cases passed; typecheck passed.
+Full Node22 suite; sole failure is existing SQLite temporalTrend integer overflow:
+  ...
+1..5046
+# tests 5473
+# suites 106
+# pass 5344
+# fail 1
+# cancelled 0
+# skipped 125
+# todo 3
+# duration_ms 65189.629083

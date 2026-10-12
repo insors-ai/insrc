@@ -4,7 +4,7 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T05:04:07.092Z"
+    "updatedAt": "2026-10-12T05:08:05.626Z"
   },
   "body": {
     "tasks": [
@@ -228,6 +228,76 @@
               },
               {
                 "title": "reader-safety prevents replacement filters lazy fetch and config-driven commands",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "fd652b27",
+        "ranAt": "2026-10-12T05:08:05.626Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "reader-safety bounds aggregate source and shared evidence bytes and counts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/reader-limits.test.ts",
+                "title": "reader-safety bounds aggregate source and shared evidence bytes and counts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reader-safety cancels timed-out aborted and failed children without admitted bytes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/reader-limits.test.ts",
+                "title": "reader-safety cancels timed-out aborted and failed children without admitted bytes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reader-safety rejects truncated or oversized stdout and stderr without leaks",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/reader-limits.test.ts",
+                "title": "reader-safety rejects truncated or oversized stdout and stderr without leaks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/sources/__tests__/reader-limits.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 829,
+            "titles": [
+              {
+                "title": "reader-safety bounds aggregate source and shared evidence bytes and counts",
+                "result": "pass"
+              },
+              {
+                "title": "reader-safety cancels timed-out aborted and failed children without admitted bytes",
+                "result": "pass"
+              },
+              {
+                "title": "reader-safety rejects truncated or oversized stdout and stderr without leaks",
                 "result": "pass"
               }
             ],

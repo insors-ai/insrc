@@ -37,3 +37,13 @@ Reader limits can only lower the hard limits: 10,000 selected paths, 64 MiB sour
 Controlled process tests prove exact/over-limit behavior, failure without admitted output, kill-on-timeout/cancellation/output overflow, stream/spawn/exit failures and removal of abort listeners. Three planned limit tests plus the five pinned-reader tests pass. TypeScript checking passes. Full-suite evidence will follow.
 
 T004 full suite: 5,470 tests, 5,341 passed, one known SQLite overflow failure, 125 skipped, three todo. Log: `/tmp/di1-s2-t4-full.log`.
+
+T004 daemon validation passed every acceptance check and all three mapped tests. Commit: `fd652b27`.
+
+## T005 — output lineage
+
+Added deterministic lineage serialization and validation for all non-metadata/evidence output files. Imported copies must match upstream digests; derived outputs retain all reviewed source IDs, transformation/reviewer and modification notes. Original and independently inferred records require matching explicit author/rationale declarations. Record provenance is checked against the union of contributors and modifications from its own output and specimens. Missing bindings, unknown contributors, absent outputs, conflicting declarations and changed bytes fail closed. Shared source identities across import stages are deduplicated only when their metadata, reviewed profiles and bytes agree.
+
+All three planned lineage tests pass; TypeScript checking passes. Full regression results will follow.
+
+T005 full suite: 5,473 tests, 5,344 passed, one known SQLite overflow failure, 125 skipped, three todo. Log: `/tmp/di1-s2-t5-full.log`.

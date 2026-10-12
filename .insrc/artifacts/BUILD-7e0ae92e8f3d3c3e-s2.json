@@ -4,7 +4,7 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T05:04:07.092Z",
+    "updatedAt": "2026-10-12T05:08:05.626Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -20,6 +20,10 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
     "summary": "Implement strict sc3 schemas, internal reviewed-policy and lineage contracts, canonical source identities and S001 validation parity. Full suite retains the known unrelated SQLite temporalTrend failure; planned tests and typecheck pass.",
@@ -32,107 +36,121 @@
           "file": "plans/design-intelligence-di1-s2-build.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "plans/reviews/design-intelligence-di1-s2-t1-verification.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "plans/reviews/design-intelligence-di1-s2-t2-verification.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "plans/reviews/design-intelligence-di1-s2-t3-verification.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
+      },
+      {
+        "target": {
+          "file": "plans/reviews/design-intelligence-di1-s2-t4-verification.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "src/design/corpus/sources/__tests__/contracts.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "src/design/corpus/sources/__tests__/eligibility.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "src/design/corpus/sources/__tests__/fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "src/design/corpus/sources/__tests__/git-fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "src/design/corpus/sources/__tests__/git-reader.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
+      },
+      {
+        "target": {
+          "file": "src/design/corpus/sources/__tests__/reader-limits.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "src/design/corpus/sources/contracts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "src/design/corpus/sources/eligibility.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "src/design/corpus/sources/git-reader.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "src/design/corpus/sources/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "src/design/corpus/sources/policy.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       },
       {
         "target": {
           "file": "src/design/corpus/sources/validation-primitives.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-12T05:04:07.092Z"
+        "timestamp": "2026-10-12T05:08:05.626Z"
       }
     ],
-    "commit": "5a036847"
+    "commit": "fd652b27"
   }
 }

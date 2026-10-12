@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "b5f333f8d7ba421b",
-    "storyId": "s1"
+    "storyId": "s1",
+    "epicSlug": "expose-all-daemon-config-settings-via"
   },
   "body": {
     "kind": "code-review",

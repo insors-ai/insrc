@@ -9,7 +9,8 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "e2c6705fd105d4ac",
-    "storyId": "s2"
+    "storyId": "s2",
+    "epicSlug": "complete-generated-artifact-companion-wiring-across"
   },
   "body": {
     "kind": "code-review",

@@ -36,44 +36,48 @@ export const createGitRunner = (spawnProcess: typeof spawn = spawn): BinaryGitRu
   if (options.signal?.aborted) { reject(new SourceReaderError('inventory.invalid', 'Source acquisition cancelled.')); return; }
   const child = spawnProcess('git', [...GIT_READ_ARGS, ...args], { cwd: options.cwd, env: gitEnvironment(), shell: false,
     stdio: ['pipe', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
-  const chunks: Buffer[] = []; let stdoutBytes = 0, stderrBytes = 0;
-  let failed: SourceReaderError | undefined;
-  const stop = (error: SourceReaderError) => {
-    if (!failed) failed = error;
-    chunks.length = 0;
-    try { if (process.platform !== 'win32' && child.pid) process.kill(-child.pid, 'SIGKILL'); else child.kill('SIGKILL'); } catch { child.kill('SIGKILL'); }
-  };
-  const timer = setTimeout(() => stop(new SourceReaderError('limit.exceeded', 'Source acquisition timed out.')), options.timeoutMs);
+  const chunks: Buffer[] = []; let stdoutBytes = 0, stderrBytes = 0, settled = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const abort = () => stop(new SourceReaderError('inventory.invalid', 'Source acquisition cancelled.'));
-  options.signal?.addEventListener('abort', abort, { once: true });
-  if (options.signal?.aborted) abort();
+  const settle = (error?: SourceReaderError) => {
+    if (settled) return;
+    settled = true; if (timer) clearTimeout(timer); options.signal?.removeEventListener('abort', abort);
+    if (error) reject(error); else resolve(new Uint8Array(Buffer.concat(chunks, stdoutBytes)));
+    chunks.length = 0;
+  };
+  const stop = (error: SourceReaderError) => {
+    if (settled) return;
+    // Settle even when spawn failed before a PID or when no close event can arrive.
+    settle(error);
+    try { if (process.platform !== 'win32' && child.pid) process.kill(-child.pid, 'SIGKILL'); else child.kill('SIGKILL'); }
+    catch { try { child.kill('SIGKILL'); } catch { /* No process was created. */ } }
+    child.stdin.destroy(); child.stdout.destroy(); child.stderr.destroy();
+  };
   child.stdout.on('data', (chunk: Buffer) => {
-    if (failed) return;
+    if (settled) return;
     stdoutBytes += chunk.length;
     if (stdoutBytes > options.stdoutLimit) stop(new SourceReaderError('limit.exceeded', 'Git output exceeds byte limit.'));
     else chunks.push(Buffer.from(chunk));
   });
   child.stderr.on('data', (chunk: Buffer) => {
+    if (settled) return;
     stderrBytes += chunk.length;
     if (stderrBytes > options.stderrLimit) stop(new SourceReaderError('limit.exceeded', 'Git diagnostics exceed byte limit.'));
   });
-  child.on('error', () => { failed ??= new SourceReaderError('inventory.invalid', 'Cannot acquire local Git objects.'); });
+  child.on('error', () => stop(new SourceReaderError('inventory.invalid', 'Cannot acquire local Git objects.')));
   child.stdout.on('error', () => stop(new SourceReaderError('inventory.invalid', 'Git output stream failed.')));
   child.stderr.on('error', () => stop(new SourceReaderError('inventory.invalid', 'Git diagnostics stream failed.')));
   child.stdin.on('error', () => stop(new SourceReaderError('inventory.invalid', 'Git input stream failed.')));
-  child.on('close', code => {
-    clearTimeout(timer); options.signal?.removeEventListener('abort', abort);
-    if (failed) reject(failed);
-    else if (code !== 0) reject(new SourceReaderError('reference.missing', 'Local Git object is unavailable.'));
-    else resolve(new Uint8Array(Buffer.concat(chunks, stdoutBytes)));
-    chunks.length = 0;
-  });
+  child.on('close', code => settle(code === 0 ? undefined : new SourceReaderError('reference.missing', 'Local Git object is unavailable.')));
+  timer = setTimeout(() => stop(new SourceReaderError('limit.exceeded', 'Source acquisition timed out.')), options.timeoutMs);
+  options.signal?.addEventListener('abort', abort, { once: true });
+  if (options.signal?.aborted) { abort(); return; }
   child.stdin.end(input);
 });
 export const runGitBinary = createGitRunner();
-export interface ReaderLimits { files: number; bytes: number; metadataBytes: number; timeoutMs: number; stderrBytes: number; }
+export interface ReaderLimits { files: number; bytes: number; metadataBytes: number; timeoutMs: number; stderrBytes: number; requestTimeoutMs: number; }
 export const READER_LIMITS: Readonly<ReaderLimits> = Object.freeze({ files: CORPUS_LIMITS.files, bytes: CORPUS_LIMITS.packageBytes,
-  metadataBytes: CORPUS_LIMITS.packageBytes, timeoutMs: 30000, stderrBytes: 65536 });
+  metadataBytes: CORPUS_LIMITS.packageBytes, timeoutMs: 30000, stderrBytes: 65536, requestTimeoutMs: 300000 });
 export interface ReaderOptions {
   /** May only lower hard limits. A controlled test/maintainer seam, never a policy bypass. */
   readonly limits?: Partial<ReaderLimits> | undefined;
@@ -126,14 +130,26 @@ export async function readPinnedSources(localRepository: string, requestInput: u
   if (request.paths.length > limits.files || request.paths.some(path => Buffer.byteLength(path) > 16384 || path.split('/').length > CORPUS_LIMITS.depth)) {
     return failure([problem('limit.exceeded', '/paths', 'Selected path count, length or depth exceeds limits.')]);
   }
+  const cancellation = new AbortController();
+  const onAbort = () => cancellation.abort(new SourceReaderError('inventory.invalid', 'Source acquisition cancelled.'));
+  options.signal?.addEventListener('abort', onAbort, { once: true });
+  if (options.signal?.aborted) onAbort();
+  const deadline = setTimeout(() => cancellation.abort(new SourceReaderError('limit.exceeded', 'Source request deadline exceeded.')), limits.requestTimeoutMs);
+  const signal = cancellation.signal;
   let total = 0, metadataBytes = 0;
   const metadata = new Map<string, Uint8Array>();
   const get = async (oid: string, kind: 'commit' | 'tree' | 'blob'): Promise<Uint8Array> => {
-    if (options.signal?.aborted) throw new SourceReaderError('inventory.invalid', 'Source acquisition cancelled.');
+    if (signal.aborted) throw signal.reason;
     const cached = metadata.get(oid); if (kind !== 'blob' && cached) return cached;
     const remaining = kind === 'blob' ? limits.bytes - total : limits.metadataBytes - metadataBytes;
-    const response = await run(['cat-file', '--batch'], Buffer.from(`${oid}\n`), { cwd: localRepository,
-      stdoutLimit: remaining + 192, stderrLimit: limits.stderrBytes, timeoutMs: limits.timeoutMs, signal: options.signal });
+    const response = await new Promise<Uint8Array>((resolve, reject) => {
+      const abortRead = () => { signal.removeEventListener('abort', abortRead); reject(signal.reason); };
+      signal.addEventListener('abort', abortRead, { once: true });
+      if (signal.aborted) { signal.removeEventListener('abort', abortRead); reject(signal.reason); return; }
+      Promise.resolve().then(() => run(['cat-file', '--batch'], Buffer.from(`${oid}\n`), { cwd: localRepository,
+        stdoutLimit: remaining + 192, stderrLimit: limits.stderrBytes, timeoutMs: limits.timeoutMs, signal }))
+        .then(resolve, reject).finally(() => signal.removeEventListener('abort', abortRead));
+    });
     if (response.byteLength > remaining + 192) throw new SourceReaderError('limit.exceeded', 'Git response exceeds remaining budget.');
     const bytes = decodeObject(response, oid, kind);
     if (bytes.byteLength > remaining) throw new SourceReaderError('limit.exceeded', 'Acquired objects exceed remaining budget.');
@@ -162,6 +178,9 @@ export async function readPinnedSources(localRepository: string, requestInput: u
       }
     }
     return { ok: true, value: blobs };
-  } catch (error) { return failure([error instanceof SourceReaderError ? problem(error.code, '/acquisition', error.message)
-    : problem('inventory.invalid', '/acquisition', 'Local source acquisition failed.')]); }
+  } catch (error) {
+    const reason: unknown = signal.aborted ? signal.reason : error;
+    return failure([reason instanceof SourceReaderError ? problem(reason.code, '/acquisition', reason.message)
+      : problem('inventory.invalid', '/acquisition', 'Local source acquisition failed.')]);
+  } finally { clearTimeout(deadline); options.signal?.removeEventListener('abort', onAbort); }
 }

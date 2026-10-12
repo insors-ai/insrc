@@ -71,6 +71,8 @@ export function validateOutputLineage(lineageInput: unknown, outputsInput: unkno
     if (!equalSet(record.provenance.sourceRefs, bound.flatMap(binding => binding.sourceIds))) add(path, 'Record sourceRefs must equal its output and specimen contributors.');
     if (!equalSet(record.provenance.modificationNotes, bound.flatMap(binding => binding.modifications))) add(path, 'Record modification notes must retain its output and specimen modifications.');
     if ('sourceIds' in own) {
+      if (record.provenance.authorship === 'inferred' && (!own.inference || own.inference.author !== record.provenance.author
+        || own.inference.rationale !== record.rationale)) add(path, 'Inferred record requires a matching reviewed author and rationale.');
       if (record.provenance.authorship !== own.authorship && !(record.provenance.authorship === 'inferred' && own.authorship === 'derived')) add(path, 'Record authorship disagrees with reviewed output binding.');
     } else if (record.provenance.authorship !== own.authorship || record.provenance.author !== own.author || record.rationale !== own.rationale) {
       add(path, 'Original or inferred record declaration must match its authored provenance and rationale.');

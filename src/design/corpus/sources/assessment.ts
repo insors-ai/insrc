@@ -1,5 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 /** Pure assessment. Re-evaluate reviewed inputs rather than trusting staged labels or formatter success. */
+import { types } from 'node:util';
 import { canonicalJson, candidateContentDigest, CORPUS_LIMITS, hashBytes, releaseContentDigest, reviewContentDigest } from '../canonical.js';
 import { decodeReleaseManifest, sortIssues } from '../contracts.js';
 import type { ReleaseManifest, StageAssessment, ValidationIssue, ValidationResult } from '../contracts.js';
@@ -9,20 +10,48 @@ import { snapshotBlobs, stageSources } from './eligibility.js';
 import type { AcquiredBlob, StagedSources } from './eligibility.js';
 import { classifyPackageFiles, validatePackagedLineage } from './lineage.js';
 import { assembleSourceMetadata } from './notices.js';
-import { failure, problem, snapshotJson } from './validation-primitives.js';
+import { AcquisitionBudget, failure, problem, snapshotJson } from './validation-primitives.js';
 
 export interface SourceAcquisition { readonly request: unknown; readonly blobs: unknown; }
 /** Maintainer-controlled policy and output declarations; repository payloads cannot author these inputs. */
 export interface EligibilityReview { readonly policy: unknown; readonly imports: readonly SourceAcquisition[]; readonly lineage: unknown; }
-export function evaluateSourceImports(review: EligibilityReview): ValidationResult<StagedSources[]> {
+/** Inspect descriptors before accessing values; callers may supply arbitrary runtime data. */
+function reviewSnapshot(input: unknown): ValidationResult<EligibilityReview> {
+  try {
+    const data = (value: unknown, keys: string[]): Record<string, unknown> => {
+      if (!value || typeof value !== 'object' || types.isProxy(value) || Object.getPrototypeOf(value) !== Object.prototype) throw new Error();
+      const descriptors = Object.getOwnPropertyDescriptors(value);
+      if (Reflect.ownKeys(descriptors).length !== keys.length || keys.some(key => !descriptors[key] || !('value' in descriptors[key]!))) throw new Error();
+      return Object.fromEntries(keys.map(key => [key, descriptors[key]!.value]));
+    };
+    const root = data(input, ['policy', 'imports', 'lineage']);
+    const policy = snapshotJson(root['policy']); if (!policy.ok) return policy;
+    const lineage = snapshotJson(root['lineage']); if (!lineage.ok) return lineage;
+    const raw = root['imports'];
+    if (!raw || typeof raw !== 'object' || types.isProxy(raw) || !Array.isArray(raw) || Object.getPrototypeOf(raw) !== Array.prototype) throw new Error();
+    if (raw.length > CORPUS_LIMITS.files) return failure([problem('limit.exceeded', '/imports', 'Import count exceeds limit.')]);
+    const descriptors = Object.getOwnPropertyDescriptors(raw);
+    if (Reflect.ownKeys(descriptors).length !== raw.length + 1) throw new Error();
+    const imports: SourceAcquisition[] = [], budget = new AcquisitionBudget();
+    for (let i = 0; i < raw.length; i++) {
+      const entry = descriptors[String(i)]; if (!entry || !('value' in entry)) throw new Error();
+      const source = data(entry.value, ['request', 'blobs']);
+      const request = snapshotJson(source['request']); if (!request.ok) return request;
+      const blobs = snapshotBlobs(source['blobs']); if (!blobs.ok) return blobs;
+      const charged = budget.charge(blobs.value.length, blobs.value.reduce((sum, blob) => sum + blob.bytes.byteLength, 0));
+      if (!charged.ok) return charged;
+      imports.push({ request: request.value, blobs: blobs.value });
+    }
+    return { ok: true, value: { policy: policy.value, lineage: lineage.value, imports } };
+  } catch { return failure([problem('schema.invalid', '/review', 'Expected plain reviewed source inputs without accessors or proxies.')]); }
+}
+export function evaluateSourceImports(reviewInput: unknown): ValidationResult<StagedSources[]> {
+  const snapshot = reviewSnapshot(reviewInput); if (!snapshot.ok) return snapshot;
+  const review = snapshot.value;
   const policy = decodeSourcePolicy(review.policy); if (!policy.ok) return policy;
-  if (!Array.isArray(review.imports) || review.imports.length > CORPUS_LIMITS.files) return failure([problem('limit.exceeded', '/imports', 'Import count exceeds limit.')]);
-  const stages: StagedSources[] = []; let count = 0, bytes = 0;
+  const stages: StagedSources[] = [];
   for (const input of review.imports) {
-    if (!input || typeof input !== 'object') return failure([problem('schema.invalid', '/imports', 'Expected source acquisition inputs.')]);
     const acquired = snapshotBlobs(input.blobs); if (!acquired.ok) return acquired;
-    count += acquired.value.length; bytes += acquired.value.reduce((sum, blob) => sum + blob.bytes.byteLength, 0);
-    if (count > CORPUS_LIMITS.files || bytes > CORPUS_LIMITS.packageBytes) return failure([problem('limit.exceeded', '/imports', 'Combined acquired inputs exceed limits.')]);
     const stage = stageSources(policy.value, input.request, acquired.value); if (!stage.ok) return stage;
     stages.push(stage.value);
   }
@@ -38,7 +67,7 @@ function structuralCandidate(manifest: ReleaseManifest, files: readonly Acquired
     files: [...files.filter(file => file.path !== manifest.coveragePath), { path: manifest.coveragePath, bytes: coverageBytes }]
       .map(file => ({ ...file, kind: 'regular' as const })) };
 }
-export function assessEligibility(manifestInput: unknown, filesInput: unknown, review: EligibilityReview): ValidationResult<StageAssessment> {
+export function assessEligibility(manifestInput: unknown, filesInput: unknown, reviewInput: unknown): ValidationResult<StageAssessment> {
   const snapshot = snapshotJson(manifestInput); if (!snapshot.ok) return snapshot;
   const decoded = decodeReleaseManifest(snapshot.value); if (!decoded.ok) return decoded;
   const manifest = decoded.value;
@@ -52,6 +81,8 @@ export function assessEligibility(manifestInput: unknown, filesInput: unknown, r
     const files = new Map(copied.value.map(file => [file.path, file]));
     const structural = validateRelease(structuralCandidate(manifest, copied.value));
     if (!structural.ok) return finish(structural.issues);
+    const reviewed = reviewSnapshot(reviewInput); if (!reviewed.ok) return finish(reviewed.issues);
+    const review = reviewed.value;
     const policy = decodeSourcePolicy(review.policy); if (!policy.ok) return finish(policy.issues);
     const stages = evaluateSourceImports(review); if (!stages.ok) return finish(stages.issues);
     // Reconstruct independently from reviewed policy, exact acquisition bytes and the reviewed output descriptor.
@@ -67,12 +98,19 @@ export function assessEligibility(manifestInput: unknown, filesInput: unknown, r
     if (issues.length) return finish(issues);
     const categories = classifyPackageFiles(manifest, stages.value); if (!categories.ok) return finish(categories.issues);
     const outputPaths = new Set(categories.value.filter(file => file.category === 'output').map(file => file.path));
-    const lineageFile = files.get(LINEAGE_PATH)!;
+    const lineageFile = files.get(LINEAGE_PATH);
+    if (!lineageFile) return finish([problem('reference.missing', LINEAGE_PATH, 'Packaged lineage is absent.')]);
     let packaged: unknown;
     try { packaged = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(lineageFile.bytes)); }
     catch { return finish([problem('schema.invalid', LINEAGE_PATH, 'Invalid packaged lineage JSON.')]); }
+    const records = [];
+    for (const record of structural.value.records) {
+      const entry = manifest.records.find(entry => entry.recordId === record.recordId);
+      if (!entry) return finish([problem('reference.missing', '/manifest/records', 'Validated record has no inventory entry.')]);
+      records.push({ path: entry.path, record });
+    }
     const checked = validatePackagedLineage(packaged, review.lineage, copied.value.filter(file => outputPaths.has(file.path)), stages.value,
-      structural.value.records.map(record => ({ path: manifest.records.find(entry => entry.recordId === record.recordId)!.path, record })));
+      records);
     return checked.ok ? finish([]) : finish(checked.issues);
   } catch { return finish([problem('schema.invalid', '/eligibility', 'Expected bounded candidate and reviewed source inputs.')]); }
 }
@@ -81,12 +119,14 @@ export interface EligibilityCandidate {
   readonly manifest: ReleaseManifest; readonly files: AcquiredBlob[]; readonly assessment: StageAssessment;
 }
 /** Assemble a candidate from reviewed output bytes and source acquisitions; never create coverage or publish. */
-export function prepareEligibilityCandidate(manifestInput: unknown, outputsInput: unknown, review: EligibilityReview): ValidationResult<EligibilityCandidate> {
+export function prepareEligibilityCandidate(manifestInput: unknown, outputsInput: unknown, reviewInput: unknown): ValidationResult<EligibilityCandidate> {
   const snapshot = snapshotJson(manifestInput); if (!snapshot.ok) return snapshot;
   const decoded = decodeReleaseManifest(snapshot.value); if (!decoded.ok) return decoded;
   const base = decoded.value;
   const coverage = base.files.filter(file => file.path === base.coveragePath);
   if (coverage.length !== 1) return failure([problem('inventory.invalid', '/manifest/coveragePath', 'Declare exactly one coverage path and media type before staging.')]);
+  const reviewed = reviewSnapshot(reviewInput); if (!reviewed.ok) return reviewed;
+  const review = reviewed.value;
   const output = snapshotBlobs(outputsInput); if (!output.ok) return output;
   const policy = decodeSourcePolicy(review.policy); if (!policy.ok) return policy;
   const stages = evaluateSourceImports(review); if (!stages.ok) return stages;

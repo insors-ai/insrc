@@ -10,6 +10,7 @@ export function profileDecision(policy: SourcePolicy, profile: ReviewedProfile |
   if (profile.decision === 'excluded') return { status: 'excluded', reason: profile.reason };
   const category = policy.categories.find(item => item.id === profile.category);
   if (profile.decision !== 'eligible' || !profile.termsResolved || !profile.reviewedBy.trim() || !category
+    || !category.conditions.length || !profile.conditions.length
     || !profile.licenseIds.length || !profile.licenseEvidence.length || !profile.attribution.length
     || profile.licenseIds.some(id => !category.licenseIds.includes(id))
     || category.conditions.some(condition => !profile.conditions.includes(condition))) {

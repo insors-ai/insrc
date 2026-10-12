@@ -1,9 +1,9 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hashBytes, candidateContentDigest } from '../../canonical.js';
+import { hashBytes, candidateContentDigest, CORPUS_LIMITS } from '../../canonical.js';
 import { checkPublication } from '../../validate.js';
-import { assessEligibility, prepareEligibilityCandidate } from '../assessment.js';
+import { assessEligibility, evaluateSourceImports, prepareEligibilityCandidate } from '../assessment.js';
 import { assessmentFixture, finalizeFixture } from './assessment-fixtures.js';
 function passed(f: ReturnType<typeof assessmentFixture>) { const result = assessEligibility(f.manifest, f.files, f.review); return result.ok && result.value.passed; }
 function resealFile(f: ReturnType<typeof assessmentFixture>, path: string, bytes: Uint8Array) {
@@ -47,5 +47,25 @@ test('acyclic-staging assesses before coverage finalization and rejects missing 
     const failure = assessEligibility(bad.manifest, bad.files, bad.review); assert.equal(failure.ok, false);
     assert.equal('value' in failure, false);
   }
+  let invoked = 0;
+  const accessor = { ...f.review }; Object.defineProperty(accessor, 'policy', { get() { invoked++; throw new Error('getter'); } });
+  const importAccessor = { ...f.review, imports: [{ get request() { invoked++; throw new Error('getter'); }, blobs: [] }] };
+  const proxy = new Proxy({}, { get() { invoked++; throw new Error('proxy'); }, ownKeys() { invoked++; throw new Error('proxy'); } });
+  for (const invalid of [null, undefined, accessor, importAccessor, proxy, { ...f.review, imports: [proxy] }, { ...f.review, imports: new Array(1) }]) {
+    assert.equal(prepareEligibilityCandidate(f.manifest, [], invalid).ok, false);
+    assert.equal(evaluateSourceImports(invalid).ok, false);
+    const assessed = assessEligibility(f.manifest, f.files, invalid); assert.equal(assessed.ok && assessed.value.passed, false);
+  }
+  assert.equal(invoked, 0);
+  const tooMany = evaluateSourceImports({ ...f.review, imports: Array.from({ length: CORPUS_LIMITS.files + 1 }, () => ({ request: {}, blobs: [] })) });
+  assert.equal(tooMany.ok, false);
+  const countBlobs = Array.from({ length: CORPUS_LIMITS.files / 2 + 1 }, (_, i) => ({ path: `f${i}`, bytes: new Uint8Array() }));
+  const count = evaluateSourceImports({ ...f.review, imports: [{ request: {}, blobs: countBlobs }, { request: {}, blobs: countBlobs }] });
+  assert.equal(!count.ok && count.issues[0]!.code, 'limit.exceeded');
+  const bytes = evaluateSourceImports({ ...f.review, imports: [
+    { request: {}, blobs: [{ path: 'large', bytes: new Uint8Array(CORPUS_LIMITS.packageBytes) }] },
+    { request: {}, blobs: [{ path: 'extra', bytes: new Uint8Array(1) }] },
+  ] });
+  assert.equal(!bytes.ok && bytes.issues[0]!.code, 'limit.exceeded');
   const original = assessmentFixture(false); assert.equal(passed(original), true);
 });

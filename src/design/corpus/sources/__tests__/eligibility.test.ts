@@ -43,6 +43,12 @@ test('mixed-eligibility propagates stale evidence without rejecting independent 
   assert.deepEqual(reordered, r2);
 });
 test('mixed-eligibility requires explicit font and compound-license decisions', () => {
+  const empty = sourceFixture();
+  empty.policy.categories[0]!.id = 'font'; empty.policy.categories[0]!.conditions = [];
+  for (const profile of empty.policy.profiles) { profile.category = 'font'; profile.conditions = []; }
+  const decision = stageSources(empty.policy, empty.request, empty.blobs);
+  assert.equal(decision.ok && decision.value.report.admitted.length, 0);
+
   for (const category of ['font', 'compound']) {
     const f = sourceFixture(); const profile = f.policy.profiles[0]!;
     profile.category = category; profile.licenseIds = category === 'font' ? ['OFL-1.1'] : ['MIT OR Apache-2.0'];

@@ -32,7 +32,8 @@ export const SOURCE_POLICY_SCHEMA = object({ schemaVersion: Type.Literal(1), pol
 export const OUTPUT_BINDING_SCHEMA = object({ path: text(), digest: DIGEST_SCHEMA,
   authorship: Type.Union([Type.Literal('imported'), Type.Literal('derived')]),
   sourceIds: Type.Array(sourceId, { minItems: 1, maxItems: CORPUS_LIMITS.files, uniqueItems: true }),
-  transformation: text(), modifications: strings(), reviewedBy: text() });
+  transformation: text(), modifications: strings(), reviewedBy: text(),
+  inference: Type.Optional(object({ author: text(), rationale: text() })) });
 export const ORIGINAL_OUTPUT_SCHEMA = object({ path: text(), digest: DIGEST_SCHEMA,
   authorship: Type.Union([Type.Literal('original'), Type.Literal('inferred')]), author: text(), rationale: text() });
 export const LINEAGE_SCHEMA = object({ schemaVersion: Type.Literal(1),

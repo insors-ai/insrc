@@ -10,15 +10,15 @@ import { requiredSourcePaths } from '../eligibility.js';
 import { sourceFixture } from './fixtures.js';
 import { gitFixture } from './git-fixtures.js';
 
-function processFixture(behavior: 'hang' | 'exit' | 'spawn' | 'stdout' | 'stderr' | 'stream') {
+function processFixture(behavior: 'hang' | 'exit' | 'spawn' | 'stdout' | 'stderr' | 'stream' | 'no-close' | 'error-no-close') {
   const child = Object.assign(new EventEmitter(), { stdin: new PassThrough(), stdout: new PassThrough(), stderr: new PassThrough(), killed: 0,
-    kill() { this.killed++; queueMicrotask(() => this.emit('close', null)); return true; } });
+    kill() { this.killed++; if (!['no-close', 'error-no-close'].includes(behavior)) queueMicrotask(() => this.emit('close', null)); return true; } });
   const spawnFake = (() => {
     child.stdin.once('finish', () => queueMicrotask(() => {
       if (behavior === 'stdout') child.stdout.write(Buffer.alloc(257));
       if (behavior === 'stderr') child.stderr.write(Buffer.alloc(257));
       if (behavior === 'stream') child.stdout.emit('error', new Error('private payload'));
-      if (behavior === 'spawn') child.emit('error', new Error('private payload'));
+      if (behavior === 'spawn' || behavior === 'error-no-close') child.emit('error', new Error('private payload'));
       if (behavior === 'exit' || behavior === 'spawn') child.emit('close', 1);
     }));
     return child;
@@ -42,10 +42,14 @@ test('reader-safety bounds aggregate source and shared evidence bytes and counts
     if (required.ok) { assert.equal(required.value.filter(p => p === 'LICENSE').length, 1); assert.equal(required.value.length, 4); }
     assert.equal((await readPinnedSources(f.dir, { ...f.request, paths: Array.from({ length: 10001 }, (_, i) => `f${i}`) }, { run })).ok, false);
     assert.equal(calls, 0);
+    const closure = sourceFixture();
+    closure.policy.profiles[0]!.licenseEvidence = Array.from({ length: 10000 }, (_, i) => ({ path: `e${i}`, digest: 'a'.repeat(64) }));
+    const overflow = requiredSourcePaths(closure.policy, { ...closure.request, paths: ['good.txt'] });
+    assert.equal(!overflow.ok && overflow.issues[0]!.code, 'limit.exceeded');
   } finally { f.dispose(); }
 });
 test('reader-safety cancels timed-out aborted and failed children without admitted bytes', async () => {
-  for (const behavior of ['hang', 'exit', 'spawn', 'stream'] as const) {
+  for (const behavior of ['hang', 'exit', 'spawn', 'stream', 'no-close', 'error-no-close'] as const) {
     const f = processFixture(behavior), abort = new AbortController();
     await assert.rejects(f.run(['cat-file', '--batch'], new Uint8Array(), { ...options, signal: abort.signal }), error => {
       assert.ok(error instanceof Error); assert.ok(!error.message.includes('private payload')); return true;
@@ -58,6 +62,13 @@ test('reader-safety cancels timed-out aborted and failed children without admitt
   abort.abort(); await assert.rejects(pending, /cancelled/); assert.equal(f.child.killed, 1); assert.equal(getEventListeners(abort.signal, 'abort').length, 0);
   const git = gitFixture();
   try {
+    let internal: AbortSignal | undefined;
+    const external = new AbortController();
+    const stalled: BinaryGitRunner = async (_args, _input, options) => { internal = options.signal; return new Promise(() => {}); };
+    const timed = await readPinnedSources(git.dir, git.request, { run: stalled, signal: external.signal, limits: { requestTimeoutMs: 10 } });
+    assert.equal(timed.ok, false); assert.equal(!timed.ok && timed.issues[0]!.code, 'limit.exceeded');
+    assert.equal(getEventListeners(external.signal, 'abort').length, 0);
+    assert.ok(internal?.aborted); assert.equal(getEventListeners(internal!, 'abort').length, 0);
     const failed = processFixture('exit'); const result = await readPinnedSources(git.dir, git.request, { run: failed.run });
     assert.equal(result.ok, false); assert.equal('value' in result, false);
   } finally { git.dispose(); }

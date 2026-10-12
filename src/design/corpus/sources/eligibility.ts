@@ -35,7 +35,9 @@ export function requiredSourcePaths(policy: SourcePolicy, request: SourceRequest
     if (paths.size > CORPUS_LIMITS.files) return failure([problem('limit.exceeded', '/paths', 'Evidence closure exceeds file limit.')]);
     const profile = profiles.get(queue[i]!);
     for (const ref of [...(profile?.licenseEvidence ?? []), ...(profile?.noticeEvidence ?? [])]) {
-      if (!paths.has(ref.path)) { paths.add(ref.path); queue.push(ref.path); }
+      if (!paths.has(ref.path)) { paths.add(ref.path);
+        if (paths.size > CORPUS_LIMITS.files) return failure([problem('limit.exceeded', '/paths', 'Evidence closure exceeds file limit.')]);
+        queue.push(ref.path); }
     }
   }
   const result = [...paths].sort(compareText), issues = pathIssues(result, '/paths');
@@ -111,11 +113,9 @@ export function stageSources(policyInput: unknown, requestInput: unknown, acquir
     else if (decision.status === 'excluded') report.excluded.push({ path, reason: decision.reason });
     else report.unresolved.push(path);
   }
-  const included = new Set(report.admitted), queue = [...included];
-  for (let i = 0; i < queue.length; i++) for (const ref of [...profiles.get(queue[i]!)!.licenseEvidence, ...profiles.get(queue[i]!)!.noticeEvidence]) {
-    if (!included.has(ref.path)) { included.add(ref.path); queue.push(ref.path); }
-  }
-  const admitted = [...included].sort(compareText).map(path => {
+  const included = requiredSourcePaths(policy, { ...request, paths: report.admitted });
+  if (!included.ok) return included;
+  const admitted = included.value.map(path => {
     const profile = profiles.get(path)!, source: SourceFile = {
       sourceId: sourceIdentity(request.repositoryUrl, request.revision, path), repositoryUrl: request.repositoryUrl, revision: request.revision,
       path, digest: profile.digest, licenseIds: [...profile.licenseIds], licenseTextRefs: [...new Set(profile.licenseEvidence.map(ref => evidencePath(ref.digest)))].sort(compareText),

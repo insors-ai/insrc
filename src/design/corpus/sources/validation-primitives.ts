@@ -47,3 +47,16 @@ export function pathIssues(paths: readonly string[], prefix = ''): ValidationIss
   }
   return issues;
 }
+
+/** Shared aggregate acquisition bound; count preflight and byte acquisition may be charged separately. */
+export class AcquisitionBudget {
+  private count = 0;
+  private bytes = 0;
+  constructor(private readonly maxFiles: number = CORPUS_LIMITS.files, private readonly maxBytes: number = CORPUS_LIMITS.packageBytes) {}
+  get remainingBytes(): number { return this.maxBytes - this.bytes; }
+  charge(count: number, bytes: number): ValidationResult<true> {
+    this.count += count; this.bytes += bytes;
+    return this.count > this.maxFiles || this.bytes > this.maxBytes
+      ? failure([problem('limit.exceeded', '/imports', 'Combined acquired inputs exceed limits.')]) : { ok: true, value: true };
+  }
+}

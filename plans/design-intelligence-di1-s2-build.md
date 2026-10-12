@@ -85,3 +85,15 @@ Final focused corpus result: **58 passed, zero failures/skips** under Node 22.23
 Final full sweep: 5,373 executed tests, 5,231 passed, 14 failures, 125 skipped, three todo. Failures are the known SQLite overflow, the same 12 unrelated daemon/MCP/review SIGABRT files, and a DaemonSection async-render timing failure. The isolated DaemonSection rerun passed all 11 tests. No full-suite pass is claimed. Full source test/build evidence and the exact failed test list are in the final verification file. Code-review and explicit BUILD approval are still pending.
 
 T008 daemon validation passed all acceptance checks and mapped acceptance/isolation tests; it independently inspected the durable 58-test/build evidence. All eight S002 tasks have passed their insrc gates. T008 commit: `693088dc`. Independent code-review is next; BUILD is not yet approved.
+
+## Initial daemon review and corrections
+
+Independent daemon review `cr-1791783446612-au7dme` returned WARN (0 HIGH, 5 MED, 8 LOW), with degraded graph grounding. Its unmodified result is archived in `plans/reviews/design-intelligence-di1-s2-initial-code-review.json`.
+
+Corrected the three MED code findings: child errors/timeouts now settle once and clean up without depending on a close event; all public assessment paths snapshot reviewed fields without invoking getters/proxies; each pinned-source request has a five-minute deadline in addition to the 30-second child limit. Tests exercise no-close errors/timeouts, a stalled runner, listener cleanup and hostile review inputs.
+
+Corrected actionable LOW findings: inferred records with derived bindings require matching reviewed author/rationale; categories/profiles must explicitly record conditions; missing record/lineage lookups return precise issues; admitted and requested evidence use one closure walk; I/O staging and pure assessment share aggregate-budget accounting. Added direct aggregate count/byte and closure-overflow regressions. The closure limit is now checked at insertion, though the previous dynamic queue loop would also visit newly appended items: the original review's claim that the final insertion escaped checking was not reproduced.
+
+Retained the approved LLD choice to mirror S001's private path/date primitives with public-behavior parity tests. Exporting S001 internals to remove that duplication would change the approved boundary.
+
+The two MED coverage findings are evidence caveats: BUILD/TESTS records exist on disk and all task gates passed, but the review grounding omitted BUILD and its test rerun was denied. The named smoke promise says **full corpus regression suite**, not full repository suite, and is reported via the supported smoke-test protocol. The focused corpus suite/build pass; the documented broader failures remain unresolved. We have not overridden the review verdict or claimed a full-repository pass. Review-fix evidence is in `plans/reviews/design-intelligence-di1-s2-review-fixes-verification.txt`.

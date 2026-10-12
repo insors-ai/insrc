@@ -64,6 +64,13 @@ test('lineage-closure rejects unbound specimens inconsistent provenance and stal
   assert.equal(validateOutputLineage(f.lineage, [f.output], [f.stage], [{ path: f.output.path, record }]).ok, true);
 });
 test('lineage-closure requires explicit original and inferred output declarations', () => {
+  const derived = fixture();
+  const inferred = { ...recordFixture(), examples: [], rationale: 'Reviewed inference', provenance: { authorship: 'inferred' as const,
+    author: 'Author', sourceRefs: derived.lineage.bindings[0]!.sourceIds, modificationNotes: ['Combined fixtures'] } };
+  const check = () => validateOutputLineage(derived.lineage, [derived.output], [derived.stage], [{ path: derived.output.path, record: inferred }]);
+  assert.equal(check().ok, false);
+  derived.lineage.bindings[0]!.inference = { author: 'Other', rationale: inferred.rationale }; assert.equal(check().ok, false);
+  derived.lineage.bindings[0]!.inference.author = 'Author'; assert.equal(check().ok, true);
   for (const authorship of ['original', 'inferred'] as const) {
     const record = { ...recordFixture(), examples: [], rationale: 'Independently authored fixture', provenance: { authorship, author: 'Author', sourceRefs: [], modificationNotes: [] } };
     const output = { path: 'record.json', bytes: makeBytes(JSON.stringify(record)) };

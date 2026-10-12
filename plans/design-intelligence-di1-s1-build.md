@@ -14,7 +14,9 @@ The user approved the S001 PLAN. All six tasks passed their insrc validation gat
 
 Task commits: `a8fbd5b8`, `26634ca9`, `a03cbac1`, `25c394f9`, `90971c1f`, `bdbb7267`. Review fixes: `5d835fcb`.
 
-## Verification
+## Historical verification before digest correction
+
+Counts below belong to earlier commits and are superseded by the final 33-test result in the digest-correction section. The 24-test entry precedes the snapshot regressions that raised the suite to 27; the digest correction raised it to 33. No tests were removed.
 
 - All six insrc task gates: PASS, including daemon-run mapped tests and strict typecheck.
 - `npm run build`: PASS ([saved build log](reviews/design-intelligence-di1-s1-build.log)).
@@ -94,3 +96,13 @@ Independent Python canonicalization/hash recomputation preserved the record gold
 Fresh code review was requested through insrc, with the committed change range and no dirty-source substitution. The daemon waited for its stale index, then failed because its Claude CLI session quota was exhausted (reported reset: 1:40 a.m. Kolkata). No fresh review was recorded. The previous CR does not certify these corrections, and BUILD is not approved or complete. A Codex-provider alternative was offered to the user; no provider settings have been changed.
 
 S002 design has started through the eight-step design.story workflow. Its draft LLD covers reviewed file-level policy, bounded local pinned Git extraction, source-to-output lineage and deterministic notices. It remains unreviewed/unapproved, with no S002 implementation or real source imports.
+
+
+### Fresh independent review retry — 12 October 2026
+
+After quota became available, Claude Opus in the insrc daemon completed S001 code review: WARN, 0 HIGH / 4 MED / 4 LOW. Grounding is degraded because the index stayed stale. Three MED coverage findings report that the review context omitted BUILD evidence and usable hunks; they are not failing tests or identified digest defects. The actual daemon-run task checks remain in BUILD/TESTS, and the final test/build output is preserved in [durable verification evidence](reviews/design-intelligence-di1-s1-digest-verification.txt). The review's MED stale-roadmap finding is corrected in the program roadmap. Historical counts above are now explicitly marked as superseded. The HTML/Markdown PRD parity concern is retained as a LOW maintenance observation; neither PRD was changed in this correction.
+
+This records the review faithfully; it does not convert WARN to PASS, claim the missing graph evidence exists, or approve BUILD. S001 completion remains a separate user approval gate.
+
+
+S002's subsequent independent design review found two MED ambiguities (private-helper reuse and digest-mismatch failure scope) plus one LOW path-grammar clarification. The LLD now specifies local primitives with S001 behavioral parity tests, per-file unresolved outcomes for stale reviewed digests, request failure for acquisition-integrity errors, and pre-I/O rejection of any explicitly selected non-portable path. All three were corrected and resolved through the framework: effective PASS, no override/deferral, no approval.

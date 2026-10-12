@@ -24,7 +24,212 @@
     "hldBaseRunId": "wf-1791738717329-ylatwv",
     "hldEffectiveHash": "a20e4da9408dfea954d2ef18bb08b0d7eaad28b1155c8f8eead228779aaf2088",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers DEF s2 ac1 (only eligible files admitted from a mixed source; exact revisions, attribution and modifications kept) and ac2 (notices for an exported release carry the required license and attribution records), and builds nothing outside sc3.",
+          "evidence": "DEF-7e0ae92e8f3d3c3e.json:472-490: ac1 'a source with eligible and unknown-license files … only eligible files are admitted and their exact revisions, attribution and modifications are retained'; ac2 'all included third-party material has the required license and attribution records'. The LLD's ImportReport and the reviewed-policy design (§3.2, §3.4) cover ac1. The deterministic notices and the reconstruction check (§3.5) cover ac2. The ImportReport postcondition rules out publication, catalog writes and IPC/MCP surfaces. [files: .insrc/artifacts/DEF-7e0ae92e8f3d3c3e.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc3 interface shapes (SourceFile, SourceManifest, ImportReport) match the approved HLD sketch exactly.",
+          "evidence": "HLD-7e0ae92e8f3d3c3e.json:283 interfaceSketch is identical field-for-field to LLD §2.1, including eligibility 'eligible' | 'excluded' | 'unresolved', policyVersion and schemaVersion: 1. [files: .insrc/artifacts/HLD-7e0ae92e8f3d3c3e.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Existing git revParse returns short hashes, and shell-helper decodes output as UTF-8 text, so neither can be used to pin a commit or preserve binary bytes.",
+          "evidence": "helpers.ts:40-42 runs `git rev-parse --short`. shell-helper.ts:89-92 does `stdout += chunk.toString('utf8')` and silently drops bytes past maxBytes (it only sets a stdoutTruncated flag). Both points the design makes are correct. [files: src/daemon/tools/builtins/git/helpers.ts, src/daemon/tools/shell-helper.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "candidateContentDigest returns '' unless the coverage path appears exactly once. It also excludes the coverage file's digest and reviewDigest, so eligibility can be bound before the coverage envelope is finalized.",
+          "evidence": "canonical.ts:96-106: `if (coverage.length !== 1) return ''`, then it deletes releaseId, reviewDigest and coverage[0].digest before hashing. The manifest needs a coverage entry with a path and mediaType, but its bytes and the reviewDigest value do not affect the candidate digest. Source-manifest, notices and lineage file digests do stay in the hash. This confirms the §3.5 assembly order and the 'noncomputable digest → failure' handling. [files: src/design/corpus/canonical.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "checkPublication requires exactly one eligibility assessment, bound to the current candidateContentDigest, with passed=true and no issues.",
+          "evidence": "validate.ts:337-345 requires exactly one assessment per stage. It flags assessment.stale when the digest does not match and assessment.failed when !passed or issues is non-empty. STAGE_ASSESSMENT_SCHEMA (contracts.ts:57-60) requires DIGEST_SCHEMA for candidateContentDigest, so an empty digest cannot even be decoded. That justifies the design's 'do not construct a StageAssessment with an empty digest'. [files: src/design/corpus/validate.ts, src/design/corpus/contracts.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "S002 reuses S001's 'portable path rules and NFC/case collision comparisons' and UTC ISO validation (for retrievedAt) as existing helpers.",
+          "evidence": "validate.ts:16 exports `isPortablePath`, but `pathCollisionKey` (validate.ts:20, `path.normalize('NFC').toLowerCase()`) and `utcDate` (validate.ts:21) are module-private `const`/`function` with no export. index.ts re-exports only exported symbols. To reuse them as written, S002 must either add exports to S001's validate.ts, which touches the S001 surface the design says it leaves unchanged, or duplicate the logic, which risks drifting from S001's collision and timestamp rules. [files: src/design/corpus/validate.ts, src/design/corpus/index.ts]",
+          "action": "State in §3.1 whether S002 adds `pathCollisionKey`/`utcDate` exports to src/design/corpus/validate.ts (and list that as a change site) or duplicates them with a parity test against S001 behaviour.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The ValidationIssue codes the error paths use (provenance.incomplete, reference.missing, digest.mismatch, path.invalid, inventory.invalid, limit.exceeded) already exist in S001, so no S001 schema change is needed.",
+          "evidence": "contracts.ts:53-55 ISSUE_CODES includes all six codes. [files: src/design/corpus/contracts.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S001 safety limits of <=10,000 files and <=64 MiB exist for reuse.",
+          "evidence": "canonical.ts:5 `CORPUS_LIMITS = { recordBytes: 1 MiB, packageBytes: 64 MiB, files: 10_000, depth: 64 }`, exported. [files: src/design/corpus/canonical.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "New sources/* modules can be added without changing S001's public barrel, and the Git reader stays out of the pure src/design/corpus/index.ts.",
+          "evidence": "index.ts re-exports only contracts/canonical/validate. module-isolation.test.ts:11-56 compiles the corpus and imports out/design/corpus/index.js with fs/net/child_process forbidden, so a pure-boundary smoke test already has a template to extend. The design names a separate entry for git-reader.ts. [files: src/design/corpus/index.ts, src/design/corpus/__tests__/module-isolation.test.ts]",
+          "action": "None. Make sure the pure-boundary test also covers the new pure sources entry (eligibility/notices), not just index.js.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Lineage stored as a separate file (sources/lineage.json) listed in manifest.files is covered by candidate hashing, and S001's release validation accepts it without schema change.",
+          "evidence": "canonical.ts:96-105 hashes every manifest.files entry (path, digest, mediaType) except the coverage digest. validate.ts:193-207 accepts any declared regular file and treats files that are neither records nor sourceManifest/notices/coverage as contentPaths. An extra lineage file therefore validates and is bound by the digest. The manifest has no lineagePath field, so S002 has to find it at the fixed path, as the design states. [files: src/design/corpus/canonical.ts, src/design/corpus/validate.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Package paths derived from upstream repository paths can be validated with S001's portable path rule.",
+          "evidence": "isPortablePath (validate.ts:16-19) rejects '\\\\', '%', ':' and control characters. Real upstream paths can contain '%' or ':', and the design applies the S001 rule to SourceFile.path. This rejects them as path.invalid rather than marking them unresolved, which fits 'unsafe paths → abort request'. However, one such path aborts the whole mixed import. I could not tell from the design whether that is intended (§5 makes the unsafe-path case request-level) or whether such files should be reported per file. [files: src/design/corpus/validate.ts]",
+          "action": "Clarify whether a non-portable upstream path fails the whole request or only that file.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S002 does no catalog/package installation (S004), coverage (S003/sc4) or publication (S005). It produces only the 'eligibility' stage and does not change sc1/sc2.",
+          "evidence": "HLD:274-282 sc3 is ownedByStory s2. The LLD keeps staging in memory ('durable catalog/package installation remains S004'), emits stage='eligibility' only, and says 'No changes to S001 public schema'. S001's LLD (LLD-…-s1.json:414) defines a dependency-inverted assessment input for downstream eligibility, which this matches. The only boundary pressure is the unexported-helper issue raised under new-versus-reuse. [files: .insrc/artifacts/HLD-7e0ae92e8f3d3c3e.json, .insrc/artifacts/LLD-7e0ae92e8f3d3c3e-s1.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Each failure is detectable and its handling is stated consistently. In particular, a digest mismatch is handled the same way across the error-path list.",
+          "evidence": "§5 case 1 says 'mismatched evidence digests' → mark the path unresolved (per file, other files still admitted). §5 case 3 says 'mismatched source bytes' → 'Request-level ValidationResult failure … no partial admitted result'. §3.3 also fails the whole request on 'digest mismatch'. With ac1 (DEF:475-477) requiring a mixed source to still admit eligible files, an implementer cannot tell whether a stale reviewed-profile digest for one file should abort the whole import or leave that file unresolved. The two choices give different ImportReports and different test expectations. [files: .insrc/artifacts/DEF-7e0ae92e8f3d3c3e.json]",
+          "action": "Define one rule: for example, a stale profile digest for one file → that file unresolved, while a Git object or framing integrity failure → request-level failure. Align §3.3, §5 and the mixed-eligibility and reader-safety tests with it.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion maps to concrete tests, and the existing test framework is node:test plus node:assert/strict via tsx.",
+          "evidence": "The acceptance mapping table maps ac1 to source-schema, mixed-eligibility, pinned-reader and others, and ac2 to notice-closure, lineage-closure, candidate-roundtrip and others. The existing corpus tests use `import { test } from 'node:test'; import assert from 'node:assert/strict'` (module-isolation.test.ts:2-3), matching the stated framework. [files: src/design/corpus/__tests__/module-isolation.test.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 12,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-12T04:32:22.374Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "new-versus-reuse.1": {
+        "findingId": "new-versus-reuse.1",
+        "status": "resolved",
+        "note": "Specified S002-local collision/timestamp primitives and parity matrix against S001 public behavior; only isPortablePath is reused as an export. No S001 surface change.",
+        "resolvedAt": "2026-10-12T04:35:01.268Z"
+      },
+      "error-paths.1": {
+        "findingId": "error-paths.1",
+        "status": "resolved",
+        "note": "Aligned acquisition and eligibility: stale reviewed file/evidence digests yield per-file unresolved outcomes propagated to dependents; Git acquisition-integrity failures abort the request. Updated data model, error paths and test subjects.",
+        "resolvedAt": "2026-10-12T04:35:01.272Z"
+      },
+      "data-compatibility.2": {
+        "findingId": "data-compatibility.2",
+        "status": "resolved",
+        "note": "Made strict v1 selected-path grammar explicit: any requested non-portable path aborts before I/O, while unselected paths have no effect. Added edge case and reader-safety test requirement.",
+        "resolvedAt": "2026-10-12T04:35:01.273Z"
+      }
+    }
   },
   "body": {
     "summary": {
@@ -228,7 +433,7 @@
         "entity": "sc3 closed schemas and source identities",
         "change": "new",
         "callSites": [],
-        "details": "Proposed src/design/corpus/sources/contracts.ts defines exact sc3 runtime TypeBox schemas with Static-derived types, reusing S001 digest/issue primitives. SourceFile.sourceId uniquely names one repositoryUrl/revision/path tuple within a release; use a stable namespaced lowercase identifier derived from SHA-256 of canonical tuple, and reject duplicate IDs or inconsistent tuples. revision is a full Git commit OID (40 or 64 lowercase hex), digest is raw blob SHA-256; retrievedAt is validated UTC ISO supplied by the caller, not wall-clock-generated. path and all distributed evidence refs use S001 portable path rules and NFC/case collision comparisons. Reference-only source links are not SourceFile admission records. GuidanceRecord.provenance.sourceRefs resolves exactly to sourceId entries for imported/derived material; no URL guessing or source-ID aliases. [[c2]] [[c3]]"
+        "details": "Proposed src/design/corpus/sources/contracts.ts defines exact sc3 runtime TypeBox schemas with Static-derived types, reusing S001 digest/issue primitives. SourceFile.sourceId uniquely names one repositoryUrl/revision/path tuple within a release; use a stable namespaced lowercase identifier derived from SHA-256 of canonical tuple, and reject duplicate IDs or inconsistent tuples. revision is a full Git commit OID (40 or 64 lowercase hex), digest is raw blob SHA-256; retrievedAt is validated UTC ISO supplied by the caller, not wall-clock-generated. path and all distributed evidence refs use S001 portable path rules and NFC/case collision comparisons. Reference-only source links are not SourceFile admission records. GuidanceRecord.provenance.sourceRefs resolves exactly to sourceId entries for imported/derived material; no URL guessing or source-ID aliases. [[c2]] [[c3]] Reuse only the exported isPortablePath helper. pathCollisionKey and utcDate are private in S001; S002 will implement small local equivalents in sources/validation-primitives.ts, with behavioral parity tests against S001 public validators. Collision equivalence is NFC normalization followed by toLowerCase; timestamps accept only real UTC calendar instants whose ISO round-trip exactly matches YYYY-MM-DDTHH:mm:ss[.sss]Z. No exports or code changes in S001 validate.ts/index.ts are proposed. The parity matrix includes NFC-equivalent paths, case collisions, C0/C1 characters, leap days, impossible dates, fractional-second precision and offsets. [[c3]]"
       },
       {
         "entity": "Reviewed source policy v1",
@@ -240,13 +445,13 @@
         "entity": "Bounded pinned local source adapter",
         "change": "new",
         "callSites": [],
-        "details": "Proposed sources/git-reader.ts is a separate I/O entry, never re-exported by the pure src/design/corpus/index.ts. Acquire only from a caller-supplied existing local Git repository; no clone/fetch or worktree reads. Verify full supplied OID identifies a commit, enumerate exact literal selected tree paths, reject symlink/submodule/non-blob entries, then read blobs at that commit. Dirty worktree changes cannot affect bytes. Use shell:false argv, literal path matching, fixed read-only Git subcommands, disable replacement objects and lazy fetching, exclude inherited Git command/config overrides, and bound stdout/stderr/time and abort children; never silently truncate. Existing shell-helper emits decoded text and git revParse emits short hashes, so do not use them for byte preservation/pinning. The internal injectable reader returns copied Uint8Array blobs plus verified object kind/path/commit for pure tests. Enforce <=10,000 selected files and <=64 MiB aggregate staged bytes using S001 safety limits, <=30 seconds per child, and fail the request without admitted bytes on truncation, timeout, absent OID/path, digest mismatch, malformed output or cancellation. Git LFS pointers and submodules stay unresolved unless a future approved adapter supplies verified content; never follow them or trigger filters. Staging is an in-memory result; durable catalog/package installation remains S004. [[c3]] [[c5]]"
+        "details": "Proposed sources/git-reader.ts is a separate I/O entry, never re-exported by the pure src/design/corpus/index.ts. Acquire only from a caller-supplied existing local Git repository; no clone/fetch or worktree reads. Verify full supplied OID identifies a commit, enumerate exact literal selected tree paths, reject symlink/submodule/non-blob entries, then read blobs at that commit. Dirty worktree changes cannot affect bytes. Use shell:false argv, literal path matching, fixed read-only Git subcommands, disable replacement objects and lazy fetching, exclude inherited Git command/config overrides, and bound stdout/stderr/time and abort children; never silently truncate. Existing shell-helper emits decoded text and git revParse emits short hashes, so do not use them for byte preservation/pinning. The internal injectable reader returns copied Uint8Array blobs plus verified object kind/path/commit for pure tests. Enforce <=10,000 selected files and <=64 MiB aggregate staged bytes using S001 safety limits, <=30 seconds per child, and fail the request without admitted bytes on truncation, timeout, absent OID/path, Git object/framing integrity failure, malformed output or cancellation. Git LFS pointers and submodules stay unresolved unless a future approved adapter supplies verified content; never follow them or trigger filters. Staging is an in-memory result; durable catalog/package installation remains S004. [[c3]] [[c5]] Distinguish verified acquisition from profile eligibility: successfully acquired blob bytes that differ from a reviewed profile digest make only that file unresolved; no bytes from it or from dependents requiring its evidence are admitted. An invalid Git object/type/framing or inconsistent acquisition result aborts the request. Validate explicitly requested upstream paths before I/O: any non-portable requested path (including percent or colon) aborts the entire request with path.invalid, rather than silently skipping it. Unselected upstream paths are not enumerated for admission and cannot invalidate the request. This strict v1 request grammar is separate from mixed license eligibility. [[c2]]"
       },
       {
         "entity": "Eligibility and source-to-output lineage",
         "change": "new",
         "callSites": [],
-        "details": "Proposed sources/eligibility.ts accepts detached reviewed descriptors, policy, acquired blobs and the candidate's records/file inventory. Separate staging decisions from candidate assessment: evaluate every exact requested file against the profile and evidence digests, return mixed ImportReport plus only admitted copied bytes. A rejected/unresolved source cannot be referenced by included records or outputs. Internal output bindings map each included third-party package path and digest to nonempty sourceIds, transformation identifier and explicit modification notes; imported byte copies require equality to upstream digest, derived bytes require their own digest and recorded transformations/reviewer rather than a false equality assertion. Bindings are serialized within a separate deterministic lineage JSON file listed in the manifest, so candidate hashing covers them without changing sc3; its fixed package path is sources/lineage.json and schema version 1. Records' sourceRefs and modificationNotes must agree with bindings; shared specimens union all contributing sources. Original and independently inferred records identify author/rationale and cannot silently wrap unbound third-party assets. A missing binding for any non-original specimen/output fails provenance.incomplete. Require explicit original-output declarations with author and rationale in the same lineage file for package content with no upstream sources; metadata/evidence files use their own explicit categories. Closure includes license and notice evidence, their raw digests and attribution; no dependency is admitted on repository reputation. [[c2]] [[c3]]"
+        "details": "Proposed sources/eligibility.ts accepts detached reviewed descriptors, policy, acquired blobs and the candidate's records/file inventory. Separate staging decisions from candidate assessment: evaluate every exact requested file against the profile and evidence digests, return mixed ImportReport plus only admitted copied bytes. A rejected/unresolved source cannot be referenced by included records or outputs. Internal output bindings map each included third-party package path and digest to nonempty sourceIds, transformation identifier and explicit modification notes; imported byte copies require equality to upstream digest, derived bytes require their own digest and recorded transformations/reviewer rather than a false equality assertion. Bindings are serialized within a separate deterministic lineage JSON file listed in the manifest, so candidate hashing covers them without changing sc3; its fixed package path is sources/lineage.json and schema version 1. Records' sourceRefs and modificationNotes must agree with bindings; shared specimens union all contributing sources. Original and independently inferred records identify author/rationale and cannot silently wrap unbound third-party assets. A missing binding for any non-original specimen/output fails provenance.incomplete. Require explicit original-output declarations with author and rationale in the same lineage file for package content with no upstream sources; metadata/evidence files use their own explicit categories. Closure includes license and notice evidence, their raw digests and attribution; no dependency is admitted on repository reputation. [[c2]] [[c3]] A stale file or license/notice evidence profile digest is a per-file unresolved eligibility result, propagated to every requested file depending on that evidence; other independently eligible files still appear in admitted. No stale bytes are distributed. Acquisition-integrity failures remain request-level as specified by the reader. [[c2]]"
       },
       {
         "entity": "Deterministic notices and eligibility composition",
@@ -276,8 +481,8 @@
       "errorCases": [
         {
           "scenario": "Unknown, absent or conflicting file terms",
-          "detection": "Resolve exact file profile and policy category; detect absent review, unsupported expressions and mismatched evidence digests.",
-          "response": "Mark path unresolved, stage no affected bytes; provenance.incomplete for candidate references.",
+          "detection": "Resolve the exact file profile and policy category; detect absent review, unsupported expressions, and SHA-256 disagreement between successfully acquired bytes and reviewed file or evidence profiles.",
+          "response": "Mark the affected path and every requested dependent of stale evidence unresolved; admit no affected bytes. Other independently eligible files may be admitted. Candidate references to unresolved material fail provenance.incomplete.",
           "userImpact": "Maintainer must supply a reviewed file-specific decision.",
           "recoverable": true
         },
@@ -289,16 +494,16 @@
           "recoverable": true
         },
         {
-          "scenario": "Missing or moving revision, mismatched source bytes",
-          "detection": "Verify full commit type, tree/blob identity and SHA-256 against reviewed descriptor before staging.",
-          "response": "Request-level ValidationResult failure with digest.mismatch or reference.missing; no partial admitted result.",
+          "scenario": "Missing pinned revision/path or Git acquisition-integrity failure",
+          "detection": "Verify full commit type, exact tree/blob identity and complete binary framing; distinguish an invalid/inconsistent acquisition result from valid bytes that merely differ from a stale reviewed profile.",
+          "response": "Request-level ValidationResult failure with digest.mismatch, inventory.invalid or reference.missing; no admitted result. A reviewed-profile digest mismatch after successful acquisition instead follows the per-file unresolved rule.",
           "userImpact": "Re-pin and review the intended revision.",
           "recoverable": true
         },
         {
           "scenario": "Unsafe paths, duplicate IDs, symlinks/submodules or limit excess",
           "detection": "Apply portable path and NFC/case collision checks, unique sourceId tuple checks, tree modes and incremental byte/time bounds.",
-          "response": "path.invalid, inventory.invalid, reference.missing or limit.exceeded; abort request and release subprocess/resources.",
+          "response": "path.invalid, inventory.invalid, reference.missing or limit.exceeded; abort request and release subprocess/resources. Any explicitly requested non-portable upstream path, including percent/colon, aborts the entire request before I/O; unselected paths have no effect.",
           "userImpact": "Correct the input; no traversal, lazy fetch, filters or truncated output.",
           "recoverable": true
         },
@@ -359,6 +564,14 @@
         {
           "input": "Coverage envelope not yet finalized",
           "expected": "The manifest already declares coverage path/mediaType; eligibility binds non-cyclic content and does not require S003 editorial completion."
+        },
+        {
+          "input": "One successfully read file differs from its reviewed digest",
+          "expected": "That file and dependents of its stale evidence are unresolved; other independently eligible files are admitted. Git object/framing integrity failure instead aborts the whole request."
+        },
+        {
+          "input": "An explicitly requested upstream path contains percent or colon",
+          "expected": "Reject the entire request as path.invalid before I/O under the strict v1 grammar. The same path elsewhere in the unselected repository has no effect."
         }
       ],
       "invariantsToPreserve": [
@@ -388,8 +601,9 @@
           "purpose": "Prove sc3 schema and file-level reviewed policy without Git or real third-party content.",
           "subjects": [
             "source-schema: exact sc3 round-trip, strict unknown fields, unique IDs, full revisions and portable evidence refs",
-            "mixed-eligibility: eligible/unknown/conflicting/excluded files, expression and font-profile handling, no label-only admission",
-            "lineage-closure: multi-source derived outputs, original declarations, record sourceRefs and modifications, no unbound specimens"
+            "mixed-eligibility: eligible/unknown/conflicting/excluded files, expression and font-profile handling, no label-only admission; stale file/evidence profiles remain per-file unresolved and propagate to dependents",
+            "lineage-closure: multi-source derived outputs, original declarations, record sourceRefs and modifications, no unbound specimens",
+            "validation-parity: local collision/timestamp primitives match S001 public-validator behavior on the shared adversarial matrix without exporting private S001 helpers"
           ],
           "fixturesNeeded": [
             "Independently authored text/binary files with synthetic reviewed policy descriptors; labels represent test decisions, not legal assertions."
@@ -412,7 +626,7 @@
           "purpose": "Prove pinned extraction with temporary local repositories and a controlled process seam.",
           "subjects": [
             "pinned-reader: exact commit bytes despite dirty worktree/branch movement; binary round-trip and missing revision/path",
-            "reader-safety: symlink/submodule/LFS rejection, unsafe paths, collisions, byte/count/time limits, cancellation and subprocess failure with no admitted bytes",
+            "reader-safety: symlink/submodule/LFS rejection, unsafe paths, collisions, byte/count/time limits, cancellation and subprocess failure with no admitted bytes; acquisition-integrity failures abort the request, and any selected non-portable path fails before I/O while unselected paths do not",
             "candidate-roundtrip: mixed source staging through source manifest/notices/lineage and S001 preflight, with complete exported inventory"
           ],
           "fixturesNeeded": [

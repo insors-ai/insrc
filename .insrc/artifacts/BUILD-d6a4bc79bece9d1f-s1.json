@@ -7,7 +7,8 @@
     "updatedAt": "2026-10-10T16:38:46.117Z",
     "authoredBy": "controller",
     "standalone": true,
-    "approvedAt": "2026-10-10T16:38:47.248Z"
+    "approvedAt": "2026-10-10T16:38:47.248Z",
+    "epicSlug": "vs-code-plugin-chat-panel-concurrent"
   },
   "body": {
     "tasks": [

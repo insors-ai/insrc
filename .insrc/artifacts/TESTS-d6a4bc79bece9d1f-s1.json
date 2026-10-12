@@ -5,7 +5,8 @@
     "storyId": "s1",
     "createdAt": "2026-10-10T15:41:15.706Z",
     "updatedAt": "2026-10-10T16:03:41.079Z",
-    "standalone": true
+    "standalone": true,
+    "epicSlug": "vs-code-plugin-chat-panel-concurrent"
   },
   "body": {
     "tasks": [

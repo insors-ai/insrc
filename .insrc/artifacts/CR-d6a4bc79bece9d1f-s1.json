@@ -10,7 +10,9 @@
     "schemaVersion": 1,
     "epicHash": "d6a4bc79bece9d1f",
     "storyId": "s1",
-    "reviewedBy": "daemon"
+    "reviewedBy": "daemon",
+    "epicSlug": "vs-code-plugin-chat-panel-concurrent",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

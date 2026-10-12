@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -169,3 +169,36 @@ Run at 2026-10-12T09:21:45.177Z on commit `923ae9c7`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` | 0 | 20 | 0.3 s |  |
+
+## t6
+
+Run at 2026-10-12T09:50:22.245Z on commit `5ef06e69`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**integration: over a real temporary directory with two store instances on one session: each appends, then the first saves its held object twice more with a get between; the rows file holds every row of both, was never replaced, and a torn last line written by hand is dropped and cut back**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | over a real temporary directory with two store instances on one session: each appends, then the first saves its held object twice more with a get between; the rows file holds every row of both, was never replaced, and a torn last line written by hand is dropped and cut back | `vscode-plugin/src/chat/__tests__/session-file-store.integration.test.ts` |
+
+**integration: the chat panel run over the file store: a turn's saves append only that turn's rows, a restored session shows the same rows, and a failing save is logged without breaking the turn**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the chat panel run over the file store: a turn's saves append only that turn's rows, a restored session shows the same rows, and a failing save is logged without breaking the turn | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: a session the migration kept in globalState keeps its output files through the start-up sweep**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a session the migration kept in globalState keeps its output files through the start-up sweep | `vscode-plugin/src/chat/__tests__/session-file-store.integration.test.ts` |
+
+**smoke: after installing the build and reloading the window, the three existing chats open with their history, ~/.insrc/chat-sessions holds a head and a rows file for each, and the extension's value in state.vscdb no longer holds the sessions**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: The user reloaded the window and reported in chat on 2026-10-12, after being asked to confirm the three chats are listed and open with their history: 'the 3 chats show'. The builder did not see the panel. Files and state were checked by a script whose output is /tmp/insrc-validate-output/chat-migration-check.txt: ~/.insrc/chat-sessions holds a head and a rows file for each of the three chats; the first 5,674 / 3,741 / 3,242 rows of each rows file equal the copy in ~/.insrc/backups/state.vscdb.before-chat-session-files-20261012 and the head titles match; the live row of state.vscdb (select value from ItemTable where key='insors.insrc-vscode') is 57 bytes with the single key insrc.daemonSelfUpdate.lastSeenPluginVersion, and no row of ItemTable has a value mentioning insrc.chat.session. A text search of the state.vscdb file still finds the old keys: those are unvacuumed free pages of the SQLite file, not the live row.
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 136 | 2 s |  |
+| `vscode-plugin/src/chat/__tests__/session-file-store.integration.test.ts` | 0 | 2 | 0.3 s |  |

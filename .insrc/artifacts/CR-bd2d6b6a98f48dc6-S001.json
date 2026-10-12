@@ -9,7 +9,9 @@
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "bd2d6b6a98f48dc6",
-    "storyId": "S001"
+    "storyId": "S001",
+    "epicSlug": "dev-chat-header-session-dropdown-reads",
+    "standalone": true
   },
   "body": {
     "kind": "code-review",

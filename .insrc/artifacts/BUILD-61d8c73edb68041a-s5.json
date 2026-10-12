@@ -6,7 +6,8 @@
     "storyId": "s5",
     "createdAt": "2026-09-17T17:39:58.599Z",
     "updatedAt": "2026-09-17T17:39:58.599Z",
-    "approvedAt": "2026-09-17T17:43:23.035Z"
+    "approvedAt": "2026-09-17T17:43:23.035Z",
+    "epicSlug": "integrate-insrc-framework-into-jetbrains-ide"
   },
   "body": {
     "tasks": [

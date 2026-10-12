@@ -21,6 +21,7 @@ import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode }
 // S001 (bugfix): classifyPermissionDenial is the pure classifier that tells a tool-permission gate
 // apart from a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial, type ProviderRegistry, type ProviderId } from './cli-adapter.js';
+import { createApprovalQueue, type ApprovalResolution } from './approval-queue.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type TurnSink } from './turn-lifecycle.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
@@ -157,13 +158,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // Normalize a session's stored mode (optional/back-compat/corrupt -> 'manual').
   const modeOf = (s: ChatSession | undefined): PermissionMode =>
     s !== undefined && (s.mode === 'edit-auto' || s.mode === 'auto' || s.mode === 'manual') ? s.mode : 'manual';
-  // S001 (bugfix): pending review-mode permission requests, requestId -> the request's grant facts.
-  // Populated when a turn surfaces an approval-request (claude's `system/permission_denied`, which
-  // also ENDS the turn). `toolName` is the tool to pre-allow; `command` (when present) is the exact
-  // command to name in the grant re-run; `blockKind` tells a tool-permission gate (Approve re-runs
-  // with the tool pre-allowed) apart from a working-dir / sandbox-allowlist block (Approve cannot
-  // grant a directory — it posts an informational message instead). Cleared on decision.
-  const pendingPerms = new Map<string, { toolName: string; command?: string; blockKind: 'tool-gate' | 'dir-block' }>();
+  // ISSUE-6a811b8a: the approval queue. Every approval-request a turn raises is queued here and
+  // only the oldest undecided one (the head) is shown as an actionable card; the next is shown once
+  // it is decided. Each request keeps the facts its decision needs: `toolName` (the tool to
+  // pre-allow), `command` (the exact command to name in the grant re-run), `blockKind` (a
+  // tool-permission gate apart from a working-dir / sandbox-allowlist block, which Approve cannot
+  // grant) and `resolution` (a turn that ended on refusal, or the running turn).
+  const approvals = createApprovalQueue();
+  // The requestId of the head card the webview is showing (posted once) and the total it shows.
+  let shownApproval: string | undefined;
+  let shownTotal = 0;
   // S004 (dev-chat ux polish): pending selection requests, requestId -> the widget's options.
   // Populated when a turn surfaces a selection-request (parsed from an `insrc:select` marker),
   // consumed by a selection-decision to map the chosen ids back to labels. Cleared on decision.
@@ -220,6 +224,87 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
   };
 
+  // ISSUE-6a811b8a: where a request is answered. The adapters set it; a request without it is
+  // routed as before the field existed (a request naming a tool was a claude refusal that ended
+  // the turn; any other was answered inside the turn).
+  const resolutionOf = (ev: Extract<TurnEvent, { kind: 'approval-request' }>): ApprovalResolution =>
+    ev.resolution ?? (typeof ev.toolName === 'string' && ev.toolName !== '' ? 'turn-ended' : 'in-turn');
+
+  // ISSUE-6a811b8a: post the queue head as the actionable card, once per request.
+  const showApprovalHead = (): void => {
+    const head = approvals.head();
+    if (head === undefined) {
+      shownApproval = undefined;
+      return;
+    }
+    if (shownApproval === head.request.requestId) {
+      // Requests joined the queue behind the shown card: update its count in place, never a second card.
+      if (head.total !== shownTotal) {
+        shownTotal = head.total;
+        post({ type: 'approval-position', requestId: head.request.requestId, position: head.position, total: head.total });
+      }
+      return;
+    }
+    shownApproval = head.request.requestId;
+    shownTotal = head.total;
+    const r = head.request;
+    post({
+      type: 'turn-event',
+      event: {
+        kind: 'approval-request',
+        turnId: r.turnId,
+        requestId: r.requestId,
+        title: r.title,
+        detail: r.detail,
+        ...(r.toolName !== undefined ? { toolName: r.toolName } : {}),
+        ...(r.command !== undefined ? { command: r.command } : {}),
+        resolution: r.resolution,
+        ...(head.total > 1 ? { position: head.position, total: head.total } : {}),
+      },
+    });
+  };
+
+  // ISSUE-6a811b8a: queue a raised approval-request (instead of posting it) and show the head.
+  const enqueueApproval = (ev: Extract<TurnEvent, { kind: 'approval-request' }>): void => {
+    approvals.enqueue({
+      requestId: ev.requestId,
+      turnId: ev.turnId,
+      title: ev.title,
+      detail: ev.detail,
+      ...(typeof ev.toolName === 'string' && ev.toolName !== '' ? { toolName: ev.toolName } : {}),
+      ...(ev.command !== undefined && ev.command !== '' ? { command: ev.command } : {}),
+      blockKind: classifyPermissionDenial(ev.detail),
+      resolution: resolutionOf(ev),
+    });
+    showApprovalHead();
+  };
+
+  // ISSUE-6a811b8a: Stop. Each request still waiting is recorded as rejected, and the queue cleared.
+  const rejectQueuedApprovals = (): void => {
+    shownApproval = undefined;
+    for (const r of approvals.clear()) recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
+  };
+
+  // ISSUE-6a811b8a: a chat switch or the panel closing. The waiting cards were live-only, so the
+  // queue is dropped without outcome rows.
+  const dropQueuedApprovals = (): void => {
+    shownApproval = undefined;
+    approvals.clear();
+  };
+
+  // A provider that answers in-turn (control-protocol / codex): relay the decision to the LIVE
+  // turn's captured adapter (its own provider, never the current session's — it may have
+  // switched). decide() no-ops on an unknown/stale/dead requestId, so a late click is safe.
+  const relayDecision = (requestId: string, decision: 'approve' | 'deny'): void => {
+    const live = turns.live;
+    if (live === undefined) return;
+    try {
+      deps.providers.get(live.provider).decide(live.turnId, requestId, decision);
+    } catch {
+      /* adapter gone / provider unavailable — the decision is undeliverable, never throw */
+    }
+  };
+
   // S004 (dev-chat ux polish): record a resolved selection. Mirrors recordPermissionOutcome — emit
   // it LIVE as a turn-event the webview renders via the registry (a resolved chip), AND persist it
   // STRUCTURALLY as a role:'selection-outcome' transcript row (+ save) so a restored session shows the
@@ -247,7 +332,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const followLiveTurn = (s: ChatSession): void =>
     turns.follow(s, {
       onEvent: (ev) => {
-        if (!disposed && session === s) post({ type: 'turn-event', event: ev });
+        // ISSUE-6a811b8a: a followed turn's approval requests go through the queue like a live one's.
+        if (!disposed && session === s) {
+          if (ev.kind === 'approval-request') enqueueApproval(ev);
+          else post({ type: 'turn-event', event: ev });
+          if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
+        }
         appendEvent(s, ev);
       },
       onEnd: () => {
@@ -645,18 +735,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (governor !== undefined) await governor.beginTurn({ mode: 'auto', cwd: deps.cwd() });
       },
       onEvent: (ev) => {
-        post({ type: 'turn-event', event: ev });
+        // ISSUE-6a811b8a: an approval-request is queued, not posted; only the queue head is shown.
+        if (ev.kind === 'approval-request') enqueueApproval(ev);
+        else post({ type: 'turn-event', event: ev });
         appendEvent(s, ev);
-        // S001 (bugfix): remember what an approval card is asking about, so Approve can re-run the
-        // blocked action concretely (the exact command / tool pre-allowed) — and so a working-dir
-        // block is branched away from the tool-grant path (classifyPermissionDenial).
-        if (ev.kind === 'approval-request' && typeof ev.toolName === 'string' && ev.toolName !== '') {
-          pendingPerms.set(ev.requestId, {
-            toolName: ev.toolName,
-            ...(ev.command !== undefined && ev.command !== '' ? { command: ev.command } : {}),
-            blockKind: classifyPermissionDenial(ev.detail),
-          });
-        }
+        // ISSUE-6a811b8a: the turn's end lets its batch of turn-ended requests complete.
+        if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
         // S004 (dev-chat ux polish): remember a surfaced selection request's options (keyed by
         // requestId) so a later selection-decision can map the chosen ids back to labels.
         if (ev.kind === 'selection-request') {
@@ -734,6 +818,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       case 'cancel-turn':
         // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.
         // Idempotent when no turn is active (stop() no-ops).
+        rejectQueuedApprovals(); // ISSUE-6a811b8a: Stop rejects the requests still waiting
         void turns.stop();
         return;
       case 'new-chat': {
@@ -748,6 +833,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // would paint into the newly-restored session's view (a session-file turn keeps running).
         void turns.detach();
         turns.invalidate();
+        dropQueuedApprovals(); // ISSUE-6a811b8a: a chat switch drops the waiting requests
         // A DRAFT (unsaved): the new chat is not written to history until its first turn, so
         // repeatedly starting/abandoning new chats never leaves empty sessions behind.
         session = deps.store.draft(msg.provider);
@@ -768,6 +854,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         }
         void turns.detach();
         turns.invalidate();
+        dropQueuedApprovals(); // ISSUE-6a811b8a: a chat switch drops the waiting requests
         session = s;
         permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
         post({ type: 'session-restored', sessionId: s.id, transcript: s.transcript, mode: permissionMode });
@@ -800,12 +887,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // request (no in-turn control channel), so the decision can't be relayed to a live turn —
         // instead, on Approve we re-run the blocked action resuming the session with that tool
         // pre-allowed; on Deny we drop it (the turn already ended as denied).
-        const pending = pendingPerms.get(msg.requestId);
-        if (pending !== undefined) {
-          pendingPerms.delete(msg.requestId);
+        // ISSUE-6a811b8a: a queued request is decided only when it is the head; a waiting one's card
+        // is never shown, so a decision for it (a stale or second webview) is ignored.
+        if (approvals.has(msg.requestId)) {
+          const res = approvals.decide(msg.requestId, msg.decision);
+          if (!res.ok) return;
+          shownApproval = undefined;
+          const decided = res.decided;
           // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
           // live-rendered chip — including the dir-block approve branch, which posts no grant re-run.
-          recordPermissionOutcome(pending.toolName, msg.decision === 'approve', msg.requestId);
+          recordPermissionOutcome(decided.toolName ?? decided.title, msg.decision === 'approve', msg.requestId);
+          if (decided.resolution === 'in-turn') {
+            relayDecision(msg.requestId, msg.decision);
+            showApprovalHead();
+            return;
+          }
+          const pending = { toolName: decided.toolName ?? 'tool', command: decided.command, blockKind: decided.blockKind };
           if (msg.decision === 'approve') {
             if (pending.blockKind === 'dir-block') {
               // A working-dir / sandbox-allowlist block: --allowedTools cannot grant a directory,
@@ -836,17 +933,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
               void runTurn(`Approved: please proceed with the ${pending.toolName} action you requested permission for.`, [pending.toolName], { suppressEcho: true });
             }
           }
+          showApprovalHead();
           return;
         }
-        // Otherwise a provider that DOES answer in-turn (control-protocol / codex): relay to the
-        // LIVE turn's captured adapter. decide() no-ops on an unknown/stale/dead requestId.
-        const live = turns.live;
-        if (live === undefined) return;
-        try {
-          deps.providers.get(live.provider).decide(live.turnId, msg.requestId, msg.decision);
-        } catch {
-          /* adapter gone / provider unavailable — the decision is undeliverable, never throw */
-        }
+        // Otherwise an id the host does not hold: relay to the LIVE turn's captured adapter, as
+        // before. decide() no-ops on an unknown/stale/dead requestId.
+        relayDecision(msg.requestId, msg.decision);
         return;
       }
       case 'set-permission-mode': {
@@ -903,6 +995,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     channel = ch;
     channel.onDidDispose(() => {
       void turns.detach();
+      dropQueuedApprovals();
       disposed = true;
       channel = undefined;
     });
@@ -936,6 +1029,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     },
     dispose(): void {
       void turns.detach();
+      dropQueuedApprovals();
       disposed = true;
       channel?.dispose();
       channel = undefined;

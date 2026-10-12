@@ -68,6 +68,8 @@ export type HostToWebview =
   | { readonly type: 'session-restored'; readonly sessionId: string; readonly transcript: TranscriptEntry[]; readonly mode?: PermissionMode }
   | { readonly type: 'history-list'; readonly chats: ChatSummary[] }
   | { readonly type: 'edit-prompt'; readonly path: string; readonly diff: UnifiedDiff; readonly review?: boolean }
+  // ISSUE-6a811b8a: the shown approval card's place in the queue changed ('1 of N'); update it in place.
+  | { readonly type: 'approval-position'; readonly requestId: string; readonly position: number; readonly total: number }
   | { readonly type: 'docs-list'; readonly artifacts: DocsArtifactSummary[] }
   // S007: one pending artifact's rendered body for the docs-review pane (additive).
   // `commentable` (optional; default true) hides request-changes for artifact kinds the

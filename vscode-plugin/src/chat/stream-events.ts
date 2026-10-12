@@ -106,6 +106,12 @@ export type TurnEvent =
        * (control protocol, codex). Set by the mapper that raised it; absent reads as 'in-turn'.
        */
       readonly resolution?: 'turn-ended' | 'in-turn';
+      /**
+       * ISSUE-6a811b8a: set by the chat host only, when it posts the request as the actionable
+       * card: its place in the approval queue ('1 of N'). Absent on adapter events.
+       */
+      readonly position?: number;
+      readonly total?: number;
     }
   | {
       /**

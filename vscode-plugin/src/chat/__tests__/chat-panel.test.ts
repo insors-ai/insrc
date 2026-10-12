@@ -1950,11 +1950,11 @@ test('S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-bl
   assert.equal((outD[0] as { decision: string }).decision, 'rejected');
 });
 
-test('S001 (bugfix): a stale/idless permission-decision (no pendingPerms entry) falls through to adapter.decide (codex/in-turn relay unchanged)', async () => {
+test('S001 (bugfix): an in-turn request is relayed to adapter.decide (codex/in-turn relay); an id the host does not hold still falls through', async () => {
   const fc = fakeChannel();
   const decided: Array<[string, string, string]> = [];
-  // An approval-request WITHOUT a toolName is never added to pendingPerms, so a decision for it
-  // falls through to the live turn's adapter.decide() — the codex / in-turn control-protocol path.
+  // An approval-request WITHOUT a toolName (and no resolution) is answered inside the running turn:
+  // its decision is relayed to the live turn's adapter.decide() — the codex / control-protocol path.
   const evs: TurnEvent[] = [
     { kind: 'status', turnId: 't9', phase: 'tool' },
     { kind: 'approval-request', turnId: 't9', requestId: 'perm-9', title: 'Run', detail: 'echo hi' },
@@ -1966,15 +1966,23 @@ test('S001 (bugfix): a stale/idless permission-decision (no pendingPerms entry) 
     store: createInMemoryChatSessionStore(),
     cwd: () => '/repo',
   });
-  host.open();
-  fc.send(env('submit-turn', { text: 'do it' }));
-  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
-  fc.send(env('permission-decision', { requestId: 'perm-9', decision: 'approve' }));
-  await waitFor(() => decided.length >= 1);
-  assert.deepEqual(decided[0], ['t9', 'perm-9', 'approve'], 'fell through to the live adapter.decide relay (unchanged)');
-  // S003 (ux polish): a stale/no-pending decision records NO outcome (nothing to resolve).
-  assert.ok(!turnEvents(fc).some((e) => e.kind === 'permission-outcome'), 'no outcome recorded for a fall-through decision');
-  fc.fireDispose(); // reap the hanging turn so the test process can exit
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'do it' }));
+    await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
+    fc.send(env('permission-decision', { requestId: 'perm-9', decision: 'approve' }));
+    await waitFor(() => decided.length >= 1);
+    assert.deepEqual(decided[0], ['t9', 'perm-9', 'approve'], 'relayed to the live adapter.decide');
+    // ISSUE-6a811b8a: a decided request records exactly one outcome, whichever path answers it.
+    assert.equal(turnEvents(fc).filter((e) => e.kind === 'permission-outcome').length, 1, 'one outcome for the decided request');
+    // An id the host does not hold (stale card, another window) still falls through, with no outcome.
+    fc.send(env('permission-decision', { requestId: 'perm-unknown', decision: 'deny' }));
+    await waitFor(() => decided.length >= 2);
+    assert.deepEqual(decided[1], ['t9', 'perm-unknown', 'deny'], 'an unknown id falls through to decide()');
+    assert.equal(turnEvents(fc).filter((e) => e.kind === 'permission-outcome').length, 1, 'no outcome for a fall-through decision');
+  } finally {
+    fc.fireDispose(); // reap the hanging turn so the test process can exit
+  }
 });
 
 // ---- S003 (dev-chat ux polish) ac2/ac3/ac4: permission-outcome record + suppressed grant echo ----
@@ -2791,4 +2799,98 @@ test('a failing edit-governor call is logged, never an unhandled rejection', asy
   } finally {
     process.off('unhandledRejection', onUnhandled);
   }
+});
+
+// ---- ISSUE-6a811b8a: approval requests are asked one at a time --------------------
+
+/** A claude refusal that ended the turn, as the adapter raises it. */
+const refused = (requestId: string, toolName: string, turnId = 't1', extra: Partial<Extract<TurnEvent, { kind: 'approval-request' }>> = {}): TurnEvent => ({
+  kind: 'approval-request', turnId, requestId, title: `Permission: ${toolName}`, detail: `${toolName} needs your permission`, toolName, resolution: 'turn-ended', ...extra,
+});
+const approvalCards = (fc: FakeChannel): Array<Extract<TurnEvent, { kind: 'approval-request' }>> =>
+  turnEvents(fc).filter((e): e is Extract<TurnEvent, { kind: 'approval-request' }> => e.kind === 'approval-request');
+const outcomes = (fc: FakeChannel): Array<Extract<TurnEvent, { kind: 'permission-outcome' }>> =>
+  turnEvents(fc).filter((e): e is Extract<TurnEvent, { kind: 'permission-outcome' }> => e.kind === 'permission-outcome');
+
+test("three requests in one turn: only the first card is posted (with '1 of 3')", async () => {
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [refused('r1', 'Edit'), refused('r2', 'Write'), refused('r3', 'Bash'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit three files' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const cards = approvalCards(fc);
+  assert.equal(cards.length, 1, 'one actionable card, not three');
+  assert.equal(cards[0]!.requestId, 'r1', 'the oldest request');
+  // Posted when the first request arrived; the count follows as the others queue behind it.
+  const positions = fc.posted.filter((m) => m.payload.type === 'approval-position').map((m) => m.payload);
+  const last = positions[positions.length - 1];
+  assert.deepEqual([last?.['requestId'], last?.['position'], last?.['total']], ['r1', 1, 3], "shown as '1 of 3'");
+});
+
+test('a turn followed after reload routes its approval-requests through the queue and its end ends the batch', async () => {
+  const { store, id } = storeWithLiveTurn(1);
+  const { adapter, requests } = resumeAdapter([refused('f1', 'Edit'), refused('f2', 'Write'), { kind: 'done', turnId: 't1', ok: true }]);
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 2, isAlive: (pid) => pid === 2 });
+  host.open();
+  fc.send(env('open-chat', { chatId: id }));
+  await waitFor(() => requests.length === 1);
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['f1'], 'only the first of the followed turn\'s requests is shown');
+  fc.send(env('permission-decision', { requestId: 'f2', decision: 'deny' }));
+  assert.equal(outcomes(fc).length, 0, 'the waiting request cannot be decided early');
+  fc.send(env('permission-decision', { requestId: 'f1', decision: 'deny' }));
+  assert.deepEqual(approvalCards(fc).map((c) => c.requestId), ['f1', 'f2'], 'the second is shown once the first is decided');
+});
+
+test('Stop with requests queued records each as rejected and clears the queue', async () => {
+  const fc = fakeChannel();
+  const decided: string[] = [];
+  const evs: TurnEvent[] = [refused('s1', 'Edit'), refused('s2', 'Bash')];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { hang: true, onDecide: (_t, r) => decided.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'do two things' }));
+    await waitFor(() => approvalCards(fc).length === 1);
+    fc.send(env('cancel-turn'));
+    assert.deepEqual(outcomes(fc).map((o) => [o.toolName, o.decision]), [['Edit', 'rejected'], ['Bash', 'rejected']], 'each waiting request is recorded as rejected');
+    fc.send(env('permission-decision', { requestId: 's1', decision: 'approve' }));
+    assert.equal(outcomes(fc).length, 2, 'a cleared request is no longer decided by the queue');
+  } finally {
+    fc.fireDispose();
+  }
+
+  // A chat switch drops the queue without outcome rows (the cards were live-only).
+  const fc2 = fakeChannel();
+  const host2 = createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: scriptedAdapter([refused('d1', 'Edit'), refused('d2', 'Bash')], { hang: true }) }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
+  try {
+    host2.open();
+    fc2.send(env('submit-turn', { text: 'do two things' }));
+    await waitFor(() => approvalCards(fc2).length === 1);
+    fc2.send(env('new-chat', { provider: 'claude' }));
+    assert.equal(outcomes(fc2).length, 0, 'no outcome rows for a dropped queue');
+  } finally {
+    fc2.fireDispose();
+  }
+});
+
+test("outcome rows: one role:'permission-outcome' row per decision, in decision order, and no approval-request rows (restore shows only chips)", async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [refused('o1', 'Edit'), refused('o2', 'Write'), refused('o3', 'Bash'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }];
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: scriptedAdapter(evs) }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit three files' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  for (const id of ['o1', 'o2', 'o3']) fc.send(env('permission-decision', { requestId: id, decision: 'deny' }));
+  const saved = store.get(store.list()[0]!.id)!;
+  const rows = saved.transcript.filter((r) => r.role === 'permission-outcome') as Array<{ toolName: string; decision: string }>;
+  assert.deepEqual(rows.map((r) => [r.toolName, r.decision]), [['Edit', 'rejected'], ['Write', 'rejected'], ['Bash', 'rejected']], 'one row per decision, in order');
+  assert.ok(!saved.transcript.some((r) => (r as { role: string }).role === 'approval-request'), 'no approval-request rows');
 });

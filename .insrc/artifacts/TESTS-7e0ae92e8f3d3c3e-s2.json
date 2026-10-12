@@ -4,7 +4,7 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T05:08:05.626Z"
+    "updatedAt": "2026-10-12T05:11:55.474Z"
   },
   "body": {
     "tasks": [
@@ -298,6 +298,76 @@
               },
               {
                 "title": "reader-safety rejects truncated or oversized stdout and stderr without leaks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "5c5ced74",
+        "ranAt": "2026-10-12T05:11:55.474Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "lineage-closure retains every source and transformation for derived outputs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/lineage.test.ts",
+                "title": "lineage-closure retains every source and transformation for derived outputs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "lineage-closure rejects unbound specimens inconsistent provenance and stale outputs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/lineage.test.ts",
+                "title": "lineage-closure rejects unbound specimens inconsistent provenance and stale outputs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "lineage-closure requires explicit original and inferred output declarations",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/lineage.test.ts",
+                "title": "lineage-closure requires explicit original and inferred output declarations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/sources/__tests__/lineage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 535,
+            "titles": [
+              {
+                "title": "lineage-closure retains every source and transformation for derived outputs",
+                "result": "pass"
+              },
+              {
+                "title": "lineage-closure rejects unbound specimens inconsistent provenance and stale outputs",
+                "result": "pass"
+              },
+              {
+                "title": "lineage-closure requires explicit original and inferred output declarations",
                 "result": "pass"
               }
             ],

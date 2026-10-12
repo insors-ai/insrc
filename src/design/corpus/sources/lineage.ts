@@ -1,11 +1,12 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { canonicalJson, CORPUS_LIMITS, hashBytes } from '../canonical.js';
-import type { GuidanceRecord, ValidationIssue, ValidationResult } from '../contracts.js';
-import { decodeLineage, decodeSourceManifest } from './contracts.js';
+import { decodeReleaseManifest } from '../contracts.js';
+import type { GuidanceRecord, ReleaseManifest, ValidationIssue, ValidationResult } from '../contracts.js';
+import { decodeLineage, decodeSourceManifest, LINEAGE_PATH } from './contracts.js';
 import type { Lineage } from './contracts.js';
-import { snapshotBlobs } from './eligibility.js';
+import { snapshotBlobs, evidencePath } from './eligibility.js';
 import type { AdmittedSource, StagedSources } from './eligibility.js';
-import { compareText, failure, problem } from './validation-primitives.js';
+import { compareText, failure, pathCollisionKey, pathIssues, problem, snapshotJson } from './validation-primitives.js';
 
 const sorted = (values: readonly string[]): string[] => [...new Set(values)].sort(compareText);
 const equalSet = (a: readonly string[], b: readonly string[]): boolean => JSON.stringify(sorted(a)) === JSON.stringify(sorted(b));
@@ -35,7 +36,7 @@ export function canonicalLineage(lineage: Lineage): Lineage {
 }
 export const lineageBytes = (lineage: Lineage): Uint8Array => Buffer.from(canonicalJson(canonicalLineage(lineage), CORPUS_LIMITS.packageBytes));
 export interface RecordOutput { readonly path: string; readonly record: GuidanceRecord; }
-/** Caller partitions metadata/evidence separately; every remaining output must be declared here. */
+/** Validate reviewed output declarations; use classifyPackageFiles for the explicit package partition. */
 export function validateOutputLineage(lineageInput: unknown, outputsInput: unknown, stages: readonly StagedSources[], records: readonly RecordOutput[] = []): ValidationResult<Lineage> {
   const decoded = decodeLineage(lineageInput); if (!decoded.ok) return decoded;
   const outputs = snapshotBlobs(outputsInput); if (!outputs.ok) return outputs;
@@ -76,4 +77,68 @@ export function validateOutputLineage(lineageInput: unknown, outputsInput: unkno
     }
   }
   return issues.length ? failure(issues) : { ok: true, value: canonicalLineage(lineage) };
+}
+
+export type PackageClassification =
+  | { path: string; category: 'metadata'; role: 'source-manifest' | 'notices' | 'coverage' | 'lineage' }
+  | { path: string; category: 'evidence'; sourceIds: string[] }
+  | { path: string; category: 'output' };
+/** Classification is derived from manifest roles and admitted evidence, never an output's self-label. */
+export function classifyPackageFiles(manifest: ReleaseManifest, stages: readonly StagedSources[]): ValidationResult<PackageClassification[]> {
+  const collected = collectSources(stages); if (!collected.ok) return collected;
+  const roles = [
+    [manifest.sourceManifestPath, 'source-manifest'], [manifest.noticesPath, 'notices'],
+    [manifest.coveragePath, 'coverage'], [LINEAGE_PATH, 'lineage'],
+  ] as const;
+  const issues = pathIssues(roles.map(([path]) => path));
+  const evidence = new Map<string, Set<string>>();
+  for (const admitted of collected.value) for (const ref of [...admitted.profile.licenseEvidence, ...admitted.profile.noticeEvidence]) {
+    const path = evidencePath(ref.digest), ids = evidence.get(path) ?? new Set<string>();
+    ids.add(admitted.source.sourceId); evidence.set(path, ids);
+  }
+  issues.push(...pathIssues([...roles.map(([path]) => path), ...evidence.keys()]));
+  const files = new Set(manifest.files.map(file => file.path));
+  for (const [path] of roles) if (!files.has(path)) issues.push(problem('reference.missing', path, 'Required metadata category is absent.'));
+  for (const path of evidence.keys()) if (!files.has(path)) issues.push(problem('reference.missing', path, 'Required evidence category is absent.'));
+  for (const record of manifest.records) if (roles.some(([path]) => path === record.path) || evidence.has(record.path)) {
+    issues.push(problem('inventory.invalid', record.path, 'Record cannot masquerade as metadata or license evidence.'));
+  }
+  if (issues.length) return failure(issues);
+  return { ok: true, value: manifest.files.map(file => {
+    const role = roles.find(([path]) => path === file.path);
+    if (role) return { path: file.path, category: 'metadata' as const, role: role[1] };
+    const sourceIds = evidence.get(file.path);
+    if (sourceIds) return { path: file.path, category: 'evidence' as const, sourceIds: [...sourceIds].sort(compareText) };
+    return { path: file.path, category: 'output' as const };
+  }) };
+}
+/** Add immutable lineage bytes to the candidate inventory; final release resealing stays downstream. */
+export function bindLineageToManifest(manifestInput: unknown, lineageInput: unknown): ValidationResult<{
+  manifest: ReleaseManifest; file: { path: string; kind: 'regular'; bytes: Uint8Array };
+}> {
+  const snapshot = snapshotJson(manifestInput); if (!snapshot.ok) return snapshot;
+  const manifest = decodeReleaseManifest(snapshot.value); if (!manifest.ok) return manifest;
+  const lineage = decodeLineage(lineageInput); if (!lineage.ok) return lineage;
+  const conflicts = [manifest.value.sourceManifestPath, manifest.value.noticesPath, manifest.value.coveragePath,
+    ...manifest.value.records.map(record => record.path), ...lineage.value.bindings.map(binding => binding.path), ...lineage.value.originals.map(original => original.path)];
+  if (conflicts.some(path => pathCollisionKey(path) === pathCollisionKey(LINEAGE_PATH))) {
+    return failure([problem('inventory.invalid', LINEAGE_PATH, 'Lineage metadata path conflicts with another package role.')]);
+  }
+  const inventoryIssues = pathIssues(manifest.value.files.map(file => file.path));
+  if (inventoryIssues.length) return failure(inventoryIssues);
+  const bytes = lineageBytes(lineage.value);
+  const files = manifest.value.files.filter(file => file.path !== LINEAGE_PATH);
+  files.push({ path: LINEAGE_PATH, digest: hashBytes(bytes), mediaType: 'application/json' });
+  const issues = pathIssues(files.map(file => file.path)); if (issues.length) return failure(issues);
+  return { ok: true, value: { manifest: { ...manifest.value, files }, file: { path: LINEAGE_PATH, kind: 'regular', bytes } } };
+}
+/** Compare distributable claims to the separate maintainer-reviewed output descriptor, even without records. */
+export function validatePackagedLineage(candidateInput: unknown, reviewedInput: unknown, outputsInput: unknown,
+  stages: readonly StagedSources[], records: readonly RecordOutput[] = []): ValidationResult<Lineage> {
+  const candidate = decodeLineage(candidateInput); if (!candidate.ok) return candidate;
+  const reviewed = decodeLineage(reviewedInput); if (!reviewed.ok) return reviewed;
+  if (hashBytes(lineageBytes(candidate.value)) !== hashBytes(lineageBytes(reviewed.value))) {
+    return failure([problem('provenance.incomplete', LINEAGE_PATH, 'Packaged contributors or transformations differ from reviewed output lineage.')]);
+  }
+  return validateOutputLineage(reviewed.value, outputsInput, stages, records);
 }

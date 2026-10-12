@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -123,3 +123,31 @@ Run at 2026-10-12T05:08:05.626Z on commit `fd652b27`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/design/corpus/sources/__tests__/reader-limits.test.ts` | 0 | 3 | 0.8 s |  |
+
+## t5
+
+Run at 2026-10-12T05:11:55.474Z on commit `5c5ced74`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: lineage-closure retains every source and transformation for derived outputs**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | lineage-closure retains every source and transformation for derived outputs | `src/design/corpus/sources/__tests__/lineage.test.ts` |
+
+**unit: lineage-closure rejects unbound specimens inconsistent provenance and stale outputs**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | lineage-closure rejects unbound specimens inconsistent provenance and stale outputs | `src/design/corpus/sources/__tests__/lineage.test.ts` |
+
+**unit: lineage-closure requires explicit original and inferred output declarations**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | lineage-closure requires explicit original and inferred output declarations | `src/design/corpus/sources/__tests__/lineage.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/design/corpus/sources/__tests__/lineage.test.ts` | 0 | 3 | 0.5 s |  |

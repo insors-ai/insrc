@@ -38,8 +38,8 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers FR001-FR004 and ac1-ac4 of Story s5 (DEF \u00a76.5) and all four fix intents of ISSUE-e2bcadd9, and builds no stated non-goal.",
-          "evidence": "DEF.md:237-240 sets out ac1 (no largest-size announcement, same code and message), ac2 (a throwing last-indexed read gets a named cause and code), ac3 (the four ISSUE-e2bcadd9 reproductions) and ac4 (refuse with a named error and progress, no partial result). The design covers each one: refusal before measuring (\u00a72.1, \u00a72.11), index-state-read-failed / lookup-failed (\u00a72.4, \u00a73.3), tool-loop call naming, cache before scope, typed failure (\u00a72.4-\u00a72.6), and RepoIndexingError (\u00a72.3, \u00a72.8, \u00a72.12). ISSUE.md fix intent 3 asks to keep 'the pairing check and the rule that the scope is resolved once'. The design keeps both on a miss. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md, docs/standalone/bug-four-defects-left-code-review-E20261007e2bcadd9/ISSUE.md]",
+          "premise": "The design covers FR001-FR004 and ac1-ac4 of Story s5 (DEF §6.5) and all four fix intents of ISSUE-e2bcadd9, and builds no stated non-goal.",
+          "evidence": "DEF.md:237-240 sets out ac1 (no largest-size announcement, same code and message), ac2 (a throwing last-indexed read gets a named cause and code), ac3 (the four ISSUE-e2bcadd9 reproductions) and ac4 (refuse with a named error and progress, no partial result). The design covers each one: refusal before measuring (§2.1, §2.11), index-state-read-failed / lookup-failed (§2.4, §3.3), tool-loop call naming, cache before scope, typed failure (§2.4-§2.6), and RepoIndexingError (§2.3, §2.8, §2.12). ISSUE.md fix intent 3 asks to keep 'the pairing check and the rule that the scope is resolved once'. The design keeps both on a miss. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md, docs/standalone/bug-four-defects-left-code-review-E20261007e2bcadd9/ISSUE.md]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -51,8 +51,8 @@
           "kind": "semantic",
           "severity": "MED",
           "premise": "ac4's 'no partial result is returned' holds for every graph-reading request: results that reach a repository under index are filtered.",
-          "evidence": "\u00a72.8 filters cross-repository results only for search.callers / search.callees / search.callers_nhop. Other handlers traverse the graph or a closure across repositories without any filter. entity.closure and entity.unreachable call closureEntities / unreachableEntities over edges (daemon/index.ts:1107-1141). repo.depends_on and repo.search_cross_repo resolve the DEPENDS_ON closure and search every repository in it (daemon/index.ts:1184-1212). search.closure returns resolveClosure. The design refuses these only when a ROOT or NAMED repository is under index. A ready repository whose closure includes a repository under index therefore still gets half-built rows from that repository. The same applies to graph_query in the built-in tools. [files: src/daemon/index.ts, src/daemon/tools/builtins/graph/index.ts]",
-          "action": "Extend the filtering postcondition of \u00a72.8 / \u00a72.12 to every traversal or closure result: entity.closure, entity.unreachable, repo.depends_on, repo.search_cross_repo, search.closure and graph_query. Either leave out the entities or repositories under index, or refuse. Add a test for each.",
+          "evidence": "§2.8 filters cross-repository results only for search.callers / search.callees / search.callers_nhop. Other handlers traverse the graph or a closure across repositories without any filter. entity.closure and entity.unreachable call closureEntities / unreachableEntities over edges (daemon/index.ts:1107-1141). repo.depends_on and repo.search_cross_repo resolve the DEPENDS_ON closure and search every repository in it (daemon/index.ts:1184-1212). search.closure returns resolveClosure. The design refuses these only when a ROOT or NAMED repository is under index. A ready repository whose closure includes a repository under index therefore still gets half-built rows from that repository. The same applies to graph_query in the built-in tools. [files: src/daemon/index.ts, src/daemon/tools/builtins/graph/index.ts]",
+          "action": "Extend the filtering postcondition of §2.8 / §2.12 to every traversal or closure result: entity.closure, entity.unreachable, repo.depends_on, repo.search_cross_repo, search.closure and graph_query. Either leave out the entities or repositories under index, or refuse. Add a test for each.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -111,7 +111,7 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "scopeErrorMapping is the single mapping of the scope errors, shared by the run driver, the daemon RPC and the plan walk through taskRefusalMapping, so adding RepoIndexingError there reaches all three.",
-          "evidence": "invariants.ts:118-125 scopeErrorMapping and :137-141 taskRefusalMapping, which delegates to it. orchestrator/driver.ts:704 classifyShaperError calls scopeErrorMapping first. ScopeErrorCode (:100) is a closed union, so the design's union extension is needed and is listed in \u00a73.6. [files: src/analyze/context/invariants.ts, src/analyze/orchestrator/driver.ts]",
+          "evidence": "invariants.ts:118-125 scopeErrorMapping and :137-141 taskRefusalMapping, which delegates to it. orchestrator/driver.ts:704 classifyShaperError calls scopeErrorMapping first. ScopeErrorCode (:100) is a closed union, so the design's union extension is needed and is listed in §3.6. [files: src/analyze/context/invariants.ts, src/analyze/orchestrator/driver.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -123,7 +123,7 @@
           "kind": "semantic",
           "severity": "MED",
           "premise": "The change to isModelCallFailure (Ollama and socket texts no longer matched anywhere in a message) has its callers inventoried.",
-          "evidence": "isModelCallFailure has seven consumers, not one: classifier/driver.ts:303, planner/driver.ts:516, summariser/driver.ts:368, runtimes/shared/aggregator.ts:355, context/synthesizer.ts:340, context/decomposer.ts:391, and context/driver.ts:1028. Today model-failure.ts:81-83 matches the OLLAMA_FAILURE_TEXTS anywhere because 'a socket error can be nested in another's message'. wrapOllamaError (ollama.ts:759-773) returns a plain Error for every failure except ECONNREFUSED and not-found. After the change, any Ollama transport error that reaches one of these six other callers without passing through the new ModelCallFailedError wrapping is reclassified from llm-unavailable to a shape failure. Examples are an error re-wrapped by an intermediate layer, or a stream error raised during iteration rather than creation. \u00a73.x and \u00a75 list none of these consumers, and no test covers them. [files: src/analyze/context/model-failure.ts, src/agent/providers/ollama.ts, src/analyze/classifier/driver.ts, src/analyze/planner/driver.ts, src/analyze/summariser/driver.ts, src/analyze/runtimes/shared/aggregator.ts, src/analyze/context/synthesizer.ts, src/analyze/context/decomposer.ts]",
+          "evidence": "isModelCallFailure has seven consumers, not one: classifier/driver.ts:303, planner/driver.ts:516, summariser/driver.ts:368, runtimes/shared/aggregator.ts:355, context/synthesizer.ts:340, context/decomposer.ts:391, and context/driver.ts:1028. Today model-failure.ts:81-83 matches the OLLAMA_FAILURE_TEXTS anywhere because 'a socket error can be nested in another's message'. wrapOllamaError (ollama.ts:759-773) returns a plain Error for every failure except ECONNREFUSED and not-found. After the change, any Ollama transport error that reaches one of these six other callers without passing through the new ModelCallFailedError wrapping is reclassified from llm-unavailable to a shape failure. Examples are an error re-wrapped by an intermediate layer, or a stream error raised during iteration rather than creation. §3.x and §5 list none of these consumers, and no test covers them. [files: src/analyze/context/model-failure.ts, src/agent/providers/ollama.ts, src/analyze/classifier/driver.ts, src/analyze/planner/driver.ts, src/analyze/summariser/driver.ts, src/analyze/runtimes/shared/aggregator.ts, src/analyze/context/synthesizer.ts, src/analyze/context/decomposer.ts]",
           "action": "Add the six other isModelCallFailure consumers to the change sites. State that every Ollama transport failure path (complete retry :328-347, stream :517 and :614-621, including errors thrown while iterating a stream) raises ModelCallFailedError. Add at least one test per consumer family, for example the classifier and the planner on a stand-in Ollama socket failure, proving an outage is still llm-unavailable.",
           "fixability": "manual",
           "outcome": "does-not-hold"
@@ -134,7 +134,7 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The daemon requests \u00a72.8 names all exist, and runAnalyze reaches runShaper only through shaper.buildRunBundle, whose ShapeOpts is passed through as RunShaperArgs.opts. That makes a ShapeOpts.scopeChecked flag a working channel.",
+          "premise": "The daemon requests §2.8 names all exist, and runAnalyze reaches runShaper only through shaper.buildRunBundle, whose ShapeOpts is passed through as RunShaperArgs.opts. That makes a ShapeOpts.scopeChecked flag a working channel.",
           "evidence": "daemon/index.ts registers search.query :1048, search.closure :1060, search.callers :1065, search.callees :1070, locate.inferParents :1081, entity.summary :1102, entity.closure :1107, entity.unreachable :1123, repo.depends_on :1184, repo.search_cross_repo :1203, search.by_file :1216, search.callers_nhop :1221 and analyze.classify :1755. context/index.ts:111-121 `buildRunBundle: (input, opts: ShapeOpts) => runShaper({ ..., inputs: input, opts })`. computeCacheKey(promptContent, inputs) at context/driver.ts:338 excludes opts. graph_entity, graph_search, graph_callers, graph_callees and graph_query appear in tools/builtins/graph/index.ts. [files: src/daemon/index.ts, src/analyze/context/index.ts, src/analyze/context/driver.ts, src/daemon/tools/builtins/graph/index.ts]",
           "action": "none",
           "fixability": "manual",
@@ -147,7 +147,7 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "The structured-output retry helper today loses the error type of a throwing call, so keeping ModelCallFailedError through it is a real change site.",
-          "evidence": "structured-output.ts:197-207 catches the call's throw, keeps only `(err as Error).message` in lastErrors, and :220 throws `new Error(`structured-output: validation failed after ${maxAttempts} attempts: ...`)`. The type is lost, as the design states, and \u00a72.6 changes it. [files: src/agent/providers/structured-output.ts]",
+          "evidence": "structured-output.ts:197-207 catches the call's throw, keeps only `(err as Error).message` in lastErrors, and :220 throws `new Error(`structured-output: validation failed after ${maxAttempts} attempts: ...`)`. The type is lost, as the design states, and §2.6 changes it. [files: src/agent/providers/structured-output.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -195,7 +195,7 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "Over the request socket a handler's thrown error reaches the client as a plain string message, so RepoIndexingError must carry its code as a 'repo-indexing:' prefix in its message to be detectable.",
-          "evidence": "daemon/server.ts:71-77 failureMessage returns `err instanceof Error ? err.message : String(err)` (or a named LMDB lock message), and :197/:211 send `{ id, error: failureMessage(...) }`. A string is all the client gets, matching \u00a72.8. [files: src/daemon/server.ts]",
+          "evidence": "daemon/server.ts:71-77 failureMessage returns `err instanceof Error ? err.message : String(err)` (or a named LMDB lock message), and :197/:211 send `{ id, error: failureMessage(...) }`. A string is all the client gets, matching §2.8. [files: src/daemon/server.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -207,7 +207,7 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "A registry read failure or a pristine registry in ensureRepoQueryable is skipped, as ensureNonEmptyClosure does today, so the new check adds no new raw-error path.",
-          "evidence": "invariants.ts:186-213 catches the listRepos failure ('registry read failed; skipping invariant') and returns undefined when repos.length === 0. \u00a72.3 copies the same skip. [files: src/analyze/context/invariants.ts]",
+          "evidence": "invariants.ts:186-213 catches the listRepos failure ('registry read failed; skipping invariant') and returns undefined when repos.length === 0. §2.3 copies the same skip. [files: src/analyze/context/invariants.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -219,7 +219,7 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "Each acceptance criterion maps to at least one named test that would fail without the change, including the ISSUE-e2bcadd9 reproductions (cache hit with a broken connections file, a validation message quoting 'ECONNREFUSED', a real outage behind the retry prefix).",
-          "evidence": "\u00a75's acceptance mapping lists tests for ac1 (run order on both branches, docs, analyze.classify), ac2 (lastIndexedAt throw at both read sites, the mapping in classifyShaperError and the orchestrator), ac3 (all four reproductions from ISSUE.md:11-17, plus the typed-failure and retry-helper cases) and ac4 (status, cache-hit, search, built-in tool and indexer-record tests). The existing seams the tests rely on are real: RunShaperArgs.pipelineSteps (`args.pipelineSteps ?? REAL_PIPELINE_STEPS`, driver.ts:389), ensureNonEmptyClosure deps (invariants.ts:171) and _setTaskScopeDepsForTest (task-scope.ts:40). The test gap for the other isModelCallFailure consumers is reported under change-sites. [files: src/analyze/context/driver.ts, src/analyze/context/invariants.ts, src/analyze/runtimes/shared/task-scope.ts]",
+          "evidence": "§5's acceptance mapping lists tests for ac1 (run order on both branches, docs, analyze.classify), ac2 (lastIndexedAt throw at both read sites, the mapping in classifyShaperError and the orchestrator), ac3 (all four reproductions from ISSUE.md:11-17, plus the typed-failure and retry-helper cases) and ac4 (status, cache-hit, search, built-in tool and indexer-record tests). The existing seams the tests rely on are real: RunShaperArgs.pipelineSteps (`args.pipelineSteps ?? REAL_PIPELINE_STEPS`, driver.ts:389), ensureNonEmptyClosure deps (invariants.ts:171) and _setTaskScopeDepsForTest (task-scope.ts:40). The test gap for the other isModelCallFailure consumers is reported under change-sites. [files: src/analyze/context/driver.ts, src/analyze/context/invariants.ts, src/analyze/runtimes/shared/task-scope.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -248,6 +248,13 @@
         "choice": "Pin with a contract test",
         "rationale": "Chosen by the user in chat on 2026-10-13: keep 'as today' in the LLD and add a plan task with a test asserting each guarded search request still accepts its existing params, so a change to a handler's params fails the test.",
         "resolvedAt": "2026-10-13T08:05:11.933Z"
+      },
+      "qe4357416": {
+        "question": "alt2 (partial): The other Epic constraints (k1, k3, k4, k6-k11) are not scored one by one; none distinguishes the alternatives (no model calls, no kind bytes, no ignore rules are involved).",
+        "status": "resolved",
+        "choice": "Score only the borderline constraints",
+        "rationale": "Chosen by the user in chat on 2026-10-13. Done in commit 3bb70547: k1, k7 and k8 are scored per alternative in the LLD (a1 satisfies all three; a2 partial on k1 and k8; a3 violates k1); k3, k4, k6, k9, k10 and k11 are stated not to touch s5 in any alternative, each with its reason.",
+        "resolvedAt": "2026-10-13T08:10:32.060Z"
       }
     }
   },
@@ -350,7 +357,7 @@
           "internal": "Private implementation of s11: The step tools run inside the daemon, and the MCP server opens no store"
         }
       ],
-      "rolloutPhase": "Phase A \u2014 a daemon that stays up and reads that tell the truth",
+      "rolloutPhase": "Phase A — a daemon that stays up and reads that tell the truth",
       "nonFunctional": {
         "performance": "Reading one file's entities costs in proportion to that file's rows, and one repository's in proportion to that repository's rows. A file commit is one write transaction whose size is bounded by one file. A first full index holds more pending rows than today until the cross-file pass runs, and that pass does more work; this is accepted under the accuracy rule. Index jobs take precedence in the queue and a derived pass yields between its units of work, so a commit waits for at most one unit of a pass. Model calls are serial; the mid-tier pass sends only new or changed documents. Vector writes keep the plain insert for entities first stored in the same commit, so a first full index writes vectors at today's cost; the upsert, which costs more against a large vector table, is used only for changed entities and for the backfill, and Story s2's design measures it on this repository.",
         "security": "No store is opened outside the daemon and no model is reached except through the local provider or the CLI providers. The ignore-file proposal sends the model file names and manifest names, not file contents, and writes into the user's repository only when no root ignore file exists. Document text sent to the mid-tier model goes through the user's own CLI session, as other mid-tier calls do.",

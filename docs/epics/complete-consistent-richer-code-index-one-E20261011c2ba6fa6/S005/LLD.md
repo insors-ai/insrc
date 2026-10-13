@@ -506,3 +506,25 @@ Borderline Epic constraints, scored one by one (question qe4357416, 2026-10-13):
 
 - cd2 (partial): The search requests' params are given as 'as today' (each handler's existing typed params) rather than restated.
 - alt2 (partial): The other Epic constraints (k1, k3, k4, k6-k11) are not scored one by one; none distinguishes the alternatives (no model calls, no kind bytes, no ignore rules are involved).
+
+## Resolved questions
+
+- `q4e48e4a6` — cd2 (partial): The search requests' params are given as 'as today' (each handler's existing typed params) rather than restated.
+  - **resolved**: Pin with a contract test — Chosen by the user in chat on 2026-10-13: keep 'as today' in the LLD and add a plan task with a test asserting each guarded search request still accepts its existing params, so a change to a handler's params fails the test. _(2026-10-13T08:05:11.933Z)_
+- `qe4357416` — alt2 (partial): The other Epic constraints (k1, k3, k4, k6-k11) are not scored one by one; none distinguishes the alternatives (no model calls, no kind bytes, no ignore rules are involved).
+  - **resolved**: Score only the borderline constraints — Chosen by the user in chat on 2026-10-13. Done in commit 3bb70547: k1, k7 and k8 are scored per alternative in the LLD (a1 satisfies all three; a2 partial on k1 and k8; a3 violates k1); k3, k4, k6, k9, k10 and k11 are stated not to touch s5 in any alternative, each with its reason. _(2026-10-13T08:10:32.060Z)_
+
+## Citations
+
+- **[[c1]]** `step-output` `s1 context.assemble`
+- **[[c2]]** `step-output` `s2-s3 alternatives and judgment`
+- **[[c3]]** `step-output` `s4 contract.detail`
+- **[[c4]]** `step-output` `s5-s7 error paths, tests, migration`
+- **[[c5]]** `stakeholder` `Decisions D1 (refuse before announcing) and D2 (option B: progress in memory, final figures written once to the registry row), 2026-10-13`
+- **[[c6]]** `step-output` `s8 checklist.verify`
+- **[[c7]]** `prior-artifact` `Daemon review of this LLD, 2026-10-13T07:32Z (block, 2 HIGH / 8 MED), all findings applied`
+- **[[c8]]** `prior-artifact` `Second daemon review of this LLD, 2026-10-13T07:36Z (block, 0 HIGH / 5 MED), all findings applied`
+- **[[c9]]** `prior-artifact` `Third daemon review of this LLD, 2026-10-13T07:40Z (block, 2 HIGH / 2 MED), all findings applied`
+- **[[c10]]** `prior-artifact` `Fourth daemon review of this LLD, 2026-10-13T07:43Z (block, 0 HIGH / 1 MED: the built-in graph tools), applied`
+- **[[c11]]** `prior-artifact` `Fifth daemon review of this LLD, 2026-10-13T07:49Z (block, 0 HIGH / 2 MED), both applied; approved with override by stakeholder decision (option A)`
+- **[[c12]]** `analyze-bundle` `insrc_analyze run of 2026-10-13 (repoIndexedAt 2026-10-13T07:18:15Z) on the registry write path: updateRepoStatus src/db/repos.ts:243-269 (entity 877c60e63174c429fc74456f54a23197), rowToRepo :340-352 (c12d844f45fbfad547c075f67867b636), RepoRow src/db/graph/codec.ts:89-103 (9251c46b4b951c5ab6c1d368803d1830), encodeRepoRow :105, decodeRepoRow :114-127 (86f01c917f0c419537284ed0b2e7af19), RegisteredRepo src/shared/types.ts:678-698; callers start (index.ts:246-335) and fullIndex (index.ts:594-738), confirmed by a text search: the four calls at src/indexer/index.ts:309, 596, 726, 735` — "updateRepoStatus(_db: DbClient, path: string, status: RegisteredRepo['status'], lastIndexed?: string, errorMsg?: string): Promise<void>"

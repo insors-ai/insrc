@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "8d4b90c9ab301e66",
+    "storyId": "S001",
+    "createdAt": "2026-10-13T12:12:45.679Z",
+    "updatedAt": "2026-10-13T12:12:45.679Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-13T11:21:58.998Z",
+    "epicSlug": "rework-document-review-pane-fixed-decision"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "A feedback entry can now carry an inline anchor, the decision it was saved with and a batch id. Both writers store them through one helper, both schemas and the request coercion accept them, and the Feedback section shows them; a batch append writes all entries in one write or none, and priorFeedback reads a stored list.",
+    "testRecord": {
+      "md": "docs/standalone/rework-document-review-pane-fixed-decision-E202610138d4b90c9/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/artifacts/format/bindings.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:12:45.679Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/provenance/__tests__/review-fields.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:12:45.679Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/provenance/schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:12:45.679Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/provenance/tool.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:12:45.679Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/provenance/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:12:45.679Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/provenance/writer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:12:45.679Z"
+      }
+    ],
+    "commit": "cd6cede6"
+  }
+}

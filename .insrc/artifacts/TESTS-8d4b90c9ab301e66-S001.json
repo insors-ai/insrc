@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "8d4b90c9ab301e66",
+    "storyId": "S001",
+    "createdAt": "2026-10-13T12:12:45.679Z",
+    "updatedAt": "2026-10-13T12:12:45.679Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-13T11:21:58.998Z",
+    "epicSlug": "rework-document-review-pane-fixed-decision"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "cd6cede6",
+        "ranAt": "2026-10-13T12:12:45.679Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "feedback: appendFeedbackBatch writes every entry in one write with ids and one timestamp, changes no other key, and writes nothing when any entry is invalid",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/provenance/__tests__/review-fields.test.ts",
+                "title": "feedback: appendFeedbackBatch writes every entry in one write with ids and one timestamp, changes no other key, and writes nothing when any entry is invalid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "feedback: appendFeedback stores an entry's anchor, decision and batchId when the request has them and stores a request without them exactly as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/provenance/__tests__/review-fields.test.ts",
+                "title": "feedback: appendFeedback stores an entry's anchor, decision and batchId when the request has them and stores a request without them exactly as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "feedback: the tool's input schema, coerceRequest and the stored list's schema accept an entry with an anchor, a decision and a batchId, and an entry without them is still valid",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/provenance/__tests__/review-fields.test.ts",
+                "title": "feedback: the tool's input schema, coerceRequest and the stored list's schema accept an entry with an anchor, a decision and a batchId, and an entry without them is still valid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "feedback: feedbackBodyLines shows the decision and the quoted text of an entry that has them and renders an old entry byte-identically",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/provenance/__tests__/review-fields.test.ts",
+                "title": "feedback: feedbackBodyLines shows the decision and the quoted text of an entry that has them and renders an old entry byte-identically",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "feedback: priorFeedback returns the stored list, and an empty list for a missing, unreadable or feedback-less artifact",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/provenance/__tests__/review-fields.test.ts",
+                "title": "feedback: priorFeedback returns the stored list, and an empty list for a missing, unreadable or feedback-less artifact",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifacts/provenance/__tests__/review-fields.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 556,
+            "titles": [
+              {
+                "title": "feedback: appendFeedbackBatch writes every entry in one write with ids and one timestamp, changes no other key, and writes nothing when any entry is invalid",
+                "result": "pass"
+              },
+              {
+                "title": "feedback: appendFeedback stores an entry's anchor, decision and batchId when the request has them and stores a request without them exactly as before",
+                "result": "pass"
+              },
+              {
+                "title": "feedback: the tool's input schema, coerceRequest and the stored list's schema accept an entry with an anchor, a decision and a batchId, and an entry without them is still valid",
+                "result": "pass"
+              },
+              {
+                "title": "feedback: feedbackBodyLines shows the decision and the quoted text of an entry that has them and renders an old entry byte-identically",
+                "result": "pass"
+              },
+              {
+                "title": "feedback: priorFeedback returns the stored list, and an empty list for a missing, unreadable or feedback-less artifact",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

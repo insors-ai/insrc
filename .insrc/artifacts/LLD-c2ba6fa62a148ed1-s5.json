@@ -240,6 +240,15 @@
     "reviewOverride": {
       "reason": "Stakeholder decision 2026-10-13 (option A): five daemon review rounds, every HIGH and MED finding applied (rounds 1-4 and both MEDs of round 5, commit 01d697a9); the rounds were narrowing and each surfaced new gaps rather than converging; anything further is to surface at the plan and code review.",
       "at": "2026-10-13T08:01:35.177Z"
+    },
+    "questionResolutions": {
+      "q4e48e4a6": {
+        "question": "cd2 (partial): The search requests' params are given as 'as today' (each handler's existing typed params) rather than restated.",
+        "status": "resolved",
+        "choice": "Pin with a contract test",
+        "rationale": "Chosen by the user in chat on 2026-10-13: keep 'as today' in the LLD and add a plan task with a test asserting each guarded search request still accepts its existing params, so a change to a handler's params fails the test.",
+        "resolvedAt": "2026-10-13T08:05:11.933Z"
+      }
     }
   },
   "body": {

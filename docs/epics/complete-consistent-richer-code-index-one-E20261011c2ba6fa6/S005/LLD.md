@@ -499,23 +499,21 @@ ISSUE-a6940f8a as in a1. ac4: the handler map in src/daemon/index.ts wraps the g
 - dm1 (partial): src/db/repos.ts (updateRepoStatus, which writes the row) was read directly, not cited in an s1 bundle.
 - alt2 (partial): The other Epic constraints (k1, k3, k4, k6-k11) are not scored one by one; none distinguishes the alternatives (no model calls, no kind bytes, no ignore rules are involved).
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q4e48e4a6` — cd2 (partial): The search requests' params are given as 'as today' (each handler's existing typed params) rather than restated.
+  - **resolved**: Pin with a contract test — Chosen by the user in chat on 2026-10-13: keep 'as today' in the LLD and add a plan task with a test asserting each guarded search request still accepts its existing params, so a change to a handler's params fails the test. _(2026-10-13T08:05:11.933Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**2 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-13T07:49:23.679Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| coverage-of-intent | MED | ac4's 'no partial result is returned' holds for every graph-reading request: results that reach a repository under index are filtered. | §2.8 filters cross-repository results only for search.callers / search.callees / search.callers_nhop. Other handlers traverse the graph or a closure across repositories without any filter. entity.closure and entity.unreachable call closureEntities / unreachableEntities over edges (daemon/index.ts:1107-1141). repo.depends_on and repo.search_cross_repo resolve the DEPENDS_ON closure and search every repository in it (daemon/index.ts:1184-1212). search.closure returns resolveClosure. The design refuses these only when a ROOT or NAMED repository is under index. A ready repository whose closure includes a repository under index therefore still gets half-built rows from that repository. The same applies to graph_query in the built-in tools. [files: src/daemon/index.ts, src/daemon/tools/builtins/graph/index.ts] | Extend the filtering postcondition of §2.8 / §2.12 to every traversal or closure result: entity.closure, entity.unreachable, repo.depends_on, repo.search_cross_repo, search.closure and graph_query. Either leave out the entities or repositories under index, or refuse. Add a test for each. |
-| change-sites | MED | The change to isModelCallFailure (Ollama and socket texts no longer matched anywhere in a message) has its callers inventoried. | isModelCallFailure has seven consumers, not one: classifier/driver.ts:303, planner/driver.ts:516, summariser/driver.ts:368, runtimes/shared/aggregator.ts:355, context/synthesizer.ts:340, context/decomposer.ts:391, and context/driver.ts:1028. Today model-failure.ts:81-83 matches the OLLAMA_FAILURE_TEXTS anywhere because 'a socket error can be nested in another's message'. wrapOllamaError (ollama.ts:759-773) returns a plain Error for every failure except ECONNREFUSED and not-found. After the change, any Ollama transport error that reaches one of these six other callers without passing through the new ModelCallFailedError wrapping is reclassified from llm-unavailable to a shape failure. Examples are an error re-wrapped by an intermediate layer, or a stream error raised during iteration rather than creation. §3.x and §5 list none of these consumers, and no test covers them. [files: src/analyze/context/model-failure.ts, src/agent/providers/ollama.ts, src/analyze/classifier/driver.ts, src/analyze/planner/driver.ts, src/analyze/summariser/driver.ts, src/analyze/runtimes/shared/aggregator.ts, src/analyze/context/synthesizer.ts, src/analyze/context/decomposer.ts] | Add the six other isModelCallFailure consumers to the change sites. State that every Ollama transport failure path (complete retry :328-347, stream :517 and :614-621, including errors thrown while iterating a stream) raises ModelCallFailedError. Add at least one test per consumer family, for example the classifier and the planner on a stand-in Ollama socket failure, proving an outage is still llm-unavailable. |
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `step-output` `s1 context.assemble`
+- **[[c2]]** `step-output` `s2-s3 alternatives and judgment`
+- **[[c3]]** `step-output` `s4 contract.detail`
+- **[[c4]]** `step-output` `s5-s7 error paths, tests, migration`
+- **[[c5]]** `stakeholder` `Decisions D1 (refuse before announcing) and D2 (option B: progress in memory, final figures written once to the registry row), 2026-10-13`
+- **[[c6]]** `step-output` `s8 checklist.verify`
+- **[[c7]]** `prior-artifact` `Daemon review of this LLD, 2026-10-13T07:32Z (block, 2 HIGH / 8 MED), all findings applied`
+- **[[c8]]** `prior-artifact` `Second daemon review of this LLD, 2026-10-13T07:36Z (block, 0 HIGH / 5 MED), all findings applied`
+- **[[c9]]** `prior-artifact` `Third daemon review of this LLD, 2026-10-13T07:40Z (block, 2 HIGH / 2 MED), all findings applied`
+- **[[c10]]** `prior-artifact` `Fourth daemon review of this LLD, 2026-10-13T07:43Z (block, 0 HIGH / 1 MED: the built-in graph tools), applied`
+- **[[c11]]** `prior-artifact` `Fifth daemon review of this LLD, 2026-10-13T07:49Z (block, 0 HIGH / 2 MED), both applied; approved with override by stakeholder decision (option A)`

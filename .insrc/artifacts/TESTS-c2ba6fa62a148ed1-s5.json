@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "createdAt": "2026-10-13T11:53:21.419Z",
+    "updatedAt": "2026-10-13T11:53:21.419Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "e3612253",
+        "ranAt": "2026-10-13T11:53:21.419Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+                "title": "OllamaProvider: complete() raises a connection refused and a socket hang up (after its retry) as ModelCallFailedError",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+                "title": "OllamaProvider: completeStructured failures on the call and during iteration are raised as ModelCallFailedError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "OllamaProvider: a socket failure during stream iteration is raised as ModelCallFailedError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+                "title": "OllamaProvider: stream creation and stream iteration failures are raised as ModelCallFailedError with the client error as cause",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "retry helper: a ModelCallFailedError on the last attempt is re-thrown as a ModelCallFailedError with the attempt prefix",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+                "title": "retry helper: a ModelCallFailedError on the last attempt is re-thrown as a ModelCallFailedError with the attempt prefix",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+                "title": "retry helper: a shape failure on the last attempt stays a plain Error even after an earlier failed call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5547,
+            "titles": [
+              {
+                "title": "OllamaProvider: stream creation and stream iteration failures are raised as ModelCallFailedError with the client error as cause",
+                "result": "pass"
+              },
+              {
+                "title": "OllamaProvider: completeStructured failures on the call and during iteration are raised as ModelCallFailedError",
+                "result": "pass"
+              },
+              {
+                "title": "OllamaProvider: complete() raises a connection refused and a socket hang up (after its retry) as ModelCallFailedError",
+                "result": "pass"
+              },
+              {
+                "title": "retry helper: a ModelCallFailedError on the last attempt is re-thrown as a ModelCallFailedError with the attempt prefix",
+                "result": "pass"
+              },
+              {
+                "title": "retry helper: a shape failure on the last attempt stays a plain Error even after an earlier failed call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

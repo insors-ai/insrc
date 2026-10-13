@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -183,3 +183,46 @@ Run at 2026-10-13T13:05:58.188Z on commit `c9614ed3`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/index-run-record.test.ts` | 0 | 3 | 1.1 s |  |
+
+## t7
+
+Run at 2026-10-13T13:11:56.874Z on commit `d721fee2`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message | `src/analyze/context/__tests__/invariants.test.ts` |
+
+**unit: ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg | `src/analyze/context/__tests__/invariants.test.ts` |
+
+**unit: ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error) | `src/analyze/context/__tests__/invariants.test.ts` |
+| pass | ensureNonEmptyClosure: with readers the check keeps its leniency for a registry that cannot be read or holds no repo | `src/analyze/context/__tests__/invariants.test.ts` |
+
+**unit: plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping | `src/analyze/executor/__tests__/walker.test.ts` |
+
+**unit: classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings | `src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/invariants.test.ts` | 0 | 18 | 2 s |  |
+| `src/analyze/executor/__tests__/walker.test.ts` | 0 | 29 | 0.5 s |  |
+| `src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts` | 0 | 9 | 0.8 s |  |

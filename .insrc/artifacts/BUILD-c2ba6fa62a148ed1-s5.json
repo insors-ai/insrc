@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T13:05:58.188Z",
+    "updatedAt": "2026-10-13T13:11:56.874Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -34,9 +34,13 @@
       {
         "id": "t6",
         "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
       }
     ],
-    "summary": "A full index now keeps an in-memory record of how far it has got (began, files selected, files done) and writes the run's final figures onto the registry row once, with its final status ('completed' with 'ready', 'failed' with the error with 'error'); the start-up re-queue is unchanged. A file's own error is caught and the file skipped, so a run that fails does so at a later step (manifest, clean-up, cross-file pass), after the walk.",
+    "summary": "A scope whose repository is being indexed, or whose last index ended in an error, is now refused with RepoIndexingError (code 'repo-indexing') stating how far the run got, by the analyzer's scope checks (ensureNonEmptyClosure for code and docs, resolveTaskScope for infra and data) and carried by both error mappings and the plan walk; an unreadable or empty registry and a connection scope are not refused.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
     },
@@ -46,9 +50,9 @@
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:05:58.188Z"
+        "timestamp": "2026-10-13T13:11:56.874Z"
       }
     ],
-    "commit": "c9614ed3"
+    "commit": "d721fee2"
   }
 }

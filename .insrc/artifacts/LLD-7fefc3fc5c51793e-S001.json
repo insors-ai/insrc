@@ -221,6 +221,12 @@
         "rationale": "Chosen by the user in chat on 2026-10-13: the assistant's markdown prose uses the editor's monospace font, so --sans holds var(--vscode-editor-font-family) and the whole chat is monospace, as the approved spec says.",
         "resolvedAt": "2026-10-13T06:31:32.286Z"
       }
+    },
+    "approvedAt": "2026-10-13T06:32:13.238Z",
+    "rangeBase": "7aff36237b08a53abf7bf6a0ddfd2287280ada8c",
+    "reviewOverride": {
+      "reason": "Approved by the user on 2026-10-13 with both findings carried into the build as explicit work: (1) add a name for textPreformat.background and a rule giving inline code that ground; (2) rewrite both history-chip tests in chat-panel.test.ts (about ten assertions) for the wrapper. Also carried: check diff line grounds in a high-contrast theme and state the expected look, and order the colour-scheme rules so high-contrast light wins over high-contrast dark, asserted by a test and checked in the panel.",
+      "at": "2026-10-13T06:32:13.238Z"
     }
   },
   "body": {

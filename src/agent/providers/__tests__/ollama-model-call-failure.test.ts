@@ -141,3 +141,36 @@ test('retry helper: a shape failure on the last attempt stays a plain Error even
 	assert.ok(!(caught instanceof ModelCallFailedError), 'the last attempt failed on shape, not on the call');
 	assert.equal(caught.message, 'structured-output: validation failed after 2 attempts: missing a');
 });
+
+test('OllamaProvider: a cancelled call (AbortError) reaches the caller as it was raised, on the call and during iteration, and is not taken for a failed model call', async () => {
+	const { isModelCallFailure } = await import('../../../analyze/context/model-failure.js');
+	const abort = (): Error => Object.assign(new Error('This operation was aborted'), { name: 'AbortError' });
+	for (const where of ['call', 'iteration'] as const) {
+		const runs: Array<[string, (p: OllamaProvider) => Promise<unknown>]> = [
+			['stream', async p => { for await (const _ of p.stream([{ role: 'user', content: 'hi' }])) { /* drain */ } }],
+			['complete', p => p.complete([{ role: 'user', content: 'hi' }])],
+			['completeStructured', p => p.completeStructured([{ role: 'user', content: 'hi' }], SCHEMA, { maxAttempts: 1 })],
+		];
+		for (const [name, run] of runs) {
+			const client = failingClient(abort, where);
+			let caught: unknown;
+			try { await run(providerWith(client)); } catch (err) { caught = err; }
+			const label = `${name} ${where}`;
+			assert.equal(caught, client.thrown[0], `${label}: the abort itself, unwrapped (got ${String(caught)})`);
+			assert.ok(!(caught instanceof ModelCallFailedError), label);
+			assert.equal(isModelCallFailure(caught), false, `${label}: not a failed model call`);
+			assert.equal(client.thrown.length, 1, `${label}: a cancellation is not retried`);
+		}
+	}
+});
+
+test('retry helper: a cancelled attempt (AbortError) ends the helper at once and is re-thrown as it was raised, not retried and not reported as a failure of shape', async () => {
+	const abort = Object.assign(new Error('This operation was aborted'), { name: 'AbortError' });
+	let calls = 0;
+	let caught: unknown;
+	try {
+		await withStructuredRetry(async () => { calls += 1; throw abort; }, () => ({ ok: true, value: 1 }), 3);
+	} catch (err) { caught = err; }
+	assert.equal(caught, abort);
+	assert.equal(calls, 1, 'not retried');
+});

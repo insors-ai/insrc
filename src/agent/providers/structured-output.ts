@@ -202,6 +202,9 @@ export async function withStructuredRetry<T>(
 		try {
 			raw = await call(note);
 		} catch (err) {
+			// A cancelled call ends the helper as it was raised: it is neither
+			// retried nor reported as a failure of shape or of the model.
+			if (err instanceof Error && err.name === 'AbortError') throw err;
 			// Application-level error (model didn't use the tool, parse
 			// error inside the provider's call closure, etc.). Convert to
 			// a validation failure so the next attempt re-issues with the

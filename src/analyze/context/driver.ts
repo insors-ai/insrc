@@ -365,26 +365,41 @@ function checksScopeState(invocationMode: RunShaperArgs['invocationMode'], shape
 }
 
 /**
+ * The check a checked request's scope gets, on a hit and on a miss alike: the
+ * code source needs a non-empty graph closure (the not-indexed check, which
+ * makes the under-index check first); every other checked source is refused
+ * only for a repository under index.
+ */
+async function checkScopeState(shaperId: RunShaperArgs['shaperId'], scope: ResolvedScope): Promise<void> {
+	if (shaperId === 'code') {
+		await ensureNonEmptyClosure(scope);
+	} else {
+		await ensureRepoQueryable(scope);
+	}
+}
+
+/**
  * Whether a cached bundle may be served, judged from what it recorded,
  * without resolving the request's scope:
  *   - no repoPath key (written before it was recorded): a miss;
  *   - repoPath null (built over no repository): served, as today;
- *   - a repository: refused with RepoIndexingError when it is now under index
- *     and the request is one whose scope runShaper checks (checksScopeState),
- *     as a miss would be; a miss when its last-indexed time has moved past the
- *     bundle's.
+ *   - a repository: for a request whose scope runShaper checks
+ *     (checksScopeState), the recorded repository gets the check a miss makes
+ *     (checkScopeState): refused when it is under index, and for the code
+ *     source when the index no longer holds it; a miss when its last-indexed
+ *     time has moved past the bundle's.
  */
 async function servedFromCache(
 	bundle:        AnalyzeContextBundle,
-	checksScope:   boolean,
+	scopeCheck:    ((scope: ResolvedScope) => Promise<void>) | undefined,
 	lastIndexedOf: (path: string) => Promise<number | undefined>,
 ): Promise<boolean> {
 	const meta = bundle.meta;
 	if (meta === undefined || !('repoPath' in meta) || meta.repoPath === undefined) return false;
 	if (meta.repoPath === null) return true;
 	const repo = meta.repoPath;
-	if (checksScope) {
-		await ensureRepoQueryable({ kind: 'repo', value: repo, repoPath: repo, lookupPath: repo });
+	if (scopeCheck !== undefined) {
+		await scopeCheck({ kind: 'repo', value: repo, repoPath: repo, lookupPath: repo });
 	}
 	const current = await lastIndexedOf(repo);
 	return current === undefined || !isStaleByIndexer(bundle, current);
@@ -425,7 +440,10 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// something the cache does not depend on cannot make a hit unreachable.
 	const cached = readBundle(runId, cacheKey, opts);
 	if (cached !== null) {
-		const served = await servedFromCache(cached, checksScopeState(invocationMode, shaperId, opts), lastIndexedOf);
+		const scopeCheck = checksScopeState(invocationMode, shaperId, opts)
+			? (scope: ResolvedScope) => checkScopeState(shaperId, scope)
+			: undefined;
+		const served = await servedFromCache(cached, scopeCheck, lastIndexedOf);
 		if (served) {
 			log.debug(
 				{ runId, mode: invocationMode, shaperId, file: cacheFilePathFor(runId, cacheKey) },
@@ -452,13 +470,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	//     empty-closure check, which makes the under-index check first).
 	// classification + task modes skip both: by the time a task fires,
 	// the run-mode invocation has already checked its scope.
-	if (checksScopeState(invocationMode, shaperId, opts)) {
-		if (shaperId === 'code') {
-			await ensureNonEmptyClosure(scope);
-		} else {
-			await ensureRepoQueryable(scope);
-		}
-	}
+	if (checksScopeState(invocationMode, shaperId, opts)) await checkScopeState(shaperId, scope);
 
 	// The scope's repo lastIndexedAt, stamped into meta for the next
 	// invocation's freshness check.

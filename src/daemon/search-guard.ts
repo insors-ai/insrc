@@ -111,7 +111,9 @@ export async function underIndexFilter(deps: Pick<SearchGuardDeps, 'listRepos'> 
 	let registered: readonly RegisteredRepo[];
 	try {
 		registered = deps.listRepos !== undefined ? await deps.listRepos() : await listRepos(null);
-	} catch {
+	} catch (err) {
+		// The guard refuses nothing then, so the filter leaves nothing out.
+		log.debug({ err: (err as Error).message }, 'underIndexFilter: registry read failed; nothing left out');
 		registered = [];
 	}
 	const repos = new Set(registered.filter(isUnderIndex).map(r => r.path));

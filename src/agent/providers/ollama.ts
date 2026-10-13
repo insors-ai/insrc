@@ -757,6 +757,11 @@ function toOllamaToolChoice(
   return toolChoice;
 }
 
+/** The error a cancelled request raises (fetch's DOMException, the Ollama client's own AbortError). */
+function isAbortError(err: unknown): boolean {
+  return err instanceof Error && err.name === 'AbortError';
+}
+
 /**
  * Every failure the Ollama client raises -- from the call itself or from
  * inside a stream's iteration -- is a failed model call, whatever its text
@@ -766,8 +771,11 @@ function toOllamaToolChoice(
  * error is kept as the cause. The two configuration failures keep their
  * actionable wording as the detail.
  */
-function wrapOllamaError(err: unknown): ModelCallFailedError {
+function wrapOllamaError(err: unknown): unknown {
   if (err instanceof ModelCallFailedError) return err;
+  // A cancelled call is not a failed one: the abort reaches the caller as it
+  // was raised, so a cancellation is never reported as the model being unavailable.
+  if (isAbortError(err)) return err;
   const message = err instanceof Error ? err.message : String(err);
   let detail = message;
   if (message.includes('ECONNREFUSED')) {
@@ -796,6 +804,8 @@ function wrapOllamaError(err: unknown): ModelCallFailedError {
  */
 export function isTransientOllamaError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
+  // A cancelled call is never retried; 'aborted' below is a socket the far side cut.
+  if (isAbortError(err)) return false;
   const msg = err.message;
   if (msg.includes('ECONNREFUSED')) return false;
   if (msg.includes('not found') || msg.includes('404')) return false;

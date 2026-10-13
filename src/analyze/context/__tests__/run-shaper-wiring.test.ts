@@ -18,7 +18,8 @@ import { fileURLToPath } from 'node:url';
 import { registerBuiltinTools } from '../../../daemon/tools/builtins/index.js';
 import { upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
-import { addRepo, updateRepoStatus } from '../../../db/repos.js';
+import { addRepo, removeRepo, updateRepoStatus } from '../../../db/repos.js';
+import { useTemporaryLance } from '../../../db/lance/__tests__/helpers/temp-lance.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import { PATHS } from '../../../shared/paths.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
@@ -53,6 +54,9 @@ const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..'
 
 let sandbox: string;
 let repo: string;
+// removeRepo also deletes the repository's vectors: a temporary vector store, never the daemon's.
+useTemporaryLance();
+
 const runIds: string[] = [];
 
 test.beforeEach(async () => {
@@ -570,4 +574,22 @@ test('runShaper: a cache hit decides the index state by the same rule as a miss:
 	// The same code run with no prior check is refused, warm as cold.
 	const refused = await callWith(code, cid, standIns().steps).then(() => undefined, (e: unknown) => e);
 	assert.ok(refused instanceof RepoIndexingError, String(refused));
+});
+
+test('runShaper: a cache hit on a code run whose recorded repository the index no longer holds is refused as not indexed, as the same request is from a cold cache', async () => {
+	const intent = unfocused({ kind: 'repo', value: repo });
+	const id = runId('cache-removed');
+	await callWith(intent, id, standIns().steps);
+	// The repository leaves the registry; another one stays, so the registry is not pristine.
+	await addRepo(null, { path: join(sandbox, 'other'), name: 'other', addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' });
+	await removeRepo(null, repo);
+
+	const warm = standIns();
+	const hit = await callWith(intent, id, warm.steps).then(() => undefined, (e: unknown) => e);
+	assert.ok(hit instanceof ScopeNotIndexedError, `warm: ${String(hit)}`);
+	assert.equal(warm.seen.synthesize, 0, 'not served, not built');
+
+	const cold = await callWith(intent, runId('cache-removed-cold'), standIns().steps).then(() => undefined, (e: unknown) => e);
+	assert.ok(cold instanceof ScopeNotIndexedError, `cold: ${String(cold)}`);
+	assert.equal((hit as Error).message, (cold as Error).message, 'the same refusal warm and cold');
 });

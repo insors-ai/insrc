@@ -1,0 +1,911 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791892996232-lqdtcu",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T12:08:41.963Z",
+    "epicCreatedAt": "2026-10-13T11:21:58.998Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 325725,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8d4b90c9ab301e66",
+    "epicSlug": "rework-document-review-pane-fixed-decision",
+    "storyId": "S001",
+    "lldRunId": "wf-1791891861132-94mwxv",
+    "lldEffectiveHash": "1db9389dad06487b19b0dc6f30ce89734ebbbbd05540487280680e8fbf121deb",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build goes from the daemon outward. First the saved feedback entry learns to carry an inline anchor and a decision, comments survive a re-authoring, and one new daemon call records a decision with its comments. Then the chat learns to take a message from another pane and hold it until it can run, and the review pane's host moves to that one call. Last the pane's shell is rebuilt in four steps (fixed comment panel and theme, document tabs, inline drafts, comment history), wired up, and checked in a browser and by hand in VS Code."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Give the feedback entry an anchor, a decision and a batch id, and add the batch append",
+        "summary": "Add the three optional fields to the entry's type, the stored list's schema, the append request's schema and coercion, the single-entry writer and the Feedback section renderer. Add appendFeedbackBatch (all entries in one write, or none) and priorFeedback (the stored list of an artifact JSON, or an empty list).",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "An entry with an anchor, a decision and a batch id is accepted and stored by the single-entry append and by the batch",
+          "A request without the new fields is stored and rendered exactly as before",
+          "The batch writes every entry in one write, or nothing when one entry is invalid",
+          "The Feedback section shows an entry's decision and quoted text"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "feedback: appendFeedbackBatch writes every entry in one write with ids and one timestamp, changes no other key, and writes nothing when any entry is invalid"
+          },
+          {
+            "level": "unit",
+            "name": "feedback: appendFeedback stores an entry's anchor, decision and batchId when the request has them and stores a request without them exactly as before"
+          },
+          {
+            "level": "unit",
+            "name": "feedback: the tool's input schema, coerceRequest and the stored list's schema accept an entry with an anchor, a decision and a batchId, and an entry without them is still valid"
+          },
+          {
+            "level": "unit",
+            "name": "feedback: feedbackBodyLines shows the decision and the quoted text of an entry that has them and renders an old entry byte-identically"
+          },
+          {
+            "level": "unit",
+            "name": "feedback: priorFeedback returns the stored list, and an empty list for a missing, unreadable or feedback-less artifact"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Keep a document's comments when it is re-authored",
+        "summary": "In the HLD, epic LLD, standalone LLD and PLAN finalizers, read the feedback of the JSON at the artifact's own path and put it into the new body before rendering. A Define is not carried.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A re-authored HLD, LLD and PLAN keep their earlier feedback entries in order and render them",
+          "A first authoring has no Feedback section, and a re-authored Define carries none",
+          "The carry-forward only reads: the prior JSON file is unchanged after the finalizer has run"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "finalize: a re-authored HLD, epic LLD, standalone LLD and PLAN each keep the feedback entries of the JSON at their own artifact path, in order, and render them in the Feedback section; a first authoring has none; a re-authored Define carries none"
+          },
+          {
+            "level": "integration",
+            "name": "finalize: the prior artifact JSON is byte-identical after the finalizer has run"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Extract the reviewer lookup and add the new fields to the review view",
+        "summary": "Make resolveReviewer in the companion header module from the inline fallback and have the header use it. Add docPath, contentVersion, feedback, reviewer and state to the review view.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "resolveReviewer gives the git name, else the OS login, else unknown, with its source",
+          "The companion header's user text is unchanged",
+          "The view returns the five new fields and its existing fields are unchanged",
+          "The daemon's typecheck and the existing review-view tests pass with the new fields"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "reviewer: resolveReviewer gives the trimmed git name with source git, else the OS login with source os, else unknown, and resolveCompanionHeader's user is unchanged for the same inputs"
+          },
+          {
+            "level": "unit",
+            "name": "review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the review decision call to the daemon",
+        "summary": "Add handleReviewDecision in a new src/workflow/review-decision.ts and register 'workflow.reviewDecision'. It validates the request, resolves the author, records the decision first (approve or reject through the existing functions; feedback changes no state) and then appends the comments in one batch with the decision that took effect.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Approve, reject and feedback each give the outcome and saved entries the design states, including a withheld approval",
+          "An invalid request answers an error and writes nothing",
+          "A failed comment write after the decision reports the outcome with commentsError",
+          "The existing review handlers are unchanged"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason"
+          },
+          {
+            "level": "unit",
+            "name": "review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject"
+          },
+          {
+            "level": "unit",
+            "name": "review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused"
+          },
+          {
+            "level": "unit",
+            "name": "review decision: a decision with no comments writes no feedback entry"
+          },
+          {
+            "level": "unit",
+            "name": "review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing"
+          },
+          {
+            "level": "unit",
+            "name": "review decision: a failing comment write after the decision took effect reports the outcome with commentsError"
+          },
+          {
+            "level": "unit",
+            "name": "review decision: the author is the one resolveReviewer gives and is never taken from the request"
+          },
+          {
+            "level": "unit",
+            "name": "daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Let the turn lifecycle say whether a turn is in progress, and report a failed follow",
+        "summary": "Add busy() to the lifecycle. Make a follow call its sink's end callback when the resume fails as well as when it ends normally.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "busy is true and false at the moments the design lists, and a superseding turn keeps it true",
+          "A follow whose resume fails calls its end callback once and busy is false then"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a superseding turn keeps it true"
+          },
+          {
+            "level": "unit",
+            "name": "turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Let another pane hand the chat a message that waits its turn",
+        "summary": "Add the ready flag, submitExternal, the waiting list and the drain to the chat host. A waiting message is run only when the webview is ready, no turn is in progress, no runTurn is starting and no permission request is unanswered. The host drains at the points the design lists, at a follow's end on either path, and when the last waiting permission request has been decided and its batch handled: at once if no follow-up turn was started, otherwise when that turn ends.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "A message handed to a closed panel opens it, is reported as queued and is run when the webview posts ready, not before",
+          "A message waits behind a running turn, a followed turn and an approval follow-up, and waiting messages run one per turn end, in order",
+          "A message waits while a permission request is unanswered and is run after the last one is decided, with or without a follow-up turn; no waiting request is rejected by it",
+          "A message waiting behind a turn that a typed message supersedes is run when the typed message's turn ends, and a typed message behaves as before",
+          "The list drains after Stop and after a chat switch, keeps waiting across a second ready while a turn runs, and is dropped with a warning on dispose"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c9",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "chat host: submitExternal on a closed panel opens it, answers queued although the session exists, and the message is run when the webview posts ready, not before"
+          },
+          {
+            "level": "unit",
+            "name": "chat host: submitExternal runs the message at once when the webview is ready and nothing is in progress, and queues it behind a running turn, a followed turn and an approval follow-up; waiting messages run one per turn end, in order"
+          },
+          {
+            "level": "unit",
+            "name": "chat host: a message waiting behind a turn that a typed message supersedes is run when the typed message's turn ends, and a typed message still supersedes a running turn"
+          },
+          {
+            "level": "unit",
+            "name": "chat host: submitExternal answers unavailable with no CLI or blank text, drains after Stop and after a chat switch into the session then active, keeps waiting across a second ready while a turn runs, and drops its list on dispose with a warning"
+          },
+          {
+            "level": "unit",
+            "name": "chat host: a pane message waits while a permission request is unanswered, rejects none, and is run after the last one is decided: at once when all were denied, after the follow-up turn when one was approved"
+          },
+          {
+            "level": "unit",
+            "name": "chat host: a pane message waiting behind a followed turn is run when the follow fails as well as when it ends"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Give the pane's client one decide call and add the new messages to the protocol",
+        "summary": "Replace approve and comment in the review client with decide over 'workflow.reviewDecision', and forward the view's new fields. Change the 'docs-decision' message and add 'docs-decision-result', 'open-companion' and 'docs-companion' to the protocol and its kind lists.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "decide calls the daemon once with the given path and throws on the error arm",
+          "content forwards docPath, contentVersion, feedback, reviewer and state",
+          "The three new kinds are listed and 'docs-decision' carries a decision and a comments list"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "docs review client: decide calls 'workflow.reviewDecision' once with the given path, without the id map, and throws on the error arm; content forwards the new view fields"
+          },
+          {
+            "level": "unit",
+            "name": "plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Move the pane's host to the open document's path, the one call and the chat message",
+        "summary": "The host keeps the open document's id, path and companions; acts on a decision for that document only (approve and reject need it pending, feedback does not); calls decide once; posts the result; re-reads the list and the document by path; and hands the chat one message. It answers 'open-companion' with the file's text, scripts stamped with the shell's nonce, and re-posts the open document when the rebuilt shell sends its boot ping.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "A decision calls decide once with the document's path and every comment, and the chat gets one message, the decision line alone when there are no comments",
+          "Send feedback works on a document that is not pending; approve and reject are refused for it",
+          "A companion of the open document is posted with its scripts stamped; any other path, or a failed read, is posted with no html",
+          "A boot ping from a rebuilt shell re-posts the open document, pending or not",
+          "A failing decide or chat hand-over is reported and nothing saved is undone",
+          "The tests that pin the replaced decision handling are rewritten for the new call; none is removed without a replacement"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c9",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "docs review host: a docs-decision calls decide once with the open document's docPath and every comment, posts docs-decision-result, re-reads the list and the document by docPath, and hands the chat one message with the decision and the numbered comments"
+          },
+          {
+            "level": "integration",
+            "name": "docs review host: a decision with no comments sends the chat the decision line alone"
+          },
+          {
+            "level": "integration",
+            "name": "docs review host: send feedback works on a read-only open and on a document just approved, while approve and reject are refused for a document that is not pending or not the open one"
+          },
+          {
+            "level": "integration",
+            "name": "docs review host: a failing decide posts a failed result, sends no chat message and keeps the open document"
+          },
+          {
+            "level": "integration",
+            "name": "docs review host: a withheld approval and a commentsError are each reported in the result and in the chat message"
+          },
+          {
+            "level": "integration",
+            "name": "docs review host: docs-content carries the feedback list, the reviewer, the state and one document entry per HTML companion"
+          },
+          {
+            "level": "integration",
+            "name": "docs review host: open-companion for one of the document's companions posts docs-companion with the file's text and the shell's nonce on every script tag that had none; for any other path, or when the read fails, it posts docs-companion with no html"
+          },
+          {
+            "level": "integration",
+            "name": "docs review host: an absent, throwing or unavailable notifyChat leaves the decision recorded and says so in the result"
+          },
+          {
+            "level": "integration",
+            "name": "docs review host: a boot ping while a document is open re-posts that document by its path, for a pending document and for one that is no longer pending"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Rebuild the pane's shell: fixed comment panel in the VS Code theme",
+        "summary": "Lay the shell out as a column with the header and the comment panel outside one scrolling region. Take every colour from VS Code theme variables and define the --it-* tokens from them. The comment panel is a rounded box with a field and round icon-only buttons that post one decision with the whole-document comment, stay disabled until the result arrives and show the result line.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "The comment panel and header stay outside the scrolling region",
+          "No terminal style, theme message or literal colour is used",
+          "The three buttons post one decision with the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing",
+          "The section chooser and the functional, diagram and experience renderers still draw",
+          "The shell baseline and the assertions on the old layout and style are updated to the new shell, and one inline script, the nonce CSP and no remote origin are still asserted"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch"
+          },
+          {
+            "level": "integration",
+            "name": "docs review shell: each of the three buttons posts one docs-decision with the whole-document comment and is disabled until the result arrives, the result line is shown, and feedback with no comment posts nothing"
+          },
+          {
+            "level": "integration",
+            "name": "docs review shell: the existing section chooser, functional-requirement, diagram and experience renderers still draw"
+          },
+          {
+            "level": "integration",
+            "name": "docs review shell: the shell is one inline script under a nonce CSP with no remote origin, and its recorded baseline is that of the new shell"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Show each document of an artifact in its own tab, HTML artifacts as the full page",
+        "summary": "The header shows one tab per document: the markdown first, then each HTML artifact by title. Choosing an HTML tab asks the host for the file and sets its text as the srcdoc of a frame with sandbox allow-scripts, with the file's path shown above it. Comments made on an HTML tab are whole-document comments with that file as their target.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "Each HTML artifact has its own tab, and choosing it posts open-companion",
+          "The frame is set from the posted text with sandbox allow-scripts and nothing else; without text the tab shows the path and a line",
+          "A comment sent from an HTML tab names that file and carries no anchor"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c13",
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "docs review shell: an HTML document's tab posts open-companion, and docs-companion sets the text as the srcdoc of a frame with sandbox allow-scripts and shows the file's path; with no html it shows the path and a line of text"
+          },
+          {
+            "level": "integration",
+            "name": "docs review shell: there is one tab per document, the markdown first, and a comment sent from an HTML tab names that file and has no anchor"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Add inline comments as drafts",
+        "summary": "Selecting text in one block of a markdown document offers a round comment button that marks the passage and opens a thread card with a field. An added comment is a draft with a quote, section, prefix and suffix. Drafts are sent with the decision, cleared only on a clean result, removable, and kept in the webview's saved state per artifact.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "A selection in one block makes a draft with its anchor; a selection across blocks, in the Feedback section or cutting a mark offers no button",
+          "Every draft is posted with the decision",
+          "Drafts are cleared on a successful result, kept on a failed one or one with commentsError, and restored when the shell is rebuilt",
+          "Comment and quote text are set as text"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c9",
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "docs review shell: selecting text in one block and adding a comment makes a draft with a quote, section, prefix and suffix; a selection across blocks, in the Feedback section or cutting an existing mark offers no button"
+          },
+          {
+            "level": "integration",
+            "name": "docs review shell: the three buttons post one docs-decision with every draft and the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing"
+          },
+          {
+            "level": "integration",
+            "name": "docs review shell: drafts are cleared on a successful result, kept on a failed one or one with commentsError, and restored from the saved state when the shell is rebuilt"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Show the saved comments of a document",
+        "summary": "Saved entries with an anchor are placed on their quotes with a mark and a margin marker that shows the count; clicking either opens the thread, oldest first, with author, time and decision. Entries with no place, and entries without an anchor, are listed in the whole-document strip in time order, tagged when they are from an earlier revision. A document not awaiting review shows its history and offers send feedback only.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "Saved inline entries appear on their passages with a count and open oldest first",
+          "An entry whose quote is gone is listed as on an earlier revision with its quote; entries without an anchor are listed in time order",
+          "An entry the shell cannot read is skipped and counted",
+          "A document not awaiting review shows its history and offers send feedback only",
+          "Author, comment and quote text are set as text"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c9",
+          "c13",
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order"
+          },
+          {
+            "level": "integration",
+            "name": "docs review shell: a document that is not awaiting review shows its history and offers send feedback only"
+          },
+          {
+            "level": "integration",
+            "name": "docs review shell: author, comment and quote text are set as text, never as markup"
+          },
+          {
+            "level": "integration",
+            "name": "docs review shell: a saved entry with no string author, timestamp or comment is skipped and the strip says how many could not be shown"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Wire the pane to the chat and to the companion files, and check the real shell in a browser",
+        "summary": "In extension.ts pass notifyChat (the chat host's submitExternal) and readCompanion (an .html file under the workspace's docs/ folder, at most 8 MB) to the review host. Render the real shell with a long document in headless Chrome and compare it with the approved mock.",
+        "size": "S",
+        "order": 13,
+        "dependsOn": [
+          "t6",
+          "t10",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "The review host is given notifyChat and readCompanion, and the two hosts do not import each other",
+          "readCompanion refuses a path that is not an .html file under docs/ or is over the size limit",
+          "In headless Chrome the comment panel is in view at the top and at the bottom of a long document"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7",
+          "c10",
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "review wiring: the review host is given notifyChat bound to the chat host's submitExternal and a readCompanion, and neither host module imports the other"
+          },
+          {
+            "level": "unit",
+            "name": "review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB"
+          },
+          {
+            "level": "smoke",
+            "name": "Headless Chrome render of the real shell with a long document: the comment panel stays in view at the top and at the bottom of the scroll, and a screenshot matches the approved mock's layout"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Run the suites, update the daemon, install the plugin and check by hand",
+        "summary": "Run the daemon's and the plugin's typechecks and test suites. Ask the user before pushing, since the installed daemon is updated from the remote; update and restart the daemon before installing the plugin build. The user then checks in VS Code: the theme, an inline and a whole-document comment sent with reject, the history on reopening, a decision sent while a chat turn runs and with the chat closed, and three HTML artifacts (a sequence diagram, one other mermaid diagram and a UI mock). The results are recorded as reported.",
+        "size": "S",
+        "order": 14,
+        "dependsOn": [
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "Both suites pass apart from failures that exist before this Story",
+          "The daemon is updated before the plugin is installed, and nothing is pushed without the user's word",
+          "The user's checks in VS Code pass, and the result for each of the three HTML artifacts is recorded"
+        ],
+        "derivedFrom": [
+          "c10",
+          "c11",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "The daemon's and the plugin's whole test suites pass apart from failures that exist before this Story"
+          },
+          {
+            "level": "smoke",
+            "name": "By hand in VS Code with a light and a dark theme: the pane follows the theme, an HTML companion with scripts is drawn in its tab, an inline comment and a whole-document comment sent with reject are saved under the git user and appear in the chat as one message, and they are shown as history when the document is opened again"
+          },
+          {
+            "level": "smoke",
+            "name": "By hand in VS Code: a decision sent while a chat turn is running is delivered after that turn ends, and one sent with the chat panel closed opens the chat and is delivered"
+          },
+          {
+            "level": "smoke",
+            "name": "By hand in VS Code: a sequence diagram, one other mermaid diagram and a UI mock are each drawn in their own tab, with the result recorded for each"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "feedback: appendFeedbackBatch writes every entry in one write with ids and one timestamp, changes no other key, and writes nothing when any entry is invalid",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "feedback: appendFeedback stores an entry's anchor, decision and batchId when the request has them and stores a request without them exactly as before",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "feedback: the tool's input schema, coerceRequest and the stored list's schema accept an entry with an anchor, a decision and a batchId, and an entry without them is still valid",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "feedback: feedbackBodyLines shows the decision and the quoted text of an entry that has them and renders an old entry byte-identically",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "feedback: priorFeedback returns the stored list, and an empty list for a missing, unreadable or feedback-less artifact",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "reviewer: resolveReviewer gives the trimmed git name with source git, else the OS login with source os, else unknown, and resolveCompanionHeader's user is unchanged for the same inputs",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "review decision: a decision with no comments writes no feedback entry",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "review decision: a failing comment write after the decision took effect reports the outcome with commentsError",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "review decision: the author is the one resolveReviewer gives and is never taken from the request",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "finalize: a re-authored HLD, epic LLD, standalone LLD and PLAN each keep the feedback entries of the JSON at their own artifact path, in order, and render them in the Feedback section; a first authoring has none; a re-authored Define carries none",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review client: decide calls 'workflow.reviewDecision' once with the given path, without the id map, and throws on the error arm; content forwards the new view fields",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a superseding turn keeps it true",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat host: submitExternal on a closed panel opens it, answers queued although the session exists, and the message is run when the webview posts ready, not before",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat host: submitExternal runs the message at once when the webview is ready and nothing is in progress, and queues it behind a running turn, a followed turn and an approval follow-up; waiting messages run one per turn end, in order",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat host: a message waiting behind a turn that a typed message supersedes is run when the typed message's turn ends, and a typed message still supersedes a running turn",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat host: submitExternal answers unavailable with no CLI or blank text, drains after Stop and after a chat switch into the session then active, keeps waiting across a second ready while a turn runs, and drops its list on dispose with a warning",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review host: a docs-decision calls decide once with the open document's docPath and every comment, posts docs-decision-result, re-reads the list and the document by docPath, and hands the chat one message with the decision and the numbered comments",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review host: a decision with no comments sends the chat the decision line alone",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review host: send feedback works on a read-only open and on a document just approved, while approve and reject are refused for a document that is not pending or not the open one",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review host: a failing decide posts a failed result, sends no chat message and keeps the open document",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review host: a withheld approval and a commentsError are each reported in the result and in the chat message",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review host: docs-content carries the feedback list, the reviewer, the state and one document entry per HTML companion",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review host: open-companion for one of the document's companions posts docs-companion with the file's text and the shell's nonce on every script tag that had none; for any other path, or when the read fails, it posts docs-companion with no html",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review host: an absent, throwing or unavailable notifyChat leaves the decision recorded and says so in the result",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review shell: selecting text in one block and adding a comment makes a draft with a quote, section, prefix and suffix; a selection across blocks, in the Feedback section or cutting an existing mark offers no button",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review shell: the three buttons post one docs-decision with every draft and the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing",
+        "coveredByTaskIds": [
+          "t9",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review shell: drafts are cleared on a successful result, kept on a failed one or one with commentsError, and restored from the saved state when the shell is rebuilt",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review shell: an HTML document's tab posts open-companion, and docs-companion sets the text as the srcdoc of a frame with sandbox allow-scripts and shows the file's path; with no html it shows the path and a line of text",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review shell: a document that is not awaiting review shows its history and offers send feedback only",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review shell: author, comment and quote text are set as text, never as markup",
+        "coveredByTaskIds": [
+          "t11",
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs review shell: the existing section chooser, functional-requirement, diagram and experience renderers still draw",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Headless Chrome render of the real shell with a long document: the comment panel stays in view at the top and at the bottom of the scroll, and a screenshot matches the approved mock's layout",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "By hand in VS Code with a light and a dark theme: the pane follows the theme, an HTML companion with scripts is drawn in its tab, an inline comment and a whole-document comment sent with reject are saved under the git user and appear in the chat as one message, and they are shown as history when the document is opened again",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "By hand in VS Code: a decision sent while a chat turn is running is delivered after that turn ends, and one sent with the chat panel closed opens the chat and is delivered",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: appendFeedback (the new fields in both writers and both schemas, appendFeedbackBatch, priorFeedback, the carry-forward in the HLD, LLD and PLAN finalizers)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: feedbackBodyLines (the decision and the quoted text in the Feedback section)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: handleArtifactContent (the five new view fields) and resolveReviewer"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: workflow.approve entry, the new 'workflow.reviewDecision' handler and handleReviewDecision"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: DocsReviewClient (decide in place of approve and comment)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: createDocsReviewHost (layout, theme, open document, viewers, comments, decision, chat)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: createChatPanelHost (submitExternal, the ready flag, the waiting list and drain points) and the lifecycle's busy()"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges: FeedbackEntry, ArtifactReviewView and the review pane's webview protocol"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths: error cases, edge cases and invariants to preserve"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy: test levels, subjects and the mapping of ac1 to ac8"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration: the order of change, daemon before plugin, and backward compatibility"
+    },
+    {
+      "id": "c12",
+      "kind": "stakeholder",
+      "ref": "Approval override of the LLD, given by the user in chat on 2026-10-13 after the third daemon review (0 high, 3 medium): a failed follow reports its end and the chat host drains then; the pane's host re-posts the open document by its path on the rebuilt shell's boot ping; the chat host's drain waits while a permission request is unanswered and runs when the last one is decided"
+    },
+    {
+      "id": "c13",
+      "kind": "stakeholder",
+      "ref": "The LLD's two open questions, resolved by the user in chat on 2026-10-13: the history shows only comments saved the new way; the hand check opens a UI mock and one other mermaid diagram besides a sequence diagram. The user also confirmed that each additional HTML artifact is its own tab with the full HTML loaded in it"
+    },
+    {
+      "id": "c14",
+      "kind": "doc",
+      "ref": "docs/mocks/docs-review-pane.html",
+      "quotedText": "Mock of the reworked document viewer / approver pane (VS Code webview)."
+    }
+  ]
+}

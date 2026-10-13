@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T13:56:46.991Z
+**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T14:10:42.058Z
 
-**Commit:** 4f78c9d2
+**Commit:** e9eaa614
 
 ## Summary
 
-A contract test calls each of the twelve graph-reading search requests over a real daemon's socket with the parameters they take today; the seed makes every parameter, required or optional, decide the answer, so renaming any one a handler reads fails the test (17 renames checked).
+The daemon's eleven graph-reading search requests that name a repository now refuse with 'repo-indexing: ...' (with how far the run has got) when that repository, or any root's, is under index; requests about ready repositories are answered as before, and an unreadable or empty registry refuses nothing.
 
 ## Tasks validated
 
@@ -23,9 +23,10 @@ A contract test calls each of the twelve graph-reading search requests over a re
 - ✓ `t9`
 - ✓ `t10`
 - ✓ `t11`
+- ✓ `t12`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T13:56:46.991Z)
+- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T14:10:42.058Z)

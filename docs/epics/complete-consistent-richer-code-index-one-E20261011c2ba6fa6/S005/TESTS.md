@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 49 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 53 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -350,3 +350,33 @@ Run at 2026-10-13T13:56:46.991Z on commit `4f78c9d2`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/search-request-contract.test.ts` | 0 | 1 | 2.6 s |  |
+
+## t12
+
+Run at 2026-10-13T14:10:42.058Z on commit `e9eaa614`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before | `src/daemon/__tests__/search-guard.test.ts` |
+| pass | search request contract: each guarded search request accepts its existing params and answers | `src/daemon/__tests__/search-request-contract.test.ts` |
+
+**integration: entity.closure / entity.unreachable with a root in a repository under index are refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | entity.closure / entity.unreachable with a root in a repository under index are refused | `src/daemon/__tests__/search-guard.test.ts` |
+
+**integration: search guard: a registry read that throws skips the guard and the request is answered as today**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | search guard: a registry read that throws skips the guard and the request is answered as today | `src/daemon/__tests__/search-guard.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/search-guard.test.ts` | 0 | 3 | 70.2 s |  |
+| `src/daemon/__tests__/search-request-contract.test.ts` | 0 | 1 | 2.7 s |  |

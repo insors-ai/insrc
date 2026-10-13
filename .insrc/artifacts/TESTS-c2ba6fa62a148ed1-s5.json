@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T13:56:46.991Z",
+    "updatedAt": "2026-10-13T14:10:42.058Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1849,6 +1849,94 @@
             "exitCode": 0,
             "timedOut": false,
             "durationMs": 2601,
+            "titles": [
+              {
+                "title": "search request contract: each guarded search request accepts its existing params and answers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "e9eaa614",
+        "ranAt": "2026-10-13T14:10:42.058Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-guard.test.ts",
+                "title": "search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/search-request-contract.test.ts",
+                "title": "search request contract: each guarded search request accepts its existing params and answers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "entity.closure / entity.unreachable with a root in a repository under index are refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-guard.test.ts",
+                "title": "entity.closure / entity.unreachable with a root in a repository under index are refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "search guard: a registry read that throws skips the guard and the request is answered as today",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-guard.test.ts",
+                "title": "search guard: a registry read that throws skips the guard and the request is answered as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/search-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 70215,
+            "titles": [
+              {
+                "title": "search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+                "result": "pass"
+              },
+              {
+                "title": "entity.closure / entity.unreachable with a root in a repository under index are refused",
+                "result": "pass"
+              },
+              {
+                "title": "search guard: a registry read that throws skips the guard and the request is answered as today",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/search-request-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2734,
             "titles": [
               {
                 "title": "search request contract: each guarded search request accepts its existing params and answers",

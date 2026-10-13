@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "5ff61e5fdca3875d",
+    "storyId": "S001",
+    "createdAt": "2026-10-13T06:45:42.001Z",
+    "authoredBy": "controller",
+    "triageRationale": "One localized edit with no design choice left: the user decided the behaviour (a chevron on a long assistant response, starting expanded).",
+    "epicCreatedAt": "2026-10-13T06:45:42.001Z"
+  },
+  "body": {
+    "focus": "In the VS Code dev chat, let the user collapse a long assistant response by hand. Since ISSUE-b1c7c1bc (commit 0d000665) the assistant row skips the collapse wrapper entirely, so it has no chevron. A long assistant response (the same test as for a user message: more than 3 lines or more than 240 characters) should get the chevron and start EXPANDED; it must never start collapsed. Short responses stay unwrapped. One function in vscode-plugin/src/chat/render-registry.ts (msgRow) and its tests.",
+    "producesLld": false,
+    "commit": "9e4ebe15"
+  }
+}

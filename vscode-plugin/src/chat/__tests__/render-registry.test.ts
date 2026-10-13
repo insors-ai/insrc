@@ -491,11 +491,22 @@ test('S001 (ux polish): a command-less tool-result renders no command line but s
 const LONG_LINES = 'line one\nline two\nline three\nline four\nline five';
 const LONG_CHARS = 'x'.repeat(300);
 
-test('S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — many lines', () => {
+test('S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — many lines; it has the chevron and the user can fold it', () => {
   const { reg } = makeRegistry();
   assert.ok(LONG_LINES.split('\n').length > 3, 'precondition: isLong() classifies this as long (>3 lines)');
   const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: LONG_LINES, collapsible: true })!;
-  assert.ok(!findByClass(row, 'insrc-collapse'), 'a multi-line assistant message is not wrapped in the collapse primitive');
+  // It has the chevron so the user can fold it by hand, and it starts expanded.
+  const wrap = findByClass(row, 'insrc-collapse')!;
+  assert.ok(wrap, 'a long assistant message has the collapse control');
+  assert.doesNotMatch(wrap.className, /insrc-collapse--collapsed/, 'it starts expanded');
+  const chevron = findByClass(wrap, 'insrc-collapse__chevron')!;
+  assert.equal(chevron.textContent, '\u25be', 'the chevron shows the expanded state');
+  // One click folds it, a second opens it again; the text is in the row throughout.
+  chevron.click();
+  assert.match(wrap.className, /insrc-collapse--collapsed/, 'the user folded it');
+  assert.equal(chevron.textContent, '\u25b8');
+  chevron.click();
+  assert.doesNotMatch(wrap.className, /insrc-collapse--collapsed/, 'and opened it again');
   assert.ok(mdText(row).includes('line five'), 'the whole answer renders, down to the last line');
 });
 
@@ -503,7 +514,9 @@ test('S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-c
   const { reg } = makeRegistry();
   assert.ok(LONG_CHARS.length > 240, 'precondition: isLong() classifies this as long (>240 chars)');
   const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: LONG_CHARS, collapsible: true })!;
-  assert.ok(!findByClass(row, 'insrc-collapse'), 'a long single-line assistant message is not wrapped in the collapse primitive');
+  const wrap = findByClass(row, 'insrc-collapse')!;
+  assert.ok(wrap, 'a long single-line assistant message has the collapse control');
+  assert.doesNotMatch(wrap.className, /insrc-collapse--collapsed/, 'it starts expanded');
   assert.ok(mdText(row).includes(LONG_CHARS), 'the full text renders');
 });
 

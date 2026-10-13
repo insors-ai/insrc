@@ -352,15 +352,17 @@ export function renderRegistryWebviewSource(): string {
     // burying the model's own answer behind a chevron was never its job. The user row keeps
     // collapsing when long (a deliberate narrowing: long pastes stay previewable). host.collapsible
     // itself is untouched and still serves tool-command, tool-result and caption rows.
-    `var content=inner||null;var longMsg=isLong(raw)&&role!=='assistant';` +
+    // A long assistant row gets the same chevron, but starts EXPANDED: the user can fold a long
+    // answer by hand, and it is never folded for them.
+    `var content=inner||null;var longMsg=isLong(raw);var folded=role!=='assistant';` +
     // A user message with files: its text (when it has any) in an element of its own, then the
     // chips under it. A message without files takes the unchanged path below.
     `var atts=role==='user'&&vm&&vm.meta&&vm.meta.attachments&&vm.meta.attachments.length>0?vm.meta.attachments:null;` +
     `if(atts&&!content){` +
-    `if(raw!==''){var t=document.createElement('div');t.className='insrc-bubble__text';t.textContent=raw;bubble.appendChild(longMsg?host.collapsible(t,{defaultCollapsed:true}):t);}` +
+    `if(raw!==''){var t=document.createElement('div');t.className='insrc-bubble__text';t.textContent=raw;bubble.appendChild(longMsg?host.collapsible(t,{defaultCollapsed:folded}):t);}` +
     `bubble.appendChild(attChips(atts));wrap.appendChild(bubble);return wrap;}` +
-    `if(content){bubble.appendChild(longMsg?host.collapsible(content,{defaultCollapsed:true}):content);}` +
-    `else if(longMsg){var c=document.createElement('div');c.textContent=raw;bubble.appendChild(host.collapsible(c,{defaultCollapsed:true}));}` +
+    `if(content){bubble.appendChild(longMsg?host.collapsible(content,{defaultCollapsed:folded}):content);}` +
+    `else if(longMsg){var c=document.createElement('div');c.textContent=raw;bubble.appendChild(host.collapsible(c,{defaultCollapsed:folded}));}` +
     `else{bubble.textContent=raw;}` +
     `wrap.appendChild(bubble);return wrap;}` +
     // S001 (bugfix): assistant content is rendered by the bundled `marked` library (GFM: tables,

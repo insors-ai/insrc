@@ -1,0 +1,617 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791918007889-ixl2il",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T19:00:07.901Z",
+    "epicCreatedAt": "2026-10-13T18:50:28.696Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 10,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dd277f9cddd6d879",
+    "epicSlug": "list-pending-build-records-review",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1791918007889-ixl2il",
+    "hldEffectiveHash": "ad5992896bf924b7795ac3beefe9d5c0b17cf76e8f7b602285ab6d6dffe17555",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story in the daemon's workflow module. The pending list is one scan with a fixed set of kinds; BUILD joins it. The same story must make sure a BUILD record's document can be served to the review pane (the delivery snapshot marks a record 'review-view' only when its markdown carries the artifact marker, and build records are served read-only today) and that a decision on it goes through the existing approve path with its code-review rule. The plugin already knows the BUILD kind in its table. Seven BUILD records are pending in this repository now, so the list grows little. A few files in one module, one approach, few tasks.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The upstream intent (triage rationale: BUILD joins the pending scan; its document must be servable to the review pane; a decision goes through the existing approve path with its code-review rule; no plugin source change) is fully designed, and nothing beyond it is built.",
+          "evidence": "LLD-dd277f9cddd6d879-S001.json meta.triageRationale names exactly these three points. The design covers each: PENDING_KINDS + CR-presence condition (2.1), the marker/exists check so only a servable BUILD.md path is offered, and approve/reject through handleReviewDecision -> approveWorkflowTarget. handleArtifactContent (artifact-content.ts:164-244) has no kind filter, so a BUILD .md with a marker is served as-is; no plugin source is changed. [files: .insrc/artifacts/LLD-dd277f9cddd6d879-S001.json, src/workflow/artifact-content.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today PENDING_KINDS is SPEC/DEF/HLD/LLD/PLAN/ISSUE/CR, the scan makes one readdirSync, skips a malformed file with a log, and treats pending as neither approvedAt nor rejectedAt.",
+          "evidence": "pending.ts:39 `PENDING_KINDS = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'ISSUE', 'CR']`; :110 single `readdirSync(dir).filter(...)` with no sort; :118-123 try/catch + log.warn + continue; :127-128 the two stamp checks. [files: src/workflow/pending.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Approving a BUILD record whose Story's code review is missing, unreadable or by the same party is withheld into skipped[] under any configuration; a block verdict withholds only when codeReview.enforce is on.",
+          "evidence": "gates.ts:686-725 otherPartyReviewGap: for a BUILD- id it reads CR-<epicHash>-<storyId>.json via readJsonOrUndefined and returns a gap when undefined ('Completion requires a code review of this Story, and none has been run') or when reviewer === author; approveArtifactByJsonPath throws ReviewBlockedError (:621-625), which approveWorkflowTarget routes to skipped (:868-869), independent of enforce. code-review/gate.ts:102-112: with enforce off a block is returned as advisory warn and 'NEVER withholds completion'. Note: for a malformed CR file the relayed reason says none was run, not 'unreadable', and a CR that parses but has no meta is not withheld; neither changes the design's outcome. [files: src/workflow/gates.ts, src/workflow/code-review/gate.ts]",
+          "action": "None required. Optionally word the malformed-CR reason as the message the gate actually gives.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A rejected build record stays rejected across later validates, the pane's decision call refuses a further decision on it, and approving in the chat clears the rejection.",
+          "evidence": "standalone-record.ts:424-428 mergeWithPrior: 'a later validate must never clobber a completed (or rejected) story', prior rejectedAt/rejectReason re-spread. review-decision.ts:149-153 returns `cannot ${decision} ... it is already ${state}, not awaiting review` for a non-pending record. gates.ts:650-652 approveArtifactByJsonPath: 'Clear any prior rejection if we're re-approving' deletes rejectedAt and rejectReason. [files: src/workflow/runners/build/standalone-record.ts, src/workflow/review-decision.ts, src/workflow/gates.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "deriveMdPath already resolves a BUILD record's BUILD.md, and the content and decision calls already serve a BUILD record by that path when the file carries the artifact marker.",
+          "evidence": "path-scheme.ts:48 ArtifactKind includes 'BUILD' and :70 STORY_SCOPED includes 'BUILD'; pending.ts:188 deriveMdPath takes any ArtifactKind. Both handleArtifactContent (artifact-content.ts:199) and handleReviewDecision (review-decision.ts:131) resolve the json through jsonPathForMd, which throws without a marker (gates.ts:1017-1026) - the reason the design adds the marker check. The build writer puts the marker on the first line (standalone-record.ts:331), so the 512-character window finds it; jsonPathForMd itself reads 4096 characters, so the design's window is narrower but sufficient for writer-produced files. [files: src/workflow/path-scheme.ts, src/workflow/pending.ts, src/workflow/gates.ts, src/workflow/runners/build/standalone-record.ts]",
+          "action": "None required. Consider using the same 4096-character window as readArtifactIdMarker so the two never disagree.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The VS Code plugin passes kind through as a string and its table already ranks BUILD between ISSUE and CR, so no plugin source changes.",
+          "evidence": "docs-review-list.ts:22 `RV_KINDS=['SPEC','DEF','HLD','LLD','PLAN','ISSUE','BUILD','CR']`; the type select builds its options from the kinds present (:49-54). docs-review-client.ts:125 `kind: a.kind` with no enumeration; :122 and :139 skip an empty mdPath, matching the design's pathless handling. [files: vscode-plugin/src/chat/docs-review-list.ts, vscode-plugin/src/chat/docs-review-client.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No consumer of PendingKind / PENDING_KINDS / listPendingArtifacts exists outside pending.ts and the two test files the inventory names, and pending.test.ts:94 is the test whose title becomes false.",
+          "evidence": "Grep over *.ts/*.kt: PendingKind and PENDING_KINDS occur only in src/workflow/pending.ts; listPendingArtifacts is imported only by pending.test.ts and artifact-kinds.test.ts; handleWorkflowPending is used by src/daemon/index.ts and pending.test.ts. pending.test.ts:94 is 'listPendingArtifacts excludes a non-union KIND even when unapproved (BUILD)' with a BUILD fixture and no CR. [files: src/workflow/pending.ts, src/workflow/__tests__/pending.test.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "artifact-kinds.test.ts seeds an unapproved BUILD with a CR record and a marker-carrying BUILD.md, so its pending result gains one BUILD row while its lower bound and before/after comparison still hold.",
+          "evidence": "artifact-kinds.test.ts:58 seeds BUILD-<HASH>-s1 unapproved, :65 CR-<HASH>-s1, :66-67 writes S001/BUILD.md with artifactIdMarker(BUILD-<HASH>-s1) under docs/epics/pay-things-E20260115abc123de, the folder the record's createdAt derives. :112 asserts `length >= 4`; :131 compares readAll before and after adding a TESTS record, and TESTS is not a pending kind, so the BUILD row is identical on both sides. [files: src/workflow/__tests__/artifact-kinds.test.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "At the end of a chat turn that runs the code review the presenter opens the BUILD record first and the CR record last, so the code review is the document on show.",
+          "evidence": "review-presenter.ts:142-147 opens every newly pending document in the list's order, so with a sorted scan BUILD-<x> is opened before CR-<x>; that part is true. I did not read docsReviewHost.openArtifact to confirm the last quiet open is the one left on show, and review-presenter.ts:128-135 opens a document at once when a tool result carries pendingApproval.artifactPath: if the code review's result presents the CR that way, the CR is opened mid-turn and the BUILD record is opened last at the turn's end. [files: vscode-plugin/src/chat/review-presenter.ts, vscode-plugin/src/extension.ts]",
+          "action": "Confirm which document is left on show when the CR is presented by a tool result during the turn, and state it in the edge case (or pin it in the plugin test).",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "change-sites.4",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The JetBrains plugin reads the same list and has no enumeration of pending kinds, so a BUILD row is carried by its kind text.",
+          "evidence": "DaemonGateway.kt:866 pendingArtifacts forwards workflow.pending; a grep of jetbrains-plugin/src/main for the quoted kind names (SPEC/DEF/HLD/LLD/PLAN/ISSUE/CR) finds none; ReviewToolWindow.kt:196 and :223 only print `dto.kind` / `value.kind`. [files: jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ReviewToolWindow.kt]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Nothing stored changes; in this repository the list grows by at most 7 build records, and older build records without epicCreatedAt exist and must be handled as pathless.",
+          "evidence": "Glob finds 146 .insrc/artifacts/BUILD-*.json; 139 of them contain approvedAt or rejectedAt, leaving 7 unstamped. Only 70 of the 146 carry epicCreatedAt (standalone-record.ts:70-73: 'Absent on older records'), so the older shape the design guards against is real. The design adds no field and writes nothing: the scan stays read-only. [files: src/workflow/runners/build/standalone-record.ts, src/workflow/pending.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A BUILD record and its Story's CR record share the identical file-name suffix, including lower-case epic story ids, so a set lookup on CR-<x>.json is the same record the approval gate reads.",
+          "evidence": "storage.ts:160-161 buildArtifactId = `BUILD-${epicHash}-${storyId}` and :173-174 codeReviewArtifactId = `CR-${epicHash}-${storyId}`; gates.ts:696 and code-review/gate.ts:72 build the CR path with the same function from the BUILD's own epicHash and storyId. The store holds matching pairs in both forms (BUILD-/CR-2ff0dfdadb1c8d1c-s1, BUILD-/CR-008e146ad1475ef9-S001). [files: src/workflow/storage.ts, src/workflow/gates.ts, src/workflow/code-review/gate.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A withheld approval comes back from handleReviewDecision as outcome 'withheld' with the approve call's reason and stamps nothing, and an unreadable store or one malformed file behaves as today.",
+          "evidence": "review-decision.ts:164-171: when res.approved is empty, `outcome = 'withheld'; reason = res.skipped[0]?.reason ?? 'the approval was not recorded'`; approveWorkflowTarget pushes to skipped without calling the stamp (gates.ts:855-857, 868-869). pending.ts:76-80 maps a thrown scan to `{ error }`, and :118-123 skips a malformed file. The CR is checked by name only, so a malformed CR file cannot throw inside the scan. [files: src/workflow/review-decision.ts, src/workflow/gates.ts, src/workflow/pending.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion maps to a test that can be written against existing seams: ac1 and ac2 to the listPendingArtifacts unit subjects, ac3 to the content and decision integration subjects, with the withheld case through the decision handler's approve seam.",
+          "evidence": "The acceptance mapping lists proving tests for ac1, ac2 and ac3. The seam the ac3 withheld case needs exists: review-decision.ts:86-89 ReviewDecisionDeps.approve (`typeof approveWorkflowTarget`) used at :164. pending.test.ts:37-46 has the temporary-store fixture the unit subjects reuse, and artifact-kinds.test.ts:66-67 shows the marker-carrying BUILD.md fixture pattern the path subject needs. [files: src/workflow/review-decision.ts, src/workflow/__tests__/pending.test.ts, src/workflow/__tests__/artifact-kinds.test.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 14,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-13T19:00:08.290Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "A Story's build record now appears in the list of documents awaiting approval once the Story's code review has run. From then on it is in the review pane's table, opens there like any document (and by itself when a chat turn produces the code review), and can be approved or rejected from the pane; approving it completes the Story, under the same code-review rule as today. A build record rejected from the pane leaves the list for good: after the fixes the Story is completed by approving it in the chat, as today, since a later build run keeps the rejection on the record. A build record of a Story that is still being built, or whose code review has not run, is not listed. Acceptance: ac1, a build record that is neither approved nor rejected and whose Story has a code review record is in the pending list with kind BUILD, its work item id and the path of its BUILD.md; ac2, a build record without a code review record, and an approved or rejected one, is not listed, and EXTEND, STUB and AMD records stay out; ac3, the review pane opens and decides a build record through the existing calls, an approval the approve call withholds being relayed with its reason.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone Story — no parent HLD. Designed directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Daemon pending list: a Story's build record is listed once its code review has run"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "listPendingArtifacts",
+          "signature": "listPendingArtifacts(repoPath: string): readonly PendingArtifact[]",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository whose .insrc/artifacts directory is scanned."
+            }
+          ],
+          "returns": {
+            "type": "readonly PendingArtifact[]",
+            "meaning": "As today, plus BUILD records. PENDING_KINDS becomes ['SPEC','DEF','HLD','LLD','PLAN','ISSUE','BUILD','CR'] and its comment says BUILD is listed once the Story's code review has run, with EXTEND, STUB and AMD still excluded. In the scan, a file BUILD-<x>.json passes the kind check and is then skipped unless the directory also holds CR-<x>.json (same suffix; the names come from the one readdirSync the scan already makes, held in a Set). The approved/rejected rule applies as to every kind. The descriptor is built by the existing toDescriptor: kind 'BUILD', title 'BUILD <work item id>' (a build record's body has no title), mdPath from deriveMdPath (which already resolves a BUILD record's BUILD.md), workItemId, openQuestionCount 0. One addition for a BUILD record only: its mdPath is the derived path only when that file exists AND its first 512 characters contain the marker '<!-- insrc:artifact <this record's artifact id> -->'; otherwise mdPath is ''. Two older shapes fail that test: a record without epicCreatedAt whose build began on a later day than its work item derives a folder that does not exist, and a BUILD.md written before the marker was introduced has none, so the content and decision calls could not resolve it. Such a record is listed by its id with no path, as a pathless record of any kind is today, and nothing is offered a path that cannot be opened or decided. This is one existsSync and one bounded read per listed BUILD record. The scan also sorts the directory's file names before walking them, so the list's order is the names' order on every platform (BUILD-<x> before CR-<x>)."
+          },
+          "errors": [
+            {
+              "type": "as today",
+              "condition": "An unreadable store directory throws (mapped to { error } by handleWorkflowPending); one malformed file is skipped and logged. The code review record is checked by name only, so a malformed CR file does not hide or fail the build record."
+            }
+          ],
+          "preconditions": [
+            "None beyond today's"
+          ],
+          "postconditions": [
+            "Every record listed before this Story is still listed, in the same form",
+            "A BUILD record is listed exactly when it is neither approved nor rejected and its Story's CR record exists",
+            "handleWorkflowPending's result shape is unchanged; only a new value of kind can appear",
+            "A listed BUILD record's mdPath is either an existing BUILD.md that carries this record's marker, or ''",
+            "The list is in file-name order"
+          ]
+        },
+        {
+          "name": "PendingKind",
+          "signature": "type PendingKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'ISSUE' | 'BUILD' | 'CR'",
+          "parameters": [],
+          "returns": {
+            "type": "type",
+            "meaning": "Derived from PENDING_KINDS. The plugin's client passes kind through as a string and its table already ranks BUILD, so no plugin source changes; a plugin test pins that a BUILD row is listed, counted and opened like any other."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "Type only."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "No other consumer of PendingKind exists outside pending.ts"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "PendingArtifact.kind",
+        "change": "field-modify",
+        "details": "One more value, 'BUILD'. No field is added and nothing stored changes; the list is computed on each call. Existing tests touched: pending.test.ts:94 ('excludes a non-union KIND even when unapproved (BUILD)') is replaced by the 'no code review record' case of this Story's second unit subject, since BUILD is now a listed kind; artifact-kinds.test.ts seeds an unapproved BUILD with a CR record and a marker-carrying BUILD.md, so its pending result gains that BUILD row: its before/after comparisons and its lower bound still hold and are re-read in this Story, with the expected row stated where the test names rows. The two integration subjects on the read and decision calls are added to artifact-content.test.ts and review-decision.test.ts.",
+        "schemaDiff": "PendingKind: + 'BUILD'",
+        "callSites": [
+          "src/workflow/pending.ts",
+          "src/workflow/__tests__/pending.test.ts",
+          "src/workflow/__tests__/artifact-kinds.test.ts",
+          "src/workflow/__tests__/artifact-content.test.ts",
+          "src/workflow/__tests__/review-decision.test.ts",
+          "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The build record's BUILD.md cannot be resolved (a legacy record without the identity fields)",
+          "detection": "deriveMdPath returns ''",
+          "response": "As for any kind today: the record is listed with an empty path",
+          "userImpact": "It shows in the table by its id; the plugin's presenter skips it and opening it fails with the daemon's message, as for any pathless record",
+          "recoverable": true
+        },
+        {
+          "scenario": "The derived BUILD.md does not exist, or exists without this record's artifact marker (an older build record)",
+          "detection": "existsSync and a read of the file's first 512 characters, for a BUILD record only",
+          "response": "mdPath is ''",
+          "userImpact": "As for a pathless record: listed by its id, not auto-opened, no path that cannot be read is offered",
+          "recoverable": true
+        },
+        {
+          "scenario": "Approving a build record from the pane when its Story's code review is missing, unreadable or by the same party as the build",
+          "detection": "approveWorkflowTarget returns the record in skipped with a reason, under any configuration",
+          "response": "handleReviewDecision returns outcome 'withheld' with the reason, as for a review-blocked design",
+          "userImpact": "The pane says why it was not approved; nothing is stamped",
+          "recoverable": true
+        },
+        {
+          "scenario": "Approving a build record whose code review verdict is block",
+          "detection": "The code-review gate",
+          "response": "With codeReview.enforce on, withheld with the reason. With it off (the default) the verdict is advisory and the approval goes through, exactly as approving the same record in the chat does today",
+          "userImpact": "Under the default setting the pane can complete a Story whose code review blocks; the pane shows the code review record beside it in the table",
+          "recoverable": true
+        },
+        {
+          "scenario": "The code review record's file is malformed",
+          "detection": "Not read by the scan: its presence by name is the condition",
+          "response": "The build record is listed; approving it is withheld by the gate (an unreadable code review)",
+          "userImpact": "The pane relays the reason",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A Story still being built: its BUILD record exists, no CR record yet",
+          "expected": "Not listed"
+        },
+        {
+          "input": "The code review runs in a chat turn",
+          "expected": "The CR record and the BUILD record both become pending in that turn; the plugin's presenter opens both at the turn's end in the list's order, which the scan now fixes as file-name order: the BUILD record first, the CR record last, so the code review is on show and the build record is in the table"
+        },
+        {
+          "input": "The code review is run again after fixes",
+          "expected": "The BUILD record was already listed and stays listed; nothing is opened again by the list (its id was pending before the turn)"
+        },
+        {
+          "input": "A build record with a CR record whose verdict is block",
+          "expected": "Listed: it awaits a decision. Approving it is withheld only when codeReview.enforce is on; otherwise it is approved as advisory"
+        },
+        {
+          "input": "An approved build record",
+          "expected": "Not listed, as before"
+        },
+        {
+          "input": "A rejected build record",
+          "expected": "Not listed, and it stays out: the build writer keeps rejectedAt on every later validate, and the pane's decision call refuses a record that is already rejected. After the fixes the Story is completed through insrc_workflow_approve in the chat, which clears the rejection, as today"
+        },
+        {
+          "input": "A CR record with no BUILD record",
+          "expected": "The CR is listed as today; nothing else changes"
+        },
+        {
+          "input": "An epic Story with a lower-case story id (BUILD-<hash>-s5, CR-<hash>-s5)",
+          "expected": "Matched by the identical suffix"
+        },
+        {
+          "input": "EXT, STUB, AMD, TESTS records",
+          "expected": "Not listed, as before"
+        },
+        {
+          "input": "A trivial standalone build (a BUILD record with no LLD)",
+          "expected": "Listed once its code review record exists, like any other"
+        },
+        {
+          "input": "A BUILD.md that carries another record's marker",
+          "expected": "Treated as having no marker for this record: the path is ''"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Pending means neither approvedAt nor rejectedAt is stamped: the same fields approve and reject write",
+          "source": "c1"
+        },
+        {
+          "text": "One malformed file never drops the rest of the list",
+          "source": "c1"
+        },
+        {
+          "text": "A BUILD record's approval enforces the code-review rule in approveWorkflowTarget, whoever asks",
+          "source": "c3"
+        },
+        {
+          "text": "The workflow.pending result shape is unchanged",
+          "source": "c1"
+        },
+        {
+          "text": "A completed or rejected build record's stamp is never clobbered by a later validate",
+          "source": "c7"
+        },
+        {
+          "text": "The scan is pure over the filesystem and reads the directory's names once",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The scan's rule for a BUILD record.",
+          "subjects": [
+            "listPendingArtifacts lists a pending BUILD record whose Story has a code review record, with kind BUILD, its work item id and the path of its BUILD.md",
+            "listPendingArtifacts leaves out a BUILD record with no code review record, an approved or a rejected one, and EXT, STUB and AMD records as before",
+            "listPendingArtifacts gives a BUILD record an empty path when the BUILD.md its fields derive does not exist or does not carry this record's artifact marker, and lists the records in file-name order"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The read and decision calls on a BUILD record (the withheld case through the decision handler's approve seam, which holds under any configuration), and the plugin's table with a BUILD row.",
+          "subjects": [
+            "handleArtifactContent serves a BUILD record's markdown by the path the pending list gives, with kind BUILD",
+            "handleReviewDecision on a BUILD record: approve goes through the same approve call as any record and a result that call withholds is returned with its reason; reject stamps the record, after which it is not listed and the pane's call refuses a further decision on it",
+            "docs review shell: a BUILD row is listed between ISSUE and CR, counted in the type select, and opens like any other row"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "The suites and a hand check.",
+          "subjects": [
+            "The daemon's workflow and MCP suites and the plugin's suite pass apart from failures that exist before this Story",
+            "By hand in VS Code: after a Story's code review runs in the chat, its build record is in the review pane's table and can be opened and approved there; a build record of a Story still being built is not listed; a build record rejected in the pane leaves the table and is completed by approval in the chat"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "listPendingArtifacts lists a pending BUILD record whose Story has a code review record, with kind BUILD, its work item id and the path of its BUILD.md",
+            "docs review shell: a BUILD row is listed between ISSUE and CR, counted in the type select, and opens like any other row",
+            "By hand in VS Code: after a Story's code review runs in the chat, its build record is in the review pane's table and can be opened and approved there; a build record of a Story still being built is not listed; a build record rejected in the pane leaves the table and is completed by approval in the chat",
+            "listPendingArtifacts gives a BUILD record an empty path when the BUILD.md its fields derive does not exist or does not carry this record's artifact marker, and lists the records in file-name order"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "listPendingArtifacts leaves out a BUILD record with no code review record, an approved or a rejected one, and EXT, STUB and AMD records as before",
+            "By hand in VS Code: after a Story's code review runs in the chat, its build record is in the review pane's table and can be opened and approved there; a build record of a Story still being built is not listed; a build record rejected in the pane leaves the table and is completed by approval in the chat"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "handleArtifactContent serves a BUILD record's markdown by the path the pending list gives, with kind BUILD",
+            "handleReviewDecision on a BUILD record: approve goes through the same approve call as any record and a result that call withholds is returned with its reason; reject stamps the record, after which it is not listed and the pane's call refuses a further decision on it",
+            "The daemon's workflow and MCP suites and the plugin's suite pass apart from failures that exist before this Story"
+          ]
+        }
+      ],
+      "testFramework": "node:test run with tsx (npx tsx --test); the daemon tests use a temporary .insrc/artifacts store as pending.test.ts does, the plugin test the review shell's harness"
+    },
+    "migration": {
+      "stateBefore": "The pending list carries SPEC, DEF, HLD, LLD, PLAN, ISSUE and CR records. A build record is never listed, so it cannot be seen or approved in the review pane and is not opened when a chat turn produces it.",
+      "stateAfter": "A build record that is neither approved nor rejected is listed once its Story's code review record exists.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add BUILD to PENDING_KINDS with the code-review-record condition, the marker check and the sorted scan, and its tests; replace pending.test.ts's 'excludes BUILD' case and re-read artifact-kinds.test.ts",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Pin the read and decision calls for a BUILD record, and the plugin's table with a BUILD row, by tests",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Run the suites; push; update and restart the daemon; check by hand",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The workflow.pending result keeps its shape and gains one kind value; its order becomes file-name order. The VS Code plugin passes kind through as a string and already ranks BUILD. The JetBrains plugin also reads this list (DaemonGateway.pendingArtifacts) and approves through workflow.approve, which runs the same gate; it has no enumeration of pending kinds, so a BUILD row is carried by its kind text; this Story changes nothing there and its hand check does not cover it. Nothing stored changes. In this repository the list grows by the unapproved build records that have a code review record (at most 7 today).",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "List a BUILD record once its Story has a code review record",
+        "oneLineSummary": "BUILD joins the pending kinds, but a build record is listed only when the Story's code review has run",
+        "approach": "Add 'BUILD' to PENDING_KINDS. In listPendingArtifacts a BUILD-<x>.json that is neither approved nor rejected is listed only when CR-<x>.json exists in the same directory (whatever its verdict). The names of the directory's files are already read once per scan, so the check is a set lookup. Everything else (title, path, work item id) uses the existing descriptor code; the content and decision calls already serve a BUILD record.",
+        "pros": [
+          "A build record appears when it is time to close the Story, which is when the user is asked to approve it",
+          "The review pane's auto-open then opens it at that moment, once, instead of at the Story's first task",
+          "A Story still being built adds nothing to the list",
+          "Filesystem only, one set lookup per BUILD record; no delivery graph is built"
+        ],
+        "cons": [
+          "A build record of a Story whose code review was never run is not listed (it cannot be closed under the code-review rule either, and is still on the delivery board)",
+          "The readiness rule is a second condition beside approved/rejected"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "List every unapproved BUILD record",
+        "oneLineSummary": "BUILD joins the pending kinds with no further condition",
+        "approach": "Add 'BUILD' to PENDING_KINDS only.",
+        "pros": [
+          "One-word change",
+          "Every open build is visible in the table"
+        ],
+        "cons": [
+          "A build record exists from the Story's first validated task, so the list shows records that cannot be approved yet",
+          "The auto-open would open the build record at the end of the turn that validated the first task, and never again when the Story is actually ready",
+          "Approving such a record from the pane is withheld or, with the code-review rule not enforced, closes a half-built Story"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Puts unfinished builds in a list of documents awaiting approval."
+      },
+      {
+        "id": "a3",
+        "name": "List a BUILD record when every planned task has passed",
+        "oneLineSummary": "Readiness computed from the plan and the recorded task results",
+        "approach": "Build the Story's validation counts as the delivery read model does (plan tasks against recorded results) and list the BUILD record when none is failed or unrecorded.",
+        "pros": [
+          "Readiness means exactly 'the build is done'"
+        ],
+        "cons": [
+          "The pending scan would read plans and results per build record or build the delivery graph, on a call the pane makes often",
+          "Two definitions of readiness to keep in step (the delivery model's and this one)",
+          "A done build without a code review still cannot be closed, so the user is offered an approval that is then withheld"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "More exact about 'built' but costlier and still offers an approval that is withheld."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifact-content.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review-decision.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/path-scheme.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-list.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/standalone-record.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/code-review/gate.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 1 of this LLD, 2026-10-14: block, 3 medium (a rejected build record never returns to pending; a blocking code review withholds only under codeReview.enforce; a record without epicCreatedAt can derive a path that does not exist)"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 2 of this LLD, 2026-10-14: block, 1 medium (a BUILD.md without the artifact marker cannot be opened or decided; 68 of 146 here have none), and two points not verified (the JetBrains plugin reads the same list; the scan's order is not fixed)"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/artifact-kinds.test.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 3 of this LLD, 2026-10-14: block, 1 medium (the call-site inventory omitted artifact-kinds.test.ts, the content and decision suites, and the pending test whose title becomes false)"
+    }
+  ]
+}

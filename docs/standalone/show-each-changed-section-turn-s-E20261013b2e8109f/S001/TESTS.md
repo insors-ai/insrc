@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 27 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -215,3 +215,100 @@ Run at 2026-10-13T09:03:32.805Z on commit `48de54bd`. Tests check: **passed**. 9
 | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 8 | 0.5 s |  |
 | `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` | 0 | 8 | 0.4 s |  |
 | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` | 0 | 75 | 0.4 s |  |
+
+## t6
+
+Run at 2026-10-13T09:12:37.601Z on commit `08c30702`. Tests check: **passed**. 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: governor: check passes the reconciled operations to showSections and calls nothing when nothing changed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | governor: check passes the reconciled operations to showSections and calls nothing when nothing changed | `vscode-plugin/src/chat/__tests__/edit-governor.test.ts` |
+
+**unit: governor: checks run one at a time, a call made during a check causes exactly one more, and its promise resolves after that one**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | governor: checks run one at a time, a call made during a check causes exactly one more, and its promise resolves after that one | `vscode-plugin/src/chat/__tests__/edit-governor.test.ts` |
+
+**unit: governor: an unreadable check calls sectionsUnreadable once per turn and a later check still shows sections**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | governor: an unreadable check calls sectionsUnreadable once per turn and a later check still shows sections | `vscode-plugin/src/chat/__tests__/edit-governor.test.ts` |
+
+**unit: governor: sectionPaths holds the path of every known section, shown or hidden, and is empty after beginTurn**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | governor: sectionPaths holds the path of every known section, shown or hidden, and is empty after beginTurn | `vscode-plugin/src/chat/__tests__/edit-governor.test.ts` |
+
+**unit: governor: no snapshot or the editor view means sectionsActive is false and check does nothing; in the chat view observe does nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | governor: no snapshot or the editor view means sectionsActive is false and check does nothing; in the chat view observe does nothing | `vscode-plugin/src/chat/__tests__/edit-governor.test.ts` |
+
+**unit: governor: a check that ends after a newer turn began shows nothing, and resolveTurn runs a last check then releases the snapshot**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | governor: a check that ends after a newer turn began shows nothing, and resolveTurn runs a last check then releases the snapshot | `vscode-plugin/src/chat/__tests__/edit-governor.test.ts` |
+
+**unit: governor: abandonTurn makes sectionsActive false at once, releases the snapshot without a last check, and a check in flight shows nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | governor: abandonTurn makes sectionsActive false at once, releases the snapshot without a last check, and a check in flight shows nothing | `vscode-plugin/src/chat/__tests__/edit-governor.test.ts` |
+
+**unit: protocol: transcript-row is a host message and edit-prompt is not**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | protocol: transcript-row is a host message and edit-prompt is not | `vscode-plugin/src/chat/__tests__/protocol.test.ts` |
+
+**unit: chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment (__tests__/extension-chat-wiring.test.ts; replaces the assertion on `computeDiff: defaultComputeDiff` at line 89)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment | `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` |
+
+**integration: diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: diff sections: a check is requested after every tool-result and file-edit event and once more at the end of the turn, and the session is saved after late rows**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff sections: a check is requested after every tool-result and file-edit event and once more at the end of the turn, and the session is saved after late rows | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: diff sections: overflow and unreadable push one marker row each and post it as transcript-row**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff sections: overflow and unreadable push one marker row each and post it as transcript-row | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: diff sections: with no snapshot, or with the editor view, no diff state is made and the rows and messages are those of today**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff sections: with no snapshot, or with the editor view, no diff state is made and the rows and messages are those of today | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: diff sections: the restored window and an older page carry each section's latest version at its first row's place**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff sections: the restored window and an older page carry each section's latest version at its first row's place | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 149 | 3.1 s |  |
+| `vscode-plugin/src/chat/__tests__/edit-governor.test.ts` | 0 | 14 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` | 0 | 22 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/protocol.test.ts` | 0 | 10 | 0.3 s |  |

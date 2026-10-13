@@ -4,7 +4,7 @@
     "epicHash": "b2e8109f42afc0dd",
     "storyId": "S001",
     "createdAt": "2026-10-13T08:48:39.843Z",
-    "updatedAt": "2026-10-13T09:03:32.805Z",
+    "updatedAt": "2026-10-13T09:12:37.601Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T07:52:45.476Z",
@@ -31,9 +31,13 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "The webview draws a diff row as the mock's widget (built through line(), remembered by sid, redrawn in place by redrawDiff), handles the new 'transcript-row' message, folds a tool result only when its output is long, and no transcript row shrinks. The old renderDiff, its 'edit-prompt' handler and the seven .insrc-diff-* rules are gone from the shell.",
+    "summary": "The governor compares the working tree with the turn's snapshot after each tool call, one check at a time, and hands the host add, update and withdraw operations; the host pushes each as a diff row and posts it as transcript-row. edit-prompt and the per-file computeDiff are removed.",
     "testRecord": {
       "md": "docs/standalone/show-each-changed-section-turn-s-E20261013b2e8109f/S001/TESTS.md"
     },
@@ -43,184 +47,198 @@
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-theme-before.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/codex-file-change-item.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/edit-governor.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/git-baseline.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/live-cli.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/real-git.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/cli-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/diff-sections.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/edit-governor.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/git-baseline.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/render-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/session-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/stream-events.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/transcript-window.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/extension.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T09:03:32.805Z"
+        "timestamp": "2026-10-13T09:12:37.601Z"
       }
     ],
-    "commit": "48de54bd"
+    "commit": "08c30702"
   }
 }

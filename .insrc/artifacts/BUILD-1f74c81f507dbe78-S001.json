@@ -4,7 +4,7 @@
     "epicHash": "1f74c81f507dbe78",
     "storyId": "S001",
     "createdAt": "2026-10-13T16:14:59.110Z",
-    "updatedAt": "2026-10-13T16:16:02.329Z",
+    "updatedAt": "2026-10-13T16:20:17.087Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T14:35:06.077Z",
@@ -19,9 +19,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "DocsArtifactSummary (protocol.ts) gains optional openQuestions and workItemId. The client maps them from the daemon's pending artifact: openQuestionCount when it is a number (0 included), workItemId when it is a non-empty string; otherwise the key is absent. The host already forwards the summaries unchanged; a test now pins that. The existing client test that deep-equals the mapped list was updated to expect the count its fixture carries.",
+    "summary": "docs-review-panel.ts: the host gains optional deps watchDocument and setTimer. setOpened is now the one place the open document's record is assigned; it keeps the watch when the same document (same artifact id and path) is read again, ends it and starts a new one on [docPath, .insrc/artifacts/<id>.json] for another document, and ends it when the record is cleared (a failed open of another document, the panel closing, dispose). Keeping the watch for the same document is the reviewer's suggestion from the LLD's last review, so a change cannot fall between ending and restarting it. A change starts a quiet period of RELOAD_QUIET_MS (300), restarted by further changes; at its end the host re-reads the pending list and the open document by its path, posted with changed: true. decide() counts decisions in flight; a change during one is remembered and starts the quiet period when the decision settles on any path (recorded, refused, failed). openDoc takes reveal and changed: reveal is passed by a list-row open and by openArtifact and is on both the content and the 'unavailable' content of a failed read; re-reads never carry it. protocol.ts: docs-content gains reveal? and changed?. extension.ts: createPanel sets panel.iconPath to the review icon pair before wrapping it, and watchDocument creates one VS Code file watcher per path under the first workspace folder. vscode.d.ts (the plugin's own compile-only declarations) gains createFileSystemWatcher, RelativePattern and FileSystemWatcher. One fix outside the task, in its own commit: extension-chat-wiring.test.ts pinned createDocsReviewClient(client); my earlier hand-check fix (d7536863) had added the repository argument and I had not run the whole suite then, so that test was failing; its assertion now expects the argument. Not checked: the real VS Code file watcher (whether it reports changes under .insrc/, and its timing); that is the hand check in task 6. Plugin suite without forced exit: 1251 tests, 1241 pass, 8 skipped, 2 fail (manifest-catalog.test.ts, failing before either Story).",
     "testRecord": {
       "md": "docs/standalone/review-pane-document-table-search-live-E202610131f74c81f/S001/TESTS.md"
     },
@@ -31,58 +35,93 @@
           "file": "vscode-plugin/media/insrc-review-icon-dark.svg"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T16:16:02.329Z"
+        "timestamp": "2026-10-13T16:20:17.087Z"
       },
       {
         "target": {
           "file": "vscode-plugin/media/insrc-review-icon.svg"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T16:16:02.329Z"
+        "timestamp": "2026-10-13T16:20:17.087Z"
       },
       {
         "target": {
           "file": "vscode-plugin/package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T16:16:02.329Z"
+        "timestamp": "2026-10-13T16:20:17.087Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T16:16:02.329Z"
+        "timestamp": "2026-10-13T16:20:17.087Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T16:16:02.329Z"
+        "timestamp": "2026-10-13T16:20:17.087Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T16:20:17.087Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/review-icon.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T16:16:02.329Z"
+        "timestamp": "2026-10-13T16:20:17.087Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T16:20:17.087Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/docs-review-client.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T16:16:02.329Z"
+        "timestamp": "2026-10-13T16:20:17.087Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/docs-review-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T16:20:17.087Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T16:16:02.329Z"
+        "timestamp": "2026-10-13T16:20:17.087Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T16:20:17.087Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/vscode.d.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T16:20:17.087Z"
       }
     ],
-    "commit": "727006f3"
+    "commit": "a6475dad"
   }
 }

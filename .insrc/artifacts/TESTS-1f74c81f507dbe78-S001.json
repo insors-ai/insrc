@@ -4,7 +4,7 @@
     "epicHash": "1f74c81f507dbe78",
     "storyId": "S001",
     "createdAt": "2026-10-13T16:14:59.110Z",
-    "updatedAt": "2026-10-13T16:16:02.329Z",
+    "updatedAt": "2026-10-13T16:20:17.087Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T14:35:06.077Z",
     "epicSlug": "review-pane-document-table-search-live"
@@ -194,6 +194,167 @@
               },
               {
                 "title": "docs review host: docs-list carries openQuestions and workItemId",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "a6475dad",
+        "ranAt": "2026-10-13T16:20:17.087Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review wiring: extension.ts sets the review panel's iconPath to the pair and gives the review host a watchDocument bound to file watchers under the workspace folder",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+                "title": "review wiring: extension.ts sets the review panel's iconPath to the pair and gives the review host a watchDocument bound to file watchers under the workspace folder",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docs review host: opening a document watches its markdown file and its artifact JSON, and the watch is disposed wherever the open document's record is replaced or cleared: another document, a failed open of another, the panel closing and dispose",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts",
+                "title": "docs review host: opening a document watches its markdown file and its artifact JSON, and the watch is disposed wherever the open document's record is replaced or cleared: another document, a failed open of another, the panel closing and dispose",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docs review host: a burst of changes causes one re-read of the list and of the open document by its path after the quiet period, marked changed; a change during a decision is acted on when the decision settles, whether it was recorded, refused or failed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts",
+                "title": "docs review host: a burst of changes causes one re-read of the list and of the open document by its path after the quiet period, marked changed; a change during a decision is acted on when the decision settles, whether it was recorded, refused or failed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docs review host: a watcher or disposer that throws is logged and the document is still shown; with no watcher dep nothing is watched",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts",
+                "title": "docs review host: a watcher or disposer that throws is logged and the document is still shown; with no watcher dep nothing is watched",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docs review host: docs-content carries reveal for a list-row open and for openArtifact, on the content and on the unavailable content of a failed read alike, and not for a re-read after a decision, on the boot ping or from the watch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts",
+                "title": "docs review host: docs-content carries reveal for a list-row open and for openArtifact, on the content and on the unavailable content of a failed read alike, and not for a re-read after a decision, on the boot ping or from the watch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 823,
+            "titles": [
+              {
+                "title": "docs review host: a docs-decision calls decide once with the open document's docPath and every comment, posts docs-decision-result, re-reads the list and the document by docPath, and hands the chat one message with the decision and the numbered comments",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a decision with no comments sends the chat the decision line alone",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: send feedback works on a read-only open and on a document just approved, while approve and reject are refused for a document that is not pending or not the open one",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a failing decide posts a failed result, sends no chat message and keeps the open document",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a withheld approval and a commentsError are each reported in the result and in the chat message",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: docs-content carries the feedback list, the reviewer, the state and one document entry per HTML companion",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: open-companion for one of the document's companions posts docs-companion with the file's text and the shell's nonce on every script tag that had none; for any other path, or when the read fails, it posts docs-companion with no html",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: an absent, throwing or unavailable notifyChat leaves the decision recorded and says so in the result",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a boot ping while a document is open re-posts that document by its path, for a pending document and for one that is no longer pending",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: docs-list carries openQuestions and workItemId",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: opening a document watches its markdown file and its artifact JSON, and the watch is disposed wherever the open document's record is replaced or cleared: another document, a failed open of another, the panel closing and dispose",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a burst of changes causes one re-read of the list and of the open document by its path after the quiet period, marked changed; a change during a decision is acted on when the decision settles, whether it was recorded, refused or failed",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a watcher or disposer that throws is logged and the document is still shown; with no watcher dep nothing is watched",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: docs-content carries reveal for a list-row open and for openArtifact, on the content and on the unavailable content of a failed read alike, and not for a re-read after a decision, on the boot ping or from the watch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 350,
+            "titles": [
+              {
+                "title": "review wiring: the review host is given notifyChat bound to the chat host's submitExternal and a readCompanion, and neither host module imports the other",
+                "result": "pass"
+              },
+              {
+                "title": "review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB",
+                "result": "pass"
+              },
+              {
+                "title": "review wiring: extension.ts sets the review panel's iconPath to the pair and gives the review host a watchDocument bound to file watchers under the workspace folder",
                 "result": "pass"
               }
             ],

@@ -39,7 +39,7 @@ const CALL_FAILURES: readonly Error[] = [
 	new Error('claude exited with 1. stderr=overloaded stdout='),
 	new Error('codex emitted error event: {"type":"error"}'),
 	new ModelCallFailedError('client declined the sampling request'),
-	new Error('Ollama is not running at http://localhost:11434'),
+	new ModelCallFailedError('Ollama is not running. Start it with: ollama serve'),
 ];
 
 /** The model answered, in a shape that cannot be used. */

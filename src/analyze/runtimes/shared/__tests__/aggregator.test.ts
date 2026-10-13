@@ -18,6 +18,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { ModelCallFailedError } from '../../../../agent/providers/model-call-error.js';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -65,7 +66,7 @@ function stubProvider(structuredReply: AggregateLLMOutput, capture?: {
 	};
 }
 
-function throwingProvider(message: string): LLMProvider {
+function throwingProvider(failure: string | Error): LLMProvider {
 	return {
 		supportsTools: false,
 		capabilities:  {
@@ -75,7 +76,7 @@ function throwingProvider(message: string): LLMProvider {
 		complete:        async () => { throw new Error('stub: complete not used'); },
 		stream:          async function* () { yield ''; throw new Error('stub: stream not used'); },
 		embed:           async () => [],
-		completeStructured: async () => { throw new Error(message); },
+		completeStructured: async () => { throw typeof failure === 'string' ? new Error(failure) : failure; },
 	};
 }
 
@@ -189,9 +190,13 @@ test('buildMessages: focus omitted when undefined', () => {
 // ---------------------------------------------------------------------------
 
 test('classifyError: Ollama-down patterns -> aggregator-llm-unavailable', () => {
-	for (const pat of ['ECONNREFUSED', 'Model not found', 'fetch failed']) {
-		const wrapped = _classifyErrorForTest(new Error(`oops: ${pat} downstream`));
+	// The local provider raises an outage typed (ModelCallFailedError); the
+	// same words quoted inside a plain message are not an outage.
+	for (const pat of ['connect ECONNREFUSED 127.0.0.1:11434', 'Model not found in Ollama.', 'fetch failed']) {
+		const wrapped = _classifyErrorForTest(new ModelCallFailedError(pat));
 		assert.match(wrapped.message, /aggregator-llm-unavailable/);
+		const quoted = _classifyErrorForTest(new Error(`oops: ${pat} downstream`));
+		assert.match(quoted.message, /aggregator-schema-unrecoverable/);
 	}
 });
 
@@ -272,7 +277,7 @@ test('runAggregator: provider throws ECONNREFUSED -> rethrown as aggregator-llm-
 			scope:           'XS',
 			runId:           'rt-agg-3',
 			upstreamOutputs: new Map(),
-			provider:        throwingProvider('boom ECONNREFUSED localhost'),
+			provider:        throwingProvider(new ModelCallFailedError('connect ECONNREFUSED localhost')),
 		}),
 		/aggregator-llm-unavailable/,
 	);

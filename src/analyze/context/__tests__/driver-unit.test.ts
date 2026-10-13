@@ -25,6 +25,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { ModelCallFailedError } from '../../../agent/providers/model-call-error.js';
 
 import {
 	ShaperLlmUnavailableError,
@@ -82,26 +83,26 @@ test('stable stringify is deterministic for arrays (insertion order matters)', (
 // ---------------------------------------------------------------------------
 
 test('classifyOllamaError(ECONNREFUSED) -> ShaperLlmUnavailableError', () => {
-	const err = new Error('connect ECONNREFUSED 127.0.0.1:11434');
+	const err = new ModelCallFailedError('connect ECONNREFUSED 127.0.0.1:11434');
 	const out = _classifyOllamaErrorForTest(err);
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 	assert.match(out.message, /ECONNREFUSED/);
 });
 
 test('classifyOllamaError("Ollama is not running. Start it...") -> ShaperLlmUnavailableError', () => {
-	const err = new Error('Ollama is not running. Start it with: ollama serve');
+	const err = new ModelCallFailedError('Ollama is not running. Start it with: ollama serve');
 	const out = _classifyOllamaErrorForTest(err);
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });
 
 test('classifyOllamaError("Model not found ...") -> ShaperLlmUnavailableError', () => {
-	const err = new Error('Model not found in Ollama. Pull it with: ollama pull qwen3-coder');
+	const err = new ModelCallFailedError('Model not found in Ollama. Pull it with: ollama pull qwen3-coder');
 	const out = _classifyOllamaErrorForTest(err);
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });
 
 test('classifyOllamaError("fetch failed") -> ShaperLlmUnavailableError (retries exhausted by provider)', () => {
-	const err = new Error('fetch failed');
+	const err = new ModelCallFailedError('fetch failed');
 	const out = _classifyOllamaErrorForTest(err);
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });
@@ -110,19 +111,19 @@ test('classifyOllamaError("Did not receive done...") -> ShaperLlmUnavailableErro
 	// By the time this reaches the driver, the provider has burned
 	// through its transient-retry budget -- so the failure is terminal
 	// from the driver's perspective.
-	const err = new Error('Did not receive done or success response in stream');
+	const err = new ModelCallFailedError('Did not receive done or success response in stream');
 	const out = _classifyOllamaErrorForTest(err);
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });
 
 test('classifyOllamaError("ECONNRESET") -> ShaperLlmUnavailableError', () => {
-	const err = new Error('socket ECONNRESET');
+	const err = new ModelCallFailedError('socket ECONNRESET');
 	const out = _classifyOllamaErrorForTest(err);
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });
 
 test('classifyOllamaError("socket hang up") -> ShaperLlmUnavailableError', () => {
-	const err = new Error('socket hang up');
+	const err = new ModelCallFailedError('socket hang up');
 	const out = _classifyOllamaErrorForTest(err);
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });

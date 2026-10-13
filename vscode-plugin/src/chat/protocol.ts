@@ -55,6 +55,12 @@ export interface DocsArtifactSummary {
   readonly kind: string;
   readonly title: string;
   readonly status: string;
+  // Story E202610131f74c81f:S001: what the pane's table shows beside the title. Each is an
+  // absent key when the daemon sent none.
+  /** How many open questions the document has. */
+  readonly openQuestions?: number | undefined;
+  /** The canonical work item id (E…:S…), when the daemon could derive it. */
+  readonly workItemId?: string | undefined;
 }
 
 /**

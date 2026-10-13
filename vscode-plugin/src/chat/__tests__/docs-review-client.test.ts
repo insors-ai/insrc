@@ -34,13 +34,13 @@ const PENDING = {
   ],
 };
 
-test('pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status)', async () => {
+test('pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status, and the open-question count)', async () => {
   const { client } = fakeIpc((m) => (m === 'workflow.pending' ? PENDING : { error: 'x' }));
   const c = createDocsReviewClient(client);
   const list = await c.pending();
   assert.deepEqual(list, [
-    { id: 'LLD-abc-s7', kind: 'LLD', title: 'Docs review pane', status: 'pending' },
-    { id: 'PLAN-abc-s7', kind: 'PLAN', title: 'Docs review plan', status: 'pending' },
+    { id: 'LLD-abc-s7', kind: 'LLD', title: 'Docs review pane', status: 'pending', openQuestions: 1 },
+    { id: 'PLAN-abc-s7', kind: 'PLAN', title: 'Docs review plan', status: 'pending', openQuestions: 0 },
   ]);
 });
 
@@ -341,4 +341,24 @@ test('every call names the repository it is given, and none when no folder is op
     await c.content('docs/x/LLD.md');
     assert.deepEqual(calls.map((x) => x.params), [{}, { mdPath: 'docs/x/LLD.md' }]);
   }
+});
+
+// Story E202610131f74c81f:S001 t2: what the pane's table shows beside the title.
+test('docs review client: pending forwards openQuestions and workItemId when the daemon gives them and leaves them absent otherwise', async () => {
+  const { client } = fakeIpc(() => ({
+    artifacts: [
+      { artifactId: 'LLD-abc-s7', kind: 'LLD', title: 'With both', mdPath: 'docs/x/LLD.md', workItemId: 'E20261013abc:S007', openQuestionCount: 3, state: 'pending' },
+      { artifactId: 'CR-abc-S001', kind: 'CR', title: 'No work item', mdPath: 'docs/x/CR.md', openQuestionCount: 0, state: 'pending' },
+      { artifactId: 'DEF-old', kind: 'DEF', title: 'From an older daemon', mdPath: 'docs/x/DEF.md', state: 'pending' },
+      { artifactId: 'ISSUE-odd', kind: 'ISSUE', title: 'Odd values', mdPath: '', workItemId: '', openQuestionCount: '2', state: 'pending' },
+    ],
+  }));
+  const list = await createDocsReviewClient(client).pending();
+  assert.deepEqual(list, [
+    { id: 'LLD-abc-s7', kind: 'LLD', title: 'With both', status: 'pending', openQuestions: 3, workItemId: 'E20261013abc:S007' },
+    { id: 'CR-abc-S001', kind: 'CR', title: 'No work item', status: 'pending', openQuestions: 0 },
+    { id: 'DEF-old', kind: 'DEF', title: 'From an older daemon', status: 'pending' },
+    { id: 'ISSUE-odd', kind: 'ISSUE', title: 'Odd values', status: 'pending' },
+  ], 'a count of 0 is given; an absent, empty or wrongly typed value is an absent key');
+  for (const key of ['openQuestions', 'workItemId']) assert.equal(key in list[2]!, false);
 });

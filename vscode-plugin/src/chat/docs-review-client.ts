@@ -120,6 +120,8 @@ export function createDocsReviewClient(client: IpcClient, opts: DocsReviewClient
         kind: a.kind,
         title: a.title,
         status: a.state,
+        ...(typeof a.openQuestionCount === 'number' ? { openQuestions: a.openQuestionCount } : {}),
+        ...(typeof a.workItemId === 'string' && a.workItemId !== '' ? { workItemId: a.workItemId } : {}),
       }));
     },
 

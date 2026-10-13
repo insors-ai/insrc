@@ -521,3 +521,14 @@ test('docs review host: a boot ping while a document is open re-posts that docum
     assert.deepEqual(h.content, []);
   }
 });
+
+// Story E202610131f74c81f:S001 t2: the host forwards the summaries as the client gave them.
+test('docs review host: docs-list carries openQuestions and workItemId', async () => {
+  const rich = { ...LLD, openQuestions: 3, workItemId: 'E20261013abc:S007' };
+  const h = harness({ pending: [rich, PLAN] });
+  h.host.open();
+  await settle();
+  const list = h.fc.posted.filter((p) => p.type === 'docs-list').at(-1)!;
+  assert.deepEqual(list['artifacts'], [rich, PLAN], 'unchanged, and a summary without them has no such keys');
+  assert.equal((list['artifacts'] as unknown[])[0], rich, 'forwarded by reference');
+});

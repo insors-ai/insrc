@@ -1,0 +1,143 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * Epic c2ba6fa6, Story s5, Task t1 — every transport failure of the local
+ * provider is a ModelCallFailedError (with the client's error as its cause),
+ * and the structured retry helper keeps that type on its last attempt.
+ * Exercised against a stand-in Ollama client; no live Ollama.
+ *
+ * Run: npx tsx --test src/agent/providers/__tests__/ollama-model-call-failure.test.ts
+ */
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+import { OllamaProvider } from '../ollama.js';
+import { ModelCallFailedError } from '../model-call-error.js';
+import { withStructuredRetry } from '../structured-output.js';
+import type { StructuredSchema } from '../../../shared/types.js';
+
+/** The failures the Ollama client raises, as the client raises them. */
+const FAILURES: ReadonlyArray<() => Error> = [
+	() => new Error('connect ECONNREFUSED 127.0.0.1:11434'),
+	() => new Error('socket hang up'),
+	() => new TypeError('fetch failed'),
+	() => new TypeError('terminated'),
+	() => new Error('Did not receive done or success response in stream.'),
+];
+
+type Where = 'call' | 'iteration';
+
+/** A stand-in client whose chat() rejects (`call`) or returns a stream that
+ *  yields one chunk and then fails (`iteration`). */
+function failingClient(make: () => Error, where: Where) {
+	const thrown: Error[] = [];
+	return {
+		thrown,
+		chat: async () => {
+			const err = make();
+			thrown.push(err);
+			if (where === 'call') throw err;
+			return (async function* () {
+				yield { message: { content: '{"a":' }, done: false };
+				throw err;
+			})();
+		},
+	};
+}
+
+function providerWith(client: unknown): OllamaProvider {
+	const p = new OllamaProvider();
+	// readonly is compile-time only; override at runtime for the test.
+	(p as unknown as { client: unknown }).client = client;
+	return p;
+}
+
+function assertTyped(err: unknown, original: Error | undefined, label: string): void {
+	assert.ok(err instanceof ModelCallFailedError, `${label}: expected ModelCallFailedError, got ${String(err)}`);
+	assert.equal(err.cause, original, `${label}: the client's own error is kept as the cause`);
+}
+
+const SCHEMA: StructuredSchema = { type: 'object', properties: { a: { type: 'number' } }, required: ['a'] } as unknown as StructuredSchema;
+
+test('OllamaProvider: stream creation and stream iteration failures are raised as ModelCallFailedError with the client error as cause', async () => {
+	for (const make of FAILURES) {
+		for (const where of ['call', 'iteration'] as const) {
+			const client = failingClient(make, where);
+			const p = providerWith(client);
+			let caught: unknown;
+			try {
+				for await (const _ of p.stream([{ role: 'user', content: 'hi' }])) { /* drain */ }
+			} catch (err) { caught = err; }
+			assertTyped(caught, client.thrown[0], `stream ${where} ${make().message}`);
+		}
+	}
+});
+
+test('OllamaProvider: completeStructured failures on the call and during iteration are raised as ModelCallFailedError', async () => {
+	for (const make of FAILURES) {
+		for (const where of ['call', 'iteration'] as const) {
+			const client = failingClient(make, where);
+			const p = providerWith(client);
+			let caught: unknown;
+			try {
+				await p.completeStructured([{ role: 'user', content: 'hi' }], SCHEMA, { maxAttempts: 1 });
+			} catch (err) { caught = err; }
+			assert.ok(caught instanceof ModelCallFailedError, `completeStructured ${where} ${make().message}: got ${String(caught)}`);
+			// Behind the retry helper the provider's error is the cause.
+			assertTyped((caught as Error).cause, client.thrown[0], `completeStructured ${where} cause`);
+		}
+	}
+});
+
+test('OllamaProvider: complete() raises a connection refused and a socket hang up (after its retry) as ModelCallFailedError', { timeout: 30_000 }, async () => {
+	const refused = failingClient(() => new Error('connect ECONNREFUSED 127.0.0.1:11434'), 'call');
+	let caught: unknown;
+	try { await providerWith(refused).complete([{ role: 'user', content: 'hi' }]); } catch (err) { caught = err; }
+	assertTyped(caught, refused.thrown[0], 'complete ECONNREFUSED');
+	assert.match((caught as ModelCallFailedError).detail, /^Ollama is not running/);
+	assert.equal(refused.thrown.length, 1, 'a refused connection is not retried');
+
+	// socket hang up is transient: retried once, then raised typed.
+	const hangup = failingClient(() => new Error('socket hang up'), 'iteration');
+	caught = undefined;
+	try { await providerWith(hangup).complete([{ role: 'user', content: 'hi' }]); } catch (err) { caught = err; }
+	assert.equal(hangup.thrown.length, 2, 'the transient failure was retried once');
+	assertTyped(caught, hangup.thrown[1], 'complete socket hang up');
+	assert.equal((caught as ModelCallFailedError).detail, 'socket hang up');
+});
+
+test('retry helper: a ModelCallFailedError on the last attempt is re-thrown as a ModelCallFailedError with the attempt prefix', async () => {
+	const last = new ModelCallFailedError('socket hang up');
+	let calls = 0;
+	let caught: unknown;
+	try {
+		await withStructuredRetry(async () => {
+			calls += 1;
+			if (calls < 3) return { wrong: true };   // a shape failure first ...
+			throw last;                              // ... then the call fails
+		}, () => ({ ok: false, errors: ['shape'] }), 3);
+	} catch (err) { caught = err; }
+	assert.ok(caught instanceof ModelCallFailedError);
+	assert.equal(caught.detail, 'structured-output: validation failed after 3 attempts: socket hang up');
+	assert.equal(caught.message, 'Model call failed: structured-output: validation failed after 3 attempts: socket hang up');
+	assert.equal(caught.cause, last);
+});
+
+test('retry helper: a shape failure on the last attempt stays a plain Error even after an earlier failed call', async () => {
+	let calls = 0;
+	let caught: unknown;
+	try {
+		await withStructuredRetry(async () => {
+			calls += 1;
+			if (calls === 1) throw new ModelCallFailedError('socket hang up');
+			return { wrong: true };
+		}, () => ({ ok: false, errors: ['missing a'] }), 2);
+	} catch (err) { caught = err; }
+	assert.ok(caught instanceof Error);
+	assert.ok(!(caught instanceof ModelCallFailedError), 'the last attempt failed on shape, not on the call');
+	assert.equal(caught.message, 'structured-output: validation failed after 2 attempts: missing a');
+});

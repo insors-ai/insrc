@@ -429,3 +429,58 @@ test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates t
 		assert.ok(!handlerSource(src, method).includes('review-decision'), `${method} does not go through the new call`);
 	}
 });
+
+// Story E20261013dd277f9c:S001 — a BUILD record is decided from the pane like any record.
+test("handleReviewDecision on a BUILD record: approve goes through the same approve call as any record and a result that call withholds is returned with its reason; reject stamps the record, after which it is not listed and the pane's call refuses a further decision on it", async () => {
+	const { listPendingArtifacts } = await import('../pending.js');
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-review-decision-build-'));
+	try {
+		const id = `BUILD-${HASH}-S001`;
+		const mdRel = `${DIR_REL}/BUILD.md`;
+		const meta = { workflow: 'build', epicHash: HASH, storyId: 'S001', standalone: true, epicSlug: 'demo', createdAt: '2026-10-13T08:00:00.000Z', epicCreatedAt: '2026-10-13T08:00:00.000Z' };
+		mkdirSync(join(repo, DIR_REL), { recursive: true });
+		writeFileSync(join(repo, mdRel), `<!-- insrc:artifact ${id} -->\n\n# Build — Story S001\n`);
+		mkdirSync(join(repo, ARTIFACTS_DIR), { recursive: true });
+		const jsonPath = join(repo, ARTIFACTS_DIR, `${id}.json`);
+		writeFileSync(jsonPath, JSON.stringify({ meta, body: { summary: 'built' }, citations: [] }, null, 2) + '\n');
+		writeFileSync(join(repo, ARTIFACTS_DIR, `CR-${HASH}-S001.json`), JSON.stringify({ meta: { ...meta, workflow: 'code-review' }, body: { verdict: 'pass' } }));
+		const listed = (): boolean => listPendingArtifacts(repo).some(a => a.artifactId === id);
+		assert.equal(listed(), true);
+		const ask = async (req: Record<string, unknown>, deps: ReviewDecisionDeps): Promise<ReviewDecisionResult | { error: string }> =>
+			handleReviewDecision({ repo, mdPath: mdRel, ...req } as ReviewDecisionRequest, undefined, deps);
+
+		// APPROVE, WITHHELD: the approve call (where a build's code-review rule lives) holds it back.
+		const calls: unknown[] = [];
+		const held = await ask({ decision: 'approve', comments: [] }, {
+			...DEPS,
+			approve: async (req) => { calls.push(req); return { approved: [], skipped: [{ path: jsonPath, reason: 'code review: reviewed by the party that built it' }] }; },
+		}) as ReviewDecisionResult;
+		assert.deepEqual(calls, [{ repoPath: repo, artifactPath: jsonPath }], 'the same call as for any record: the repository and the record');
+		assert.equal(held.artifactId, id);
+		assert.equal(held.outcome, 'withheld');
+		assert.equal(held.reason, 'code review: reviewed by the party that built it', 'the reason is relayed');
+		assert.equal(stored(jsonPath).meta.approvedAt, undefined, 'nothing is stamped');
+		assert.equal(listed(), true, 'still awaiting a decision');
+
+		// APPROVE, GIVEN: the approve call's result is the outcome.
+		const ok = await ask({ decision: 'approve', comments: [] }, {
+			...DEPS,
+			approve: async () => ({ approved: [{ path: jsonPath, result: { workflow: 'build', path: jsonPath, approvedAt: '2026-10-14T00:00:00.000Z' } }], skipped: [] }) as never,
+		}) as ReviewDecisionResult;
+		assert.equal(ok.outcome, 'approved');
+
+		// REJECT: stamped by the real reject; the record leaves the list, and the pane's call
+		// refuses a further decision on it.
+		const no = await ask({ decision: 'reject', comments: [{ comment: 'Task 3 is not done.' }] }, DEPS) as ReviewDecisionResult;
+		assert.equal(no.outcome, 'rejected');
+		const s = stored(jsonPath);
+		assert.equal(typeof s.meta.rejectedAt, 'string');
+		assert.equal(s.meta.rejectReason, 'Task 3 is not done.');
+		assert.equal(listed(), false, 'a rejected build record is not listed');
+		for (const decision of ['approve', 'reject'] as const) {
+			const again = await ask({ decision, comments: [] }, DEPS);
+			assert.ok('error' in again, `${decision} is refused`);
+			assert.match((again as { error: string }).error, /it is already rejected, not awaiting review/);
+		}
+	} finally { cleanup(repo); }
+});

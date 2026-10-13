@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -153,3 +153,21 @@ Run at 2026-10-13T16:38:06.477Z on commit `2800f2a0`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 226 | 19 s |  |
+
+## t6
+
+Run at 2026-10-13T19:26:08.094Z on commit `bd3a9e47`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: The plugin's whole test suite and typecheck pass apart from failures that exist before this Story**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Plugin suite after t5 and the later hand-check fix: 1260 tests, 1250 pass, 2 fail (the two manifest-catalog failures that exist before this Story); npx tsc --noEmit -p vscode-plugin clean
+
+**smoke: By hand in VS Code: the tab shows the review icon in a light and a dark theme; the table pages, searches with suggestions and filters by type over the real pending list; and a document edited on disk while open is reloaded in place with the scroll position kept**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Checked by the user in VS Code with the installed plugin 0.5.14. 2026-10-14: asked item by item whether the icon shows in a light and a dark theme, the table pages, searches with suggestions and filters by type, and a document edited on disk reloads in place with the scroll position kept, the user answered 'yes for the 3 earlier stories'
+
+**smoke: Headless Chrome render of the real shell's list view with 240 rows: the toolbar and pager stay in view and the table scrolls**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: google-chrome --headless=new on /tmp/t9/shell-dark-listsearch.html over the live pending list (240 documents): tableScrolls true, toolbar top 0, pager bottom 613 of a 613 viewport, page does not scroll; search 'shared size' gives 1 of 240; ISSUE gives 32 on 2 pages (25 and 7); a row posts open-doc

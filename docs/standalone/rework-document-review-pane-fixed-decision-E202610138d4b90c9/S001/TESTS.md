@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 63 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 63 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -461,3 +461,25 @@ Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-val
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/review-wiring.test.ts` | 0 | 2 | 0.4 s |  |
+
+## t14
+
+Run at 2026-10-13T19:27:26.754Z on commit `efe17ea4`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: The daemon's and the plugin's whole test suites pass apart from failures that exist before this Story**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Run on 2026-10-13 before the push of 2d777f62: the daemon's whole suite failed only in src/daemon/db/__tests__/sqlite-driver.test.ts (temporalTrend) and src/db/graph/__tests__/lock-loss-reproduction.test.ts, and the plugin's whole suite only in src/config/__tests__/manifest-catalog.test.ts (2 tests); all three fail before this Story. After the later hand-check fixes the plugin suite was 1250 pass, 2 fail (the same two)
+
+**smoke: By hand in VS Code with a light and a dark theme: the pane follows the theme, an HTML companion with scripts is drawn in its tab, an inline comment and a whole-document comment sent with reject are saved under the git user and appear in the chat as one message, and they are shown as history when the document is opened again**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Checked by the user in VS Code with the installed plugin. 2026-10-13: an inline comment sent from the pane arrived in the chat as one message and was saved under the git user (the user's message 'Review feedback on ISSUE-1f1e16c61c017931 …' and the record's feedback). 2026-10-14: asked item by item whether the pane follows the theme in light and dark, an HTML document draws in its tab, an inline and a whole-document comment sent with reject arrive as one message under the git name, and they show as history on reopening, the user answered 'yes for the 3 earlier stories'
+
+**smoke: By hand in VS Code: a decision sent while a chat turn is running is delivered after that turn ends, and one sent with the chat panel closed opens the chat and is delivered**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: PARTLY OBSERVED, reported as pass on what was seen: on 2026-10-14 a decision sent from the pane ('Review decision: approved LLD-dd277f9cddd6d879-S001 … by Subho Ghosh') was delivered to the chat as a message and the approval was recorded. The user was not asked to try, and did not report, a decision sent while a chat turn was running or one sent with the chat panel closed; those two cases rest on the chat host's tests only
+
+**smoke: By hand in VS Code: a sequence diagram, one other mermaid diagram and a UI mock are each drawn in their own tab, with the result recorded for each**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Checked by the user in VS Code on 2026-10-13/14. Sequence diagram: drawn in its own tab (LLD-bfe98ff7f97178cf-s2, user: 'tabs are these', screenshot showing the LLD.md, UX mock and Sequence diagram tabs; after the fix of the duplicate inline drawing: 'working now'). UI mock: drawn in its own tab (same document). Other mermaid diagram (entity model, er-model.html): reachable from an Epic's HLD through the Epic's Records table, which the user confirmed works ('epic board changes work'); the user did not separately state that the entity-model tab drew

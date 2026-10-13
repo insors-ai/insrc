@@ -483,26 +483,55 @@ A new file .insrc/artifacts/COMMENTS-<artifactId>.json holds review threads: eac
 - Should comments saved by the pane's earlier request-changes button, which are stored as resolved open questions, be shown in the new history? Recommended: no; they stay in the document's resolved questions.
 - The frame was run in VS Code with one sequence-diagram companion. The other companion kinds (er-model, ux-mock, component-dependency, mocks) were not each run. Recommended: check one of each in the build's hand check; a page that does not draw still shows its path.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q9bc28512` — Should comments saved by the pane's earlier request-changes button, which are stored as resolved open questions, be shown in the new history? Recommended: no; they stay in the document's resolved questions.
+  - **resolved**: Exclude legacy comments — Chosen by the user in chat on 2026-10-13 (option 1): the history shows only comments saved the new way; the older request-changes notes stay in the document's resolved questions. _(2026-10-13T12:00:26.006Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**3 do not hold · 1 could not be verified · 11 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-13T11:51:58.658Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| change-sites | MED | The listed drain points cover every way the chat stops being busy, so a waiting pane message is always run. | A follow that fails ends with no callback. turn-lifecycle.ts:418-424: `catch (err) { log.warn(... could not resume turn ...) } finally { if (following?.ctl === ctl) following = undefined; ... }`; sink.onEnd is called only in the non-failing path (:413-417). busy() would turn false there, but none of the design's drain points (onTerminal, onEnd, onError, Stop, chat switch, 'ready') fires. This is the closed-panel case the design itself routes through a follow: 'ready' calls postInitialState, which calls followLiveTurn (chat-panel.ts:640), and the message waits behind it. If the resume throws, the message stays on the list until some later, unrelated drain point. [files: vscode-plugin/src/chat/turn-lifecycle.ts, vscode-plugin/src/chat/chat-panel.ts] | Give the follow sink an end-of-follow callback that also fires on the failure path (or have the lifecycle report an idle transition) and drain there; add the case to the error paths and to the chat host tests. |
-| change-sites | MED | Drafts on the open document are restored after the pane is hidden and shown, including on a document that is no longer pending, while 'open-doc' behaves as today. | The review panel is created with `{ enableScripts: true }` only (extension.ts:671), so hiding it destroys the webview. On rebuild the shell sends only the boot ping `open-doc` with an empty id (docs-review-panel.ts:1738), which the host answers with the list alone (:1786-1787); it does not re-post the open document. A real id is opened only `if (pending.has(msg.artifactId))`, otherwise it is dropped as stale (:1788-1793). The design keeps the open document's id and docPath in the host but names no step that re-posts it when the shell is rebuilt, and says 'open-doc' behaves as today. So for a read-only open, or a document just approved whose comments failed to save (the commentsError case, where the drafts are kept on purpose), the drafts sit in saved state with no document to show them on. [files: vscode-plugin/src/chat/docs-review-panel.ts, vscode-plugin/src/extension.ts] | State that the host re-posts the open document (by docPath) when the rebuilt shell sends its boot ping, or add a message for it; add a host test for a rebuild on a non-pending document. |
-| error-paths | MED | The three-part drain condition (webview ready, lifecycle not busy, no runTurn in flight) is enough to keep a pane message from pre-empting chat work the user has not finished, including an approval follow-up. | Permission requests raised by a turn wait across that turn's end until the user answers them; the follow-up starts only once the batch is complete (chat-panel.ts:523-525 `takeCompletedBatch()`; runCompletedBatch is also called from the 'permission-decision' handler at :1490). In that window the lifecycle is not busy, so the drain at the end of onTerminal runs the pane message through the typed-message path, and that path answers the waiting requests with a no: supersedeQueuedApprovals (:497-503) clears the queue and records each as rejected. The design names this ('queued approvals are superseded') but its edge cases only cover approvals already decided. A decision pressed in the review pane would silently deny permission cards still shown in the chat, and their follow-up never runs. [files: vscode-plugin/src/chat/chat-panel.ts] | Add 'no approval request is waiting' to the drain condition and drain when the queue empties (after the last permission-decision and its runCompletedBatch); or state the denial as intended and add the edge case and a test. |
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| current-behaviour | An HTML companion with scripts can be shown as the srcdoc of an 'allow-scripts' sandboxed frame under the shell's unchanged CSP, once the shell's nonce is added to its script tags. | I cannot run VS Code. What I could check is consistent with the claim: the shell CSP is `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-…'` (docs-review-panel.ts:1611), and this Story's own sequence-diagram.html has exactly three `<script>` tags (lines 45, 2075, 2212), all inline with no src or type attribute and no inline event handlers. The design relies on the user's probe (c37, c5) for the run-time behaviour, and its own open question says only the sequence-diagram kind was run. [files: vscode-plugin/src/chat/docs-review-panel.ts] | Keep the hand check of each companion kind in the build, as open question 2 recommends. |
+- **[[c1]]** `analyze-bundle` `s1.analyzeBundles[0]: Modules and callers of the review flow: the daemon's review IPCs, the plugin's review pane, the chat host.`
+- **[[c2]]** `analyze-bundle` `s1.analyzeBundles[1]: Callers of appendFeedback, rejectArtifactByJsonPath, handleArtifactContent and feedbackBodyLines; sites that name FeedbackEntry or the artifact.feedback.append IPC.`
+- **[[c3]]** `analyze-bundle` `s1.analyzeBundles[2]: Behaviour of the daemon functions the Story changes or calls, read in the source.`
+- **[[c4]]** `analyze-bundle` `s1.analyzeBundles[3]: The review pane and the chat host as built.`
+- **[[c5]]** `analyze-bundle` `s1.analyzeBundles[4]: How a webview can show a repository HTML document that has its own scripts (probe run in VS Code, 2026-10-13); how the JetBrains plugin reads the review view.`
+- **[[c6]]** `code` `src/workflow/artifacts/provenance/writer.ts:117-150` — "export function appendFeedback(req: AppendFeedbackRequest): AppendFeedbackResult {"
+- **[[c7]]** `code` `src/workflow/artifacts/provenance/types.ts:37-42` — "export interface FeedbackEntry extends ProvenanceAuthorship {"
+- **[[c8]]** `code` `src/workflow/artifacts/format/bindings.ts:81-89` — "export function feedbackBodyLines(feedback: FeedbackRecord | undefined): string[] {"
+- **[[c9]]** `code` `src/workflow/artifact-content.ts:142-214` — "export function handleArtifactContent("
+- **[[c10]]** `code` `src/workflow/gates.ts:971-990` — "export function rejectArtifactByJsonPath(jsonPath: string, reason: string): RejectionResult {"
+- **[[c11]]** `code` `src/daemon/index.ts:638-652` — "'workflow.approve': async (params) => {"
+- **[[c12]]** `code` `src/daemon/index.ts:609-619` — "'artifact.feedback.append': async (params) => {"
+- **[[c13]]** `code` `src/workflow/artifacts/companion/header.ts:127-141` — "function defaultGitUserName(repoPath: string): string | undefined {"
+- **[[c14]]** `code` `src/workflow/artifacts/companion/header.ts:87-89` — "user:        nonEmpty((deps.gitUserName ?? defaultGitUserName)(input.repoPath))"
+- **[[c15]]** `code` `src/workflow/pending.ts:128-128` — "if (typeof meta['rejectedAt'] === 'string' && meta['rejectedAt'].length > 0) continue;"
+- **[[c16]]** `code` `src/workflow/orchestrator.ts:2312-2312` — "async function finalizeStandaloneLld("
+- **[[c17]]** `code` `src/workflow/orchestrator.ts:1190-1190` — "const epicHash = computeEpicHash(runId);"
+- **[[c18]]** `code` `src/daemon/steps/workflow-step/phases/synthesize.ts:83-83` — "writeAtomic(paths.json, result.finalized.renderedJson);"
+- **[[c19]]** `code` `src/workflow/storage.ts:583-585` — "export function artifactJsonPath(repoPath: string, artifactId: string): string {"
+- **[[c20]]** `code` `src/workflow/gates.ts:201-201` — "const next: DefineArtifact = { ...define, body: { ...define.body, stories: [...define.body.stories, story] } };"
+- **[[c21]]** `code` `src/workflow/gates.ts:826-826` — "export async function approveWorkflowTarget("
+- **[[c22]]** `code` `src/workflow/artifacts/companion/types.ts:29-36` — "export interface CompanionArtifactRef {"
+- **[[c23]]** `code` `src/workflow/artifacts/provenance/tool.ts:85-85` — "export function coerceRequest(input: ToolInput): AppendFeedbackRequest {"
+- **[[c24]]** `code` `vscode-plugin/src/chat/docs-review-client.ts:42-55` — "export interface DocsReviewClient {"
+- **[[c25]]** `code` `vscode-plugin/src/chat/docs-review-client.ts:77-77` — "const resolvePath = (idOrPath: string): string => mdPathById.get(idOrPath) ?? idOrPath;"
+- **[[c26]]** `code` `vscode-plugin/src/chat/docs-review-panel.ts:1220-1220` — "export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {"
+- **[[c27]]** `code` `vscode-plugin/src/chat/docs-review-panel.ts:1800-1800` — "log.warn(`[docs-review] docs-decision: unknown/stale artifact ${msg.artifactId}`);"
+- **[[c28]]** `code` `vscode-plugin/src/chat/docs-review-panel.ts:1611-1611` — "const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;"
+- **[[c29]]** `code` `vscode-plugin/src/chat/chat-panel.ts:124-135` — "export interface ChatPanelHost {"
+- **[[c30]]** `code` `vscode-plugin/src/chat/chat-panel.ts:631-631` — "if (session === undefined) session = deps.store.draft(available[0]!);"
+- **[[c31]]** `code` `vscode-plugin/src/chat/chat-panel.ts:1129-1129` — "if ((typed === '' && files.length === 0) || session === undefined) return; // empty submit is a no-op"
+- **[[c32]]** `code` `vscode-plugin/src/chat/chat-panel.ts:550-550` — "void runTurn(prompt, approvals.grantChain(), { suppressEcho: true });"
+- **[[c33]]** `code` `vscode-plugin/src/chat/turn-lifecycle.ts:372-373` — "if (live === undefined || following?.sessionId === s.id || runningTurns.has(live.cursor.turnId)) return;"
+- **[[c34]]** `code` `vscode-plugin/src/extension.ts:668-672` — "const reviewHost = createDocsReviewHost({"
+- **[[c35]]** `code` `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1531-1534` — "private fun parseView(data: Map<String, Any?>): ArtifactReviewViewDto {"
+- **[[c36]]** `code` `src/workflow/runners/design-story/standalone.ts:57-57` — "acceptanceCriteria: [],"
+- **[[c37]]** `stakeholder` `User request and decisions in chat, 2026-10-13. ac1: a fixed comment panel at the bottom, styled like the chat input, with round icon-only buttons. ac2: the VS Code theme only, no light/dark switch. ac3: a viewer by document type, markdown or HTML. ac4: inline comments, annotated inline. ac5: all comments sent when approve, reject or send feedback is pressed; with no comments only the decision. ac6: comments saved with the user (git or OS) and a timestamp, in the artifact JSON. ac7: earlier comments shown as markers that open on click, in time order. ac8: the decision and the new comments sent to the chat; the pane records the decision, the chat message is submitted by itself, it waits for a running turn and opens a closed chat (the recommended answers, accepted). The user ran the frame probe in VS Code and sent its result.`
+- **[[c38]]** `doc` `docs/mocks/docs-review-pane.html` — "Mock of the reworked document viewer / approver pane (VS Code webview)."
+- **[[c39]]** `prior-artifact` `Daemon reviews of revisions 1 and 2 of this LLD, 2026-10-13. Revision 1: block, 1 high and 5 medium (a message to a closed chat dropped; the chosen option's text out of step with the contract; no user lookup function to export; the waiting list missing a superseded turn, a followed turn and an approval follow-up; a decision on a document that is no longer pending; no carry-forward possible for a Define). Revision 2: block, 4 medium (the chat's session exists as soon as the panel is opened, so the wait must be for the webview's ready; the finalizers do write companion files; the single-entry append would drop the new fields; the closed-panel test).`
+- **[[c40]]** `code` `src/workflow/artifacts/companion/render.ts:79-79` — "writeFileSync(destPath, html, 'utf8');"
+- **[[c41]]** `code` `src/workflow/artifacts/provenance/tool.ts:39-39` — "additionalProperties: false,"
+- **[[c42]]** `code` `src/workflow/artifacts/provenance/writer.ts:134-141` — "const entry: FeedbackEntry = {"
+- **[[c43]]** `code` `vscode-plugin/src/chat/chat-panel.ts:1650-1651` — "channel.setHtml(renderShell());"
+- **[[c44]]** `code` `vscode-plugin/src/chat/chat-panel.ts:1358-1364` — "case 'ready':"
+- **[[c45]]** `code` `src/workflow/artifacts/provenance/schema.ts:23-28` — "export const FEEDBACK_PROPERTY_SCHEMA: Record<string, unknown> = {"

@@ -230,6 +230,15 @@
     "reviewOverride": {
       "reason": "Approved by the user in chat on 2026-10-13 after three daemon review rounds (revision 3: block, 0 high, 3 medium). The three open findings are carried into the plan as explicit tasks and tests: (1) a follow that fails reports its end, and the chat host drains its waiting list then; (2) the review pane's host re-posts the open document by its path when the rebuilt shell sends its boot ping, so drafts on a document that is no longer pending are shown again; (3) the chat host's drain also waits while any permission request is unanswered and drains when the last one is decided, so a pane message never rejects waiting requests.",
       "at": "2026-10-13T11:58:07.475Z"
+    },
+    "questionResolutions": {
+      "q9bc28512": {
+        "question": "Should comments saved by the pane's earlier request-changes button, which are stored as resolved open questions, be shown in the new history? Recommended: no; they stay in the document's resolved questions.",
+        "status": "resolved",
+        "choice": "Exclude legacy comments",
+        "rationale": "Chosen by the user in chat on 2026-10-13 (option 1): the history shows only comments saved the new way; the older request-changes notes stay in the document's resolved questions.",
+        "resolvedAt": "2026-10-13T12:00:26.006Z"
+      }
     }
   },
   "body": {

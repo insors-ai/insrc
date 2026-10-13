@@ -667,8 +667,29 @@ export function activate(context: vscode.ExtensionContext): void {
     // persists nothing extension-side (k3). Gated behind the same insrc.chat.enabled flag.
     const reviewHost = createDocsReviewHost({
       client: createDocsReviewClient(client, { repo: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath }),
-      createPanel: ({ viewType, title }) =>
-        webviewChannel(vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true })),
+      createPanel: ({ viewType, title }) => {
+        const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
+        // Story E202610131f74c81f:S001: the pane's own tab icon, as the delivery board has its own.
+        panel.iconPath = {
+          light: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-review-icon.svg')),
+          dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-review-icon-dark.svg')),
+        };
+        return webviewChannel(panel);
+      },
+      // Story E202610131f74c81f:S001: the open document's files are watched, so a document
+      // revised outside the pane is shown without reopening it.
+      watchDocument: (relPaths, onChange) => {
+        const folder = vscode.workspace.workspaceFolders?.[0];
+        if (folder === undefined) return { dispose: () => {} };
+        const watchers = relPaths.map((rel) => {
+          const w = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, rel));
+          w.onDidChange(onChange);
+          w.onDidCreate(onChange);
+          w.onDidDelete(onChange);
+          return w;
+        });
+        return { dispose: () => { for (const w of watchers) w.dispose(); } };
+      },
       // Story E202610138d4b90c9:S001: a decision and its comments are handed to the chat as
       // one message, which waits its turn there; and an artifact's HTML documents are read
       // from the workspace folder's docs/ directory for the pane's frame. The two hosts

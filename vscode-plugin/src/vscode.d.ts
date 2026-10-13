@@ -202,6 +202,20 @@ declare module 'vscode' {
     export function onDidChangeConfiguration(listener: (e: ConfigurationChangeEvent) => unknown): Disposable;
     /** Register a read-only content provider for a custom URI scheme (S006 baseline diff side). */
     export function registerTextDocumentContentProvider(scheme: string, provider: TextDocumentContentProvider): Disposable;
+    /** Watch files matching a pattern for changes on disk (the review pane's open document). */
+    export function createFileSystemWatcher(pattern: RelativePattern): FileSystemWatcher;
+  }
+
+  /** A path pattern relative to a workspace folder. */
+  export class RelativePattern {
+    constructor(base: WorkspaceFolder, pattern: string);
+  }
+
+  /** Reports files being created, changed and deleted; disposed to stop. */
+  export interface FileSystemWatcher extends Disposable {
+    readonly onDidCreate: Event<Uri>;
+    readonly onDidChange: Event<Uri>;
+    readonly onDidDelete: Event<Uri>;
   }
 
   /** A per-scope persisted key/value store (VS Code's `Memento`). */

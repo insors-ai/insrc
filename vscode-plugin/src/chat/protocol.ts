@@ -197,6 +197,11 @@ export type HostToWebview =
       readonly reviewer?: DocsContent['reviewer'];
       readonly state?: DocsContent['state'];
       readonly documents?: readonly DocsDocumentTab[] | undefined;
+      // Story E202610131f74c81f:S001 (additive). `reveal`: the reviewer asked for this document
+      // (a list row, or the delivery board), so the pane brings it into view; absent on every
+      // re-read. `changed`: the re-read was started by a change to the document's files.
+      readonly reveal?: boolean | undefined;
+      readonly changed?: boolean | undefined;
     }
   // S001 sc2 (additive): the live echo of the user's prompt on submit, so it appears
   // during the turn (not only on a later session-restored replay). `key` is the row's

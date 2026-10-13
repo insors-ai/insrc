@@ -108,3 +108,26 @@ test("review wiring: readCompanion answers the text of an .html file under the w
     rmSync(outside, { recursive: true, force: true });
   }
 });
+
+// Story E202610131f74c81f:S001 t3: the pane's tab icon and the watcher of the open document.
+test("review wiring: extension.ts sets the review panel's iconPath to the pair and gives the review host a watchDocument bound to file watchers under the workspace folder", () => {
+  const ext = code(read('..', '..', 'extension.ts'));
+  const block = /createDocsReviewHost\(\{([\s\S]*?)\n    \}\);/.exec(ext)?.[1];
+  assert.ok(block, 'the review host is built in extension.ts');
+  // The icon is set on the vscode panel before it is wrapped as a channel.
+  const create = /createPanel: \(\{ viewType, title \}\) => \{([\s\S]*?)\n      \},/.exec(block!)?.[1];
+  assert.ok(create, 'createPanel builds the panel itself');
+  assert.match(create!, /const panel = vscode\.window\.createWebviewPanel\(viewType, title, vscode\.ViewColumn\.Active, \{ enableScripts: true \}\);/);
+  assert.match(create!, /panel\.iconPath = \{\s*light: vscode\.Uri\.file\(join\(context\.extensionPath, 'media', 'insrc-review-icon\.svg'\)\),\s*dark: vscode\.Uri\.file\(join\(context\.extensionPath, 'media', 'insrc-review-icon-dark\.svg'\)\),\s*\};/);
+  assert.ok(create!.indexOf('panel.iconPath') < create!.indexOf('return webviewChannel(panel);'), 'before it is wrapped');
+  // The watcher: one VS Code file watcher per path, under the first workspace folder, all three events, disposed together.
+  const watch = /watchDocument: \(relPaths, onChange\) => \{([\s\S]*?)\n      \},/.exec(block!)?.[1];
+  assert.ok(watch, 'the host is given watchDocument');
+  assert.match(watch!, /const folder = vscode\.workspace\.workspaceFolders\?\.\[0\];/);
+  assert.match(watch!, /if \(folder === undefined\) return \{ dispose: \(\) => \{\} \};/, 'with no folder it watches nothing and still answers a disposer');
+  assert.match(watch!, /vscode\.workspace\.createFileSystemWatcher\(new vscode\.RelativePattern\(folder, rel\)\)/);
+  for (const ev of ['onDidChange', 'onDidCreate', 'onDidDelete']) assert.match(watch!, new RegExp(`w\\.${ev}\\(onChange\\);`), `${ev} reports a change`);
+  assert.match(watch!, /return \{ dispose: \(\) => \{ for \(const w of watchers\) w\.dispose\(\); \} \};/);
+  // The host itself stays free of vscode.
+  assert.doesNotMatch(code(read('..', 'docs-review-panel.ts')), /from 'vscode'/);
+});

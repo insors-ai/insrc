@@ -46,7 +46,18 @@ export interface DocsReviewHostDeps {
    * path; undefined when it may not or cannot be read. Absent means no companion is shown.
    */
   readonly readCompanion?: ((relPath: string) => Promise<string | undefined>) | undefined;
+  /**
+   * Story E202610131f74c81f:S001: watches repo-relative files and calls onChange when any of
+   * them is created, changed or deleted. Absent means the pane does not follow changes made
+   * outside it.
+   */
+  readonly watchDocument?: ((relPaths: readonly string[], onChange: () => void) => { dispose(): void }) | undefined;
+  /** The timer for the quiet period after a file change; setTimeout by default. */
+  readonly setTimer?: ((fn: () => void, ms: number) => { cancel(): void }) | undefined;
 }
+
+/** How long the open document's files must be quiet before it is read again. */
+export const RELOAD_QUIET_MS = 300;
 
 /** What the chat hand-over of a decision came to. */
 type ChatHandOver = 'sent' | 'queued' | 'unavailable' | 'failed' | 'none';
@@ -1270,6 +1281,17 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   // The nonce of the shell last rendered: an HTML companion's scripts run in its frame only
   // when they carry it.
   let shellNonce = '';
+  // Story E202610131f74c81f:S001: the watch on the open document's files, named by the
+  // document it is for; the quiet period running after a change; how many decisions are in
+  // flight; and whether a change arrived while one was.
+  let watch: { readonly key: string; dispose(): void } | undefined;
+  let quiet: { cancel(): void } | undefined;
+  let deciding = 0;
+  let changedWhileDeciding = false;
+  const setTimer = deps.setTimer ?? ((fn: () => void, ms: number) => {
+    const t = setTimeout(fn, ms);
+    return { cancel: () => clearTimeout(t) };
+  });
 
   const post = (msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
@@ -1326,8 +1348,8 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       if (mySeq === refreshSeq) postUnavailable(err);
     }
     if (disposed) return;
-    if (summary !== undefined) void openDoc(target.artifactId, { kind: summary.kind });
-    else void openDoc(target.artifactId, { path: target.mdPath, readOnly: true });
+    if (summary !== undefined) void openDoc(target.artifactId, { kind: summary.kind, reveal: true });
+    else void openDoc(target.artifactId, { path: target.mdPath, readOnly: true, reveal: true });
   }
 
   /**
@@ -1355,6 +1377,55 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     }
   }
 
+  /** End the watch and anything waiting on it. A disposer that throws is logged. */
+  function dropWatch(): void {
+    quiet?.cancel();
+    quiet = undefined;
+    changedWhileDeciding = false;
+    const w = watch;
+    watch = undefined;
+    if (w === undefined) return;
+    try {
+      w.dispose();
+    } catch (err) {
+      log.warn(`[docs-review] the watch on the open document could not be ended: ${String(err)}`);
+    }
+  }
+
+  /** After a change: one re-read of the list and the document, once the files have been quiet. */
+  function startQuiet(): void {
+    quiet?.cancel();
+    quiet = setTimer(() => {
+      quiet = undefined;
+      void refreshPending().then(() => reopen({ changed: true }));
+    }, RELOAD_QUIET_MS);
+  }
+
+  /**
+   * The ONE place the open document's record is assigned, so the watch always follows it:
+   * kept when the same document is read again (ending and restarting it could miss a change
+   * in between), replaced for another document, and ended when the record is cleared.
+   */
+  function setOpened(next: OpenDocument | undefined): void {
+    opened = next;
+    const key = next !== undefined && next.docPath !== undefined ? `${next.artifactId}\n${next.docPath}` : undefined;
+    if (key === watch?.key) return;
+    dropWatch();
+    if (key === undefined || next === undefined || next.docPath === undefined || deps.watchDocument === undefined) return;
+    try {
+      // The markdown, and the artifact's record: a comment saved by another tool changes only the record.
+      const w = deps.watchDocument([next.docPath, `.insrc/artifacts/${next.artifactId}.json`], () => {
+        if (disposed || watch?.key !== key) return; // a watch the host no longer holds
+        // During a decision the change is remembered; it is acted on when the decision settles.
+        if (deciding > 0) changedWhileDeciding = true;
+        else startQuiet();
+      });
+      watch = { key, dispose: () => w.dispose() };
+    } catch (err) {
+      log.warn(`[docs-review] ${next.docPath} is not watched for changes: ${String(err)}`);
+    }
+  }
+
   /**
    * Open one document. A list-row open passes no options; openArtifact passes the
    * kind from its own pending read, or, for an artifact not awaiting review, the
@@ -1362,8 +1433,12 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
    */
   async function openDoc(
     artifactId: string,
-    opts: { readonly kind?: string; readonly path?: string; readonly readOnly?: boolean } = {},
+    opts: { readonly kind?: string; readonly path?: string; readonly readOnly?: boolean; readonly reveal?: boolean; readonly changed?: boolean } = {},
   ): Promise<void> {
+    // reveal: the reviewer asked for this document, so the pane brings it into view. Absent on
+    // every re-read, which must never move the reviewer. changed: the re-read was started by
+    // the watch.
+    const marks = { ...(opts.reveal === true ? { reveal: true } : {}), ...(opts.changed === true ? { changed: true } : {}) };
     const commentable = COMMENTABLE_KINDS.has(opts.kind ?? pending.get(artifactId)?.kind ?? '');
     const readOnly = opts.readOnly === true ? { readOnly: true } : {};
     const mySeq = ++openSeq;
@@ -1372,13 +1447,13 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       if (mySeq !== openSeq) return; // superseded by a newer open — drop this response
       const docPath = content.docPath !== undefined && content.docPath !== '' ? content.docPath : opts.path;
       const htmlCompanions = htmlCompanionsOf(content.companions);
-      opened = {
+      setOpened({
         artifactId,
         docPath,
         companions: htmlCompanions.map((c) => c.relPath),
         kind: opts.kind ?? pending.get(artifactId)?.kind ?? (opened?.artifactId === artifactId ? opened.kind : undefined),
         title: pending.get(artifactId)?.title ?? (opened?.artifactId === artifactId ? opened.title : undefined),
-      };
+      });
       const documents: DocsDocumentTab[] = [
         { title: docPath !== undefined ? baseName(docPath) : 'Document', type: 'markdown', ...(docPath !== undefined ? { relPath: docPath } : {}) },
         ...htmlCompanions.map((c): DocsDocumentTab => ({ title: c.title, type: 'html', relPath: c.relPath })),
@@ -1472,6 +1547,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         ...(content.reviewer !== undefined ? { reviewer: content.reviewer } : {}),
         ...(content.state !== undefined ? { state: content.state } : {}),
         documents,
+        ...marks,
       });
     } catch (err) {
       log.warn(`[docs-review] content ${artifactId} failed: ${String(err)}`);
@@ -1480,7 +1556,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       if (mySeq !== openSeq) return;
       // The pane now shows this failure. A failed re-read of the open document keeps what
       // the host knows of it; a failed open of another one leaves nothing open.
-      if (opened?.artifactId !== artifactId) opened = undefined;
+      if (opened?.artifactId !== artifactId) setOpened(undefined);
       // A content-load failure means the reviewer never saw the body — suppress approve
       // (blocked:true) so the review gate is not defeated; request-changes stays available.
       post({
@@ -1491,6 +1567,8 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         blocked: true,
         commentable,
         ...readOnly,
+        // An asked-for open that failed is shown where the reviewer will see it.
+        ...(opts.reveal === true ? { reveal: true } : {}),
       });
     }
   }
@@ -1500,15 +1578,15 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
    * when it is no longer awaiting review. Used after a decision and when a rebuilt shell
    * sends its boot ping.
    */
-  async function reopen(): Promise<void> {
+  async function reopen(how: { readonly changed?: boolean } = {}): Promise<void> {
     const o = opened;
     if (o === undefined) return;
     const awaiting = pending.get(o.artifactId);
     const kind = awaiting?.kind ?? o.kind;
     if (o.docPath !== undefined) {
-      await openDoc(o.artifactId, { path: o.docPath, ...(kind !== undefined ? { kind } : {}), readOnly: awaiting === undefined });
+      await openDoc(o.artifactId, { path: o.docPath, ...(kind !== undefined ? { kind } : {}), readOnly: awaiting === undefined, ...how });
     } else if (awaiting !== undefined) {
-      await openDoc(o.artifactId);
+      await openDoc(o.artifactId, how);
     }
   }
 
@@ -1535,6 +1613,21 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
    * and send feedback does not.
    */
   async function decide(artifactId: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<void> {
+    // A change to the document's files while this runs is remembered and acted on when it
+    // settles, on every path: some of them do not read the document again themselves.
+    deciding += 1;
+    try {
+      await decideNow(artifactId, decision, comments);
+    } finally {
+      deciding -= 1;
+      if (deciding === 0 && changedWhileDeciding) {
+        changedWhileDeciding = false;
+        if (watch !== undefined) startQuiet();
+      }
+    }
+  }
+
+  async function decideNow(artifactId: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<void> {
     const o = opened;
     if (o === undefined || o.artifactId !== artifactId) {
       log.warn(`[docs-review] docs-decision: ${artifactId} is not the open document`);
@@ -2155,9 +2248,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         // A rebuilt shell (the pane hidden and shown again) sends the ping too and has lost
         // its document: the open one is posted again, by its path, pending or not.
         if (msg.artifactId === '') {
-          void refreshPending().then(reopen);
+          void refreshPending().then(() => reopen());
         } else if (pending.has(msg.artifactId)) {
-          void openDoc(msg.artifactId);
+          void openDoc(msg.artifactId, { reveal: true });
         } else {
           // A stale row (approved/evicted since the list was posted) -> refresh, drop the open.
           log.warn(`[docs-review] open-doc: unknown/stale artifact ${msg.artifactId}`);
@@ -2191,7 +2284,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         disposed = true;
         channel = undefined;
         pending.clear();
-        opened = undefined;
+        setOpened(undefined);
       });
       channel.onMessage(handleMessage);
       channel.setHtml(renderShell());
@@ -2208,7 +2301,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       channel?.dispose();
       channel = undefined;
       pending.clear();
-      opened = undefined;
+      setOpened(undefined);
     },
   };
   return host;

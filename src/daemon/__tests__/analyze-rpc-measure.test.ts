@@ -29,7 +29,7 @@ import { registerBuiltinTemplates } from '../../analyze/planner/templates/bootst
 import { registerBuiltinRuntimes } from '../../analyze/runtimes/bootstrap.js';
 import { listEntitiesForRepo, upsertEntities } from '../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
-import { addRepo } from '../../db/repos.js';
+import { addRepo, updateRepoStatus } from '../../db/repos.js';
 import { makeEntityId } from '../../indexer/parser/base.js';
 import type { AnalyzeScope, AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type { Entity, IpcStreamMessage, LLMProvider } from '../../shared/types.js';
@@ -165,13 +165,14 @@ test("the daemon's run request, plan request and classify request treat a stated
 	if (!classified.ok) return;
 	assert.deepEqual(classified.intent, { ...intentOn(small, 'XL'), scope: 'XS' }, "the response keeps the field, with the measured size");
 	assert.deepEqual(classified.measure, SMALL, "the classifier's figure is not a hint");
-	// A scope that cannot be counted is not refused here: the size is the largest, and the measure says why.
+	// A scope the index does not hold is refused before it is measured (Epic c2ba6fa6, Story s5):
+	// no size is returned for it.
 	_setClassifierForTest(async () => intentOn(unregistered, 'XS'));
 	const uncounted = await classify({ runId: id('classify-uncounted'), userPrompt: 'what is here', scopeRef: repo(unregistered) });
-	assert.ok(uncounted.ok);
-	if (!uncounted.ok) return;
-	assert.equal(uncounted.intent.scope, 'XL');
-	assert.deepEqual([uncounted.measure.determined, uncounted.measure.size], [false, 'XL']);
+	assert.equal(uncounted.ok, false);
+	if (uncounted.ok) return;
+	assert.equal(uncounted.error.code, 'scope-not-indexed');
+	assert.ok(!('measure' in uncounted) && !('intent' in uncounted), 'no measured size');
 
 	// --- The plan request at depth 0: the intent states L and the request states a root size of XL. ---
 	// The plan of four tasks is accepted only in the band of XS, the measured size.
@@ -295,4 +296,42 @@ test("a run takes one measure of the area it names: the context builder uses the
 	const built = await withModel(null, () => buildRun(oneShotRunParams({ focus: 'where is fn0' }, small, id('bundle-measures'))), LOOKUPS);
 	assert.ok(built.ok, built.ok ? '' : built.error.message);
 	assert.equal(measured, 1);
+});
+
+test("analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'", async () => {
+	const measured: string[] = [];
+	_setMeasureDepsForTest({ listEntities: async (path: string) => { measured.push(path); return listEntitiesForRepo(null, path); } });
+	try {
+		// A scope no registered repository contains.
+		_setClassifierForTest(async () => intentOn(unregistered, 'XS'));
+		const refused = await classify({ runId: id('classify-unindexed'), userPrompt: 'what is here', scopeRef: repo(unregistered) });
+		assert.equal(refused.ok, false);
+		if (refused.ok) return;
+		assert.equal(refused.error.code, 'scope-not-indexed');
+		assert.equal(refused.error.message,
+			`Scope ${unregistered} produced an empty graph closure. No registered repo contains this path. Reason: no registered repo contains the scope path. `
+			+ "Run `insrc repo add <path>` and let the indexer finish (status: 'ready') before re-running analyze.");
+		assert.ok(!('measure' in refused) && !('intent' in refused), 'no measured size returned');
+
+		// A repository under index.
+		await updateRepoStatus(null, small, 'indexing');
+		_setClassifierForTest(async () => intentOn(small, 'XS'));
+		const indexing = await classify({ runId: id('classify-indexing'), userPrompt: 'what is here', scopeRef: repo(small) });
+		assert.equal(indexing.ok, false);
+		if (indexing.ok) return;
+		assert.equal(indexing.error.code, 'repo-indexing');
+		assert.equal((indexing.error.data as { repoPath: string }).repoPath, small);
+		assert.ok(!('measure' in indexing));
+		assert.deepEqual(measured, [], 'nothing was measured for either');
+
+		// A generic intent is not checked: it is measured and answered as before.
+		await updateRepoStatus(null, small, 'ready');
+		_setMeasureDepsForTest(undefined);
+		_setClassifierForTest(async () => ({ ...intentOn(unregistered, 'XS'), target: 'generic' }));
+		const generic = await classify({ runId: id('classify-generic'), userPrompt: 'what is here', scopeRef: repo(unregistered) });
+		assert.ok(generic.ok);
+	} finally {
+		_setMeasureDepsForTest(undefined);
+		_setClassifierForTest(undefined);
+	}
 });

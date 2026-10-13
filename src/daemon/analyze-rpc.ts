@@ -80,6 +80,7 @@ import {
 	toolLoopExhaustedData,
 } from '../analyze/context/driver.js';
 import { scopeErrorMapping } from '../analyze/context/invariants.js';
+import { resolveTaskScope } from '../analyze/runtimes/shared/task-scope.js';
 import {
 	MaxPlanDepthExceededError,
 	PlanBuilderExhausted,
@@ -350,6 +351,20 @@ export async function classify(params: unknown): Promise<ClassifyRpcResponse> {
 		// The classifier states no size: it is counted from the scope the
 		// classifier named. The response keeps the field, with the measured size.
 		const unsized = await classifierImpl({ input, opts });
+		// The scope the classifier named is checked BEFORE it is measured, as the
+		// run checks it: a scope the index does not hold, or a repository being
+		// indexed, is answered with its own code and message and no size. A
+		// generic intent has no family row and is not checked.
+		if (unsized.target !== 'generic') {
+			try {
+				await resolveTaskScope(unsized.scopeRef, unsized.target, 'the request');
+			} catch (err) {
+				const scoped = scopeErrorMapping(err);
+				if (scoped === undefined) throw err;
+				log.info({ runId: parsed.runId, code: scoped.code }, 'analyze.classify: the scope was refused before it was measured');
+				return { ok: false, error: scoped };
+			}
+		}
 		const measure = await measureRequestScope(unsized.scopeRef, unsized.target);
 		log.debug({ runId: parsed.runId, size: measure.size, determined: measure.determined }, 'analyze.classify complete');
 		return { ok: true, intent: { ...unsized, scope: measure.size }, measure };

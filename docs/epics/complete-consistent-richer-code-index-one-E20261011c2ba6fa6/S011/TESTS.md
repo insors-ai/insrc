@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 101 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 101 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -428,3 +428,21 @@ Run at 2026-10-13T06:00:42.483Z on commit `f1b81679`. Tests check: **passed**. 6
 | `src/daemon/steps/__tests__/step-host.test.ts` | 0 | 5 | 1.4 s |  |
 | `src/mcp/__tests__/forward-step.test.ts` | 0 | 4 | 1 s |  |
 | `src/mcp/__tests__/mcp-process-e2e.test.ts` | 0 | 4 | 4.3 s |  |
+
+## t13
+
+Run at 2026-10-13T06:32:04.533Z on commit `284ce2c4`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: installed daemon: an analysis through a restarted client session works**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/smoke.md section 1: insrc_analyze through the restarted session's MCP server (pid 87098, started after the update) returned a full bundle (size M, 34 files, 76 items, model=opus) grounded on src/mcp/forward-step.ts, src/mcp/server.ts, src/daemon/index.ts:1902 and src/daemon/steps/host.ts.
+
+**smoke: installed daemon: a multi-turn workflow step continues after the client session's MCP server restarts**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: smoke.md section 2: issue workflow started via MCP pid 87098 (emit_plan, state WNVfux58ECv6yBWX9tcJvw), continued via a new installed MCP process pid 88099 (emit_step s1, state havXUlViLBdYc1vLxFmAbw), then via pid 87098 again (emit_step s2).
+
+**smoke: installed daemon after every client session has restarted: lsof shows only the daemon on the store files and the lance directory**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: smoke.md section 3: lsof of ~/.insrc/graph.lmdb and graph.lmdb-lock lists only pid 81990 (the daemon); lsof +D ~/.insrc/lance lists no holder; lsof -p of every other node process, the MCP server pid 87098 included, shows no store path.

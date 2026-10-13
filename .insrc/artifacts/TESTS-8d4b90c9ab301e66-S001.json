@@ -4,7 +4,7 @@
     "epicHash": "8d4b90c9ab301e66",
     "storyId": "S001",
     "createdAt": "2026-10-13T12:12:45.679Z",
-    "updatedAt": "2026-10-13T12:12:45.679Z",
+    "updatedAt": "2026-10-13T12:19:23.527Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T11:21:58.998Z",
     "epicSlug": "rework-document-review-pane-fixed-decision"
@@ -108,6 +108,59 @@
               },
               {
                 "title": "feedback: priorFeedback returns the stored list, and an empty list for a missing, unreadable or feedback-less artifact",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "bb5afca9",
+        "ranAt": "2026-10-13T12:19:23.527Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "finalize: a re-authored HLD, epic LLD, standalone LLD and PLAN each keep the feedback entries of the JSON at their own artifact path, in order, and render them in the Feedback section; a first authoring has none; a re-authored Define carries none",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/feedback-carry-finalize.test.ts",
+                "title": "finalize: a re-authored HLD, epic LLD, standalone LLD and PLAN each keep the feedback entries of the JSON at their own artifact path, in order, and render them in the Feedback section; a first authoring has none; a re-authored Define carries none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalize: the prior artifact JSON is byte-identical after the finalizer has run",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/feedback-carry-finalize.test.ts",
+                "title": "finalize: the prior artifact JSON is byte-identical after the finalizer has run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/feedback-carry-finalize.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 515,
+            "titles": [
+              {
+                "title": "finalize: a re-authored HLD, epic LLD, standalone LLD and PLAN each keep the feedback entries of the JSON at their own artifact path, in order, and render them in the Feedback section; a first authoring has none; a re-authored Define carries none",
+                "result": "pass"
+              },
+              {
+                "title": "finalize: the prior artifact JSON is byte-identical after the finalizer has run",
                 "result": "pass"
               }
             ],

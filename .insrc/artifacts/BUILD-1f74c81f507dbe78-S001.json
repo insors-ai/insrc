@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "1f74c81f507dbe78",
+    "storyId": "S001",
+    "createdAt": "2026-10-13T16:14:59.110Z",
+    "updatedAt": "2026-10-13T16:14:59.110Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-13T14:35:06.077Z",
+    "epicSlug": "review-pane-document-table-search-live"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "media/insrc-review-icon.svg and media/insrc-review-icon-dark.svg are new: the delivery board icon's spiral group, unchanged, behind a document page with a folded corner and a check mark, stroked #1a4528 (light) and #ffffff (dark), with no background. package.json's insrc.chat.docsReview command declares the pair. The panel's tab icon is set in task 3, where the plan puts the wiring. I rendered both files beside the delivery board's in headless Chrome at 200 px and 24 px (/tmp/t9/icon/icons.png): the glyph reads at tab size in both.",
+    "testRecord": {
+      "md": "docs/standalone/review-pane-document-table-search-live-E202610131f74c81f/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/media/insrc-review-icon-dark.svg"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T16:14:59.110Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/media/insrc-review-icon.svg"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T16:14:59.110Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T16:14:59.110Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/review-icon.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T16:14:59.110Z"
+      }
+    ],
+    "commit": "f5765ed7"
+  }
+}

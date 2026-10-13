@@ -30,6 +30,7 @@
 
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
 import { getLogger } from '../../shared/logger.js';
+import { ModelCallFailedError } from './model-call-error.js';
 import type { StructuredSchema } from '../../shared/types.js';
 
 const log = getLogger('providers:structured-output');
@@ -188,6 +189,10 @@ export async function withStructuredRetry<T>(
 		throw new Error(`structured-output: maxAttempts must be >= 1; got ${maxAttempts}`);
 	}
 	let lastErrors: readonly string[] = [];
+	// The last attempt's failed model call, when it was one: the helper's
+	// final error keeps that type, so a real outage is not reported as a
+	// failure of shape.
+	let lastCallFailure: ModelCallFailedError | undefined;
 	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 		const note = attempt === 1
 			? undefined
@@ -203,6 +208,7 @@ export async function withStructuredRetry<T>(
 			// error message as feedback.
 			const msg = (err as Error).message ?? String(err);
 			lastErrors = [msg];
+			lastCallFailure = err instanceof ModelCallFailedError ? err : undefined;
 			log.warn({ attempt, maxAttempts, error: msg }, 'structured-output: call threw; treating as validation failure for retry');
 			continue;
 		}
@@ -215,9 +221,14 @@ export async function withStructuredRetry<T>(
 			return result.value;
 		}
 		lastErrors = result.errors;
+		lastCallFailure = undefined;
 		log.warn({ attempt, maxAttempts, errors: lastErrors }, 'structured-output: validation failed; will retry');
 	}
-	throw new Error(`structured-output: validation failed after ${maxAttempts} attempts: ${lastErrors.join('; ')}`);
+	const prefix = `structured-output: validation failed after ${maxAttempts} attempts: `;
+	if (lastCallFailure !== undefined) {
+		throw new ModelCallFailedError(`${prefix}${lastCallFailure.detail}`, { cause: lastCallFailure });
+	}
+	throw new Error(`${prefix}${lastErrors.join('; ')}`);
 }
 
 

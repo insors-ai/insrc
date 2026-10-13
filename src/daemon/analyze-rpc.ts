@@ -72,12 +72,15 @@ import {
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
 	ShaperNoPlanError,
+	ShaperIndexStateReadError,
+	ShaperLookupFailedError,
 	ShaperPromptMissingError,
 	ShaperSchemaUnrecoverable,
 	ShaperToolLoopExhausted,
 	toolLoopExhaustedData,
 } from '../analyze/context/driver.js';
 import { scopeErrorMapping } from '../analyze/context/invariants.js';
+import { resolveTaskScope } from '../analyze/runtimes/shared/task-scope.js';
 import {
 	MaxPlanDepthExceededError,
 	PlanBuilderExhausted,
@@ -143,12 +146,15 @@ export type AnalyzeRpcResponse = AnalyzeRpcOk | AnalyzeRpcErr;
 export type AnalyzeRpcErrorCode =
 	| 'invalid-params'
 	| 'scope-not-indexed'
+	| 'repo-indexing'
 	| 'shaper-llm-unavailable'
 	| 'shaper-tool-loop-exhausted'
 	| 'shaper-schema-unrecoverable'
 	| 'shaper-prompt-missing'
 	| 'no-plan-for-request'
 	| 'answer-step-failed'
+	| 'index-state-read-failed'
+	| 'lookup-failed'
 	| 'run-abandoned'
 	| 'classifier-llm-unavailable'
 	| 'classifier-schema-unrecoverable'
@@ -345,6 +351,20 @@ export async function classify(params: unknown): Promise<ClassifyRpcResponse> {
 		// The classifier states no size: it is counted from the scope the
 		// classifier named. The response keeps the field, with the measured size.
 		const unsized = await classifierImpl({ input, opts });
+		// The scope the classifier named is checked BEFORE it is measured, as the
+		// run checks it: a scope the index does not hold, or a repository being
+		// indexed, is answered with its own code and message and no size. A
+		// generic intent has no family row and is not checked.
+		if (unsized.target !== 'generic') {
+			try {
+				await resolveTaskScope(unsized.scopeRef, unsized.target, 'the request');
+			} catch (err) {
+				const scoped = scopeErrorMapping(err);
+				if (scoped === undefined) throw err;
+				log.info({ runId: parsed.runId, code: scoped.code }, 'analyze.classify: the scope was refused before it was measured');
+				return { ok: false, error: scoped };
+			}
+		}
 		const measure = await measureRequestScope(unsized.scopeRef, unsized.target);
 		log.debug({ runId: parsed.runId, size: measure.size, determined: measure.determined }, 'analyze.classify complete');
 		return { ok: true, intent: { ...unsized, scope: measure.size }, measure };
@@ -991,6 +1011,12 @@ function classifyShaperError(err: unknown): AnalyzeRpcErrorPayload {
 	if (err instanceof ShaperNoPlanError) {
 		return { code: 'no-plan-for-request', message: err.message };
 	}
+	if (err instanceof ShaperIndexStateReadError) {
+		return { code: 'index-state-read-failed', message: err.message };
+	}
+	if (err instanceof ShaperLookupFailedError) {
+		return { code: 'lookup-failed', message: err.message };
+	}
 	// The lookups ran and the answer could not be written: the failure
 	// carries what they found, and the report says the answer step failed.
 	if (err instanceof ShaperAnswerStepFailedError) {
@@ -1012,6 +1038,8 @@ function classifyShaperError(err: unknown): AnalyzeRpcErrorPayload {
 export const CAUSE_CODES_IN_BOTH_LISTS = [
 	'no-plan-for-request',
 	'answer-step-failed',
+	'index-state-read-failed',
+	'lookup-failed',
 	'run-abandoned',
 ] as const satisfies ReadonlyArray<AnalyzeRpcErrorCode & RunErrorCode>;
 

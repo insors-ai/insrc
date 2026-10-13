@@ -9,9 +9,10 @@
  * accepted in both cases, as it always was.
  *
  * The daemon's run handler is called directly. The accepted requests run for
- * real over a sandboxed graph store, with a stated source and size on a
- * directory that is not indexed: no model is reached, and the run ends at the
- * indexed check with the intent it had built.
+ * real over a sandboxed graph store, with a stated source and size on an
+ * indexed directory: the run's scope check passes, and a stand-in context
+ * builder ends the run at the plan stage with the intent it had built, before
+ * any model is reached.
  */
 
 import { test } from 'node:test';
@@ -20,6 +21,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { ScopeNotIndexedError } from '../../analyze/context/invariants.js';
+import type { RunShaper } from '../../analyze/context/types.js';
+import { _setRunShaperForTest } from '../../analyze/orchestrator/driver.js';
 import { purgeRunForTests } from '../../analyze/orchestrator/index.js';
 import type { RunAnalyzeArgs } from '../../analyze/orchestrator/types.js';
 import { upsertEntities } from '../../db/entities.js';
@@ -45,10 +49,22 @@ test.beforeEach(async () => {
 		id: 'e-fixture', repo: REGISTERED, file: `${REGISTERED}/index.ts`, kind: 'function', name: 'fn',
 		language: 'typescript', startLine: 1, endLine: 3,
 	} as unknown as Entity]);
+	// The request's directory is an indexed repository (the run's scope check,
+	// made before the measure, passes); the context builder stands in and ends
+	// the run at the plan stage with the indexed check's failure.
+	await addRepo(null, { path: dirPath, name: dirPath, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' });
+	await upsertEntities(null, [{
+		id: 'e-proj', repo: dirPath, file: join(dirPath, 'a.ts'), kind: 'variable', name: 'a',
+		language: 'typescript', startLine: 1, endLine: 1,
+	} as unknown as Entity]);
+	_setRunShaperForTest(() => ({
+		buildRunBundle: async () => { throw new ScopeNotIndexedError(dirPath, dirPath, 'the context builder stands in for the test'); },
+	}) as unknown as RunShaper);
 });
 
 test.afterEach(async () => {
 	_setRunAnalyzeForTest(undefined);
+	_setRunShaperForTest(undefined);
 	await closeGraphStore();
 	rmSync(sandbox, { recursive: true, force: true });
 });
@@ -81,12 +97,13 @@ test('an empty prompt with a stated kind of source is accepted and gives an unfo
 	const id = uniqueId('unfocused');
 	try {
 		const { terminal, streams } = await request({ runId: id, userPrompt: '', scopeRef: { kind: 'repo', value: dirPath }, targetHint: 'code', scopeHint: 'M' });
-		// The run went past classification (it ends at the indexed check), so the request was not refused.
+		// The run went past classification (it ends at the context builder), so the request was not refused.
 		assert.deepEqual([terminal.ok, terminal.stage, terminal.error.code], [false, 'plan', 'scope-not-indexed']);
 		assert.equal(terminal.intent?.focused, false);
 		assert.ok(terminal.intent !== undefined && !('focus' in terminal.intent), 'no focus key');
-		// The stated size is a hint: the size is measured, and a scope in no registered repo cannot be counted.
-		assert.deepEqual([terminal.intent?.target, terminal.intent?.scope], ['code', 'XL']);
+		// The stated size is a hint: the size is measured from the repository, not taken from the request.
+		// The repository holds one file, so it measures XS, not the 'M' the request stated.
+		assert.deepEqual([terminal.intent?.target, terminal.intent?.scope], ['code', 'XS']);
 		assert.equal(streams[streams.length - 1], 'done');
 	} finally {
 		purgeRunForTests(id);

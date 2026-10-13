@@ -6,30 +6,22 @@
  * The provider behind a call is role-routed: it can be the local
  * Ollama, the claude / codex CLI, or an MCP sampling client. Each
  * reports a failed call differently:
- *   - Ollama + sockets: by message text (the provider wraps a clean
- *     connection failure into these strings).
- *   - CLI: by message text too -- a non-zero exit (which also covers a
- *     binary that could not be started) or an error envelope/event.
+ *   - Ollama: by a typed error. The local provider raises every
+ *     transport failure (connection refused, socket hang up, a stream
+ *     that ends early) as ModelCallFailedError, so no socket wording is
+ *     looked for inside a message, where it could be quoted text.
+ *   - CLI: by its own wording at the START of the message -- a non-zero
+ *     exit (which also covers a binary that could not be started) or an
+ *     error envelope/event.
  *   - sampling: by a typed error, since the client's wording is its own.
+ * A typed failure passed on as a plain message is still recognised by the
+ * 'Model call failed: ' its message opens with.
  *
  * Anything else is NOT a failed call: no structured output, an answer
  * that does not parse, validation that fails after its retries.
  */
 
 import { ModelCallFailedError } from '../../agent/providers/model-call-error.js';
-
-/** Ollama / socket failures, as the local provider words them. */
-const OLLAMA_FAILURE_TEXTS: readonly string[] = [
-	'Ollama is not running',
-	'Model not found',
-	'ECONNREFUSED',
-	'ECONNRESET',
-	'fetch failed',
-	'socket hang up',
-	'EPIPE',
-	'other side closed',
-	'Did not receive done or success response in stream',
-];
 
 /** Failures of the CLI call itself (src/agent/providers/cli-provider.ts). */
 const CLI_FAILURE_TEXTS: readonly string[] = [
@@ -39,8 +31,12 @@ const CLI_FAILURE_TEXTS: readonly string[] = [
 	'codex exited with',
 ];
 
+/** A ModelCallFailedError's message opens with this (model-call-error.ts). */
+const TYPED_FAILURE_TEXT = 'Model call failed: ';
+
+/** Every wording a failed call's message opens with. */
 export const MODEL_CALL_FAILURE_TEXTS: readonly string[] = Object.freeze([
-	...OLLAMA_FAILURE_TEXTS,
+	TYPED_FAILURE_TEXT,
 	...CLI_FAILURE_TEXTS,
 ]);
 
@@ -72,14 +68,8 @@ export function isModelCallFailure(err: unknown): boolean {
 	// (after the retry helper's prefix, when there is one). It is never
 	// matched further in, where it could be quoted text.
 	const own = msg.replace(RETRY_PREFIX, '');
-	for (const text of CLI_FAILURE_TEXTS) {
+	for (const text of MODEL_CALL_FAILURE_TEXTS) {
 		if (own.startsWith(text)) return true;
-	}
-	// The local provider wraps a connection failure with its own
-	// prefix, and a socket error can be nested in another's message,
-	// so these are matched anywhere -- outside a quoted answer.
-	for (const text of OLLAMA_FAILURE_TEXTS) {
-		if (msg.includes(text)) return true;
 	}
 	return false;
 }

@@ -23,7 +23,7 @@
 import { statSync } from 'node:fs';
 import { basename, isAbsolute, resolve, sep } from 'node:path';
 
-import type { RegisteredRepo } from '../shared/types.js';
+import type { RegisteredRepo, RepoLastRun } from '../shared/types.js';
 import {
 	getGraphStore,
 	withWriteTxn,
@@ -246,6 +246,8 @@ export async function updateRepoStatus(
 	status: RegisteredRepo['status'],
 	lastIndexed?: string,
 	errorMsg?: string,
+	/** The run's final figures, written with the final status; when omitted the stored ones are kept. */
+	lastRun?: RepoLastRun,
 ): Promise<void> {
 	await withWriteTxn(s => {
 		const id = findRepoIdByPath(s, path);
@@ -263,6 +265,7 @@ export async function updateRepoStatus(
 			status:      status as RepoStatus,
 			lastIndexed: parseOptionalTimestamp(lastIndexed),
 			errorMsg:    errorMsg ?? '',
+			...(lastRun !== undefined ? { lastRun } : {}),
 		};
 		s.repo.put(key, encodeRepoRow(next));
 	});
@@ -348,6 +351,7 @@ function rowToRepo(row: RepoRow): RegisteredRepo {
 	if (row.namespace !== undefined) r.namespace   = row.namespace;
 	if (row.lastIndexed > 0)         r.lastIndexed = formatTimestamp(row.lastIndexed);
 	if (row.errorMsg !== '')         r.errorMsg    = row.errorMsg;
+	if (row.lastRun !== undefined)   r.lastRun     = row.lastRun;
 	return r;
 }
 

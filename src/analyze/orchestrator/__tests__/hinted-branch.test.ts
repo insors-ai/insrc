@@ -20,9 +20,10 @@ import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import { addRepo } from '../../../db/repos.js';
 import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 import { connectionCheckFor } from '../../classifier/driver.js';
-import { ScopeRefUnresolvedError } from '../../context/invariants.js';
+import { ScopeNotIndexedError, ScopeRefUnresolvedError } from '../../context/invariants.js';
 import { connectionIsRegistered, type ScopeDeps } from '../../context/scope.js';
-import { hintedIntentBase, runAnalyze } from '../driver.js';
+import type { RunShaper } from '../../context/types.js';
+import { _setRunShaperForTest, hintedIntentBase, runAnalyze } from '../driver.js';
 import { purgeRunForTests, readRunRecord } from '../persistence.js';
 import type { AnalyzeRunEvent } from '../types.js';
 
@@ -155,11 +156,19 @@ test("hinted request with a scope that does not resolve fails with 'scope-ref-un
 test('hinted request with a valid pairing reaches the context builder and the planner', async () => {
 	// A valid pairing passes the classify stage with the prompt as its
 	// focus and goes on to the plan stage, whose first step is the
-	// context builder. The sandbox directory is in no registered repo,
-	// so the context builder stops at its indexed check -- before any
-	// model call. Reaching THAT failure, at stage 'plan', is the proof
-	// the request got past classification and into the context builder.
+	// context builder. The sandbox directory is an indexed repository, so
+	// the run's own scope check (made before the measure) passes; the
+	// context builder is a stand-in that stops the run before any model
+	// call. Reaching THAT failure, at stage 'plan', is the proof the
+	// request got past classification and into the context builder.
 	// (The planner itself is a model call; it is covered by the live checks.)
+	await addRepo(null, { path: dirPath, name: dirPath, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' });
+	await upsertEntities(null, [{
+		id: 'e-proj', repo: dirPath, file: filePath, kind: 'variable', name: 'a', language: 'typescript', startLine: 1, endLine: 1,
+	} as unknown as Entity]);
+	_setRunShaperForTest(() => ({
+		buildRunBundle: async () => { throw new ScopeNotIndexedError(dirPath, dirPath, 'the context builder stands in for the test'); },
+	}) as unknown as RunShaper);
 	const id = runId('valid');
 	try {
 		const { result, events, record } = await run(id, {
@@ -172,10 +181,10 @@ test('hinted request with a valid pairing reaches the context builder and the pl
 		assert.equal(classified.intent.target, 'code');
 		assert.equal(classified.intent.focused, true);
 		assert.equal(classified.intent.focus, 'how is this laid out');
-		// The size is measured, not taken from the request. The scope here is in no registered repo, so it cannot
-		// be counted: the size is the largest, and the stated size is kept as the measure's hint.
-		assert.equal(classified.intent.scope, 'XL');
-		assert.deepEqual([classified.measure?.determined, classified.measure?.size, classified.measure?.sizeHint], [false, 'XL', 'M']);
+		// The size is measured, not taken from the request: the intent's size is the measure's, and the stated
+		// size is kept as the measure's hint only.
+		assert.equal(classified.intent.scope, classified.measure?.size);
+		assert.deepEqual([classified.measure?.determined, classified.measure?.sizeHint], [true, 'M']);
 		assert.deepEqual(classified.intent.scopeRef, { kind: 'repo', value: dirPath });
 		assert.ok(events.some(e => e.type === 'stage-started' && e.stage === 'plan'), 'the plan stage started');
 
@@ -185,6 +194,7 @@ test('hinted request with a valid pairing reaches the context builder and the pl
 		assert.equal(result.error.code, 'scope-not-indexed');
 		assert.equal(record?.intent?.focus, 'how is this laid out');
 	} finally {
+		_setRunShaperForTest(undefined);
 		purgeRunForTests(id);
 	}
 });

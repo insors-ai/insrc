@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { join, extname, resolve, relative, sep } from 'node:path';
 import type { DbClient } from '../db/client.js';
-import type { RegisteredRepo, IndexJob, ConfigScope } from '../shared/types.js';
+import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope } from '../shared/types.js';
 import { upsertEntities, listEntityFilesForRepo, deleteEntitiesById } from '../db/entities.js';
 import {
   upsertRelations,
@@ -18,6 +18,7 @@ import { resolveMessagingEndpoints } from './messaging-endpoints.js';
 import { detectSourceRoots } from './source-roots.js';
 import { deleteEntitiesForFile, getEntity } from '../db/entities.js';
 import { updateRepoStatus, lookupRepoId, UnregisteredRepoError } from '../db/repos.js';
+import { bumpIndexRunDone, closeIndexRun, openIndexRun, readIndexRun, setIndexRunSelected } from './run-record.js';
 import { SHARED_MODULES_REPO_ID } from '../shared/repo-namespaces.js';
 import { embedEntities, embedText } from './embedder.js';
 import { parseManifest } from './manifest.js';
@@ -591,9 +592,34 @@ export class IndexerService {
     return this.settleTimers.size;
   }
 
+  /** The registry status writes of a full index, in one place (a test counts them). */
+  protected async writeIndexStatus(
+    repoPath: string,
+    status: RegisteredRepo['status'],
+    lastIndexed?: string,
+    errorMsg?: string,
+    lastRun?: RepoLastRun,
+  ): Promise<void> {
+    await updateRepoStatus(this.db, repoPath, status, lastIndexed, errorMsg, lastRun);
+  }
+
   private async fullIndex(repoPath: string): Promise<void> {
     log.info({ repo: repoPath }, 'full index started');
-    await updateRepoStatus(this.db, repoPath, 'indexing');
+    await this.writeIndexStatus(repoPath, 'indexing');
+    // How far the run has got, held in memory for readers (src/indexer/run-record.ts).
+    // Its final figures are written once, with the final status; never per file.
+    openIndexRun(repoPath);
+    const lastRunOf = (outcome: RepoLastRun['outcome'], error?: string): RepoLastRun => {
+      const view = readIndexRun(repoPath);
+      return {
+        startedAt:     view?.startedAt ?? Date.now(),
+        endedAt:       Date.now(),
+        filesSelected: view?.filesSelected ?? 0,
+        filesDone:     view?.filesDone ?? 0,
+        outcome,
+        ...(error !== undefined ? { error } : {}),
+      };
+    };
 
     try {
       let fileCount = 0;
@@ -614,6 +640,7 @@ export class IndexerService {
         }
         supported.push(filePath);
       }
+      setIndexRunSelected(repoPath, supported.length);
       log.info(
         { repo: repoPath, total: files.length, supported: supported.length, skippedGenerated },
         'full index: files to process',
@@ -632,6 +659,7 @@ export class IndexerService {
           log.error({ file: filePath, err: msg }, 'full index: file error (skipping)');
           skipped++;
         }
+        bumpIndexRunDone(repoPath);
         // (LMDB substrate: no periodic checkpoint needed -- there's no
         // buffer pool to evict and msync runs at every txn commit.)
 
@@ -723,7 +751,7 @@ export class IndexerService {
 
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
       log.info({ repo: repoPath, fileCount, skipped, elapsed: `${elapsed}s` }, 'full index complete');
-      await updateRepoStatus(this.db, repoPath, 'ready', new Date().toISOString());
+      await this.writeIndexStatus(repoPath, 'ready', new Date().toISOString(), undefined, lastRunOf('completed'));
       // Post-indexing doc summarisation (docs/plans/docs-module.md Section 8).
       // Enqueued at background priority -- the queue runs it after
       // whatever else is pending. Skip-if-unchanged inside the driver
@@ -732,8 +760,10 @@ export class IndexerService {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       log.error({ repo: repoPath, err: msg }, 'full index failed');
-      await updateRepoStatus(this.db, repoPath, 'error', undefined, msg);
+      await this.writeIndexStatus(repoPath, 'error', undefined, msg, lastRunOf('failed', msg));
       throw err;
+    } finally {
+      closeIndexRun(repoPath);
     }
   }
 
@@ -986,7 +1016,7 @@ export class IndexerService {
   // -------------------------------------------------------------------------
 
   /** @returns true if the file was indexed, false if skipped (unchanged or no parser). */
-  private async indexFile(
+  protected async indexFile(
     filePath:   string,
     repoPath:   string,
     cleanFirst: boolean,

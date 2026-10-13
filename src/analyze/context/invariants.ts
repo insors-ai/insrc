@@ -37,8 +37,10 @@ import { listEntitiesForRepo } from '../../db/entities.js';
 import { listRepos } from '../../db/repos.js';
 import { getLogger } from '../../shared/logger.js';
 import type { RegisteredRepo } from '../../shared/types.js';
+import { readIndexRun } from '../../indexer/run-record.js';
+import type { IndexRunView } from '../../indexer/run-record.js';
 
-import { freshnessPathOf } from './scope.js';
+import { freshnessPathOf, longestPrefixRepo } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 
 const log = getLogger('analyze:context:invariants');
@@ -84,6 +86,67 @@ export class ScopeNotIndexedError extends Error {
 	}
 }
 
+/** How far the run of a repository under index got, as far as it is known. */
+export type RepoIndexingRun = {
+	/** Unix ms. */
+	readonly startedAt?:     number | undefined;
+	/** Unix ms; a run that ended. */
+	readonly endedAt?:       number | undefined;
+	/** Absent before the walk has counted the files. */
+	readonly filesSelected?: number | undefined;
+	readonly filesDone?:     number | undefined;
+	readonly error?:         string | undefined;
+};
+
+/** What a 'repo-indexing' failure carries. `run` is null when the figures are not known. */
+export type RepoIndexingData = {
+	readonly repoPath: string;
+	readonly status:   'indexing' | 'error';
+	readonly run:      RepoIndexingRun | null;
+};
+
+/**
+ * The scope's repository is being indexed, or its last index ended in an
+ * error before it completed: a request about it would be answered from a
+ * half-built index, so it is refused, saying how far the run got.
+ */
+export class RepoIndexingError extends Error {
+	readonly data: RepoIndexingData;
+
+	constructor(data: RepoIndexingData) {
+		super(repoIndexingMessage(data));
+		this.name = 'RepoIndexingError';
+		this.data = data;
+	}
+}
+
+function at(ms: number | undefined): string {
+	return ms === undefined ? 'an unknown time' : new Date(ms).toISOString();
+}
+
+function repoIndexingMessage(d: RepoIndexingData): string {
+	const run = d.run;
+	if (d.status === 'indexing') {
+		if (run === null) {
+			return `The repository ${d.repoPath} is being indexed; how far the run has got is not known yet. ` +
+				'Retry once the index is ready.';
+		}
+		const files = run.filesSelected === undefined
+			? 'the files to index are not yet counted'
+			: `${run.filesDone ?? 0} of ${run.filesSelected} files done`;
+		return `The repository ${d.repoPath} is being indexed: the run began at ${at(run.startedAt)}, ${files}. ` +
+			'Retry once the index is ready.';
+	}
+	const error = run?.error !== undefined && run.error !== '' ? ` Error: ${run.error}` : '';
+	if (run === null || run.startedAt === undefined) {
+		return `The last index of the repository ${d.repoPath} ended in an error before it completed; ` +
+			`how far it got is not known.${error} Re-index the repository.`;
+	}
+	return `The last index of the repository ${d.repoPath} ended in an error before it completed: ` +
+		`it began at ${at(run.startedAt)}, ended at ${at(run.endedAt)}, ${run.filesDone ?? 0} of ${run.filesSelected ?? 0} files done.` +
+		`${error} Re-index the repository.`;
+}
+
 /** A task under a connection scope names a connection other than the scope's
  *  own. Only a task is refused this way: the request's own scope is in order. */
 export class ConnectionOutsideScopeError extends Error {
@@ -96,13 +159,14 @@ export class ConnectionOutsideScopeError extends Error {
 	}
 }
 
-/** The code of each of the three scope errors, as a request's failure states it. */
-export type ScopeErrorCode = 'scope-not-indexed' | 'scope-ref-unresolved' | 'scope-ref-kind-target-mismatch';
+/** The code of each of the scope errors, as a request's failure states it. */
+export type ScopeErrorCode = 'scope-not-indexed' | 'scope-ref-unresolved' | 'scope-ref-kind-target-mismatch' | 'repo-indexing';
 
 /** A scope error as a coded failure. `scope-not-indexed` carries the path that
  *  was looked for and the repo it was found registered as, if any. */
 export type ScopeErrorMapping =
 	| { readonly code: 'scope-not-indexed'; readonly message: string; readonly data: { readonly scopePath: string; readonly registeredAs: string | undefined } }
+	| { readonly code: 'repo-indexing'; readonly message: string; readonly data: RepoIndexingData }
 	| { readonly code: 'scope-ref-unresolved' | 'scope-ref-kind-target-mismatch'; readonly message: string };
 
 /**
@@ -119,6 +183,7 @@ export function scopeErrorMapping(err: unknown): ScopeErrorMapping | undefined {
 	if (err instanceof ScopeNotIndexedError) {
 		return { code: 'scope-not-indexed', message: err.message, data: { scopePath: err.scopePath, registeredAs: err.registeredAs } };
 	}
+	if (err instanceof RepoIndexingError) return { code: 'repo-indexing', message: err.message, data: err.data };
 	if (err instanceof ScopeRefUnresolvedError) return { code: 'scope-ref-unresolved', message: err.message };
 	if (err instanceof ScopeKindTargetMismatchError) return { code: 'scope-ref-kind-target-mismatch', message: err.message };
 	return undefined;
@@ -168,7 +233,7 @@ export function taskRefusalMapping(err: unknown): { readonly code: TaskRefusalCo
  */
 export async function ensureNonEmptyClosure(
 	scope: ResolvedScope,
-	deps?: Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo'>,
+	deps?: Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo'> & { readonly indexRun?: ((repoPath: string) => IndexRunView | undefined) | undefined },
 ): Promise<string | undefined> {
 	// Data-only scopes don't need a code graph.
 	if (scope.kind === 'connection') {
@@ -212,15 +277,10 @@ export async function ensureNonEmptyClosure(
 		return undefined;
 	}
 
-	let best: RegisteredRepo | undefined;
-	for (const r of repos) {
-		const isPrefix = scopePath === r.path || scopePath.startsWith(`${r.path}/`);
-		if (!isPrefix) continue;
-		if (best === undefined || r.path.length > best.path.length) {
-			best = r;
-		}
-	}
-
+	const best = longestPrefixRepo(scopePath, repos);
+	// A repository under index is refused first, with how far its run got,
+	// before its entity count is read: a half-built index is not an answer.
+	if (best !== undefined) refuseIfUnderIndex(best, deps?.indexRun);
 	if (best === undefined) {
 		throw new ScopeNotIndexedError(
 			scopePath,
@@ -247,4 +307,75 @@ export async function ensureNonEmptyClosure(
 		'ensureNonEmptyClosure: closure non-empty',
 	);
 	return best.path;
+}
+
+
+/**
+ * Refuse a scope whose repository is being indexed, or whose last index ended
+ * in an error before it completed, with RepoIndexingError: the status, and how
+ * far the run got (from the daemon's running record while it runs, from the
+ * row's lastRun once it ended). Runs for every kind of source; a connection
+ * scope reads no repository's index and is not checked.
+ *
+ * It does not refuse, and does not throw, when it cannot tell: the registry
+ * cannot be read, holds no repository at all, or holds none that contains the
+ * scope (that refusal is the empty-closure check's, for the sources that read
+ * the graph). The request then proceeds as it does today.
+ */
+export async function ensureRepoQueryable(
+	scope: ResolvedScope,
+	deps?: {
+		readonly listRepos?: (() => Promise<readonly RegisteredRepo[]>) | undefined;
+		readonly indexRun?:  ((repoPath: string) => IndexRunView | undefined) | undefined;
+	},
+): Promise<void> {
+	if (scope.kind === 'connection') return;
+	const scopePath = freshnessPathOf(scope);
+	if (scopePath.length === 0) return;
+
+	let repos: readonly RegisteredRepo[];
+	try {
+		repos = deps?.listRepos !== undefined ? await deps.listRepos() : await listRepos(null);
+	} catch (err) {
+		log.debug({ scope: scopePath, err: (err as Error).message }, 'ensureRepoQueryable: registry read failed; skipping the check');
+		return;
+	}
+	if (repos.length === 0) {
+		log.debug({ scope: scopePath }, 'ensureRepoQueryable: registry pristine; skipping the check');
+		return;
+	}
+	const repo = longestPrefixRepo(scopePath, repos);
+	if (repo === undefined) return;
+	refuseIfUnderIndex(repo, deps?.indexRun);
+}
+
+/** The rule itself, for a repository already found in the registry. */
+function refuseIfUnderIndex(
+	repo:     RegisteredRepo,
+	indexRun: ((repoPath: string) => IndexRunView | undefined) | undefined,
+): void {
+	if (repo.status === 'indexing') {
+		const view = (indexRun ?? readIndexRun)(repo.path);
+		throw new RepoIndexingError({
+			repoPath: repo.path,
+			status:   'indexing',
+			run:      view === undefined ? null : {
+				startedAt: view.startedAt,
+				...(view.filesSelected !== undefined ? { filesSelected: view.filesSelected } : {}),
+				filesDone: view.filesDone,
+			},
+		});
+	}
+	if (repo.status === 'error') {
+		const last = repo.lastRun;
+		const error = last?.error ?? repo.errorMsg;
+		throw new RepoIndexingError({
+			repoPath: repo.path,
+			status:   'error',
+			// A row written before lastRun was recorded is a failed run whose figures are not known.
+			run: last !== undefined && last.outcome === 'failed'
+				? { startedAt: last.startedAt, endedAt: last.endedAt, filesSelected: last.filesSelected, filesDone: last.filesDone, ...(error !== undefined ? { error } : {}) }
+				: (error !== undefined && error !== '' ? { error } : null),
+		});
+	}
 }

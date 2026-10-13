@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { registerBuiltinTools } from '../../../daemon/tools/builtins/index.js';
 import { upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
-import { addRepo } from '../../../db/repos.js';
+import { addRepo, updateRepoStatus } from '../../../db/repos.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import { PATHS } from '../../../shared/paths.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
@@ -29,12 +29,16 @@ import {
 	runShaper,
 	ShaperAnswerStepFailedError,
 	ShaperLlmUnavailableError,
+	ShaperIndexStateReadError,
 	_realPipelineStepsForTest,
 	type PipelineSteps,
 	_computeCacheKeyForTest,
 	_stableStringifyForTest,
 } from '../driver.js';
-import { ScopeKindTargetMismatchError, ScopeNotIndexedError } from '../invariants.js';
+import { RepoIndexingError, ScopeKindTargetMismatchError, ScopeNotIndexedError } from '../invariants.js';
+import { validateBundleWithErrors } from '../schema.js';
+import { _classifyShaperErrorForTest as daemonClassify } from '../../../daemon/analyze-rpc.js';
+import { _classifyShaperErrorForTest as planTreeClassify } from '../../orchestrator/driver.js';
 import type { ResolvedScope } from '../scope.js';
 import type { AnalyzeContextBundle } from '../types.js';
 import { buildCompleteness } from '../../completeness.js';
@@ -399,4 +403,149 @@ test("the tool loop's final answer is asked for with a schema that has no report
 	assert.equal(bundle.summary, 'classified');
 	assert.equal(bundle.report, undefined, 'a classification bundle has no report: no lookups were run for it');
 	assert.equal(bundle.meta.mode, 'classification');
+});
+
+test("runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline", async () => {
+	const loop = forbiddenLoop();
+	const intent = unfocused({ kind: 'module', value: join(repo, 'src') });
+
+	// (a) runShaper's own freshness read: the first read throws.
+	const reads: string[] = [];
+	const first = standIns({ lastIndexedAt: async (path) => { reads.push(path); throw new Error('MDB_BAD_TXN: the registry could not be read'); } });
+	const atRead = await call(intent, first.steps, loop.provider, 'state-read').then(() => undefined, (e: unknown) => e);
+	assert.ok(atRead instanceof ShaperIndexStateReadError, `runShaper's read: ${String(atRead)}`);
+	assert.match(atRead.message, /MDB_BAD_TXN: the registry could not be read/);
+	assert.equal(reads.length, 1, 'the read went through the injected reader');
+	assert.equal(first.seen.decompose.length, 0, 'nothing ran after the failed read');
+	assert.equal(planTreeClassify(atRead).code, 'index-state-read-failed');
+	assert.equal(daemonClassify(atRead).code, 'index-state-read-failed');
+
+	// (b) inside the pipeline: runShaper's read succeeds, the pipeline's read throws.
+	let n = 0;
+	const second = standIns({ lastIndexedAt: async () => { n += 1; if (n === 1) return 1_700_000_000_000; throw new Error('MDB_READERS_FULL'); } });
+	const inPipeline = await call(intent, second.steps, loop.provider, 'state-read-pipeline').then(() => undefined, (e: unknown) => e);
+	assert.ok(inPipeline instanceof ShaperIndexStateReadError, `pipeline: ${String(inPipeline)}`);
+	assert.match(inPipeline.message, /MDB_READERS_FULL/);
+	assert.equal(n, 2, 'both reads went through the one injected reader');
+	assert.equal(second.seen.decompose.length, 1, 'the plan was made');
+	assert.equal(second.seen.executePlan.length, 0, 'no lookup ran without the watermark');
+	assert.equal(loop.used(), false);
+});
+
+// ---------------------------------------------------------------------------
+// The cache before the scope (Epic c2ba6fa6, Story s5, Task t8)
+// ---------------------------------------------------------------------------
+
+/** Scope readers that fail the test if anything resolves a scope. */
+function forbiddenScopeDeps(): { deps: NonNullable<Parameters<typeof runShaper>[0]['scopeDeps']>; reached: string[] } {
+	const reached: string[] = [];
+	const no = (name: string) => async (): Promise<never> => { reached.push(name); throw new Error(`scope resolution reached (${name})`); };
+	return { deps: { listRepos: no('listRepos'), findEntitiesByFile: no('findEntitiesByFile'), listEntitiesForRepo: no('listEntitiesForRepo'), loadConnections: no('loadConnections') }, reached };
+}
+
+function callWith(intent: ClassifiedIntent, id: string, steps: PipelineSteps, extra: Partial<Parameters<typeof runShaper>[0]> = {}, shaper: 'code' | 'data' = 'code') {
+	return runShaper({
+		promptPath: `prompts/analyze/${shaper}.system.md`, invocationMode: 'run', shaperId: shaper,
+		inputs: { intent }, opts: { runId: id }, provider: forbiddenLoop().provider, pipelineSteps: steps, ...extra,
+	});
+}
+
+/** A cached bundle for `intent` in `id`'s run slot, written the way runShaper writes one. */
+function seedBundle(id: string, intent: ClassifiedIntent, meta: Record<string, unknown>, shaper: 'code' | 'data' = 'code'): void {
+	const prompt = readFileSync(join(REPO_ROOT, `src/prompts/analyze/${shaper}.system.md`), 'utf8');
+	const bundle = { ...RAW, summary: 'CACHED', meta: { mode: 'run', shaper, toolCalls: 1, modelId: 'm', emptyLayers: [], schemaVersion: 2, ...meta } };
+	writeBundle(id, { mode: 'run', hash: _computeCacheKeyForTest(prompt, { intent }) }, bundle as unknown as AnalyzeContextBundle);
+}
+
+test("runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle", async () => {
+	const intent = unfocused({ kind: 'repo', value: repo });
+	const id = runId('cache-first');
+	const built = await callWith(intent, id, standIns().steps);
+	assert.equal(built.meta?.repoPath, repo, 'a built bundle records its repository');
+
+	const again = standIns();
+	const forbidden = forbiddenScopeDeps();
+	const hit = await callWith(intent, id, again.steps, { scopeDeps: forbidden.deps });
+	assert.equal(hit.summary, built.summary);
+	assert.deepEqual(forbidden.reached, [], 'scope resolution was never reached');
+	assert.equal(again.seen.decompose.length + again.seen.synthesize, 0, 'nothing was built');
+
+	// A connection scope: resolving it would read every repository's connections
+	// file, and one of them is broken. The cached bundle is still returned.
+	const conn: ClassifiedIntent = { target: 'data', scope: 'M', focused: false, scopeRef: { kind: 'connection', value: 'ledger-db' }, reasoning: 'r' };
+	const cid = runId('cache-conn');
+	seedBundle(cid, conn, { repoPath: null }, 'data');
+	const broken = forbiddenScopeDeps();
+	const connHit = await callWith(conn, cid, standIns().steps, { scopeDeps: broken.deps }, 'data');
+	assert.equal(connHit.summary, 'CACHED');
+	assert.deepEqual(broken.reached, []);
+});
+
+test('runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss', async () => {
+	const intent = unfocused({ kind: 'repo', value: repo });
+	const id = runId('cache-indexing');
+	await callWith(intent, id, standIns().steps);
+	await updateRepoStatus(null, repo, 'indexing');
+	const again = standIns();
+	const refused = await callWith(intent, id, again.steps).then(() => undefined, (e: unknown) => e);
+	assert.ok(refused instanceof RepoIndexingError, String(refused));
+	assert.equal(refused.data.repoPath, repo);
+	assert.equal(again.seen.synthesize, 0, 'not built either');
+
+	// A bundle written before repoPath was recorded is a miss: built again.
+	await updateRepoStatus(null, repo, 'ready');
+	const oid = runId('cache-no-repopath');
+	seedBundle(oid, intent, {});
+	const rebuilt = standIns();
+	const fresh = await callWith(intent, oid, rebuilt.steps);
+	assert.equal(rebuilt.seen.synthesize, 1, 'built, not served');
+	assert.notEqual(fresh.summary, 'CACHED');
+	assert.equal(fresh.meta?.repoPath, repo);
+});
+
+test('runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built', async () => {
+	const intent = unfocused({ kind: 'repo', value: repo });
+	const id = runId('cache-stale');
+	let watermark = 1_760_000_000_000;
+	const reads: string[] = [];
+	const lastIndexedAt = async (path: string): Promise<number> => { reads.push(path); return watermark; };
+	await callWith(intent, id, standIns({ lastIndexedAt }).steps);
+
+	// Same watermark: served, and the freshness read is the recorded repository's.
+	reads.length = 0;
+	const same = standIns({ lastIndexedAt });
+	await callWith(intent, id, same.steps);
+	assert.equal(same.seen.synthesize, 0, 'served');
+	assert.deepEqual(reads, [repo], 'freshness read for the recorded repository only');
+
+	// The repository was reindexed since: a miss, built again.
+	watermark += 60_000;
+	const later = standIns({ lastIndexedAt });
+	const rebuilt = await callWith(intent, id, later.steps);
+	assert.equal(later.seen.synthesize, 1, 'built again');
+	assert.equal(rebuilt.meta?.repoLastIndexedAt, watermark);
+});
+
+test('bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates', () => {
+	const base = { ...RAW, report: undefined, meta: { mode: 'run', shaper: 'code', toolCalls: 1, modelId: 'm', emptyLayers: [], schemaVersion: 2 } };
+	delete (base as { report?: unknown }).report;
+	for (const repoPath of ['/r/app', null]) {
+		const v = validateBundleWithErrors({ ...base, meta: { ...base.meta, repoPath } });
+		assert.ok(v.ok, `repoPath ${String(repoPath)}: ${v.ok ? '' : v.errors.join('; ')}`);
+	}
+	assert.ok(validateBundleWithErrors(base).ok, 'a bundle without repoPath still validates');
+	const wrong = validateBundleWithErrors({ ...base, meta: { ...base.meta, repoPath: 42 } });
+	assert.equal(wrong.ok, false, 'repoPath is a string or null, nothing else');
+});
+
+test('runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks', async () => {
+	const conn: ClassifiedIntent = { target: 'data', scope: 'M', focused: false, scopeRef: { kind: 'connection', value: 'ledger-db' }, reasoning: 'r' };
+	const id = runId('cache-null');
+	seedBundle(id, conn, { repoPath: null }, 'data');
+	// Every repository is under index, and the freshness reader throws: neither is consulted.
+	await updateRepoStatus(null, repo, 'indexing');
+	let freshnessReads = 0;
+	const served = await callWith(conn, id, standIns({ lastIndexedAt: async () => { freshnessReads += 1; throw new Error('must not be read'); } }).steps, {}, 'data');
+	assert.equal(served.summary, 'CACHED');
+	assert.equal(freshnessReads, 0);
 });

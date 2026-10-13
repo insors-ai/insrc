@@ -11,14 +11,17 @@ import assert from 'node:assert/strict';
 
 import {
 	ShaperAnswerStepFailedError,
+	ShaperIndexStateReadError,
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
+	ShaperLookupFailedError,
 	ShaperNoPlanError,
 	ShaperPromptMissingError,
 	ShaperSchemaUnrecoverable,
 	ShaperToolLoopExhausted,
 } from '../../context/driver.js';
 import {
+	RepoIndexingError,
 	ScopeKindTargetMismatchError,
 	ScopeNotIndexedError,
 	ScopeRefUnresolvedError,
@@ -36,7 +39,7 @@ import type { ExecutedExploration } from '../../explore/types.js';
 /** The five classes mapped before this contract grew, then the five new ones. */
 const CASES: ReadonlyArray<readonly [Error, string]> = [
 	[new ScopeNotIndexedError('/r/unindexed', undefined, 'no entities'), 'scope-not-indexed'],
-	[new ShaperLlmUnavailableError('down'),                              'shaper-llm-unavailable'],
+	[new ShaperLlmUnavailableError('down', 'tool loop'),                              'shaper-llm-unavailable'],
 	[new ShaperToolLoopExhausted(40),                                    'shaper-tool-loop-exhausted'],
 	[new ShaperSchemaUnrecoverable(3, ['bad schema']),                   'shaper-schema-unrecoverable'],
 	[new ShaperPromptMissingError('/p'),                                 'shaper-prompt-missing'],
@@ -73,12 +76,42 @@ test('an error neither mapping knows stays internal-error on both sides', () => 
 	assert.equal(daemonClassify(err).code, 'internal-error');
 });
 
-test('the three new cause codes are declared in both lists', () => {
+test('the cause codes are declared in both lists', () => {
 	assert.deepEqual([...CAUSE_CODES_IN_BOTH_LISTS], [
 		'no-plan-for-request',
 		'answer-step-failed',
+		'index-state-read-failed',
+		'lookup-failed',
 		'run-abandoned',
 	]);
+});
+
+test("classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings", () => {
+	const indexing = new RepoIndexingError({ repoPath: '/r/app', status: 'indexing', run: { startedAt: 1_760_000_000_000, filesSelected: 10, filesDone: 4 } });
+	const failed = new RepoIndexingError({ repoPath: '/r/app', status: 'error', run: null });
+	for (const err of [indexing, failed]) {
+		for (const [side, f] of [['plan tree', planTreeClassify], ['daemon', daemonClassify]] as const) {
+			const out = f(err) as { code: string; message: string; data?: unknown };
+			assert.equal(out.code, 'repo-indexing', side);
+			assert.equal(out.message, err.message, side);
+			assert.deepEqual(out.data, err.data, `${side}: the repository, its status and the run figures`);
+		}
+	}
+});
+
+test('classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings', () => {
+	const cases: ReadonlyArray<readonly [Error, string]> = [
+		[new ShaperIndexStateReadError('MDB_BAD_TXN'), 'index-state-read-failed'],
+		[new ShaperLookupFailedError('the graph store is closed'), 'lookup-failed'],
+	];
+	for (const [err, code] of cases) {
+		for (const [side, f] of [['plan tree', planTreeClassify], ['daemon', daemonClassify]] as const) {
+			const out = f(err);
+			assert.equal(out.code, code, `${side}: ${err.name}`);
+			assert.equal(out.message, err.message, `${side}: the error's own message`);
+			assert.notEqual(out.code, 'internal-error');
+		}
+	}
 });
 
 // ---------------------------------------------------------------------------
@@ -181,9 +214,9 @@ test('one function maps the three scope error classes to their codes and data, a
 	}
 	// Any other error is not a scope error: the shared function says so, and the
 	// two mappings go on to their own cases.
-	for (const other of [new Error('boom'), new ShaperLlmUnavailableError('down'), 'a string', undefined, null]) {
+	for (const other of [new Error('boom'), new ShaperLlmUnavailableError('down', 'tool loop'), 'a string', undefined, null]) {
 		assert.equal(scopeErrorMapping(other), undefined);
 	}
-	assert.equal(planTreeClassify(new ShaperLlmUnavailableError('down')).code, 'shaper-llm-unavailable');
+	assert.equal(planTreeClassify(new ShaperLlmUnavailableError('down', 'tool loop')).code, 'shaper-llm-unavailable');
 	assert.equal(daemonClassify(new Error('boom')).code, 'internal-error');
 });

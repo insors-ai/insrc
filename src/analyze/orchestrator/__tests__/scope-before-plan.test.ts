@@ -1,9 +1,11 @@
 /**
- * The run checks its scope once before it plans (Story s7, task t13).
+ * The run checks its scope once before it plans (Story s7, task t13), and,
+ * since Epic c2ba6fa6 Story s5 (task t9), before the request is measured: a
+ * refused scope is never announced at a size, and nothing is built for it.
  *
- * After the run context is built and before the planner is asked, runAnalyze
- * resolves the intent's scope with the function every plan task uses. For a
- * docs run this is the first place the index is checked.
+ * Right after classification, runAnalyze resolves the intent's scope with the
+ * function every plan task uses. For a docs run this is the first place the
+ * index is checked.
  *
  * Whole runs over a sandboxed graph store. The model is a stand-in that gives
  * each schema its smallest valid answer, so the run context builds; it keeps
@@ -105,22 +107,22 @@ async function run(target: AnalyzeTarget, scopeRef: AnalyzeScopeRef): Promise<Ru
 const plannerStarted = (r: Run): boolean => r.events.some(e => e.type === 'stage-substep' && e.substep === 'planner');
 const outcome = (r: Run): string => r.result.ok ? 'ok' : `${r.result.stage}/${r.result.error.code}`;
 
-test("a docs run on a scope in no registered repo ends at stage 'plan' with 'scope-not-indexed' before the planner is called; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning)", async () => {
+test("a docs run on a scope in no registered repo ends at stage 'classify' with 'scope-not-indexed' before anything is measured or built; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning)", async () => {
 	// --- a docs run on a directory that no registered repo contains ---
 	const docs = await run('docs', { kind: 'repo', value: unregistered });
-	assert.equal(outcome(docs), 'plan/scope-not-indexed');
+	assert.equal(outcome(docs), 'classify/scope-not-indexed');
 	if (docs.result.ok) return;
 	assert.match(docs.result.error.message, /no registered repo contains the scope path/);
 	// The failure carries what the scope error carries: the path, and that it is registered nowhere.
 	assert.deepEqual(docs.result.error.data, { scopePath: unregistered, registeredAs: undefined });
-	assert.equal(docs.result.intent?.target, 'docs');
-	// The run context WAS built (its two model steps ran) and the planner was not asked.
-	assert.deepEqual(docs.roles, ['analyze.decompose', 'analyze.synthesize']);
-	assert.ok(!docs.roles.includes('analyze.plan'));
+	// Refused before it was measured: no size was announced and no model was asked.
+	assert.ok(!docs.events.some(e => e.type === 'classified'), "no 'classified' event");
+	assert.ok(!docs.events.some(e => e.type === 'stage-substep' && e.substep === 'measure'), 'no measure substep');
+	assert.deepEqual(docs.roles, [], 'the run context was not built');
 	assert.equal(plannerStarted(docs), false, "the 'planner' step never started");
 	assert.ok(!docs.events.some(e => e.type === 'plan-accepted'));
 	// The record says the same, and 'done' fired once.
-	assert.deepEqual([docs.record?.status, docs.record?.stage, docs.record?.error?.code], ['failed', 'plan', 'scope-not-indexed']);
+	assert.deepEqual([docs.record?.status, docs.record?.stage, docs.record?.error?.code], ['failed', 'classify', 'scope-not-indexed']);
 	assert.equal(docs.events.filter(e => e.type === 'done').length, 1);
 
 	// --- a docs run on an indexed repo: checked, passes, and the planner is asked ---
@@ -149,9 +151,9 @@ test("a docs run on a scope in no registered repo ends at stage 'plan' with 'sco
 		assert.deepEqual(r.roles, ['analyze.decompose', 'analyze.synthesize', 'analyze.plan'], target);
 		assert.equal(plannerStarted(r), true, target);
 	}
-	// A code run on the unregistered directory is refused by the context builder, as before: no model at all.
+	// A code run on the unregistered directory is refused the same way: no model at all.
 	const code = await run('code', { kind: 'repo', value: unregistered });
-	assert.equal(outcome(code), 'plan/scope-not-indexed');
+	assert.equal(outcome(code), 'classify/scope-not-indexed');
 	assert.deepEqual(code.roles, []);
 
 	// --- a pairing the family's row refuses still ends at 'classify', before anything is built ---

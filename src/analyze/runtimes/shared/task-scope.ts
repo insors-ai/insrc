@@ -13,7 +13,10 @@
  *      family's row of the classifier's table (`TARGET_TO_KINDS`), and resolves
  *      the scope, through `resolveScopeForTarget` (no list of kinds is held here);
  *   2. for the code and docs families, which read the stored graph, runs the
- *      indexed check (`ensureNonEmptyClosure`) with the same readers.
+ *      indexed check (`ensureNonEmptyClosure`) with the same readers;
+ *   3. for every family, refuses a scope whose repository is being indexed, or
+ *      whose last index failed (`ensureRepoQueryable`; the indexed check runs
+ *      it first for the code and docs families).
  *
  * Infra tasks walk the file system and data tasks open a connection pool at a
  * path: neither reads the graph, so neither is checked for an index.
@@ -26,7 +29,7 @@
 
 import type { AnalyzeScopeRef } from '../../../shared/analyze-types.js';
 import { TARGET_TO_KINDS } from '../../classifier/validate.js';
-import { ensureNonEmptyClosure, ScopeKindTargetMismatchError } from '../../context/invariants.js';
+import { ensureNonEmptyClosure, ensureRepoQueryable, ScopeKindTargetMismatchError } from '../../context/invariants.js';
 import { resolveScopeForTarget } from '../../context/scope.js';
 import type { KindsPerTarget, ResolvedScope, ScopeDeps } from '../../context/scope.js';
 import type { DocsArea } from '../../docs-retrieval.js';
@@ -52,6 +55,8 @@ const GRAPH_FAMILIES: ReadonlySet<TaskFamily> = new Set(['code', 'docs']);
  * @throws ScopeRefUnresolvedError       `resolveScope` cannot resolve the value.
  * @throws ScopeNotIndexedError          a code or docs scope in no registered repo, or
  *         in one with no stored entities (the registry was read and holds repos).
+ * @throws RepoIndexingError             the scope's repository is being indexed, or its
+ *         last index ended in an error before it completed.
  */
 export async function resolveTaskScope(
 	scopeRef:      AnalyzeScopeRef,
@@ -72,6 +77,8 @@ export async function resolveTaskScope(
 	}
 	if (GRAPH_FAMILIES.has(family)) {
 		await ensureNonEmptyClosure(scope, readers);
+	} else {
+		await ensureRepoQueryable(scope, readers);
 	}
 	return scope;
 }

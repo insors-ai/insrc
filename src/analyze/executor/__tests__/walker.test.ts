@@ -847,6 +847,44 @@ test('a task refused for naming a connection outside the scope is a failed task 
 	}
 });
 
+test("plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping", async () => {
+	const { resolveTaskScope, _setTaskScopeDepsForTest } = await import('../../runtimes/shared/task-scope.js');
+	const { mkdtempSync, rmSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+	const repo = mkdtempSync(join(tmpdir(), 'walker-under-index-'));
+	// A registry in which the task's repository is being indexed.
+	_setTaskScopeDepsForTest({
+		listRepos:           async () => [{ path: repo, name: 'app', addedAt: '', status: 'indexing' }],
+		findEntitiesByFile:  async () => [],
+		listEntitiesForRepo: async () => [],
+		loadConnections:     async () => ({ connections: [] }) as never,
+	});
+	_resetRuntimeRegistryForTests();
+	// The task resolves its scope the way every runtime does.
+	registerTemplateRuntime({ templateId: 'demo.infra', execute: async () => { await resolveTaskScope({ kind: 'repo', value: repo }, 'infra', 'infra.layout'); return { a: 1 }; } });
+	registerTemplateRuntime(stubRuntime('demo.aggregator', { report: 'r' }));
+	const runId = uniqueRunId('repo-indexing');
+	const plan = mkPlan([
+		mkTask({ taskId: 't01', template: 'demo.infra',      produces: ['a'] }),
+		mkTask({ taskId: 't02', template: 'demo.aggregator', produces: ['report'], consumes: ['a'] }),
+	]);
+	try {
+		const result = await runExecutor({ tree: mkNode(plan), intent: SAMPLE_INTENT, runId });
+		const rec = result.root.perTask.get('t01')!;
+		assert.equal(rec.status, 'failed');
+		assert.equal(rec.code, 'repo-indexing');
+		assert.match(rec.error!, new RegExp(`^The repository ${repo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} is being indexed`));
+		assert.ok(!rec.error!.includes('runtime-threw'));
+		assert.deepEqual(result.root.tasksFailed[0], { taskId: 't01', reason: rec.error, code: 'repo-indexing' });
+		assert.equal(readTaskOutput(runId, 't01')?.code, 'repo-indexing');
+	} finally {
+		_setTaskScopeDepsForTest(undefined);
+		purgeAllTaskOutputs(runId);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test('the plan walk imports nothing from the run driver', async () => {
 	const { readFileSync } = await import('node:fs');
 	const { fileURLToPath } = await import('node:url');

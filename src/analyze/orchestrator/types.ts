@@ -282,12 +282,15 @@ export type RunErrorCode =
 	| 'invalid-input'
 	// run-bundle shaper (mirrors analyze-rpc.ts error codes)
 	| 'scope-not-indexed'
+	| 'repo-indexing'
 	| 'shaper-llm-unavailable'
 	| 'shaper-tool-loop-exhausted'
 	| 'shaper-schema-unrecoverable'
 	| 'shaper-prompt-missing'
 	| 'no-plan-for-request'
 	| 'answer-step-failed'
+	| 'index-state-read-failed'
+	| 'lookup-failed'
 	// planner
 	| 'plan-builder-llm-unavailable'
 	| 'plan-builder-schema-unrecoverable'

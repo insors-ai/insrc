@@ -1,0 +1,1952 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "createdAt": "2026-10-13T11:53:21.419Z",
+    "updatedAt": "2026-10-13T14:10:42.058Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "e3612253",
+        "ranAt": "2026-10-13T11:53:21.419Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+                "title": "OllamaProvider: complete() raises a connection refused and a socket hang up (after its retry) as ModelCallFailedError",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+                "title": "OllamaProvider: completeStructured failures on the call and during iteration are raised as ModelCallFailedError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "OllamaProvider: a socket failure during stream iteration is raised as ModelCallFailedError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+                "title": "OllamaProvider: stream creation and stream iteration failures are raised as ModelCallFailedError with the client error as cause",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "retry helper: a ModelCallFailedError on the last attempt is re-thrown as a ModelCallFailedError with the attempt prefix",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+                "title": "retry helper: a ModelCallFailedError on the last attempt is re-thrown as a ModelCallFailedError with the attempt prefix",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+                "title": "retry helper: a shape failure on the last attempt stays a plain Error even after an earlier failed call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5547,
+            "titles": [
+              {
+                "title": "OllamaProvider: stream creation and stream iteration failures are raised as ModelCallFailedError with the client error as cause",
+                "result": "pass"
+              },
+              {
+                "title": "OllamaProvider: completeStructured failures on the call and during iteration are raised as ModelCallFailedError",
+                "result": "pass"
+              },
+              {
+                "title": "OllamaProvider: complete() raises a connection refused and a socket hang up (after its retry) as ModelCallFailedError",
+                "result": "pass"
+              },
+              {
+                "title": "retry helper: a ModelCallFailedError on the last attempt is re-thrown as a ModelCallFailedError with the attempt prefix",
+                "result": "pass"
+              },
+              {
+                "title": "retry helper: a shape failure on the last attempt stays a plain Error even after an earlier failed call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "7589466b",
+        "ranAt": "2026-10-13T12:33:07.673Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/model-failure.test.ts",
+                "title": "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/model-failure.test.ts",
+                "title": "what the model WROTE is not evidence about the call: a quoted answer is never matched",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "isModelCallFailure: a plain 'structured-output: ... attempts: Model call failed: ...' message is a failed call",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/model-failure.test.ts",
+                "title": "isModelCallFailure: a plain 'structured-output: ... attempts: Model call failed: ...' message is a failed call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/model-failure.test.ts",
+                "title": "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/model-failure-callers.test.ts",
+                "title": "each of the five callers classifies a CLI call failure as its model-unavailable error and a shape failure as its schema error",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+                "title": "classifyError: Ollama-down patterns -> aggregator-llm-unavailable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/model-failure-callers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 740,
+            "titles": [
+              {
+                "title": "source search: the failure-text list exists only in model-failure.ts",
+                "result": "pass"
+              },
+              {
+                "title": "each of the five callers classifies a CLI call failure as its model-unavailable error and a shape failure as its schema error",
+                "result": "pass"
+              },
+              {
+                "title": "a typed sampling failure reaches each caller's error as the client's own words",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/model-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 593,
+            "titles": [
+              {
+                "title": "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
+                "result": "pass"
+              },
+              {
+                "title": "isModelCallFailure: a plain 'structured-output: ... attempts: Model call failed: ...' message is a failed call",
+                "result": "pass"
+              },
+              {
+                "title": "isModelCallFailure: CLI call failures and ModelCallFailedError are failures; shape failures are not",
+                "result": "pass"
+              },
+              {
+                "title": "what the model WROTE is not evidence about the call: a quoted answer is never matched",
+                "result": "pass"
+              },
+              {
+                "title": "modelCallFailureDetail returns the failure's own words",
+                "result": "pass"
+              },
+              {
+                "title": "planning and answer-writing classifiers raise their model-unavailable error for a CLI call failure",
+                "result": "pass"
+              },
+              {
+                "title": "planning and answer-writing classifiers raise their model-unavailable error for a typed sampling failure",
+                "result": "pass"
+              },
+              {
+                "title": "a shape failure stays a schema error for both calls",
+                "result": "pass"
+              },
+              {
+                "title": "model-unavailable messages are provider-neutral and carry the underlying message in a field",
+                "result": "pass"
+              },
+              {
+                "title": "the two prompt-missing errors carry the prompt path",
+                "result": "pass"
+              },
+              {
+                "title": "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 493,
+            "titles": [
+              {
+                "title": "stableStringify: object keys sorted",
+                "result": "pass"
+              },
+              {
+                "title": "stableStringify: Map entries sorted + emitted as object",
+                "result": "pass"
+              },
+              {
+                "title": "stableStringify: arrays preserve order",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: empty map -> \"No upstream outputs\" sentinel",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: tasks emitted in sorted taskId order",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: null upstream rendered as unavailable note",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: JSON output rendered in fenced block",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: system has prompt content, user has Target/Scope/upstream",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: focus is included in the user message when present",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: focus omitted when undefined",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: Ollama-down patterns -> aggregator-llm-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: arbitrary error -> aggregator-schema-unrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: non-Error -> aggregator-internal wrapper",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: stub provider -> report carries LLM output + runtime metadata",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: focus passed through to the user message",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: provider throws ECONNREFUSED -> rethrown as aggregator-llm-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: provider throws arbitrary error -> aggregator-schema-unrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: missing prompt file -> \"aggregator prompt missing\"",
+                "result": "pass"
+              },
+              {
+                "title": "AGGREGATE_LLM_SCHEMA: requires summary + findings, additionalProperties false",
+                "result": "pass"
+              },
+              {
+                "title": "the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent",
+                "result": "pass"
+              },
+              {
+                "title": "a map in which every name has one output renders a user message byte-identical to the one rendered before the change",
+                "result": "pass"
+              },
+              {
+                "title": "a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section",
+                "result": "pass"
+              },
+              {
+                "title": "an absent output of one of several producers is worded by its task and the others are said to be available; a name with no output keeps the old wording",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "9ebe0d95",
+        "ranAt": "2026-10-13T12:39:56.293Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-errors.test.ts",
+                "title": "ShaperLlmUnavailableError message names the call, never a provider",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 798,
+            "titles": [
+              {
+                "title": "stable stringify produces identical output for object key permutations",
+                "result": "pass"
+              },
+              {
+                "title": "stable stringify is order-stable for Maps with reverse insertion",
+                "result": "pass"
+              },
+              {
+                "title": "stable stringify treats different values as distinct",
+                "result": "pass"
+              },
+              {
+                "title": "stable stringify is deterministic for arrays (insertion order matters)",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(ECONNREFUSED) -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"Ollama is not running. Start it...\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"Model not found ...\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"fetch failed\") -> ShaperLlmUnavailableError (retries exhausted by provider)",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"Did not receive done...\") -> ShaperLlmUnavailableError (retries exhausted)",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"ECONNRESET\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"socket hang up\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(arbitrary other Error) -> original error",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(non-Error value) -> wraps in Error",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers on an all-empty bundle returns every layer",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers on a fully-populated bundle returns []",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers treats whitespace-only bodies as empty",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers preserves the spec render order in its return",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperLlmUnavailableError carries the call and the cause in its message",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperToolLoopExhausted carries the turn count in its message",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperSchemaUnrecoverable carries the retry count + reasons in its message",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperPromptMissingError carries the absolute prompt path",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: classification mode returns empty string",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: run mode returns empty string",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: task mode with empty upstream map returns empty string",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: task mode with one populated upstream renders a JSON block",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: null upstream value renders [unavailable: ...] marker",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: undefined upstream value also renders unavailable marker",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: mixed populated + null upstream renders both",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: upstream task ids are sorted alphabetically",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/shaper-errors.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 571,
+            "titles": [
+              {
+                "title": "ShaperLlmUnavailableError message names the call, never a provider",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperAnswerStepFailedError states its reason, keeps what the lookups found, and never reports retries",
+                "result": "pass"
+              },
+              {
+                "title": "the other new errors carry their detail and their own name",
+                "result": "pass"
+              },
+              {
+                "title": "a tool's output with no JSON form is described as text and never thrown into the tool loop",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "2cec35d1",
+        "ranAt": "2026-10-13T12:45:35.350Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+                "title": "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+                "title": "cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+                "title": "classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+                "title": "the cause codes are declared in both lists",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/shaper-causes.test.ts",
+                "title": "runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 784,
+            "titles": [
+              {
+                "title": "focused request on a repo: stand-in arguments and bundle equal the recorded baseline",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns each cause for the stand-in that produces it, including 'empty-plan' through the fourth stand-in",
+                "result": "pass"
+              },
+              {
+                "title": "a planning call that fails for another reason is replaced by the free-form lookup, as before",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns 'not-applicable' for classification and task modes",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace",
+                "result": "pass"
+              },
+              {
+                "title": "an unfocused intent whose plan is replaced falls to the free-form lookup with a broad-survey purpose",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path",
+                "result": "pass"
+              },
+              {
+                "title": "module scope: lookup path and cache key unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call",
+                "result": "pass"
+              },
+              {
+                "title": "error messages state the cause, name the failed call, and never say retries or Ollama for another provider",
+                "result": "pass"
+              },
+              {
+                "title": "CLI and sampling call failures give 'planner-model-failed' and 'answer-model-failed' from the pipeline",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper throws ShaperAnswerStepFailedError with reason 'invalid-bundle' for an invalid bundle",
+                "result": "pass"
+              },
+              {
+                "title": "settlePipelineOutcome: a valid bundle is stamped and returned; not-applicable continues; a cause throws its error",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline's three causes after the lookups ran carry the results and the report, and the cause table gives ShaperAnswerStepFailedError with its reason",
+                "result": "pass"
+              },
+              {
+                "title": "a missing answer prompt found after the lookups ran carries the results and the report under its own code; a missing planning prompt carries none",
+                "result": "pass"
+              },
+              {
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              },
+              {
+                "title": "a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1735,
+            "titles": [
+              {
+                "title": "runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a refused pairing fails before the scope is resolved or any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a scope outside every registered repo fails as not indexed before any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a cause becomes its typed error and does NOT fall through to the tool loop",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper's run-mode bundle carries the report derived from the executed lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report",
+                "result": "pass"
+              },
+              {
+                "title": "a bundle cached before the change is not returned",
+                "result": "pass"
+              },
+              {
+                "title": "the tool loop's final answer is asked for with a schema that has no report, and a classification bundle carries none",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/shaper-causes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 688,
+            "titles": [
+              {
+                "title": "runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 618,
+            "titles": [
+              {
+                "title": "both classifyShaperError functions map each of the five new error classes to its code",
+                "result": "pass"
+              },
+              {
+                "title": "one list of ten error classes gives the same code from the plan tree's and the daemon's mapping",
+                "result": "pass"
+              },
+              {
+                "title": "an error neither mapping knows stays internal-error on both sides",
+                "result": "pass"
+              },
+              {
+                "title": "the cause codes are declared in both lists",
+                "result": "pass"
+              },
+              {
+                "title": "classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings",
+                "result": "pass"
+              },
+              {
+                "title": "both mapping functions return 'answer-step-failed' with the reason, the results and the report, and a failed planning call is still 'shaper-llm-unavailable'",
+                "result": "pass"
+              },
+              {
+                "title": "both mapping functions keep the code of a missing prompt and put the results and the report in its data only when the lookups ran",
+                "result": "pass"
+              },
+              {
+                "title": "one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "a73aee5a",
+        "ranAt": "2026-10-13T13:01:23.220Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/codec.test.ts",
+                "title": "registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/codec.test.ts",
+                "title": "repo row round-trip",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/repos-lmdb.test.ts",
+                "title": "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/repos-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2691,
+            "titles": [
+              {
+                "title": "addRepo + listRepos round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo with explicit name overrides basename derivation",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo with empty name falls back to basename",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo on existing path updates in place (same repo_id semantics)",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo with multiple paths creates multiple rows",
+                "result": "pass"
+              },
+              {
+                "title": "removeRepo by path deletes the row",
+                "result": "pass"
+              },
+              {
+                "title": "removeRepo on unknown path is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "listRepos on empty registry returns empty array",
+                "result": "pass"
+              },
+              {
+                "title": "updateRepoStatus mutates only status / lastIndexed / errorMsg",
+                "result": "pass"
+              },
+              {
+                "title": "updateRepoStatus on unknown path is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "updateRepoStatus with errorMsg surfaces it on listRepos",
+                "result": "pass"
+              },
+              {
+                "title": "all four status values round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "lastIndexed sentinel: absent when never indexed, present after first index",
+                "result": "pass"
+              },
+              {
+                "title": "lastIndexed survives close + reopen",
+                "result": "pass"
+              },
+              {
+                "title": "many repos round-trip without collision (linear-scan correctness)",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo updates status without losing addedAt",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects empty string",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects non-string input",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects relative paths",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects filesystem root + system / volatile dirs",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape normalises trailing-slash + .. segments",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects normalised banned root (e.g. `/Users/.`)",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPath (full) accepts an existing temp directory",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPath (full) rejects non-existent path",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo rejects empty / banned-root paths via shape validation",
+                "result": "pass"
+              },
+              {
+                "title": "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/codec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 404,
+            "titles": [
+              {
+                "title": "repo row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined",
+                "result": "pass"
+              },
+              {
+                "title": "repo row round-trip -- shared-modules kind with namespace",
+                "result": "pass"
+              },
+              {
+                "title": "entity row round-trip including all flag fields",
+                "result": "pass"
+              },
+              {
+                "title": "entity row preserves empty-string sentinel defaults",
+                "result": "pass"
+              },
+              {
+                "title": "edge props: empty payload encodes to zero-byte buffer",
+                "result": "pass"
+              },
+              {
+                "title": "edge props: CALLS shape round-trips",
+                "result": "pass"
+              },
+              {
+                "title": "edge props: READS shape round-trips",
+                "result": "pass"
+              },
+              {
+                "title": "edge props: IMPORTS shape round-trips",
+                "result": "pass"
+              },
+              {
+                "title": "unresolved row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "plan row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "plan_step row round-trip with sentinel timestamps + dependsOn",
+                "result": "pass"
+              },
+              {
+                "title": "session row round-trip with all status / tier values",
+                "result": "pass"
+              },
+              {
+                "title": "turn row round-trip with all enum values",
+                "result": "pass"
+              },
+              {
+                "title": "todo_list row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "todo_item row round-trip with tags + meta",
+                "result": "pass"
+              },
+              {
+                "title": "todo_comment row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "config_entry row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "msgpack encoding is more compact than JSON for typical entity",
+                "result": "pass"
+              },
+              {
+                "title": "large body in entity row round-trips correctly",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "c9614ed3",
+        "ranAt": "2026-10-13T13:05:58.188Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/index-run-record.test.ts",
+                "title": "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reindex of a ready repository: status indexing and the running record carries the new run's figures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/index-run-record.test.ts",
+                "title": "reindex of a ready repository: status indexing and the running record carries the new run's figures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/index-run-record.test.ts",
+                "title": "start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/index-run-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1124,
+            "titles": [
+              {
+                "title": "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)",
+                "result": "pass"
+              },
+              {
+                "title": "reindex of a ready repository: status indexing and the running record carries the new run's figures",
+                "result": "pass"
+              },
+              {
+                "title": "start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "d721fee2",
+        "ranAt": "2026-10-13T13:11:56.874Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/invariants.test.ts",
+                "title": "ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/invariants.test.ts",
+                "title": "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/invariants.test.ts",
+                "title": "ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/invariants.test.ts",
+                "title": "ensureNonEmptyClosure: with readers the check keeps its leniency for a registry that cannot be read or holds no repo",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker.test.ts",
+                "title": "plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+                "title": "classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/invariants.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1950,
+            "titles": [
+              {
+                "title": "ensureNonEmptyClosure: pristine registry -> skipped silently, returns undefined",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: connection-kind scope is skipped silently",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: registered repo with entities -> returns repo path",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: scope nested under registered repo with entities -> match",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: registered repo with ZERO entities -> ScopeNotIndexedError",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: scope outside every registered repo -> ScopeNotIndexedError",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: longest-prefix repo wins when nested",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: false-prefix is rejected (requires / boundary)",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: given readers it reads the registry and the entities through them, not the real store",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: with readers the check keeps its leniency for a registry that cannot be read or holds no repo",
+                "result": "pass"
+              },
+              {
+                "title": "ScopeNotIndexedError carries scopePath + registeredAs on the instance",
+                "result": "pass"
+              },
+              {
+                "title": "ScopeNotIndexedError handles undefined registeredAs",
+                "result": "pass"
+              },
+              {
+                "title": "symbol exception: a symbol in a registered repo with ZERO entities -> ScopeNotIndexedError, not \"no entity of that name\"",
+                "result": "pass"
+              },
+              {
+                "title": "symbol exception: a symbol outside every registered repo, and with a pristine registry -> ScopeNotIndexedError",
+                "result": "pass"
+              },
+              {
+                "title": "symbol exception: in an indexed repo a symbol resolves to its stored entity; an unknown name is unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message",
+                "result": "pass"
+              },
+              {
+                "title": "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg",
+                "result": "pass"
+              },
+              {
+                "title": "ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/executor/__tests__/walker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 491,
+            "titles": [
+              {
+                "title": "unmetDependencies: no consumes -> null",
+                "result": "pass"
+              },
+              {
+                "title": "unmetDependencies: every consume present -> null",
+                "result": "pass"
+              },
+              {
+                "title": "unmetDependencies: first missing name reported",
+                "result": "pass"
+              },
+              {
+                "title": "projectUpstream: limits to consumed names only",
+                "result": "pass"
+              },
+              {
+                "title": "checkOutputShape: exact match -> null",
+                "result": "pass"
+              },
+              {
+                "title": "checkOutputShape: missing name reported",
+                "result": "pass"
+              },
+              {
+                "title": "checkOutputShape: extra name reported",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: 2-task happy path -- discovery + aggregator",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: missing runtime -> task fails; downstream cascades",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: runtime throws -> failed status with reason; cascade",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: runtime returns extra/missing produces -> output-shape-mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: planner-template task materialises child report as parent.report",
+                "result": "pass"
+              },
+              {
+                "title": "runExecutor: planner task whose child build failed -> child-plan-unavailable + cascade",
+                "result": "pass"
+              },
+              {
+                "title": "taskOutputPathFor: lands under ~/.insrc/analyze/<runId>/tasks/<taskId>.json",
+                "result": "pass"
+              },
+              {
+                "title": "readTaskOutput: miss returns null",
+                "result": "pass"
+              },
+              {
+                "title": "purgeTaskOutput on a missing slot is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: 2-task happy path emits started+completed per task in plan order",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: failed task emits started + completed with status=\"failed\"",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: planner-template task -- child plan events fire BETWEEN parent started + completed, with parentTaskPath set",
+                "result": "pass"
+              },
+              {
+                "title": "onTaskEvent: throwing subscriber does not crash the executor",
+                "result": "pass"
+              },
+              {
+                "title": "SINGLE-PASS: child plan tasks execute exactly once (regression for the executePlanNode double-walk)",
+                "result": "pass"
+              },
+              {
+                "title": "the plan walk copies the record to the task record, and a runtime that returns none is recorded as failed",
+                "result": "pass"
+              },
+              {
+                "title": "a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)",
+                "result": "pass"
+              },
+              {
+                "title": "a task refused for naming a connection outside the scope is a failed task with a code and its own message",
+                "result": "pass"
+              },
+              {
+                "title": "plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping",
+                "result": "pass"
+              },
+              {
+                "title": "the plan walk imports nothing from the run driver",
+                "result": "pass"
+              },
+              {
+                "title": "every task of every plan in a tree keeps its own record",
+                "result": "pass"
+              },
+              {
+                "title": "a planner task whose child produced no report fails with the child's cause",
+                "result": "pass"
+              },
+              {
+                "title": "a plan two levels down keeps its own records and names its tasks by their full path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 766,
+            "titles": [
+              {
+                "title": "both classifyShaperError functions map each of the five new error classes to its code",
+                "result": "pass"
+              },
+              {
+                "title": "one list of ten error classes gives the same code from the plan tree's and the daemon's mapping",
+                "result": "pass"
+              },
+              {
+                "title": "an error neither mapping knows stays internal-error on both sides",
+                "result": "pass"
+              },
+              {
+                "title": "the cause codes are declared in both lists",
+                "result": "pass"
+              },
+              {
+                "title": "classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings",
+                "result": "pass"
+              },
+              {
+                "title": "classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings",
+                "result": "pass"
+              },
+              {
+                "title": "both mapping functions return 'answer-step-failed' with the reason, the results and the report, and a failed planning call is still 'shaper-llm-unavailable'",
+                "result": "pass"
+              },
+              {
+                "title": "both mapping functions keep the code of a missing prompt and put the results and the report in its data only when the lookups ran",
+                "result": "pass"
+              },
+              {
+                "title": "one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "0ae37186",
+        "ranAt": "2026-10-13T13:21:10.640Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "a bundle cached before the change is not returned",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2382,
+            "titles": [
+              {
+                "title": "runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a refused pairing fails before the scope is resolved or any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a scope outside every registered repo fails as not indexed before any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a cause becomes its typed error and does NOT fall through to the tool loop",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper's run-mode bundle carries the report derived from the executed lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report",
+                "result": "pass"
+              },
+              {
+                "title": "a bundle cached before the change is not returned",
+                "result": "pass"
+              },
+              {
+                "title": "the tool loop's final answer is asked for with a schema that has no report, and a classification bundle carries none",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built",
+                "result": "pass"
+              },
+              {
+                "title": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "34c8c765",
+        "ranAt": "2026-10-13T13:28:59.818Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "run order: the same on the hinted-target branch",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "run order: the same on the hinted-target branch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+                "title": "a docs run on a scope in no registered repo ends at stage 'classify' with 'scope-not-indexed' before anything is measured or built; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "run order: a request that passes the check still emits 'classified' with its measure, as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "run order: a request that passes the check still emits 'classified' with its measure, as before",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+                "title": "hinted request with a valid pairing reaches the context builder and the planner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1587,
+            "titles": [
+              {
+                "title": "hinted request: focused with the prompt as focus, unfocused with an empty prompt",
+                "result": "pass"
+              },
+              {
+                "title": "hinted request: the validator's two checks are made, with the connection check it was given",
+                "result": "pass"
+              },
+              {
+                "title": "hinted pairing the table refuses fails at 'classify' with a failed run record",
+                "result": "pass"
+              },
+              {
+                "title": "hinted request with a scope that does not resolve fails with 'scope-ref-unresolved'",
+                "result": "pass"
+              },
+              {
+                "title": "hinted request with a valid pairing reaches the context builder and the planner",
+                "result": "pass"
+              },
+              {
+                "title": "hinted request: a connection check that throws fails the run at classify with a code, not an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "the classifier receives a connection check from each caller",
+                "result": "pass"
+              },
+              {
+                "title": "connectionIsRegistered: declared by a registered repo or not; an unreadable file is reported",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1320,
+            "titles": [
+              {
+                "title": "run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)",
+                "result": "pass"
+              },
+              {
+                "title": "run order: the same on the hinted-target branch",
+                "result": "pass"
+              },
+              {
+                "title": "run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message",
+                "result": "pass"
+              },
+              {
+                "title": "run order: a request that passes the check still emits 'classified' with its measure, as before",
+                "result": "pass"
+              },
+              {
+                "title": "runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')",
+                "result": "pass"
+              },
+              {
+                "title": "runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 750,
+            "titles": [
+              {
+                "title": "a docs run on a scope in no registered repo ends at stage 'classify' with 'scope-not-indexed' before anything is measured or built; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "8e943746",
+        "ranAt": "2026-10-13T13:37:23.467Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+                "title": "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1453,
+            "titles": [
+              {
+                "title": "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)",
+                "result": "pass"
+              },
+              {
+                "title": "the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              },
+              {
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              },
+              {
+                "title": "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "4f78c9d2",
+        "ranAt": "2026-10-13T13:56:46.991Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "search request contract: each guarded search request accepts its existing params and answers",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-request-contract.test.ts",
+                "title": "search request contract: each guarded search request accepts its existing params and answers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/search-request-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2601,
+            "titles": [
+              {
+                "title": "search request contract: each guarded search request accepts its existing params and answers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "e9eaa614",
+        "ranAt": "2026-10-13T14:10:42.058Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-guard.test.ts",
+                "title": "search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/search-request-contract.test.ts",
+                "title": "search request contract: each guarded search request accepts its existing params and answers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "entity.closure / entity.unreachable with a root in a repository under index are refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-guard.test.ts",
+                "title": "entity.closure / entity.unreachable with a root in a repository under index are refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "search guard: a registry read that throws skips the guard and the request is answered as today",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-guard.test.ts",
+                "title": "search guard: a registry read that throws skips the guard and the request is answered as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/search-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 70215,
+            "titles": [
+              {
+                "title": "search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+                "result": "pass"
+              },
+              {
+                "title": "entity.closure / entity.unreachable with a root in a repository under index are refused",
+                "result": "pass"
+              },
+              {
+                "title": "search guard: a registry read that throws skips the guard and the request is answered as today",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/search-request-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2734,
+            "titles": [
+              {
+                "title": "search request contract: each guarded search request accepts its existing params and answers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

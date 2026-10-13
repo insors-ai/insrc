@@ -12,7 +12,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { ModelCallFailedError, ModelResponseShapeError } from '../../../agent/providers/model-call-error.js';
+import { OllamaProvider } from '../../../agent/providers/ollama.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
+import { ClassifierLlmUnavailableError, _classifyErrorForTest as classifierClassify } from '../../classifier/driver.js';
+import { PlanBuilderLlmUnavailableError, _classifyErrorForTest as plannerClassify } from '../../planner/driver.js';
+import { _classifyErrorForTest as aggregatorClassify } from '../../runtimes/shared/aggregator.js';
+import { _classifyErrorCodeForTest as summariserClassify } from '../../summariser/driver.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import type { ExecutedPlan } from '../../explore/types.js';
 import {
@@ -95,12 +100,27 @@ async function caught(run: () => Promise<unknown>): Promise<unknown> {
 // isModelCallFailure
 // ---------------------------------------------------------------------------
 
-test('isModelCallFailure: Ollama texts, CLI call failures, ModelCallFailedError are failures; shape failures are not', () => {
+test('isModelCallFailure: a validation message quoting \'ECONNREFUSED\' / \'Model not found\' / \'EPIPE\' / \'fetch failed\' without \' text=\' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper\'s prefix, is', () => {
 	for (const text of OLLAMA_TEXTS) {
-		assert.equal(isModelCallFailure(new Error(text)), true, text);
-		// The local provider's retry wrapper puts the text mid-message.
-		assert.equal(isModelCallFailure(new Error(`structured-output: validation failed after 3 attempts: ${text}`)), true, text);
+		// The local provider raises an outage typed; the same words in a
+		// plain message are quoted text, not an outage.
+		assert.equal(isModelCallFailure(new Error(text)), false, `plain: ${text}`);
+		assert.equal(isModelCallFailure(new Error(`/summary must be string; saw '${text}'`)), false, `quoted: ${text}`);
+		assert.equal(isModelCallFailure(new Error(`structured-output: validation failed after 3 attempts: /answer must mention ${text}`)), false, `validation: ${text}`);
+		const typed = new ModelCallFailedError(text);
+		assert.equal(isModelCallFailure(typed), true, `typed: ${text}`);
+		assert.equal(isModelCallFailure(new ModelCallFailedError(`structured-output: validation failed after 3 attempts: ${text}`, { cause: typed })), true, `typed behind the retry prefix: ${text}`);
 	}
+});
+
+test("isModelCallFailure: a plain 'structured-output: ... attempts: Model call failed: ...' message is a failed call", () => {
+	assert.equal(isModelCallFailure(new Error('structured-output: validation failed after 3 attempts: Model call failed: socket hang up')), true);
+	assert.equal(isModelCallFailure(new Error('Model call failed: connect ECONNREFUSED 127.0.0.1:11434')), true);
+	// Only at the start (after the prefix): quoted further in, it is text.
+	assert.equal(isModelCallFailure(new Error("/summary must be string; saw 'Model call failed: x'")), false);
+});
+
+test('isModelCallFailure: CLI call failures and ModelCallFailedError are failures; shape failures are not', () => {
 	for (const text of CLI_CALL_FAILURES) {
 		assert.equal(isModelCallFailure(new Error(text)), true, text);
 	}
@@ -136,8 +156,9 @@ test('what the model WROTE is not evidence about the call: a quoted answer is ne
 	assert.equal(isModelCallFailure(new Error("/summary must be string; saw 'claude exited with 1'")), false);
 	assert.equal(isModelCallFailure(new Error('the note says codex exited with 2')), false);
 
-	// A real connection failure with nothing quoted is still recognised, wrapped or not.
-	assert.equal(isModelCallFailure(new Error('structured-output: validation failed after 3 attempts: connect ECONNREFUSED 127.0.0.1:11434')), true);
+	// A real connection failure arrives typed, and is recognised wrapped or not.
+	assert.equal(isModelCallFailure(new ModelCallFailedError('connect ECONNREFUSED 127.0.0.1:11434')), true);
+	assert.equal(isModelCallFailure(new Error('structured-output: validation failed after 3 attempts: Model call failed: connect ECONNREFUSED 127.0.0.1:11434')), true);
 });
 
 test('modelCallFailureDetail returns the failure\'s own words', () => {
@@ -211,7 +232,7 @@ test('model-unavailable messages are provider-neutral and carry the underlying m
 	// A failure that DID come from Ollama still says so, through the
 	// underlying message -- the prefix no longer asserts it.
 	const local = await caught(() => decompose({
-		intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(new Error('Ollama is not running at http://localhost:11434')),
+		intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(new ModelCallFailedError('Ollama is not running at http://localhost:11434')),
 	})) as DecomposerLlmUnavailableError;
 	assert.match(local.message, /^The model call for planning failed: Ollama is not running/);
 });
@@ -223,4 +244,39 @@ test('the two prompt-missing errors carry the prompt path', () => {
 	const s = new SynthesizerPromptMissingError('/x/synthesize.code.system.md');
 	assert.equal(s.path, '/x/synthesize.code.system.md');
 	assert.match(s.message, /\/x\/synthesize\.code\.system\.md/);
+});
+
+// ---------------------------------------------------------------------------
+// Every consumer, on the error the local provider really raises
+// ---------------------------------------------------------------------------
+
+/** A real OllamaProvider whose client fails with a socket error mid-stream. */
+function ollamaWithBrokenSocket(): LLMProvider {
+	const p = new OllamaProvider();
+	(p as unknown as { client: unknown }).client = {
+		chat: async () => (async function* () {
+			yield { message: { content: '{' }, done: false };
+			throw new Error('socket hang up');
+		})(),
+	};
+	return p;
+}
+
+test('each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure', async () => {
+	// What reaches a consumer: the provider's error, behind its retry helper.
+	const raised = await caught(() => ollamaWithBrokenSocket().completeStructured(
+		[{ role: 'user', content: 'x' }], { type: 'object' } as never, { maxAttempts: 2 },
+	));
+	assert.ok(raised instanceof ModelCallFailedError, `the provider raised ${String(raised)}`);
+
+	assert.ok(classifierClassify(raised) instanceof ClassifierLlmUnavailableError, 'classifier');
+	assert.ok(plannerClassify(raised) instanceof PlanBuilderLlmUnavailableError, 'planner');
+	assert.equal(summariserClassify(raised), 'llm-unavailable', 'summariser');
+	assert.match(aggregatorClassify(raised).message, /^aggregator-llm-unavailable: /, 'aggregator');
+
+	// The two pipeline calls, driven end to end through the real provider.
+	const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: ollamaWithBrokenSocket() }));
+	assert.ok(planning instanceof DecomposerLlmUnavailableError, `decomposer: ${(planning as Error).name}: ${(planning as Error).message}`);
+	const answer = await caught(() => synthesize({ intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code', provider: ollamaWithBrokenSocket() }));
+	assert.ok(answer instanceof SynthesizerLlmUnavailableError, `synthesizer: ${(answer as Error).name}: ${(answer as Error).message}`);
 });

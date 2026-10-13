@@ -13,6 +13,7 @@ import type {
 } from '../../shared/types.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import { getLogger } from '../../shared/logger.js';
+import { ModelCallFailedError } from './model-call-error.js';
 import { validateAgainstSchema, withStructuredRetry } from './structured-output.js';
 
 const log = getLogger('ollama');
@@ -756,20 +757,25 @@ function toOllamaToolChoice(
   return toolChoice;
 }
 
-function wrapOllamaError(err: unknown): Error {
-  if (err instanceof Error) {
-    if (err.message.includes('ECONNREFUSED')) {
-      return new Error(
-        'Ollama is not running. Start it with: ollama serve',
-      );
-    }
-    if (err.message.includes('not found') || err.message.includes('404')) {
-      return new Error(
-        `Model not found in Ollama. Pull it with: ollama pull <model>`,
-      );
-    }
+/**
+ * Every failure the Ollama client raises -- from the call itself or from
+ * inside a stream's iteration -- is a failed model call, whatever its text
+ * (ECONNREFUSED, socket hang up, fetch failed, terminated, a stream that
+ * ends early, a rejected request). It is raised as ModelCallFailedError so
+ * a caller recognises it by type, not by matching words; the client's own
+ * error is kept as the cause. The two configuration failures keep their
+ * actionable wording as the detail.
+ */
+function wrapOllamaError(err: unknown): ModelCallFailedError {
+  if (err instanceof ModelCallFailedError) return err;
+  const message = err instanceof Error ? err.message : String(err);
+  let detail = message;
+  if (message.includes('ECONNREFUSED')) {
+    detail = 'Ollama is not running. Start it with: ollama serve';
+  } else if (message.includes('not found') || message.includes('404')) {
+    detail = 'Model not found in Ollama. Pull it with: ollama pull <model>';
   }
-  return err instanceof Error ? err : new Error(String(err));
+  return new ModelCallFailedError(detail, { cause: err });
 }
 
 /**

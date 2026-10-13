@@ -219,7 +219,15 @@ export function runReviewStream<T>(
 			},
 			fail: (failure, message, reason) => { if (!settled) failWith(failure, message, reason); },
 		};
-		handle = transport(sink);
+		// A transport that throws while opening (a connection refused before any
+		// event) settles here like any other failure, so the wait timer and the
+		// abort listener are released rather than left armed.
+		try {
+			handle = transport(sink);
+		} catch (err) {
+			failWith('unreachable', `${method}: cannot reach the daemon (${err instanceof Error ? err.message : String(err)})`);
+			return;
+		}
 		if (pending !== undefined) release(pending);
 	});
 }

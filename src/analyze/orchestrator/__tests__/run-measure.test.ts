@@ -228,13 +228,14 @@ test('runAnalyze sets the intent\'s size from the measure on both classification
 	assert.equal(classifiedOf(classifiedUnstated).intent.scope, 'XS');
 	_setClassifyForTest(undefined);
 
-	// --- A request refused for its scope is refused where it was, with the same code. ---
-	// The measure does not refuse: it says the size could not be determined, and the indexed check refuses.
+	// --- A request refused for its scope is refused with the same code, before it is measured. ---
+	// (Epic c2ba6fa6, Story s5: the run's scope check comes before the measure, so a refused
+	// request is never announced at a size.)
 	const refused = await run('refused', { userPrompt: 'what is here', scopeRef: repo(unregistered), targetHint: 'code', scopeHint: 'S' });
-	assert.equal(outcome(refused), 'plan/scope-not-indexed');
-	const notDetermined = classifiedOf(refused).measure!;
-	assert.deepEqual([notDetermined.size, notDetermined.determined, notDetermined.sizeHint, notDetermined.items], ['XL', false, 'S', 0]);
-	assert.ok(notDetermined.note!.includes(unregistered), notDetermined.note);
+	assert.equal(outcome(refused), 'classify/scope-not-indexed');
+	assert.ok(!refused.events.some(e => e.type === 'classified'), "no 'classified' event, so no size announced");
+	assert.ok(!refused.events.some(e => e.type === 'stage-substep' && e.substep === 'measure'), 'nothing measured');
+	assert.equal(refused.record?.measure, undefined, 'no measure in the run record');
 	assert.deepEqual(refused.roles, [], 'refused before any model call, as before');
 	// A pairing the table refuses still ends at classify, before anything is measured.
 	const pairing = await run('pairing', { userPrompt: 'what is here', scopeRef: { kind: 'connection', value: 'ledger' }, targetHint: 'code', scopeHint: 'S' });

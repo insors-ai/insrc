@@ -20,6 +20,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { ModelCallFailedError } from '../../../agent/providers/model-call-error.js';
 
 import {
 	MaxPlanDepthExceededError,
@@ -160,20 +161,20 @@ test('renderDepthPolicy: XL depth hint mentions structural breadth + child plans
 // ---------------------------------------------------------------------------
 
 test('classifyError(ECONNREFUSED) -> PlanBuilderLlmUnavailableError', () => {
-	const err = new Error('connect ECONNREFUSED 127.0.0.1:11434');
+	const err = new ModelCallFailedError('connect ECONNREFUSED 127.0.0.1:11434');
 	const out = _classifyErrorForTest(err);
 	assert.ok(out instanceof PlanBuilderLlmUnavailableError);
 	assert.match(out.message, /ECONNREFUSED/);
 });
 
 test('classifyError("Ollama is not running") -> PlanBuilderLlmUnavailableError', () => {
-	const err = new Error('Ollama is not running. Start it with: ollama serve');
+	const err = new ModelCallFailedError('Ollama is not running. Start it with: ollama serve');
 	const out = _classifyErrorForTest(err);
 	assert.ok(out instanceof PlanBuilderLlmUnavailableError);
 });
 
 test('classifyError("Model not found") -> PlanBuilderLlmUnavailableError', () => {
-	const err = new Error('Model not found in Ollama.');
+	const err = new ModelCallFailedError('Model not found in Ollama.');
 	const out = _classifyErrorForTest(err);
 	assert.ok(out instanceof PlanBuilderLlmUnavailableError);
 });

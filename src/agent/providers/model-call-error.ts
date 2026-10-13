@@ -13,8 +13,10 @@ export class ModelCallFailedError extends Error {
 	/** The underlying failure's own message. */
 	readonly detail: string;
 
-	constructor(detail: string) {
-		super(`Model call failed: ${detail}`);
+	/** `cause` keeps the transport's own error (the Ollama client's, a
+	 *  wrapped earlier attempt's) for whoever needs more than the text. */
+	constructor(detail: string, options?: { readonly cause?: unknown } | undefined) {
+		super(`Model call failed: ${detail}`, options?.cause !== undefined ? { cause: options.cause } : undefined);
 		this.name = 'ModelCallFailedError';
 		this.detail = detail;
 	}

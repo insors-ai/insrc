@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "createdAt": "2026-10-13T11:53:21.419Z",
+    "updatedAt": "2026-10-13T14:10:42.058Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
+      }
+    ],
+    "summary": "The daemon's eleven graph-reading search requests that name a repository now refuse with 'repo-indexing: ...' (with how far the run has got) when that repository, or any root's, is under index; requests about ready repositories are answered as before, and an unreadable or empty registry refuses nothing.",
+    "testRecord": {
+      "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T14:10:42.058Z"
+      }
+    ],
+    "commit": "e9eaa614"
+  }
+}

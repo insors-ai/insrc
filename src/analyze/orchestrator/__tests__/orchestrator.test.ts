@@ -99,7 +99,7 @@ test("plan tree's classify mapping returns the inner code and passes context err
 	const notIndexed = _classifyClassifierErrorForTest(new ScopeNotIndexedError('/r/unindexed', undefined, 'no entities'));
 	assert.equal(notIndexed.code, 'scope-not-indexed');
 	assert.equal(notIndexed.data?.['scopePath'], '/r/unindexed');
-	assert.equal(_classifyClassifierErrorForTest(new ShaperLlmUnavailableError('down')).code, 'shaper-llm-unavailable');
+	assert.equal(_classifyClassifierErrorForTest(new ShaperLlmUnavailableError('down', 'tool loop')).code, 'shaper-llm-unavailable');
 	assert.equal(_classifyClassifierErrorForTest(new ShaperPromptMissingError('/p')).code, 'shaper-prompt-missing');
 
 	// A plain Error whose message merely mentions a code is NOT matched by
@@ -132,7 +132,7 @@ test('classifyShaperError: ScopeNotIndexedError populates data', () => {
 
 test('classifyShaperError: typed shaper errors map to stable codes', () => {
 	const cases: Array<[Error, string]> = [
-		[new ShaperLlmUnavailableError('down'),               'shaper-llm-unavailable'],
+		[new ShaperLlmUnavailableError('down', 'tool loop'),               'shaper-llm-unavailable'],
 		[new ShaperToolLoopExhausted('exhausted'),            'shaper-tool-loop-exhausted'],
 		[new ShaperSchemaUnrecoverable(3, ['bad schema']),    'shaper-schema-unrecoverable'],
 		[new ShaperPromptMissingError('/p'),                  'shaper-prompt-missing'],

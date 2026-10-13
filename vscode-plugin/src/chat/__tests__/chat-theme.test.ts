@@ -93,7 +93,7 @@ const APPROVED_THEME_VARIABLES = [
   'dropdown-background', 'dropdown-foreground', 'dropdown-border', 'checkbox-background', 'checkbox-foreground', 'checkbox-border',
 ].map((v) => `--vscode-${v}`);
 
-test("chat theme: the chat's own style has no hex, rgb, rgba, hsl or color-mix value, no radial gradient, no var() with a literal fallback, and no forced colour scheme; a linear gradient is built only from names and transparent", () => {
+test("chat theme: the chat's own style has no hex, rgb, rgba or hsl value, no radial gradient and no var() with a literal fallback; its only color-mix is the assistant message's ground, declared once; the colour scheme follows the theme kind; a linear gradient is built only from names and transparent", () => {
   const html = shellHtml();
   assert.equal(styleBlocks(html).length, 2, 'the shared sheet, then the chat\'s own style');
   // Data URIs are shapes, not colours; they are checked on their own below.
@@ -162,7 +162,7 @@ test("chat theme: every name used in the shell style, the row renderer style and
   for (const name of names.keys()) assert.ok(everything.includes(`var(${name})`), `${name} is used`);
 });
 
-test('chat theme: the named layer refers only to the theme variables of the approved mapping, and every optional one falls back to another theme variable', () => {
+test("chat theme: every name but the one derived ground holds a theme variable of this design's mapping, and every optional one falls back to another theme variable", () => {
   const names = layer(ownStyle(shellHtml()));
   const referenced = new Set<string>();
   // The one derived colour (see the first test); every other name holds a theme variable.
@@ -312,7 +312,7 @@ test('chat theme: the history chip is one wrapper around the select with a maske
   for (const src of sources) assert.ok(src.startsWith('data:'), `declared image source is a data URI: ${src.slice(0, 40)}`);
 });
 
-test("chat theme: selectors, class names and element ids of the shell and the row renderer are the same as before the change, and the shell is still one nonce'd inline script under the same policy", () => {
+test("chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy", () => {
   const before = JSON.parse(readFileSync(join(HERE, 'chat-theme-before.json'), 'utf8')) as { selectors: string[]; ids: string[]; styleBlocks: number };
   const html = shellHtml();
   const now = selectors(ownStyle(html));
@@ -346,7 +346,7 @@ test("chat theme: selectors, class names and element ids of the shell and the ro
   assert.match(html, /Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'nonce-N';"/);
 });
 
-test("chat theme: the docs-review panel's rendered document, the shared token sheet and the docs-review markdown rules are byte-identical to before the change", () => {
+test("chat theme: the shared token sheet and the docs-review markdown rules are byte-identical to before the change, and the docs-review panel uses none of the chat's three style sources", () => {
   const before = JSON.parse(readFileSync(join(HERE, 'chat-theme-before.json'), 'utf8')) as { sharedSheetSha256: string; docsReviewMarkdownSha256: string };
   const sha = (s: string): string => createHash('sha256').update(s).digest('hex');
   assert.equal(sha(renderTerminalStyle()), before.sharedSheetSha256, 'the shared token sheet is unchanged');

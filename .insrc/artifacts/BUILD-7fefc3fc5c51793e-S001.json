@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "7fefc3fc5c51793e",
+    "storyId": "S001",
+    "createdAt": "2026-10-13T06:59:58.048Z",
+    "updatedAt": "2026-10-13T06:59:58.048Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story in one module with one clear approach: the approved spec fixes which theme variable each component uses.",
+    "epicCreatedAt": "2026-10-13T06:26:49.137Z",
+    "epicSlug": "make-dev-chat-follow-vs-code"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ],
+    "summary": "The dev chat's named colours now hold VS Code theme variables, and every fixed colour, tint and decorative gradient in the shell style, the row renderer style and the chat's markdown tokens is replaced by a name; the colour scheme follows the theme kind; the history chip is a wrapper whose glyph is a mask in the text colour; the whole chat uses the editor's monospace font. Both review findings were built in (inline code has its own ground; both history-chip tests were rewritten). Differences from the approved design, all on the user's instructions or noted to them: one derived colour (the assistant message's ground is the editor background mixed with 10% black, decided by the user on 2026-10-13 after their theme showed borders with no contrast); both message bubbles use the chat request border; a diff line takes the theme's diff outline, transparent outside high contrast (two theme variables beyond the mapping); the unused name --bg-alt was removed. The docs-review 'rendered document' subject is proven by fingerprints of the shared sheet and the docs-review markdown rules plus the panel's imports, not by rendering the panel.",
+    "testRecord": {
+      "md": "docs/standalone/make-dev-chat-follow-vs-code-E202610137fefc3fc/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-5ff61e5fdca3875d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-5ff61e5fdca3875d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/5ff61e5fdca3875d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-theme-before.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/markdown-style.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/render-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:59:58.048Z"
+      }
+    ],
+    "commit": "f2289cf0"
+  }
+}

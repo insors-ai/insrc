@@ -25,9 +25,11 @@ import type { RpcHandlers, StreamHandlers } from '../server.js';
 import { failureMessage } from '../server.js';
 import type { IpcStreamMessage } from '../../shared/types.js';
 import {
+	codeReviewRequestParams,
 	freshnessFromReply,
 	groundingFromReply,
-	ReviewStreamError,
+	reviewArtifactRequestParams,
+	runReviewStream,
 	unavailableFromError,
 } from '../../shared/review-stream.js';
 import type {
@@ -36,9 +38,11 @@ import type {
 	CodeReviewStreamParams,
 	CodeReviewStreamResult,
 	ReviewArtifactStreamParams,
-	ReviewStreamFailure,
 	ReviewStreamOpts,
 } from '../../shared/review-stream.js';
+
+/** The wait limit's wording, from the shared review request (re-exported for tests). */
+export { waitText } from '../../shared/review-stream.js';
 
 /** The daemon requests a step handler makes, in the socket client's shapes. */
 export interface StepDaemonClient {
@@ -71,17 +75,6 @@ export interface InDaemonClientDeps {
 	readonly clearTimer?: ((handle: unknown) => void) | undefined;
 }
 
-/** A wait limit in words, never more than the limit: whole minutes when it is
- *  a whole number of minutes, otherwise seconds. */
-export function waitText(ms: number): string {
-	if (ms >= 60_000 && ms % 60_000 === 0) {
-		const min = ms / 60_000;
-		return `${min} minute${min === 1 ? '' : 's'}`;
-	}
-	const sec = Math.max(1, Math.floor(ms / 1000));
-	return `${sec} second${sec === 1 ? '' : 's'}`;
-}
-
 /** The client that calls the daemon's own request handlers in-process. */
 export function createInDaemonClient(
 	unary:  RpcHandlers,
@@ -98,78 +91,33 @@ export function createInDaemonClient(
 		}
 	};
 
+	/** The in-process transport: the daemon's own stream handler, called with a
+	 *  send that hands its frames to the shared request, and a signal that a
+	 *  failed request (wait limit, abort) aborts so the inner run ends. */
 	const streamRequest = <T>(method: string, params: Record<string, unknown>, opts: ReviewStreamOpts): Promise<T> =>
-		new Promise<T>((resolve, reject) => {
-			const setTimer   = deps.setTimer   ?? ((fn: () => void, ms: number) => setTimeout(fn, ms));
-			const clearTimer = deps.clearTimer ?? ((h: unknown) => clearTimeout(h as NodeJS.Timeout));
+		runReviewStream<T>(method, opts, (sink) => {
 			const inner = new AbortController();
-			let settled = false;
-			let timer: unknown;
-
-			const finish = (action: () => void): void => {
-				if (settled) return;
-				settled = true;
-				if (timer !== undefined) clearTimer(timer);
-				opts.signal?.removeEventListener('abort', onAbort);
-				action();
-			};
-			const failWith = (failure: ReviewStreamFailure, message: string, reason?: string): void =>
-				finish(() => { inner.abort(); reject(new ReviewStreamError(failure, message, reason)); });
-
-			function onAbort(): void { failWith('aborted', `${method}: aborted by client`); }
-			if (opts.signal?.aborted) { onAbort(); return; }
-			opts.signal?.addEventListener('abort', onAbort);
-
 			const handler = stream[method];
 			if (handler === undefined) {
-				failWith('unknown-method', `${method}: this daemon does not support the request (unknown method: ${method}).`);
-				return;
+				sink.fail('unknown-method', `${method}: this daemon does not support the request (unknown method: ${method}).`);
+				return { end: () => {}, cancel: () => inner.abort() };
 			}
-			timer = setTimer(
-				() => failWith('timeout', `${method}: no result from the daemon within ${waitText(opts.timeoutMs)}`),
-				opts.timeoutMs,
-			);
-
-			const send = (msg: IpcStreamMessage): void => {
-				if (settled) return;
-				if (msg.stream === 'progress' || msg.stream === 'delta') {
-					opts.onFrame?.(msg.stream, msg.data);
-				} else if (msg.stream === 'done') {
-					finish(() => resolve(msg.data as T));
-				} else if (msg.stream === 'error') {
-					const data = msg.data as { error?: string; reason?: string } | undefined;
-					finish(() => reject(new ReviewStreamError('daemon-error', data?.error ?? `${method}: daemon error`, data?.reason)));
-				}
-				// Any other kind: ignored, as the socket client does.
-			};
-
+			const send = (msg: IpcStreamMessage): void => { sink.frame({ stream: msg.stream, data: msg.data }); };
 			// Called through a resolved promise so a handler that throws synchronously
-			// settles here too, and the timer and abort listener are released.
+			// settles the request too, and its timer and abort listener are released.
 			Promise.resolve().then(() => handler(params, send, inner.signal)).then(
-				() => {
-					// Over the socket a handler that ends without a final frame leaves
-					// the client waiting; in-process there is nothing left to wait for.
-					if (!settled) failWith('closed', `${method}: the request ended before completion`);
-				},
-				(err: unknown) => {
-					// The request server sends a handler's throw as an 'error' frame.
-					if (!settled) failWith('daemon-error', failureMessage(err, method));
-				},
+				// Over the socket a handler that ends without a final frame leaves the
+				// client waiting; in-process there is nothing left to wait for.
+				() => sink.fail('closed', `${method}: the request ended before completion`),
+				// The request server sends a handler's throw as an 'error' frame.
+				(err: unknown) => sink.fail('daemon-error', failureMessage(err, method)),
 			);
-		});
+			return { end: () => {}, cancel: () => inner.abort() };
+		}, deps);
 
 	return {
-		reviewArtifactStream: (params, opts) => streamRequest<WorkflowReviewDone>('workflow.review', {
-			artifactPath: params.artifactPath,
-			...(params.repo !== undefined ? { repo: params.repo } : {}),
-		}, opts),
-		codeReviewStream: (params, opts) => streamRequest<CodeReviewStreamResult>('codeReview.run', {
-			epicHash: params.epicHash,
-			storyId:  params.storyId,
-			...(params.repo          !== undefined ? { repo:          params.repo }          : {}),
-			...(params.client        !== undefined ? { client:        params.client }        : {}),
-			...(params.groundingMode !== undefined ? { groundingMode: params.groundingMode } : {}),
-		}, opts),
+		reviewArtifactStream: (params, opts) => streamRequest<WorkflowReviewDone>('workflow.review', reviewArtifactRequestParams(params), opts),
+		codeReviewStream:     (params, opts) => streamRequest<CodeReviewStreamResult>('codeReview.run', codeReviewRequestParams(params), opts),
 		fetchCodeReviewGrounding: (params) =>
 			call<Parameters<typeof groundingFromReply>[0]>('codeReview.grounding', params).then(groundingFromReply, unavailableFromError),
 		fetchCodeReviewFreshness: (params) =>

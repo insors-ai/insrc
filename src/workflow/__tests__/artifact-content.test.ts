@@ -17,6 +17,7 @@
  */
 
 import { test } from 'node:test';
+import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -428,5 +429,79 @@ test('t1: a malformed sequenceDefinition travels through as written — the read
 		assert.deepEqual(v.sequenceDefinition as unknown, junk, 'no validation, no defaulting, no coercion');
 	} finally {
 		cleanup(repo);
+	}
+});
+
+// ---------------------------------------------------------------------------
+// Story 8d4b90c9/S001 t3 — the fields the review pane saves and shows comments with
+// ---------------------------------------------------------------------------
+
+test('review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion', () => {
+	const REVIEWER = { gitUserName: () => 'Rev Iewer\n', osUserName: () => 'rev' };
+	const entries = [
+		{ id: 'f1', author: 'Rev Iewer', timestamp: '2026-10-13T09:00:00.000Z', target: { file: MD_REL }, comment: 'First.', decision: 'feedback', batchId: 'b1', anchor: { quote: 'rendered' } },
+		{ id: 'f2', author: 'Rev Iewer', timestamp: '2026-10-13T09:00:00.000Z', target: { file: MD_REL }, comment: 'Second.', decision: 'feedback', batchId: 'b1' },
+	];
+	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { openQuestions: ['First?'], feedback: entries } } });
+	try {
+		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined, REVIEWER));
+		assert.equal(v.docPath, MD_REL);
+		assert.equal(v.contentVersion, createHash('sha256').update(MD_BODY, 'utf8').digest('hex').slice(0, 16));
+		assert.match(v.contentVersion, /^[0-9a-f]{16}$/);
+		assert.deepEqual(v.feedback, entries, 'as stored, in order');
+		assert.deepEqual(v.reviewer, { name: 'Rev Iewer', source: 'git' });
+		assert.equal(v.state, 'pending');
+		// The existing fields are what they were.
+		assert.equal(v.artifactId, ID);
+		assert.equal(v.kind, 'LLD');
+		assert.equal(v.renderedMarkdown, MD_BODY);
+		assert.deepEqual(v.openQuestions, [{ id: v.openQuestions[0]!.id, text: 'First?', status: 'open' }]);
+		assert.equal(v.approvable, true);
+		assert.equal('blockReason' in v, false);
+
+		// An absolute mdPath gives the same repo-relative docPath.
+		assert.equal(asView(handleArtifactContent({ repo, mdPath: join(repo, mdRel) }, undefined, REVIEWER)).docPath, MD_REL);
+		// The reviewer falls back to the OS login, with its source.
+		assert.deepEqual(
+			asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined, { ...REVIEWER, gitUserName: () => undefined })).reviewer,
+			{ name: 'rev', source: 'os' },
+		);
+
+		// A changed markdown gives a different contentVersion; the same text gives the same one.
+		assert.equal(asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined, REVIEWER)).contentVersion, v.contentVersion);
+		writeFileSync(join(repo, mdRel), MD_BODY + 'One more line.\n');
+		const changed = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined, REVIEWER));
+		assert.notEqual(changed.contentVersion, v.contentVersion);
+		assert.equal(changed.contentVersion, createHash('sha256').update(MD_BODY + 'One more line.\n', 'utf8').digest('hex').slice(0, 16));
+	} finally {
+		cleanup(repo);
+	}
+
+	// state follows meta.approvedAt, else meta.rejectedAt; no feedback is an absent key.
+	const states: readonly [Record<string, unknown>, string][] = [
+		[{}, 'pending'],
+		[{ approvedAt: '2026-10-13T10:00:00.000Z' }, 'approved'],
+		[{ rejectedAt: '2026-10-13T10:00:00.000Z', rejectReason: 'no' }, 'rejected'],
+		[{ approvedAt: '2026-10-13T11:00:00.000Z', rejectedAt: '2026-10-13T10:00:00.000Z' }, 'approved'],
+		[{ approvedAt: '', rejectedAt: '' }, 'pending'],
+	];
+	for (const [meta, state] of states) {
+		const fx = makeFixture({ json: { meta, body: {} } });
+		try {
+			const v = asView(handleArtifactContent({ repo: fx.repo, mdPath: fx.mdRel }, undefined, REVIEWER));
+			assert.equal(v.state, state, JSON.stringify(meta));
+			assert.equal('feedback' in v, false, 'no stored feedback is an absent key');
+		} finally {
+			cleanup(fx.repo);
+		}
+	}
+	// An empty or non-list feedback is absent too.
+	for (const feedback of [[], 'x', null]) {
+		const fx = makeFixture({ json: { meta: {}, body: { feedback } } });
+		try {
+			assert.equal('feedback' in asView(handleArtifactContent({ repo: fx.repo, mdPath: fx.mdRel }, undefined, REVIEWER)), false);
+		} finally {
+			cleanup(fx.repo);
+		}
 	}
 });

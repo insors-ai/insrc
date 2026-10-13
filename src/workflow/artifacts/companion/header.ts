@@ -84,11 +84,30 @@ export function resolveCompanionHeader(input: CompanionHeaderInput, deps: Compan
 		workItemId:  workItemId(input.source),
 		sourceDoc:   { id: input.artifactId, href: `./${basename(input.sourceMdPath)}` },
 		date:        formatDate((deps.now ?? (() => new Date()))()),
-		user:        nonEmpty((deps.gitUserName ?? defaultGitUserName)(input.repoPath))
-			?? nonEmpty((deps.osUserName ?? defaultOsUserName)())
-			?? 'unknown',
+		user:        resolveReviewer(input.repoPath, deps).name,
 		contextLine: contextLine(input.source),
 	};
+}
+
+/** Who is at the machine, and where the name came from. */
+export interface Reviewer {
+	readonly name:   string;
+	readonly source: 'git' | 'os' | 'unknown';
+}
+
+/** The lookups resolveReviewer reads the machine with. */
+export type ReviewerDeps = Pick<CompanionHeaderDeps, 'gitUserName' | 'osUserName'>;
+
+/**
+ * The person a header or a saved comment is attributed to: git user.name in the
+ * repo, else the OS login, else 'unknown'. Never throws.
+ */
+export function resolveReviewer(repoPath: string, deps: ReviewerDeps = {}): Reviewer {
+	const git = nonEmpty((deps.gitUserName ?? defaultGitUserName)(repoPath));
+	if (git !== undefined) return { name: git, source: 'git' };
+	const os = nonEmpty((deps.osUserName ?? defaultOsUserName)());
+	if (os !== undefined) return { name: os, source: 'os' };
+	return { name: 'unknown', source: 'unknown' };
 }
 
 function nonEmpty(v: string | undefined): string | undefined {

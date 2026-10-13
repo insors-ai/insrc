@@ -16,7 +16,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
-import { formatDate, resolveCompanionHeader, type CompanionHeaderDeps, type CompanionHeaderSource } from '../header.js';
+import { formatDate, resolveCompanionHeader, resolveReviewer, type CompanionHeaderDeps, type CompanionHeaderSource } from '../header.js';
 
 const HASH = 'd9f85b3cc8cc966b';
 const CREATED = '2026-10-11T10:31:49.465Z';
@@ -145,5 +145,35 @@ test('d9f85b3c t4 — with nothing to say, the context line is placement only', 
 		assert.equal(header(repo).contextLine, 'Standalone story S001');
 		assert.equal(header(repo, { kind: 'HLD', epicHash: HASH, anchorCreatedAt: CREATED, summary: '  ' }).contextLine, `Epic ${HASH}`);
 		assert.equal(header(repo, { kind: 'LLD-epic', epicHash: HASH, epicSlug: 'e', storyId: 's1', anchorCreatedAt: CREATED }).contextLine, 'Story S001 of Epic e');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Story 8d4b90c9/S001 t3 — the lookup the header and a saved comment share
+// ---------------------------------------------------------------------------
+
+test('reviewer: resolveReviewer gives the trimmed git name with source git, else the OS login with source os, else unknown, and resolveCompanionHeader\'s user is unchanged for the same inputs', () => {
+	withRepo(repo => {
+		const cases: readonly { readonly deps: CompanionHeaderDeps; readonly name: string; readonly source: 'git' | 'os' | 'unknown' }[] = [
+			{ deps: PINNED, name: 'Subho Ghosh', source: 'git' },
+			{ deps: { ...PINNED, gitUserName: () => undefined }, name: 'subho', source: 'os' },
+			{ deps: { ...PINNED, gitUserName: () => '  \n' }, name: 'subho', source: 'os' },
+			{ deps: { ...PINNED, gitUserName: () => undefined, osUserName: () => ' subho \n' }, name: 'subho', source: 'os' },
+			{ deps: { ...PINNED, gitUserName: () => undefined, osUserName: () => undefined }, name: 'unknown', source: 'unknown' },
+			{ deps: { ...PINNED, gitUserName: () => '', osUserName: () => '' }, name: 'unknown', source: 'unknown' },
+		];
+		for (const c of cases) {
+			assert.deepEqual(resolveReviewer(repo, c.deps), { name: c.name, source: c.source });
+			// The header's user is the same name, as it was before the lookup was extracted.
+			assert.equal(header(repo, STANDALONE, c.deps).user, c.name);
+		}
+		// The git lookup is asked about this repo.
+		let asked: string | undefined;
+		resolveReviewer(repo, { gitUserName: r => { asked = r; return 'A'; } });
+		assert.equal(asked, repo);
+		// With no seams it reads the machine and never throws.
+		const real = resolveReviewer(repo);
+		assert.ok(real.name.length > 0);
+		assert.ok(['git', 'os', 'unknown'].includes(real.source));
 	});
 });

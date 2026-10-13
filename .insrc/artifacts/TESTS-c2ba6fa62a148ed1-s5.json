@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T12:45:35.350Z",
+    "updatedAt": "2026-10-13T13:01:23.220Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -785,6 +785,249 @@
               },
               {
                 "title": "one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "a73aee5a",
+        "ranAt": "2026-10-13T13:01:23.220Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/codec.test.ts",
+                "title": "registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/codec.test.ts",
+                "title": "repo row round-trip",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/repos-lmdb.test.ts",
+                "title": "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/repos-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2691,
+            "titles": [
+              {
+                "title": "addRepo + listRepos round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo with explicit name overrides basename derivation",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo with empty name falls back to basename",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo on existing path updates in place (same repo_id semantics)",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo with multiple paths creates multiple rows",
+                "result": "pass"
+              },
+              {
+                "title": "removeRepo by path deletes the row",
+                "result": "pass"
+              },
+              {
+                "title": "removeRepo on unknown path is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "listRepos on empty registry returns empty array",
+                "result": "pass"
+              },
+              {
+                "title": "updateRepoStatus mutates only status / lastIndexed / errorMsg",
+                "result": "pass"
+              },
+              {
+                "title": "updateRepoStatus on unknown path is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "updateRepoStatus with errorMsg surfaces it on listRepos",
+                "result": "pass"
+              },
+              {
+                "title": "all four status values round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "lastIndexed sentinel: absent when never indexed, present after first index",
+                "result": "pass"
+              },
+              {
+                "title": "lastIndexed survives close + reopen",
+                "result": "pass"
+              },
+              {
+                "title": "many repos round-trip without collision (linear-scan correctness)",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo updates status without losing addedAt",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects empty string",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects non-string input",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects relative paths",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects filesystem root + system / volatile dirs",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape normalises trailing-slash + .. segments",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects normalised banned root (e.g. `/Users/.`)",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPath (full) accepts an existing temp directory",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPath (full) rejects non-existent path",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo rejects empty / banned-root paths via shape validation",
+                "result": "pass"
+              },
+              {
+                "title": "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/codec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 404,
+            "titles": [
+              {
+                "title": "repo row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined",
+                "result": "pass"
+              },
+              {
+                "title": "repo row round-trip -- shared-modules kind with namespace",
+                "result": "pass"
+              },
+              {
+                "title": "entity row round-trip including all flag fields",
+                "result": "pass"
+              },
+              {
+                "title": "entity row preserves empty-string sentinel defaults",
+                "result": "pass"
+              },
+              {
+                "title": "edge props: empty payload encodes to zero-byte buffer",
+                "result": "pass"
+              },
+              {
+                "title": "edge props: CALLS shape round-trips",
+                "result": "pass"
+              },
+              {
+                "title": "edge props: READS shape round-trips",
+                "result": "pass"
+              },
+              {
+                "title": "edge props: IMPORTS shape round-trips",
+                "result": "pass"
+              },
+              {
+                "title": "unresolved row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "plan row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "plan_step row round-trip with sentinel timestamps + dependsOn",
+                "result": "pass"
+              },
+              {
+                "title": "session row round-trip with all status / tier values",
+                "result": "pass"
+              },
+              {
+                "title": "turn row round-trip with all enum values",
+                "result": "pass"
+              },
+              {
+                "title": "todo_list row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "todo_item row round-trip with tags + meta",
+                "result": "pass"
+              },
+              {
+                "title": "todo_comment row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "config_entry row round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "msgpack encoding is more compact than JSON for typical entity",
+                "result": "pass"
+              },
+              {
+                "title": "large body in entity row round-trips correctly",
                 "result": "pass"
               }
             ],

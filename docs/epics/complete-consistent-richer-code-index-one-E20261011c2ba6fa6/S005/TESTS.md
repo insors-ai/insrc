@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -131,3 +131,27 @@ Run at 2026-10-13T12:45:35.350Z on commit `2cec35d1`. Tests check: **passed**. 6
 | `src/analyze/context/__tests__/run-shaper-wiring.test.ts` | 0 | 10 | 1.7 s |  |
 | `src/analyze/orchestrator/__tests__/shaper-causes.test.ts` | 0 | 1 | 0.7 s |  |
 | `src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts` | 0 | 8 | 0.6 s |  |
+
+## t5
+
+Run at 2026-10-13T13:01:23.220Z on commit `a73aee5a`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined | `src/db/graph/__tests__/codec.test.ts` |
+| pass | repo row round-trip | `src/db/graph/__tests__/codec.test.ts` |
+
+**unit: registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one | `src/db/__tests__/repos-lmdb.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/__tests__/repos-lmdb.test.ts` | 0 | 26 | 2.7 s |  |
+| `src/db/graph/__tests__/codec.test.ts` | 0 | 20 | 0.4 s |  |

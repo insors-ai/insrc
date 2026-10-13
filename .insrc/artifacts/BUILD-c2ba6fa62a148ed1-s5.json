@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T12:45:35.350Z",
+    "updatedAt": "2026-10-13T13:01:23.220Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -26,9 +26,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "A throw from the last-indexed read (at runShaper's freshness check or inside the pipeline) and from the lookup executor are now the named pipeline causes 'index-state-read-failed' and 'lookup-failed', each with its own typed error and code on both the daemon and plan-tree mappings, instead of a raw rejection reported as internal-error.",
+    "summary": "The registry row now carries an optional lastRun with the last full index's final figures; it round-trips through the codec, older rows decode without it, and a status write that omits it keeps the stored one.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
     },
@@ -38,9 +42,9 @@
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:45:35.350Z"
+        "timestamp": "2026-10-13T13:01:23.220Z"
       }
     ],
-    "commit": "2cec35d1"
+    "commit": "a73aee5a"
   }
 }

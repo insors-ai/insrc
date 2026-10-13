@@ -92,6 +92,7 @@ function offlineStream(method: string): StreamHandler {
 import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
 import { resolveClosure, searchEntities, findCallers, findCallees, closureEntities, unreachableEntities } from '../db/search.js';
 import { embedQuery } from '../indexer/embedder.js';
+import { guardSearchRequest } from './search-guard.js';
 import { getArtifactById, queryArtifactVec } from '../db/lance/artifact-vec.js';
 import { inferParentCandidates } from '../workflow/locate/infer.js';
 import { buildOwnershipIndex } from '../workflow/locate/ownership.js';
@@ -1059,16 +1060,19 @@ async function main(): Promise<void> {
 
 		'search.closure': async (params) => {
 			const { repoPath } = params as { repoPath: string };
+			await guardSearchRequest({ repoPaths: [repoPath] });
 			return resolveClosure(db, repoPath);
 		},
 
 		'search.callers': async (params) => {
 			const { entityId } = params as { entityId: string };
+			await guardSearchRequest({ entityIds: [entityId] });
 			return findCallers(db, entityId) as Promise<Entity[]>;
 		},
 
 		'search.callees': async (params) => {
 			const { entityId } = params as { entityId: string };
+			await guardSearchRequest({ entityIds: [entityId] });
 			return findCallees(db, entityId) as Promise<Entity[]>;
 		},
 
@@ -1083,6 +1087,7 @@ async function main(): Promise<void> {
 			if (typeof repoPath !== 'string' || repoPath.length === 0) {
 				return { error: 'locate.inferParents: `repoPath` is required' };
 			}
+			await guardSearchRequest({ repoPaths: [repoPath] });
 			const req: InferParentsRequest = {
 				repoPath,
 				touchedPaths:      Array.isArray(touchedPaths) ? touchedPaths.filter((p): p is string => typeof p === 'string') : [],
@@ -1101,6 +1106,7 @@ async function main(): Promise<void> {
 
 		'entity.summary': async (params) => {
 			const { entityId } = params as { entityId: string };
+			await guardSearchRequest({ entityIds: [entityId] });
 			return getEntity(db, entityId);
 		},
 
@@ -1117,6 +1123,7 @@ async function main(): Promise<void> {
 			}
 			if (direction !== undefined) opts.direction = direction;
 			if (maxDepth !== undefined)  opts.maxDepth  = maxDepth;
+			await guardSearchRequest({ entityIds: rootIds });
 			return closureEntities(db, rootIds, opts) as Promise<Entity[]>;
 		},
 
@@ -1132,6 +1139,7 @@ async function main(): Promise<void> {
 				opts.kindFilter = [edgeKind as 'DEFINES'|'IMPORTS'|'CALLS'|'INHERITS'|'IMPLEMENTS'|'DEPENDS_ON'|'EXPORTS'|'REFERENCES'];
 			}
 			if (maxDepth !== undefined) opts.maxDepth = maxDepth;
+			await guardSearchRequest({ entityIds: rootIds });
 			return unreachableEntities(
 				db,
 				rootIds,
@@ -1183,6 +1191,7 @@ async function main(): Promise<void> {
 
 		'repo.depends_on': async (params) => {
 			const { repoId } = params as { repoId: string };
+			await guardSearchRequest({ repoPaths: [repoId] });
 			const closurePaths = await resolveClosure(db, repoId);
 			const allRepos = await listRepos(db);
 			const byPath = new Map(allRepos.map(r => [r.path, r.name] as const));
@@ -1206,6 +1215,7 @@ async function main(): Promise<void> {
 				repoId: string;
 				limit?: number;
 			};
+			await guardSearchRequest({ repoPaths: [repoId] });
 			const closurePaths = await resolveClosure(db, repoId);
 			const queryVec     = await embedQuery(query);
 			return searchEntities(db, queryVec, closurePaths, limit ?? 10, 'code') as Promise<Entity[]>;
@@ -1215,11 +1225,13 @@ async function main(): Promise<void> {
 
 		'search.by_file': async (params) => {
 			const { filePath } = params as { filePath: string };
+			await guardSearchRequest({ filePaths: [filePath] });
 			return findEntitiesByFile(db, filePath);
 		},
 
 		'search.callers_nhop': async (params) => {
 			const { entityId, hops } = params as { entityId: string; hops?: number };
+			await guardSearchRequest({ entityIds: [entityId] });
 			const maxHops = Math.min(hops ?? 1, 3); // cap at 3 to prevent explosion
 			// For 1-hop, use the existing findCallers
 			if (maxHops <= 1) return findCallers(db, entityId) as Promise<Entity[]>;

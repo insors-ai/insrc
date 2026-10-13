@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 57 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 61 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -401,3 +401,37 @@ Run at 2026-10-13T13:26:57.647Z on commit `eae93703`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 213 | 19 s |  |
+
+## t12
+
+Run at 2026-10-13T13:49:35.582Z on commit `4efeb4a0`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: a document that is not awaiting review shows its history and offers send feedback only**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: a document that is not awaiting review shows its history and offers send feedback only | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: author, comment and quote text are set as text, never as markup**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: author, comment and quote text are set as text, never as markup | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: a saved entry with no string author, timestamp or comment is skipped and the strip says how many could not be shown**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: a saved entry with no string author, timestamp or comment is skipped and the strip says how many could not be shown | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 217 | 18.7 s |  |

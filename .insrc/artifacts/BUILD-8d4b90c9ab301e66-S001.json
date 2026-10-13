@@ -4,7 +4,7 @@
     "epicHash": "8d4b90c9ab301e66",
     "storyId": "S001",
     "createdAt": "2026-10-13T12:12:45.679Z",
-    "updatedAt": "2026-10-13T13:26:57.647Z",
+    "updatedAt": "2026-10-13T13:49:35.582Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T11:21:58.998Z",
@@ -55,9 +55,13 @@
       {
         "id": "t11",
         "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
       }
     ],
-    "summary": "New vscode-plugin/src/chat/docs-review-comments.ts exports DOCS_COMMENTS_SOURCE, a sixth source string inlined into the pane's single script (docs-review-panel.ts) after the five existing ones. It holds the text model (a block is a p, li, td, th, heading, blockquote, pre, dd or dt; a passage is a block and two offsets into its own text nodes, so inline markup inside a block does not matter), rvPassage (the passage of a selection and its anchor, or null), rvFind (finding an anchor again: in its section with prefix and suffix, then in its section, then anywhere when it occurs once; never in the Feedback section), rvWrap/rvUnwrap (marks, one per text piece) and the drafts with their thread cards. Behaviour: a selection inside one block of the markdown document shows the round comment button (#insrc-rv-pop); pressing it marks the passage (mark.rv-anno.rv-draft) and opens a thread card under the block with the quote, a field and round add and close buttons; an added comment is a row with the reviewer's name, the tag 'draft, not sent' and a remove control; closing a thread with no comment, or removing its last draft, takes the mark away. No button is offered for a selection across blocks, in the document's own Feedback section, touching a marked passage, blank, longer than 500 characters, or while an HTML tab is on show. The anchor is { quote, sectionSlug, prefix, suffix } with at most 40 characters on each side. A decision posts every draft (in the order made, each with its anchor and the content version) and then the whole-document comment; feedback with neither posts nothing; a marked passage with no comment is not a comment. On a result that is ok with recorded equal to the number sent the drafts, their marks and cards and the field are cleared, in the page and in the saved state; otherwise all are kept. Drafts and the field are kept per artifact through the webview's getState/setState, restored when another run of the shell is given the document, re-placed when the same document is rendered again (an open thread is reopened), and a draft whose quote is no longer in the document is kept, counted as such in the line above the field, and still sent. Everything is built with createElement and textContent; no markup is assigned. Test harness: it now offers document listeners, createTextNode, a settable selection, a saved-state store shared between runs, and an option that gives each rendered block its text as a text node (the stub's innerHTML makes elements without text nodes, unlike a real page). What the stub cannot prove (the real Selection and Range objects, and the button's position) I ran in headless Chrome over the real shell and the Story's LLD: selecting text shows the button, pressing it marks the passage and opens the thread, a cross-block selection shows none, and reject posts one docs-decision with the draft's quote, section slug, prefix and suffix followed by the whole-document comment (/tmp/t9/shell-dark-inline.png and the JSON the run printed). Four mutations each fail the matching named test. SHELL_BASELINE moved by +17462 chars and its history says why. Not in this task: saved comments shown on their passages, margin markers and the whole-document strip (t12). Plugin suite without forced exit: 1235 tests, 1225 pass, 8 skipped, 2 fail (src/config/__tests__/manifest-catalog.test.ts, failing before this Story).",
+    "summary": "docs-review-comments.ts: a thread is now one passage with its saved comments and its drafts. On every render rvPlaceAll reads docs-content's feedback list, skips and counts entries whose author, timestamp or comment is not a string, orders the rest oldest first (entries of one time keep their stored order), and for each entry with an anchor finds the quote again with rvFind (never in the document's own Feedback section). Entries found on the same passage share one mark (solid; dashed while the passage has a draft) and one margin marker, a button in the document's margin showing the number of comments, placed level with the passage when the page can measure it. A click on the marker or the mark opens the thread card: the quote, the saved comments oldest first with author, local time and decision (tagged 'on an earlier revision' when the entry's version differs from the document's), then drafts and the field; a reply is a draft with that passage's anchor. Entries with no passage go to the strip (a details element between the scrolling region and the comment panel, hidden when empty): whole-document entries, entries on an HTML document (tagged with the file name), and entries whose quote is gone, with the quote shown and tagged 'on an earlier revision'. The strip's summary gives the count and how many saved comments could not be shown. After a clean result a passage with saved comments keeps its thread. A document not awaiting review gets the same history, with approve and reject hidden (from task 9). All text is set with textContent; no markup is assigned. Deliberate change to a task 9 assertion: the strip's list is capped at 170px and scrolls on its own, so there are now two vertical scrollers (the document region and that list); the layout test asserts exactly those two. SHELL_BASELINE moved by +8232 chars with a history line. Four mutations (no time ordering, no skipping, searching the Feedback section, dropping an entry whose quote is gone) each fail a named test. Seen in headless Chrome over the real shell with a sample history (/tmp/t9/shell-dark-history.png): the marked passage, its marker with 2, the open thread oldest first, and the strip with three rows and the could-not-be-shown note. Not checked in a browser: marker positions after a window resize. Plugin suite without forced exit: 1239 tests, 1229 pass, 8 skipped, 2 fail (src/config/__tests__/manifest-catalog.test.ts, failing before this Story).",
     "testRecord": {
       "md": "docs/standalone/rework-document-review-pane-fixed-decision-E202610138d4b90c9/S001/TESTS.md"
     },
@@ -67,191 +71,191 @@
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/artifact-content.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/feedback-carry-finalize.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/review-decision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-content.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/header.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/header.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/format/bindings.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/__tests__/review-fields.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/tool.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/writer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/orchestrator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "src/workflow/review-decision.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/docs-review-client.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/docs-review-comments.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/docs-review-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/turn-lifecycle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:26:57.647Z"
+        "timestamp": "2026-10-13T13:49:35.582Z"
       }
     ],
-    "commit": "eae93703"
+    "commit": "4efeb4a0"
   }
 }

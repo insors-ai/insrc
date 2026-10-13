@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T19:41:57.790Z",
+    "updatedAt": "2026-10-13T20:20:39.779Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -12,8 +12,8 @@
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "e3612253",
-        "ranAt": "2026-10-13T11:53:21.419Z",
+        "commit": "1e26a903",
+        "ranAt": "2026-10-13T20:20:01.815Z",
         "testsPassed": true,
         "tests": [
           {
@@ -71,7 +71,7 @@
             "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5547,
+            "durationMs": 5543,
             "titles": [
               {
                 "title": "OllamaProvider: stream creation and stream iteration failures are raised as ModelCallFailedError with the client error as cause",
@@ -91,6 +91,14 @@
               },
               {
                 "title": "retry helper: a shape failure on the last attempt stays a plain Error even after an earlier failed call",
+                "result": "pass"
+              },
+              {
+                "title": "OllamaProvider: a cancelled call (AbortError) reaches the caller as it was raised, on the call and during iteration, and is not taken for a failed model call",
+                "result": "pass"
+              },
+              {
+                "title": "retry helper: a cancelled attempt (AbortError) ends the helper at once and is re-thrown as it was raised, not retried and not reported as a failure of shape",
                 "result": "pass"
               }
             ],
@@ -1438,8 +1446,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "96d4c105",
-        "ranAt": "2026-10-13T19:36:41.442Z",
+        "commit": "1e26a903",
+        "ranAt": "2026-10-13T20:20:39.779Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1523,7 +1531,7 @@
             "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2460,
+            "durationMs": 2527,
             "titles": [
               {
                 "title": "runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope",
@@ -1587,6 +1595,10 @@
               },
               {
                 "title": "runShaper: a cache hit decides the index state by the same rule as a miss: a generic run, or a run whose caller checked the scope, about a repository being indexed is served from a warm cache as it would be built from a cold one; a code run is refused",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit on a code run whose recorded repository the index no longer holds is refused as not indexed, as the same request is from a cold cache",
                 "result": "pass"
               }
             ],

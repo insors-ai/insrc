@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## t1
 
-Run at 2026-10-13T11:53:21.419Z on commit `e3612253`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-13T20:20:01.815Z on commit `1e26a903`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError**
 
@@ -34,7 +34,7 @@ Run at 2026-10-13T11:53:21.419Z on commit `e3612253`. Tests check: **passed**. 5
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/agent/providers/__tests__/ollama-model-call-failure.test.ts` | 0 | 5 | 5.5 s |  |
+| `src/agent/providers/__tests__/ollama-model-call-failure.test.ts` | 0 | 7 | 5.5 s |  |
 
 ## t2
 
@@ -229,7 +229,7 @@ Run at 2026-10-13T13:11:56.874Z on commit `d721fee2`. Tests check: **passed**. 6
 
 ## t8
 
-Run at 2026-10-13T19:36:41.442Z on commit `96d4c105`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-13T20:20:39.779Z on commit `1e26a903`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle**
 
@@ -267,7 +267,7 @@ Run at 2026-10-13T19:36:41.442Z on commit `96d4c105`. Tests check: **passed**. 7
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/analyze/context/__tests__/run-shaper-wiring.test.ts` | 0 | 16 | 2.5 s |  |
+| `src/analyze/context/__tests__/run-shaper-wiring.test.ts` | 0 | 17 | 2.5 s |  |
 
 ## t9
 

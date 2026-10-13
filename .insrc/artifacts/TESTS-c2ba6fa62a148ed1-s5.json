@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T13:11:56.874Z",
+    "updatedAt": "2026-10-13T13:21:10.640Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1429,6 +1429,160 @@
               },
               {
                 "title": "one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "0ae37186",
+        "ranAt": "2026-10-13T13:21:10.640Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "a bundle cached before the change is not returned",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2382,
+            "titles": [
+              {
+                "title": "runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a refused pairing fails before the scope is resolved or any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a scope outside every registered repo fails as not indexed before any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a cause becomes its typed error and does NOT fall through to the tool loop",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper's run-mode bundle carries the report derived from the executed lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report",
+                "result": "pass"
+              },
+              {
+                "title": "a bundle cached before the change is not returned",
+                "result": "pass"
+              },
+              {
+                "title": "the tool loop's final answer is asked for with a schema that has no report, and a classification bundle carries none",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built",
+                "result": "pass"
+              },
+              {
+                "title": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
                 "result": "pass"
               }
             ],

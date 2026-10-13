@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T13:11:56.874Z
+**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T13:21:10.640Z
 
-**Commit:** d721fee2
+**Commit:** 0ae37186
 
 ## Summary
 
-A scope whose repository is being indexed, or whose last index ended in an error, is now refused with RepoIndexingError (code 'repo-indexing') stating how far the run got, by the analyzer's scope checks (ensureNonEmptyClosure for code and docs, resolveTaskScope for infra and data) and carried by both error mappings and the plan walk; an unreadable or empty registry and a connection scope are not refused.
+runShaper now reads its cache before resolving the request's scope; every bundle records the repository it was built over (repoPath, or null), and a hit is checked against that repository alone: refused while it is under index, a miss once it has been reindexed, and a bundle from before the change is a miss.
 
 ## Tasks validated
 
@@ -19,9 +19,10 @@ A scope whose repository is being indexed, or whose last index ended in an error
 - ✓ `t5`
 - ✓ `t6`
 - ✓ `t7`
+- ✓ `t8`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T13:11:56.874Z)
+- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T13:21:10.640Z)

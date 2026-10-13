@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 39 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -226,3 +226,45 @@ Run at 2026-10-13T13:11:56.874Z on commit `d721fee2`. Tests check: **passed**. 6
 | `src/analyze/context/__tests__/invariants.test.ts` | 0 | 18 | 2 s |  |
 | `src/analyze/executor/__tests__/walker.test.ts` | 0 | 29 | 0.5 s |  |
 | `src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts` | 0 | 9 | 0.8 s |  |
+
+## t8
+
+Run at 2026-10-13T13:21:10.640Z on commit `0ae37186`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle | `src/analyze/context/__tests__/run-shaper-wiring.test.ts` |
+
+**unit: runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss | `src/analyze/context/__tests__/run-shaper-wiring.test.ts` |
+| pass | a bundle cached before the change is not returned | `src/analyze/context/__tests__/run-shaper-wiring.test.ts` |
+
+**unit: runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built | `src/analyze/context/__tests__/run-shaper-wiring.test.ts` |
+
+**unit: bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates | `src/analyze/context/__tests__/run-shaper-wiring.test.ts` |
+| pass | runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle | `src/analyze/context/__tests__/run-shaper-wiring.test.ts` |
+
+**unit: runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks | `src/analyze/context/__tests__/run-shaper-wiring.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/run-shaper-wiring.test.ts` | 0 | 15 | 2.4 s |  |

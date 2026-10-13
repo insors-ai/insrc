@@ -38,6 +38,16 @@
         },
         "comment": "Consolidated into Epic c2ba6fa62a148ed1 (docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md) as Story s3, at the stakeholder's request of 2026-10-10. This issue is not closed and is not to be fixed on its own: it is designed and delivered through that Story, which absorbs it in full.",
         "kind": "comment"
+      },
+      {
+        "id": "0c2e93d1",
+        "author": "subho@insors.io (decision, recorded by the controller)",
+        "timestamp": "2026-10-13T17:15:47.305Z",
+        "target": {
+          "file": "src/db/entities.ts"
+        },
+        "comment": "New per-turn caller of the full entity-table scan (2026-10-13): since ISSUE-7c255f61 (beb499b5, d4b0371e) every code or docs turn of insrc_analyze_step (start, plan, narrow) runs ensureNonEmptyClosure through stepScope -> ensureScopeQueryable, which calls listEntitiesForRepo (src/db/entities.ts:779) only to learn whether the repository has any stored entity. That read decodes every row of the entity table across all repositories: measured about 200 ms per call on an 84,000-entity store (198-214 ms for a 37,000-entity repository, 160 ms for an 11,000-entity one). The same read runs per plan task through resolveTaskScope. An index of entities by repository (or an existence probe that stops at the first entity) would make the check constant-time for every caller. The code review of ISSUE-7c255f61 raised this as MED; it was accepted with a note pending this issue.",
+        "kind": "comment"
       }
     ]
   },

@@ -966,7 +966,9 @@ test('S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce\'d 
   assert.doesNotMatch(html, /id="insrc-editmode"/, 'the old edit-mode toggle is removed');
   assert.match(html, /<select id="insrc-mode"/, 'the single merged mode control is contributed');
   assert.match(html, /type:'set-permission-mode'/, 'the mode control posts set-permission-mode');
-  assert.match(html, /function renderDiff\(/, 'the chat-view diff renderer is still embedded (visualize)');
+  // Story E20261013b2e8109f:S001: the old diff box is gone; the diff widget is a registered row renderer.
+  assert.doesNotMatch(html, /function renderDiff\(/, 'the old diff box renderer is removed');
+  assert.match(html, /register\('diff',function\(vm\)/, 'the diff widget renderer is embedded');
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'still exactly one inline script');
   assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
@@ -3537,7 +3539,6 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   assert.match(html, /pager\.attach\(reg\);/, 'and handed the registry afterwards');
   // Every append goes through the pager.
   assert.match(html, /function line\(s,cls\)\{const d=document\.createElement\('div'\);if\(cls\)d\.className=cls;d\.textContent=s;return pager\.append\(d\);\}/, 'line() appends through the pager');
-  assert.match(html, /box\.appendChild\(bar\);\}pager\.append\(box\);\}/, 'renderDiff appends through the pager');
   assert.match(html, /if\(_c\)\{pager\.append\(_c\);\}/, 'the approval card appends through the pager');
   assert.doesNotMatch(html, /(?<![\w$])t\.appendChild\(/, 'nothing appends to the transcript element directly');
   // Restore: reset, then replay with absolute keys, each row stamped with its index.
@@ -3547,7 +3548,7 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   assert.match(html, /else if\(m\.type==='transcript-page'\)\{pager\.prepend\(m\);\}/);
   assert.match(html, /if\(m\.type==='turn-event'\)\{const ev=m\.event;pager\.track\(m\.rowIndex,function\(\)\{/);
   assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments\}\),m\.key\);\}\);\}/);
-  assert.match(html, /pager\.track\(undefined,function\(\)\{renderDiff\(/, 'a diff card is tracked too');
+  assert.match(html, /else if\(m\.type==='transcript-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{var r=m\.row;if\(r&&r\.role==='diff'&&r\.replaces!=null\)\{reg\.redrawDiff\(r\);\}else if\(r\)\{reg\.renderRow\(reg\.toViewModel\(r\)\);\}\}\);\}/, 'a row the host pushed is tracked with its index too');
   assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
   assert.match(html, /setProvLock\(_total>0\);/, 'the provider lock settles from total');
 });

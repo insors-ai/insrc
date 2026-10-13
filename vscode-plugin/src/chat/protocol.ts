@@ -91,6 +91,13 @@ export type HostToWebview =
     }
   | { readonly type: 'history-list'; readonly chats: ChatSummary[] }
   | { readonly type: 'edit-prompt'; readonly path: string; readonly diff: UnifiedDiff; readonly review?: boolean }
+  /**
+   * Story E20261013b2e8109f:S001: a transcript row the host pushed outside the event path (a diff
+   * section, or one of the host's own marker lines), with its absolute index. A diff row with
+   * `replaces` redraws the widget of that section; any other row is drawn as the same row is drawn
+   * on restore.
+   */
+  | { readonly type: 'transcript-row'; readonly rowIndex: number; readonly row: TranscriptEntry }
   // ISSUE-6a811b8a: the shown approval card's place in the queue changed ('1 of N'); update it in place.
   | { readonly type: 'approval-position'; readonly requestId: string; readonly position: number; readonly total: number }
   | { readonly type: 'docs-list'; readonly artifacts: DocsArtifactSummary[] }
@@ -257,6 +264,7 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'session-restored',
   'history-list',
   'edit-prompt',
+  'transcript-row',
   'docs-list',
   'docs-content',
   'user-row',

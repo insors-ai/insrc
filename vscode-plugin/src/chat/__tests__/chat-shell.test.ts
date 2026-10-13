@@ -376,3 +376,114 @@ test('shell script: a chip click on a sent message posts open-attachment, and th
   assert.doesNotThrow(() => plain.msg({ type: 'attachments-pending', sessionId: 's1', items: [{ id: 'x', name: 'x', kind: 'file', size: 1 }] }));
   assert.equal(plain.sent.length, before);
 });
+
+// Story E20261013b2e8109f:S001 / t5 — the row message and the diff widget, run in the real shell script.
+const diffRowMsg = (over: Record<string, unknown> = {}): Record<string, unknown> =>
+  ({ role: 'diff', sid: 'k-0', path: 'src/a.ts', oldStart: 1, oldLines: 2, newStart: 1, newLines: 3, added: 1, removed: 0, lines: [' a', '+b', ' c'], at: 't', ...over });
+const widgets = (v: Shell): BodyStub[] => v.term.children.filter((n) => n.className.split(/\s+/).includes('insrc-diffw'));
+const rowOf = (n: BodyStub): unknown => (n as unknown as { __row: unknown }).__row;
+
+test('transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing', () => {
+  const v = runShell();
+  v.msg({ type: 'session-restored', sessionId: 's1', transcript: [{ role: 'user', text: 'go', at: 't' }], firstIndex: 0, total: 1, mode: 'manual' });
+  assert.equal(v.term.children.length, 1);
+
+  // A new section: one widget, appended, stamped with the row's index.
+  const long = Array.from({ length: 10 }, (_, i) => `+v1 ${i}`);
+  v.msg({ type: 'transcript-row', rowIndex: 1, row: diffRowMsg({ lines: long, added: 10 }) });
+  v.msg({ type: 'transcript-row', rowIndex: 2, row: diffRowMsg({ sid: 'k-1', path: 'src/b.ts' }) });
+  assert.equal(v.term.children.length, 3);
+  const [first, second] = widgets(v);
+  assert.equal(rowOf(first!), 1);
+  assert.equal(rowOf(second!), 2);
+  assert.equal(byClass(first!, 'insrc-diffw__text')[0]!.textContent, 'v1 0');
+
+  // The reader opens the first widget; a later version redraws it in place and it stays open.
+  fire(byClass(first!, 'insrc-diffw__more')[0]!, 'click');
+  assert.ok(first!.className.includes('insrc-diffw--open'));
+  v.msg({ type: 'transcript-row', rowIndex: 3, row: diffRowMsg({ sid: undefined, replaces: 'k-0', lines: Array.from({ length: 12 }, (_, i) => `+v2 ${i}`), added: 12 }) });
+  assert.equal(v.term.children.length, 3, 'no new node for a later version');
+  assert.equal(widgets(v)[0], first, 'the same widget');
+  assert.ok(first!.className.includes('insrc-diffw--open'));
+  assert.equal(byClass(first!, 'insrc-diffw__text')[0]!.textContent, 'v2 0');
+  assert.equal(byClass(first!, 'insrc-diffw__line').length, 12);
+  assert.equal(rowOf(first!), 1, 'it keeps its own row index');
+
+  // A withdrawn section is hidden in place.
+  v.msg({ type: 'transcript-row', rowIndex: 4, row: diffRowMsg({ sid: undefined, replaces: 'k-1', path: 'src/b.ts', lines: [], withdrawn: true }) });
+  assert.equal(v.term.children.length, 3);
+  assert.ok(second!.className.split(/\s+/).includes('insrc-diffw--gone'));
+  assert.equal(second!.children.length, 0);
+
+  // A later version of a section the view does not hold changes nothing.
+  const before = v.term.children.map((n) => n.className).join('|');
+  v.msg({ type: 'transcript-row', rowIndex: 5, row: diffRowMsg({ sid: undefined, replaces: 'never-seen' }) });
+  assert.equal(v.term.children.length, 3);
+  assert.equal(v.term.children.map((n) => n.className).join('|'), before);
+
+  // After the view is reset the remembered widgets are forgotten: a late version of an old section is ignored.
+  v.msg({ type: 'session-restored', sessionId: 's2', transcript: [], firstIndex: 0, total: 0, mode: 'manual' });
+  v.msg({ type: 'transcript-row', rowIndex: 0, row: diffRowMsg({ sid: undefined, replaces: 'k-0' }) });
+  assert.equal(v.term.children.length, 0);
+
+  // A widget the pager trimmed from the view is forgotten too.
+  const t = runShell();
+  t.msg({ type: 'session-restored', sessionId: 's3', transcript: [{ role: 'user', text: 'q0', at: 't' }], firstIndex: 0, total: 1, mode: 'manual' });
+  t.msg({ type: 'transcript-row', rowIndex: 1, row: diffRowMsg() });
+  for (let i = 2; i < 420; i++) t.msg({ type: 'turn-event', rowIndex: i, event: i % 20 === 0 ? { kind: 'done', turnId: 't', ok: true } : { kind: 'assistant-delta', turnId: 't', text: `a${i}` } });
+  for (let i = 420; i < 440; i++) t.msg({ type: 'user-row', rowIndex: i, text: `q${i}`, key: `u${i}` });
+  assert.equal(widgets(t).length, 0, 'the widget was trimmed from the view');
+  const held = t.term.children.map((n) => n.className + n.textContent).join('|');
+  t.msg({ type: 'transcript-row', rowIndex: 440, row: diffRowMsg({ sid: undefined, replaces: 'k-0', lines: ['+late'] }) });
+  assert.equal(t.term.children.map((n) => n.className + n.textContent).join('|'), held, 'a version for a trimmed widget changes nothing');
+});
+
+test('transcript-row: a marker row appends the same line a restored marker row draws', () => {
+  const marker = { role: 'marker', text: '15 more changed sections in 4 files are not shown', cssClass: 'insrc-term__marker--edit', at: 't' };
+  const live = runShell();
+  live.msg({ type: 'session-restored', sessionId: 's1', transcript: [{ role: 'user', text: 'go', at: 't' }], firstIndex: 0, total: 1, mode: 'manual' });
+  live.msg({ type: 'transcript-row', rowIndex: 1, row: marker });
+  const restored = runShell();
+  restored.msg({ type: 'session-restored', sessionId: 's1', transcript: [{ role: 'user', text: 'go', at: 't' }, marker], firstIndex: 0, total: 2, mode: 'manual' });
+  assert.equal(live.term.children.length, 2);
+  assert.equal(restored.term.children.length, 2);
+  const a = live.term.children[1]!;
+  const b = restored.term.children[1]!;
+  assert.equal(a.textContent, marker.text);
+  assert.equal(a.className, 'insrc-term__marker--edit');
+  assert.deepEqual([a.tagName, a.className, a.textContent, a.children.length], [b.tagName, b.className, b.textContent, b.children.length]);
+  assert.equal(rowOf(a), 1);
+});
+
+test('diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget', () => {
+  const v = runShell();
+  // Rows 100..103 are restored: a first row already in its latest version (as the host cuts it), a
+  // later version (draws nothing), a withdrawn first row (draws nothing).
+  const window = [
+    { role: 'user', text: 'q100', at: 't' },
+    diffRowMsg({ sid: 'k-9', lines: ['+latest'] }),
+    diffRowMsg({ sid: undefined, replaces: 'k-9', lines: ['+latest'] }),
+    diffRowMsg({ sid: 'k-8', path: 'src/gone.ts', lines: [], withdrawn: true }),
+  ];
+  v.msg({ type: 'session-restored', sessionId: 's1', transcript: window, firstIndex: 100, total: 104, mode: 'manual' });
+  assert.equal(v.term.children.length, 2, 'the user row and one widget');
+  const [w] = widgets(v);
+  assert.ok(w, 'the restored diff row is in the transcript element');
+  assert.equal(rowOf(w!), 101);
+  assert.equal(byClass(w!, 'insrc-diffw__text')[0]!.textContent, 'latest');
+  assert.equal(byClass(w!, 'insrc-diffw__path')[0]!.attrs['title'], 'src/a.ts');
+  // A restored widget is remembered too: a live later version redraws it.
+  v.msg({ type: 'transcript-row', rowIndex: 104, row: diffRowMsg({ sid: undefined, replaces: 'k-9', lines: ['+newer'] }) });
+  assert.equal(byClass(w!, 'insrc-diffw__text')[0]!.textContent, 'newer');
+
+  // An older page: its diff row is drawn above the held rows.
+  fire(v.bar, 'click');
+  assert.deepEqual(v.sent.at(-1), { type: 'load-older', sessionId: 's1', before: 100 });
+  const page = [{ role: 'user', text: 'q98', at: 't' }, diffRowMsg({ sid: 'k-1', path: 'src/older.ts', lines: ['+old page'] })];
+  v.msg({ type: 'transcript-page', sessionId: 's1', before: 100, firstIndex: 98, rows: page, total: 105 });
+  assert.equal(v.term.children.length, 4);
+  const older = widgets(v)[0]!;
+  assert.equal(rowOf(older), 99);
+  assert.equal(byClass(older, 'insrc-diffw__path')[0]!.attrs['title'], 'src/older.ts');
+  assert.equal(v.term.children.indexOf(older), 1, 'above the rows held before');
+});

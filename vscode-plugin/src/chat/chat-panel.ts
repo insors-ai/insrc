@@ -647,6 +647,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // The scrolling transcript band (mock .term): the only overflow region, its own padding +
       // subtle top gradient. Replaces the former inset .pad wrapper so progress/input are full bars.
       `#insrc-term{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:16px 14px;white-space:pre-wrap;word-break:break-word;color:var(--fg);background:var(--panel);}` +
+      // Story E20261013b2e8109f:S001: a row of the transcript never shrinks. A row with overflow:hidden
+      // has a minimum height of zero in a flex column, which is how the old diff box was squashed to nothing.
+      `#insrc-term>*{flex-shrink:0;}` +
       `#insrc-term>div{white-space:pre-wrap;}` +
       // Story E20261012ddc4ede1:S001: the 'load earlier' bar above the transcript. The pager shows
       // it (with the count of older rows) only while rows older than the first held one exist.
@@ -730,13 +733,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.chrome #insrc-history{max-width:100%;}` +
       // The ground and text are set here too: the shared sheet's `.insrc-term-diff` rule would paint them.
       `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;background:var(--panel);color:var(--fg);}` +
-      `.insrc-diff-path{color:var(--dim);padding:4px 10px;background:var(--bg-inset);border-bottom:1px solid var(--border);}` +
-      `.insrc-diff-add{background:var(--add-bg);outline:1px solid var(--add-border);outline-offset:-1px;color:var(--fg-strong);padding:0 10px;}` +
-      `.insrc-diff-del{background:var(--del-bg);outline:1px solid var(--del-border);outline-offset:-1px;color:var(--fg);padding:0 10px;}` +
-      `.insrc-diff-ctx{color:var(--muted);padding:0 10px;}` +
-      `.insrc-diff-actions{display:flex;gap:8px;padding:8px 10px;background:var(--bg-inset);}` +
-      `.insrc-diff-actions button{border:1px solid var(--border-lit);background:var(--btn2-bg);color:var(--btn2-fg);border-radius:6px;padding:4px 12px;font-family:var(--font);cursor:pointer;}` +
-      `.insrc-diff-actions button:hover{background:var(--btn2-hover);}` +
       // S001 sc1: the shared collapse/chevron primitive styles (icon-only chevron + 3-line clamp, k6 a/b).
       RENDER_REGISTRY_STYLE +
       // S001 (bugfix) — full mock parity (k5, docs/epics/…/mocks.html): the .msg card system.
@@ -775,7 +771,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `</style>`;
     const provCls = surfaceClass('provider-dropdown');
     const histCls = surfaceClass('history-dropdown');
-    const diffCls = surfaceClass('inline-diff'); // S006: sc1 'inline-diff' surface for the chat-view diff
     // S005: provider <option>s are rendered server-side from providers.available (the
     // installed claude/codex set is fixed per panel, k4) so NO new sc3 message is needed;
     // values are attribute-escaped. Empty available -> the selector is disabled.
@@ -902,10 +897,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function updatePermSeg(){if(pmseg)pmseg.className='seg'+(pmode==='auto'?' perm-auto':'');}` +
       `updatePermSeg();` +
       `if(pm)pm.addEventListener('change',function(){pmode=(pm.value==='auto'||pm.value==='edit-auto')?pm.value:'manual';vs.postMessage({v:1,payload:{type:'set-permission-mode',mode:pmode}});updatePermSeg();});` +
-      // renderDiff: one row per hunk line via textContent (no innerHTML); add/remove/context
-      // class by the +/-/space prefix computeDiff wrote. In review mode append accept/reject
-      // buttons that post edit-decision for this path.
-      `function renderDiff(path,diff,review){var box=document.createElement('div');box.className=${JSON.stringify(diffCls)};var hdr=document.createElement('div');hdr.className='insrc-diff-path';hdr.textContent=path;box.appendChild(hdr);var hunks=(diff&&diff.hunks)||[];hunks.forEach(function(h){(h.lines||[]).forEach(function(ln){var d=document.createElement('div');var c=ln.charAt(0);d.className=c==='+'?'insrc-diff-add':c==='-'?'insrc-diff-del':'insrc-diff-ctx';d.textContent=ln;box.appendChild(d);});});if(review){var bar=document.createElement('div');bar.className='insrc-diff-actions';var ok=document.createElement('button');ok.textContent='accept';ok.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:true}});bar.remove();});var no=document.createElement('button');no.textContent='reject';no.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:false}});bar.remove();});bar.appendChild(ok);bar.appendChild(no);box.appendChild(bar);}pager.append(box);}` +
       // S001 sc1/t4: the live turn-event append routes through reg.renderRow(reg.toViewModel(ev)).
       // assistant-delta -> assistant-text row (its actual text, ac2); tool-call -> tool-command row
       // (the real command inline, ac3). Every other kind keeps the sc1 marker path (markerFor ->
@@ -920,11 +911,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName,position:ev.position,total:ev.total}});if(_c){pager.append(_c);}}` +
       `else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}});` +
       `if(ev&&(ev.kind==='done'||ev.kind==='error')){setRunning(false);hideProgress();}}` +
-      // S006: an edit-prompt carries the computed diff + the HOST's review flag -> render it
-      // (+ accept/reject controls only when the host says review; never gated on local state).
       // ISSUE-6a811b8a: more requests queued behind the shown card — update its '1 of N' in place.
       `else if(m.type==='approval-position'){reg.approvalPosition(m.requestId,m.position,m.total);}` +
-      `else if(m.type==='edit-prompt'){pager.track(undefined,function(){renderDiff(m.path,m.diff,m.review===true);});}` +
+      // Story E20261013b2e8109f:S001: a row the host pushed outside the event path. A later version
+      // of a diff section (a row with replaces) redraws that section's widget in place; any other
+      // row (a new section, one of the host's marker lines) is drawn as it is on restore.
+      `else if(m.type==='transcript-row'){pager.track(m.rowIndex,function(){var r=m.row;if(r&&r.role==='diff'&&r.replaces!=null){reg.redrawDiff(r);}else if(r){reg.renderRow(reg.toViewModel(r));}});}` +
       // Story E20261012ddc4ede1:S001: an older page the reader asked for; the pager puts it above
       // the held rows and keeps the reader's place (a page it did not ask for is discarded).
       `else if(m.type==='transcript-page'){pager.prepend(m);}` +

@@ -25,6 +25,7 @@
 import type { TranscriptEntry } from './session-store.js';
 import type { TurnEvent } from './stream-events.js';
 import { MARKER_CLASS } from './markers.js';
+import { COLLAPSED_LINES } from './diff-sections.js';
 
 /** The two conversational roles a message row can carry. */
 export type ChatRole = 'user' | 'assistant';
@@ -105,6 +106,11 @@ export interface RenderRegistry {
  * - event 'tool-call'           -> { kind:'tool-command', text: command ?? tool/mcp } (ac3; long commands collapse)
  * - anything else               -> { kind:'fallback', text:'' }
  */
+/** Whether a text is long enough to fold: more than 3 lines or 240 characters (the webview's isLong). */
+export function isLongText(s: string): boolean {
+  return s.split('\n').length > 3 || s.length > 240;
+}
+
 export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
   // A TranscriptEntry carries `role`; a TurnEvent carries `kind`.
   if ('role' in entry) {
@@ -121,7 +127,8 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
     // S001 (dev-chat ux polish): a replayed tool-result row -> the structured tool-result view-model
     // (command line + separator + collapsed output). Single-sourced with the live-event branch below.
     if (entry.role === 'tool-result') {
-      return { kind: 'tool-result', text: entry.command ?? '', collapsible: true, meta: { command: entry.command, output: entry.output } };
+      // Story E20261013b2e8109f:S001: only a long output folds; a short one is drawn plain.
+      return { kind: 'tool-result', text: entry.command ?? '', collapsible: isLongText(entry.output), meta: { command: entry.command, output: entry.output } };
     }
     // S003 (dev-chat ux polish): a replayed permission-outcome row -> the resolved-chip view-model
     // (tool name + decided badge). Single-sourced with the live-event branch below (dual-input parity).
@@ -159,7 +166,7 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
     const meta = entry.callId !== undefined
       ? { command: entry.command, output: entry.output, callId: entry.callId }
       : { command: entry.command, output: entry.output };
-    return { kind: 'tool-result', text: entry.command ?? '', collapsible: true, meta };
+    return { kind: 'tool-result', text: entry.command ?? '', collapsible: isLongText(entry.output), meta };
   }
   // S003 (dev-chat ux polish): a live permission-outcome event -> the SAME resolved-chip view-model
   // as its replayed transcript twin (dual-input parity, a test pins the two).
@@ -199,6 +206,41 @@ export const RENDER_REGISTRY_STYLE =
   // S001 (dev-chat ux polish): the tool-result row — a command line (green $ prompt) above a thin
   // separator, then the collapsed output. The command stays visible; only the output collapses.
   `.insrc-toolresult{}` +
+  // Story E20261013b2e8109f:S001: the diff widget (docs/mocks/chat-diff-widget.html). Its ground,
+  // border and text come from the shell's `.insrc-term-diff` rule. It never shrinks in the
+  // transcript's flex column.
+  `.insrc-diffw{flex:0 0 auto;padding:0;}` +
+  `.insrc-diffw__head{display:flex;align-items:center;gap:8px;padding:4px 10px;background:var(--bg-inset);border-bottom:1px solid var(--border);user-select:none;}` +
+  `.insrc-diffw__head[role=button]{cursor:pointer;}` +
+  `.insrc-diffw__head:focus-visible{outline:1px solid var(--focus);outline-offset:-1px;}` +
+  `.insrc-diffw__chev{color:var(--muted);flex:0 0 auto;width:1em;}` +
+  `.insrc-diffw__glyph{color:var(--amber);flex:0 0 auto;}` +
+  // A long path is cut at the front, so the file name stays readable.
+  `.insrc-diffw__path{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left;color:var(--fg);}` +
+  `.insrc-diffw__kind{color:var(--muted);font-size:11.5px;flex:0 0 auto;}` +
+  `.insrc-diffw__stat{display:flex;gap:6px;flex:0 0 auto;font-size:11.5px;}` +
+  `.insrc-diffw__a{color:var(--pass);}` +
+  `.insrc-diffw__d{color:var(--red);}` +
+  `.insrc-diffw__body{overflow-x:auto;}` +
+  `.insrc-diffw__line{display:flex;white-space:pre;}` +
+  `.insrc-diffw__num{flex:0 0 4ch;text-align:right;padding-right:1ch;color:var(--muted);opacity:.7;user-select:none;}` +
+  `.insrc-diffw__sign{flex:0 0 2ch;text-align:center;user-select:none;}` +
+  `.insrc-diffw__text{flex:1 0 auto;padding-right:10px;}` +
+  `.insrc-diffw__line--add{background:var(--add-bg);outline:1px solid var(--add-border);outline-offset:-1px;}` +
+  `.insrc-diffw__line--add .insrc-diffw__sign{color:var(--pass);}` +
+  `.insrc-diffw__line--del{background:var(--del-bg);outline:1px solid var(--del-border);outline-offset:-1px;}` +
+  `.insrc-diffw__line--del .insrc-diffw__sign{color:var(--red);}` +
+  `.insrc-diffw__line--ctx{color:var(--muted);}` +
+  `.insrc-diffw__line--note{color:var(--muted);}` +
+  `.insrc-diffw__omitted{display:none;color:var(--muted);padding:2px 10px;font-size:11.5px;}` +
+  // Folded: the lines after the first 8 and the note of lines not saved are hidden until opened.
+  `.insrc-diffw__line--more{display:none;}` +
+  `.insrc-diffw--open .insrc-diffw__line--more{display:flex;}` +
+  `.insrc-diffw--open .insrc-diffw__omitted{display:block;}` +
+  `.insrc-diffw__more{display:block;width:100%;text-align:left;font:inherit;font-size:11.5px;padding:3px 10px;color:var(--link);background:var(--bg-inset);border:0;border-top:1px solid var(--border);cursor:pointer;}` +
+  `.insrc-diffw__more:hover{text-decoration:underline;}` +
+  `.insrc-diffw--empty .insrc-diffw__body{padding:4px 10px;color:var(--muted);font-size:12px;}` +
+  `.insrc-diffw--gone{display:none;}` +
   // Story E2026101259da3204:S001: the attachment chips under a user message.
   `.insrc-attchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}` +
   `.insrc-bubble>.insrc-attchips:first-child{margin-top:0;}` +
@@ -403,7 +445,7 @@ export function renderRegistryWebviewSource(): string {
     // Story E20261013b2e8109f:S001: a diff row -> the diff widget; the row itself rides on meta.
     `if(entry.role==='diff')return {kind:'diff',text:entry.path,collapsible:false,meta:entry};` +
     // S001 (dev-chat ux polish): a replayed tool-result row -> the structured tool-result view-model.
-    `if(entry.role==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:{command:entry.command,output:entry.output}};` +
+    `if(entry.role==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:isLong(entry.output),meta:{command:entry.command,output:entry.output}};` +
     // S003 (dev-chat ux polish): a replayed permission-outcome row -> the resolved-chip view-model.
     `if(entry.role==='permission-outcome')return {kind:'permission-outcome',text:entry.toolName,collapsible:false,meta:{toolName:entry.toolName,decision:entry.decision}};` +
     // S004 (dev-chat ux polish): a replayed selection-outcome row -> the resolved-chip view-model.
@@ -414,7 +456,7 @@ export function renderRegistryWebviewSource(): string {
     `if(entry.kind==='assistant-delta')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
     `if(entry.kind==='tool-call'){var label=entry.command!=null?entry.command:(entry.mcp?(entry.mcp.server+' \\u00b7 '+entry.mcp.name):entry.tool);return entry.callId!==undefined?{kind:'tool-command',text:label,collapsible:false,meta:{callId:entry.callId}}:{kind:'tool-command',text:label,collapsible:false};}` +
     // S001 (dev-chat ux polish): a live tool-result event -> the SAME structured view-model (parity).
-    `if(entry.kind==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:entry.callId!==undefined?{command:entry.command,output:entry.output,callId:entry.callId}:{command:entry.command,output:entry.output}};` +
+    `if(entry.kind==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:isLong(entry.output),meta:entry.callId!==undefined?{command:entry.command,output:entry.output,callId:entry.callId}:{command:entry.command,output:entry.output}};` +
     // S003 (dev-chat ux polish): a live permission-outcome event -> the SAME resolved-chip view-model (parity).
     `if(entry.kind==='permission-outcome')return {kind:'permission-outcome',text:entry.toolName,collapsible:false,meta:{toolName:entry.toolName,decision:entry.decision}};` +
     // S004 (dev-chat ux polish): a live selection-request event -> the card view-model (parity with host).
@@ -489,15 +531,64 @@ export function renderRegistryWebviewSource(): string {
     `if(cmd!==''&&cmd!==pend.cmd){pend.box.removeChild(pend.head);pend.box.appendChild(toolCmd(cmd,host));}` +
     `var ps=document.createElement('div');ps.className='insrc-toolresult__sep';pend.box.appendChild(ps);` +
     `var po=document.createElement('div');po.className='insrc-toolresult__out';po.textContent=output;` +
-    `pend.box.appendChild(host.collapsible(po,{defaultCollapsed:true}));return pend.wrap;}` +
+    `pend.box.appendChild(isLong(output)?host.collapsible(po,{defaultCollapsed:true}):po);return pend.wrap;}` +
     `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--toolresult';` +
     `if(cmd!==''){var c=document.createElement('div');c.className='insrc-toolresult__cmd';` +
     `var p=document.createElement('span');p.className='insrc-toolresult__prompt';p.textContent='$';c.appendChild(p);` +
     `var ct=document.createElement('span');ct.textContent=' '+cmd;c.appendChild(ct);wrap.appendChild(c);}` +
     `var sep=document.createElement('div');sep.className='insrc-toolresult__sep';wrap.appendChild(sep);` +
     `var out=document.createElement('div');out.className='insrc-toolresult__out';out.textContent=output;` +
-    `wrap.appendChild(host.collapsible(out,{defaultCollapsed:true}));return wrap;}` +
+    `wrap.appendChild(isLong(output)?host.collapsible(out,{defaultCollapsed:true}):out);return wrap;}` +
     `register('tool-result',function(vm,host){return toolResultRow(vm,host);});` +
+    // Story E20261013b2e8109f:S001: the diff widget, one per section of a file's diff (the mock is
+    // docs/mocks/chat-diff-widget.html). Built through line() like every saved kind, so the live
+    // path, the restore handler and the pager's older-page path all append it. The first
+    // DIFF_LIMIT lines show; the header and the 'show N more lines' button open the rest. A widget
+    // is remembered under its row's sid so a later version of the section (a row with `replaces`)
+    // rebuilds it in place. className/textContent only (k1, CSP-safe); open/closed and hidden are
+    // classes, never inline styles.
+    `var DIFFS={};var DIFF_LIMIT=${COLLAPSED_LINES};var DIFF_CLS='insrc-term-diff insrc-diffw';` +
+    `function dEl(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}` +
+    `function fillDiff(box,row,open){` +
+    `var kids=box.children;while(kids&&kids.length)box.removeChild(kids[0]);box.textContent='';` +
+    `var head=dEl('div','insrc-diffw__head');var chev=dEl('span','insrc-diffw__chev','');head.appendChild(chev);` +
+    `head.appendChild(dEl('span','insrc-diffw__glyph','\\u270e'));` +
+    `var p=String(row.path!=null?row.path:'');var path=dEl('span','insrc-diffw__path');path.appendChild(dEl('bdi','',p));path.setAttribute('title',p);head.appendChild(path);` +
+    `var kind=row.binary?'binary file':row.fileState==='new'?'new file':row.fileState==='deleted'?'deleted':'';` +
+    `if(kind)head.appendChild(dEl('span','insrc-diffw__kind',kind));` +
+    `var stat=dEl('span','insrc-diffw__stat');stat.appendChild(dEl('span','insrc-diffw__a','+'+(row.added||0)));stat.appendChild(dEl('span','insrc-diffw__d','\\u2212'+(row.removed||0)));head.appendChild(stat);` +
+    `box.appendChild(head);var body=dEl('div','insrc-diffw__body');box.appendChild(body);` +
+    `var lines=row.lines||[];` +
+    `if(row.binary||lines.length===0){box.className=DIFF_CLS+' insrc-diffw--empty';body.textContent=row.binary?'binary file changed':'no lines';return box;}` +
+    `var oldNo=row.oldStart||0,newNo=row.newStart||0;` +
+    `for(var i=0;i<lines.length;i++){var l=String(lines[i]);var c=l.charAt(0);var note=c==='\\\\';` +
+    `var r=dEl('div','insrc-diffw__line insrc-diffw__line--'+(c==='+'?'add':c==='-'?'del':note?'note':'ctx')+(i>=DIFF_LIMIT?' insrc-diffw__line--more':''));` +
+    `r.appendChild(dEl('span','insrc-diffw__num',note?'':String(c==='-'?oldNo:newNo)));` +
+    `r.appendChild(dEl('span','insrc-diffw__sign',c==='+'?'+':c==='-'?'\\u2212':''));` +
+    `r.appendChild(dEl('span','insrc-diffw__text',note?l:l.slice(1)));` +
+    `if(c==='-')oldNo++;else if(c==='+')newNo++;else if(!note){oldNo++;newNo++;}` +
+    `body.appendChild(r);}` +
+    `var omitted=row.omitted>0?row.omitted:0;` +
+    `if(omitted)body.appendChild(dEl('div','insrc-diffw__omitted',omitted+' more line'+(omitted===1?'':'s')+' not saved'));` +
+    `var hidden=lines.length-DIFF_LIMIT;var isOpen=!!open&&hidden>0;` +
+    `if(hidden<=0){box.className=DIFF_CLS;return box;}` +
+    `var more=dEl('button','insrc-diffw__more');more.setAttribute('type','button');` +
+    `function paint(){box.className=DIFF_CLS+(isOpen?' insrc-diffw--open':'');chev.textContent=isOpen?'\\u25be':'\\u25b8';` +
+    `more.textContent=isOpen?'show less':'show '+hidden+' more line'+(hidden===1?'':'s');}` +
+    `function toggle(){isOpen=!isOpen;paint();}` +
+    `head.setAttribute('role','button');head.setAttribute('tabindex','0');` +
+    `head.addEventListener('click',toggle);more.addEventListener('click',toggle);` +
+    `head.addEventListener('keydown',function(e){if(e&&(e.key==='Enter'||e.key===' ')){if(e.preventDefault)e.preventDefault();toggle();}});` +
+    `box.appendChild(more);paint();return box;}` +
+    // A row with `replaces` is a later version of a section and a withdrawn one is gone: neither
+    // draws at its own place.
+    `register('diff',function(vm){var row=(vm&&vm.meta)||{};if(row.replaces!=null||row.withdrawn)return null;` +
+    `var box=line('');fillDiff(box,row,false);if(row.sid!=null)DIFFS[String(row.sid)]=box;return box;});` +
+    // redrawDiff(row): rebuild the widget remembered under row.replaces, keep it open if it was
+    // open, hide it when the section was withdrawn; nothing when no such widget is held.
+    `function redrawDiff(row){if(!row||row.replaces==null)return false;var box=DIFFS[String(row.replaces)];if(!box)return false;` +
+    `if(row.withdrawn){var ks=box.children;while(ks&&ks.length)box.removeChild(ks[0]);box.textContent='';box.className=DIFF_CLS+' insrc-diffw--gone';return true;}` +
+    `fillDiff(box,row,(' '+box.className+' ').indexOf(' insrc-diffw--open ')>=0);return true;}` +
     // S004: the approval card (k6 i). requestId/title/detail ride vm.meta (chat-panel's live
     // handler builds the vm from an ApprovalRequestEvent). Icon-only approve(\\u2713)/deny(\\u2717)
     // buttons call the decision sink with (requestId, decision). textContent/className only (k1).
@@ -590,7 +681,7 @@ export function renderRegistryWebviewSource(): string {
     // session-restored, so the fresh replay re-keys from an empty map.
     `var KEYS={};` +
     `function appendKeyed(vm,key){if(key==null)return renderRow(vm);if(KEYS[key])return KEYS[key];var n=renderRow(vm);if(n)KEYS[key]=n;return n;}` +
-    `function resetKeys(){KEYS={};PEND=[];APOS={};}` +
+    `function resetKeys(){KEYS={};PEND=[];APOS={};DIFFS={};}` +
     // Story E20261012ddc4ede1:S001: the registry's part in paging the transcript. A row trimmed
     // from the view must render again when its page is reloaded, so its key is forgotten; an older
     // page renders with its own (empty) pending-tool list, so it never captures or loses a live
@@ -598,7 +689,7 @@ export function renderRegistryWebviewSource(): string {
     // renders as its own row instead of inside a node that is no longer shown.
     `function forgetKeysBefore(idx){for(var k in KEYS){if(/^r\\d+$/.test(k)&&Number(k.slice(1))<idx)delete KEYS[k];}}` +
     `function withIsolatedPending(fn){var live=PEND;PEND=[];try{return fn();}finally{PEND=live;}}` +
-    `function forgetPendingIn(nodes){PEND=PEND.filter(function(p){return nodes.indexOf(p.wrap)<0;});}` +
-    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,forgetKeysBefore:forgetKeysBefore,withIsolatedPending:withIsolatedPending,forgetPendingIn:forgetPendingIn,onSelectionDecision:onSelectionDecision,onAttachmentOpen:onAttachmentOpen,attachmentSize:attSize};}`
+    `function forgetPendingIn(nodes){PEND=PEND.filter(function(p){return nodes.indexOf(p.wrap)<0;});for(var k in DIFFS){if(nodes.indexOf(DIFFS[k])>=0)delete DIFFS[k];}}` +
+    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,forgetKeysBefore:forgetKeysBefore,withIsolatedPending:withIsolatedPending,forgetPendingIn:forgetPendingIn,redrawDiff:redrawDiff,onSelectionDecision:onSelectionDecision,onAttachmentOpen:onAttachmentOpen,attachmentSize:attSize};}`
   );
 }

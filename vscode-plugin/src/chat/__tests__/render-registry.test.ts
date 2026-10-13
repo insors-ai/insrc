@@ -70,6 +70,7 @@ interface Registry {
   forgetKeysBefore(index: number): void;
   withIsolatedPending<T>(fn: () => T): T;
   forgetPendingIn(nodes: FakeNode[]): void;
+  redrawDiff(row: unknown): boolean;
 }
 function makeRegistry(): { reg: Registry; appended: FakeNode[] } {
   const { document } = fakeDocument();
@@ -444,7 +445,9 @@ test('S003 k6 c: inline-diff wraps its body in the collapse primitive with a cap
 test('S001 (ux polish): toViewModel maps a live tool-result event and its replayed twin to the SAME view-model (dual-input)', () => {
   const live: TurnEvent = { kind: 'tool-result', turnId: 't', command: 'npm test', output: 'ok\nfine' };
   const replayed: TranscriptEntry = { role: 'tool-result', command: 'npm test', output: 'ok\nfine', at: 't' };
-  const expected = { kind: 'tool-result', text: 'npm test', collapsible: true, meta: { command: 'npm test', output: 'ok\nfine' } };
+  // A short output does not fold (Story E20261013b2e8109f:S001); a long one does.
+  const expected = { kind: 'tool-result', text: 'npm test', collapsible: false, meta: { command: 'npm test', output: 'ok\nfine' } };
+  assert.equal(toViewModel({ kind: 'tool-result', turnId: 't', output: 'l1\nl2\nl3\nl4' }).collapsible, true);
   assert.deepEqual(toViewModel(live), expected, 'live event -> structured tool-result vm');
   assert.deepEqual(toViewModel(replayed), expected, 'replayed entry -> the identical vm');
   // A command-less pair: text is '' and meta.command is undefined, consistent across both inputs.
@@ -477,13 +480,42 @@ test('S001 (ux polish): the tool-result renderer shows the command + a separator
   assert.ok(!findByClass(wrap!, 'insrc-toolresult__cmd'), 'the command line is OUTSIDE the collapse (always visible)');
 });
 
-test('S001 (ux polish): a command-less tool-result renders no command line but still collapses the output', () => {
+test('S001 (ux polish): a command-less tool-result renders no command line and its output', () => {
   const { reg } = makeRegistry();
   const row = reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', output: 'just output' } as TurnEvent))!;
   assert.ok(!findByClass(row, 'insrc-toolresult__cmd'), 'no command line when the command is empty');
-  const wrap = findByClass(row, 'insrc-collapse');
-  assert.ok(wrap && /insrc-collapse--collapsed/.test(wrap.className), 'the output is still collapsed');
   assert.ok(allText(row).includes('just output'), 'the output text is present');
+});
+
+// Story E20261013b2e8109f:S001 / t5 — only output long enough to fold gets the chevron.
+test('tool result: a short output is drawn with no chevron and a long one folds', () => {
+  const LONG = 'l1\nl2\nl3\nl4';
+  for (const output of ['The file a.ts has been updated.', 'one\ntwo\nthree', '']) {
+    const { reg } = makeRegistry();
+    // standalone row
+    const alone = reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', output } as TurnEvent))!;
+    assert.equal(findByClass(alone, 'insrc-collapse'), undefined, `no fold for ${JSON.stringify(output)}`);
+    assert.equal(findByClass(alone, 'insrc-collapse__chevron'), undefined);
+    assert.equal(findByClass(alone, 'insrc-toolresult__out')!.textContent, output);
+    // attached to its tool row
+    const tool = reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'ls', callId: 'c1' } as TurnEvent))!;
+    reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', command: 'ls', output, callId: 'c1' } as TurnEvent));
+    assert.equal(findByClass(tool, 'insrc-collapse'), undefined);
+    assert.equal(findByClass(tool, 'insrc-toolresult__out')!.textContent, output);
+  }
+  for (const output of [LONG, 'x'.repeat(241)]) {
+    const { reg } = makeRegistry();
+    const alone = reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', output } as TurnEvent))!;
+    const wrap = findByClass(alone, 'insrc-collapse');
+    assert.ok(wrap && /insrc-collapse--collapsed/.test(wrap.className), 'a long output folds');
+    assert.ok(findByClass(wrap!, 'insrc-toolresult__out'));
+    const tool = reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'ls', callId: 'c1' } as TurnEvent))!;
+    reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', command: 'ls', output, callId: 'c1' } as TurnEvent));
+    assert.ok(findByClass(tool, 'insrc-collapse'));
+  }
+  // The replayed row folds by the same rule, in the host and in the webview.
+  assert.equal(toViewModel({ role: 'tool-result', output: 'short', at: 't' }).collapsible, false);
+  assert.equal(toViewModel({ role: 'tool-result', output: LONG, at: 't' }).collapsible, true);
 });
 
 // ISSUE-b1c7c1bc: this test replaces one that rendered a 16-character assistant message. isLong()
@@ -1114,4 +1146,126 @@ test('toViewModel: a diff row maps to the diff kind in the host and in the webvi
   const later: TranscriptEntry = { ...row, sid: undefined, replaces: 'k-3', withdrawn: true, lines: [] } as TranscriptEntry;
   assert.deepEqual(reg.toViewModel(later), toViewModel(later));
   assert.equal((toViewModel(later).meta as { replaces: string }).replaces, 'k-3');
+});
+
+// Story E20261013b2e8109f:S001 / t5 — the diff widget.
+const diffRow = (over: Record<string, unknown> = {}): TranscriptEntry =>
+  ({ role: 'diff', sid: 'k-0', path: 'src/chat/a.ts', oldStart: 41, oldLines: 3, newStart: 41, newLines: 4, added: 2, removed: 1, lines: [' keep', '-old', '+new', '+more', ' tail'], at: 't', ...over }) as TranscriptEntry;
+const byClassAll = (node: FakeNode, cls: string): FakeNode[] => [
+  ...(node.className.split(/\s+/).includes(cls) ? [node] : []),
+  ...node.children.flatMap((c) => byClassAll(c, cls)),
+];
+const lineOf = (n: FakeNode): string[] => [findByClass(n, 'insrc-diffw__num')!.textContent, findByClass(n, 'insrc-diffw__sign')!.textContent, findByClass(n, 'insrc-diffw__text')!.textContent];
+
+test('diff widget: header, line numbers, signs and classes are drawn from a diff row; 8 lines show until the header or the button is used', () => {
+  const { reg, appended } = makeRegistry();
+  const lines = [' c1', '-gone', '+a1', '+a2', ' c2', ' c3', '+a3', ' c4', ' c5', '-g2', '+a4', '\\ No newline at end of file'];
+  const box = reg.renderRow(reg.toViewModel(diffRow({ lines, added: 4, removed: 2 })))!;
+  assert.equal(box, appended[0], 'the widget is built through line(), so it is appended like every saved row');
+  assert.deepEqual(box.className.split(' '), ['insrc-term-diff', 'insrc-diffw']);
+  // Header: chevron, glyph, path (with a title), counts.
+  const head = findByClass(box, 'insrc-diffw__head')!;
+  assert.equal(findByClass(head, 'insrc-diffw__chev')!.textContent, '\u25b8');
+  assert.equal(findByClass(head, 'insrc-diffw__glyph')!.textContent, '\u270e');
+  const path = findByClass(head, 'insrc-diffw__path')!;
+  assert.equal(path.attrs['title'], 'src/chat/a.ts');
+  assert.equal(path.children[0]!.tag, 'bdi');
+  assert.equal(path.children[0]!.textContent, 'src/chat/a.ts');
+  assert.equal(findByClass(head, 'insrc-diffw__a')!.textContent, '+4');
+  assert.equal(findByClass(head, 'insrc-diffw__d')!.textContent, '\u22122');
+  assert.equal(findByClass(head, 'insrc-diffw__kind'), undefined, 'an edit of an existing file has no kind label');
+  // Lines: the old number for a removed line, the new number otherwise; the sign; the text without its prefix.
+  const rows = byClassAll(box, 'insrc-diffw__line');
+  assert.equal(rows.length, 12);
+  assert.deepEqual(rows.map(lineOf), [
+    ['41', '', 'c1'], ['42', '\u2212', 'gone'], ['42', '+', 'a1'], ['43', '+', 'a2'], ['44', '', 'c2'], ['45', '', 'c3'],
+    ['46', '+', 'a3'], ['47', '', 'c4'], ['48', '', 'c5'], ['47', '\u2212', 'g2'], ['49', '+', 'a4'], ['', '', '\\ No newline at end of file'],
+  ]);
+  const kindOf = (n: FakeNode): string => /insrc-diffw__line--(add|del|ctx|note)/.exec(n.className)![1]!;
+  assert.deepEqual(rows.map(kindOf), ['ctx', 'del', 'add', 'add', 'ctx', 'ctx', 'add', 'ctx', 'ctx', 'del', 'add', 'note']);
+  // Folded: the lines after the first 8 carry the class the style hides.
+  const more = (n: FakeNode): boolean => n.className.includes('insrc-diffw__line--more');
+  assert.deepEqual(rows.map(more), [false, false, false, false, false, false, false, false, true, true, true, true]);
+  const button = findByClass(box, 'insrc-diffw__more')!;
+  assert.equal(button.tag, 'button');
+  assert.equal(button.textContent, 'show 4 more lines');
+  assert.equal(head.attrs['role'], 'button');
+  // The button opens it; the header closes it again.
+  button.click();
+  assert.ok(box.className.split(' ').includes('insrc-diffw--open'));
+  assert.equal(button.textContent, 'show less');
+  assert.equal(findByClass(head, 'insrc-diffw__chev')!.textContent, '\u25be');
+  head.click();
+  assert.ok(!box.className.includes('insrc-diffw--open'));
+  assert.equal(button.textContent, 'show 4 more lines');
+  // One hidden line reads in the singular.
+  const nine = makeRegistry().reg.renderRow(reg.toViewModel(diffRow({ sid: 'k-1', lines: Array.from({ length: 9 }, (_, i) => `+l${i}`) })))!;
+  assert.equal(findByClass(nine, 'insrc-diffw__more')!.textContent, 'show 1 more line');
+  // The style hides the folded lines and shows them when open; nothing is hidden by an inline style.
+  assert.match(RENDER_REGISTRY_STYLE, /\.insrc-diffw__line--more\{display:none;\}/);
+  assert.match(RENDER_REGISTRY_STYLE, /\.insrc-diffw--open \.insrc-diffw__line--more\{display:flex;\}/);
+  assert.doesNotMatch(renderRegistryWebviewSource(), /\.style\./, 'the renderers set no inline style');
+});
+
+test('diff widget: 8 lines or fewer has no chevron and no button; a binary row, a new file, a deleted file and an omitted count are labelled; a row with replaces or withdrawn appends nothing', () => {
+  // Exactly 8 lines: everything shows, nothing to open.
+  const eight = makeRegistry();
+  const small = eight.reg.renderRow(eight.reg.toViewModel(diffRow({ lines: Array.from({ length: 8 }, (_, i) => `+l${i}`) })))!;
+  assert.equal(findByClass(small, 'insrc-diffw__more'), undefined);
+  assert.equal(findByClass(small, 'insrc-diffw__chev')!.textContent, '');
+  assert.equal(findByClass(small, 'insrc-diffw__head')!.attrs['role'], undefined);
+  assert.equal(byClassAll(small, 'insrc-diffw__line--more').length, 0);
+
+  const label = (over: Record<string, unknown>): FakeNode => {
+    const r = makeRegistry();
+    return r.reg.renderRow(r.reg.toViewModel(diffRow(over)))!;
+  };
+  assert.equal(findByClass(label({ fileState: 'new' }), 'insrc-diffw__kind')!.textContent, 'new file');
+  assert.equal(findByClass(label({ fileState: 'deleted' }), 'insrc-diffw__kind')!.textContent, 'deleted');
+  // A binary file: no lines, its own body text, nothing to open.
+  const bin = label({ binary: true, lines: [], added: 0, removed: 0, fileState: 'new' });
+  assert.equal(findByClass(bin, 'insrc-diffw__kind')!.textContent, 'binary file');
+  assert.equal(findByClass(bin, 'insrc-diffw__body')!.textContent, 'binary file changed');
+  assert.ok(bin.className.split(' ').includes('insrc-diffw--empty'));
+  assert.equal(findByClass(bin, 'insrc-diffw__more'), undefined);
+  // Lines left out of the saved row are named after the last line; the style shows the note only when open.
+  const cut = label({ lines: Array.from({ length: 400 }, (_, i) => `+l${i}`), omitted: 500, added: 900 });
+  assert.equal(findByClass(cut, 'insrc-diffw__omitted')!.textContent, '500 more lines not saved');
+  assert.equal(findByClass(cut, 'insrc-diffw__a')!.textContent, '+900', 'the header counts the whole section');
+  assert.equal(findByClass(cut, 'insrc-diffw__more')!.textContent, 'show 392 more lines');
+  assert.match(RENDER_REGISTRY_STYLE, /\.insrc-diffw__omitted\{display:none;/);
+  assert.match(RENDER_REGISTRY_STYLE, /\.insrc-diffw--open \.insrc-diffw__omitted\{display:block;\}/);
+  assert.equal(findByClass(label({ lines: Array.from({ length: 9 }, () => '+x'), omitted: 1 }), 'insrc-diffw__omitted')!.textContent, '1 more line not saved');
+
+  // A later version of a section and a withdrawn section draw nothing at their own place.
+  const none = makeRegistry();
+  assert.equal(none.reg.renderRow(none.reg.toViewModel(diffRow({ sid: undefined, replaces: 'k-0' }))), null);
+  assert.equal(none.reg.renderRow(none.reg.toViewModel(diffRow({ withdrawn: true, lines: [] }))), null);
+  assert.equal(none.reg.appendKeyed(none.reg.toViewModel(diffRow({ sid: undefined, replaces: 'k-0', withdrawn: true })), 'r7'), null);
+  assert.deepEqual(none.appended, []);
+
+  // redrawDiff rebuilds the widget remembered under the sid, keeps it open, hides it when withdrawn.
+  const live = makeRegistry();
+  const box = live.reg.renderRow(live.reg.toViewModel(diffRow({ lines: Array.from({ length: 10 }, (_, i) => `+v1 ${i}`) })))!;
+  findByClass(box, 'insrc-diffw__more')!.click();
+  assert.equal(live.reg.redrawDiff(diffRow({ sid: undefined, replaces: 'k-0', lines: Array.from({ length: 12 }, (_, i) => `+v2 ${i}`), added: 12 })), true);
+  assert.equal(live.appended.length, 1, 'no second widget');
+  assert.ok(box.className.includes('insrc-diffw--open'), 'an open widget stays open');
+  assert.equal(byClassAll(box, 'insrc-diffw__line').length, 12);
+  assert.equal(findByClass(box, 'insrc-diffw__text')!.textContent, 'v2 0');
+  assert.equal(findByClass(box, 'insrc-diffw__a')!.textContent, '+12');
+  assert.equal(byClassAll(box, 'insrc-diffw__head').length, 1, 'the old content is gone');
+  assert.equal(live.reg.redrawDiff(diffRow({ sid: undefined, replaces: 'nope' })), false, 'an unknown sid changes nothing');
+  assert.equal(live.reg.redrawDiff(diffRow({ sid: undefined, replaces: 'k-0', withdrawn: true, lines: [] })), true);
+  assert.deepEqual(box.className.split(' '), ['insrc-term-diff', 'insrc-diffw', 'insrc-diffw--gone']);
+  assert.equal(box.children.length, 0);
+  assert.match(RENDER_REGISTRY_STYLE, /\.insrc-diffw--gone\{display:none;\}/);
+  // The registry forgets a widget whose node the pager dropped, and every widget on a reset.
+  const drop = makeRegistry();
+  const gone = drop.reg.renderRow(drop.reg.toViewModel(diffRow()))!;
+  drop.reg.forgetPendingIn([gone]);
+  assert.equal(drop.reg.redrawDiff(diffRow({ sid: undefined, replaces: 'k-0' })), false);
+  drop.reg.renderRow(drop.reg.toViewModel(diffRow()));
+  drop.reg.resetKeys();
+  assert.equal(drop.reg.redrawDiff(diffRow({ sid: undefined, replaces: 'k-0' })), false);
 });

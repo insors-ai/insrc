@@ -253,9 +253,9 @@ test('chat theme: each component uses the name the mapping gives it (bars, trans
   for (const [kind, name] of markers) has(`.insrc-term__marker--${kind}::before`, `color:var(${name})!important`);
   assert.equal(new Set(markers.map(([, n]) => n)).size, 5);
   // diff
-  has('.insrc-diff-add', 'background:var(--add-bg)', 'outline:1px solid var(--add-border)');
-  has('.insrc-diff-del', 'background:var(--del-bg)', 'outline:1px solid var(--del-border)');
-  has('.insrc-diff-actions button', 'background:var(--btn2-bg)', 'color:var(--btn2-fg)');
+  has('.insrc-diffw__line--add', 'background:var(--add-bg)', 'outline:1px solid var(--add-border)');
+  has('.insrc-diffw__line--del', 'background:var(--del-bg)', 'outline:1px solid var(--del-border)');
+  has('.insrc-diffw__head', 'background:var(--bg-inset)', 'border-bottom:1px solid var(--border)');
   // approval card, its buttons and the decided badge
   has('.insrc-approval', 'background:var(--warn-bg)', 'border:1px solid var(--warn-border)');
   has('.insrc-approval__title', 'color:var(--warn)');
@@ -343,6 +343,38 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '.insrc-permoutcome__badge.insrc-approval__btn--approve',
     '.insrc-permoutcome__badge.insrc-approval__btn--deny',
     '.insrc-select__confirm--disabled:hover',
+    // Story E20261013b2e8109f:S001: the no-shrink rule and the diff widget (the seven .insrc-diff-* rules of the old box left the fixture).
+    '#insrc-term>*',
+    '.insrc-diffw',
+    '.insrc-diffw--empty .insrc-diffw__body',
+    '.insrc-diffw--gone',
+    '.insrc-diffw--open .insrc-diffw__line--more',
+    '.insrc-diffw--open .insrc-diffw__omitted',
+    '.insrc-diffw__a',
+    '.insrc-diffw__body',
+    '.insrc-diffw__chev',
+    '.insrc-diffw__d',
+    '.insrc-diffw__glyph',
+    '.insrc-diffw__head',
+    '.insrc-diffw__head:focus-visible',
+    '.insrc-diffw__head[role=button]',
+    '.insrc-diffw__kind',
+    '.insrc-diffw__line',
+    '.insrc-diffw__line--add',
+    '.insrc-diffw__line--add .insrc-diffw__sign',
+    '.insrc-diffw__line--ctx',
+    '.insrc-diffw__line--del',
+    '.insrc-diffw__line--del .insrc-diffw__sign',
+    '.insrc-diffw__line--more',
+    '.insrc-diffw__line--note',
+    '.insrc-diffw__more',
+    '.insrc-diffw__more:hover',
+    '.insrc-diffw__num',
+    '.insrc-diffw__omitted',
+    '.insrc-diffw__path',
+    '.insrc-diffw__sign',
+    '.insrc-diffw__stat',
+    '.insrc-diffw__text',
     'body.insrc-term',
     'body.vscode-dark',
     'body.vscode-high-contrast',
@@ -376,4 +408,35 @@ test("chat theme: the shared token sheet and the docs-review markdown rules are 
   }
   // From the chat panel's module it takes only the attribute escaper and two types, not the shell.
   assert.match(panel, /import \{ attr, type ChatPanelChannel, type ChatPanelLogger \} from '\.\/chat-panel\.js';/);
+});
+
+// Story E20261013b2e8109f:S001 / t5 — the diff widget in the shell's style.
+test("chat theme: the transcript's children do not shrink, the diff widget's rules name only the shell's theme names, and the .insrc-term-diff rule still out-ranks the shared sheet", () => {
+  const html = shellHtml();
+  const style = ownStyle(html);
+  // A row with overflow:hidden has a minimum height of zero in a flex column: no row may shrink.
+  assert.match(rule(style, '#insrc-term'), /display:flex;flex-direction:column/);
+  assert.equal(rule(style, '#insrc-term>*'), 'flex-shrink:0;');
+  assert.match(rule(style, '.insrc-diffw'), /flex:0 0 auto/);
+  // The widget's rules: every name they use is one the layer defines, and none is a theme variable.
+  const names = layer(style);
+  const widget = [...RENDER_REGISTRY_STYLE.matchAll(/(\.insrc-diffw[^{]*)\{([^}]*)\}/g)].map((m) => [m[1]!, m[2]!] as const);
+  assert.ok(widget.length >= 25, 'the widget has its rules');
+  const used = new Set<string>();
+  for (const [selector, body] of widget) {
+    assert.ok(!body.includes('--vscode-'), `${selector} names no theme variable`);
+    assert.doesNotMatch(body, /#[0-9a-fA-F]{3,8}\b|rgba?\(/, `${selector} carries no colour of its own`);
+    for (const m of body.matchAll(/var\((--[\w-]+)/g)) used.add(m[1]!);
+  }
+  assert.deepEqual([...used].filter((n) => !names.has(n)), []);
+  for (const n of ['--add-bg', '--del-bg', '--add-border', '--del-border', '--bg-inset', '--border', '--muted', '--pass', '--red', '--link', '--focus']) assert.ok(used.has(n), n);
+  // The old box's rules are gone.
+  assert.doesNotMatch(style, /\.insrc-diff-(path|add|del|ctx|actions)/);
+  // The widget's root is still painted by the chat's own `.insrc-term-diff` rule, which comes after
+  // the shared sheet's rule of the same specificity.
+  const own = rule(style, '.insrc-term-diff');
+  for (const d of ['background:var(--panel)', 'color:var(--fg)', 'border:1px solid var(--border-lit)', 'overflow:hidden']) assert.ok(own.includes(d), d);
+  const sheet = styleBlocks(html)[0]!;
+  assert.ok(sheet.includes('.insrc-term-diff'), 'the shared sheet has a rule for the same class');
+  assert.ok(html.indexOf(sheet) < html.indexOf(style), "the chat's style comes after the shared sheet");
 });

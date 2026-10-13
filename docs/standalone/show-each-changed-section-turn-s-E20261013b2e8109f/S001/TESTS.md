@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -352,3 +352,17 @@ Run at 2026-10-13T09:17:32.367Z on commit `2cc4b881`. Tests check: **passed**. 5
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 154 | 3.8 s |  |
+
+## t8
+
+Run at 2026-10-13T10:00:49.273Z on commit `7dd39fd7`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: By hand in VS Code: a claude turn and a codex turn that each change two places in one file, change one of them again and add a file show one widget per section, folded to 8 lines, with the changed one updated in place, and the widgets show in their latest form after a window reload**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-validate-output/diff-widget-t8-hand-check.txt — the user confirmed the claude turn in VS Code; codex in the panel and the reload were NOT checked by hand and are covered by diff-widget-t8-live-codex.txt, diff-widget-t8-live-claude.txt and diff-widget-t8-real-shell-*.png in the same folder
+
+**smoke: The whole plugin suite passes apart from the two manifest-catalog tests that fail before this change**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-validate-output/diff-widget-t8-suite.txt — 1206 tests, 1196 pass, 8 skipped, 2 fail (the two manifest-catalog tests)

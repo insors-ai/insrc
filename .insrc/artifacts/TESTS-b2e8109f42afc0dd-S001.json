@@ -4,7 +4,7 @@
     "epicHash": "b2e8109f42afc0dd",
     "storyId": "S001",
     "createdAt": "2026-10-13T08:48:39.843Z",
-    "updatedAt": "2026-10-13T09:17:32.367Z",
+    "updatedAt": "2026-10-13T10:00:49.273Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T07:52:45.476Z",
     "epicSlug": "show-each-changed-section-turn-s"
@@ -3339,6 +3339,38 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "7dd39fd7",
+        "ranAt": "2026-10-13T10:00:49.273Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "By hand in VS Code: a claude turn and a codex turn that each change two places in one file, change one of them again and add a file show one widget per section, folded to 8 lines, with the changed one updated in place, and the widgets show in their latest form after a window reload",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/insrc-validate-output/diff-widget-t8-hand-check.txt — the user confirmed the claude turn in VS Code; codex in the panel and the reload were NOT checked by hand and are covered by diff-widget-t8-live-codex.txt, diff-widget-t8-live-claude.txt and diff-widget-t8-real-shell-*.png in the same folder"
+            }
+          },
+          {
+            "name": "The whole plugin suite passes apart from the two manifest-catalog tests that fail before this change",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/insrc-validate-output/diff-widget-t8-suite.txt — 1206 tests, 1196 pass, 8 skipped, 2 fail (the two manifest-catalog tests)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

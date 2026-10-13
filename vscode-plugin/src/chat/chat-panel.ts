@@ -612,7 +612,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `--input-fg:var(--vscode-input-foreground);--placeholder:var(--vscode-input-placeholderForeground);--link:var(--vscode-textLink-foreground);--pre-fg:var(--vscode-textPreformat-foreground);` +
       // borders (the high-contrast border first, so high-contrast themes get their outline)
       `--border:var(--vscode-contrastBorder,var(--vscode-panel-border));--border-lit:var(--vscode-contrastBorder,var(--vscode-editorWidget-border,var(--vscode-panel-border)));` +
-      `--user-border:var(--vscode-contrastBorder,var(--vscode-chat-requestBorder,var(--vscode-editorWidget-border,var(--vscode-panel-border))));` +
+      // Both message bubbles take the chat request border: VS Code gives it a visible default even
+      // where a theme's own widget and panel borders have no contrast.
+      `--msg-border:var(--vscode-contrastBorder,var(--vscode-chat-requestBorder,var(--vscode-editorWidget-border,var(--vscode-panel-border))));` +
       `--warn-border:var(--vscode-contrastBorder,var(--vscode-inputValidation-warningBorder));--quote-border:var(--vscode-textBlockQuote-border);--sep:var(--vscode-textSeparator-foreground);` +
       // In a high-contrast theme a diff line has no ground of its own; the theme outlines it instead.
       `--add-border:var(--vscode-diffEditor-insertedTextBorder,transparent);--del-border:var(--vscode-diffEditor-removedTextBorder,transparent);--focus:var(--vscode-focusBorder);` +
@@ -740,9 +742,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-who{font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px;white-space:normal;}` +
       `.insrc-who .insrc-glyph{font-size:12px;}` +
       `.insrc-msg--user{align-items:flex-end;}.insrc-who--user{color:var(--user);}` +
-      `.insrc-bubble--user{background:var(--user-bg);border:1px solid var(--user-border);border-radius:10px 10px 2px 10px;padding:9px 12px;color:var(--fg-strong);max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
+      `.insrc-bubble--user{background:var(--user-bg);border:1px solid var(--msg-border);border-radius:10px 10px 2px 10px;padding:9px 12px;color:var(--fg-strong);max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
       `.insrc-who--assistant{color:var(--magenta);}` +
-      `.insrc-bubble--assistant{background:var(--assistant-bg);border:1px solid var(--border-lit);border-radius:2px 10px 10px 10px;padding:10px 13px;max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
+      `.insrc-bubble--assistant{background:var(--assistant-bg);border:1px solid var(--msg-border);border-radius:2px 10px 10px 10px;padding:10px 13px;max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
       // tool-call: the mock's bordered .toolrow with a green $ prompt, under a cyan '▸ tool' label.
       `.insrc-who--tool{color:var(--accent2);}` +
       `.insrc-toolrow{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--border-lit);border-radius:8px;background:var(--code-bg);padding:8px 11px;max-width:100%;}` +

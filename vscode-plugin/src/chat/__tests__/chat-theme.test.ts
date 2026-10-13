@@ -178,7 +178,7 @@ test('chat theme: the named layer refers only to the theme variables of the appr
   const holds = (name: string): string => names.get(name) ?? '';
   // Variables a theme may leave unset, or an older VS Code may not have, never stand alone.
   assert.equal(holds('--user-bg'), 'var(--vscode-chat-requestBackground,var(--vscode-editor-inactiveSelectionBackground))');
-  assert.equal(holds('--user-border'), 'var(--vscode-contrastBorder,var(--vscode-chat-requestBorder,var(--vscode-editorWidget-border,var(--vscode-panel-border))))');
+  assert.equal(holds('--msg-border'), 'var(--vscode-contrastBorder,var(--vscode-chat-requestBorder,var(--vscode-editorWidget-border,var(--vscode-panel-border))))');
   assert.equal(holds('--border-lit'), 'var(--vscode-contrastBorder,var(--vscode-editorWidget-border,var(--vscode-panel-border)))');
   assert.equal(holds('--border'), 'var(--vscode-contrastBorder,var(--vscode-panel-border))');
   assert.equal(holds('--add-bg'), 'var(--vscode-diffEditor-insertedLineBackground,var(--vscode-diffEditor-insertedTextBackground))');
@@ -188,7 +188,7 @@ test('chat theme: the named layer refers only to the theme variables of the appr
   assert.equal(holds('--add-border'), 'var(--vscode-diffEditor-insertedTextBorder,transparent)');
   assert.equal(holds('--del-border'), 'var(--vscode-diffEditor-removedTextBorder,transparent)');
   // Every border name leads with the high-contrast border.
-  for (const name of ['--border', '--border-lit', '--user-border', '--warn-border', '--dropdown-border', '--check-border']) {
+  for (const name of ['--border', '--border-lit', '--msg-border', '--warn-border', '--dropdown-border', '--check-border']) {
     assert.ok(holds(name).startsWith('var(--vscode-contrastBorder,'), `${name} leads with the high-contrast border`);
   }
   // The whole chat is in the editor's monospace font, the assistant's prose included.
@@ -227,8 +227,8 @@ test('chat theme: each component uses the name the mapping gives it (bars, trans
   has('.chrome .dot', 'background:var(--accent)');
   assert.ok(!rule(style, '.chrome .dot').includes('box-shadow'), 'the header dot has no glow');
   // messages
-  has('.insrc-bubble--user', 'background:var(--user-bg)', 'border:1px solid var(--user-border)');
-  has('.insrc-bubble--assistant', 'background:var(--assistant-bg)', 'border:1px solid var(--border-lit)');
+  has('.insrc-bubble--user', 'background:var(--user-bg)', 'border:1px solid var(--msg-border)');
+  has('.insrc-bubble--assistant', 'background:var(--assistant-bg)', 'border:1px solid var(--msg-border)');
   has('.insrc-who--user', 'color:var(--user)');
   has('.insrc-who--assistant', 'color:var(--magenta)');
   // tool rows and results, structured values

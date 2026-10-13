@@ -38,7 +38,7 @@ import type { Envelope } from '../chat/protocol.js';
 import { screenKindOf, unknownStages } from './board-model.js';
 import { parseBoardUpMessage, type BoardUpMessage } from './board-protocol.js';
 import {
-  boardDownMessages, currentEntry, currentItemId, initialBoardState, reduceBoardState, refreshAnnouncement, screenAnnouncement, shownSnapshot,
+  boardDownMessages, currentEntry, initialBoardState, recordOwnerId, reduceBoardState, refreshAnnouncement, screenAnnouncement, shownSnapshot,
   type BoardEvent, type BoardState, type NavIntent,
 } from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
@@ -183,7 +183,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `box.appendChild(left);box.appendChild(completion(r));return box;}`,
   `function renderTotals(label,showAll){const p=make('p',label,'count-line');if(showAll)p.appendChild(button('Show all',function(){send({type:'set-attention',on:false});},'link show-all'));bodyEl.appendChild(p);}`,
   // A board screen: the totals, then the six stages (or the no-matches panel). An epic's header is in the screen's top.
-  `function renderStages(b){renderTotals(b.totalsLabel,b.showAll);if(b.emptyPanel!==null){renderPanel(bodyEl,b.emptyPanel);return;}`,
+  `function renderStages(b){if(b.epicRecords!==null)bodyEl.appendChild(epicRecordsBox(b.epicRecords));renderTotals(b.totalsLabel,b.showAll);if(b.emptyPanel!==null){renderPanel(bodyEl,b.emptyPanel);return;}`,
   `const showEpic=b.epic===null&&!(model.filters!==null&&model.filters.view==='standalone');const fold=b.fold.always||narrow;`,
   `for(const sec of b.sections){if(fold&&sec.total===0)continue;bodyEl.appendChild(renderSection(sec,showEpic));}if(fold)renderFold(b);}`,
   // The Epics screen: the same stage boxes, each holding the rows of the epics whose least-advanced story is at that
@@ -253,7 +253,11 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `function recordsTab(box,d){recordsTable(box,d);`,
   `if(d.notices.length>0){box.appendChild(label('Notices'));for(const n of d.notices){const w=make('div',undefined,'warnbox notice');w.textContent=n;box.appendChild(w);}}`,
   `if(d.sourceIds.length>0)box.appendChild(make('p','Sources: '+d.sourceIds.join(', '),'source-ids muted'));`,
-  `if(d.openedRecord!==null){box.appendChild(label('Record '+d.openedRecord.artifactId));box.appendChild(make('pre',d.openedRecord.text,'opened-record'));}}`,
+  `openedRecordBox(box,d);}`,
+  // The opened read-only record under a Records table: one function for a story's tab and an epic's board.
+  `function openedRecordBox(box,d){if(d.openedRecord!==null){box.appendChild(label('Record '+d.openedRecord.artifactId));box.appendChild(make('pre',d.openedRecord.text,'opened-record'));}}`,
+  // Story E20261013cb09a32c:S001: an epic's own records, on its board above the totals.
+  `function epicRecordsBox(r){const box=make('div',undefined,'epic-records');recordsTable(box,r);openedRecordBox(box,r);return box;}`,
   // The story screen's tabs (role=tab, roving tabindex, Left/Right between them); a narrow pane uses the short labels.
   `const TABS=['overview','evidence','linked'];`,
   `function renderTabs(current){const bar=make('nav',undefined,'subtabs');bar.setAttribute('role','tablist');bar.setAttribute('aria-label','Story');const tabs=[];`,
@@ -448,6 +452,7 @@ export const BOARD_STYLE = [
   `.item:last-child{border-bottom:0;}`,
   `.between{display:flex;justify-content:space-between;align-items:center;gap:8px;}`,
   `table.records{width:100%;border-collapse:collapse;font-size:12px;}`,
+  `.epic-records{margin:0 0 14px;}`,
   `.records th{text-align:left;font-weight:600;color:var(--vscode-descriptionForeground);border-bottom:1px solid var(--vscode-panel-border);padding:6px 6px 6px 0;}`,
   `.records td{border-bottom:1px solid var(--vscode-panel-border);padding:8px 6px 8px 0;vertical-align:top;}`,
   `pre{white-space:pre-wrap;overflow-wrap:anywhere;}`,
@@ -533,7 +538,9 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const shown = shownSnapshot(next.status)?.snapshot ?? null;
     const messages = boardDownMessages(next, DISPLAY_LABELS, deps.now(), id => (shown === null ? null : memory.model(shown, id)));
     // Told before anything is kept, so a throw here leaves state as it was and posts nothing.
-    memory.kept(shown, currentItemId(next.selection));
+    // Story E20261013cb09a32c:S001: the memory's selection is the item whose records are on show,
+    // an epic on its own board included, so one of the epic's records can be opened.
+    memory.kept(shown, recordOwnerId(next.selection));
     state = next;
     for (const m of messages) channel?.postMessage(m);
   }

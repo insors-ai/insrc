@@ -366,6 +366,7 @@ export function buildBoardViewModel(snapshot: DeliverySnapshot, filter: MatchFil
   return {
     kind: 'stages',
     epic: null,
+    epicRecords: null,
     totalsLabel: totalsLabel(matches.length, attentionCount(matches), attentionOnly, unfiltered, ['item', 'items']),
     showAll: attentionOnly,
     sections,

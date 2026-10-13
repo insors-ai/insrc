@@ -120,6 +120,16 @@ export function currentItemId(selection: BoardSelection): string | null {
   return screen.kind === 'item' ? screen.itemId : null;
 }
 
+/**
+ * Story E20261013cb09a32c:S001: the item whose records are on show, which is what the details
+ * memory may open a record of: the item of an item screen, the epic of an epic's board, nothing
+ * on a list screen.
+ */
+export function recordOwnerId(selection: BoardSelection): string | null {
+  const screen = currentEntry(selection).screen;
+  return screen.kind === 'item' ? screen.itemId : screen.kind === 'epic' ? screen.epicItemId : null;
+}
+
 /** The snapshot the board currently shows: the current one, or the last good one behind a loading or failed state. */
 export function shownSnapshot(status: LoadStatus): AppliedSnapshot | null {
   return status.state === 'ready' || status.state === 'empty' ? status.current : status.last;
@@ -389,7 +399,11 @@ function screenBody(
       if (epic === undefined) return null;
       const body = buildBoardViewModel(snapshot, filterOf(entry, { kind: 'epic', epicItemId: epic.id }), entry.paging, labels);
       // The header shows the epic's own row: the same numbers as on Epics.
-      return { title: titleOf(epic), body: { ...body, epic: epicRowOf(snapshot, epic, labels) } };
+      // Story E20261013cb09a32c:S001: and the body carries the epic's own records, from the epic
+      // item alone, so the search and the needs-attention filter do not change them.
+      const own = detailsOf(epic.id);
+      const epicRecords = own === null ? null : { itemId: epic.id, evidence: own.evidence, openedRecord: own.openedRecord };
+      return { title: titleOf(epic), body: { ...body, epic: epicRowOf(snapshot, epic, labels), epicRecords } };
     }
     case 'item': {
       const item = byId.get(screen.itemId);

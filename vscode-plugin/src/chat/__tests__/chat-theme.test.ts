@@ -98,7 +98,12 @@ test("chat theme: the chat's own style has no hex, rgb, rgba, hsl or color-mix v
   assert.equal(styleBlocks(html).length, 2, 'the shared sheet, then the chat\'s own style');
   // Data URIs are shapes, not colours; they are checked on their own below.
   const uris = [...ownStyle(html).matchAll(/url\("data:[^"]*"\)/g)].map((m) => m[0]);
-  const style = ownStyle(html).replace(/url\("data:[^"]*"\)/g, 'url()');
+  // One derived colour is allowed, by the user's decision of 2026-10-13: the assistant message's
+  // ground, a slightly darker shade of the editor background. It is set aside here and pinned below.
+  const ASSISTANT_BG = '--assistant-bg:color-mix(in srgb,var(--vscode-editor-background) 90%,black);';
+  assert.equal(ownStyle(html).split(ASSISTANT_BG).length, 2, 'the one derived colour is declared once, exactly as decided');
+  assert.equal((ownStyle(html).match(/color-mix\(/g) ?? []).length, 1, 'and it is the only color-mix');
+  const style = ownStyle(html).replace(ASSISTANT_BG, '').replace(/url\("data:[^"]*"\)/g, 'url()');
 
   assert.deepEqual(style.match(/#[0-9a-fA-F]{3,8}\b(?![\w-])/g)?.filter((h) => !style.includes(`${h}{`) && !style.includes(`${h} `) && !style.includes(`${h}:`) && !style.includes(`${h},`) && !style.includes(`${h}>`) && !style.includes(`${h}.`) && !style.includes(`${h}[`)) ?? [], [], 'no hex colour');
   for (const fn of ['rgb(', 'rgba(', 'hsl(', 'hsla(', 'color-mix(', 'radial-gradient(', 'conic-gradient(']) {
@@ -160,6 +165,9 @@ test("chat theme: every name used in the shell style, the row renderer style and
 test('chat theme: the named layer refers only to the theme variables of the approved mapping, and every optional one falls back to another theme variable', () => {
   const names = layer(ownStyle(shellHtml()));
   const referenced = new Set<string>();
+  // The one derived colour (see the first test); every other name holds a theme variable.
+  assert.equal(names.get('--assistant-bg'), 'color-mix(in srgb,var(--vscode-editor-background) 90%,black)');
+  names.delete('--assistant-bg');
   for (const [name, value] of names) {
     assert.match(value, /^var\(--vscode-[\w-]+(?:,var\(--vscode-[\w-]+(?:,var\(--vscode-[\w-]+(?:,var\(--vscode-[\w-]+\))?\))?\)|,transparent)?\)$/, `${name} holds a theme variable, with at most a chain of theme-variable fallbacks: ${value}`);
     for (const m of value.matchAll(/--vscode-[\w-]+/g)) referenced.add(m[0]);
@@ -220,7 +228,7 @@ test('chat theme: each component uses the name the mapping gives it (bars, trans
   assert.ok(!rule(style, '.chrome .dot').includes('box-shadow'), 'the header dot has no glow');
   // messages
   has('.insrc-bubble--user', 'background:var(--user-bg)', 'border:1px solid var(--user-border)');
-  has('.insrc-bubble--assistant', 'background:var(--panel)', 'border:1px solid var(--border-lit)');
+  has('.insrc-bubble--assistant', 'background:var(--assistant-bg)', 'border:1px solid var(--border-lit)');
   has('.insrc-who--user', 'color:var(--user)');
   has('.insrc-who--assistant', 'color:var(--magenta)');
   // tool rows and results, structured values

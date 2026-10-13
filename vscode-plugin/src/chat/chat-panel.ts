@@ -592,7 +592,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // place its colours are chosen: every name holds a --vscode-* theme variable, and a fallback is
     // always another theme variable, never a literal. Every border name leads with the
     // high-contrast border. The rules below, RENDER_REGISTRY_STYLE and CHAT_MARKDOWN_TOKENS use
-    // only these names: no hex, rgb, hsl, color-mix or tint gradient anywhere in the chat's style.
+    // only these names: no hex, rgb, hsl or tint gradient anywhere in the chat's style, and one
+    // color-mix (--assistant-bg, below).
     const layoutStyle =
       `<style>` +
       `:root{--font:var(--vscode-editor-font-family);--sans:var(--vscode-editor-font-family);` +
@@ -602,6 +603,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `--user-bg:var(--vscode-chat-requestBackground,var(--vscode-editor-inactiveSelectionBackground));--warn-bg:var(--vscode-inputValidation-warningBackground);` +
       `--add-bg:var(--vscode-diffEditor-insertedLineBackground,var(--vscode-diffEditor-insertedTextBackground));--del-bg:var(--vscode-diffEditor-removedLineBackground,var(--vscode-diffEditor-removedTextBackground));` +
       `--quote-bg:var(--vscode-textBlockQuote-background);--sel:var(--vscode-editor-selectionBackground);` +
+      // The one derived colour, asked for by the user on 2026-10-13: the assistant's message sits on
+      // a slightly darker shade of the panel ground, because a theme may give borders no contrast
+      // at all (Atom Material: 1.06 to 1), which left the message with no visible edge.
+      `--assistant-bg:color-mix(in srgb,var(--vscode-editor-background) 90%,black);` +
       // text
       `--fg:var(--vscode-editor-foreground);--fg-strong:var(--vscode-editor-foreground);--muted:var(--vscode-descriptionForeground);--dim:var(--vscode-descriptionForeground);` +
       `--input-fg:var(--vscode-input-foreground);--placeholder:var(--vscode-input-placeholderForeground);--link:var(--vscode-textLink-foreground);--pre-fg:var(--vscode-textPreformat-foreground);` +
@@ -737,7 +742,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-msg--user{align-items:flex-end;}.insrc-who--user{color:var(--user);}` +
       `.insrc-bubble--user{background:var(--user-bg);border:1px solid var(--user-border);border-radius:10px 10px 2px 10px;padding:9px 12px;color:var(--fg-strong);max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
       `.insrc-who--assistant{color:var(--magenta);}` +
-      `.insrc-bubble--assistant{background:var(--panel);border:1px solid var(--border-lit);border-radius:2px 10px 10px 10px;padding:10px 13px;max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
+      `.insrc-bubble--assistant{background:var(--assistant-bg);border:1px solid var(--border-lit);border-radius:2px 10px 10px 10px;padding:10px 13px;max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
       // tool-call: the mock's bordered .toolrow with a green $ prompt, under a cyan '▸ tool' label.
       `.insrc-who--tool{color:var(--accent2);}` +
       `.insrc-toolrow{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--border-lit);border-radius:8px;background:var(--code-bg);padding:8px 11px;max-width:100%;}` +

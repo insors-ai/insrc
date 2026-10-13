@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T14:51:31.571Z",
+    "updatedAt": "2026-10-13T16:00:42.703Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -2063,6 +2063,42 @@
               },
               {
                 "title": "graph_query from a ready repository whose closure reaches a repository under index leaves that repository's entities out",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "c3832632",
+        "ranAt": "2026-10-13T16:00:42.703Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "analyze through the daemon (analyze.context.buildRun and the step tools via step.call) on a repository being indexed returns code 'repo-indexing' with the figures; the workflow step that reaches it passes the reply on unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/repo-indexing-steps.test.ts",
+                "title": "analyze through the daemon (analyze.context.buildRun and the step tools via step.call) on a repository being indexed returns code 'repo-indexing' with the figures; the workflow step that reaches it passes the reply on unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/repo-indexing-steps.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1181,
+            "titles": [
+              {
+                "title": "analyze through the daemon (analyze.context.buildRun and the step tools via step.call) on a repository being indexed returns code 'repo-indexing' with the figures; the workflow step that reaches it passes the reply on unchanged",
                 "result": "pass"
               }
             ],

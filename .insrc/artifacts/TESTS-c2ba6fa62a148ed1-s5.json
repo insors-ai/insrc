@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T16:00:42.703Z",
+    "updatedAt": "2026-10-13T19:23:26.507Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -2105,6 +2105,38 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "b899aaf3",
+        "ranAt": "2026-10-13T19:23:26.507Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "installed daemon: an analyze on an unindexed path is refused before any size is announced",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/smoke.md, section 'Smoke 1' (re-run on daemon e5e374b5, 2026-10-14; the first run on d250513b failed and was fixed by ISSUE-7c255f61)"
+            }
+          },
+          {
+            "name": "installed daemon: a request during a reindex is refused with 'repo-indexing' and its figures; after it the row shows lastRun",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/smoke.md, sections 'Smoke 2' and 'Smoke 3' (AFM reindex 2026-10-13T17:51Z, probe log /tmp/smoke-s5-afm2.log)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

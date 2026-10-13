@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 59 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 59 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -446,3 +446,17 @@ Run at 2026-10-13T16:00:42.703Z on commit `c3832632`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/__tests__/repo-indexing-steps.test.ts` | 0 | 1 | 1.2 s |  |
+
+## t16
+
+Run at 2026-10-13T19:23:26.507Z on commit `b899aaf3`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: installed daemon: an analyze on an unindexed path is refused before any size is announced**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/smoke.md, section 'Smoke 1' (re-run on daemon e5e374b5, 2026-10-14; the first run on d250513b failed and was fixed by ISSUE-7c255f61)
+
+**smoke: installed daemon: a request during a reindex is refused with 'repo-indexing' and its figures; after it the row shows lastRun**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/smoke.md, sections 'Smoke 2' and 'Smoke 3' (AFM reindex 2026-10-13T17:51Z, probe log /tmp/smoke-s5-afm2.log)

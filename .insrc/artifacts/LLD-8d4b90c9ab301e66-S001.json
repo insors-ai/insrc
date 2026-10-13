@@ -224,6 +224,12 @@
       "reviewedAt": "2026-10-13T11:51:58.658Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-13T11:58:07.475Z",
+    "rangeBase": "ed63050d4c20295c4b21d56e490f8ec3725b304c",
+    "reviewOverride": {
+      "reason": "Approved by the user in chat on 2026-10-13 after three daemon review rounds (revision 3: block, 0 high, 3 medium). The three open findings are carried into the plan as explicit tasks and tests: (1) a follow that fails reports its end, and the chat host drains its waiting list then; (2) the review pane's host re-posts the open document by its path when the rebuilt shell sends its boot ping, so drafts on a document that is no longer pending are shown again; (3) the chat host's drain also waits while any permission request is unanswered and drains when the last one is decided, so a pane message never rejects waiting requests.",
+      "at": "2026-10-13T11:58:07.475Z"
     }
   },
   "body": {

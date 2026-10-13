@@ -2,20 +2,21 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T11:53:21.419Z
+**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T12:33:07.673Z
 
-**Commit:** e3612253
+**Commit:** 7589466b
 
 ## Summary
 
-The local Ollama provider now raises every transport failure (from the call and from inside a stream's iteration) as ModelCallFailedError with the client's error as its cause, and the structured retry helper keeps that type when its last attempt was a failed call.
+isModelCallFailure now recognises a failed call by its type or by the provider's own wording at the start of the message ('Model call failed: ' or a CLI wording); Ollama and socket texts quoted inside a message no longer count, and every consumer family still reports a real Ollama outage as the model being unavailable.
 
 ## Tasks validated
 
 - ✓ `t1`
+- ✓ `t2`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T11:53:21.419Z)
+- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T12:33:07.673Z)

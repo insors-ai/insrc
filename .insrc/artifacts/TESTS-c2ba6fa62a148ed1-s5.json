@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T11:53:21.419Z",
+    "updatedAt": "2026-10-13T12:33:07.673Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -91,6 +91,245 @@
               },
               {
                 "title": "retry helper: a shape failure on the last attempt stays a plain Error even after an earlier failed call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "7589466b",
+        "ranAt": "2026-10-13T12:33:07.673Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/model-failure.test.ts",
+                "title": "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/model-failure.test.ts",
+                "title": "what the model WROTE is not evidence about the call: a quoted answer is never matched",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "isModelCallFailure: a plain 'structured-output: ... attempts: Model call failed: ...' message is a failed call",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/model-failure.test.ts",
+                "title": "isModelCallFailure: a plain 'structured-output: ... attempts: Model call failed: ...' message is a failed call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/model-failure.test.ts",
+                "title": "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/model-failure-callers.test.ts",
+                "title": "each of the five callers classifies a CLI call failure as its model-unavailable error and a shape failure as its schema error",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+                "title": "classifyError: Ollama-down patterns -> aggregator-llm-unavailable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/model-failure-callers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 740,
+            "titles": [
+              {
+                "title": "source search: the failure-text list exists only in model-failure.ts",
+                "result": "pass"
+              },
+              {
+                "title": "each of the five callers classifies a CLI call failure as its model-unavailable error and a shape failure as its schema error",
+                "result": "pass"
+              },
+              {
+                "title": "a typed sampling failure reaches each caller's error as the client's own words",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/model-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 593,
+            "titles": [
+              {
+                "title": "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
+                "result": "pass"
+              },
+              {
+                "title": "isModelCallFailure: a plain 'structured-output: ... attempts: Model call failed: ...' message is a failed call",
+                "result": "pass"
+              },
+              {
+                "title": "isModelCallFailure: CLI call failures and ModelCallFailedError are failures; shape failures are not",
+                "result": "pass"
+              },
+              {
+                "title": "what the model WROTE is not evidence about the call: a quoted answer is never matched",
+                "result": "pass"
+              },
+              {
+                "title": "modelCallFailureDetail returns the failure's own words",
+                "result": "pass"
+              },
+              {
+                "title": "planning and answer-writing classifiers raise their model-unavailable error for a CLI call failure",
+                "result": "pass"
+              },
+              {
+                "title": "planning and answer-writing classifiers raise their model-unavailable error for a typed sampling failure",
+                "result": "pass"
+              },
+              {
+                "title": "a shape failure stays a schema error for both calls",
+                "result": "pass"
+              },
+              {
+                "title": "model-unavailable messages are provider-neutral and carry the underlying message in a field",
+                "result": "pass"
+              },
+              {
+                "title": "the two prompt-missing errors carry the prompt path",
+                "result": "pass"
+              },
+              {
+                "title": "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 493,
+            "titles": [
+              {
+                "title": "stableStringify: object keys sorted",
+                "result": "pass"
+              },
+              {
+                "title": "stableStringify: Map entries sorted + emitted as object",
+                "result": "pass"
+              },
+              {
+                "title": "stableStringify: arrays preserve order",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: empty map -> \"No upstream outputs\" sentinel",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: tasks emitted in sorted taskId order",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: null upstream rendered as unavailable note",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: JSON output rendered in fenced block",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: system has prompt content, user has Target/Scope/upstream",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: focus is included in the user message when present",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: focus omitted when undefined",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: Ollama-down patterns -> aggregator-llm-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: arbitrary error -> aggregator-schema-unrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: non-Error -> aggregator-internal wrapper",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: stub provider -> report carries LLM output + runtime metadata",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: focus passed through to the user message",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: provider throws ECONNREFUSED -> rethrown as aggregator-llm-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: provider throws arbitrary error -> aggregator-schema-unrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: missing prompt file -> \"aggregator prompt missing\"",
+                "result": "pass"
+              },
+              {
+                "title": "AGGREGATE_LLM_SCHEMA: requires summary + findings, additionalProperties false",
+                "result": "pass"
+              },
+              {
+                "title": "the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent",
+                "result": "pass"
+              },
+              {
+                "title": "a map in which every name has one output renders a user message byte-identical to the one rendered before the change",
+                "result": "pass"
+              },
+              {
+                "title": "a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section",
+                "result": "pass"
+              },
+              {
+                "title": "an absent output of one of several producers is worded by its task and the others are said to be available; a name with no output keeps the old wording",
                 "result": "pass"
               }
             ],

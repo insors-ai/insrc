@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T11:53:21.419Z",
+    "updatedAt": "2026-10-13T12:33:07.673Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -14,9 +14,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "The local Ollama provider now raises every transport failure (from the call and from inside a stream's iteration) as ModelCallFailedError with the client's error as its cause, and the structured retry helper keeps that type when its last attempt was a failed call.",
+    "summary": "isModelCallFailure now recognises a failed call by its type or by the provider's own wording at the start of the message ('Model call failed: ' or a CLI wording); Ollama and socket texts quoted inside a message no longer count, and every consumer family still reports a real Ollama outage as the model being unavailable.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
     },
@@ -26,9 +30,9 @@
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T11:53:21.419Z"
+        "timestamp": "2026-10-13T12:33:07.673Z"
       }
     ],
-    "commit": "e3612253"
+    "commit": "7589466b"
   }
 }

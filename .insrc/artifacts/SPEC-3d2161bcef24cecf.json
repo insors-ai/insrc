@@ -19,7 +19,8 @@
     "schemaVersion": 1,
     "specHash": "3d2161bcef24cecf",
     "epicSlug": "dev-chat-follows-vs-code-theme",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-13T06:21:04.584Z"
   },
   "body": {
     "title": "Dev chat follows the VS Code theme",

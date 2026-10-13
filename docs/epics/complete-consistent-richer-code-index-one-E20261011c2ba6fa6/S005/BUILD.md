@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T13:28:59.818Z
+**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T13:37:23.467Z
 
-**Commit:** 34c8c765
+**Commit:** 8e943746
 
 ## Summary
 
-runAnalyze now checks the request's scope right after classification, before it measures or announces a size: an unindexed scope or a repository under index is refused at 'classify' with the same code, message and data as before (code and docs alike, and without the two model calls a docs request used to make first), and the context builder is told the scope was checked.
+The daemon's analyze.classify request now checks the scope the classifier named before measuring it: an unindexed scope is answered 'scope-not-indexed' and a repository under index 'repo-indexing', each with no measured size; a generic intent is measured and answered as before.
 
 ## Tasks validated
 
@@ -21,9 +21,10 @@ runAnalyze now checks the request's scope right after classification, before it 
 - ✓ `t7`
 - ✓ `t8`
 - ✓ `t9`
+- ✓ `t10`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T13:28:59.818Z)
+- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T13:37:23.467Z)

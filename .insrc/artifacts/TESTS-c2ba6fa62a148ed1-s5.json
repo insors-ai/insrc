@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T13:28:59.818Z",
+    "updatedAt": "2026-10-13T13:37:23.467Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1768,6 +1768,54 @@
             "titles": [
               {
                 "title": "a docs run on a scope in no registered repo ends at stage 'classify' with 'scope-not-indexed' before anything is measured or built; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "8e943746",
+        "ranAt": "2026-10-13T13:37:23.467Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+                "title": "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1453,
+            "titles": [
+              {
+                "title": "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)",
+                "result": "pass"
+              },
+              {
+                "title": "the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              },
+              {
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              },
+              {
+                "title": "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'",
                 "result": "pass"
               }
             ],

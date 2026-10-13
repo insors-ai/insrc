@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 48 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -318,3 +318,19 @@ Run at 2026-10-13T13:28:59.818Z on commit `34c8c765`. Tests check: **passed**. 8
 | `src/analyze/orchestrator/__tests__/hinted-branch.test.ts` | 0 | 8 | 1.6 s |  |
 | `src/analyze/orchestrator/__tests__/run-order.test.ts` | 0 | 6 | 1.3 s |  |
 | `src/analyze/orchestrator/__tests__/scope-before-plan.test.ts` | 0 | 1 | 0.8 s |  |
+
+## t10
+
+Run at 2026-10-13T13:37:23.467Z on commit `8e943746`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing' | `src/daemon/__tests__/analyze-rpc-measure.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/analyze-rpc-measure.test.ts` | 0 | 4 | 1.5 s |  |

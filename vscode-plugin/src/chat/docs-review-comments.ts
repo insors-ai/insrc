@@ -14,7 +14,10 @@
  *   - finding an anchor again in a document (rvFind), which is how a draft is put back
  *     after the document is rendered again and how a saved comment is placed;
  *   - drafts: the comments written and not yet sent. They are kept per artifact in the
- *     webview's saved state, so hiding the pane, or the shell being rebuilt, loses none.
+ *     webview's saved state, so hiding the pane, or the shell being rebuilt, loses none;
+ *   - the saved comments of the document: those with an anchor are put on their passages
+ *     with a margin marker that counts them and open as a thread, oldest first; the rest
+ *     are listed in the whole-document strip in time order.
  *
  * Nothing here assigns markup: every element is made with createElement and every
  * comment, quote and name is set as text.
@@ -129,47 +132,117 @@ b.setAttribute('type','button');b.setAttribute('title',label);b.setAttribute('ar
 var svg=document.createElementNS(RV_SVG,'svg');svg.setAttribute('viewBox','0 0 16 16');svg.setAttribute('aria-hidden','true');
 var p=document.createElementNS(RV_SVG,'path');p.setAttribute('d',path);svg.appendChild(p);b.appendChild(svg);return b;}
 
-/* ---- drafts ---- */
-/* A thread is one passage and the comments drafted on it. block and marks are where it
-   is in the document as rendered now (none when its quote is not there); card is its
-   open thread card. */
+/* ---- threads: the saved comments and the drafts of one passage ---- */
+/* A thread is one passage: its anchor, the saved comments placed on it (oldest first) and
+   the comments drafted on it. block, start, end and marks are where it is in the document
+   as rendered now (no block when its quote is not there); card is its open thread card. */
 var rvThreads=[];var rvPending=null;
+/* The saved comments with no passage: those on the whole document, on an HTML document of
+   the artifact, and those whose quote is no longer in the document. rvSkipped counts the
+   saved entries that could not be read. */
+var rvStrip=[];var rvSkipped=0;var rvMarkerEls=[];
 function rvDraftCount(){var n=0;rvThreads.forEach(function(th){n+=th.drafts.length;});return n;}
 function rvWho(){var r=shown&&shown.reviewer;return (r&&typeof r.name==='string'&&r.name)?r.name:'you';}
 function rvSameAnchor(a,b){return a.quote===b.quote&&(a.sectionSlug||'')===(b.sectionSlug||'')&&(a.prefix||'')===(b.prefix||'')&&(a.suffix||'')===(b.suffix||'');}
 function rvThreadFor(anchor){for(var i=0;i<rvThreads.length;i++){if(rvSameAnchor(rvThreads[i].anchor,anchor))return rvThreads[i];}
-var th={anchor:anchor,drafts:[],block:null,marks:[],card:null,open:false};rvThreads.push(th);return th;}
+var th={anchor:anchor,saved:[],drafts:[],block:null,start:-1,end:-1,marks:[],card:null,open:false};rvThreads.push(th);return th;}
+function rvThreadAt(hit){for(var i=0;i<rvThreads.length;i++){var th=rvThreads[i];if(th.block===hit.block&&th.start===hit.start&&th.end===hit.end)return th;}return null;}
+function rvPut(th,hit){th.block=hit.block;th.start=hit.start;th.end=hit.end;th.marks=rvWrap(hit.block,hit.start,hit.end,'rv-anno');}
+/* Dashed while the passage has a draft, or nothing saved yet; solid when it has only saved comments. */
+function rvRestyle(th){var cls='rv-anno'+((th.drafts.length||!th.saved.length)?' rv-draft':'');th.marks.forEach(function(m){m.className=cls;});}
 function rvCloseThread(th){if(th.card&&th.card.parentNode)th.card.parentNode.removeChild(th.card);th.card=null;th.open=false;}
-function rvDropThread(th){rvCloseThread(th);rvUnwrap(th.marks);th.marks=[];var i=rvThreads.indexOf(th);if(i>=0)rvThreads.splice(i,1);}
-/* The thread card, under the block of the passage: the quote, each draft with a control
-   to remove it, and a field with round add and close buttons. */
+function rvDropThread(th){rvCloseThread(th);rvUnwrap(th.marks);th.marks=[];th.block=null;var i=rvThreads.indexOf(th);if(i>=0)rvThreads.splice(i,1);}
+/* A passage with neither a saved comment nor a draft is no longer a thread. */
+function rvSettle(th,reopen){if(!th.drafts.length&&!th.saved.length){rvDropThread(th);return;}
+rvRestyle(th);if(reopen)rvOpenThread(th);else rvCloseThread(th);}
+/* A saved entry the pane can show: its author, time and comment are all text. */
+function rvReadable(e){return !!e&&typeof e==='object'&&typeof e.author==='string'&&typeof e.timestamp==='string'&&typeof e.comment==='string';}
+/* The time of a saved comment, in the reader's own time; as stored when it is not a time. */
+function rvWhen(ts){var d=new Date(ts);if(isNaN(d.getTime()))return String(ts);
+function p(n){return (n<10?'0':'')+n;}
+return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());}
+function rvDecisionOf(e){return e.decision==='approve'?'approved':e.decision==='reject'?'rejected':e.decision==='feedback'?'feedback':((typeof e.kind==='string'&&e.kind)?e.kind:'comment');}
+/* Made on another version of the document than the one shown. */
+function rvEarlier(e){var v=e.target&&e.target.version;return typeof v==='string'&&v!==''&&!!shown&&typeof shown.contentVersion==='string'&&v!==shown.contentVersion;}
+/* One saved comment: who, when, the decision it was saved with and a note, then (from the
+   caller) its quote and its text. All set as text. */
+function rvSavedRow(e,note){var row=rvEl('div','rv-c');
+row.appendChild(rvEl('span','rv-who',e.author));row.appendChild(rvEl('span','rv-when',rvWhen(e.timestamp)));
+row.appendChild(rvEl('span','rv-tag'+(e.decision==='approve'?' rv-tag-approve':e.decision==='reject'?' rv-tag-reject':''),rvDecisionOf(e)+(note?' · '+note:'')));
+return row;}
+/* The thread card, under the block of the passage: the quote, the saved comments oldest
+   first, each draft with a control to remove it, and a field with round add and close
+   buttons. */
 function rvOpenThread(th,focus){rvCloseThread(th);var card=rvEl('div','rv-thread');
 card.appendChild(rvEl('div','rv-q','“'+th.anchor.quote+'”'));
+th.saved.forEach(function(e){var row=rvSavedRow(e,rvEarlier(e)?'on an earlier revision':'');row.appendChild(rvEl('div','rv-text',e.comment));card.appendChild(row);});
 th.drafts.forEach(function(d,i){var row=rvEl('div','rv-c');
 var x=rvEl('button','rv-x','✕');x.setAttribute('type','button');x.setAttribute('title','Remove this draft');x.setAttribute('aria-label','Remove this draft');
-x.addEventListener('click',function(){th.drafts.splice(i,1);if(!th.drafts.length)rvDropThread(th);else rvOpenThread(th);rvSync();});
+x.addEventListener('click',function(){th.drafts.splice(i,1);rvSettle(th,true);rvSync();});
 row.appendChild(x);row.appendChild(rvEl('span','rv-who',rvWho()));row.appendChild(rvEl('span','rv-tag rv-tag-draft','draft, not sent'));
 row.appendChild(rvEl('div','rv-text',d.text));card.appendChild(row);});
 var comp=rvEl('div','rv-compose'),ta=document.createElement('textarea');
 ta.setAttribute('rows','1');ta.setAttribute('maxlength','10000');ta.setAttribute('placeholder','Comment on this text…');ta.setAttribute('aria-label','Comment on the selected text');
 var add=rvIconButton('M8 3v10M3 8h10','Add this comment as a draft');
 var close=rvIconButton('M4 4l8 8M12 4l-8 8','Close');
-function addDraft(){var v=String(ta.value||'').trim();if(!v)return;th.drafts.push({text:v});rvOpenThread(th,true);rvSync();}
+function addDraft(){var v=String(ta.value||'').trim();if(!v)return;th.drafts.push({text:v});rvRestyle(th);rvOpenThread(th,true);rvSync();}
 add.addEventListener('click',addDraft);
 ta.addEventListener('keydown',function(e){if(e&&e.key==='Enter'&&!e.shiftKey){if(e.preventDefault)e.preventDefault();addDraft();}});
 /* Closing a passage that has no comment takes its mark away. */
-close.addEventListener('click',function(){if(!th.drafts.length)rvDropThread(th);else rvCloseThread(th);rvSync();});
+close.addEventListener('click',function(){rvSettle(th,false);rvSync();});
 comp.appendChild(ta);comp.appendChild(add);comp.appendChild(close);card.appendChild(comp);
 var top=th.block?rvTopOf(th.block):null;
 if(top&&top.parentNode===bodyEl)bodyEl.insertBefore(card,top.nextSibling);else bodyEl.appendChild(card);
 th.card=card;th.open=true;
 if(focus&&typeof ta.focus==='function'){try{ta.focus();}catch(err){}}}
-/* Put every draft's mark on its passage in the document as rendered now. The body was
-   rendered again, so earlier marks and cards are gone with it. */
-function rvPlaceDrafts(){rvThreads.forEach(function(th){th.marks=[];th.card=null;th.block=null;
-var hit=tab?null:rvFind(th.anchor);
-if(hit&&!rvCutsMark(hit.block,hit.start,hit.end)){th.block=hit.block;th.marks=rvWrap(hit.block,hit.start,hit.end,'rv-anno rv-draft');}
-if(th.open&&th.block)rvOpenThread(th);else th.open=false;});}
+/* The margin markers: one beside each commented passage, with the number of its comments.
+   A click opens the thread, or closes it. Placed level with the passage when the page can
+   say where that is. */
+function rvMarkers(){rvMarkerEls.forEach(function(b){if(b.parentNode)b.parentNode.removeChild(b);});rvMarkerEls=[];
+rvThreads.forEach(function(th){var n=th.saved.length+th.drafts.length;if(!th.block||!th.marks.length||!n)return;
+var b=document.createElement('button');b.className='rv-marker'+(th.drafts.length?' rv-draft':'');b.setAttribute('type','button');
+var label=n+' comment'+(n===1?'':'s')+' on this text'+(th.drafts.length?', '+th.drafts.length+' not sent':'');
+b.setAttribute('title',label);b.setAttribute('aria-label',label);
+var svg=document.createElementNS(RV_SVG,'svg');svg.setAttribute('viewBox','0 0 16 16');svg.setAttribute('aria-hidden','true');
+var p=document.createElementNS(RV_SVG,'path');p.setAttribute('d','M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z');svg.appendChild(p);b.appendChild(svg);
+b.appendChild(rvEl('span','rv-n',String(n)));
+try{var r=th.marks[0].getBoundingClientRect(),base=mdEl.getBoundingClientRect();b.style.top=(r.top-base.top)+'px';}catch(err){}
+b.addEventListener('click',function(){if(th.card)rvCloseThread(th);else rvOpenThread(th);rvMarkers();});
+mdEl.appendChild(b);rvMarkerEls.push(b);});}
+/* The strip above the comment panel: the saved comments with no passage, oldest first.
+   Hidden when there is nothing to say. */
+function rvStripRender(){while(histListEl.firstChild)histListEl.removeChild(histListEl.firstChild);
+var n=rvStrip.length;histEl.style.display=(n||rvSkipped)?'':'none';
+histSumEl.textContent='Earlier comments on the whole document ('+n+')'+(rvSkipped?' · '+rvSkipped+' saved comment'+(rvSkipped===1?'':'s')+' could not be shown':'');
+rvStrip.forEach(function(s){var row=rvSavedRow(s.e,s.note);
+if(s.quote)row.appendChild(rvEl('div','rv-hq','“'+s.quote+'”'));
+row.appendChild(rvEl('div','rv-text',s.e.comment));histListEl.appendChild(row);});}
+/* Put the saved comments and the drafts on the document as rendered now. The body was
+   rendered again, so earlier marks, cards and markers are gone with it. */
+function rvPlaceAll(){
+rvThreads.forEach(function(th){th.saved=[];th.marks=[];th.card=null;th.block=null;th.start=-1;th.end=-1;});
+rvStrip=[];rvSkipped=0;
+var list=(shown&&Array.isArray(shown.feedback))?shown.feedback:[],valid=[];
+list.forEach(function(e,i){if(rvReadable(e))valid.push({e:e,i:i,t:Date.parse(e.timestamp)});else rvSkipped++;});
+/* Oldest first; entries of one time (one decision) stay in the order they were saved. */
+valid.sort(function(a,b){var x=isNaN(a.t)||isNaN(b.t)?(a.e.timestamp<b.e.timestamp?-1:a.e.timestamp>b.e.timestamp?1:0):a.t-b.t;return x||a.i-b.i;});
+valid.forEach(function(v){var e=v.e,a=e.anchor,file=(e.target&&typeof e.target.file==='string')?e.target.file:'';
+/* On an HTML document of the artifact: a whole-document comment that names the file. */
+if(/\.html$/i.test(file)&&file!==shown.docPath){rvStrip.push({e:e,note:'on '+file.slice(file.lastIndexOf('/')+1)});return;}
+if(!a||typeof a.quote!=='string'||!a.quote){rvStrip.push({e:e,note:rvEarlier(e)?'on an earlier revision':''});return;}
+var hit=rvFind(a),th=hit?rvThreadAt(hit):null;
+if(hit&&!th){if(rvCutsMark(hit.block,hit.start,hit.end))hit=null;else{th=rvThreadFor(a);rvPut(th,hit);}}
+/* Its quote is not in the document any more: listed with the quote it was made on. */
+if(!hit){rvStrip.push({e:e,quote:a.quote,note:'on an earlier revision'});return;}
+th.saved.push(e);});
+/* The drafts: on a passage that already has a thread, they join it. */
+rvThreads.slice().forEach(function(th){if(th.block||!th.drafts.length)return;var hit=rvFind(th.anchor);if(!hit)return;
+var at=rvThreadAt(hit);
+if(at&&at!==th){at.drafts=at.drafts.concat(th.drafts);at.open=at.open||th.open;th.drafts=[];return;}
+if(!rvCutsMark(hit.block,hit.start,hit.end))rvPut(th,hit);});
+rvThreads=rvThreads.filter(function(th){return th.saved.length||th.drafts.length;});
+rvThreads.forEach(function(th){rvRestyle(th);if(th.open&&th.block)rvOpenThread(th);else th.open=false;});
+rvStripRender();rvMarkers();}
 /* The saved state: per artifact, the whole-document field and the drafts. */
 function rvStored(){try{var s=vs.getState?vs.getState():null;return (s&&s.rv&&typeof s.rv==='object')?s.rv:{};}catch(err){return {};}}
 function rvSave(){if(!shown||!shown.artifactId)return;var all=rvStored(),drafts=[];
@@ -190,12 +263,13 @@ rvThreads.forEach(function(th){th.drafts.forEach(function(d){var a={quote:th.anc
 if(th.anchor.sectionSlug)a.sectionSlug=th.anchor.sectionSlug;if(th.anchor.prefix)a.prefix=th.anchor.prefix;if(th.anchor.suffix)a.suffix=th.anchor.suffix;
 var c={comment:d.text,anchor:a};if(shown&&typeof shown.contentVersion==='string')c.version=shown.contentVersion;out.push(c);});});
 return out;}
-/* Every draft was saved: none is left, in the document or in the saved state. */
-function rvClearDrafts(){rvThreads.slice().forEach(rvDropThread);rvThreads=[];}
-/* The line above the field, and the saved state, after any change to the drafts. */
+/* Every draft was saved: none is left, in the document or in the saved state. A passage
+   that has saved comments keeps its thread. */
+function rvClearDrafts(){rvThreads.slice().forEach(function(th){th.drafts=[];rvSettle(th,!!th.card);});}
+/* The line above the field, the markers and the saved state, after any change to the drafts. */
 function rvSync(){var n=rvDraftCount(),lost=0;rvThreads.forEach(function(th){if(!th.block)lost+=th.drafts.length;});
 draftsEl.textContent=n?(n+' inline comment'+(n===1?'':'s')+' drafted'+(lost?' ('+lost+' on text that is no longer in the document)':'')+'. Sent with the button you press.'):(tab?'':'Select text in the document to comment on it.');
-rvSave();}
+rvMarkers();rvSave();}
 function rvHidePop(){rvPending=null;popEl.style.display='none';}
 /* A selection was made or changed: offer the comment button when a comment can be made on it. */
 function rvOnSelect(e){if(e&&e.target&&rvInside(popEl,e.target))return;
@@ -213,12 +287,15 @@ document.addEventListener('keyup',rvOnSelect);
 /* The comment button: mark the passage and open its thread, with the field ready. */
 popBtn.addEventListener('click',function(){var p=rvPending;rvHidePop();if(!p)return;
 var th=rvThreadFor(p.anchor);
-if(!th.marks.length){th.block=p.block;th.marks=rvWrap(p.block,p.start,p.end,'rv-anno rv-draft');}
+if(!th.marks.length)rvPut(th,p);
+rvRestyle(th);
 try{var sel=window.getSelection?window.getSelection():null;if(sel&&sel.removeAllRanges)sel.removeAllRanges();}catch(err){}
 rvOpenThread(th,true);rvSync();});
 /* A marked passage: a click opens its thread, or closes it. */
 bodyEl.addEventListener('click',function(e){var m=rvMarkOf(e&&e.target);if(!m)return;
 var sel=window.getSelection?window.getSelection():null;if(sel&&sel.isCollapsed===false)return;
-for(var i=0;i<rvThreads.length;i++){var th=rvThreads[i];if(th.marks.indexOf(m)>=0){if(th.card)rvCloseThread(th);else rvOpenThread(th);return;}}});
+for(var i=0;i<rvThreads.length;i++){var th=rvThreads[i];if(th.marks.indexOf(m)>=0){if(th.card)rvCloseThread(th);else rvOpenThread(th);rvMarkers();return;}}});
 fieldEl.addEventListener('input',rvSave);
+/* The markers are level with their passages, which move when the pane is resized. */
+window.addEventListener('resize',rvMarkers);
 `;

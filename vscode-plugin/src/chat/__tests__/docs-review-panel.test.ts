@@ -1216,6 +1216,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *       string (the text model of the rendered document, anchors and the inline
  *       drafts), its styles, the comment button a selection offers, and the line
  *       that counts the drafts.
+ *   E202610138d4b90c9:S001/t12 (+8232 chars, +8238 bytes): the saved comments. The comment source
+ *       gains the threads of saved comments, the margin markers and the strip; the
+ *       shell gains the strip's markup above the comment panel and their styles.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -1229,9 +1232,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  113064,
-  bytes:  113123,
-  sha256: '0c87cda39d337eb42037f91fc0cc0f18a014d00db69eb1769ec1b4659c522226',
+  chars:  121296,
+  bytes:  121361,
+  sha256: '194ae044e5f5e4ef164a73b02f51b170fd9fad085422d28fe204ced39d4d2336',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1817,6 +1820,10 @@ interface WebviewRun {
   pop: BodyStub;
   popBtn: BodyStub;
   drafts: BodyStub;
+  /** The strip of saved comments with no passage: the element, its summary line and its list. */
+  hist: BodyStub;
+  histSum: BodyStub;
+  histList: BodyStub;
   /** Make a selection (or clear it with null) and let the script hear of it, as a mouse-up does. */
   select(range: { startContainer: BodyStub; startOffset: number; endContainer: BodyStub; endOffset: number } | null): void;
   /** The webview's saved state. */
@@ -1863,7 +1870,8 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
     'insrc-rv-kind', 'insrc-rv-state', 'insrc-rv-who', 'insrc-rv-field', 'insrc-rv-result',
     'insrc-rv-approve', 'insrc-rv-reject', 'insrc-rv-feedback',
     'insrc-rv-tabs', 'insrc-rv-md', 'insrc-rv-html', 'insrc-rv-html-path', 'insrc-rv-html-note', 'insrc-rv-frame',
-    'insrc-rv-pop', 'insrc-rv-pop-btn', 'insrc-rv-drafts'];
+    'insrc-rv-pop', 'insrc-rv-pop-btn', 'insrc-rv-drafts',
+    'insrc-rv-hist', 'insrc-rv-hist-sum', 'insrc-rv-hist-list'];
   const byId: Record<string, BodyStub> = {};
   for (const id of ids) byId[id] = bodyStub('div', id);
   byId['insrc-rv-field']!.value = '';
@@ -1951,6 +1959,7 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
       state: byId['insrc-rv-state']!, kind: byId['insrc-rv-kind']!, who: byId['insrc-rv-who']!,
     },
     pop: byId['insrc-rv-pop']!, popBtn: byId['insrc-rv-pop-btn']!, drafts: byId['insrc-rv-drafts']!,
+    hist: byId['insrc-rv-hist']!, histSum: byId['insrc-rv-hist-sum']!, histList: byId['insrc-rv-hist-list']!,
     select: (range) => {
       selection = range === null ? null : { isCollapsed: false, rangeCount: 1, getRangeAt: () => range, removeAllRanges: () => { selection = null; } };
       for (const l of docListeners['mouseup'] ?? []) l({ target: byId['insrc-docs-body'] });
@@ -5725,11 +5734,15 @@ test("docs review shell: the comment panel and the header are outside the one sc
   // comment panel; each of the first and last OUTSIDE the region.
   const iHead = markup.indexOf('<div class="rv-head">');
   const iScroll = markup.indexOf('<div id="insrc-rv-scroll" class="rv-scroll">');
+  const iHist = markup.indexOf('<details id="insrc-rv-hist" class="rv-hist">');
   const iBar = markup.indexOf('<div id="insrc-rv-bar" class="rv-bar">');
-  assert.ok(iHead > 0 && iScroll > iHead && iBar > iScroll, 'header, scrolling region, comment panel, in that order');
+  assert.ok(iHead > 0 && iScroll > iHead && iHist > iScroll && iBar > iHist, 'header, scrolling region, the strip of earlier comments, comment panel, in that order');
   const head = markup.slice(iHead, iScroll);
-  const region = markup.slice(iScroll, iBar);
+  const region = markup.slice(iScroll, iHist);
+  const strip = markup.slice(iHist, iBar);
   const bar = markup.slice(iBar);
+  assert.ok(strip.endsWith('</details>'), 'the strip is closed before the panel opens');
+  assert.ok(strip.includes('id="insrc-rv-hist-list"') && !region.includes('insrc-rv-hist'), 'and it too is outside the scrolling region');
   // The region closes before the panel begins: its two closing tags end the slice.
   assert.ok(region.endsWith('</div></div>'), 'the region is closed before the panel opens');
   const count = (text: string, re: RegExp): number => (text.match(re) ?? []).length;
@@ -5757,7 +5770,11 @@ test("docs review shell: the comment panel and the header are outside the one sc
   assert.ok(css.includes('.rv-head{flex:0 0 auto;'), 'the header keeps its own height');
   assert.ok(css.includes('.rv-bar{flex:0 0 auto;'), 'the comment panel keeps its own height');
   assert.ok(css.includes('.rv-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;}'), 'the region takes the rest and scrolls');
-  assert.equal(count(css, /overflow-y\s*:/g), 1, 'it is the one vertically scrolling element');
+  // The one other element that may scroll is the LIST inside the strip of earlier
+  // comments, which is capped so a long history cannot take the document's room.
+  assert.ok(css.includes('.rv-hist-list{max-height:170px;overflow-y:auto;'), "the strip's list is capped and scrolls on its own");
+  assert.ok(css.includes('.rv-hist{flex:0 0 auto;'), 'and the strip keeps its own height');
+  assert.equal(count(css, /overflow-y\s*:/g), 2, 'the document region and that list are the only vertical scrollers');
   assert.equal(count(css, /overflow\s*:\s*(?:auto|scroll)/g), 0, 'and nothing else scrolls both ways');
   assert.doesNotMatch(css, /position\s*:\s*(?:fixed|sticky)/, 'the panel is held by the layout, not pinned over the document');
 
@@ -6428,4 +6445,242 @@ test('docs review shell: drafts are cleared on a successful result, kept on a fa
   assert.equal(rebuilt.drafts.textContent, '1 inline comment drafted (1 on text that is no longer in the document). Sent with the button you press.');
   fire(rebuilt.bar.feedback, 'click');
   assert.equal((postedOf(rebuilt, 'docs-decision').at(-1)!['comments'] as Array<{ anchor?: { quote: string } }>)[0]!.anchor!.quote, 'cut to 8 lines');
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610138d4b90c9:S001 t12 — the saved comments of a document.
+// ---------------------------------------------------------------------------
+
+const MD_FILE = 'docs/epics/x/S007/LLD.md';
+/** A saved comment, as the daemon stores it. */
+const savedEntry = (o: {
+  id: string; at: string; comment: string; author?: string; decision?: string; kind?: string;
+  quote?: string; slug?: string; version?: string; file?: string;
+}): Record<string, unknown> => ({
+  id: o.id, author: o.author ?? 'Rev Iewer', timestamp: o.at,
+  target: { file: o.file ?? MD_FILE, ...(o.version !== undefined ? { version: o.version } : {}) },
+  comment: o.comment,
+  ...(o.kind !== undefined ? { kind: o.kind } : {}),
+  ...(o.quote !== undefined ? { anchor: { quote: o.quote, ...(o.slug !== undefined ? { sectionSlug: o.slug } : {}) } } : {}),
+  ...(o.decision !== undefined ? { decision: o.decision } : {}),
+});
+/** The time of a saved comment as the pane shows it: the reader's own time, to the minute. */
+const shownWhen = (iso: string): string => {
+  const d = new Date(iso);
+  const p = (n: number): string => (n < 10 ? '0' : '') + n;
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+const NOW_VERSION = '0123456789abcdef';
+const markersOf = (w: WebviewRun): BodyStub[] => w.md.children.filter((c) => c.className.split(' ')[0] === 'rv-marker');
+/** A saved comment's row as text: who, when, the tag, then its quote (if shown) and its text. */
+const rowText = (row: BodyStub): string[] => row.children.map((c) => c.textContent);
+const stripRows = (w: WebviewRun): string[][] => w.histList.children.map(rowText);
+
+const HISTORY = [
+  // Stored out of time order, to show that the pane orders them.
+  savedEntry({ id: 'new', at: '2026-10-13T03:45:00.000Z', author: 'Priya N', comment: 'Header now lists path and counts. OK.', decision: 'feedback', quote: 'cut to 8 lines', slug: 'summary', version: NOW_VERSION }),
+  savedEntry({ id: 'whole-late', at: '2026-10-13T05:00:00.000Z', comment: 'Approved as it stands.', decision: 'approve', version: NOW_VERSION }),
+  savedEntry({ id: 'old', at: '2026-10-12T10:35:00.000Z', comment: 'Say what the header shows when folded.', decision: 'reject', quote: 'cut to 8 lines', slug: 'summary', version: 'aaaa' }),
+  savedEntry({ id: 'gone', at: '2026-10-12T11:00:00.000Z', comment: 'This limit was fine.', decision: 'feedback', quote: 'a passage that was removed', slug: 'summary', version: 'aaaa' }),
+  savedEntry({ id: 'whole-first', at: '2026-10-11T09:00:00.000Z', author: 'Priya N', comment: 'Consider a shorter summary.', kind: 'suggestion', version: 'aaaa' }),
+  savedEntry({ id: 'on-html', at: '2026-10-13T06:00:00.000Z', comment: 'The arrow to the daemon is missing.', decision: 'feedback', file: TAB_SEQ }),
+  // Its words are in the document, but only in the document's own Feedback section.
+  savedEntry({ id: 'in-feedback', at: '2026-10-13T07:00:00.000Z', comment: 'Quoting the list itself.', decision: 'feedback', quote: 'A saved comment is listed here.', version: NOW_VERSION }),
+];
+
+test('docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order', () => {
+  const w = runWebview({ textNodes: true });
+  w.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: HISTORY });
+
+  // The two entries on one passage share ONE mark, solid (nothing on it is a draft).
+  const p = blockOf(w, SUMMARY_P);
+  assert.deepEqual(p.children.map((c) => (c.nodeType === 3 ? `text:${c.data}` : `${c.tagName}.${c.className}:${inlineText(c)}`)),
+    ['text:The header is ', 'mark.rv-anno:cut to 8 lines', 'text: until expanded.']);
+  assert.equal(marksIn(w.body).length, 1, 'no other passage is marked');
+  // A margin marker beside it, with the number of its comments.
+  const markers = markersOf(w);
+  assert.equal(markers.length, 1);
+  assert.equal(markers[0]!.className, 'rv-marker');
+  assert.equal(markers[0]!.tagName, 'button');
+  assert.equal(allOf(markers[0]!).find((n) => n.className === 'rv-n')!.textContent, '2', 'the count');
+  assert.equal(markers[0]!.attrs['aria-label'], '2 comments on this text');
+  assert.equal(cardsIn(w).length, 0, 'the thread is closed until it is asked for');
+
+  // A click on the marker opens the thread: the quote, then the comments OLDEST FIRST.
+  fire(markers[0]!, 'click');
+  const card = cardsIn(w)[0]!;
+  assert.equal(p.nextSibling, card);
+  assert.equal(card.children[0]!.textContent, '\u201ccut to 8 lines\u201d');
+  const saved = card.children.filter((c) => c.className === 'rv-c');
+  assert.deepEqual(saved.map(rowText), [
+    ['Rev Iewer', shownWhen('2026-10-12T10:35:00.000Z'), 'rejected \u00b7 on an earlier revision', 'Say what the header shows when folded.'],
+    ['Priya N', shownWhen('2026-10-13T03:45:00.000Z'), 'feedback', 'Header now lists path and counts. OK.'],
+  ], 'author, time and decision; the one made on another version says so');
+  assert.deepEqual(saved.map((r) => r.children[2]!.className), ['rv-tag rv-tag-reject', 'rv-tag']);
+  // The marker closes it again, and a click on the mark opens it.
+  fire(markersOf(w)[0]!, 'click');
+  assert.equal(cardsIn(w).length, 0);
+  fire(w.body, 'click', { target: marksIn(p)[0]! });
+  assert.equal(cardsIn(w).length, 1);
+
+  // THE STRIP: the entries with no passage, in time order.
+  assert.notEqual(w.hist.style['display'], 'none');
+  assert.equal(w.histSum.textContent, 'Earlier comments on the whole document (5)');
+  assert.deepEqual(stripRows(w), [
+    ['Priya N', shownWhen('2026-10-11T09:00:00.000Z'), 'suggestion \u00b7 on an earlier revision', 'Consider a shorter summary.'],
+    // Its quote is gone: listed as on an earlier revision, WITH the quote it was made on.
+    ['Rev Iewer', shownWhen('2026-10-12T11:00:00.000Z'), 'feedback \u00b7 on an earlier revision', '\u201ca passage that was removed\u201d', 'This limit was fine.'],
+    ['Rev Iewer', shownWhen('2026-10-13T05:00:00.000Z'), 'approved', 'Approved as it stands.'],
+    ['Rev Iewer', shownWhen('2026-10-13T06:00:00.000Z'), 'feedback \u00b7 on sequence-diagram.html', 'The arrow to the daemon is missing.'],
+    // The document's own Feedback section is never searched, so this one has no passage either.
+    ['Rev Iewer', shownWhen('2026-10-13T07:00:00.000Z'), 'feedback \u00b7 on an earlier revision', '\u201cA saved comment is listed here.\u201d', 'Quoting the list itself.'],
+  ]);
+  assert.equal(marksIn(blockOf(w, 'A saved comment is listed here.')).length, 0);
+  assert.deepEqual(w.histList.children.map((r) => r.children[2]!.className), ['rv-tag', 'rv-tag', 'rv-tag rv-tag-approve', 'rv-tag', 'rv-tag']);
+
+  // A reply on a saved thread is a draft on the same passage: dashed, counted, and sent with that anchor.
+  addInCard(cardsIn(w)[0]!, 'Agreed.');
+  assert.equal(marksIn(p)[0]!.className, 'rv-anno rv-draft');
+  assert.equal(markersOf(w)[0]!.className, 'rv-marker rv-draft');
+  assert.equal(allOf(markersOf(w)[0]!).find((n) => n.className === 'rv-n')!.textContent, '3');
+  assert.equal(markersOf(w)[0]!.attrs['aria-label'], '3 comments on this text, 1 not sent');
+  fire(w.bar.feedback, 'click');
+  assert.deepEqual(postedOf(w, 'docs-decision')[0]!['comments'], [
+    { comment: 'Agreed.', anchor: { quote: 'cut to 8 lines', sectionSlug: 'summary' }, version: NOW_VERSION },
+  ]);
+  // Once it is saved the thread stays, with its saved comments, and is solid again.
+  w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: true, outcome: 'recorded', recorded: 1, message: 'Feedback sent.' });
+  assert.equal(marksIn(p)[0]!.className, 'rv-anno');
+  assert.equal(allOf(markersOf(w)[0]!).find((n) => n.className === 'rv-n')!.textContent, '2');
+  // The host then posts the document again with the new entry: three on the passage.
+  w.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: [...HISTORY, savedEntry({ id: 'reply', at: '2026-10-13T08:00:00.000Z', comment: 'Agreed.', decision: 'feedback', quote: 'cut to 8 lines', slug: 'summary', version: NOW_VERSION })] });
+  assert.equal(marksIn(blockOf(w, SUMMARY_P)).length, 1);
+  assert.equal(allOf(markersOf(w)[0]!).find((n) => n.className === 'rv-n')!.textContent, '3');
+  assert.equal(markersOf(w).length, 1, 'the earlier marker is replaced, not added to');
+  assert.deepEqual(cardsIn(w)[0]!.children.filter((c) => c.className === 'rv-c').map((r) => r.children[3]!.textContent),
+    ['Say what the header shows when folded.', 'Header now lists path and counts. OK.', 'Agreed.'], 'the open thread is open again, oldest first');
+
+  // A document with no saved comments: no mark, no marker, and no strip.
+  const none = runWebview({ textNodes: true });
+  none.deliver({ ...INLINE_DOC, docPath: MD_FILE });
+  assert.equal(marksIn(none.body).length, 0);
+  assert.equal(markersOf(none).length, 0);
+  assert.equal(none.hist.style['display'], 'none');
+});
+
+test('docs review shell: a document that is not awaiting review shows its history and offers send feedback only', () => {
+  for (const state of [{ state: 'approved' }, { state: 'rejected' }, { state: 'pending', readOnly: true }]) {
+    const w = runWebview({ textNodes: true });
+    w.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: HISTORY, ...state });
+    // Its history is all there: the passage, its marker and thread, and the strip.
+    assert.equal(marksIn(blockOf(w, SUMMARY_P)).length, 1);
+    assert.equal(markersOf(w).length, 1);
+    fire(markersOf(w)[0]!, 'click');
+    assert.equal(cardsIn(w)[0]!.children.filter((c) => c.className === 'rv-c').length, 2);
+    assert.equal(w.histList.children.length, 5);
+    // Send feedback is the only decision offered.
+    assert.deepEqual(w.controls(), { approve: 'hidden', reject: 'hidden', feedback: 'on' });
+    assert.match(w.bar.state.textContent, /feedback only$/);
+    // And it still works: an inline reply and a whole-document comment go as feedback.
+    addInCard(cardsIn(w)[0]!, 'A late note.');
+    w.bar.field.value = 'And one on the whole.';
+    fire(w.bar.feedback, 'click');
+    const sent = postedOf(w, 'docs-decision');
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0]!['decision'], 'feedback');
+    assert.equal((sent[0]!['comments'] as unknown[]).length, 2);
+    // Approve and reject are not shown, and pressing them would post nothing more.
+    fire(w.bar.approve, 'click');
+    fire(w.bar.reject, 'click');
+    assert.equal(postedOf(w, 'docs-decision').length, 1);
+  }
+});
+
+test('docs review shell: author, comment and quote text are set as text, never as markup', () => {
+  const HOSTILE_AUTHOR = '<img src=x onerror=alert(1)>';
+  const HOSTILE_COMMENT = '<script>alert(1)</script><b>bold</b>';
+  const HOSTILE_QUOTE = '<i>gone</i> & "quoted"';
+  const w = runWebview({ textNodes: true });
+  const created = w.created.length;
+  w.deliver({
+    ...INLINE_DOC, docPath: MD_FILE, reviewer: { name: HOSTILE_AUTHOR, source: 'git' },
+    feedback: [
+      savedEntry({ id: 'a', at: '2026-10-12T10:00:00.000Z', author: HOSTILE_AUTHOR, comment: HOSTILE_COMMENT, decision: 'reject', quote: 'cut to 8 lines', slug: 'summary' }),
+      savedEntry({ id: 'b', at: '2026-10-12T11:00:00.000Z', author: HOSTILE_AUTHOR, comment: HOSTILE_COMMENT, decision: 'feedback', quote: HOSTILE_QUOTE }),
+      savedEntry({ id: 'c', at: '2026-10-12T12:00:00.000Z', author: HOSTILE_AUTHOR, comment: HOSTILE_COMMENT, decision: '<u>approve</u>', kind: '<u>kind</u>' }),
+      savedEntry({ id: 'd', at: '<time>', author: HOSTILE_AUTHOR, comment: HOSTILE_COMMENT, file: 'docs/x/<b>.html' }),
+    ],
+  });
+  fire(markersOf(w)[0]!, 'click');
+  addInCard(cardsIn(w)[0]!, HOSTILE_COMMENT); // a draft, shown under the reviewer's name
+
+  // Each string is shown character for character.
+  const card = cardsIn(w)[0]!;
+  const rows = card.children.filter((c) => c.className === 'rv-c');
+  assert.equal(rows[0]!.children[0]!.textContent, HOSTILE_AUTHOR);
+  assert.equal(rows[0]!.children[3]!.textContent, HOSTILE_COMMENT);
+  assert.equal(allOf(rows[1]!).find((n) => n.className === 'rv-who')!.textContent, HOSTILE_AUTHOR, "the draft's author");
+  assert.equal(allOf(rows[1]!).find((n) => n.className === 'rv-text')!.textContent, HOSTILE_COMMENT, "the draft's text");
+  const strip = stripRows(w);
+  assert.deepEqual(strip.find((r) => r.includes(`\u201c${HOSTILE_QUOTE}\u201d`))?.slice(0, 1), [HOSTILE_AUTHOR], 'the quote of an entry with no passage');
+  assert.ok(strip.every((r) => r[0] === HOSTILE_AUTHOR && r.at(-1) === HOSTILE_COMMENT));
+  assert.ok(strip.some((r) => r[2] === '<u>kind</u>'), 'an unknown decision falls back to the kind, as text');
+  assert.ok(strip.some((r) => r[1] === '<time>' && r[2] === 'comment \u00b7 on <b>.html'), 'a time that is not a time, and a file name, as text');
+  assert.equal(w.bar.who.textContent, `as ${HOSTILE_AUTHOR} (git user)`);
+
+  // NEVER as markup: nothing the comments touch was assigned innerHTML or outerHTML,
+  const touched = [...allOf(card), ...allOf(w.histList), w.histSum, w.hist, ...markersOf(w).flatMap(allOf), ...marksIn(w.body), w.bar.who, w.drafts];
+  assert.ok(touched.length > 30);
+  for (const n of touched) assert.ok(!n.writes.some((x) => x.prop === 'innerHTML' || x.prop === 'outerHTML'), `${n.tagName}.${n.className} was never assigned markup`);
+  // the body's own markup assignment (the guarded markdown path) carries none of it,
+  for (const x of w.body.writes.filter((y) => y.prop === 'innerHTML')) {
+    for (const hostile of [HOSTILE_AUTHOR, HOSTILE_COMMENT, HOSTILE_QUOTE]) assert.ok(!String(x.value).includes(hostile));
+  }
+  // and no element was made from their text: only the pane's own element kinds exist.
+  const made = new Set(w.created.slice(created));
+  for (const tag of ['script', 'img', 'b', 'i', 'u', 'time', 'iframe', 'a']) assert.ok(!made.has(tag), `no <${tag}> element was created`);
+  // No attribute carries their text either, other than the names the pane itself gives.
+  for (const n of touched) {
+    for (const [k, v] of Object.entries(n.attrs)) assert.ok(!/[<>]/.test(v), `attribute ${k} of ${n.tagName} holds no comment text`);
+  }
+});
+
+test('docs review shell: a saved entry with no string author, timestamp or comment is skipped and the strip says how many could not be shown', () => {
+  const good = savedEntry({ id: 'ok', at: '2026-10-12T10:00:00.000Z', comment: 'Readable.', decision: 'feedback' });
+  const placed = savedEntry({ id: 'ok2', at: '2026-10-12T11:00:00.000Z', comment: 'On the header.', decision: 'feedback', quote: 'cut to 8 lines', slug: 'summary' });
+  const bad = [
+    { ...good, author: 7 },
+    { ...good, author: undefined },
+    { ...good, timestamp: null },
+    { ...good, comment: { text: 'x' } },
+    { ...placed, comment: 42 },
+    null,
+    'a string',
+    [],
+  ];
+  const w = runWebview({ textNodes: true });
+  w.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: [bad[0], good, bad[1], bad[2], placed, bad[3], bad[4], bad[5], bad[6], bad[7]] });
+  assert.deepEqual(stripRows(w).map((r) => r.at(-1)), ['Readable.'], 'the readable whole-document entry is listed');
+  assert.equal(marksIn(blockOf(w, SUMMARY_P)).length, 1, 'and the readable inline one is placed');
+  assert.equal(allOf(markersOf(w)[0]!).find((n) => n.className === 'rv-n')!.textContent, '1', 'counted without the unreadable one on the same passage');
+  assert.equal(w.histSum.textContent, 'Earlier comments on the whole document (1) \u00b7 8 saved comments could not be shown');
+
+  // One unreadable entry reads in the singular.
+  const one = runWebview({ textNodes: true });
+  one.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: [good, bad[0]] });
+  assert.equal(one.histSum.textContent, 'Earlier comments on the whole document (1) \u00b7 1 saved comment could not be shown');
+  // Only unreadable entries: the strip is still shown, to say so.
+  const only = runWebview({ textNodes: true });
+  only.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: [bad[5], bad[0]] });
+  assert.notEqual(only.hist.style['display'], 'none');
+  assert.equal(only.histSum.textContent, 'Earlier comments on the whole document (0) \u00b7 2 saved comments could not be shown');
+  assert.equal(only.histList.children.length, 0);
+  // A feedback value that is not a list is no history at all, and breaks nothing.
+  for (const feedback of ['x', 7, { a: 1 }, null]) {
+    const odd = runWebview({ textNodes: true });
+    odd.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback });
+    assert.equal(odd.hist.style['display'], 'none');
+    assert.deepEqual(odd.controls(), ALL_ON, 'the document is still shown and can be decided on');
+    assert.ok(odd.body.children.length > 3);
+  }
 });

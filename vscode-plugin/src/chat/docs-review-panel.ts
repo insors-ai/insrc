@@ -1649,7 +1649,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.rv-frame{display:block;width:100%;height:100%;border:1px solid var(--vscode-panel-border);border-radius:4px;color-scheme:light;background:Canvas;}` +
       // The document: the one scrolling region.
       `.rv-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;}` +
-      `.rv-doc{position:relative;max-width:900px;margin:0 auto;padding:12px 28px 40px;color:var(--vscode-editor-foreground);}` +
+      `.rv-doc{position:relative;max-width:900px;margin:0 auto;padding:12px 56px 40px 28px;color:var(--vscode-editor-foreground);}` +
       `.insrc-docs-oq-item{color:var(--it-warn);margin:4px 0;}` +
       // The comment panel, styled as the chat panel's input: one rounded box holding the
       // field and round, icon-only buttons (the name is in the tooltip and the aria-label).
@@ -1687,6 +1687,19 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.rv-compose{padding:6px 8px;display:flex;gap:6px;align-items:center;}` +
       `.rv-compose textarea{flex:1;min-width:0;resize:none;height:30px;background:none;color:var(--vscode-input-foreground);border:0;outline:none;padding:5px 4px;font:inherit;line-height:1.5;}` +
       `.rv-ic.rv-sm{width:24px;height:24px;}.rv-ic.rv-sm svg{width:13px;height:13px;}` +
+      // Saved comments: when and with which decision; the margin marker beside a commented
+      // passage; and the strip of those with no passage, whose list is capped and scrolls
+      // on its own so a long history cannot take the document's room.
+      `.rv-when{color:var(--vscode-descriptionForeground);font-size:11px;margin-left:6px;}` +
+      `.rv-tag-approve{color:var(--vscode-charts-green);}.rv-tag-reject{color:var(--vscode-errorForeground);}` +
+      `.rv-hq{color:var(--vscode-descriptionForeground);font-style:italic;overflow-wrap:anywhere;}` +
+      `.rv-marker{position:absolute;right:6px;height:22px;min-width:34px;padding:0 6px;display:flex;align-items:center;justify-content:center;gap:3px;font:inherit;font-size:11px;border-radius:11px;cursor:pointer;` +
+      `background:var(--vscode-button-secondaryBackground);color:var(--vscode-button-secondaryForeground);border:1px solid var(--vscode-editorWidget-border);}` +
+      `.rv-marker svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;}` +
+      `.rv-marker.rv-draft{border-color:var(--vscode-editorWarning-foreground);color:var(--vscode-editorWarning-foreground);}` +
+      `.rv-hist{flex:0 0 auto;border-top:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);}` +
+      `.rv-hist summary{padding:5px 14px;cursor:pointer;color:var(--vscode-descriptionForeground);font-size:12px;}` +
+      `.rv-hist-list{max-height:170px;overflow-y:auto;border-top:1px solid var(--vscode-panel-border);background:var(--vscode-editor-background);}` +
       // The rendered document reads as an editor preview: headings in the editor's own
       // foreground with a rule under the first two levels, code in the editor's font.
       `#insrc-docs-body{font-size:14px;line-height:1.6;}` +
@@ -1851,6 +1864,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `const popEl=document.getElementById('insrc-rv-pop');` +
       `const popBtn=document.getElementById('insrc-rv-pop-btn');` +
       `const draftsEl=document.getElementById('insrc-rv-drafts');` +
+      // The strip of saved comments that have no passage, above the comment panel.
+      `const histEl=document.getElementById('insrc-rv-hist');` +
+      `const histSumEl=document.getElementById('insrc-rv-hist-sum');` +
+      `const histListEl=document.getElementById('insrc-rv-hist-list');` +
       // current: the id of the document shown. shown: its last docs-content message.
       // busy: a decision was posted and its result has not arrived. sent: how many
       // comments that decision carried.
@@ -2046,8 +2063,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // tab on show, and its frame.
       `docs=Array.isArray(m.documents)?m.documents:[];` +
       `if(!same||!tab||!docs.some(function(d){return d&&d.type==='html'&&d.relPath===tab;})){rvShowTab('');}else{rvTabs();}` +
-      // The body was rendered again: every draft's mark is put back on its passage.
-      `rvHidePop();rvPlaceDrafts();rvSync();` +
+      // The body was rendered again: the saved comments and the drafts are put on their
+      // passages, and the rest of the saved comments in the strip.
+      `rvHidePop();rvPlaceAll();rvSync();` +
       `renderList(items);renderBar();}` +
       `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
       `if(m.type==='docs-list'){renderList(m.artifacts);}` +
@@ -2100,6 +2118,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `<div id="insrc-rv-html-note" class="rv-html-note" aria-live="polite"></div>` +
       `<div id="insrc-rv-frame" class="rv-frame-host"></div>` +
       `</div></div>` +
+      // The saved comments that have no passage, collapsed until opened. Outside the
+      // scrolling region, like the comment panel under it.
+      `<details id="insrc-rv-hist" class="rv-hist"><summary id="insrc-rv-hist-sum"></summary>` +
+      `<div id="insrc-rv-hist-list" class="rv-hist-list"></div></details>` +
       // The comment panel: outside the scrolling region, so it is in view at every scroll
       // position. Icon-only buttons; each one's name is its title and aria-label.
       `<div id="insrc-rv-bar" class="rv-bar">` +

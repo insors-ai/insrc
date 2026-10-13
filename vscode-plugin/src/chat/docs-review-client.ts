@@ -56,6 +56,11 @@ export interface DocsReviewClient {
   /** All daemon-tracked pending artifacts, mapped to the sc3 summary shape. */
   pending(): Promise<DocsArtifactSummary[]>;
   /**
+   * Story E20261013e62a9269:S001: each pending document's id with its .md path (one with no
+   * path is skipped), in the daemon's order. It leaves what pending() retained alone.
+   */
+  pendingDocuments(): Promise<Array<{ readonly id: string; readonly mdPath: string }>>;
+  /**
    * One artifact's verbatim rendered body + open questions + block state. The arg is the
    * artifact's id (the sc3 summary drops mdPath, so the client resolves the .md path the
    * daemon needs from the id->mdPath map pending() retained; a raw path is accepted too).
@@ -123,6 +128,15 @@ export function createDocsReviewClient(client: IpcClient, opts: DocsReviewClient
         ...(typeof a.openQuestionCount === 'number' ? { openQuestions: a.openQuestionCount } : {}),
         ...(typeof a.workItemId === 'string' && a.workItemId !== '' ? { workItemId: a.workItemId } : {}),
       }));
+    },
+
+    async pendingDocuments(): Promise<Array<{ readonly id: string; readonly mdPath: string }>> {
+      const res = await client.rpc<{ artifacts: readonly PendingArtifact[] } | DaemonError>(
+        'workflow.pending',
+        where(),
+      );
+      if (isError(res)) throw new Error(res.error);
+      return res.artifacts.filter((a) => typeof a.mdPath === 'string' && a.mdPath !== '').map((a) => ({ id: a.artifactId, mdPath: a.mdPath }));
     },
 
     async content(idOrPath: string): Promise<DocsContent> {

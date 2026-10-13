@@ -32,7 +32,8 @@ import { deriveSectionIndex, createSectionResolver, type SectionIndex } from './
 const COMMENTABLE_KINDS = new Set(['DEF', 'HLD', 'LLD']);
 
 export interface DocsReviewHostDeps {
-  createPanel(opts: { viewType: string; title: string }): ChatPanelChannel;
+  /** quiet (Story E20261013e62a9269:S001): the pane is created without taking keyboard focus. */
+  createPanel(opts: { viewType: string; title: string; quiet?: boolean | undefined }): ChatPanelChannel;
   readonly client: DocsReviewClient;
   readonly logger?: ChatPanelLogger;
   readonly genNonce?: () => string;
@@ -81,8 +82,10 @@ export interface DocsReviewHost {
    * E2 S004 (sc7): open the pane on one artifact, by the id and docs/ markdown path
    * the delivery board took from the daemon's snapshot. Pending or read-only is
    * decided from this call's own pending read, never from the pane's refresh.
+   * Story E20261013e62a9269:S001: with quiet (a document the chat presents) the pane is
+   * created or brought to the front without taking keyboard focus.
    */
-  openArtifact(target: { readonly artifactId: string; readonly mdPath: string }): void;
+  openArtifact(target: { readonly artifactId: string; readonly mdPath: string; readonly quiet?: boolean | undefined }): void;
 }
 
 const VIEW_TYPE = 'insrc.docsReviewPanel';
@@ -2345,29 +2348,35 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     }
   }
 
+  /** Show the pane, creating it when there is none. quiet: without taking keyboard focus. */
+  function show(quiet: boolean): void {
+    disposed = false;
+    if (channel !== undefined) {
+      if (quiet) channel.reveal({ preserveFocus: true });
+      else channel.reveal();
+      void refreshPending();
+      return;
+    }
+    channel = deps.createPanel({ viewType: VIEW_TYPE, title: 'insrc docs review', ...(quiet ? { quiet: true } : {}) });
+    channel.onDidDispose(() => {
+      disposed = true;
+      channel = undefined;
+      pending.clear();
+      setOpened(undefined);
+    });
+    channel.onMessage(handleMessage);
+    channel.setHtml(renderShell());
+    // The webview boot ping also triggers refreshPending; post one now so a fast
+    // consumer (test double) sees the list without waiting for the ping.
+    void refreshPending();
+  }
+
   const host: DocsReviewHost = {
     open(): void {
-      disposed = false;
-      if (channel !== undefined) {
-        channel.reveal();
-        void refreshPending();
-        return;
-      }
-      channel = deps.createPanel({ viewType: VIEW_TYPE, title: 'insrc docs review' });
-      channel.onDidDispose(() => {
-        disposed = true;
-        channel = undefined;
-        pending.clear();
-        setOpened(undefined);
-      });
-      channel.onMessage(handleMessage);
-      channel.setHtml(renderShell());
-      // The webview boot ping also triggers refreshPending; post one now so a fast
-      // consumer (test double) sees the list without waiting for the ping.
-      void refreshPending();
+      show(false);
     },
     openArtifact(target): void {
-      host.open();
+      show(target.quiet === true);
       void openArtifactFrom(target);
     },
     dispose(): void {

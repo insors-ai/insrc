@@ -362,3 +362,30 @@ test('docs review client: pending forwards openQuestions and workItemId when the
   ], 'a count of 0 is given; an absent, empty or wrongly typed value is an absent key');
   for (const key of ['openQuestions', 'workItemId']) assert.equal(key in list[2]!, false);
 });
+
+// Story E20261013e62a9269:S001: what the review presenter reads.
+test("docs review client: pendingDocuments returns each pending document's id and path and skips one with no path", async () => {
+  const LIST = {
+    artifacts: [
+      { artifactId: 'LLD-abc-s7', kind: 'LLD', title: 'A', mdPath: '/repo/docs/epics/x/S007/LLD.md', openQuestionCount: 1, state: 'pending' },
+      { artifactId: 'CR-abc-s7', kind: 'CR', title: 'B', mdPath: '', openQuestionCount: 0, state: 'pending' },
+      { artifactId: 'PLAN-abc-s7', kind: 'PLAN', title: 'C', mdPath: '/repo/docs/epics/x/S007/PLAN.md', openQuestionCount: 0, state: 'pending' },
+    ],
+  };
+  const { client, calls } = fakeIpc((method) => (method === 'workflow.pending' ? LIST : { error: 'unexpected' }));
+  const c = createDocsReviewClient(client, { repo: () => '/repo' });
+  assert.deepEqual(await c.pendingDocuments(), [
+    { id: 'LLD-abc-s7', mdPath: '/repo/docs/epics/x/S007/LLD.md' },
+    { id: 'PLAN-abc-s7', mdPath: '/repo/docs/epics/x/S007/PLAN.md' },
+  ], "in the daemon's order, the one with no path skipped");
+  assert.deepEqual(calls, [{ method: 'workflow.pending', params: { repo: '/repo' } }], 'one call, naming the workspace folder');
+  // It leaves alone what pending() retained: content() by id still resolves through pending()'s map only.
+  const fresh = fakeIpc((method, params) => (method === 'workflow.pending' ? LIST : { renderedMarkdown: '# x', openQuestions: [], blocked: false, echo: params }));
+  const c2 = createDocsReviewClient(fresh.client, { repo: () => '/repo' });
+  await c2.pendingDocuments();
+  await c2.content('LLD-abc-s7');
+  assert.deepEqual((fresh.calls.at(-1)!.params as { mdPath: string }).mdPath, 'LLD-abc-s7', 'pendingDocuments did not fill the id-to-path map');
+  // The daemon's error is thrown, as pending() throws it.
+  const bad = fakeIpc(() => ({ error: 'workflow.pending: `repo` is required' }));
+  await assert.rejects(() => createDocsReviewClient(bad.client).pendingDocuments(), /repo` is required/);
+});

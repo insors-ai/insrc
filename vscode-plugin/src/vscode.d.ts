@@ -85,7 +85,7 @@ declare module 'vscode' {
     readonly visible: boolean;
     /** The tab icon (themed light/dark) — the insrc chat sets this to the insrc mark. */
     iconPath?: Uri | { readonly light: Uri; readonly dark: Uri } | undefined;
-    reveal(viewColumn?: ViewColumn): void;
+    reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
     onDidDispose(listener: () => unknown): Disposable;
     /** Fires when the panel's `active` / `visible` state changes (chat group lock). */
     onDidChangeViewState(listener: (e: unknown) => unknown): Disposable;
@@ -129,7 +129,7 @@ declare module 'vscode' {
     export function createWebviewPanel(
       viewType: string,
       title: string,
-      showOptions: ViewColumn,
+      showOptions: ViewColumn | { readonly viewColumn: ViewColumn; readonly preserveFocus?: boolean | undefined },
       options?: { enableScripts?: boolean | undefined },
     ): WebviewPanel;
     /** Present a quick-pick menu; resolves the chosen item or undefined on dismiss (S004 sc9). */

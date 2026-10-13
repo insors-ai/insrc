@@ -19,7 +19,7 @@ export interface WebviewPanelLike {
     onDidReceiveMessage(listener: (message: unknown) => void): unknown;
   };
   onDidDispose(listener: () => void): unknown;
-  reveal(): void;
+  reveal(viewColumn?: undefined, preserveFocus?: boolean): void;
   dispose(): void;
 }
 
@@ -40,7 +40,7 @@ export function webviewChannel(panel: WebviewPanelLike): ChatPanelChannel {
     onDidDispose: (listener) => {
       panel.onDidDispose(listener);
     },
-    reveal: () => panel.reveal(),
+    reveal: (opts) => (opts?.preserveFocus === true ? panel.reveal(undefined, true) : panel.reveal()),
     dispose: () => panel.dispose(),
   };
 }

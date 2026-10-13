@@ -27,7 +27,192 @@
     "sizeClass": "small",
     "triageRationale": "One story in one module with one clear approach: the approved spec already fixes which theme variable each component uses, so what is left is replacing colour values in three style sources and adding a check that no fixed colour remains.",
     "seededFromSpec": "3d2161bcef24cecf",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Every element of the approved mapping in SPEC-3d2161bcef24cecf has a name in the layer, including the markdown group 'textPreformat.*, textCodeBlock.background, textBlockQuote.* and textSeparator.foreground'.",
+          "evidence": "The spec maps markdown to 'textPreformat.*' (foreground and background). The layer defines only `--pre-fg: var(--vscode-textPreformat-foreground)`; there is no name for textPreformat.background. The cause is the token set: markdown-style.ts:88-89 uses the single `codeBg` field for both inline code (`.insrc-md code{...background:${t.codeBg}`) and fenced blocks (`.insrc-md pre{background:${t.codeBg}`), and the design points `codeBg` at the code-block ground, so inline code chips get textCodeBlock.background instead of textPreformat.background. Every other mapping entry I compared (bars, bubbles, tool row, markers, diff, approval, buttons, decided chips, selection card, input, selects, pill, attachment chips, progress, quote, separator, focus) has a name. [files: docs/standalone/dev-chat-follows-vs-code-theme-E202610133d2161bc/SPEC.md, vscode-plugin/src/chat/markdown-style.ts]",
+          "action": "Add a `--pre-bg: var(--vscode-textPreformat-background)` name and an override rule for inline code (`.insrc-md code{background:var(--pre-bg)}` with `.insrc-md pre code` kept at none) among the rules the shell adds after the markdown rules, or record explicitly that inline code takes the code-block ground and why.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No non-goal is built: layout, shapes and glyphs are unchanged, the docs-review panel is untouched, and the font change is limited to the theme's monospace editor font.",
+          "evidence": "The design changes colour values only, plus one wrapper span for the history chip whose border, radius and icon position are kept. The docs-review panel is fed only by renderTerminalStyle and DOCS_REVIEW_MARKDOWN_TOKENS (docs-review-panel.ts:1222, 1489), neither of which is changed. One caveat: the design's default for `--sans` is `var(--vscode-font-family)` (the interface font), while the spec says 'Fonts are the theme's monospace editor font' and lists 'Changing fonts other than taking the theme's monospace editor font' as a non-goal. The design does not hide this: it raises it as the open question, and today's prose font is indeed a fixed sans stack (chat-panel.ts:597, markdown-style.ts:77, 100).",
+          "action": "Resolve the open question before planning. If the answer is not the editor font, the spec's font wording needs the user's explicit change, since the default as written contradicts it.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today the shell forces a dark colour scheme and chooses colours from 19 named variables holding fixed values, with further fixed tints, gradients and fixed code grounds in its rules, the row renderer's style and the markdown tokens.",
+          "evidence": "chat-panel.ts:594-597 is `:root{color-scheme:dark;--font:...;--bg:#0b0e14;...--sans:'Inter',...}` with exactly 19 names (font, bg, bg-alt, bg-inset, panel, fg, fg-strong, muted, dim, border, border-lit, accent, accent2, amber, magenta, red, user, sel, sans). Fixed values outside :root: radial gradients on body (599) and #insrc-term (610), the dot's box-shadow (605), the pill border (669), diff lines (691-692), user bubble (707), `#0a0d14` on .insrc-toolrow (712) and .insrc-json (722). render-registry.ts:201-250 holds rgba tints, linear-gradient tints, hex text colours, `#0a0d14` and literal fallbacks (`var(--border,#222a36)`, `var(--muted,#9aa3ad)`, `var(--font,monospace)`). markdown-style.ts:110 is `codeBg: '#0a0d14'`.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today the history chip is the select itself, with a faint fixed fill and a clock icon painted as an SVG data URI whose stroke is a fixed colour.",
+          "evidence": "chat-panel.ts:685-688: `.chrome #insrc-history{...background-color:rgba(255,255,255,.045);border:1px solid var(--border);border-radius:6px;background-image:url(\"data:image/svg+xml,...stroke='%23c6cdd8'...\"),linear-gradient(...),linear-gradient(...)`. The markup at 943 is a bare `<select id=\"insrc-history\" class=\"segsel ...\">` inside `<span class=\"right\">`.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The shared token sheet supplies the marker glyphs and the chat only re-tones them; the sheet maps nine roles to theme variables with literal fallbacks.",
+          "evidence": "design-tokens.ts:220-224 sets `content: var(--it-mk-*)` on the marker ::before rules; chat-panel.ts:616-620 overrides only the colour with `!important`. design-tokens.ts:184-194 emits nine `var(--vscode-*, literal)` roles (font, bg, fg, dim, accent, warn, err, sel, border). Worth knowing when building: the shell emits `${style}${layoutStyle}` (928) and the body is `<body class=\"insrc-term\">` (935), so the shared rule `.insrc-term{font-family;font-size;line-height;background;color}` outranks the shell's `body{...}` rule by specificity. The body's own font, size and ground therefore already come from the shared sheet, not from `--font`/`--bg`.",
+          "action": "None required. The builder should not expect the `body{}` declarations to be what the panel shows; the `.box` and descendant rules are what take effect.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The decided badge can get its own passed and failed colours through `.insrc-permoutcome__badge.insrc-approval__btn--approve` and `--deny` without changing the renderer's class names.",
+          "evidence": "render-registry.ts:525 builds the badge as `badge.className='insrc-permoutcome__badge insrc-approval__btn--'+(approved?'approve':'deny')`, so both classes are on the same element and the two-class selector matches and outranks the single-class button rules at 222-223.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The markdown token set has no field for a block quote ground, a separate rule colour or a separate link colour, so those must be added by the shell after the markdown rules while renderMarkdownStyle stays unchanged.",
+          "evidence": "markdown-style.ts:86 gives the block quote only a left border and text colour; 92 draws `hr` from `t.border`; 88 and 91 both use `t.accent` for inline code text and for links. Pointing `accent` at the preformat foreground therefore also recolours links, which the design corrects with a later `.insrc-md a` rule. chat-panel.ts:720 emits the markdown rules inside layoutStyle, so rules appended after it win at equal specificity.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A masked icon given as a data URI is allowed by the existing content security policy, and the existing policy test will still see it.",
+          "evidence": "chat-panel.ts:585: `default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'nonce-...'`. Mask images are fetched under img-src, which permits data:. The existing test (chat-panel.test.ts:1508-1516) collects every `url(` scheme across all style blocks, not only background-image, so a `mask-image:url(\"data:...\")` keeps both its non-vacuous guard and its policy check.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The three listed files are the only places the chat's colours are set: RENDER_REGISTRY_STYLE and CHAT_MARKDOWN_TOKENS have no other consumer, and no colour is set from script.",
+          "evidence": "RENDER_REGISTRY_STYLE is consumed only at chat-panel.ts:698 (tests aside); CHAT_MARKDOWN_TOKENS only at chat-panel.ts:720. A search of chat-panel.ts, render-registry.ts and transcript-pager.ts for `.style`, cssText and style attributes finds only `bar.style.display` in transcript-pager.ts:66-67. The chat's names appear nowhere else in non-test source (docs-review-panel.ts:1496 only mentions them in a comment). The mock generator (mocks/gen-mocks.ts) does not render the chat shell.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The existing tests that need changing are 'the four assertions that pinned the history chip's old fill and icon stroke'.",
+          "evidence": "Only two assertions pin the fill and stroke (1463 `background-color:rgba\\(255,255,255,\\.045\\)`, 1477 `stroke='%23c6cdd8'`). Moving the border, radius, ground and icon from the select to a wrapper with a ::before mask breaks more, in two tests. Test at 1119 ('...the rest of the chip is untouched') asserts on the `.chrome #insrc-history{...}` rule: 1127 `border:1px solid var\\(--border\\)`, 1128 `border-radius:6px`, 1129 `padding:3px 16px 3px 22px`, 1130 `background-position:left 6px center`. Test at 1449 asserts on the same rule: 1455 `background-image:url\\(\"data:image\\/svg\\+xml,`, 1456 `background-repeat:no-repeat,no-repeat,no-repeat` (three layers), 1461 border, 1462 radius, 1466-1475 the padding and `background-position:left (\\d+)px center` relationship. Roughly ten assertions across two tests pin where the chip's border, radius and icon live, not four. [files: vscode-plugin/src/chat/__tests__/chat-panel.test.ts]",
+          "action": "Replace the migration step's count with the real inventory: both tests (chat-panel.test.ts:1119-1131 and 1449-1483) must be rewritten to assert the border, radius and ground on the wrapper, the icon as a mask in its ::before placed inside the left padding, and the select's own rule reduced to max-width, padding and the two arrow layers. Keep the intent of each (one control, icon inside the padding, 36ch cap).",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Nothing stored changes and the docs-review panel's document stays byte-identical, because it does not share any of the three changed sources.",
+          "evidence": "docs-review-panel.ts:14 and 19 import only renderTerminalStyle, DOCS_REVIEW_MARKDOWN_TOKENS and renderMarkdownStyle; 1489 builds its markdown rules from DOCS_REVIEW_MARKDOWN_TOKENS and its own rules use `--it-*` only. It does not import RENDER_REGISTRY_STYLE or CHAT_MARKDOWN_TOKENS. The design leaves renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS and design-tokens.ts unchanged, and the change touches only CSS strings, so no transcript row, message or setting shape is involved.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every optional theme variable falls back to a variable every theme defines, so no element loses its ground or border when a theme leaves one unset.",
+          "evidence": "VS Code's colour registry is not in this repository, so I could not check which variables are always emitted. The fallback chains as written are well formed. One case to confirm: as far as I recall, high-contrast themes leave both diffEditor.insertedLineBackground and diffEditor.insertedTextBackground unset (they use borders instead), and likewise for the removed pair. If so `--add-bg` and `--del-bg` have no value there and the diff's added and removed lines are drawn with no ground at all (chat-panel.ts:691-692 give them nothing else to tell them apart). The result is a transparent line, not a broken one, but the design's statement that the fallback is 'a variable every theme defines' would be untrue for these two names.",
+          "action": "Check the diff line grounds in a high-contrast theme during the smoke test. If they are unset, state the expected high-contrast look for diff lines in the edge cases (for example a contrast-border edge), and narrow the test's claim about fallbacks accordingly.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The colour scheme can follow the theme-kind class on the body: light for vscode-light and vscode-high-contrast-light, dark for vscode-dark and vscode-high-contrast.",
+          "evidence": "The classes are added by VS Code at run time, not by this repository: the shell emits only `<body class=\"insrc-term\">` (chat-panel.ts:935, pinned by chat-panel.test.ts:1243), and no file under vscode-plugin/src mentions the vscode-light or vscode-dark classes. From memory, a high-contrast light webview body carries both `vscode-high-contrast-light` and `vscode-high-contrast` (kept for compatibility). If that is right, a `body.vscode-high-contrast{color-scheme:dark}` rule also matches high-contrast light, and the result depends on rule order.",
+          "action": "Write the light high-contrast rule after the dark high-contrast rule (or exclude it with `:not(.vscode-high-contrast-light)`), say so in the design, and have the unit test assert that order. Confirm in the smoke check with a high-contrast light theme, which the smoke subject should name explicitly.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion (ac1, ac2, ac3) maps to at least one named test, and the tests can be written the way the strategy says: the shell rendered through createChatPanelHost with a fake channel, with the chat's own style separable from the shared token sheet.",
+          "evidence": "The LLD's acceptanceMapping (LLD-7fefc3fc5c51793e-S001.json:237-256) gives ac1 two unit tests and the smoke check, ac2 one unit test and ac3 two integration tests. chat-panel.test.ts:117 and chat-shell.test.ts:45 already render the shell through `createChatPanelHost({ createPanel: () => channel, ... })`. The shell emits the shared sheet and the chat's own style as two separate `<style>` blocks (`${style}${layoutStyle}`, chat-panel.ts:928), so a test can scan the second alone. Two things for the builder: the attachment rules are emitted only when the host has the attachment seams (chat-panel.ts:653-668), so the scan must render a host with attachments on or `.attchip` goes unchecked; and ac1's 'follows the theme' rests in part on the smoke check, which the gate cannot run.",
+          "action": "Render the shell with the attachment seams present in the colour-scan and name-defined tests, and record the smoke result as reported by the builder.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 12,
+        "unverified": 2
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-13T06:26:55.196Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

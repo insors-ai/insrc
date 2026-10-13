@@ -505,3 +505,37 @@ test('review view: docPath, contentVersion, feedback, reviewer and state are ret
 		}
 	}
 });
+
+// Story E20261013dd277f9c:S001 — a BUILD record is a listed kind: the pane reads it by the
+// path the pending list gives.
+test("handleArtifactContent serves a BUILD record's markdown by the path the pending list gives, with kind BUILD", async () => {
+	const { listPendingArtifacts } = await import('../pending.js');
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-artcontent-build-'));
+	try {
+		const hash = '238917216d8fd532';
+		const id = `BUILD-${hash}-S001`;
+		const meta = { workflow: 'build', epicHash: hash, epicCreatedAt: '2026-09-19T08:00:00.000Z', epicSlug: 'demo', storyId: 'S001', standalone: true };
+		const dir = join(repo, ARTIFACTS_DIR);
+		mkdirSync(dir, { recursive: true });
+		writeFileSync(join(dir, `${id}.json`), JSON.stringify({ meta, body: { summary: 'built' } }));
+		writeFileSync(join(dir, `CR-${hash}-S001.json`), JSON.stringify({ meta: { ...meta, workflow: 'code-review' }, body: { verdict: 'pass' } }));
+		const mdRel = `docs/standalone/demo-E20260919${hash.slice(0, 8)}/S001/BUILD.md`;
+		const text = `<!-- insrc:artifact ${id} -->\n\n# Build (standalone small) — Story S001\n\nAll tasks passed.\n`;
+		mkdirSync(join(repo, mdRel, '..'), { recursive: true });
+		writeFileSync(join(repo, mdRel), text);
+
+		// The pending list gives the build record with this file's path,
+		const listed = listPendingArtifacts(repo).find(a => a.artifactId === id);
+		assert.ok(listed, 'the build record is pending');
+		assert.equal(listed.mdPath, join(repo, mdRel));
+		// and the content call serves it by that path.
+		const view = asView(handleArtifactContent({ repo, mdPath: listed.mdPath }, undefined));
+		assert.equal(view.artifactId, id);
+		assert.equal(view.kind, 'BUILD');
+		assert.equal(view.renderedMarkdown, text, 'its markdown, byte for byte');
+		assert.equal(view.docPath, mdRel);
+		assert.equal(view.state, 'pending');
+		assert.equal(view.approvable, true, 'no design review blocks a build record; its code-review rule is enforced at approval');
+		assert.deepEqual(view.openQuestions, []);
+	} finally { cleanup(repo); }
+});

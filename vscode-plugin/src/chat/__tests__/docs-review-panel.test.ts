@@ -7240,3 +7240,31 @@ test('docs review shell: a diagram or mock that has its own tab is not also draw
   w.deliver({ ...BASE, documents: [MD, tabOf(UX), tabOf(SEQ)] });
   assert.deepEqual([w.diagram.children.length, w.experience.children.length], [0, 0]);
 });
+
+// Story E20261013dd277f9c:S001 — the daemon's pending list now carries BUILD records.
+test('docs review shell: a BUILD row is listed between ISSUE and CR, counted in the type select, and opens like any other row', () => {
+  const w = runWebview({ textNodes: true });
+  w.send('docs-list', { artifacts: [
+    { id: 'CR-abc-S001', kind: 'CR', title: 'CR E20261013abc:S001', status: 'pending', workItemId: 'E20261013abc:S001' },
+    { id: 'BUILD-abc-S001', kind: 'BUILD', title: 'BUILD E20261013abc:S001', status: 'pending', workItemId: 'E20261013abc:S001', openQuestions: 0 },
+    { id: 'ISSUE-def', kind: 'ISSUE', title: 'A defect', status: 'pending' },
+    { id: 'LLD-abc-S001', kind: 'LLD', title: 'A design', status: 'pending' },
+  ] });
+  assert.deepEqual(listRows(w).map((r) => r[0]), ['LLD', 'ISSUE', 'BUILD', 'CR'], 'between ISSUE and CR');
+  assert.deepEqual(listRows(w)[2], ['BUILD', 'BUILD E20261013abc:S001', 'E20261013abc:S001', '0']);
+  assert.deepEqual(w.lv.kind.children.map((o) => [o.value, o.textContent]), [
+    ['', 'All types (4)'], ['LLD', 'LLD (1)'], ['ISSUE', 'ISSUE (1)'], ['BUILD', 'BUILD (1)'], ['CR', 'CR (1)'],
+  ]);
+  w.lv.kind.value = 'BUILD';
+  fire(w.lv.kind, 'change');
+  assert.deepEqual(listRows(w).map((r) => r[1]), ['BUILD E20261013abc:S001']);
+  // It opens like any other row, and is decided like any pending document that takes no comments.
+  fire(rowButton(w, 'BUILD E20261013abc:S001'), 'click');
+  assert.deepEqual(postedOf(w, 'open-doc').at(-1), { type: 'open-doc', artifactId: 'BUILD-abc-S001' });
+  w.deliver({ artifactId: 'BUILD-abc-S001', markdown: '# Build — Story S001\n\nAll tasks passed.\n', openQuestions: [], blocked: false, state: 'pending', contentVersion: '0123456789abcdef', reveal: true });
+  assert.equal(w.lv.view(), 'doc');
+  assert.equal(w.lv.title.textContent, 'BUILD E20261013abc:S001');
+  assert.equal(w.bar.kind.textContent, 'BUILD');
+  assert.equal(w.controls().approve, 'on');
+  assert.equal(w.controls().reject, 'on');
+});

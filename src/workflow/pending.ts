@@ -19,7 +19,7 @@
  * only renders + transports.
  */
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { closeSync, existsSync, openSync, readdirSync, readFileSync, readSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getLogger } from '../shared/logger.js';
@@ -33,10 +33,12 @@ const log = getLogger('workflow-pending');
 // sc1 contract types
 // ---------------------------------------------------------------------------
 
-/** The reviewer-approvable artifact kinds the pending list surfaces. BUILD /
- *  EXTEND / STUB / AMD are deliberately excluded — they are not artifacts a
- *  reviewer approves in the review panel. */
-export const PENDING_KINDS = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'ISSUE', 'CR'] as const;
+/** The reviewer-approvable artifact kinds the pending list surfaces. A BUILD
+ *  record is listed once its Story's code review has run (Story
+ *  E20261013dd277f9c:S001): its approval is the Story's completion. EXTEND /
+ *  STUB / AMD stay excluded — they are not artifacts a reviewer approves in
+ *  the review panel. */
+export const PENDING_KINDS = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'ISSUE', 'BUILD', 'CR'] as const;
 export type PendingKind = typeof PENDING_KINDS[number];
 
 export interface PendingArtifact {
@@ -107,12 +109,18 @@ export function listPendingArtifacts(repoPath: string): readonly PendingArtifact
 	const dir = join(repoPath, ARTIFACTS_DIR);
 	if (!existsSync(dir)) return [];
 
-	const files = readdirSync(dir).filter(f => f.endsWith('.json'));
+	// Sorted, so the list's order is the names' order on every platform.
+	const files = readdirSync(dir).filter(f => f.endsWith('.json')).sort();
+	const names: ReadonlySet<string> = new Set(files);
 	const out: PendingArtifact[] = [];
 
 	for (const file of files) {
 		const kind = kindFromFilename(file);
 		if (!PENDING_KIND_SET.has(kind)) continue;   // non-reviewer-approvable kind
+		// A BUILD record exists from its Story's first validated task. It awaits
+		// approval only once the Story's code review has run: its CR record, the
+		// same name under the CR prefix, is then in this directory.
+		if (kind === 'BUILD' && !names.has(`CR${file.slice('BUILD'.length)}`)) continue;
 
 		let art: ArtifactShape;
 		try {
@@ -148,12 +156,42 @@ function toDescriptor(repoPath: string, file: string, kind: PendingKind, art: Ar
 		artifactId,
 		kind,
 		title:  deriveTitle(kind, meta, body, workItemId, artifactId),
-		mdPath: deriveMdPath(repoPath, kind, meta),
+		mdPath: kind === 'BUILD' ? buildRecordMdPath(repoPath, artifactId, meta) : deriveMdPath(repoPath, kind, meta),
 		openQuestionCount,
 		state:  'pending',
 	};
 	if (workItemId !== undefined) descriptor.workItemId = workItemId;
 	return descriptor;
+}
+
+/** How much of a BUILD.md is read to find its artifact marker. */
+const MARKER_HEAD_CHARS = 512;
+
+/**
+ * A BUILD record's .md path: the derived path only when that file exists and
+ * its head carries THIS record's artifact marker, else ''. Two older shapes
+ * fail: a record without `epicCreatedAt` whose build began on a later day than
+ * its work item derives a folder that does not exist, and a BUILD.md written
+ * before the marker was introduced cannot be resolved by the content and
+ * decision calls. Such a record is listed by its id with no path.
+ */
+function buildRecordMdPath(repoPath: string, artifactId: string, meta: Readonly<Record<string, unknown>>): string {
+	const derived = deriveMdPath(repoPath, 'BUILD', meta);
+	if (derived === '' || !existsSync(derived)) return '';
+	let head: string;
+	try {
+		const fd = openSync(derived, 'r');
+		try {
+			// 4 bytes a character at most: the head is whole however it is encoded.
+			const buf = Buffer.alloc(MARKER_HEAD_CHARS * 4);
+			head = buf.toString('utf8', 0, readSync(fd, buf, 0, buf.length, 0)).slice(0, MARKER_HEAD_CHARS);
+		} finally {
+			closeSync(fd);
+		}
+	} catch {
+		return '';
+	}
+	return head.includes(`<!-- insrc:artifact ${artifactId} -->`) ? derived : '';
 }
 
 /** Canonical E…:S…:T… identity when the meta carries the hash + createdAt

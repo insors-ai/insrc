@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -92,3 +92,42 @@ Run at 2026-10-13T12:39:56.293Z on commit `9ebe0d95`. Tests check: **passed**. 3
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/context/__tests__/driver-unit.test.ts` | 0 | 31 | 0.8 s |  |
 | `src/analyze/context/__tests__/shaper-errors.test.ts` | 0 | 4 | 0.6 s |  |
+
+## t4
+
+Run at 2026-10-13T12:45:35.350Z on commit `2cec35d1`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline | `src/analyze/context/__tests__/run-shaper-wiring.test.ts` |
+
+**unit: pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member | `src/analyze/context/__tests__/pipeline-outcome.test.ts` |
+| pass | cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call | `src/analyze/context/__tests__/pipeline-outcome.test.ts` |
+
+**unit: classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings | `src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts` |
+| pass | the cause codes are declared in both lists | `src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts` |
+
+**unit: runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error | `src/analyze/orchestrator/__tests__/shaper-causes.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/pipeline-outcome.test.ts` | 0 | 18 | 0.8 s |  |
+| `src/analyze/context/__tests__/run-shaper-wiring.test.ts` | 0 | 10 | 1.7 s |  |
+| `src/analyze/orchestrator/__tests__/shaper-causes.test.ts` | 0 | 1 | 0.7 s |  |
+| `src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts` | 0 | 8 | 0.6 s |  |

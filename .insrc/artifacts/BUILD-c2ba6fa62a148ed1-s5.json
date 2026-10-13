@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T12:39:56.293Z",
+    "updatedAt": "2026-10-13T12:45:35.350Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -22,9 +22,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "A failed model call in the shaper's tool loop or final structured emit is now reported as 'The model call for the tool loop failed: ...' / 'The model call for the final structured emit failed: ...', naming no provider the failure did not come from.",
+    "summary": "A throw from the last-indexed read (at runShaper's freshness check or inside the pipeline) and from the lookup executor are now the named pipeline causes 'index-state-read-failed' and 'lookup-failed', each with its own typed error and code on both the daemon and plan-tree mappings, instead of a raw rejection reported as internal-error.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
     },
@@ -34,9 +38,9 @@
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:39:56.293Z"
+        "timestamp": "2026-10-13T12:45:35.350Z"
       }
     ],
-    "commit": "9ebe0d95"
+    "commit": "2cec35d1"
   }
 }

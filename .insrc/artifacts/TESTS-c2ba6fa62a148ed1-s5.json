@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T12:39:56.293Z",
+    "updatedAt": "2026-10-13T12:45:35.350Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -529,6 +529,262 @@
               },
               {
                 "title": "a tool's output with no JSON form is described as text and never thrown into the tool loop",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "2cec35d1",
+        "ranAt": "2026-10-13T12:45:35.350Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+                "title": "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+                "title": "cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+                "title": "classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+                "title": "the cause codes are declared in both lists",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/shaper-causes.test.ts",
+                "title": "runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 784,
+            "titles": [
+              {
+                "title": "focused request on a repo: stand-in arguments and bundle equal the recorded baseline",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns each cause for the stand-in that produces it, including 'empty-plan' through the fourth stand-in",
+                "result": "pass"
+              },
+              {
+                "title": "a planning call that fails for another reason is replaced by the free-form lookup, as before",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns 'not-applicable' for classification and task modes",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace",
+                "result": "pass"
+              },
+              {
+                "title": "an unfocused intent whose plan is replaced falls to the free-form lookup with a broad-survey purpose",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path",
+                "result": "pass"
+              },
+              {
+                "title": "module scope: lookup path and cache key unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call",
+                "result": "pass"
+              },
+              {
+                "title": "error messages state the cause, name the failed call, and never say retries or Ollama for another provider",
+                "result": "pass"
+              },
+              {
+                "title": "CLI and sampling call failures give 'planner-model-failed' and 'answer-model-failed' from the pipeline",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper throws ShaperAnswerStepFailedError with reason 'invalid-bundle' for an invalid bundle",
+                "result": "pass"
+              },
+              {
+                "title": "settlePipelineOutcome: a valid bundle is stamped and returned; not-applicable continues; a cause throws its error",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline's three causes after the lookups ran carry the results and the report, and the cause table gives ShaperAnswerStepFailedError with its reason",
+                "result": "pass"
+              },
+              {
+                "title": "a missing answer prompt found after the lookups ran carries the results and the report under its own code; a missing planning prompt carries none",
+                "result": "pass"
+              },
+              {
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              },
+              {
+                "title": "a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1735,
+            "titles": [
+              {
+                "title": "runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a refused pairing fails before the scope is resolved or any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a scope outside every registered repo fails as not indexed before any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a cause becomes its typed error and does NOT fall through to the tool loop",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper's run-mode bundle carries the report derived from the executed lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report",
+                "result": "pass"
+              },
+              {
+                "title": "a bundle cached before the change is not returned",
+                "result": "pass"
+              },
+              {
+                "title": "the tool loop's final answer is asked for with a schema that has no report, and a classification bundle carries none",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/shaper-causes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 688,
+            "titles": [
+              {
+                "title": "runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 618,
+            "titles": [
+              {
+                "title": "both classifyShaperError functions map each of the five new error classes to its code",
+                "result": "pass"
+              },
+              {
+                "title": "one list of ten error classes gives the same code from the plan tree's and the daemon's mapping",
+                "result": "pass"
+              },
+              {
+                "title": "an error neither mapping knows stays internal-error on both sides",
+                "result": "pass"
+              },
+              {
+                "title": "the cause codes are declared in both lists",
+                "result": "pass"
+              },
+              {
+                "title": "classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings",
+                "result": "pass"
+              },
+              {
+                "title": "both mapping functions return 'answer-step-failed' with the reason, the results and the report, and a failed planning call is still 'shaper-llm-unavailable'",
+                "result": "pass"
+              },
+              {
+                "title": "both mapping functions keep the code of a missing prompt and put the results and the report in its data only when the lookups ran",
+                "result": "pass"
+              },
+              {
+                "title": "one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)",
                 "result": "pass"
               }
             ],

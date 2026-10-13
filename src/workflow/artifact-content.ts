@@ -248,7 +248,7 @@ function nonEmptyString(v: unknown): boolean {
 }
 
 /** The canonical .md path relative to the canonical repo root, with forward slashes. */
-function docPathOf(repoPath: string, realMd: string): string {
+export function docPathOf(repoPath: string, realMd: string): string {
 	let root: string;
 	try {
 		root = realpathSync(repoPath);

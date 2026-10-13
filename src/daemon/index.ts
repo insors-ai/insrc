@@ -733,6 +733,31 @@ async function main(): Promise<void> {
 			);
 		},
 
+		// One decision from the review pane (Story E202610138d4b90c9:S001): approve,
+		// reject or send feedback, with the reviewer's comments. The decision is
+		// recorded first, then the comments are appended to the artifact's
+		// feedback in one write, with the author the daemon resolves. Every
+		// refusal is a structured { error } and writes nothing. The follow-on of
+		// an approval is the one 'workflow.approve' runs, bound to this daemon's
+		// graph handle.
+		'workflow.reviewDecision': async (params) => {
+			const { handleReviewDecision } = await import('../workflow/review-decision.js');
+			return handleReviewDecision(
+				params as Parameters<typeof handleReviewDecision>[0],
+				process.env['INSRC_REPO'],
+				{
+					followOn: async (approved, repoPath) => {
+						const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
+						return advanceApprovedBugfixes(approved, {
+							repoPath,
+							inferCandidates: async (req: InferParentsRequest) =>
+								inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
+						});
+					},
+				},
+			);
+		},
+
 		// Read-side of sc4 (S007): resolve a brainstorm SpecArtifact by its
 		// specHash, refusing an unapproved one. `define` / standalone
 		// `design.story` reach an approved spec ONLY through this IPC — never by

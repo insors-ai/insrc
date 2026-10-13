@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T13:21:10.640Z",
+    "updatedAt": "2026-10-13T13:28:59.818Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -42,9 +42,13 @@
       {
         "id": "t8",
         "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
       }
     ],
-    "summary": "runShaper now reads its cache before resolving the request's scope; every bundle records the repository it was built over (repoPath, or null), and a hit is checked against that repository alone: refused while it is under index, a miss once it has been reindexed, and a bundle from before the change is a miss.",
+    "summary": "runAnalyze now checks the request's scope right after classification, before it measures or announces a size: an unindexed scope or a repository under index is refused at 'classify' with the same code, message and data as before (code and docs alike, and without the two model calls a docs request used to make first), and the context builder is told the scope was checked.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
     },
@@ -54,9 +58,9 @@
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:21:10.640Z"
+        "timestamp": "2026-10-13T13:28:59.818Z"
       }
     ],
-    "commit": "0ae37186"
+    "commit": "34c8c765"
   }
 }

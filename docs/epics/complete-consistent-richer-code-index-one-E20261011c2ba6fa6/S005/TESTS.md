@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 39 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -268,3 +268,53 @@ Run at 2026-10-13T13:21:10.640Z on commit `0ae37186`. Tests check: **passed**. 7
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/context/__tests__/run-shaper-wiring.test.ts` | 0 | 15 | 2.4 s |  |
+
+## t9
+
+Run at 2026-10-13T13:28:59.818Z on commit `34c8c765`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change) | `src/analyze/orchestrator/__tests__/run-order.test.ts` |
+
+**unit: run order: the same on the hinted-target branch**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | run order: the same on the hinted-target branch | `src/analyze/orchestrator/__tests__/run-order.test.ts` |
+
+**unit: run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message | `src/analyze/orchestrator/__tests__/run-order.test.ts` |
+| pass | a docs run on a scope in no registered repo ends at stage 'classify' with 'scope-not-indexed' before anything is measured or built; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning) | `src/analyze/orchestrator/__tests__/scope-before-plan.test.ts` |
+
+**unit: run order: a request that passes the check still emits 'classified' with its measure, as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | run order: a request that passes the check still emits 'classified' with its measure, as before | `src/analyze/orchestrator/__tests__/run-order.test.ts` |
+| pass | hinted request with a valid pairing reaches the context builder and the planner | `src/analyze/orchestrator/__tests__/hinted-branch.test.ts` |
+
+**unit: runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error') | `src/analyze/orchestrator/__tests__/run-order.test.ts` |
+
+**unit: runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key | `src/analyze/orchestrator/__tests__/run-order.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/orchestrator/__tests__/hinted-branch.test.ts` | 0 | 8 | 1.6 s |  |
+| `src/analyze/orchestrator/__tests__/run-order.test.ts` | 0 | 6 | 1.3 s |  |
+| `src/analyze/orchestrator/__tests__/scope-before-plan.test.ts` | 0 | 1 | 0.8 s |  |

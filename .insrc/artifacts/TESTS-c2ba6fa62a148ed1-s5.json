@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T13:21:10.640Z",
+    "updatedAt": "2026-10-13T13:28:59.818Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1583,6 +1583,191 @@
               },
               {
                 "title": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "34c8c765",
+        "ranAt": "2026-10-13T13:28:59.818Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "run order: the same on the hinted-target branch",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "run order: the same on the hinted-target branch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+                "title": "a docs run on a scope in no registered repo ends at stage 'classify' with 'scope-not-indexed' before anything is measured or built; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "run order: a request that passes the check still emits 'classified' with its measure, as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "run order: a request that passes the check still emits 'classified' with its measure, as before",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+                "title": "hinted request with a valid pairing reaches the context builder and the planner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+                "title": "runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1587,
+            "titles": [
+              {
+                "title": "hinted request: focused with the prompt as focus, unfocused with an empty prompt",
+                "result": "pass"
+              },
+              {
+                "title": "hinted request: the validator's two checks are made, with the connection check it was given",
+                "result": "pass"
+              },
+              {
+                "title": "hinted pairing the table refuses fails at 'classify' with a failed run record",
+                "result": "pass"
+              },
+              {
+                "title": "hinted request with a scope that does not resolve fails with 'scope-ref-unresolved'",
+                "result": "pass"
+              },
+              {
+                "title": "hinted request with a valid pairing reaches the context builder and the planner",
+                "result": "pass"
+              },
+              {
+                "title": "hinted request: a connection check that throws fails the run at classify with a code, not an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "the classifier receives a connection check from each caller",
+                "result": "pass"
+              },
+              {
+                "title": "connectionIsRegistered: declared by a registered repo or not; an unreadable file is reported",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/run-order.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1320,
+            "titles": [
+              {
+                "title": "run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)",
+                "result": "pass"
+              },
+              {
+                "title": "run order: the same on the hinted-target branch",
+                "result": "pass"
+              },
+              {
+                "title": "run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message",
+                "result": "pass"
+              },
+              {
+                "title": "run order: a request that passes the check still emits 'classified' with its measure, as before",
+                "result": "pass"
+              },
+              {
+                "title": "runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')",
+                "result": "pass"
+              },
+              {
+                "title": "runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 750,
+            "titles": [
+              {
+                "title": "a docs run on a scope in no registered repo ends at stage 'classify' with 'scope-not-indexed' before anything is measured or built; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning)",
                 "result": "pass"
               }
             ],

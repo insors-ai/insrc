@@ -190,7 +190,19 @@ export interface SpawnOutput {
   readonly errTail: () => string;
 }
 
-export type SpawnFn = (command: string, args: readonly string[], opts: { readonly cwd: string; readonly output?: SpawnOutput | undefined }) => SpawnedProcess;
+export type SpawnFn = (
+  command: string,
+  args: readonly string[],
+  opts: {
+    readonly cwd: string;
+    readonly output?: SpawnOutput | undefined;
+    /**
+     * ISSUE-2284d9b4: start the CLI with no input stream. For a CLI that reads its input as
+     * prompt text until it ends, an open pipe means it never starts the turn.
+     */
+    readonly closeInput?: boolean | undefined;
+  },
+) => SpawnedProcess;
 
 /** Minimal logger seam (the vscode-plugin does not pull the daemon's pino logger; never console.log). */
 export interface AdapterLogger {
@@ -271,6 +283,12 @@ interface ProviderMapper {
    * exact envelope is pinned by the INSRC_LIVE_TESTS suite against the installed CLI.
    */
   formatDecision(requestId: string, decision: 'approve' | 'deny'): string;
+  /**
+   * ISSUE-2284d9b4: the CLI reads its input stream as prompt text until it ends, so it is started
+   * with that input closed. Nothing can then be written to it: a decision for such a CLI is
+   * reported as undeliverable. Absent -> the input stays open for the decision relay.
+   */
+  readonly inputIsPrompt?: boolean | undefined;
 }
 
 // ---- S004: permission-request normalizing adapter (over field aliases) -------
@@ -668,6 +686,8 @@ function parseMcpTool(tool: string): { server: string; name: string } | undefine
 const codexMapper: ProviderMapper = {
   id: 'codex',
   resume: true,
+  // `codex exec` waits for its input to end before it starts ("Reading additional input from stdin...").
+  inputIsPrompt: true,
   buildArgs(req: TurnRequest): string[] {
     // `codex exec --json <prompt>`; resume via the `exec resume <id>` subcommand.
     // S004: auto => bypass approvals+sandbox so the agent never blocks (k3, spike 7100435);
@@ -824,7 +844,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         : undefined;
     let proc: SpawnedProcess;
     try {
-      proc = deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), { cwd: effectiveReq.cwd, ...(output !== undefined ? { output } : {}) });
+      proc = deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), {
+        cwd: effectiveReq.cwd,
+        ...(output !== undefined ? { output } : {}),
+        ...(mapper.inputIsPrompt === true ? { closeInput: true } : {}),
+      });
     } catch (err) {
       if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
         void sessionOutput.endTurn(sessionId, turnId, { code: null, signal: null }).catch(() => {});
@@ -970,7 +994,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     set.delete(requestId);
     if (set.size === 0) pendingByTurn.delete(turnId);
     const proc = live.get(turnId);
-    if (proc === undefined || typeof proc.write !== 'function') {
+    if (proc === undefined || typeof proc.write !== 'function' || mapper.inputIsPrompt === true) {
       // Process gone or no write seam: the decision is undeliverable; the entry is already
       // cleared so the card is not left live. Never throw into the caller.
       log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (no live stdin)`);
@@ -1155,6 +1179,9 @@ export async function deriveChatTitle(
 export const nodeSpawner: SpawnFn = (command, args, opts) => {
   // stdin is a pipe (not 'ignore') so the review-mode permission-decision relay can
   // write a control line back to the CLI (S004 write() seam); stdout/stderr piped as before.
+  // ISSUE-2284d9b4: with closeInput the CLI gets no input stream at all, so one that reads its
+  // input to the end before starting (codex exec) starts at once.
+  const stdin = opts.closeInput === true ? 'ignore' : 'pipe';
   // Off Windows the CLI leads its own process group (detached), so a stop reaches every
   // process it started, not just the direct child.
   const ownGroup = process.platform !== 'win32';
@@ -1166,7 +1193,7 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
   try {
     child = nodeChildSpawn(command, [...args], {
       cwd: opts.cwd,
-      stdio: fds !== undefined ? ['pipe', fds[0]!, fds[1]!] : ['pipe', 'pipe', 'pipe'],
+      stdio: fds !== undefined ? [stdin, fds[0]!, fds[1]!] : [stdin, 'pipe', 'pipe'],
       detached: ownGroup,
     });
   } finally {

@@ -41,6 +41,8 @@ export interface FakeSpawnCall {
   readonly command: string;
   readonly args: readonly string[];
   readonly cwd: string;
+  /** Whether the CLI was started with no input stream; absent when the caller did not ask. */
+  readonly closeInput?: boolean | undefined;
 }
 
 export interface FakeSpawner {
@@ -116,7 +118,7 @@ export function makeFakeSpawner(script: FakeProcScript | FakeProcScript[]): Fake
   let idx = 0;
 
   const spawn: SpawnFn = (command, args, opts) => {
-    calls.push({ command, args: [...args], cwd: opts.cwd });
+    calls.push({ command, args: [...args], cwd: opts.cwd, ...(opts.closeInput !== undefined ? { closeInput: opts.closeInput } : {}) });
     const s = single ?? scripts![Math.min(idx++, scripts!.length - 1)]!;
     const { proc, handle } = makeFakeProc(s);
     procs.push(handle);

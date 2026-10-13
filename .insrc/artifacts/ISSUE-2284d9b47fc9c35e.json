@@ -21,7 +21,11 @@
     "epicSlug": "codex-chat-turns-hang-because-cli",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-13T05:56:39.494Z",
+    "parentRef": {
+      "slug": "codex-chat-turns-hang-because-cli"
+    }
   },
   "body": {
     "title": "Codex chat turns hang because the CLI's input is left open",

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T14:10:42.058Z",
+    "updatedAt": "2026-10-13T16:00:42.703Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1940,6 +1940,165 @@
             "titles": [
               {
                 "title": "search request contract: each guarded search request accepts its existing params and answers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "c411ab88",
+        "ranAt": "2026-10-13T14:40:25.910Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "search.callers across repositories leaves out the entities of a repository under index",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-filter.test.ts",
+                "title": "search.callers across repositories leaves out the entities of a repository under index",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "search.query while one repository is being indexed returns rows from the other repositories only",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-filter.test.ts",
+                "title": "search.query while one repository is being indexed returns rows from the other repositories only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-filter.test.ts",
+                "title": "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/search-filter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 123189,
+            "titles": [
+              {
+                "title": "search.callers across repositories leaves out the entities of a repository under index",
+                "result": "pass"
+              },
+              {
+                "title": "search.query while one repository is being indexed returns rows from the other repositories only",
+                "result": "pass"
+              },
+              {
+                "title": "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "6f82f3e0",
+        "ranAt": "2026-10-13T14:51:31.571Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/graph/__tests__/graph-guard.test.ts",
+                "title": "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "graph_query from a ready repository whose closure reaches a repository under index leaves that repository's entities out",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/graph/__tests__/graph-guard.test.ts",
+                "title": "graph_query from a ready repository whose closure reaches a repository under index leaves that repository's entities out",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/graph/__tests__/graph-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 903,
+            "titles": [
+              {
+                "title": "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out",
+                "result": "pass"
+              },
+              {
+                "title": "graph_query from a ready repository whose closure reaches a repository under index leaves that repository's entities out",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "c3832632",
+        "ranAt": "2026-10-13T16:00:42.703Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "analyze through the daemon (analyze.context.buildRun and the step tools via step.call) on a repository being indexed returns code 'repo-indexing' with the figures; the workflow step that reaches it passes the reply on unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/repo-indexing-steps.test.ts",
+                "title": "analyze through the daemon (analyze.context.buildRun and the step tools via step.call) on a repository being indexed returns code 'repo-indexing' with the figures; the workflow step that reaches it passes the reply on unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/repo-indexing-steps.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1181,
+            "titles": [
+              {
+                "title": "analyze through the daemon (analyze.context.buildRun and the step tools via step.call) on a repository being indexed returns code 'repo-indexing' with the figures; the workflow step that reaches it passes the reply on unchanged",
                 "result": "pass"
               }
             ],

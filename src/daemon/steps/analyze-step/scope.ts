@@ -15,6 +15,7 @@
 
 import { resolveScopeForTarget } from '../../../analyze/context/scope.js';
 import type { ResolvedScope, ScopeDeps } from '../../../analyze/context/scope.js';
+import { ensureScopeQueryable } from '../../../analyze/runtimes/shared/task-scope.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 
 /**
@@ -22,7 +23,20 @@ import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
  * kind of source allows -- so the pairing test passes. It is here so
  * that a later widening of the step tool's scope cannot go round the
  * table.
+ *
+ * @throws ScopeNotIndexedError  a code or docs scope in no registered repository, or
+ *         in one with no stored entities (the registry was read and holds repositories).
+ * @throws RepoIndexingError     the scope's repository is under index.
  */
 export async function stepScope(intent: Pick<ClassifiedIntent, 'target' | 'scopeRef'>, deps?: ScopeDeps): Promise<ResolvedScope> {
-	return resolveScopeForTarget(intent.scopeRef, intent.target, deps);
+	const scope = await resolveScopeForTarget(intent.scopeRef, intent.target, deps);
+	// The run's own checks, through the one function the run uses
+	// (ensureScopeQueryable), made before anything is measured, read from the
+	// cache or looked up: every phase makes this call, so a repository that goes
+	// under index during a run is refused at its next turn. A code or docs scope
+	// the index does not hold is refused (ISSUE-7c255f61), and a repository being
+	// indexed, or whose last index failed, for every source (Epic c2ba6fa6,
+	// Story s5). A generic intent is not checked, as the run does not check it.
+	if (intent.target !== 'generic') await ensureScopeQueryable(scope, intent.target, deps);
+	return scope;
 }

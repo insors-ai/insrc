@@ -15,8 +15,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
+import { upsertEntities } from '../../../db/entities.js';
 import { addRepo } from '../../../db/repos.js';
-import type { RegisteredRepo } from '../../../shared/types.js';
+import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 
 import {
 	_getRunnersForTest,
@@ -147,6 +148,11 @@ test('the step tool\'s plan phase resolves the scope from the token and runs the
 		return { type: 'concept.resolve', query: 'stub', hits: [] };
 	});
 	const parse = <T>(e: { content: { text: string }[] }): T => JSON.parse(e.content[0]!.text) as T;
+	// The step tool refuses a code scope the index does not hold (ISSUE-7c255f61):
+	// the repository holds one stored entity.
+	await upsertEntities(null, [{
+		id: 'e-alpha', repo: REPO, file: `${REPO}/a.ts`, kind: 'function', name: 'fn', language: 'typescript', startLine: 1, endLine: 1,
+	} as unknown as Entity]);
 
 	const started = await handleAnalyzeStep({
 		phase: 'start', repo: REPO, focus: `plan-phase scope ${Date.now()}`, target: 'code', scope: 'S',

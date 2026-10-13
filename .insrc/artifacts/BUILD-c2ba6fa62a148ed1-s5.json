@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T14:10:42.058Z",
+    "updatedAt": "2026-10-13T16:00:42.703Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -58,9 +58,21 @@
       {
         "id": "t12",
         "passed": true
+      },
+      {
+        "id": "t13",
+        "passed": true
+      },
+      {
+        "id": "t14",
+        "passed": true
+      },
+      {
+        "id": "t15",
+        "passed": true
       }
     ],
-    "summary": "The daemon's eleven graph-reading search requests that name a repository now refuse with 'repo-indexing: ...' (with how far the run has got) when that repository, or any root's, is under index; requests about ready repositories are answered as before, and an unreadable or empty registry refuses nothing.",
+    "summary": "An analysis asked of the daemon about a repository being indexed is now refused with 'repo-indexing' and how far the run has got whichever way it is asked: analyze.context.buildRun, insrc_analyze and insrc_analyze_step through step.call (the step tool gained the check it lacked), and a workflow step's grounding, which passes the code and message on unchanged.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
     },
@@ -70,9 +82,9 @@
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T14:10:42.058Z"
+        "timestamp": "2026-10-13T16:00:42.703Z"
       }
     ],
-    "commit": "e9eaa614"
+    "commit": "c3832632"
   }
 }

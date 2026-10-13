@@ -20,6 +20,7 @@
  */
 
 import { getEntity } from '../db/entities.js';
+import { listRepos } from '../db/repos.js';
 import { ensureRepoQueryable, RepoIndexingError } from '../analyze/context/invariants.js';
 import type { IndexRunView } from '../indexer/run-record.js';
 import type { RegisteredRepo } from '../shared/types.js';
@@ -79,4 +80,33 @@ export async function guardSearchRequest(names: SearchRequestNames, deps: Search
 			throw err;
 		}
 	}
+}
+
+/**
+ * What a result that follows the graph or a closure across repositories leaves
+ * out: the entities and the repositories of every repository under index (the
+ * guard's rule: being indexed, or last index ended in an error). Built from one
+ * registry read; a registry that cannot be read leaves nothing out, as the
+ * guard refuses nothing then.
+ */
+export interface UnderIndexFilter {
+	/** The repositories left out. */
+	readonly repos: ReadonlySet<string>;
+	entities<T extends { readonly repo?: string | undefined }>(rows: readonly T[]): T[];
+	paths(paths: readonly string[]): string[];
+}
+
+export async function underIndexFilter(deps: Pick<SearchGuardDeps, 'listRepos'> = {}): Promise<UnderIndexFilter> {
+	let registered: readonly RegisteredRepo[];
+	try {
+		registered = deps.listRepos !== undefined ? await deps.listRepos() : await listRepos(null);
+	} catch {
+		registered = [];
+	}
+	const repos = new Set(registered.filter(r => r.status === 'indexing' || r.status === 'error').map(r => r.path));
+	return {
+		repos,
+		entities: rows => rows.filter(e => e.repo === undefined || !repos.has(e.repo)),
+		paths: paths => paths.filter(p => !repos.has(p)),
+	};
 }

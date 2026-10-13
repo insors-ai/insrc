@@ -92,7 +92,7 @@ function offlineStream(method: string): StreamHandler {
 import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
 import { resolveClosure, searchEntities, findCallers, findCallees, closureEntities, unreachableEntities } from '../db/search.js';
 import { embedQuery } from '../indexer/embedder.js';
-import { guardSearchRequest } from './search-guard.js';
+import { guardSearchRequest, underIndexFilter } from './search-guard.js';
 import { getArtifactById, queryArtifactVec } from '../db/lance/artifact-vec.js';
 import { inferParentCandidates } from '../workflow/locate/infer.js';
 import { buildOwnershipIndex } from '../workflow/locate/ownership.js';
@@ -1076,8 +1076,9 @@ async function main(): Promise<void> {
 			const searchFilter = (filter === 'code' || filter === 'artifact') ? filter : 'all';
 			log.debug({ query: text.slice(0, 120), limit: limit ?? 10, filter: searchFilter }, 'search.query request');
 			const queryVec = await embedQuery(text);
-			// Use all registered repos as the default closure scope
-			const repos = (await listRepos(db)).map(r => r.path);
+			// Every registered repository is searched, except one under index:
+			// the answer comes from the others, and the request is not refused.
+			const repos = (await underIndexFilter()).paths((await listRepos(db)).map(r => r.path));
 			const results = await searchEntities(db, queryVec, repos, limit ?? 10, searchFilter) as Entity[];
 			log.debug({ query: text.slice(0, 60), hits: results.length, names: results.slice(0, 5).map(e => `${e.kind}:${e.name}`) }, 'search.query response');
 			return results;
@@ -1086,19 +1087,19 @@ async function main(): Promise<void> {
 		'search.closure': async (params) => {
 			const { repoPath } = params as { repoPath: string };
 			await guardSearchRequest({ repoPaths: [repoPath] });
-			return resolveClosure(db, repoPath);
+			return (await underIndexFilter()).paths(await resolveClosure(db, repoPath));
 		},
 
 		'search.callers': async (params) => {
 			const { entityId } = params as { entityId: string };
 			await guardSearchRequest({ entityIds: [entityId] });
-			return findCallers(db, entityId) as Promise<Entity[]>;
+			return (await underIndexFilter()).entities(await findCallers(db, entityId) as Entity[]);
 		},
 
 		'search.callees': async (params) => {
 			const { entityId } = params as { entityId: string };
 			await guardSearchRequest({ entityIds: [entityId] });
-			return findCallees(db, entityId) as Promise<Entity[]>;
+			return (await underIndexFilter()).entities(await findCallees(db, entityId) as Entity[]);
 		},
 
 		// ----- locate.* IPC (S003 / sc3 — the tiered parent-locator) -----
@@ -1149,7 +1150,7 @@ async function main(): Promise<void> {
 			if (direction !== undefined) opts.direction = direction;
 			if (maxDepth !== undefined)  opts.maxDepth  = maxDepth;
 			await guardSearchRequest({ entityIds: rootIds });
-			return closureEntities(db, rootIds, opts) as Promise<Entity[]>;
+			return (await underIndexFilter()).entities(await closureEntities(db, rootIds, opts) as Entity[]);
 		},
 
 		'entity.unreachable': async (params) => {
@@ -1165,12 +1166,13 @@ async function main(): Promise<void> {
 			}
 			if (maxDepth !== undefined) opts.maxDepth = maxDepth;
 			await guardSearchRequest({ entityIds: rootIds });
-			return unreachableEntities(
+			const filter = await underIndexFilter();
+			return filter.entities(await unreachableEntities(
 				db,
 				rootIds,
 				candidateKinds as readonly ('repo'|'file'|'module'|'function'|'method'|'class'|'interface'|'type')[],
 				opts,
-			) as Promise<Entity[]>;
+			) as Entity[]);
 		},
 
 		// ----- artifact.* IPCs (MCP server's `insrc_artifact_*` tools) -----
@@ -1217,7 +1219,7 @@ async function main(): Promise<void> {
 		'repo.depends_on': async (params) => {
 			const { repoId } = params as { repoId: string };
 			await guardSearchRequest({ repoPaths: [repoId] });
-			const closurePaths = await resolveClosure(db, repoId);
+			const closurePaths = (await underIndexFilter()).paths(await resolveClosure(db, repoId));
 			const allRepos = await listRepos(db);
 			const byPath = new Map(allRepos.map(r => [r.path, r.name] as const));
 			// resolveClosure's documented fallback returns [repoPath] even
@@ -1241,7 +1243,7 @@ async function main(): Promise<void> {
 				limit?: number;
 			};
 			await guardSearchRequest({ repoPaths: [repoId] });
-			const closurePaths = await resolveClosure(db, repoId);
+			const closurePaths = (await underIndexFilter()).paths(await resolveClosure(db, repoId));
 			const queryVec     = await embedQuery(query);
 			return searchEntities(db, queryVec, closurePaths, limit ?? 10, 'code') as Promise<Entity[]>;
 		},
@@ -1258,8 +1260,10 @@ async function main(): Promise<void> {
 			const { entityId, hops } = params as { entityId: string; hops?: number };
 			await guardSearchRequest({ entityIds: [entityId] });
 			const maxHops = Math.min(hops ?? 1, 3); // cap at 3 to prevent explosion
+			// The callers in a repository under index are left out, and are not walked through.
+			const filter = await underIndexFilter();
 			// For 1-hop, use the existing findCallers
-			if (maxHops <= 1) return findCallers(db, entityId) as Promise<Entity[]>;
+			if (maxHops <= 1) return filter.entities(await findCallers(db, entityId) as Entity[]);
 
 			// Multi-hop: BFS caller traversal
 			const seen = new Set<string>();
@@ -1271,7 +1275,7 @@ async function main(): Promise<void> {
 				for (const eid of frontier) {
 					if (seen.has(eid)) continue;
 					seen.add(eid);
-					const callers = await findCallers(db, eid);
+					const callers = filter.entities(await findCallers(db, eid) as Entity[]);
 					for (const c of callers) {
 						if (!seen.has(c.id)) {
 							allCallers.push(c);

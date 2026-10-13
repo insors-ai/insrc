@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "7c255f612a40e0eb",
+    "storyId": "S001",
+    "createdAt": "2026-10-13T16:43:34.976Z",
+    "updatedAt": "2026-10-13T17:04:01.980Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-13T16:34:09.820Z",
+    "epicSlug": "refuse-unindexed-scope-analyze-step-tool"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "d4b0371e",
+        "ranAt": "2026-10-13T17:04:01.980Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1533,
+            "titles": [
+              {
+                "title": "insrc_analyze_step start on a scope the index does not hold (in no registered repository, or in one with no stored entities), for code and docs, is refused with code 'scope-not-indexed' and the run's message, with no size announced and no state minted",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_analyze_step start on an indexed repository is answered; data, infra and generic requests on an unregistered directory are not refused for it",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_analyze_step plan on a run whose repository is no longer held by the index is refused with code 'scope-not-indexed' before its lookups run",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_analyze_step replies to every scope error with the code and message of the one mapping (scopeErrorMapping); only a repository under index is retryable; any other error is not a scope error",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

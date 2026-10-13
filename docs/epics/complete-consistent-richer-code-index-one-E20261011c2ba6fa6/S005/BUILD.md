@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T14:10:42.058Z
+**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T16:00:42.703Z
 
-**Commit:** e9eaa614
+**Commit:** c3832632
 
 ## Summary
 
-The daemon's eleven graph-reading search requests that name a repository now refuse with 'repo-indexing: ...' (with how far the run has got) when that repository, or any root's, is under index; requests about ready repositories are answered as before, and an unreadable or empty registry refuses nothing.
+An analysis asked of the daemon about a repository being indexed is now refused with 'repo-indexing' and how far the run has got whichever way it is asked: analyze.context.buildRun, insrc_analyze and insrc_analyze_step through step.call (the step tool gained the check it lacked), and a workflow step's grounding, which passes the code and message on unchanged.
 
 ## Tasks validated
 
@@ -24,9 +24,12 @@ The daemon's eleven graph-reading search requests that name a repository now ref
 - ✓ `t10`
 - ✓ `t11`
 - ✓ `t12`
+- ✓ `t13`
+- ✓ `t14`
+- ✓ `t15`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T14:10:42.058Z)
+- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T16:00:42.703Z)

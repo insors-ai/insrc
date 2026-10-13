@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -173,3 +173,52 @@ Run at 2026-10-13T12:31:31.992Z on commit `7fda274d`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` | 0 | 30 | 1.6 s |  |
+
+## t6
+
+Run at 2026-10-13T12:37:48.576Z on commit `a509e0a3`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: chat host: submitExternal on a closed panel opens it, answers queued although the session exists, and the message is run when the webview posts ready, not before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat host: submitExternal on a closed panel opens it, answers queued although the session exists, and the message is run when the webview posts ready, not before | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**unit: chat host: submitExternal runs the message at once when the webview is ready and nothing is in progress, and queues it behind a running turn, a followed turn and an approval follow-up; waiting messages run one per turn end, in order**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat host: submitExternal runs the message at once when the webview is ready and nothing is in progress, and queues it behind a running turn, a followed turn and an approval follow-up; waiting messages run one per turn end, in order | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**unit: chat host: a message waiting behind a turn that a typed message supersedes is run when the typed message's turn ends, and a typed message still supersedes a running turn**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat host: a message waiting behind a turn that a typed message supersedes is run when the typed message's turn ends, and a typed message still supersedes a running turn | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**unit: chat host: submitExternal answers unavailable with no CLI or blank text, drains after Stop and after a chat switch into the session then active, keeps waiting across a second ready while a turn runs, and drops its list on dispose with a warning**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat host: submitExternal answers unavailable with no CLI or blank text, drains after Stop and after a chat switch into the session then active, keeps waiting across a second ready while a turn runs, and drops its list on dispose with a warning | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**unit: chat host: a pane message waits while a permission request is unanswered, rejects none, and is run after the last one is decided: at once when all were denied, after the follow-up turn when one was approved**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat host: a pane message waits while a permission request is unanswered, rejects none, and is run after the last one is decided: at once when all were denied, after the follow-up turn when one was approved | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**unit: chat host: a pane message waiting behind a followed turn is run when the follow fails as well as when it ends**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat host: a pane message waiting behind a followed turn is run when the follow fails as well as when it ends | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+| pass | chat host: a pane message waiting behind a turn that fails is run when the error is reported | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+| pass | turn lifecycle: busy is false when a turn's error is reported | `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 161 | 4.4 s |  |
+| `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` | 0 | 31 | 1.7 s |  |

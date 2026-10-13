@@ -4,7 +4,7 @@
     "epicHash": "b2e8109f42afc0dd",
     "storyId": "S001",
     "createdAt": "2026-10-13T08:48:39.843Z",
-    "updatedAt": "2026-10-13T08:48:39.843Z",
+    "updatedAt": "2026-10-13T08:51:32.861Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T07:52:45.476Z",
     "epicSlug": "show-each-changed-section-turn-s"
@@ -142,6 +142,119 @@
               },
               {
                 "title": "reconcileSections: beyond the limit new sections are kept hidden, counted in overflow, and never produce an operation later",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "78676aa7",
+        "ranAt": "2026-10-13T08:51:32.861Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "git-baseline: snapshot resolves the printed index path against cwd, copies it, adds and writes a tree with GIT_INDEX_FILE set to the copy, and returns the tree id and the copy's path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/git-baseline.test.ts",
+                "title": "git-baseline: snapshot resolves the printed index path against cwd, copies it, adds and writes a tree with GIT_INDEX_FILE set to the copy, and returns the tree id and the copy's path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-baseline: changes returns an empty string for an unchanged tree, the patch for a changed one and undefined when write-tree or diff fails",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/git-baseline.test.ts",
+                "title": "git-baseline: changes returns an empty string for an unchanged tree, the patch for a changed one and undefined when write-tree or diff fails",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-baseline: read resolves a path with show <tree>:./<rel> and gives undefined for a path not in the tree",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/git-baseline.test.ts",
+                "title": "git-baseline: read resolves a path with show <tree>:./<rel> and gives undefined for a path not in the tree",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-baseline: release removes the private index, and a failed git add does not fail snapshot",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/git-baseline.test.ts",
+                "title": "git-baseline: release removes the private index, and a failed git add does not fail snapshot",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-baseline (real git): tracked, untracked, new, deleted, binary and ignored files in a subfolder give the expected sections, read returns start content from the tree id, and the index and status are unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts",
+                "title": "git-baseline (real git): tracked, untracked, new, deleted, binary and ignored files in a subfolder give the expected sections, read returns start content from the tree id, and the index and status are unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 533,
+            "titles": [
+              {
+                "title": "git-baseline (real git): tracked, untracked, new, deleted, binary and ignored files in a subfolder give the expected sections, read returns start content from the tree id, and the index and status are unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/git-baseline.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 329,
+            "titles": [
+              {
+                "title": "git-baseline: snapshot resolves the printed index path against cwd, copies it, adds and writes a tree with GIT_INDEX_FILE set to the copy, and returns the tree id and the copy's path",
+                "result": "pass"
+              },
+              {
+                "title": "git-baseline: changes returns an empty string for an unchanged tree, the patch for a changed one and undefined when write-tree or diff fails",
+                "result": "pass"
+              },
+              {
+                "title": "git-baseline: read resolves a path with show <tree>:./<rel> and gives undefined for a path not in the tree",
+                "result": "pass"
+              },
+              {
+                "title": "git-baseline: release removes the private index, and a failed git add does not fail snapshot",
                 "result": "pass"
               }
             ],

@@ -20,7 +20,8 @@ import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, RunOptio
 import type { TurnEvent } from '../stream-events.js';
 import { markerFor, WAITING_LABEL } from '../markers.js';
 import { fakeLiveProc, waitFor, type FakeLiveProc } from './fixtures.js';
-import { defaultComputeDiff, type DiffView } from '../edit-governor.js';
+import type { DiffView } from '../edit-governor.js';
+import type { TranscriptEntry } from '../session-store.js';
 
 interface FakeChannel {
   channel: ChatPanelChannel;
@@ -790,7 +791,7 @@ test('S001 shell: session-restored replay routes through the sc1 registry (keyed
   assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
 });
 
-// ---- S006: edit governance (inline diff + auto/review + revert) + chat-vs-editor diffView ----
+// ---- S006: edit governance + Story E20261013b2e8109f:S001: a turn's changed sections as diff rows ----
 
 interface FakeGov {
   deps: ChatEditGovernanceDeps;
@@ -798,21 +799,36 @@ interface FakeGov {
   baseline: Map<string, string>;
   editorCalls: Array<{ path: string; review: boolean }>;
   setDiffView: (v: DiffView) => void;
+  setAvailable: (v: boolean) => void;
+  /** What baseline.changes answers next: a patch, '' (nothing changed), undefined (unreadable) or a function called per check. */
+  patch: { next: string | undefined | (() => Promise<string | undefined>) };
+  /** How many checks ran (calls of baseline.changes). */
+  checks: { count: number };
+  snapshots: { count: number };
+  released: { count: number };
 }
 function fakeGovernance(): FakeGov {
   const disk = new Map<string, string>();
   const baseline = new Map<string, string>();
   const editorCalls: FakeGov['editorCalls'] = [];
+  const patch: FakeGov['patch'] = { next: '' };
+  const checks = { count: 0 };
+  const snapshots = { count: 0 };
+  const released = { count: 0 };
   let view: DiffView = 'chat';
+  let available = true;
   const deps: ChatEditGovernanceDeps = {
-    computeDiff: defaultComputeDiff,
+    relPath: (p) => (p.startsWith('/repo/') ? p.slice('/repo/'.length) : p),
     diffView: () => view,
     baseline: {
-      available: async () => true,
-      snapshot: async () => ({ ref: 'SNAP' }),
+      available: async () => available,
+      snapshot: async () => ({ ref: `SNAP${snapshots.count++}`, index: '/tmp/idx' }),
       read: async (_h, path) => baseline.get(path),
-      changes: async () => '',
-      release: async () => {},
+      changes: async () => {
+        checks.count++;
+        return typeof patch.next === 'function' ? patch.next() : patch.next;
+      },
+      release: async () => { released.count++; },
     },
     fs: {
       read: async (path) => disk.get(path),
@@ -821,68 +837,329 @@ function fakeGovernance(): FakeGov {
     },
     editorDiff: async (path, _base, o) => { editorCalls.push({ path, review: o.review }); },
   };
-  return { deps, disk, baseline, editorCalls, setDiffView: (v) => { view = v; } };
+  return { deps, disk, baseline, editorCalls, setDiffView: (v) => { view = v; }, setAvailable: (v) => { available = v; }, patch, checks, snapshots, released };
 }
-const editPrompts = (fc: FakeChannel): Array<{ path: string; diff: unknown; review?: boolean }> =>
-  fc.posted.filter((m) => m.payload.type === 'edit-prompt').map((m) => m.payload as { path: string; diff: unknown; review?: boolean });
 
-test('S001 (bugfix): the edit-review gate is RETIRED — even a legacy set-edit-mode:review turn is visualize-only (no revert)', async () => {
+/** A patch with one section per [path, oldStart, text]. */
+const patchOf = (...sections: Array<[path: string, oldStart: number, text: string]>): string =>
+  sections.map(([p, start, text]) => [`diff --git a/${p} b/${p}`, `--- a/${p}`, `+++ b/${p}`, `@@ -${start},2 +${start},3 @@`, ' ctx', `+${text}`, ' ctx2', ''].join('\n')).join('');
+
+/** An adapter the test feeds one event at a time, so a check can finish before the next event. */
+function fedAdapter(): { adapter: StreamAdapter; feed: (ev: TurnEvent) => void; runs: () => number } {
+  const queue: TurnEvent[] = [];
+  let cancelled = false;
+  let runs = 0;
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {
+      runs++;
+      cancelled = false;
+      for (;;) {
+        while (queue.length === 0 && !cancelled) await new Promise((r) => setTimeout(r, 2));
+        if (cancelled) return;
+        const ev = queue.shift()!;
+        yield ev;
+        if (ev.kind === 'done' || ev.kind === 'error') return;
+      }
+    },
+    cancel: () => { cancelled = true; },
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  return { adapter, feed: (ev) => void queue.push(ev), runs: () => runs };
+}
+
+interface PostedRow { rowIndex: number; row: TranscriptEntry }
+const transcriptRows = (fc: FakeChannel): PostedRow[] =>
+  fc.posted.filter((m) => m.payload.type === 'transcript-row').map((m) => ({ rowIndex: m.payload['rowIndex'] as number, row: m.payload['row'] as TranscriptEntry }));
+const diffRowsOf = (rows: readonly TranscriptEntry[]): Array<Extract<TranscriptEntry, { role: 'diff' }>> =>
+  rows.filter((r): r is Extract<TranscriptEntry, { role: 'diff' }> => r.role === 'diff');
+const toolResult = (output = 'ok'): TurnEvent => ({ kind: 'tool-result', turnId: 't1', command: 'run', output });
+const fileEdit = (path: string): TurnEvent => ({ kind: 'file-edit', turnId: 't1', path, diff: { path, hunks: [] } });
+const DONE: TurnEvent = { kind: 'done', turnId: 't1', ok: true };
+const settleDiff = (): Promise<void> => new Promise((r) => setTimeout(r, 25));
+
+test('diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed', async () => {
   const fc = fakeChannel();
   const gov = fakeGovernance();
-  gov.baseline.set('src/a.ts', 'old\n');
-  gov.disk.set('src/a.ts', 'NEW\n');
+  const fed = fedAdapter();
   const store = createInMemoryChatSessionStore();
-  const evs: TurnEvent[] = [
-    { kind: 'file-edit', turnId: 't1', path: 'src/a.ts', diff: { path: 'src/a.ts', hunks: [] } },
-    { kind: 'done', turnId: 't1', ok: true },
-  ];
-  const host = createChatPanelHost({
-    createPanel: () => fc.channel,
-    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
-    store,
-    cwd: () => '/repo',
-    editGovernance: gov.deps,
-  });
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: fed.adapter }, ['claude']), store, cwd: () => '/repo', editGovernance: gov.deps });
   host.open();
-  // A legacy set-edit-mode:'review' message is now inert — the merged chat mode governs edits, so
-  // the governor runs visualize-only regardless (Claude-Code style: no separate accept/reject gate).
-  fc.send(env('set-edit-mode', { mode: 'review' }));
   fc.send(env('submit-turn', { text: 'go' }));
-  await waitFor(() => editPrompts(fc).length >= 1);
-  assert.equal(editPrompts(fc)[0]!.path, 'src/a.ts', 'the diff is still shown (visualize)');
-  assert.notEqual(editPrompts(fc)[0]!.review, true, 'but there is no review gate (review flag never set)');
-  fc.send(env('edit-decision', { path: 'src/a.ts', accept: false }));
-  await new Promise((r) => setTimeout(r, 30));
-  assert.equal(gov.disk.get('src/a.ts'), 'NEW\n', 'reject does NOT revert — the gate is retired');
+  await waitFor(() => fed.runs() === 1);
+  assert.equal(gov.snapshots.count, 1, 'the snapshot is taken before the CLI starts');
+
+  // Two sections of one file: two rows, each with its own sid.
+  gov.patch.next = patchOf(['src/a.ts', 1, 'one'], ['src/a.ts', 40, 'two']);
+  fed.feed(toolResult());
+  await waitFor(() => transcriptRows(fc).length === 2);
+  const [first, second] = transcriptRows(fc);
+  assert.ok(first!.row.role === 'diff' && second!.row.role === 'diff');
+  const sid0 = (first!.row as { sid?: string }).sid;
+  const sid1 = (second!.row as { sid?: string }).sid;
+  assert.match(sid0 ?? '', /^d[0-9a-z]+-0$/);
+  assert.match(sid1 ?? '', /^d[0-9a-z]+-1$/);
+  assert.equal('replaces' in first!.row, false);
+  assert.deepEqual([first!.row.role === 'diff' && first!.row.path, first!.row.role === 'diff' && first!.row.oldStart, first!.row.role === 'diff' && first!.row.lines], ['src/a.ts', 1, [' ctx', '+one', ' ctx2']]);
+  assert.deepEqual([second!.row.role === 'diff' && second!.row.oldStart, second!.row.role === 'diff' && second!.row.added], [40, 1]);
+  assert.equal(second!.rowIndex, first!.rowIndex + 1);
+  const early = JSON.stringify(transcriptRows(fc));
+
+  // The first section changes and the second goes: two more rows, each naming a sid.
+  gov.patch.next = patchOf(['src/a.ts', 1, 'one, changed']);
+  fed.feed(toolResult());
+  await waitFor(() => transcriptRows(fc).length === 4);
+  const [, , update, withdraw] = transcriptRows(fc);
+  assert.ok(update!.row.role === 'diff' && withdraw!.row.role === 'diff');
+  if (update!.row.role === 'diff') {
+    assert.equal(update!.row.replaces, sid0);
+    assert.equal(update!.row.sid, undefined);
+    assert.deepEqual(update!.row.lines, [' ctx', '+one, changed', ' ctx2']);
+  }
+  if (withdraw!.row.role === 'diff') {
+    assert.equal(withdraw!.row.replaces, sid1);
+    assert.equal(withdraw!.row.withdrawn, true);
+    assert.deepEqual(withdraw!.row.lines, []);
+    assert.deepEqual([withdraw!.row.path, withdraw!.row.oldStart], ['src/a.ts', 40]);
+  }
+
+  fed.feed(DONE);
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  await settleDiff();
+  // Every posted row is the row the transcript holds at that index; the early rows are as they were.
+  const transcript = store.get(store.list()[0]!.id)!.transcript;
+  for (const p of transcriptRows(fc)) assert.deepEqual(transcript[p.rowIndex], p.row);
+  assert.equal(JSON.stringify(transcriptRows(fc).slice(0, 2)), early, 'no earlier row is changed');
+  assert.equal(diffRowsOf(transcript).length, 4, 'four rows were pushed, none rewritten');
+  assert.equal(transcriptRows(fc).length, 4, 'the last check found nothing new');
+  assert.equal(fc.posted.some((m) => m.payload.type === 'edit-prompt'), false);
 });
 
-test('S006 integration: an AUTO turn renders visualize-only (no accept/reject revert on reject) + edit marker still renders', async () => {
+test('diff sections: a check is requested after every tool-result and file-edit event and once more at the end of the turn, and the session is saved after late rows', async () => {
+  const fake = fakeSessionFs();
+  const store = createFileChatSessionStore({ root: '/sessions', fs: fake.fs });
+  const diskRows = (id: string): TranscriptEntry[] =>
+    (fake.files.get(`/sessions/${id}${ROWS_SUFFIX}`) ?? '').split('\n').filter((l) => l !== '').map((l) => JSON.parse(l) as TranscriptEntry);
   const fc = fakeChannel();
   const gov = fakeGovernance();
-  gov.baseline.set('src/a.ts', 'old\n');
-  gov.disk.set('src/a.ts', 'NEW\n');
-  const store = createInMemoryChatSessionStore();
-  const evs: TurnEvent[] = [
-    { kind: 'file-edit', turnId: 't1', path: 'src/a.ts', diff: { path: 'src/a.ts', hunks: [] } },
-    { kind: 'done', turnId: 't1', ok: true },
-  ];
-  const host = createChatPanelHost({
-    createPanel: () => fc.channel,
-    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
-    store,
-    cwd: () => '/repo',
-    editGovernance: gov.deps,
-  });
-  host.open(); // default session is 'auto'
+  const fed = fedAdapter();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: fed.adapter }, ['claude']), store, cwd: () => '/repo', editGovernance: gov.deps });
+  host.open();
   fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => fed.runs() === 1);
+  assert.equal(gov.checks.count, 0);
+
+  fed.feed(toolResult());
+  await waitFor(() => gov.checks.count === 1);
+  fed.feed(fileEdit('src/a.ts'));
+  await waitFor(() => gov.checks.count === 2);
+  // Events that change no file ask for no check.
+  fed.feed({ kind: 'assistant-delta', turnId: 't1', text: 'working' });
+  fed.feed({ kind: 'tool-call', turnId: 't1', tool: 'Bash' } as TurnEvent);
+  await settleDiff();
+  assert.equal(gov.checks.count, 2);
+
+  // The last check is still running when the turn ends: its rows arrive after the turn's own save.
+  let open!: (v: string) => void;
+  gov.patch.next = () => new Promise<string>((r) => { open = r; });
+  fed.feed(DONE);
+  await waitFor(() => gov.checks.count === 3);
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
-  await waitFor(() => editPrompts(fc).length >= 1); // auto still shows the diff (ac1)
-  // the existing edit marker (S004) still renders as a turn-event
-  assert.ok(turnEvents(fc).some((e) => e.kind === 'file-edit'), 'file-edit still posted as a turn-event (marker unchanged)');
-  // a stray reject in auto is not tracked -> no revert
-  fc.send(env('edit-decision', { path: 'src/a.ts', accept: false }));
-  await new Promise((r) => setTimeout(r, 30));
-  assert.equal(gov.disk.get('src/a.ts'), 'NEW\n', 'auto mode: reject does not revert (edit not tracked)');
+  await settleDiff();
+  const id = store.list()[0]!.id;
+  assert.equal(diffRowsOf(diskRows(id)).length, 0, 'the turn was saved before the last check answered');
+  assert.equal(gov.released.count, 0, 'the snapshot is held until the last check is done');
+  open(patchOf(['src/a.ts', 1, 'late']));
+  await waitFor(() => transcriptRows(fc).length === 1);
+  await settleDiff();
+  assert.equal(diffRowsOf(diskRows(id)).length, 1, 'the late row is saved');
+  assert.deepEqual(diskRows(id), JSON.parse(JSON.stringify(store.get(id)!.transcript)));
+  assert.equal(gov.checks.count, 3, 'one check at the end, no more');
+  assert.equal(gov.released.count, 1);
+});
+
+test('diff sections: overflow and unreadable push one marker row each and post it as transcript-row', async () => {
+  const fc = fakeChannel();
+  const gov = fakeGovernance();
+  const fed = fedAdapter();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: fed.adapter }, ['claude']), store, cwd: () => '/repo', editGovernance: gov.deps });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => fed.runs() === 1);
+  const markers = (): PostedRow[] => transcriptRows(fc).filter((p) => p.row.role === 'marker');
+  const many = (n: number, dir: string): string => patchOf(...Array.from({ length: n }, (_, i): [string, number, string] => [`${dir}/f${i}.ts`, 1, 'x']));
+
+  // 21 new sections: 20 shown, one counted.
+  gov.patch.next = many(21, 'one');
+  fed.feed(toolResult());
+  await waitFor(() => markers().length === 1);
+  assert.equal(transcriptRows(fc).filter((p) => p.row.role === 'diff').length, 20);
+  assert.deepEqual(markers()[0]!.row, { role: 'marker', text: '1 more changed section in 1 file is not shown', cssClass: 'insrc-term__marker--edit', at: (markers()[0]!.row as { at: unknown }).at });
+  assert.equal(markers()[0]!.rowIndex, transcriptRows(fc).at(-1)!.rowIndex, 'the count follows the sections');
+
+  // Unreadable: said once, however often it happens.
+  gov.patch.next = undefined;
+  fed.feed(toolResult());
+  await waitFor(() => markers().length === 2);
+  fed.feed(toolResult());
+  await waitFor(() => gov.checks.count === 3);
+  await settleDiff();
+  assert.equal(markers().length, 2);
+  assert.equal((markers()[1]!.row as { text: string }).text, 'The changes of this turn could not be read');
+  gov.patch.next = many(21, 'one');
+  fed.feed(DONE);
+  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'done').length === 1);
+  await settleDiff();
+
+  // A second turn: 25 new sections in 3 more than the shown files.
+  fc.send(env('submit-turn', { text: 'again' }));
+  await waitFor(() => fed.runs() === 2);
+  gov.patch.next = patchOf(...Array.from({ length: 25 }, (_, i): [string, number, string] => [i < 20 ? `two/f${i}.ts` : `two/g${i % 2}.ts`, 1 + i * 10, 'x']));
+  fed.feed(toolResult());
+  await waitFor(() => markers().length === 3);
+  assert.equal((markers()[2]!.row as { text: string }).text, '5 more changed sections in 2 files are not shown');
+  gov.patch.next = '';
+  fed.feed(DONE);
+  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'done').length === 2);
+  await settleDiff();
+  const transcript = store.get(store.list()[0]!.id)!.transcript;
+  for (const p of transcriptRows(fc)) assert.deepEqual(transcript[p.rowIndex], p.row);
+});
+
+test('diff sections: with no snapshot, or with the editor view, no diff state is made and the rows and messages are those of today', async () => {
+  const evs: TurnEvent[] = [toolResult('listing'), fileEdit('src/a.ts'), { kind: 'tool-result', turnId: 't1', output: 'The file src/a.ts has been updated', editPath: 'src/a.ts' }, DONE];
+  const run = async (configure?: (g: FakeGov) => void): Promise<{ fc: FakeChannel; gov: FakeGov; rows: unknown[] }> => {
+    const fc = fakeChannel();
+    const gov = fakeGovernance();
+    gov.patch.next = patchOf(['src/a.ts', 1, 'one']);
+    gov.baseline.set('src/a.ts', 'old\n');
+    gov.disk.set('src/a.ts', 'NEW\n');
+    configure?.(gov);
+    const store = createInMemoryChatSessionStore();
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      ...(configure !== undefined ? { editGovernance: gov.deps } : {}),
+    });
+    host.open();
+    fc.send(env('submit-turn', { text: 'go' }));
+    await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+    await settleDiff();
+    const rows = store.get(store.list()[0]!.id)!.transcript.map((r) => ({ ...r, at: 0 }));
+    return { fc, gov, rows };
+  };
+  // Today's rows: a host with no governance at all.
+  const plain = await run();
+  assert.ok(plain.rows.some((r) => (r as TranscriptEntry).role === 'marker' && (r as { text: string }).text.includes('src/a.ts')), 'the path marker');
+  assert.ok(plain.rows.some((r) => (r as TranscriptEntry).role === 'tool-result'), 'the result row');
+  const kinds = (fc: FakeChannel): string[] => fc.posted.map((m) => m.payload.type).filter((t) => t === 'turn-event' || t === 'transcript-row' || t === 'user-row');
+
+  // Not a git folder: no snapshot.
+  const nogit = await run((g) => g.setAvailable(false));
+  assert.deepEqual(nogit.rows, plain.rows);
+  assert.deepEqual(kinds(nogit.fc), kinds(plain.fc));
+  assert.equal(transcriptRows(nogit.fc).length, 0);
+  assert.equal(nogit.gov.checks.count, 0);
+
+  // The editor view: the editor diff opens; nothing is checked and no row is added.
+  const editor = await run((g) => g.setDiffView('editor'));
+  assert.deepEqual(editor.rows, plain.rows);
+  assert.deepEqual(kinds(editor.fc), kinds(plain.fc));
+  assert.equal(transcriptRows(editor.fc).length, 0);
+  assert.equal(editor.gov.checks.count, 0);
+  assert.deepEqual(editor.gov.editorCalls, [{ path: 'src/a.ts', review: false }]);
+  // The accept/reject gate is retired: a stray reject reverts nothing.
+  editor.fc.send(env('edit-decision', { path: 'src/a.ts', accept: false }));
+  await settleDiff();
+  assert.equal(editor.gov.disk.get('src/a.ts'), 'NEW\n');
+
+  // The chat view in a git folder is the one case with sections (and no editor).
+  const chat = await run(() => {});
+  assert.equal(diffRowsOf(chat.rows as TranscriptEntry[]).length, 1);
+  assert.deepEqual(chat.gov.editorCalls, []);
+  for (const r of [plain, nogit, editor, chat]) assert.equal(r.fc.posted.some((m) => m.payload.type === 'edit-prompt'), false);
+});
+
+test("diff sections: the restored window and an older page carry each section's latest version at its first row's place", async () => {
+  // A real turn: a section is added, changed, and another is withdrawn.
+  const fc = fakeChannel();
+  const gov = fakeGovernance();
+  const fed = fedAdapter();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: fed.adapter }, ['claude']), store, cwd: () => '/repo', editGovernance: gov.deps });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => fed.runs() === 1);
+  gov.patch.next = patchOf(['src/a.ts', 1, 'v1'], ['src/b.ts', 1, 'gone soon']);
+  fed.feed(toolResult());
+  await waitFor(() => transcriptRows(fc).length === 2);
+  gov.patch.next = patchOf(['src/a.ts', 1, 'v2']);
+  fed.feed(toolResult());
+  await waitFor(() => transcriptRows(fc).length === 4);
+  fed.feed(DONE);
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  await settleDiff();
+  const [a, b] = transcriptRows(fc);
+  const sidA = (a!.row as { sid: string }).sid;
+  const sidB = (b!.row as { sid: string }).sid;
+  const id = store.list()[0]!.id;
+  const stored = JSON.stringify(store.get(id)!.transcript);
+
+  // A reloaded webview: the window has the latest version where the first row is.
+  fc.send(env('ready'));
+  const restored = posted(fc, 'session-restored').at(-1)!;
+  const rows = restored['transcript'] as TranscriptEntry[];
+  const first = restored['firstIndex'] as number;
+  const atA = rows[a!.rowIndex - first]!;
+  const atB = rows[b!.rowIndex - first]!;
+  assert.ok(atA.role === 'diff' && atB.role === 'diff');
+  if (atA.role === 'diff') {
+    assert.equal(atA.sid, sidA);
+    assert.equal(atA.replaces, undefined);
+    assert.deepEqual(atA.lines, [' ctx', '+v2', ' ctx2']);
+  }
+  if (atB.role === 'diff') {
+    assert.equal(atB.sid, sidB);
+    assert.equal(atB.withdrawn, true);
+  }
+  assert.equal(rows.length, store.get(id)!.transcript.length, 'the row count does not change');
+  assert.equal(JSON.stringify(store.get(id)!.transcript), stored, 'the stored rows are untouched');
+
+  // An older page: the first row lies outside the latest window, its newer version far later.
+  const long = createInMemoryChatSessionStore();
+  const s = long.create('claude');
+  s.transcript.push({ role: 'user', text: 'q0', at: 't' });
+  s.transcript.push({ role: 'diff', sid: 'k-0', path: 'old.ts', oldStart: 1, oldLines: 1, newStart: 1, newLines: 2, added: 1, removed: 0, lines: ['+v1'], at: 't' });
+  for (let t = 1; t < 150; t++) {
+    s.transcript.push({ role: 'user', text: `q${t}`, at: 't' });
+    for (let k = 1; k < 4; k++) s.transcript.push({ role: 'assistant', text: `a${t}.${k}`, at: 't' });
+  }
+  s.transcript.push({ role: 'diff', replaces: 'k-0', path: 'old.ts', oldStart: 1, oldLines: 1, newStart: 1, newLines: 4, added: 3, removed: 0, lines: ['+v9'], at: 't' });
+  long.save(s);
+  const fc2 = fakeChannel();
+  createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: scriptedAdapter([]) }, ['claude']), store: long, cwd: () => '/repo' }).open();
+  fc2.send(env('open-chat', { chatId: s.id }));
+  let before = posted(fc2, 'session-restored').at(-1)!['firstIndex'] as number;
+  assert.ok(before > 1, 'the first row is not in the latest window');
+  let found: TranscriptEntry | undefined;
+  while (before > 0) {
+    const pagesBefore = posted(fc2, 'transcript-page').length;
+    fc2.send(env('load-older', { sessionId: s.id, before }));
+    const page = posted(fc2, 'transcript-page').at(-1)!;
+    assert.equal(posted(fc2, 'transcript-page').length, pagesBefore + 1);
+    const pageFirst = page['firstIndex'] as number;
+    if (pageFirst <= 1) found = (page['rows'] as TranscriptEntry[])[1 - pageFirst];
+    before = pageFirst;
+  }
+  assert.ok(found !== undefined && found.role === 'diff');
+  if (found !== undefined && found.role === 'diff') {
+    assert.equal(found.sid, 'k-0');
+    assert.equal(found.replaces, undefined);
+    assert.deepEqual([found.lines, found.added, found.newLines], [['+v9'], 3, 4]);
+  }
 });
 
 test('S006 integration: set-edit-mode updates + persists session.editMode', async () => {
@@ -905,32 +1182,7 @@ test('S006 integration: set-edit-mode updates + persists session.editMode', asyn
   assert.equal(store.get(id!)!.editMode, 'review', 'an invalid mode is dropped (unchanged)');
 });
 
-test('S006 integration: diffView=editor routes to the native editor seam (no chat edit-prompt)', async () => {
-  const fc = fakeChannel();
-  const gov = fakeGovernance();
-  gov.setDiffView('editor');
-  gov.baseline.set('src/a.ts', 'old\n');
-  gov.disk.set('src/a.ts', 'NEW\n');
-  const store = createInMemoryChatSessionStore();
-  const evs: TurnEvent[] = [
-    { kind: 'file-edit', turnId: 't1', path: 'src/a.ts', diff: { path: 'src/a.ts', hunks: [] } },
-    { kind: 'done', turnId: 't1', ok: true },
-  ];
-  const host = createChatPanelHost({
-    createPanel: () => fc.channel,
-    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
-    store,
-    cwd: () => '/repo',
-    editGovernance: gov.deps,
-  });
-  host.open();
-  fc.send(env('submit-turn', { text: 'go' }));
-  await waitFor(() => gov.editorCalls.length >= 1);
-  assert.equal(gov.editorCalls[0]!.path, 'src/a.ts', 'editor diff opened for the edited path');
-  assert.equal(editPrompts(fc).length, 0, 'editor mode posts NO chat edit-prompt');
-});
-
-test('S006: without editGovernance the host behaves as before (no edit-prompt; file-edit marker still renders)', async () => {
+test('S006: without editGovernance the host behaves as before (no transcript-row; file-edit marker still renders)', async () => {
   const fc = fakeChannel();
   const evs: TurnEvent[] = [
     { kind: 'file-edit', turnId: 't1', path: 'src/a.ts', diff: { path: 'src/a.ts', hunks: [] } },
@@ -945,7 +1197,7 @@ test('S006: without editGovernance the host behaves as before (no edit-prompt; f
   host.open();
   fc.send(env('submit-turn', { text: 'go' }));
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
-  assert.equal(editPrompts(fc).length, 0, 'no governance -> no edit-prompt');
+  assert.equal(transcriptRows(fc).length, 0, 'no governance -> no pushed rows');
   assert.ok(turnEvents(fc).some((e) => e.kind === 'file-edit'), 'file-edit still posted (marker path unchanged)');
 });
 
@@ -977,43 +1229,6 @@ test('S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce\'d 
   assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
 });
 
-test('S001 (bugfix): the edit-prompt is always visualize-only (review flag never set) — the gate is retired', async () => {
-  // A legacy set-edit-mode:'review' no longer flips the gate: every edit-prompt is visualize-only.
-  const fcR = fakeChannel();
-  const govR = fakeGovernance();
-  govR.baseline.set('a.ts', 'old\n');
-  govR.disk.set('a.ts', 'new\n');
-  const storeR = createInMemoryChatSessionStore();
-  const hostR = createChatPanelHost({
-    createPanel: () => fcR.channel,
-    providers: registry({ claude: scriptedAdapter([{ kind: 'file-edit', turnId: 't1', path: 'a.ts', diff: { path: 'a.ts', hunks: [] } }, { kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
-    store: storeR,
-    cwd: () => '/repo',
-    editGovernance: govR.deps,
-  });
-  hostR.open();
-  fcR.send(env('set-edit-mode', { mode: 'review' })); // inert now
-  fcR.send(env('submit-turn', { text: 'go' }));
-  await waitFor(() => editPrompts(fcR).length >= 1);
-  assert.notEqual(editPrompts(fcR)[0]!.review, true, 'even a legacy review request -> no gate (visualize)');
-
-  // default mode -> edit-prompt.review falsy (webview shows no controls)
-  const fcA = fakeChannel();
-  const govA = fakeGovernance();
-  govA.baseline.set('a.ts', 'old\n');
-  govA.disk.set('a.ts', 'new\n');
-  const hostA = createChatPanelHost({
-    createPanel: () => fcA.channel,
-    providers: registry({ claude: scriptedAdapter([{ kind: 'file-edit', turnId: 't1', path: 'a.ts', diff: { path: 'a.ts', hunks: [] } }, { kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
-    store: createInMemoryChatSessionStore(),
-    cwd: () => '/repo',
-    editGovernance: govA.deps,
-  });
-  hostA.open(); // default auto
-  fcA.send(env('submit-turn', { text: 'go' }));
-  await waitFor(() => editPrompts(fcA).length >= 1);
-  assert.notEqual(editPrompts(fcA)[0]!.review, true, 'auto session -> edit-prompt.review not true (no controls)');
-});
 
 // ---- S001 t5: live user-row echo on submit + lc1 reconciliation ----
 

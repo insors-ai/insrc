@@ -56,7 +56,7 @@ import { createFileChatSessionStore, migrateChatSessionsFromMemento } from './ch
 import { createSessionOutput } from './chat/session-output.js';
 import { createAttachmentStore } from './chat/attachment-store.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitle } from './chat/cli-adapter.js';
-import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
+import type { DiffView } from './chat/edit-governor.js';
 import { createDocsReviewHost, type DocsReviewHost } from './chat/docs-review-panel.js';
 import { createDocsReviewClient } from './chat/docs-review-client.js';
 import { createGitBaseline } from './chat/git-baseline.js';
@@ -575,7 +575,7 @@ export function activate(context: vscode.ExtensionContext): void {
         },
       },
       editGovernance: {
-        computeDiff: defaultComputeDiff,
+        relPath: (p) => relForGit(chatCwd(), p),
         diffView: () =>
           (vscode.workspace.getConfiguration().get<DiffView>('insrc.chat.diffView') === 'editor' ? 'editor' : 'chat'),
         notify: (m) => {

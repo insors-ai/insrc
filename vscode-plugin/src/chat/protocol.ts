@@ -10,7 +10,7 @@
  *
  * Type-only; vscode-free.
  */
-import type { TurnEvent, UnifiedDiff } from './stream-events.js';
+import type { TurnEvent } from './stream-events.js';
 import type { TerminalTheme } from './design-tokens.js';
 import type { ProviderId } from './cli-adapter.js';
 import type { TranscriptEntry, ChatSummary } from './session-store.js';
@@ -90,7 +90,6 @@ export type HostToWebview =
       readonly total: number;
     }
   | { readonly type: 'history-list'; readonly chats: ChatSummary[] }
-  | { readonly type: 'edit-prompt'; readonly path: string; readonly diff: UnifiedDiff; readonly review?: boolean }
   /**
    * Story E20261013b2e8109f:S001: a transcript row the host pushed outside the event path (a diff
    * section, or one of the host's own marker lines), with its absolute index. A diff row with
@@ -263,7 +262,6 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'turn-event',
   'session-restored',
   'history-list',
-  'edit-prompt',
   'transcript-row',
   'docs-list',
   'docs-content',

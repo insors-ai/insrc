@@ -87,7 +87,7 @@ test("WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES incl
   for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc', 'cancel-turn', 'permission-decision', 'set-permission-mode', 'selection-decision', 'ready']) {
     assert.ok(WEBVIEW_TO_HOST_TYPES.includes(k as WebviewToHostType), `existing kind ${k} still present`);
   }
-  for (const k of ['turn-event', 'session-restored', 'history-list', 'edit-prompt', 'docs-list', 'docs-content', 'user-row', 'theme']) {
+  for (const k of ['turn-event', 'session-restored', 'history-list', 'docs-list', 'docs-content', 'user-row', 'theme']) {
     assert.ok(HOST_TO_WEBVIEW_TYPES.includes(k as HostToWebviewType), `existing kind ${k} still present`);
   }
   // The new shapes typecheck; the added fields are optional, so the old shapes still do too.
@@ -113,7 +113,7 @@ test('protocol: the four new webview messages and attachments-pending are in the
   for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc', 'cancel-turn', 'permission-decision', 'set-permission-mode', 'selection-decision', 'ready', 'load-older']) {
     assert.ok(WEBVIEW_TO_HOST_TYPES.includes(k as WebviewToHostType), `existing kind ${k} still present`);
   }
-  for (const k of ['turn-event', 'session-restored', 'history-list', 'edit-prompt', 'docs-list', 'docs-content', 'user-row', 'theme', 'transcript-page']) {
+  for (const k of ['turn-event', 'session-restored', 'history-list', 'docs-list', 'docs-content', 'user-row', 'theme', 'transcript-page']) {
     assert.ok(HOST_TO_WEBVIEW_TYPES.includes(k as HostToWebviewType), `existing kind ${k} still present`);
   }
   assert.equal(new Set(WEBVIEW_TO_HOST_TYPES).size, WEBVIEW_TO_HOST_TYPES.length);
@@ -148,4 +148,22 @@ test('protocol: the four new webview messages and attachments-pending are in the
   const storedPlain: TranscriptEntry = { role: 'user', text: 'look', at: '2026-10-12T00:00:00.000Z' };
   assert.deepEqual(stored.role === 'user' ? stored.attachments : undefined, [ref]);
   assert.deepEqual(Object.keys(storedPlain), ['role', 'text', 'at']);
+});
+
+// ---- Story E20261013b2e8109f:S001 t6: rows the host pushes outside the event path ----
+
+test('protocol: transcript-row is a host message and edit-prompt is not', () => {
+  assert.ok(HOST_TO_WEBVIEW_TYPES.includes('transcript-row'), "'transcript-row' is listed");
+  assert.ok(!(HOST_TO_WEBVIEW_TYPES as readonly string[]).includes('edit-prompt'), "'edit-prompt' is gone");
+  assert.equal(new Set(HOST_TO_WEBVIEW_TYPES).size, HOST_TO_WEBVIEW_TYPES.length);
+  // The shape typechecks for a diff row and for a marker row.
+  const diff: HostToWebview = {
+    type: 'transcript-row',
+    rowIndex: 4,
+    row: { role: 'diff', sid: 'd1-0', path: 'src/a.ts', oldStart: 1, oldLines: 2, newStart: 1, newLines: 3, added: 1, removed: 0, lines: [' a', '+b', ' c'], at: 1 },
+  };
+  const marker: HostToWebview = { type: 'transcript-row', rowIndex: 5, row: { role: 'marker', text: 'src/a.ts', at: 1 } };
+  assert.deepEqual([diff.type, marker.type], ['transcript-row', 'transcript-row']);
+  // The webview still sends its (inert) edit-decision.
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('edit-decision'));
 });

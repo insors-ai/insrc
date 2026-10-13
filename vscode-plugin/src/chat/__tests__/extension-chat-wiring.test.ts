@@ -86,9 +86,25 @@ test('S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects e
   const b = block![1]!;
   assert.match(b, /getConfiguration\(\)\.get<DiffView>\('insrc\.chat\.diffView'\)/, 'reads diffView with the full dotted key');
   assert.match(b, /editGovernance:\s*\{/, 'passes editGovernance into createChatPanelHost');
-  assert.match(b, /computeDiff:\s*defaultComputeDiff/, 'injects the graph-free computeDiff');
   assert.match(b, /vscode\.commands\.executeCommand\(\s*'vscode\.diff'/, 'editor surface opens a native vscode.diff');
   assert.match(b, /'git',\s*\['-C', cwd/, 'baseline shells local git (no cloud REST, k2)');
+});
+
+test('chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  const gov = /editGovernance:\s*\{([\s\S]*?)\n      \},/.exec(b);
+  assert.ok(gov, 'the editGovernance object is present');
+  assert.match(gov![1]!, /relPath:\s*\(p\)\s*=>\s*relForGit\(chatCwd\(\), p\)/, 'relPath gives the path as git names it');
+  assert.doesNotMatch(src, /computeDiff|defaultComputeDiff/, 'the per-file diff is gone');
+  // runGit takes an environment and adds it to the process's own (GIT_INDEX_FILE for the private index).
+  assert.match(b, /const runGit = \(cwd: string, args: string\[\], env\?: Record<string, string>\)/);
+  assert.match(b, /env: \{ \.\.\.process\.env, \.\.\.env \}/);
+  assert.match(b, /tempIndexPath:/);
+  assert.match(b, /copyFile:/);
+  assert.match(b, /removeFile:/);
 });
 
 test('S006: the edit-governor module is vscode-free', () => {

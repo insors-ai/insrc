@@ -11,7 +11,8 @@
  * tool (k8). All vscode calls are injected via {@link ChatPanelChannel}.
  */
 import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
-import { markerFor, markerWebviewSource } from './markers.js';
+import { MARKER_CLASS, markerFor, markerWebviewSource } from './markers.js';
+import type { DiffSection } from './diff-sections.js';
 import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from './render-registry.js';
 // S001 (bugfix): the bundled `marked` UMD (committed generated string) — evaluated first in the
 // one nonce'd webview script so `marked.parse` is available to the render registry (no CDN; CSP-safe).
@@ -27,8 +28,8 @@ import { latestWindow, pageBefore } from './transcript-window.js';
 import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type TurnSink } from './turn-lifecycle.js';
-import type { ChatSessionStore, ChatSession } from './session-store.js';
-import type { TurnEvent, UnifiedDiff } from './stream-events.js';
+import type { ChatSessionStore, ChatSession, TranscriptEntry } from './session-store.js';
+import type { TurnEvent } from './stream-events.js';
 import {
   createEditGovernor,
   type EditGovernor,
@@ -57,13 +58,14 @@ export interface ChatPanelLogger {
 /**
  * S006 edit-governance seams the host injects into the EditGovernor. Optional: when
  * absent the host behaves exactly as before (marker-only, no diff/governance). The
- * host itself provides the CHAT render (posts the sc3 edit-prompt); extension.ts
- * supplies the git/fs seams, the native-editor diff, and the diffView accessor.
+ * host itself provides the CHAT render (it pushes each changed section as a diff row);
+ * extension.ts supplies the git/fs seams, the native-editor diff, and the diffView accessor.
  */
 export interface ChatEditGovernanceDeps {
   readonly baseline: WorkspaceBaseline;
   readonly fs: FsSeam;
-  readonly computeDiff: (before: string | undefined, after: string, path: string) => UnifiedDiff;
+  /** An edit event's path as git names it: relative to the workspace folder, with forward slashes. */
+  readonly relPath: (path: string) => string;
   /** Open the edit's diff in a native VS Code editor (ac4, diffView='editor'). */
   readonly editorDiff: (path: string, baseline: string | undefined, opts: { review: boolean }) => Promise<void>;
   readonly diffView: () => DiffView;
@@ -276,25 +278,81 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     return undefined;
   };
 
-  // S006: the EditGovernor (inline diff + auto/review + revert). The CHAT surface
-  // render is host-internal (posts the sc3 edit-prompt into the one webview); the
-  // EDITOR surface + git/fs seams are injected via deps.editGovernance. Absent ->
-  // no governor -> the host renders edits exactly as before (the S004 edit marker).
+  // S006: the EditGovernor. The CHAT surface is host-internal (each changed section of a turn is
+  // pushed as a diff row); the EDITOR surface + git/fs seams are injected via deps.editGovernance.
+  // Absent -> no governor -> the host renders edits exactly as before (the S004 edit marker).
+  //
+  // Story E20261013b2e8109f:S001: the diff state of ONE turn this host started. Only that turn's
+  // sink uses it, so nothing here can hold back or add rows for a followed turn or a later one.
+  // Rows are only ever pushed: a section's first row carries a sid, a later version names it.
+  interface DiffTurn {
+    readonly session: ChatSession;
+    /** Made once per turn; with a section's id it is that section's sid, unique in the transcript. */
+    readonly key: string;
+    /** Section id -> the sid of its first row and the section as last pushed. */
+    readonly sections: Map<number, { readonly sid: string; section: DiffSection }>;
+    /** The turn's terminal event has passed: rows that arrive now are saved at once. */
+    afterTerminal: boolean;
+    ended: boolean;
+  }
+  let diffTurn: DiffTurn | undefined;
+  let diffTurnSeq = 0;
+  const openDiffTurn = (s: ChatSession): DiffTurn => {
+    const dt: DiffTurn = { session: s, key: `d${Date.now().toString(36)}${(diffTurnSeq++).toString(36)}`, sections: new Map(), afterTerminal: false, ended: false };
+    diffTurn = dt;
+    return dt;
+  };
+  /** Push a row the event path did not write, and post it while its session is the one shown. */
+  const pushRow = (dt: DiffTurn, row: TranscriptEntry): void => {
+    dt.session.transcript.push(row);
+    const rowIndex = dt.session.transcript.length - 1;
+    if (!disposed && session === dt.session) post({ type: 'transcript-row', rowIndex, row });
+  };
+  const pushMarker = (dt: DiffTurn, text: string): void => pushRow(dt, { role: 'marker', text, cssClass: MARKER_CLASS.edit, at: now() });
+  const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
+
   let governor: EditGovernor | undefined;
   if (deps.editGovernance !== undefined) {
     const eg = deps.editGovernance;
     const editRender: EditRenderSeam = {
-      // The host is authoritative for review: carry opts.review on the edit-prompt so the
-      // webview gates its accept/reject controls on the HOST's decision, not a drifting
-      // webview-local toggle (a stale toggle after a session switch never hides a real
-      // control nor shows a dead one).
-      showChat: (path, diff, opts) => post({ type: 'edit-prompt', path, diff, review: opts.review }),
+      showSections: (ops, overflow) => {
+        const dt = diffTurn;
+        if (dt === undefined || dt.ended) return; // a result for a turn whose diff state has ended is dropped
+        for (const op of ops) {
+          if (op.op === 'add') {
+            const sid = `${dt.key}-${op.id}`;
+            dt.sections.set(op.id, { sid, section: op.section });
+            pushRow(dt, { role: 'diff', sid, ...op.section, at: now() });
+            continue;
+          }
+          const known = dt.sections.get(op.id);
+          if (known === undefined) continue;
+          if (op.op === 'update') {
+            known.section = op.section;
+            pushRow(dt, { role: 'diff', replaces: known.sid, ...op.section, at: now() });
+          } else {
+            const { path, oldStart, oldLines, newStart, newLines } = known.section;
+            dt.sections.delete(op.id);
+            pushRow(dt, { role: 'diff', replaces: known.sid, path, oldStart, oldLines, newStart, newLines, added: 0, removed: 0, lines: [], withdrawn: true, at: now() });
+          }
+        }
+        if (overflow !== undefined) {
+          const { sections: n, files: m } = overflow;
+          pushMarker(dt, `${plural(n, 'more changed section', 'more changed sections')} in ${plural(m, 'file', 'files')} ${n === 1 ? 'is' : 'are'} not shown`);
+        }
+        if (dt.afterTerminal) trySave(dt.session);
+      },
+      sectionsUnreadable: () => {
+        const dt = diffTurn;
+        if (dt === undefined || dt.ended) return;
+        pushMarker(dt, 'The changes of this turn could not be read');
+        if (dt.afterTerminal) trySave(dt.session);
+      },
       showEditor: (path, baseline, opts) => eg.editorDiff(path, baseline, opts),
     };
     governor = createEditGovernor({
       baseline: eg.baseline,
       fs: eg.fs,
-      computeDiff: eg.computeDiff,
       render: editRender,
       diffView: eg.diffView,
       logger: { warn: (m) => log.warn(m) },
@@ -1081,6 +1139,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, ...readable, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
       : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, ...readable };
 
+    // Story E20261013b2e8109f:S001: this turn's diff state, opened in beforeRun.
+    let dt: DiffTurn | undefined;
     const sink: TurnSink = {
       onWaiting: () => post({ type: 'turn-event', event: { kind: 'status', turnId: 'waiting', phase: 'waiting' } }),
       // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn), so the
@@ -1089,7 +1149,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // governor runs visualize-only — it renders diffs but no longer gates with accept/reject (the
       // separate edit-review gate is retired, Claude-Code style).
       beforeRun: async () => {
-        if (governor !== undefined) await governor.beginTurn({ mode: 'auto', cwd: deps.cwd() });
+        if (governor === undefined) return;
+        await governor.beginTurn({ mode: 'auto', cwd: deps.cwd() });
+        // Story E20261013b2e8109f:S001: in a git folder with the chat view on, this turn's changes
+        // are shown as sections; the turn gets its own diff state.
+        // A setting that cannot be read leaves the turn without one, as before this Story.
+        let active = false;
+        try {
+          active = governor.sectionsActive();
+        } catch (err) {
+          warnGovernor('sectionsActive', err);
+        }
+        dt = active ? openDiffTurn(s) : undefined;
       },
       onEvent: (ev) => {
         // ISSUE-6a811b8a: an approval-request is queued, not posted; only the queue head is shown.
@@ -1108,11 +1179,25 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // (auto: visualize-only; review: track for accept/reject). Fire-and-forget so
         // the incremental turn loop never blocks on git/fs IO.
         if (governor !== undefined && ev.kind === 'file-edit') governor.observe(ev.path).catch((err: unknown) => warnGovernor('observe', err));
+        // Story E20261013b2e8109f:S001: a tool call ended or a patch landed: look for what changed.
+        // Fired and forgotten, like observe: the turn loop never waits for git.
+        if (governor !== undefined && dt !== undefined && !dt.ended && (ev.kind === 'file-edit' || ev.kind === 'tool-result')) {
+          governor.check().catch((err: unknown) => warnGovernor('check', err));
+        }
       },
       onTerminal: () => {
         runCompletedBatch(); // ISSUE-6a811b8a: requests decided before the turn ended are now complete
         trySave(s); // persist the turn's transcript rows (an errored turn's too); a failing save never breaks the turn
-        if (governor !== undefined) governor.resolveTurn().catch((err: unknown) => warnGovernor('resolveTurn', err));
+        // Story E20261013b2e8109f:S001: the last check runs here; its rows are saved as they arrive,
+        // and the turn's diff state ends when it is done.
+        const ending = dt;
+        if (ending !== undefined) ending.afterTerminal = true;
+        if (governor !== undefined) {
+          governor.resolveTurn()
+            .catch((err: unknown) => warnGovernor('resolveTurn', err))
+            .then(() => { if (ending !== undefined) ending.ended = true; })
+            .catch(() => {});
+        }
         postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
       },
       onError: (message, turnId) => post({ type: 'turn-event', event: { kind: 'error', turnId, message } }),

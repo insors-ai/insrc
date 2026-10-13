@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 27 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -159,3 +159,59 @@ Run at 2026-10-13T08:57:09.782Z on commit `09512a99`. Tests check: **passed**. 4
 | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` | 0 | 72 | 0.4 s |  |
 | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` | 0 | 20 | 0.4 s |  |
 | `vscode-plugin/src/chat/__tests__/transcript-window.test.ts` | 0 | 6 | 0.3 s |  |
+
+## t5
+
+Run at 2026-10-13T09:03:32.805Z on commit `48de54bd`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: diff widget: header, line numbers, signs and classes are drawn from a diff row; 8 lines show until the header or the button is used**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff widget: header, line numbers, signs and classes are drawn from a diff row; 8 lines show until the header or the button is used | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` |
+
+**unit: diff widget: 8 lines or fewer has no chevron and no button; a binary row, a new file, a deleted file and an omitted count are labelled; a row with replaces or withdrawn appends nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff widget: 8 lines or fewer has no chevron and no button; a binary row, a new file, a deleted file and an omitted count are labelled; a row with replaces or withdrawn appends nothing | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` |
+
+**unit: transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+
+**unit: transcript-row: a marker row appends the same line a restored marker row draws**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | transcript-row: a marker row appends the same line a restored marker row draws | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+
+**unit: diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+
+**unit: tool result: a short output is drawn with no chevron and a long one folds**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | tool result: a short output is drawn with no chevron and a long one folds | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` |
+
+**unit: chat theme: the transcript's children do not shrink, the diff widget's rules name only the shell's theme names, and the .insrc-term-diff rule still out-ranks the shared sheet (__tests__/chat-theme.test.ts; replaces the three has() lines on .insrc-diff-add, .insrc-diff-del and .insrc-diff-actions button, and the seven .insrc-diff-* selectors leave chat-theme-before.json while the widget's selectors join the test's list of added selectors)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat theme: the transcript's children do not shrink, the diff widget's rules name only the shell's theme names, and the .insrc-term-diff rule still out-ranks the shared sheet | `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` |
+| pass | chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy | `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` |
+| pass | chat theme: each component uses the name the mapping gives it (bars, transcript, user and assistant bubbles, tool row, markers, diff lines, approval card and buttons, decided badge, selection card, input, selects, pill, attachment chips, progress, markdown) | `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 8 | 0.5 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` | 0 | 8 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/render-registry.test.ts` | 0 | 75 | 0.4 s |  |

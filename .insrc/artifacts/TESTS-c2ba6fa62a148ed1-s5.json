@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T13:37:23.467Z",
+    "updatedAt": "2026-10-13T13:56:46.991Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1816,6 +1816,42 @@
               },
               {
                 "title": "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "4f78c9d2",
+        "ranAt": "2026-10-13T13:56:46.991Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "search request contract: each guarded search request accepts its existing params and answers",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-request-contract.test.ts",
+                "title": "search request contract: each guarded search request accepts its existing params and answers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/search-request-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2601,
+            "titles": [
+              {
+                "title": "search request contract: each guarded search request accepts its existing params and answers",
                 "result": "pass"
               }
             ],

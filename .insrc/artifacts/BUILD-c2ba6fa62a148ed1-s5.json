@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T13:37:23.467Z",
+    "updatedAt": "2026-10-13T13:56:46.991Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -50,9 +50,13 @@
       {
         "id": "t10",
         "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
       }
     ],
-    "summary": "The daemon's analyze.classify request now checks the scope the classifier named before measuring it: an unindexed scope is answered 'scope-not-indexed' and a repository under index 'repo-indexing', each with no measured size; a generic intent is measured and answered as before.",
+    "summary": "A contract test calls each of the twelve graph-reading search requests over a real daemon's socket with the parameters they take today; the seed makes every parameter, required or optional, decide the answer, so renaming any one a handler reads fails the test (17 renames checked).",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
     },
@@ -62,9 +66,9 @@
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:37:23.467Z"
+        "timestamp": "2026-10-13T13:56:46.991Z"
       }
     ],
-    "commit": "8e943746"
+    "commit": "4f78c9d2"
   }
 }

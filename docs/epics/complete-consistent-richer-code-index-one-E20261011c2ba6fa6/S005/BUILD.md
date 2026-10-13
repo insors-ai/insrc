@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T13:37:23.467Z
+**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T13:56:46.991Z
 
-**Commit:** 8e943746
+**Commit:** 4f78c9d2
 
 ## Summary
 
-The daemon's analyze.classify request now checks the scope the classifier named before measuring it: an unindexed scope is answered 'scope-not-indexed' and a repository under index 'repo-indexing', each with no measured size; a generic intent is measured and answered as before.
+A contract test calls each of the twelve graph-reading search requests over a real daemon's socket with the parameters they take today; the seed makes every parameter, required or optional, decide the answer, so renaming any one a handler reads fails the test (17 renames checked).
 
 ## Tasks validated
 
@@ -22,9 +22,10 @@ The daemon's analyze.classify request now checks the scope the classifier named 
 - ✓ `t8`
 - ✓ `t9`
 - ✓ `t10`
+- ✓ `t11`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T13:37:23.467Z)
+- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T13:56:46.991Z)

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 48 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 49 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -334,3 +334,19 @@ Run at 2026-10-13T13:37:23.467Z on commit `8e943746`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/analyze-rpc-measure.test.ts` | 0 | 4 | 1.5 s |  |
+
+## t11
+
+Run at 2026-10-13T13:56:46.991Z on commit `4f78c9d2`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: search request contract: each guarded search request accepts its existing params and answers**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | search request contract: each guarded search request accepts its existing params and answers | `src/daemon/__tests__/search-request-contract.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/search-request-contract.test.ts` | 0 | 1 | 2.6 s |  |

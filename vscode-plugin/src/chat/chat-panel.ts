@@ -610,7 +610,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
         }
       },
-      onEnd: () => {
+      onEnd: (outcome) => {
+        // A failed resume leaves the turn's cursor saved for a later follow; nothing has ended.
+        if (outcome === 'failed') return;
         if (session !== s) return;
         for (const turnId of followedTurns) approvals.endTurn(turnId);
         runCompletedBatch();

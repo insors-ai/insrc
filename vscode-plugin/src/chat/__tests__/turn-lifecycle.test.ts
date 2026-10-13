@@ -529,8 +529,8 @@ function followSink(h: Harness): { sink: FollowSink; calls: string[]; cursorAtEn
     cursorAtEnd,
     sink: {
       onEvent: (ev) => calls.push(`event:${ev.kind}`),
-      onEnd: () => {
-        calls.push('end');
+      onEnd: (outcome) => {
+        calls.push(outcome === 'failed' ? 'end:failed' : 'end');
         cursorAtEnd.push(h.session.liveTurn);
       },
     },
@@ -608,7 +608,7 @@ test('a failing resume keeps the cursor saved', async () => {
   await waitFor(() => warnings.length === 1);
   assert.match(warnings[0]!, /could not resume turn old: segment unreadable/);
   assert.equal(h.session.liveTurn?.cursor.turnId, 'old', 'the cursor stays saved');
-  assert.deepEqual(f.calls, [], 'onEnd is not called');
+  assert.deepEqual(f.calls, ['end:failed'], 'the end is reported as failed');
   // Following has been released: a later follow tries again.
   h.lc.follow(h.session, f.sink);
   await waitFor(() => warnings.length === 2);
@@ -975,4 +975,269 @@ test('a turn whose output ends without a done or error event ends as an error', 
   s2.runs[1]!.feed.push(done('t2'));
   await pc;
   s2.runs[1]!.proc.exitNow();
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610138d4b90c9:S001 t5 — busy(), and a follow that fails reports its end
+// ---------------------------------------------------------------------------
+
+test('turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a superseding turn keeps it true', async () => {
+  // A started turn: setting up, being read, and its terminal event.
+  {
+    const { adapter, runs } = scriptedAdapter();
+    const h = harness({ providers: registry(adapter) });
+    assert.equal(h.lc.busy(), false, 'nothing has started');
+    let release!: () => void;
+    const held = new Promise<void>((r) => (release = r));
+    const seen: string[] = [];
+    const a = recSink({
+      beforeRun: async () => {
+        seen.push(`beforeRun:${h.lc.busy()}`);
+        await held;
+      },
+      onEvent: (ev) => seen.push(`event:${ev.kind}:${h.lc.busy()}`),
+      onTerminal: (ev) => seen.push(`terminal:${ev.kind}:${h.lc.busy()}`),
+    });
+    const first = h.lc.start(h.session, REQ, a.sink);
+    assert.equal(h.lc.busy(), true, 'from the call on');
+    await waitFor(() => seen.length === 1);
+    assert.equal(h.lc.busy(), true, 'while it sets up');
+    release();
+    await waitFor(() => runs.length === 1);
+    runs[0]!.feed.push(delta('t1'));
+    await waitFor(() => seen.length === 2);
+    assert.equal(h.lc.busy(), true, 'while it is read');
+    runs[0]!.feed.push(done('t1'));
+    await first;
+    assert.deepEqual(seen, ['beforeRun:true', 'event:assistant-delta:true', 'event:done:true', 'terminal:done:false'], 'false once the terminal event is handed over, before onTerminal');
+    assert.equal(h.lc.busy(), false);
+
+    // Waiting for its lease behind the first turn's process, then superseded by a third turn.
+    const b = recSink();
+    const second = h.lc.start(h.session, REQ, b.sink);
+    await waitFor(() => b.calls.includes('waiting'));
+    assert.equal(h.lc.busy(), true, 'while it waits for its lease');
+    const c = recSink();
+    const third = h.lc.start(h.session, REQ, c.sink);
+    await second; // dropped while waiting
+    assert.equal(h.lc.busy(), true, 'the superseding turn keeps it true');
+    runs[0]!.proc.exitNow();
+    await waitFor(() => runs.length === 2);
+    assert.equal(h.lc.busy(), true);
+    runs[1]!.feed.push(done('t2'));
+    await third;
+    assert.equal(h.lc.busy(), false);
+    runs[1]!.proc.exitNow();
+  }
+
+  // A turn superseded while it is read: its end does not make busy false.
+  {
+    const { adapter, runs } = scriptedAdapter({ pipe: true });
+    const h = harness({ providers: registry(adapter) });
+    const first = h.lc.start(h.session, REQ, recSink().sink);
+    await waitFor(() => runs.length === 1);
+    runs[0]!.feed.push(delta('t1'));
+    await waitFor(() => h.lc.live !== undefined);
+    const b = recSink();
+    const second = h.lc.start(h.session, REQ, b.sink);
+    await waitFor(() => b.calls.includes('waiting'));
+    runs[0]!.feed.push(done('t1')); // the superseded turn ends, unreported
+    await first;
+    assert.equal(h.lc.busy(), true, 'the superseded turn ended; its successor is still in progress');
+    runs[0]!.proc.exitNow();
+    await waitFor(() => runs.length === 2);
+    runs[1]!.feed.push(done('t2'));
+    await second;
+    assert.equal(h.lc.busy(), false);
+    runs[1]!.proc.exitNow();
+  }
+
+  // stop, detach and a chat switch (detach with invalidate), while a turn is read and while one waits.
+  for (const end of ['stop', 'detach'] as const) {
+    const { adapter, runs } = scriptedAdapter();
+    const h = harness({ providers: registry(adapter) });
+    const first = h.lc.start(h.session, REQ, recSink().sink);
+    await waitFor(() => runs.length === 1);
+    runs[0]!.feed.push(delta('t1'));
+    await waitFor(() => h.lc.live !== undefined);
+    assert.equal(h.lc.busy(), true);
+    const ended = h.lc[end]();
+    if (end === 'detach') h.lc.invalidate();
+    assert.equal(h.lc.busy(), false, `${end}: false as soon as it is called`);
+    await ended;
+    assert.equal(h.lc.busy(), false, `${end}: and after it has taken effect`);
+    runs[0]!.proc.exitNow();
+    await Promise.race([first, tick(50)]);
+    assert.equal(h.lc.busy(), false);
+
+    const b = recSink();
+    const second = h.lc.start(h.session, REQ, b.sink);
+    assert.equal(h.lc.busy(), true, `${end}: a later turn is in progress again`);
+    await waitFor(() => runs.length === 2);
+    runs[1]!.feed.push(done('t2'));
+    await second;
+    assert.equal(h.lc.busy(), false);
+    runs[1]!.proc.exitNow();
+  }
+  for (const end of ['stop', 'detach'] as const) {
+    const { adapter, runs } = scriptedAdapter();
+    const h = harness({ providers: registry(adapter) });
+    const first = h.lc.start(h.session, REQ, recSink().sink);
+    await waitFor(() => runs.length === 1);
+    runs[0]!.feed.push(done('t1'));
+    await first;
+    const b = recSink();
+    const second = h.lc.start(h.session, REQ, b.sink);
+    await waitFor(() => b.calls.includes('waiting'));
+    assert.equal(h.lc.busy(), true);
+    await h.lc[end]();
+    assert.equal(h.lc.busy(), false, `${end}: a waiting turn that was dropped is not in progress`);
+    await second;
+    assert.equal(h.lc.busy(), false);
+    runs[0]!.proc.exitNow();
+  }
+
+  // A turn that cannot start is not in progress once start has returned.
+  {
+    const h = harness({ providers: { get: () => { throw new Error('no adapter'); }, available: [] } });
+    await h.lc.start(h.session, REQ, recSink().sink);
+    assert.equal(h.lc.busy(), false, 'no adapter');
+    const { adapter } = scriptedAdapter();
+    const h2 = harness({ providers: registry(adapter) });
+    await h2.lc.start(h2.session, REQ, recSink({ beforeRun: async () => { throw new Error('setup failed'); } }).sink);
+    assert.equal(h2.lc.busy(), false, 'a failed setup');
+  }
+
+  // A follow: true while it is read, false before onEnd.
+  {
+    const { adapter, resumes } = scriptedAdapter();
+    const h = harness({ providers: registry(adapter), isAlive: () => false });
+    h.session.liveTurn = savedTurn(99);
+    const seen: string[] = [];
+    h.lc.follow(h.session, {
+      onEvent: (ev) => seen.push(`event:${ev.kind}:${h.lc.busy()}`),
+      onEnd: (outcome) => seen.push(`end:${outcome}:${h.lc.busy()}`),
+    });
+    assert.equal(h.lc.busy(), true, 'from the call on');
+    await waitFor(() => resumes.length === 1);
+    resumes[0]!.feed.push(delta('old'));
+    await waitFor(() => seen.length === 1);
+    assert.equal(h.lc.busy(), true, 'while the follow is read');
+    resumes[0]!.feed.push(done('old'));
+    await waitFor(() => seen.length === 3);
+    assert.deepEqual(seen, ['event:assistant-delta:true', 'event:done:true', 'end:ended:false'], 'false once the follow has ended, before onEnd');
+    assert.equal(h.lc.busy(), false);
+  }
+
+  // stop and detach end a follow: false at once, and onEnd is not called.
+  for (const end of ['stop', 'detach'] as const) {
+    const { adapter, resumes } = scriptedAdapter();
+    const h = harness({ providers: registry(adapter), isAlive: () => false });
+    h.session.liveTurn = savedTurn(99);
+    const f = followSink(h);
+    h.lc.follow(h.session, f.sink);
+    await waitFor(() => resumes.length === 1);
+    assert.equal(h.lc.busy(), true);
+    const ended = h.lc[end]();
+    assert.equal(h.lc.busy(), false, `${end}: a follow it ended is not in progress`);
+    await ended;
+    await tick(20);
+    assert.equal(h.lc.busy(), false);
+    assert.deepEqual(f.calls, [], `${end}: its end is not reported`);
+    resumes[0]!.proc.exitNow();
+  }
+
+  // follow returns without following: no saved turn, a turn owned by a live host, no adapter.
+  {
+    const { adapter } = scriptedAdapter();
+    const h = harness({ providers: registry(adapter), isAlive: () => true });
+    const f = followSink(h);
+    h.lc.follow(h.session, f.sink);
+    assert.equal(h.lc.busy(), false, 'no saved turn');
+    h.session.liveTurn = savedTurn(99);
+    h.lc.follow(h.session, f.sink);
+    assert.equal(h.lc.busy(), false, "another live window's turn");
+    const h2 = harness({ providers: { get: () => { throw new Error('no adapter'); }, available: [] }, isAlive: () => false });
+    h2.session.liveTurn = savedTurn(99);
+    h2.lc.follow(h2.session, f.sink);
+    assert.equal(h2.lc.busy(), false, 'no adapter');
+    await tick(10);
+    assert.deepEqual(f.calls, [], 'and no end is reported for a follow that did not begin');
+  }
+});
+
+test('turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called', async () => {
+  const warnings: string[] = [];
+  const { adapter } = scriptedAdapter({ resumeThrows: true });
+  const h = harness({ providers: registry(adapter), isAlive: () => false, warnings });
+  h.session.liveTurn = savedTurn(99);
+  const ends: Array<{ outcome: string; busy: boolean; cursor: string | undefined }> = [];
+  const events: string[] = [];
+  h.lc.follow(h.session, {
+    onEvent: (ev) => events.push(ev.kind),
+    onEnd: (outcome) => ends.push({ outcome, busy: h.lc.busy(), cursor: h.session.liveTurn?.cursor.turnId }),
+  });
+  assert.equal(h.lc.busy(), true, 'in progress until the resume has failed');
+  await waitFor(() => ends.length === 1);
+  await tick(20);
+  assert.deepEqual(ends, [{ outcome: 'failed', busy: false, cursor: 'old' }], 'once, as failed, not in progress, the cursor still saved');
+  assert.deepEqual(events, []);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0]!, /could not resume turn old: segment unreadable/);
+  assert.equal(h.lc.busy(), false);
+
+  // A resume that fails part-way, after an event, is reported once too.
+  const failing: StreamAdapter = {
+    ...adapter,
+    async *resume(): AsyncIterable<TurnEvent> {
+      yield delta('old');
+      throw new Error('segment truncated');
+    },
+  };
+  const h2 = harness({ providers: registry(failing), isAlive: () => false, warnings });
+  h2.session.liveTurn = savedTurn(99);
+  const f2 = followSink(h2);
+  h2.lc.follow(h2.session, f2.sink);
+  await waitFor(() => f2.calls.includes('end:failed'));
+  await tick(20);
+  assert.deepEqual(f2.calls, ['event:assistant-delta', 'end:failed']);
+  assert.equal(h2.lc.busy(), false);
+
+  // A throwing end callback is logged, and the follow is released: a later follow tries again.
+  const h3 = harness({ providers: registry(adapter), isAlive: () => false, warnings });
+  h3.session.liveTurn = savedTurn(99);
+  let calls = 0;
+  const throwing: FollowSink = {
+    onEvent: () => {},
+    onEnd: () => {
+      calls += 1;
+      throw new Error('panel gone');
+    },
+  };
+  const before = warnings.length;
+  h3.lc.follow(h3.session, throwing);
+  await waitFor(() => warnings.length === before + 2);
+  assert.match(warnings.at(-1)!, /after the follow of turn old failed: panel gone/);
+  assert.equal(h3.lc.busy(), false);
+  h3.lc.follow(h3.session, throwing);
+  await waitFor(() => calls === 2);
+
+  // A follow that stop() ended while its resume was failing is not reported.
+  let rejectResume!: (e: Error) => void;
+  const pending: StreamAdapter = {
+    ...adapter,
+    // eslint-disable-next-line require-yield
+    async *resume(): AsyncIterable<TurnEvent> {
+      await new Promise<void>((_, rej) => (rejectResume = rej));
+    },
+  };
+  const h4 = harness({ providers: registry(pending), isAlive: () => false, warnings });
+  h4.session.liveTurn = savedTurn(99);
+  const f4 = followSink(h4);
+  h4.lc.follow(h4.session, f4.sink);
+  await waitFor(() => rejectResume !== undefined);
+  await h4.lc.stop();
+  rejectResume(new Error('read aborted'));
+  await tick(20);
+  assert.deepEqual(f4.calls, [], 'stopped: no end is reported');
 });

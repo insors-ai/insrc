@@ -75,13 +75,29 @@ export async function resolveTaskScope(
 		if (err instanceof ScopeKindTargetMismatchError) err.message = `${templateLabel}: ${err.message}`;
 		throw err;
 	}
-	if (GRAPH_FAMILIES.has(family)) {
-		await ensureNonEmptyClosure(scope, readers);
-	} else {
-		await ensureRepoQueryable(scope, readers);
-	}
+	await ensureScopeQueryable(scope, family, readers);
 	return scope;
 }
+
+/**
+ * The index-state checks for a resolved scope of a family, as a plan task and
+ * the run make them, and the analyze step tool too (ISSUE-7c255f61): a family
+ * that reads the stored graph (code, docs) needs the scope indexed
+ * (`ensureNonEmptyClosure`, which refuses a repository under index first); every
+ * other family is refused only for a repository under index (`ensureRepoQueryable`).
+ *
+ * @throws ScopeNotIndexedError  a code or docs scope the index does not hold.
+ * @throws RepoIndexingError     the scope's repository is being indexed, or its
+ *         last index ended in an error before it completed.
+ */
+export async function ensureScopeQueryable(scope: ResolvedScope, family: TaskFamily, deps?: ScopeDeps): Promise<void> {
+	if (GRAPH_FAMILIES.has(family)) {
+		await ensureNonEmptyClosure(scope, deps);
+	} else {
+		await ensureRepoQueryable(scope, deps);
+	}
+}
+
 
 // ---------------------------------------------------------------------------
 // What a task that reads the stored graph does with its resolved scope

@@ -12,7 +12,7 @@
  * See docs/plans/mcp-multi-turn-analyze.md for the full protocol.
  */
 
-import { RepoIndexingError, ScopeNotIndexedError } from '../../../analyze/context/invariants.js';
+import { scopeErrorMapping } from '../../../analyze/context/invariants.js';
 import { appendFileSync } from 'node:fs';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -106,16 +106,24 @@ async function dispatch(input: unknown): Promise<StepOutput> {
 				);
 		}
 	} catch (err) {
-		// A repository under index: its own code and message, which say how far
-		// the run has got. Retryable: the index ends.
-		if (err instanceof RepoIndexingError) return errorResult('repo-indexing', err.message, true);
-		// A scope the index does not hold: the run's own code and message. Not
-		// retryable: the repository has to be added and indexed first.
-		if (err instanceof ScopeNotIndexedError) return errorResult('scope-not-indexed', err.message, false);
+		const scoped = scopeErrorResult(err);
+		if (scoped !== undefined) return scoped;
 		const msg = err instanceof Error ? err.message : String(err);
 		log.warn({ phase: step.phase, err: msg }, 'insrc_analyze_step: uncaught error');
 		return errorResult('internal', msg, false);
 	}
+}
+
+/**
+ * A scope error thrown by a phase, as the reply the tool gives: the code and
+ * message of the one mapping from scope errors to codes (scopeErrorMapping).
+ * Only a repository under index is retryable: its index ends. Any other error
+ * is not a scope error (undefined).
+ */
+export function scopeErrorResult(err: unknown): StepOutputError | undefined {
+	const scoped = scopeErrorMapping(err);
+	if (scoped === undefined) return undefined;
+	return errorResult(scoped.code, scoped.message, scoped.code === 'repo-indexing');
 }
 
 function errorResult(code: string, message: string, retryable: boolean): StepOutputError {

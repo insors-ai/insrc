@@ -26,11 +26,12 @@ import { join } from 'node:path';
 
 import { upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
-import { scopeErrorMapping } from '../../../analyze/context/invariants.js';
+import { RepoIndexingError, ScopeKindTargetMismatchError, scopeErrorMapping, ScopeNotIndexedError, ScopeRefUnresolvedError } from '../../../analyze/context/invariants.js';
 import { resolveTaskScope } from '../../../analyze/runtimes/shared/task-scope.js';
 import { useTemporaryLance } from '../../../db/lance/__tests__/helpers/temp-lance.js';
 import { addRepo, removeRepo } from '../../../db/repos.js';
 import type { Entity, IpcStreamMessage } from '../../../shared/types.js';
+import { scopeErrorResult } from '../analyze-step/handler.js';
 import { createStepCallHandler } from '../host.js';
 
 useTemporaryLance();
@@ -136,4 +137,26 @@ test("insrc_analyze_step plan on a run whose repository is no longer held by the
 	assert.equal(isError, true);
 	assert.equal(reply.next, 'error');
 	assert.deepEqual(reply.error, { code: 'scope-not-indexed', message: expected.message, retryable: false });
+});
+
+test("insrc_analyze_step replies to every scope error with the code and message of the one mapping (scopeErrorMapping); only a repository under index is retryable; any other error is not a scope error", () => {
+	const errors = [
+		new ScopeNotIndexedError('/x', undefined, 'no registered repo contains the scope path'),
+		new RepoIndexingError({ repoPath: '/x', status: 'indexing', run: null }),
+		new ScopeRefUnresolvedError("Connection 'ledger' is not registered in any repo."),
+		new ScopeKindTargetMismatchError('connection', 'code', ['repo', 'workspace']),
+	];
+	const codes: string[] = [];
+	for (const err of errors) {
+		const mapped = scopeErrorMapping(err);
+		assert.ok(mapped !== undefined, err.name);
+		codes.push(mapped.code);
+		assert.deepEqual(scopeErrorResult(err), {
+			next: 'error',
+			error: { code: mapped.code, message: err.message, retryable: mapped.code === 'repo-indexing' },
+		}, err.name);
+	}
+	// Each class has a code of its own, none of them 'internal'.
+	assert.deepEqual(codes, ['scope-not-indexed', 'repo-indexing', 'scope-ref-unresolved', 'scope-ref-kind-target-mismatch']);
+	assert.equal(scopeErrorResult(new Error('MDB_BAD_TXN')), undefined);
 });

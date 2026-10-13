@@ -13,9 +13,9 @@
  * drives the later phases.
  */
 
-import { ensureNonEmptyClosure, ensureRepoQueryable } from '../../../analyze/context/invariants.js';
 import { resolveScopeForTarget } from '../../../analyze/context/scope.js';
 import type { ResolvedScope, ScopeDeps } from '../../../analyze/context/scope.js';
+import { ensureScopeQueryable } from '../../../analyze/runtimes/shared/task-scope.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 
 /**
@@ -30,15 +30,13 @@ import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
  */
 export async function stepScope(intent: Pick<ClassifiedIntent, 'target' | 'scopeRef'>, deps?: ScopeDeps): Promise<ResolvedScope> {
 	const scope = await resolveScopeForTarget(intent.scopeRef, intent.target, deps);
-	// The run's own checks (resolveTaskScope), made before anything is measured,
-	// read from the cache or looked up: every phase makes this call, so a
-	// repository that goes under index during a run is refused at its next turn.
-	// A code or docs request reads the stored graph, so a scope the index does
-	// not hold is refused (ISSUE-7c255f61); that check refuses a repository
-	// being indexed, or whose last index failed, first (Epic c2ba6fa6, Story s5).
-	// A data or infra request is refused for the latter only. A generic intent
-	// is not checked, as the run does not check it.
-	if (intent.target === 'code' || intent.target === 'docs') await ensureNonEmptyClosure(scope, deps);
-	else if (intent.target !== 'generic') await ensureRepoQueryable(scope, deps);
+	// The run's own checks, through the one function the run uses
+	// (ensureScopeQueryable), made before anything is measured, read from the
+	// cache or looked up: every phase makes this call, so a repository that goes
+	// under index during a run is refused at its next turn. A code or docs scope
+	// the index does not hold is refused (ISSUE-7c255f61), and a repository being
+	// indexed, or whose last index failed, for every source (Epic c2ba6fa6,
+	// Story s5). A generic intent is not checked, as the run does not check it.
+	if (intent.target !== 'generic') await ensureScopeQueryable(scope, intent.target, deps);
 	return scope;
 }

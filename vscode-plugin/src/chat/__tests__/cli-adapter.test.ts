@@ -16,7 +16,8 @@ import { join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
 import { tick, waitFor } from './fixtures.js';
 import { defaultProcessStartTime } from '../session-lock.js';
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner } from '../cli-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
@@ -1459,4 +1460,71 @@ test('the real spawner with closeInput starts a process that reads its input to 
   assert.equal(outcome, 'waiting');
   open.kill('SIGKILL');
   await open.exit;
+});
+
+// Story E20261013b2e8109f:S001 / t3 — which edit a result answers, and each file a codex patch changed.
+
+test("claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither", async () => {
+  const use = (id: string, name: string, input: Record<string, unknown>): string =>
+    JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id, name, input }] } });
+  const result = (id: string, content: string, isError?: boolean): string =>
+    JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: id, content, ...(isError ? { is_error: true } : {}) }] } });
+  const lines = [
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: 's1' }),
+    use('e1', 'Edit', { file_path: '/repo/a.ts', old_string: 'a', new_string: 'b' }),
+    result('e1', 'The file /repo/a.ts has been updated.'),
+    use('w1', 'Write', { file_path: '/repo/new.ts', content: 'x' }),
+    result('w1', 'File created successfully'),
+    use('e2', 'Edit', { file_path: '/repo/b.ts', old_string: 'nope', new_string: 'y' }),
+    result('e2', 'String to replace not found in file.', true),
+    use('b1', 'Bash', { command: 'false' }),
+    result('b1', 'exit 1', true),
+    use('b2', 'Bash', { command: 'true' }),
+    result('b2', ''),
+    JSON.stringify({ type: 'result', is_error: false }),
+  ];
+  const { deps } = depsFor({ lines });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+  const results = events.filter((e): e is Extract<TurnEvent, { kind: 'tool-result' }> => e.kind === 'tool-result');
+  assert.deepEqual(results.map((r) => [r.callId, r.editPath, r.isError, r.command]), [
+    ['e1', '/repo/a.ts', undefined, undefined],
+    ['w1', '/repo/new.ts', undefined, undefined],
+    ['e2', '/repo/b.ts', true, undefined],
+    ['b1', undefined, true, 'false'],
+    ['b2', undefined, undefined, 'true'],
+  ]);
+  // The fields are left out, not set to undefined or false.
+  assert.equal('editPath' in results[4]!, false);
+  assert.equal('isError' in results[0]!, false);
+});
+
+test("codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied", async () => {
+  const edits = async (provider: ProviderId, lines: string[]): Promise<Array<[string, true | undefined]>> => {
+    const { deps } = depsFor({ lines });
+    const events = await collect(createProviderRegistry(deps).get(provider).run(REQ({ provider })));
+    return events.filter((e): e is Extract<TurnEvent, { kind: 'file-edit' }> => e.kind === 'file-edit').map((e) => [e.path, e.applied]);
+  };
+  const done = JSON.stringify({ type: 'turn.completed' });
+  const item = (over: Record<string, unknown>): string => JSON.stringify({ type: 'item.completed', item: { id: 'i1', type: 'file_change', ...over } });
+
+  // The item a real codex 0.162.1 printed for a patch of two files (recorded 2026-10-13).
+  const recorded = readFileSync(fileURLToPath(new URL('./codex-file-change-item.json', import.meta.url)), 'utf8');
+  assert.deepEqual(await edits('codex', [JSON.stringify(JSON.parse(recorded)), done]), [
+    ['/tmp/insrc-codexprobe.nLSExA/a.txt', true],
+    ['/tmp/insrc-codexprobe.nLSExA/b.txt', true],
+  ]);
+  // The older shape: one path on the item.
+  assert.deepEqual(await edits('codex', [item({ path: 'src/a.ts' }), done]), [['src/a.ts', true]]);
+  // No file named: one event with the placeholder, as before.
+  assert.deepEqual(await edits('codex', [item({}), done]), [['(unknown)', true]]);
+  assert.deepEqual(await edits('codex', [item({ changes: [{ kind: 'update' }, null] }), done]), [['(unknown)', true]]);
+  // A failed patch did not change the files: no applied.
+  assert.deepEqual(await edits('codex', [item({ status: 'failed', changes: [{ path: 'x.ts', kind: 'update' }] }), done]), [['x.ts', undefined]]);
+
+  // A claude edit's event is emitted when the call is made: never applied.
+  const claude = [
+    JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'e1', name: 'Edit', input: { file_path: '/repo/a.ts', old_string: 'a', new_string: 'b' } }] } }),
+    JSON.stringify({ type: 'result', is_error: false }),
+  ];
+  assert.deepEqual(await edits('claude', claude), [['/repo/a.ts', undefined]]);
 });

@@ -47,7 +47,18 @@ export type TurnEvent =
        */
       readonly callId?: string;
     }
-  | { readonly kind: 'file-edit'; readonly turnId: string; readonly path: string; readonly diff: UnifiedDiff }
+  | {
+      readonly kind: 'file-edit';
+      readonly turnId: string;
+      readonly path: string;
+      readonly diff: UnifiedDiff;
+      /**
+       * Story E20261013b2e8109f:S001 (additive, live-only): the change is already on disk when this
+       * event is emitted (a completed codex file_change item). Absent for a claude edit, whose event
+       * is emitted when the call is made and whose result follows as a 'tool-result' with editPath.
+       */
+      readonly applied?: true;
+    }
   /** `waiting`: the host holds the turn until the session's previous CLI process has exited (no process started yet). */
   | { readonly kind: 'status'; readonly turnId: string; readonly phase: 'waiting' | 'thinking' | 'streaming' | 'tool' | 'editing' }
   | {
@@ -75,6 +86,13 @@ export type TurnEvent =
       readonly exitCode?: number;
       /** ISSUE-1163888072faa9f2 (additive): the id of the call this result answers, when reported (live-only). */
       readonly callId?: string;
+      /**
+       * Story E20261013b2e8109f:S001 (additive, live-only): the file the edit tool call this result
+       * answers was asked to change (claude Edit / Write). Absent for every other result.
+       */
+      readonly editPath?: string;
+      /** Story E20261013b2e8109f:S001 (additive, live-only): the provider reported the call as failed. */
+      readonly isError?: boolean;
     }
   | {
       /**

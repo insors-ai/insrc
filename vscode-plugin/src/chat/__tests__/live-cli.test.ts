@@ -12,13 +12,15 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { crc32, deflateSync } from 'node:zlib';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe } from '../cli-adapter.js';
 import type { ProviderId } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
+import { parsePatch } from '../diff-sections.js';
+import { baselineFor, git } from './real-git.js';
 
 const LIVE = process.env['INSRC_LIVE_TESTS'] === '1';
 
@@ -146,4 +148,61 @@ test('live codex: with the argv the adapter builds, a prompt naming an image and
   assert.equal(events.at(-1)?.kind, 'done');
   assert.match(answer, /PERIWINKLE-4471/, 'the text file was read');
   assert.match(answer, /\bred\b/i, 'the image was read');
+});
+
+// Story E20261013b2e8109f:S001 / t3 — what the two CLIs report when they change files, in a
+// temporary repository of the test's own.
+
+/** A temporary git repository with one committed file; removed by the caller. */
+function editRepo(): string {
+  const dir = mkdtempSync(join(tmpdir(), 'insrc-live-edit-'));
+  git(dir, 'init', '-q');
+  writeFileSync(join(dir, 'a.txt'), 'one\ntwo\nthree\n');
+  git(dir, 'add', '-A');
+  git(dir, 'commit', '-q', '-m', 'init');
+  return dir;
+}
+
+test("live claude: an Edit of a file in a temporary repository yields a tool-result with editPath and the baseline's changes hold the edited section", { skip: !LIVE || !defaultBinaryProbe('claude') }, async () => {
+  const dir = editRepo();
+  try {
+    mkdirSync(dir + '-idx');
+    const baseline = baselineFor(dir, dir + '-idx');
+    const handle = await baseline.snapshot(dir);
+    const reg = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe });
+    const events: TurnEvent[] = [];
+    const prompt = 'Use the Edit tool to change the word two to TWO in a.txt. Change nothing else, then stop.';
+    for await (const ev of reg.get('claude').run({ provider: 'claude', prompt, cwd: dir, permissionMode: 'auto' })) events.push(ev);
+    assert.equal(events.at(-1)?.kind, 'done');
+    assert.equal(readFileSync(join(dir, 'a.txt'), 'utf8'), 'one\nTWO\nthree\n');
+    const edit = events.find((e) => e.kind === 'file-edit');
+    assert.ok(edit && edit.kind === 'file-edit' && edit.applied === undefined, 'the edit is announced when the call is made');
+    const answered = events.filter((e) => e.kind === 'tool-result' && e.editPath !== undefined);
+    assert.equal(answered.length, 1, 'one result names the edit it answers');
+    const res = answered[0]!;
+    assert.ok(res.kind === 'tool-result' && res.editPath!.endsWith('a.txt') && res.isError !== true);
+    const sections = parsePatch((await baseline.changes(handle)) ?? '');
+    assert.deepEqual(sections.map((s) => [s.path, s.added, s.removed]), [['a.txt', 1, 1]]);
+    assert.ok(sections[0]!.lines.includes('+TWO') && sections[0]!.lines.includes('-two'));
+    await baseline.release(handle);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(dir + '-idx', { recursive: true, force: true });
+  }
+});
+
+test("live codex: a patch of two files in a temporary repository yields two applied file-edit events with those files' paths", { skip: !LIVE || !defaultBinaryProbe('codex') }, async () => {
+  const dir = editRepo();
+  try {
+    const reg = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe });
+    const events: TurnEvent[] = [];
+    const prompt = 'Use the apply_patch tool (not a shell command), in one patch, to change the word two to TWO in a.txt and to add a new file b.txt containing hello. Then stop.';
+    for await (const ev of reg.get('codex').run({ provider: 'codex', prompt, cwd: dir, permissionMode: 'auto' })) events.push(ev);
+    assert.equal(events.at(-1)?.kind, 'done');
+    const edits = events.filter((e): e is Extract<TurnEvent, { kind: 'file-edit' }> => e.kind === 'file-edit');
+    assert.deepEqual(edits.map((e) => [e.path.split('/').pop(), e.applied]).sort(), [['a.txt', true], ['b.txt', true]]);
+    assert.equal(readFileSync(join(dir, 'b.txt'), 'utf8').trim(), 'hello');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

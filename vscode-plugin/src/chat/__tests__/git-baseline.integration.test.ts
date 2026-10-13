@@ -6,50 +6,11 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFile, execFileSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { isAbsolute, join, relative } from 'node:path';
-import { createGitBaseline } from '../git-baseline.js';
+import { join } from 'node:path';
 import { parsePatch } from '../diff-sections.js';
-import type { WorkspaceBaseline } from '../edit-governor.js';
-
-const HAS_GIT = ((): boolean => {
-  try {
-    execFileSync('git', ['--version'], { stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
-})();
-
-const git = (cwd: string, ...args: string[]): string =>
-  execFileSync('git', ['-C', cwd, '-c', 'user.email=t@example.com', '-c', 'user.name=t', ...args], { encoding: 'utf8' });
-
-function baselineFor(cwd: string, tmp: string): WorkspaceBaseline {
-  let n = 0;
-  return createGitBaseline({
-    runGit: (dir, args, env) =>
-      new Promise((resolve) => {
-        execFile('git', ['-C', dir, ...args], { encoding: 'utf8', ...(env !== undefined ? { env: { ...process.env, ...env } } : {}) }, (err, stdout) => {
-          resolve({ ok: err === null, stdout: stdout ?? '' });
-        });
-      }),
-    cwd: () => cwd,
-    toAbs: (dir, p) => (isAbsolute(p) ? p : join(dir, p)),
-    toRel: (dir, p) => (isAbsolute(p) ? relative(dir, p) : p).split('\\').join('/'),
-    tempIndexPath: () => join(tmp, `idx-${n++}`),
-    copyFile: async (from, to) => {
-      try {
-        copyFileSync(from, to);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    removeFile: async (p) => rmSync(p, { force: true }),
-  });
-}
+import { HAS_GIT, baselineFor, git } from './real-git.js';
 
 const LINES = Array.from({ length: 20 }, (_, i) => `l${i + 1}`).join('\n') + '\n';
 

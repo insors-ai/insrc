@@ -1,0 +1,12 @@
+{
+  "type": "item.completed",
+  "item": {
+    "id": "item_2",
+    "type": "file_change",
+    "changes": [
+      { "path": "/tmp/insrc-codexprobe.nLSExA/a.txt", "kind": "update" },
+      { "path": "/tmp/insrc-codexprobe.nLSExA/b.txt", "kind": "add" }
+    ],
+    "status": "completed"
+  }
+}

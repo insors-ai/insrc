@@ -243,6 +243,12 @@ interface TurnState {
    */
   toolCommands?: Record<string, string>;
   /**
+   * Story E20261013b2e8109f:S001: tool_use `id` of an edit tool call -> the file it was asked to
+   * change, remembered so its tool_result (which carries only `tool_use_id`) can say which edit it
+   * answers.
+   */
+  editPaths?: Record<string, string>;
+  /**
    * S004 (dev-chat ux polish): a partially-streamed `insrc:select` marker — the text from an
    * OPENED fence whose closing fence has not yet arrived in this turn's stream. Buffered here so
    * a half-marker never emits a selection-request and never leaks a partial fence to the visible
@@ -593,6 +599,9 @@ const claudeMapper: ProviderMapper = {
           const toolName = typeof block['name'] === 'string' ? (block['name'] as string) : 'tool';
           const input = (block['input'] as Record<string, unknown> | undefined) ?? {};
           if (CLAUDE_EDIT_TOOLS.has(toolName) && typeof input['file_path'] === 'string') {
+            if (typeof block['id'] === 'string' && block['id'] !== '') {
+              (state.editPaths ??= {})[block['id'] as string] = input['file_path'] as string;
+            }
             out.push({ kind: 'file-edit', turnId, path: input['file_path'] as string, diff: diffFromClaudeEdit(input['file_path'] as string, input) });
           } else {
             const mcp = parseMcpTool(toolName);
@@ -630,12 +639,15 @@ const claudeMapper: ProviderMapper = {
         const output = coerceToolResultOutput(block['content']);
         const tid = typeof block['tool_use_id'] === 'string' ? (block['tool_use_id'] as string) : undefined;
         const command = tid !== undefined ? state.toolCommands?.[tid] : undefined;
+        const editPath = tid !== undefined ? state.editPaths?.[tid] : undefined;
         out.push({
           kind: 'tool-result',
           turnId,
           output,
           ...(command !== undefined ? { command } : {}),
           ...(tid !== undefined && tid !== '' ? { callId: tid } : {}),
+          ...(editPath !== undefined ? { editPath } : {}),
+          ...(block['is_error'] === true ? { isError: true } : {}),
         });
       }
       return out;
@@ -726,8 +738,13 @@ const codexMapper: ProviderMapper = {
       const item = (obj['item'] as Record<string, unknown> | undefined) ?? obj;
       const itemType = item['type'];
       if (itemType === 'file_change' || itemType === 'patch') {
-        const path = typeof item['path'] === 'string' ? (item['path'] as string) : '(unknown)';
-        return [{ kind: 'file-edit', turnId, path, diff: { path, hunks: [] } }];
+        // Story E20261013b2e8109f:S001: a patch item lists every file it changed (`changes`); an
+        // older shape names one `path`. The change is on disk unless the item failed.
+        const changes = Array.isArray(item['changes']) ? (item['changes'] as Array<Record<string, unknown> | null>) : [];
+        const listed = changes.map((c) => c?.['path']).filter((p): p is string => typeof p === 'string' && p !== '');
+        const paths = listed.length > 0 ? listed : [typeof item['path'] === 'string' ? (item['path'] as string) : '(unknown)'];
+        const applied = item['status'] !== 'failed';
+        return paths.map((path): TurnEvent => ({ kind: 'file-edit', turnId, path, diff: { path, hunks: [] }, ...(applied ? { applied: true as const } : {}) }));
       }
       if (itemType === 'command_execution' || itemType === 'tool_call') {
         // S001 sc2: carry the actual command (codex `item.command`) as the additive command

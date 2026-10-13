@@ -20,6 +20,7 @@ import type { DocsReviewClient, DocsContent, ReviewDecision, ReviewDecisionComme
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-style.js';
 import { DOCS_COMMENTS_SOURCE } from './docs-review-comments.js';
+import { DOCS_LIST_SOURCE } from './docs-review-list.js';
 import { deriveSectionIndex, createSectionResolver, type SectionIndex } from './docs-sections.js';
 
 /**
@@ -1723,7 +1724,30 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.rv-badge{background:var(--vscode-badge-background);color:var(--vscode-badge-foreground);border-radius:10px;padding:0 7px;font-size:11px;}` +
       // The header: which document, its kind and its state.
       `.rv-head{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 14px;border-bottom:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);}` +
-      `.rv-head select{background:var(--vscode-dropdown-background);color:var(--vscode-dropdown-foreground);border:1px solid var(--vscode-dropdown-border);border-radius:2px;padding:3px 6px;font:inherit;max-width:60%;}` +
+      `.rv-title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%;}` +
+      // The two views. Each fills the pane; the script shows one of them.
+      `.rv-listview,.rv-docview{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}` +
+      // The list view: a toolbar and a pager that keep their own height, and between them
+      // the table, which is the view's one scrolling region. Its header row stays at the
+      // top of that region.
+      `.rv-tool{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:8px 14px;border-bottom:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);}` +
+      `.rv-tool input{flex:1 1 220px;min-width:0;max-width:520px;background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border);border-radius:12px;padding:4px 10px;font:inherit;outline:none;}` +
+      `.rv-tool input:focus{border-color:var(--vscode-focusBorder);}` +
+      `.rv-tool input::placeholder{color:var(--vscode-input-placeholderForeground);}` +
+      `.rv-tool select{background:var(--vscode-dropdown-background);color:var(--vscode-dropdown-foreground);border:1px solid var(--vscode-dropdown-border);border-radius:2px;padding:3px 6px;font:inherit;}` +
+      `.rv-listnote{flex:0 0 auto;padding:10px 14px;color:var(--vscode-descriptionForeground);}` +
+      `.rv-listnote.rv-err{color:var(--vscode-errorForeground);}` +
+      `.rv-tablewrap{flex:1 1 auto;min-height:0;overflow-y:auto;}` +
+      `.rv-table{width:100%;border-collapse:collapse;}` +
+      `.rv-table th{position:sticky;top:0;text-align:left;font-weight:600;font-size:12px;padding:6px 14px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);color:var(--vscode-descriptionForeground);}` +
+      `.rv-table td{padding:5px 14px;border-bottom:1px solid var(--vscode-panel-border);vertical-align:top;}` +
+      `.rv-table tr:hover td{background:var(--vscode-list-hoverBackground);}` +
+      `.rv-rowbtn{background:none;border:0;padding:0;font:inherit;color:var(--vscode-textLink-foreground);cursor:pointer;text-align:left;overflow-wrap:anywhere;}` +
+      `.rv-rowbtn:hover{text-decoration:underline;}` +
+      `.rv-rowbtn:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px;}` +
+      `.rv-idcell{color:var(--vscode-descriptionForeground);font-family:var(--vscode-editor-font-family);font-size:12px;white-space:nowrap;}` +
+      `.rv-numcell{text-align:right;white-space:nowrap;}` +
+      `.rv-pager{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:10px;padding:6px 14px;border-top:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);font-size:12px;}` +
       // One tab per document of the artifact: the markdown, then each HTML document.
       `.rv-tabs{display:flex;gap:2px;flex-wrap:wrap;}` +
       `.rv-tab{background:none;color:var(--vscode-descriptionForeground);border:0;border-bottom:2px solid var(--vscode-sideBar-background);border-radius:0;padding:3px 8px;font:inherit;cursor:pointer;}` +
@@ -1961,25 +1985,28 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `const histEl=document.getElementById('insrc-rv-hist');` +
       `const histSumEl=document.getElementById('insrc-rv-hist-sum');` +
       `const histListEl=document.getElementById('insrc-rv-hist-list');` +
-      // current: the id of the document shown. shown: its last docs-content message.
+      // Story E202610131f74c81f:S001 — the two views, and the list view's controls.
+      `const listViewEl=document.getElementById('insrc-rv-listview');` +
+      `const docViewEl=document.getElementById('insrc-rv-docview');` +
+      `const qEl=document.getElementById('insrc-rv-q');` +
+      `const suggestEl=document.getElementById('insrc-rv-suggest');` +
+      `const kindSelEl=document.getElementById('insrc-rv-kindsel');` +
+      `const countEl=document.getElementById('insrc-rv-count');` +
+      `const listNoteEl=document.getElementById('insrc-rv-listnote');` +
+      `const prevEl=document.getElementById('insrc-rv-prev');` +
+      `const nextEl=document.getElementById('insrc-rv-next');` +
+      `const pageEl=document.getElementById('insrc-rv-page');` +
+      `const backEl=document.getElementById('insrc-rv-back');` +
+      `const titleEl=document.getElementById('insrc-rv-title');` +
+      // items: the documents awaiting review. shown: the last docs-content message of the
+      // document held.
       // busy: a decision was posted and its result has not arrived. sent: how many
       // comments that decision carried.
-      `var current='';var items=[];var shown=null;var busy=false;var sent=0;` +
+      `var items=[];var shown=null;var busy=false;var sent=0;` +
       // docs: the documents of the artifact shown. tab: the repo-relative path of the HTML
       // document on show, or '' for the markdown.
       `var docs=[];var tab='';` +
-      // docs-list: one option per document awaiting review (textContent only, no markup).
-      // The document shown is always an option, so the select names it even when it is
-      // not awaiting review.
       `function rvOption(value,text){var o=document.createElement('option');o.value=value;o.textContent=text;return o;}` +
-      `function renderList(list){items=list||[];while(listEl.firstChild)listEl.removeChild(listEl.firstChild);` +
-      `var known=false;` +
-      `if(!current)listEl.appendChild(rvOption('',items.length?'Choose a document ('+items.length+' awaiting review)':'No documents are awaiting review'));` +
-      `items.forEach(function(a){if(a.id===current)known=true;listEl.appendChild(rvOption(a.id,a.kind+' · '+(a.title||a.id)+' · '+a.status));});` +
-      `if(current&&!known)listEl.appendChild(rvOption(current,current+' · not awaiting review'));` +
-      `listEl.value=current;}` +
-      `listEl.addEventListener('change',function(){var id=listEl.value;if(!id||id===current)return;` +
-      `vs.postMessage({v:1,payload:{type:'open-doc',artifactId:id}});});` +
       `function rvKind(id){var i=id.indexOf('-');return i<0?id:id.slice(0,i);}` +
       `function rvSetResult(text,cls){resultEl.textContent=text;resultEl.className='rv-result'+(cls?' '+cls:'');}` +
       // Awaiting review: the document can be approved or rejected. A read-only open, or one
@@ -2068,7 +2095,12 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // Story E202610138d4b90c9:S001 — the SIXTH source string in the same single nonce'd
       // script: the text model of the rendered document, anchors, and the inline drafts.
       DOCS_COMMENTS_SOURCE +
-      `function renderContent(m){var r=renderMarkdownBody(bodyEl,m.markdown||'');` +
+      // Story E202610131f74c81f:S001 — the SEVENTH: the list view and which view is on show.
+      DOCS_LIST_SOURCE +
+      // A content with no artifact id is the host's notice that the list could not be read:
+      // it belongs to the list view and is not a document.
+      `function renderContent(m){if(!m.artifactId){rvListNotice(m.markdown);return;}` +
+      `var r=renderMarkdownBody(bodyEl,m.markdown||'');` +
       // Stamp FIRST, and let the stamped count gate the chooser. On the degraded
       // path the body is plain text with no heading elements, so nothing can be
       // stamped — rendering the chooser anyway would offer entries whose targets
@@ -2148,7 +2180,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // The document shown changed: an unanswered decision and the result line belonged to
       // the earlier one. A re-post of the SAME document (after a decision, or to a rebuilt
       // shell) keeps them, and the field and the drafts with them.
-      `var same=!!shown&&shown.artifactId===m.artifactId;shown=m;current=m.artifactId||'';` +
+      `var same=!!shown&&shown.artifactId===m.artifactId;shown=m;` +
       // Its field and its drafts come from the saved state, where they are kept per artifact.
       `if(!same){busy=false;rvSetResult('','');rvLoad();}` +
       // The documents of this artifact. Another artifact, or an HTML document that is no
@@ -2159,13 +2191,19 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // The body was rendered again: the saved comments and the drafts are put on their
       // passages, and the rest of the saved comments in the strip.
       `rvHidePop();rvPlaceAll();rvSync();` +
-      `renderList(items);renderBar();}` +
+      `renderBar();` +
+      // The header names the document. The reviewer is brought to it only when they asked
+      // for it (reveal); a re-read updates what is held and leaves the view as it is.
+      `var known=null;items.forEach(function(a){if(a.id===m.artifactId)known=a;});` +
+      `titleEl.textContent=String((known&&known.title)||m.artifactId);` +
+      `if(m.reveal===true){view='doc';if(listNote){listNote='';rvRows();}rvListSave();}` +
+      `rvApplyView();}` +
       `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
       `if(m.type==='docs-list'){renderList(m.artifacts);}` +
       `else if(m.type==='docs-content'){renderContent(m);}` +
       `else if(m.type==='docs-decision-result'){rvResult(m);}` +
       `else if(m.type==='docs-companion'){rvCompanion(m);}});` +
-      `listEl.appendChild(rvOption('','Loading the documents awaiting review…'));rvShowTab('');renderBar();` +
+      `rvListLoad();renderTable();rvApplyView();rvShowTab('');renderBar();` +
       // request the pending list as soon as the script is live.
       `vs.postMessage({v:1,payload:{type:'open-doc',artifactId:''}});`;
     return (
@@ -2173,9 +2211,30 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
       `${style}${mdStyle}</head>` +
       `<body class="insrc-rv">` +
+      // THE LIST VIEW: the documents awaiting review. The toolbar and the pager are outside
+      // the table's scrolling region.
+      `<div id="insrc-rv-listview" class="rv-listview">` +
+      `<div class="rv-tool">` +
+      `<input id="insrc-rv-q" type="search" list="insrc-rv-suggest" autocomplete="off" aria-label="Search documents" placeholder="Search title or id…">` +
+      `<datalist id="insrc-rv-suggest"></datalist>` +
+      `<select id="insrc-rv-kindsel" aria-label="Document type"></select>` +
+      `<span class="rv-sp"></span><span id="insrc-rv-count" class="rv-dim"></span>` +
+      `</div>` +
+      `<div id="insrc-rv-listnote" class="rv-listnote" aria-live="polite"></div>` +
+      `<div class="rv-tablewrap"><table class="rv-table"><thead><tr><th>Type</th><th>Title</th><th>Id</th><th>Open questions</th></tr></thead>` +
+      `<tbody id="insrc-docs-list"></tbody></table></div>` +
+      `<div class="rv-pager">` +
+      `<button id="insrc-rv-prev" type="button" class="rv-ic rv-sm" aria-label="Previous page" title="Previous page"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M10 3L5 8l5 5"/></svg></button>` +
+      `<span id="insrc-rv-page" class="rv-dim"></span>` +
+      `<button id="insrc-rv-next" type="button" class="rv-ic rv-sm" aria-label="Next page" title="Next page"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3l5 5-5 5"/></svg></button>` +
+      `</div>` +
+      `</div>` +
+      // THE DOCUMENT VIEW.
+      `<div id="insrc-rv-docview" class="rv-docview">` +
       // The header: outside the scrolling region.
       `<div class="rv-head">` +
-      `<select id="insrc-docs-list" aria-label="document"></select>` +
+      `<button id="insrc-rv-back" type="button" class="rv-ic rv-sm" aria-label="Back to the list" title="Back to the list"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M10 3L5 8l5 5"/></svg></button>` +
+      `<span id="insrc-rv-title" class="rv-title"></span>` +
       `<span id="insrc-rv-kind" class="rv-badge"></span>` +
       `<span id="insrc-rv-state" class="rv-dim"></span>` +
       `<span class="rv-sp"></span>` +
@@ -2229,6 +2288,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 8.5l3.2 3.2L13 5"/></svg></button>` +
       `</div>` +
       `<div id="insrc-rv-result" class="rv-result" aria-live="polite"></div>` +
+      `</div>` +
       `</div>` +
       `<script nonce="${nonce}">${MARKED_SRC}\n;${bootstrap}</script></body></html>`
     );

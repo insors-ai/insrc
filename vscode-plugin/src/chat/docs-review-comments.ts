@@ -243,13 +243,19 @@ if(!rvCutsMark(hit.block,hit.start,hit.end))rvPut(th,hit);});
 rvThreads=rvThreads.filter(function(th){return th.saved.length||th.drafts.length;});
 rvThreads.forEach(function(th){rvRestyle(th);if(th.open&&th.block)rvOpenThread(th);else th.open=false;});
 rvStripRender();rvMarkers();}
+/* The webview's saved state is one object with two keys and two writers: 'rv' (the drafts,
+   written here) and 'list' (the list view's). Each writer sets its own key and keeps the
+   other's. */
+function rvPutState(key,value){var cur=null;try{cur=vs.getState?vs.getState():null;}catch(err){cur=null;}
+var next={};if(cur&&typeof cur==='object'){for(var k in cur){if(Object.prototype.hasOwnProperty.call(cur,k))next[k]=cur[k];}}
+next[key]=value;try{if(vs.setState)vs.setState(next);}catch(err){}}
 /* The saved state: per artifact, the whole-document field and the drafts. */
 function rvStored(){try{var s=vs.getState?vs.getState():null;return (s&&s.rv&&typeof s.rv==='object')?s.rv:{};}catch(err){return {};}}
 function rvSave(){if(!shown||!shown.artifactId)return;var all=rvStored(),drafts=[];
 rvThreads.forEach(function(th){th.drafts.forEach(function(d){drafts.push({anchor:th.anchor,text:d.text});});});
 var field=String(fieldEl.value||'');
 if(drafts.length||field)all[shown.artifactId]={field:field,drafts:drafts};else delete all[shown.artifactId];
-try{if(vs.setState)vs.setState({rv:all});}catch(err){}}
+rvPutState('rv',all);}
 /* Another artifact is shown: its own field and drafts are taken from the saved state. */
 function rvLoad(){rvThreads=[];rvPending=null;var saved=shown&&shown.artifactId?rvStored()[shown.artifactId]:null;
 fieldEl.value=(saved&&typeof saved.field==='string')?saved.field:'';

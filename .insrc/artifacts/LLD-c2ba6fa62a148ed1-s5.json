@@ -37,36 +37,12 @@
           "ref": "coverage-of-intent",
           "item": "coverage-of-intent",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "ac1 (no event announces an unindexed scope as the largest size) is covered by moving the check ahead of measureRequestScope in runAnalyze",
-          "evidence": "runAnalyze measures at orchestrator/driver.ts:319 and emits 'classified' at :325, so moving the check there covers that path. But the daemon's analyze.classify request (analyze-rpc.ts:347-350) also runs `measureRequestScope(unsized.scopeRef, unsized.target)` and returns `{ ok: true, intent: { ...unsized, scope: measure.size }, measure }` for any scope. An unindexed scope that cannot be counted is still answered as the largest size there. The design leaves this path unchanged and does not mention it. [files: src/daemon/analyze-rpc.ts, src/analyze/orchestrator/driver.ts]",
-          "action": "Either run ensureNonEmptyClosure in analyze.classify before it measures, or state why that request is outside ac1.",
+          "severity": "LOW",
+          "premise": "The design covers ac1-ac4 and lc1 of Story S005 (refuse before announcing a size; a throwing last-indexed read gets a named cause; the four ISSUE-e2bcadd9 reproductions; refusal of requests about a repository being indexed or whose last index failed, with progress), and builds no non-goal.",
+          "evidence": "DEF.md:237-244 lists ac1-ac4 and lc1. The LLD maps each one: ac1 \u2192 runAnalyze/analyze.classify check before measureRequestScope (2.1, 2.11). ac2 \u2192 ShaperIndexStateReadError 'index-state-read-failed' (2.4). ac3 \u2192 the tool-loop call name, lookup-failed, cache before scope, isModelCallFailure (2.4-2.6). ac4 \u2192 RepoIndexingError with run figures at the analyzer and the search requests (2.3, 2.8). lc1 'keeps the code and message it has today' is preserved as invariant c1. Nothing in the LLD takes on s1/s2/s3 work (IndexState, file commit, entity index). [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
+          "action": "none",
           "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "ac4: an analyze request about a repository under index is refused (no answer is returned)",
-          "evidence": "The design moves the cache lookup before scope resolution and ensureNonEmptyClosure, so a cache hit returns before the indexing guard runs. fullIndex calls `updateRepoStatus(this.db, repoPath, 'indexing')` with no lastIndexed, and updateRepoStatus writes `lastIndexed: parseOptionalTimestamp(lastIndexed)`, which is 0. rowToRepo then leaves lastIndexed unset (`if (row.lastIndexed > 0)`), and resolveRepoLastIndexedAt returns undefined. readBundle only checks freshness `if (currentLastIndexedAt !== undefined ...)`, so during a reindex a cached bundle is served and not refused. [files: src/analyze/context/driver.ts, src/db/repos.ts, src/analyze/context/cache.ts]",
-          "action": "On a cache hit, run the indexing guard for the bundle's repository before returning it (or treat 'indexing'/failed 'error' as a miss), and add a test for it.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "coverage-of-intent.3",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The indexing refusal applies to non-code sources (the edge-case row 'refused with RepoIndexingError like code')",
-          "evidence": "Contract 2.1 says runAnalyze runs ensureNonEmptyClosure only 'for a run whose source is code (the case in which runShaper runs it today)'. runShaper calls it only `if (invocationMode === 'run' && shaperId === 'code')` (driver.ts:379). No call site is designed that would refuse a docs, data, infra or generic run on a repository under index, which contradicts the edge-case table. [files: src/analyze/context/driver.ts]",
-          "action": "State where non-code runs are checked: either a separate indexing guard called for every source, or ensureNonEmptyClosure split into the indexing check (all sources) and the empty check (code only).",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "current-behaviour.1",
@@ -74,8 +50,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "runAnalyze measures the request and emits 'classified' before runShaper's ensureNonEmptyClosure refuses (driver.ts:325)",
-          "evidence": "orchestrator/driver.ts:319 `measureRequestScope(...)`, :325 `emit({ type: 'classified', intent, measure })`. The refusal is only in context/driver.ts:380, inside runShaper.",
+          "premise": "Today runAnalyze measures the request and emits 'classified' before runShaper's ensureNonEmptyClosure refuses an unindexed scope (driver.ts:325).",
+          "evidence": "src/analyze/orchestrator/driver.ts:319 `const measure = await measureRequestScope(...)`, :325 `emit({ type: 'classified', intent, measure })`, then :352 shaper.buildRunBundle. That reaches runShaper, where src/analyze/context/driver.ts:379-381 runs `ensureNonEmptyClosure(scope)` for run mode + code. The refusal is recorded at stage 'plan' (driver.ts:360-364). The LLD moves it to 'classify' and says so. [files: src/analyze/orchestrator/driver.ts, src/analyze/context/driver.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -86,8 +62,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "runShaper resolves the scope and reads the last-indexed time before the cache lookup; the cache key does not depend on the scope",
-          "evidence": "context/driver.ts:336-342 builds the key from `computeCacheKey(promptContent, inputs)`. :350 `prepareScope(...)`, :357 `resolveRepoLastIndexedAt(freshnessPathOf(scope))`, :360 `readBundle(...)`. The pipeline awaits `steps.lastIndexedAt` (:1471) and `steps.executePlan` (:1473) without a catch.",
+          "premise": "runShaper resolves the scope before the cache lookup, and the cache key does not depend on the resolved scope. A status write to 'indexing' resets lastIndexed, so the freshness check alone would serve a bundle that predates the reindex.",
+          "evidence": "context/driver.ts:336-342 cacheKey = computeCacheKey(promptContent, inputs) (no scope). :350 prepareScope comes before :357 resolveRepoLastIndexedAt and :360 readBundle. In src/db/repos.ts:261-265, updateRepoStatus sets `lastIndexed: parseOptionalTimestamp(lastIndexed)`, which is 0 when the argument is omitted (indexer/index.ts:596 `updateRepoStatus(this.db, repoPath, 'indexing')`). rowToRepo omits lastIndexed when it is 0 (repos.ts:349), so the watermark is undefined and the freshness check is skipped (driver.ts:352-356). [files: src/analyze/context/driver.ts, src/db/repos.ts, src/indexer/index.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -98,8 +74,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "isModelCallFailure matches Ollama/socket texts anywhere outside ' text=', and the tool loop builds ShaperLlmUnavailableError without a call (Ollama wording)",
-          "evidence": "model-failure.ts:81-83 `for (const text of OLLAMA_FAILURE_TEXTS) { if (msg.includes(text)) return true; }`. driver.ts:1029 `new ShaperLlmUnavailableError(modelCallFailureDetail(err))` with no call, so the message is 'Local Ollama unavailable for shaper invocation'. ShaperModelCall = 'planning' | 'answer writing' (:147). wrapOllamaError (ollama.ts:759) returns plain Errors.",
+          "premise": "decodeRepoRow builds the row from named fields, so a new lastRun field would be erased by every status write unless the decoder copies it.",
+          "evidence": "src/db/graph/codec.ts:114-127: decodeRepoRow returns an object literal of id/kind/namespace/path/name/addedAt/lastIndexed/status/errorMsg only. updateRepoStatus (repos.ts:260-267) spreads the decoded row and re-encodes it, so an un-copied field is lost. The LLD extends the decoder explicitly. [files: src/db/graph/codec.ts, src/db/repos.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -110,9 +86,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Reused: ModelCallFailedError exists and is recognised by isModelCallFailure; the daemon runs the indexer in-process, so an in-memory index-run record is visible to the request guards",
-          "evidence": "model-call-error.ts:12 `export class ModelCallFailedError` with `detail`, and model-failure.ts:68 checks instanceof. daemon/index.ts:46 imports IndexerService from ../indexer/index.js, so the indexer runs in the same process. Note: the class is IndexerService, not 'Indexer' as \u00a72.6 says. Also, the retry helper rethrows `new Error(\\`structured-output: validation failed after N attempts: ...\\`)` (structured-output.ts:220), so a ModelCallFailedError behind that prefix is recognised by its 'Model call failed:' text, not by type.",
-          "action": "Correct the class name, and add 'Model call failed:' to the start-of-message list that is matched after the retry prefix.",
+          "premise": "scopeErrorMapping in invariants.ts is the one mapping of the scope errors, used by both classifyShaperError copies. taskRefusalMapping goes through it, so adding RepoIndexingError there reaches the orchestrator, the daemon and the plan walk.",
+          "evidence": "src/analyze/context/invariants.ts:118-125 scopeErrorMapping; :137-141 taskRefusalMapping calls scopeErrorMapping. Callers: orchestrator/driver.ts:704 (classifyShaperError) and :376; daemon/analyze-rpc.ts:969; analyze/measure.ts:344; executor/walker.ts:265 (taskRefusalMapping). Note: the ScopeErrorMapping union type (invariants.ts:104-106) needs a new 'repo-indexing' member carrying data, beside 'scope-not-indexed'. [files: src/analyze/context/invariants.ts, src/analyze/orchestrator/driver.ts, src/daemon/analyze-rpc.ts]",
+          "action": "none",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -121,10 +97,10 @@
           "ref": "new-versus-reuse",
           "item": "new-versus-reuse",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "On a cache hit the freshness watermark is read for 'the repository the cached bundle records (its meta's repository)'",
-          "evidence": "BundleMeta (types.ts:88-97) has mode, shaper, toolCalls, modelId, emptyLayers, schemaVersion and repoLastIndexedAt. It has no repository field. readBundle only compares meta.repoLastIndexedAt against a watermark the caller supplies. As written, the cache-first order has no repository to read the watermark for, and \u00a73 lists no BundleMeta field-add. [files: src/analyze/context/types.ts, src/analyze/context/cache.ts]",
-          "action": "Add a repository path to BundleMeta (written on every bundle) as a data-model change, and state how a cached bundle without it is handled (treat it as a miss).",
+          "severity": "MED",
+          "premise": "If the local provider raises ModelCallFailedError, a real connection failure is recognised as typed, whether or not the retry helper wraps it (2.6 postcondition).",
+          "evidence": "src/agent/providers/structured-output.ts:205-220 catches a thrown call error, keeps only its message (`lastErrors = [msg]`), and finally throws `new Error(`structured-output: validation failed after ${maxAttempts} attempts: ${lastErrors.join('; ')}`)`. That is a plain Error, so the type is lost. ModelCallFailedError's message is `Model call failed: <detail>` (model-call-error.ts:17). After the prefix is stripped, isModelCallFailure (model-failure.ts:74-77) checks only CLI_FAILURE_TEXTS with startsWith. The LLD removes the anywhere-match of the Ollama texts, so 'Model call failed: Ollama is not running...' behind the prefix would match nothing. A real outage on the structured-emit path would be classed as a schema failure (driver.ts:959-967 \u2192 ShaperSchemaUnrecoverable). [files: src/agent/providers/structured-output.ts, src/agent/providers/model-call-error.ts, src/analyze/context/model-failure.ts]",
+          "action": "Say how the wrapped form is recognised. Either the retry helper re-throws a ModelCallFailedError (keeping the type) when the last attempt threw one, or 'Model call failed: ' is added as a start-of-message wording that isModelCallFailure checks after RETRY_PREFIX. Then list structured-output.ts as a change site.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -133,12 +109,12 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Mapping the new codes in daemon/analyze-rpc.ts classifyShaperError is enough for none of them to fall into 'internal-error'",
-          "evidence": "runAnalyze's own failures go through a separate classifyShaperError in orchestrator/driver.ts:702-731, which ends `return wrap('internal-error', err)`. A RepoIndexingError raised by the new check in runAnalyze would therefore be reported as internal-error. Scope errors are mapped once in `scopeErrorMapping` (invariants.ts:118, 'The ONE mapping ... shared with ... orchestrator/driver.ts, daemon/analyze-rpc.ts, and the plan walk'). The plan walk's ensureNonEmptyClosure caller (task-scope.ts:74) maps refusals through taskRefusalMapping. The codes are typed unions: RunErrorCode (orchestrator/types.ts:274) and AnalyzeRpcErrorCode (analyze-rpc.ts:143). None of these is listed in \u00a73.3 or \u00a72.8. [files: src/analyze/orchestrator/driver.ts, src/analyze/context/invariants.ts, src/analyze/orchestrator/types.ts, src/analyze/runtimes/shared/task-scope.ts]",
-          "action": "Add RepoIndexingError to scopeErrorMapping (and ScopeErrorCode/TaskRefusalCode). Add 'repo-indexing', 'index-state-read-failed' and 'lookup-failed' to RunErrorCode and AnalyzeRpcErrorCode, and map them in the orchestrator's classifyShaperError. List these files as change sites.",
+          "severity": "LOW",
+          "premise": "The graph-reading search requests to guard in src/daemon/index.ts are search.callers, search.callees, search.callers_nhop, search.by_file, search.closure, entity.summary, entity.closure, entity.unreachable, repo.depends_on, repo.search_cross_repo and locate.inferParents, with search.query filtered instead of refused.",
+          "evidence": "In src/daemon/index.ts, every call to findCallers/findCallees/closureEntities/unreachableEntities/searchEntities/findEntitiesByFile/getEntity/resolveClosure falls inside exactly those handlers (:1048 search.query, :1060, :1065, :1070, :1081, :1102, :1107, :1123, :1184, :1203, :1216, :1221). No other handler in the file reads the graph. The graph builtin tools (daemon/tools/builtins/graph) also read the graph but are reached through the analyzer, which runShaper's guard covers. [files: src/daemon/index.ts]",
+          "action": "none",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "change-sites.2",
@@ -146,9 +122,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "fullIndex can write lastRun 'in the same update that sets the status' through the existing registry write",
-          "evidence": "updateRepoStatus(_db, path, status, lastIndexed?, errorMsg?) (repos.ts:243-269) has no lastRun parameter. It rebuilds the row as `{ ...row, status, lastIndexed, errorMsg }`, and rowToRepo maps fields one by one. The contract gives no new signature for updateRepoStatus and no rowToRepo/RegisteredRepo mapping, though repos.ts is named as a call site. [files: src/db/repos.ts]",
-          "action": "State the updateRepoStatus signature change (an optional lastRun argument) and the rowToRepo mapping.",
+          "premise": "runShaper is told through its args (RunShaperArgs) that runAnalyze already checked the scope, so it skips the check.",
+          "evidence": "runAnalyze does not call runShaper. It calls `shaper.buildRunBundle({ intent, measure }, { runId, onTrace })` (orchestrator/driver.ts:349-358) on the shaper from shaperFor('run', ...). Any flag has to pass through the ContextShaper buildRunBundle input or ShapeOpts and each shaper implementation into RunShaperArgs, and none of these is listed as a change site. If the flag goes into `inputs`, it changes the cache key, because computeCacheKey(promptContent, inputs) hashes the inputs (context/driver.ts:338). [files: src/analyze/orchestrator/driver.ts, src/analyze/context/driver.ts]",
+          "action": "Name the route the flag takes: ShapeOpts or a field of RunShapeInput that is excluded from computeCacheKey. Add the ContextShaper interface and its implementations to the call sites.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -158,9 +134,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "Each guarded search request 'names one repository' (by path, file or entity)",
-          "evidence": "entity.closure and entity.unreachable take `rootIds: readonly string[]` (index.ts:1107-1141), which can span repositories. search.callers/callees take one entityId, but their results can come from another repository that is under index. The guard's rule for multi-root and cross-repository results is not designed. [files: src/daemon/index.ts]",
-          "action": "Define the guard for rootIds arrays (refuse if any root's repository is under index) and say whether results from a repository under index are filtered out.",
+          "premise": "classifyOllamaError gains a required `call` argument, and the tool loop passes 'tool loop' (a new member of ShaperModelCall).",
+          "evidence": "classifyOllamaError has two callers: context/driver.ts:793 (the tool loop) and :959 (runFinalStructuredEmit, the final structured emit after the loop). The LLD names only the tool loop, and ShaperModelCall gains only 'tool loop'. The second caller is not assigned a call name, so it would either be mislabelled 'tool loop' or not compile. It is also the path where the retry-helper wrapping above applies. [files: src/analyze/context/driver.ts]",
+          "action": "List the runFinalStructuredEmit call site and decide its call name: reuse 'answer writing' or add a member such as 'final structured emit'.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -169,12 +145,12 @@
           "ref": "data-compatibility",
           "item": "data-compatibility",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "An older row decodes with lastRun undefined, and an older daemon reading a new row keeps the unknown key ('msgpack with unknown keys kept as extra properties')",
-          "evidence": "decodeRepoRow (codec.ts:114-127) builds a new object from named fields only (id, kind, namespace, path, name, addedAt, lastIndexed, status, errorMsg), so unknown keys are dropped. An older daemon's updateRepoStatus then rewrites the row `{ ...row, ... }` without lastRun. The first half holds: an older row reads lastRun as undefined once the decoder is extended. The backward-compat sentence is wrong, and the new decoder must copy lastRun explicitly or every status write erases it. [files: src/db/graph/codec.ts, src/db/repos.ts]",
-          "action": "Fix the backward-compat statement (an older daemon drops lastRun on its next status write) and require decodeRepoRow to copy lastRun.",
+          "severity": "LOW",
+          "premise": "The new optional lastRun field is copied explicitly by decodeRepoRow, an older row decodes with it undefined, and no migration is needed.",
+          "evidence": "codec.ts:114-127 already defaults absent fields (`kind ?? 'workspace'`, conditional namespace), so the same pattern carries an optional lastRun. updateRepoStatus spreads the decoded row (repos.ts:261), so a write without lastRun keeps the stored one once the decoder copies it. The LLD's backward-compat note (an older daemon drops the field on its next status write) is accurate. [files: src/db/graph/codec.ts, src/db/repos.ts]",
+          "action": "none",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "data-compatibility.2",
@@ -182,9 +158,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "A repository whose last index ended in error before this change (an 'error' row with no lastRun) is refused under ac4",
-          "evidence": "The rule refuses only 'error' rows 'with a last run whose outcome is failed'. Rows that failed before this ships have no lastRun, so an 'error' repository with entities is still answered from the partial index (ensureNonEmptyClosure only refuses zero entities). fullIndex today writes status 'error' with errorMsg on failure (index.ts:735), so those rows exist. [files: src/indexer/index.ts]",
-          "action": "Treat status 'error' with no lastRun as a failed run (figures unknown, errorMsg as the error), as is already done for 'indexing' with no record.",
+          "premise": "Every cached bundle records the repository it was built over (BundleMeta.repoPath), and a bundle without repoPath is treated as a miss. Yet a cache hit on a connection scope still returns the bundle (edge case).",
+          "evidence": "freshnessPathOf (src/analyze/context/scope.ts:144-146) returns '' for a connection scope, and ensureNonEmptyClosure skips connection scopes. A connection-scope bundle has no repository path to record, so under the 'no repoPath \u2192 miss' rule it is never served from cache. That contradicts the LLD's own edge case ('A cached bundle for a request whose scope is a connection ... The cached bundle is returned') and its ac3 test. The LLD does not say what repoPath is for a connection scope, or that its absence on such a bundle is not a miss. [files: src/analyze/context/scope.ts, src/analyze/context/types.ts, src/analyze/context/cache.ts]",
+          "action": "Define repoPath for a connection-scope bundle: the repository the connection is registered in, or an explicit 'no repository' marker that skips the indexing check. Distinguish 'written before this change' from 'built over no repository', for example with a schemaVersion bump or a sentinel.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -194,8 +170,8 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design does not redesign s1's IndexState/completeness or s3's entity-existence check",
-          "evidence": "The design adds an optional lastRun on the registry row and an in-memory IndexRunView. It does not touch IndexState or a completeness field (s1), and ensureNonEmptyClosure keeps its existing listEntitiesForRepo reader (invariants.ts:234-236), leaving s3's existence check for s3 to swap in. The reindex path is left to s1.",
+          "premise": "The design does not redesign anything owned by s1 (IndexState/completeness), s2 (file commit) or s3 (entity index and the existence check used by the analyzer's scope check).",
+          "evidence": "The LLD keeps ensureNonEmptyClosure's entity read as today (`Pick<ScopeDeps,'listRepos'|'listEntitiesForRepo'>`, invariants.ts:169-172) and adds only the indexing check before it. s3's existence check replaces that read later, which is compatible. The LLD reads registry status plus an in-process run record, not s1's IndexState completeness field. Its lastRun on the registry row is distinct from s1's IndexState row. One point to coordinate, not a redesign: s3 and s5 both edit ensureNonEmptyClosure's deps signature. [files: src/analyze/context/invariants.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -206,33 +182,45 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Search-request refusals reach the client as a string starting with the code ('repo-indexing: ...')",
-          "evidence": "server.ts:71-77 failureMessage returns `err.message` for a non-lock error, sent as `{ id, error: ... }` (:197/:211). The message must begin with 'repo-indexing:' for this to hold, which the design states.",
+          "premise": "A failed full index is detectable at one place and can write lastRun with outcome 'failed' and its error in the same status update.",
+          "evidence": "src/indexer/index.ts:732-736: the single outer catch of fullIndex calls `updateRepoStatus(this.db, repoPath, 'error', undefined, msg)` and rethrows. Success is the single call at :726. These are the only 'error' writes (grep of updateRepoStatus: index.ts:309, 596, 726, 735), so 'error' \u21d4 a failed full index holds. The start-up re-queue of 'error' and of 'indexing' without lastIndexed (:286-299) is unchanged, matching invariant c4. [files: src/indexer/index.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The handling of a failed registry read is stated for the new check ensureRepoQueryable and for the search-request guard.",
+          "evidence": "ensureNonEmptyClosure today deliberately skips the invariant when listRepos throws, and also when the registry is pristine (invariants.ts:186-213). The LLD says those skips are 'unchanged' for ensureNonEmptyClosure, but ensureRepoQueryable runs first and does its own listRepos read (2.3 deps). The LLD does not say whether a failed read there refuses, skips, or throws a raw error. A raw error would land in 'internal-error' in classifyShaperError (orchestrator/driver.ts:730, analyze-rpc.ts:1003-1004) and break the 'no internal-error' goal. The same gap applies to the guard on the eleven search handlers and to the runShaper cache-hit check. [files: src/analyze/context/invariants.ts]",
+          "action": "State ensureRepoQueryable's behaviour on a registry read failure and on a pristine registry. Matching ensureNonEmptyClosure's skip is the natural choice. Add a unit test for it.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "tests.1",
           "ref": "tests",
           "item": "tests",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "Each acceptance criterion maps to at least one test, including the refusal through runAnalyze's own failure mapping",
-          "evidence": "ac1-ac4 each have tests in \u00a75. But no test drives a RepoIndexingError, index-state-read-failed or lookup-failed through runAnalyze (orchestrator classifyShaperError, driver.ts:702) or the plan walk (taskRefusalMapping). The integration test covers analyze.context.buildRun and step.call only, and the unit test covers only daemon/analyze-rpc's classifyShaperError. No test covers a cache hit during a reindex, or analyze.classify on an unindexed scope. [files: src/analyze/orchestrator/driver.ts]",
-          "action": "Add tests: runAnalyze on a repository under index ends with code 'repo-indexing' (not internal-error); a cached bundle during a reindex is refused; analyze.classify on an unindexed scope announces no size.",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion ac1-ac4 maps to at least one named test that exercises it.",
+          "evidence": "The acceptance mapping table covers ac1 (run order on both branches + analyze.classify), ac2 (lastIndexedAt throwing \u2192 index-state-read-failed, in the freshness step and in the pipeline), ac3 (the four ISSUE-e2bcadd9 reproductions: tool-loop wording, lookup-failed, cache before scope, isModelCallFailure/OllamaProvider), and ac4 (unit + integration over the analyzer, the search requests, search.query filtering and rootIds). These match DEF.md:237-240. Two tests as written would fail against the design as specified: the 'behind the retry helper's prefix' case and 'a hit on a connection scope returns the bundle' (see the new-versus-reuse and data-compatibility findings). Both are design gaps, not missing tests. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
+          "action": "none",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 2,
-        "med": 8,
-        "low": 6,
+        "high": 0,
+        "med": 5,
+        "low": 10,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-13T07:32:36.545Z",
+      "reviewedAt": "2026-10-13T07:36:22.333Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     }
@@ -384,7 +372,7 @@
           "postconditions": [
             "After classification (both branches: the classifier and the hinted target) and BEFORE measureRequestScope and the 'classified' event, the run resolves the intent's scope and checks it: ensureRepoQueryable for every kind of source, then, for a run whose source is code, the empty-closure check of ensureNonEmptyClosure (the case in which runShaper runs it today). A refusal ends the run with the same failure record and code as runShaper's refusal produces today; no size is measured or announced for it (stakeholder decision D1, 2026-10-13).",
             "Its failures are coded through the orchestrator's own classifyShaperError (src/analyze/orchestrator/driver.ts), which takes the scope errors from scopeErrorMapping; RepoIndexingError therefore ends the run with code 'repo-indexing', and ShaperIndexStateReadError / ShaperLookupFailedError with 'index-state-read-failed' / 'lookup-failed', never 'internal-error'. RunErrorCode (src/analyze/orchestrator/types.ts) gains the three codes.",
-            "runShaper keeps its own checks for every other entry point (analyze.context.buildRun, the step tools); a run that already passed them in runAnalyze is not checked again (runShaper is told so through its args)."
+            "runShaper keeps its own checks for every other entry point (analyze.context.buildRun, the step tools). runAnalyze does not call runShaper directly: it calls shaper.buildRunBundle({ intent, measure }, { runId, onTrace }) (orchestrator/driver.ts), so it says that the scope was checked through a new option of ShapeOpts (src/analyze/context/types.ts), scopeChecked?: boolean, which the shaper factory (src/analyze/context/index.ts) passes on to runShaper as part of RunShaperArgs.opts. ShapeOpts is not part of the cache key (computeCacheKey hashes the prompt and the inputs only), so the flag does not change which bundle is cached."
           ]
         },
         {
@@ -459,7 +447,8 @@
           ],
           "postconditions": [
             "Called for EVERY kind of source: by runAnalyze and analyze.classify before measuring, by runShaper before building (and on a cache hit, see runShaper), and by ensureNonEmptyClosure; so a docs, data, infra or generic request about a repository under index is refused like a code one.",
-            "scopeErrorMapping (the one mapping of the scope errors) maps RepoIndexingError to code 'repo-indexing'; ScopeErrorCode and, through it, TaskRefusalCode gain the code."
+            "scopeErrorMapping (the one mapping of the scope errors) maps RepoIndexingError to code 'repo-indexing'; ScopeErrorCode and, through it, TaskRefusalCode gain the code.",
+            "When the registry read fails, or the registry is pristine (no repository registered), it does not refuse and does not throw: it logs and returns, the same skip ensureNonEmptyClosure makes today; the search requests' guard and the cache-hit check use it and so skip the same way (the request then proceeds as it does today)."
           ]
         },
         {
@@ -495,7 +484,7 @@
             "As today."
           ],
           "postconditions": [
-            "The cache lookup comes first: the cache key does not depend on the resolved scope, so a cached bundle is looked up before the scope is resolved. Every bundle written records the repository it was built over (BundleMeta.repoPath, new). On a hit the bundle's repoPath is checked with ensureRepoQueryable (a bundle about a repository now under index is refused with RepoIndexingError, not served), and the freshness watermark is read for that repository; nothing else is resolved, so a failure to resolve something the cache does not depend on (another repository's connections file) cannot make the hit unreachable. A cached bundle without repoPath (written before this change) is treated as a miss. On a miss the scope is resolved once, ensureRepoQueryable runs for every source, and the pairing check, the code-only empty-closure check and the pipeline run as today.",
+            "The cache lookup comes first: the cache key does not depend on the resolved scope, so a cached bundle is looked up before the scope is resolved. Every bundle written records the repository it was built over (BundleMeta.repoPath, new). On a hit the bundle's repoPath is checked with ensureRepoQueryable (a bundle about a repository now under index is refused with RepoIndexingError, not served), and the freshness watermark is read for that repository; nothing else is resolved, so a failure to resolve something the cache does not depend on (another repository's connections file) cannot make the hit unreachable. A bundle built over no repository (a connection scope) records repoPath null and is served without either check, as today; a cached bundle with no repoPath key (written before this change) is treated as a miss. On a miss the scope is resolved once, ensureRepoQueryable runs for every source, and the pairing check, the code-only empty-closure check and the pipeline run as today.",
             "A throw from the last-indexed read or from executePlan becomes a pipeline cause ('index-state-read-failed', 'lookup-failed') and so a typed error, never a raw rejection reported as 'internal-error'."
           ]
         },
@@ -512,13 +501,13 @@
             {
               "name": "call",
               "type": "ShaperModelCall",
-              "purpose": "The call that failed; the tool loop passes 'tool loop' (a new member of ShaperModelCall).",
+              "purpose": "The call that failed. Its two callers in src/analyze/context/driver.ts pass their own: the tool loop passes 'tool loop', and runFinalStructuredEmit (the final structured emit after the loop) passes 'final structured emit'; both are new members of ShaperModelCall.",
               "optional": false
             }
           ],
           "returns": {
             "type": "Error",
-            "meaning": "A ShaperLlmUnavailableError worded by the call ('The model call for the tool loop failed: <detail>') when the error is a failed model call, else the error unchanged. The provider is named only through the failure's own detail, so Ollama appears only when the failure came from Ollama."
+            "meaning": "A ShaperLlmUnavailableError worded by the call ('The model call for the tool loop failed: <detail>', 'The model call for the final structured emit failed: <detail>') when the error is a failed model call, else the error unchanged. The provider is named only through the failure's own detail, so Ollama appears only when the failure came from Ollama."
           },
           "errors": [],
           "preconditions": [],
@@ -539,12 +528,13 @@
           ],
           "returns": {
             "type": "boolean",
-            "meaning": "True when the call to the model failed: a ModelCallFailedError, or a message that BEGINS (after the retry helper's prefix) with a provider's own failure wording, CLI or local."
+            "meaning": "True when the call to the model failed: a ModelCallFailedError, or a message that BEGINS (after the retry helper's prefix) with a provider's own failure wording: the CLI wordings as today, and 'Model call failed: ', the message of a ModelCallFailedError."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "The local provider's connection and stream failures are raised as ModelCallFailedError (src/agent/providers/ollama.ts wrapOllamaError and its call sites), so a real connection failure, wrapped by the retry helper or not, is recognised as typed.",
+            "The local provider's connection and stream failures are raised as ModelCallFailedError (src/agent/providers/ollama.ts wrapOllamaError and its call sites).",
+            "The retry helper (src/agent/providers/structured-output.ts) keeps the type: when its last attempt threw a ModelCallFailedError it re-throws one (its detail prefixed with the helper's attempt count) instead of a plain Error, so the structured-emit path recognises a real outage by type; and a plain message that, after the helper's prefix, begins 'Model call failed: ' is recognised too.",
             "The Ollama and socket texts are no longer matched anywhere inside a message: a validation message that quotes a value containing 'ECONNREFUSED', 'Model not found', 'EPIPE' or 'fetch failed' is a failure of shape."
           ]
         },
@@ -705,7 +695,7 @@
       {
         "entity": "ShaperModelCall",
         "change": "field-modify",
-        "details": "'planning' | 'answer writing' gains 'tool loop'; ShaperLlmUnavailableError is always built with a call, so its Ollama-specific wording is retired.",
+        "details": "'planning' | 'answer writing' gains 'tool loop' and 'final structured emit' (the two callers of classifyOllamaError); ShaperLlmUnavailableError is always built with a call, so its Ollama-specific wording is retired.",
         "callSites": [
           "src/analyze/context/driver.ts"
         ]
@@ -713,8 +703,8 @@
       {
         "entity": "BundleMeta (the cached context bundle's meta)",
         "change": "field-add",
-        "details": "repoPath?: string, the repository the bundle was built over, written on every bundle; read on a cache hit for the indexing check and the freshness watermark. A cached bundle without it is treated as a miss.",
-        "schemaDiff": "+ repoPath?: string | undefined",
+        "details": "repoPath: string | null, written on every bundle: the repository the bundle was built over, or null for a bundle built over no repository (a connection scope, whose freshness path is ''). On a cache hit, a string repoPath is checked with ensureRepoQueryable and its freshness watermark is read; null skips both, as today a connection scope skips the closure check and the freshness check. A cached bundle whose meta has no repoPath key at all (written before this change) is treated as a miss.",
+        "schemaDiff": "+ repoPath?: string | null   // absent = written before this change (miss); null = built over no repository",
         "callSites": [
           "src/analyze/context/types.ts",
           "src/analyze/context/cache.ts",
@@ -730,7 +720,10 @@
           "src/analyze/orchestrator/types.ts",
           "src/analyze/orchestrator/driver.ts",
           "src/daemon/analyze-rpc.ts",
-          "src/analyze/runtimes/shared/task-scope.ts"
+          "src/analyze/runtimes/shared/task-scope.ts",
+          "src/analyze/context/types.ts",
+          "src/analyze/context/index.ts",
+          "src/agent/providers/structured-output.ts"
         ]
       }
     ],
@@ -849,6 +842,14 @@
         {
           "input": "A cached bundle written before this change (no repoPath in its meta).",
           "expected": "Treated as a miss; the request is built and the new bundle records repoPath."
+        },
+        {
+          "input": "The registry read throws while ensureRepoQueryable runs (in the analyzer, a search request or a cache hit).",
+          "expected": "No refusal and no raw error: the check is skipped and logged, as ensureNonEmptyClosure skips today, and the request proceeds."
+        },
+        {
+          "input": "A cached bundle for a connection scope (repoPath null).",
+          "expected": "Served without the indexing and freshness checks, as today."
         }
       ],
       "invariantsToPreserve": [
@@ -902,7 +903,10 @@
             "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
             "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg",
             "plan walk: a task whose scope's repository is under index is recorded with code 'repo-indexing' through taskRefusalMapping",
-            "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one"
+            "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one",
+            "ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)",
+            "isModelCallFailure: a ModelCallFailedError thrown on the last attempt of the retry helper is still a ModelCallFailedError (and a plain 'structured-output: ... attempts: Model call failed: ...' message is recognised); classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+            "runShaper: a connection-scope bundle (repoPath null) is served from cache; runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key"
           ],
           "fixturesNeeded": [
             "a temporary graph store with registered repositories in each status",
@@ -952,7 +956,9 @@
             "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed')",
             "runShaper cache order: a cache hit does not call scope resolution and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
             "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
-            "OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError"
+            "OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError",
+            "isModelCallFailure: a ModelCallFailedError thrown on the last attempt of the retry helper is still a ModelCallFailedError (and a plain 'structured-output: ... attempts: Model call failed: ...' message is recognised); classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+            "runShaper: a connection-scope bundle (repoPath null) is served from cache; runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key"
           ]
         },
         {
@@ -965,7 +971,8 @@
             "analyze through the daemon on a repository being indexed returns code 'repo-indexing' with the figures",
             "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
             "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg",
-            "entity.closure / entity.unreachable with a root in a repository under index are refused; search.callers across repositories leaves out the entities of a repository under index"
+            "entity.closure / entity.unreachable with a root in a repository under index are refused; search.callers across repositories leaves out the entities of a repository under index",
+            "ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)"
           ]
         }
       ]
@@ -1096,6 +1103,11 @@
       "id": "c7",
       "kind": "prior-artifact",
       "ref": "Daemon review of this LLD, 2026-10-13T07:32Z (block, 2 HIGH / 8 MED), all findings applied"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "Second daemon review of this LLD, 2026-10-13T07:36Z (block, 0 HIGH / 5 MED), all findings applied"
     }
   ]
 }

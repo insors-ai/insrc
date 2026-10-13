@@ -1,0 +1,3705 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s11",
+    "createdAt": "2026-10-12T11:26:17.849Z",
+    "updatedAt": "2026-10-13T06:32:04.533Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "9f1697eb",
+        "ranAt": "2026-10-12T11:26:57.256Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review stream module: ReviewStreamError from src/shared/review-stream.ts is the same class daemon-stream.ts exports, and the routing tests pass unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/review-stream.test.ts",
+                "title": "review stream module: ReviewStreamError from src/shared/review-stream.ts is the same class daemon-stream.ts exports, and the routing tests pass unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/review-step/__tests__/review-step-routing.test.ts",
+                "title": "T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/review-step/__tests__/review-step-routing.test.ts",
+                "title": "T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/code-review-step/__tests__/routing.test.ts",
+                "title": "T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/code-review-step/__tests__/routing.test.ts",
+                "title": "T11 the tool waits 30 minutes: with a daemon that never answers it fails when that limit fires",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/code-review-step/__tests__/routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 684,
+            "titles": [
+              {
+                "title": "T10 code of controller author with fresh grounding is sent to the daemon (full) and returns done with its verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T10 code of unknown author with fresh grounding is sent to the daemon (full) and returns done with its verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "title": "T10 the invoking client is passed to the daemon when the tool knows it",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a stale index returns confirm_wait and asks no daemon; the author is not even read yet",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a declined wait asks the daemon with the degraded mode, and the tool does not assemble the diff itself",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an accepted wait that never becomes fresh asks the daemon with the degraded mode",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an accepted wait that becomes fresh asks the daemon with the full mode, and never returns emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "T17 fresh grounding with no symbols asks the daemon with the degraded mode",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an unavailable freshness check and unavailable grounding each return their own error and ask no daemon",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped",
+                "result": "pass"
+              },
+              {
+                "title": "an older daemon that ignored the degraded mode is an error, not a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "an older daemon that stamped no reviewer is an error, not a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (unreachable) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (daemon-error) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (unknown-method) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (timeout) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (failed) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 the tool waits 30 minutes: with a daemon that never answers it fails when that limit fires",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the judgements phase refuses controller-authored code and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 an unknown author does not stop the judgements phase (only a known controller author does)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/review-step/__tests__/review-step-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 503,
+            "titles": [
+              {
+                "title": "T9 a DEF of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a LLD of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a HLD of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a DEF of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a LLD of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a HLD of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "title": "T9 an older artifact with no author field is routed by its attribution labels",
+                "result": "pass"
+              },
+              {
+                "title": "T11 the tool waits 31 minutes for a design (HLD, LLD) and 90 minutes for a DEF",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (unreachable) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (daemon-error) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (unknown-method) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (closed) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (failed) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the findings phase refuses a controller-authored LLD and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the findings phase refuses a controller-authored HLD and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the verdicts phase refuses a controller-authored DEF and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, and so does findings on an LLD",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/review-stream.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 426,
+            "titles": [
+              {
+                "title": "review stream module: ReviewStreamError from src/shared/review-stream.ts is the same class daemon-stream.ts exports, and the routing tests pass unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "dcecd4d1",
+        "ranAt": "2026-10-12T11:35:47.361Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts",
+                "title": "vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts",
+                "title": "vector store owner rule: the graph store's temporary reader allowance does not open the live vector store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no test opens the live vector store: each repaired test file run in a temporary home leaves no lance directory",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/lance/__tests__/no-live-vector-store-in-tests.test.ts",
+                "title": "no test opens the live vector store: each repaired test file run in a temporary home leaves no lance directory",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/lance/__tests__/no-live-vector-store-in-tests.test.ts",
+                "title": "the check sees a vector store that IS opened at the default path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 975,
+            "titles": [
+              {
+                "title": "vector store owner rule: the graph store's temporary reader allowance does not open the live vector store",
+                "result": "pass"
+              },
+              {
+                "title": "vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/lance/__tests__/no-live-vector-store-in-tests.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 30710,
+            "titles": [
+              {
+                "title": "no test opens the live vector store: each repaired test file run in a temporary home leaves no lance directory",
+                "result": "pass"
+              },
+              {
+                "title": "the check sees a vector store that IS opened at the default path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "62ccb310",
+        "ranAt": "2026-10-12T11:43:13.587Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "moved analyze tests pass at src/daemon/steps (the analyze-step suite, bundle-md, and the repointed importers and source scans)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-answer-prompt-missing.test.ts",
+                "title": "a missing answer prompt after the lookups ran returns a non-retryable error with the results and the report, from the plan phase and from the narrow phase",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-bundle-report.test.ts",
+                "title": "the step tool's bundle phase attaches the report it derives from its state and rejects an agent-supplied one as 'bundle-schema'",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-failed-lookup.test.ts",
+                "title": "stepPlan with a lookup whose prepare throws records the failed output and goes on to the next lookup (mutation: remove the conversion)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-handler.test.ts",
+                "title": "handler rejects non-object input",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-measure.test.ts",
+                "title": "the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-narrow.test.ts",
+                "title": "state codec round-trips awaiting_narrow with preparedBlob + resumeState",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-scope.test.ts",
+                "title": "step tool start phase: resolved workspace scope, and the pairing test refusing a stand-in scope",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "encodeState + decodeState round-trip preserves every field",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/bundle-md.test.ts",
+                "title": "render includes the meta comment prefix by default",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/__tests__/report-head.test.ts",
+                "title": "every writer of an answer's head (the run context's markdown, both writers of the bundle's markdown, the step tool's answer turn, both writers of the workflow runner, and the plan tree's final report) carries the measure line under the completeness line; the plan tree's merged report carries the run's measure; and a report or a run record stored before the change is read as it is",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/executor-lmdb.test.ts",
+                "title": "executor dispatches to the registered runner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/answer-step-failed-callers.test.ts",
+                "title": "the daemon's error payload, the one-shot tool's message and the workflow runner's step failure carry the report and the reason",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/lookup-measure.test.ts",
+                "title": "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report, as do the step tool's bundle phase and answer turn; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/classifier/__tests__/no-size.test.ts",
+                "title": "a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/bundle-report-schema.test.ts",
+                "title": "no source file under src/daemon/steps/analyze-step writes a literal schema version",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+                "title": "the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/no-live-store-in-tests.test.ts",
+                "title": "the MCP step and review tests, found by the full audit, create nothing at the default path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/__tests__/report-head.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 802,
+            "titles": [
+              {
+                "title": "every writer of an answer's head (the run context's markdown, both writers of the bundle's markdown, the step tool's answer turn, both writers of the workflow runner, and the plan tree's final report) carries the measure line under the completeness line; the plan tree's merged report carries the run's measure; and a report or a run record stored before the change is read as it is",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/classifier/__tests__/no-size.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 584,
+            "titles": [
+              {
+                "title": "the classifier's output schema has no size property and rejects an answer that carries one, the user message built for the classifier names no size among its required fields, and no placeholder size is given to the validator; ClassifiedIntent still has the field",
+                "result": "pass"
+              },
+              {
+                "title": "a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/bundle-report-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 401,
+            "titles": [
+              {
+                "title": "the stored bundle schema accepts a report and the schema version is 2",
+                "result": "pass"
+              },
+              {
+                "title": "the model-facing schema has neither meta nor report at both sites, on the first call and on a later one, and rejects an answer that carries a report",
+                "result": "pass"
+              },
+              {
+                "title": "no source file under src/daemon/steps/analyze-step writes a literal schema version",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/lookup-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 896,
+            "titles": [
+              {
+                "title": "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report, as do the step tool's bundle phase and answer turn; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the builder's cache key leaves out the intent's size and the size hint: a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              },
+              {
+                "title": "the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path; it never takes a default",
+                "result": "pass"
+              },
+              {
+                "title": "the bundle cache key is the same with and without a handed measure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/executor-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1356,
+            "titles": [
+              {
+                "title": "executor dispatches to the registered runner",
+                "result": "pass"
+              },
+              {
+                "title": "executor hands the request's resolved scope to the runner; without one the runner gets none",
+                "result": "pass"
+              },
+              {
+                "title": "stepPlan hands the resolved scope to the runner too",
+                "result": "pass"
+              },
+              {
+                "title": "the step tool's plan phase resolves the scope from the token and runs the lookups there",
+                "result": "pass"
+              },
+              {
+                "title": "unsupported exploration type produces a diagnostic output",
+                "result": "pass"
+              },
+              {
+                "title": "runner throw produces a `failed` output; does not stop the plan",
+                "result": "pass"
+              },
+              {
+                "title": "deterministic exploration is cached across executions",
+                "result": "pass"
+              },
+              {
+                "title": "lastIndexedAt bump invalidates the cache",
+                "result": "pass"
+              },
+              {
+                "title": "readDep exposes prior exploration outputs to later runners",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1011,
+            "titles": [
+              {
+                "title": "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)",
+                "result": "pass"
+              },
+              {
+                "title": "the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle",
+                "result": "pass"
+              },
+              {
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/answer-step-failed-callers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 636,
+            "titles": [
+              {
+                "title": "the daemon's error payload, the one-shot tool's message and the workflow runner's step failure carry the report and the reason",
+                "result": "pass"
+              },
+              {
+                "title": "a failure with no report is passed on as before: its code and message, and nothing about completeness",
+                "result": "pass"
+              },
+              {
+                "title": "a grounded step gets the flattened findings of a successful request",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-answer-prompt-missing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 746,
+            "titles": [
+              {
+                "title": "a missing answer prompt after the lookups ran returns a non-retryable error with the results and the report, from the plan phase and from the narrow phase",
+                "result": "pass"
+              },
+              {
+                "title": "the step tool's JSON output carries error.data, its message starts with the completeness line, and any other error has no data member",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-bundle-report.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 466,
+            "titles": [
+              {
+                "title": "the step tool's bundle phase attaches the report it derives from its state and rejects an agent-supplied one as 'bundle-schema'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-failed-lookup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1239,
+            "titles": [
+              {
+                "title": "stepPlan with a lookup whose prepare throws records the failed output and goes on to the next lookup (mutation: remove the conversion)",
+                "result": "pass"
+              },
+              {
+                "title": "an agent's answer that fails the lookup's schema is rejected as retryable before finalize is called",
+                "result": "pass"
+              },
+              {
+                "title": "a finalize that throws records the failed output and the run goes on",
+                "result": "pass"
+              },
+              {
+                "title": "no answer at all to capability.reuse-check is accepted and gives a record that is not established",
+                "result": "pass"
+              },
+              {
+                "title": "a finalize that throws, and a prepare that throws, leave no row in the lookup cache (mutation: store before the check)",
+                "result": "pass"
+              },
+              {
+                "title": "a step state minted before the change still resumes",
+                "result": "pass"
+              },
+              {
+                "title": "a plan with two lookups that need a model call pauses again after the first",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 582,
+            "titles": [
+              {
+                "title": "handler rejects non-object input",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects an unknown phase",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects missing phase field",
+                "result": "pass"
+              },
+              {
+                "title": "start returns emit_plan with a state blob + a real prompt",
+                "result": "pass"
+              },
+              {
+                "title": "start with no repo + no INSRC_REPO env → clear no-repo error",
+                "result": "pass"
+              },
+              {
+                "title": "plan phase with a garbage state blob returns wrong-state error",
+                "result": "pass"
+              },
+              {
+                "title": "bundle phase with awaiting_plan state returns wrong-stage error",
+                "result": "pass"
+              },
+              {
+                "title": "envelope is { content: [{type:\"text\", text: JSON}] }",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 727,
+            "titles": [
+              {
+                "title": "the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-narrow.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 594,
+            "titles": [
+              {
+                "title": "state codec round-trips awaiting_narrow with preparedBlob + resumeState",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects phase=narrow with a garbage state blob",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects phase=narrow when state stage is awaiting_plan",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects phase=narrow when explorationId does not match paused exp",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 654,
+            "titles": [
+              {
+                "title": "step tool start phase: resolved workspace scope, and the pairing test refusing a stand-in scope",
+                "result": "pass"
+              },
+              {
+                "title": "step tool plan and narrow phases resolve the scope from a token that has no scope field",
+                "result": "pass"
+              },
+              {
+                "title": "the real start phase builds a workspace scope, for every kind of source, and its prompt names that directory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 453,
+            "titles": [
+              {
+                "title": "encodeState + decodeState round-trip preserves every field",
+                "result": "pass"
+              },
+              {
+                "title": "encodeState mints a short URL-safe base64 token (22 chars, no padding)",
+                "result": "pass"
+              },
+              {
+                "title": "decodeState rejects a bogus token with StepStateDecodeError",
+                "result": "pass"
+              },
+              {
+                "title": "decodeState rejects a token of the wrong shape (too short)",
+                "result": "pass"
+              },
+              {
+                "title": "assertStage passes for a matching stage",
+                "result": "pass"
+              },
+              {
+                "title": "assertStage throws on a stage mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "releaseState drops the entry so a subsequent decodeState fails",
+                "result": "pass"
+              },
+              {
+                "title": "token round-trips a state with an executed plan attached",
+                "result": "pass"
+              },
+              {
+                "title": "analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted",
+                "result": "pass"
+              },
+              {
+                "title": "analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)",
+                "result": "pass"
+              },
+              {
+                "title": "analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/bundle-md.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 297,
+            "titles": [
+              {
+                "title": "render includes the meta comment prefix by default",
+                "result": "pass"
+              },
+              {
+                "title": "meta line can be suppressed via includeMeta=false",
+                "result": "pass"
+              },
+              {
+                "title": "the completeness line is the first line of the rendered answer, and an answer with no report says completeness was not recorded",
+                "result": "pass"
+              },
+              {
+                "title": "render walks the seven layers in order + emits headings",
+                "result": "pass"
+              },
+              {
+                "title": "empty layers are dropped from the rendered output",
+                "result": "pass"
+              },
+              {
+                "title": "layers filter narrows the rendered output",
+                "result": "pass"
+              },
+              {
+                "title": "missing meta renders \"(unset)\" instead of throwing",
+                "result": "pass"
+              },
+              {
+                "title": "meta includes repoIndexedAt when set",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/no-live-store-in-tests.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5921,
+            "titles": [
+              {
+                "title": "the two formerly live-store test files pass against a temporary store and create nothing at the default path",
+                "result": "pass"
+              },
+              {
+                "title": "the review probe test, found by the same search, creates nothing at the default path either",
+                "result": "pass"
+              },
+              {
+                "title": "three daemon request tests, found by the same search, create nothing at the default path",
+                "result": "pass"
+              },
+              {
+                "title": "the MCP step and review tests, found by the full audit, create nothing at the default path",
+                "result": "pass"
+              },
+              {
+                "title": "the check sees a store that IS opened at the default path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "92c6ea9c",
+        "ranAt": "2026-10-12T11:48:00.943Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "moved workflow, build and triage tests pass at src/daemon/steps, and workflow-rpc imports nothing from src/mcp",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts",
+                "title": "T30/T31: two Stories approved in ONE sweep, built in turn — each change log is EXACTLY its own files (build-start file committed with the work)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+                "title": "implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+                "title": "admitStandaloneBuild: trivial (no LLD) is admitted directly",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/tap-results.test.ts",
+                "title": "the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' # SKIP' with and without a reason, and skipped for ' # TODO'",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/test-mapping.test.ts",
+                "title": "a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/triage-step/__tests__/handler.test.ts",
+                "title": "start: returns emit_classification with a schema, prompt, and state token",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts",
+                "title": "LLD s4 amendment proposal lands as pending AmendmentRecord",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/brainstorm-state.test.ts",
+                "title": "t5: a payload carrying BrainstormElicitState round-trips unchanged through save->token->load",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/define-e2e.test.ts",
+                "title": "define workflow: happy path writes artifact to docs/epics/<slug>-E.../DEF.md",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts",
+                "title": "define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts",
+                "title": "design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts",
+                "title": "design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.../S<nnn>/LLD.md",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/handler.test.ts",
+                "title": "stub workflow: start → plan → synthesize → done writes artifact",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts",
+                "title": "plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>/PLAN.md",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts",
+                "title": "start gates on an unresolved HLD open question, returns resolve_questions with options",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/standalone-keying.test.ts",
+                "title": "augmentStandaloneParams: no-op unless standalone===true",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "save + load round-trip",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+                "title": "tracker.push: happy path patches Epic meta.tracker with refs",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts",
+                "title": "coarse push with pushTasks: execute prompt carries the TASK TIER block + the approved plan tasks",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+                "title": "workflow-rpc imports nothing from src/mcp, and takes the workflow step from src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/brainstorm/__tests__/registration.test.ts",
+                "title": "t4: the workflow-step handler phase switch gains NO brainstorm case (new workflow value, not a new phase)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-handler.test.ts",
+                "title": "handler rejects non-object input",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 760,
+            "titles": [
+              {
+                "title": "handler rejects non-object input",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects an unknown phase",
+                "result": "pass"
+              },
+              {
+                "title": "handler rejects missing phase field",
+                "result": "pass"
+              },
+              {
+                "title": "start returns emit_plan with a state blob + a real prompt",
+                "result": "pass"
+              },
+              {
+                "title": "start with no repo + no INSRC_REPO env → clear no-repo error",
+                "result": "pass"
+              },
+              {
+                "title": "plan phase with a garbage state blob returns wrong-state error",
+                "result": "pass"
+              },
+              {
+                "title": "bundle phase with awaiting_plan state returns wrong-stage error",
+                "result": "pass"
+              },
+              {
+                "title": "envelope is { content: [{type:\"text\", text: JSON}] }",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 310,
+            "titles": [
+              {
+                "title": "workflow-rpc imports nothing from src/mcp, and takes the workflow step from src/daemon/steps",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4501,
+            "titles": [
+              {
+                "title": "T30/T31: two Stories approved in ONE sweep, built in turn — each change log is EXACTLY its own files (build-start file committed with the work)",
+                "result": "pass"
+              },
+              {
+                "title": "T32: the build-start file left UNCOMMITTED (untracked) with nothing else dirty — the range is still derived, exact set",
+                "result": "pass"
+              },
+              {
+                "title": "T32 (tracked and modified): a build-start file that is the ONLY dirty tracked path does not stand in for the Story's work",
+                "result": "pass"
+              },
+              {
+                "title": "T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task 1) — the change log is EXACTLY both tasks' files",
+                "result": "pass"
+              },
+              {
+                "title": "T34: the same mid-build approval with the build-start file DELETED before task 2 — no file is written and the base is the pre-change one",
+                "result": "pass"
+              },
+              {
+                "title": "T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild's files",
+                "result": "pass"
+              },
+              {
+                "title": "T36 (plan-driven): implement writes NO BUILD record, and a batch approval then approves none for the Story",
+                "result": "pass"
+              },
+              {
+                "title": "T36 (Small route): implement stamps and writes NO BUILD record; a batch approval approves none",
+                "result": "pass"
+              },
+              {
+                "title": "Trivial route: the first implement stamps HEAD and writes its task-less record; a second implement keeps the stamp",
+                "result": "pass"
+              },
+              {
+                "title": "fail-open: a stamp that cannot be written leaves the implement result unchanged on every route",
+                "result": "pass"
+              },
+              {
+                "title": "a REFUSED implement stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T37: the completion writer excludes a COMMITTED build-start file — exact set",
+                "result": "pass"
+              },
+              {
+                "title": "T38: no resolvable base and a clean tree -> validate writes an EMPTY change log (no substituted range)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11076,
+            "titles": [
+              {
+                "title": "implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref",
+                "result": "pass"
+              },
+              {
+                "title": "implement: does NOT gate on the LLD open questions (resolved at stage-start now)",
+                "result": "pass"
+              },
+              {
+                "title": "implement: unapproved plan returns next=refused with reason plan-unapproved",
+                "result": "pass"
+              },
+              {
+                "title": "implement: a non-task target (a story) is a resolution error",
+                "result": "pass"
+              },
+              {
+                "title": "validate: returns the judge verdict from a stubbed CliProvider review session",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a failing judge verdict gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "validate: persists a plan-driven BUILD ledger record (standalone key ABSENT since t9) recording the task + passed",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a BUILD-record persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone key ABSENT since t9, story task)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record carries the file-level change-log for a non-empty changed set",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a Small build with no resolvable identity → err(no-identity)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record is approvable by the completion gate",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + { target:'s1/t1', epicHash } resolves + proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "validate: multi-epic dir + { target:'s1/t1', epicHash } resolves + returns a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + 's1/t1' WITHOUT epicHash still returns err(unresolved-target)",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION A (INVERTED at t8): a standalone build's persisted md now RENDERS '## Scope' for its body.focus",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION B (INVERTED at t9): a standalone build KEEPS meta.standalone true through validate",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section",
+                "result": "pass"
+              },
+              {
+                "title": "t10 END-TO-END: a trivial-routed build produces ONE record carrying the change set, the summary, the commit, its scope and its route — none of which it could carry before this Story",
+                "result": "pass"
+              },
+              {
+                "title": "t10 AUDIT: all three of t1's characterisations are still here, each carrying the task that INVERTED it — none deleted, none skipped",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION harness: read-only — rev-list --count and status --porcelain unchanged afterwards, and the suite skips cleanly when git is unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the validate writer EXCLUDES its own json + md from its own change-log, keeping the Story's real change",
+                "result": "pass"
+              },
+              {
+                "title": "t6 THE POINT OF THE STORY: a CLEAN tree WITH a stamped base yields the Story's committed change set",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a multi-task Story's change set GROWS across tasks rather than describing only the latest",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a DIRTY tree yields today's working-tree result and does NOT union in the committed range",
+                "result": "pass"
+              },
+              {
+                "title": "t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and substitutes no range",
+                "result": "pass"
+              },
+              {
+                "title": "t6: BOTH writers resolve the SAME base for the same Story — one resolver, not two chains",
+                "result": "pass"
+              },
+              {
+                "title": "t7: a SUPPLIED summary reaches body.summary",
+                "result": "pass"
+              },
+              {
+                "title": "t7: NO summary supplied → the record carries NO summary key (never synthesised from the task list)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: an EMPTY or WHITESPACE-ONLY summary is treated as omitted, not stored as a blank",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the summary input is OPTIONAL — a controller that never supplies it sees no behavioural difference",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a standalone work item gets meta.standalone TRUE on the FIRST write, read from its definition head",
+                "result": "pass"
+              },
+              {
+                "title": "validate: an EPIC-parented work item is unchanged — no flag written, record under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, LLD-only Small story: first write is standalone, sized, and filed beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, no head and no LLD: the route the standalone branch declared is what is written",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate: a caller's declaration does NOT relabel a story whose definition head says otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — completion: an LLD-only story's record is written standalone, beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — a record that never got its flag is still re-rendered beside its story, and resolves by its md path",
+                "result": "pass"
+              },
+              {
+                "title": "validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results",
+                "result": "pass"
+              },
+              {
+                "title": "a judge passed:true with a failing typecheck gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "a judge timeout returns verdict-session-timeout and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "the validate judge is called through runReviewSession with the repo as cwd and a verdict schema",
+                "result": "pass"
+              },
+              {
+                "title": "a judge object without a boolean passed gives unparseable-verdict",
+                "result": "pass"
+              },
+              {
+                "title": "a non-timeout judge error gives verdict-session-failed and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "plan-driven and standalone validate each hand the check runner the plan for their route",
+                "result": "pass"
+              },
+              {
+                "title": "implement and validate return merge-in-progress while a merge is uncommitted",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-b4b6b835: validate hands the check runner the other TypeScript projects the build touched; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails",
+                "result": "pass"
+              },
+              {
+                "title": "the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path",
+                "result": "pass"
+              },
+              {
+                "title": "when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)",
+                "result": "pass"
+              },
+              {
+                "title": "when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)",
+                "result": "pass"
+              },
+              {
+                "title": "a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)",
+                "result": "pass"
+              },
+              {
+                "title": "when the Story's route cannot be resolved, the verdict is returned with a note and neither record is written on that turn",
+                "result": "pass"
+              },
+              {
+                "title": "a stored test record that cannot be read is said so in the verdict, and a stored reported result is not reused once its test is no longer live",
+                "result": "pass"
+              },
+              {
+                "title": "on the standalone routes: a wrong mapping on a small build is refused with 'invalid-test-mapping', a good one is planned by subject, and `tests` is ignored on a trivial build",
+                "result": "pass"
+              },
+              {
+                "title": "builder text in the judge's evidence is kept to one line",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was unresolved-target)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 507,
+            "titles": [
+              {
+                "title": "the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it",
+                "result": "pass"
+              },
+              {
+                "title": "both validate prompts place the given evidence text in an evidence section and ask for the judge verdict shape",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own",
+                "result": "pass"
+              },
+              {
+                "title": "the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 452,
+            "titles": [
+              {
+                "title": "admitStandaloneBuild: trivial (no LLD) is admitted directly",
+                "result": "pass"
+              },
+              {
+                "title": "admitStandaloneBuild: Small with a missing LLD refuses (plan-missing)",
+                "result": "pass"
+              },
+              {
+                "title": "trivial standalone build: admits, renders a scope-driven prompt, and persists a BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "trivial standalone build without a focus is an error (no-scope)",
+                "result": "pass"
+              },
+              {
+                "title": "Small standalone build without an epicHash is an error (no-identity)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/tap-results.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 319,
+            "titles": [
+              {
+                "title": "the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' # SKIP' with and without a reason, and skipped for ' # TODO'",
+                "result": "pass"
+              },
+              {
+                "title": "a title nested in a suite or a subtest is found at its depth by its own title",
+                "result": "pass"
+              },
+              {
+                "title": "TAP's escaping of '#' and backslash in a title is reversed, so the title as declared matches (mutation: compare the raw line)",
+                "result": "pass"
+              },
+              {
+                "title": "a title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped",
+                "result": "pass"
+              },
+              {
+                "title": "output with no TAP version line and no result line is reported as not understood, with no titles",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/test-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 321,
+            "titles": [
+              {
+                "title": "a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level",
+                "result": "pass"
+              },
+              {
+                "title": "a correct mapping with cases, with a reported result on a live test, and with both, is accepted",
+                "result": "pass"
+              },
+              {
+                "title": "text the builder supplies must be one line: a title or evidence with a line break is a fault",
+                "result": "pass"
+              },
+              {
+                "title": "a stored mapping is reused only as far as the rules still allow: a stale name, a reported result on a test that is no longer live or smoke, and a file outside the repository are dropped, without a fault",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7463,
+            "titles": [
+              {
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "a base name under two __tests__ directories resolves to both files",
+                "result": "pass"
+              },
+              {
+                "title": "the plan-driven, small and trivial routes each build the expected check plan",
+                "result": "pass"
+              },
+              {
+                "title": "a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a passing and a failing command give ok true and ok false with their exit codes and output tails",
+                "result": "pass"
+              },
+              {
+                "title": "a command past its limit is reported timedOut and its whole process group, grandchild included, is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a test file that keeps its process alive after its tests pass still finishes under --test-force-exit",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved test name makes tests fail with a note naming it",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+                "result": "pass"
+              },
+              {
+                "title": "with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+                "result": "pass"
+              },
+              {
+                "title": "smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+                "result": "pass"
+              },
+              {
+                "title": "a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+                "result": "pass"
+              },
+              {
+                "title": "a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+                "result": "pass"
+              },
+              {
+                "title": "a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+                "result": "pass"
+              },
+              {
+                "title": "trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it",
+                "result": "pass"
+              },
+              {
+                "title": "a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments",
+                "result": "pass"
+              },
+              {
+                "title": "the whole output is still written after the output directory has been removed, and files older than the retention are pruned",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: a file with many tests is reported in full under the gate's runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: in its own process a failing test still fails the file",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/triage-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 544,
+            "titles": [
+              {
+                "title": "start: returns emit_classification with a schema, prompt, and state token",
+                "result": "pass"
+              },
+              {
+                "title": "start: errors without a focus",
+                "result": "pass"
+              },
+              {
+                "title": "feature → standalone design.story with plan; nextCall pre-fills standalone params",
+                "result": "pass"
+              },
+              {
+                "title": "small → standalone design.story, no plan",
+                "result": "pass"
+              },
+              {
+                "title": "trivial → build (no LLD), routed to insrc_build_step standalone",
+                "result": "pass"
+              },
+              {
+                "title": "epic → define, full chain, no standalone params",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix (small) → issue → build; nextCall enters the issue workflow with the magnitude",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix (sized) → issue → design → plan → build",
+                "result": "pass"
+              },
+              {
+                "title": "classify: rejects a bugfix emitted WITHOUT a magnitude (no unhandled throw)",
+                "result": "pass"
+              },
+              {
+                "title": "classify: rejects an unknown sizeClass emitted by the controller",
+                "result": "pass"
+              },
+              {
+                "title": "classify: rejects a tampered/undecodable state token",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — start with an approved specHash forwards it into the design.story nextCall",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — an epic routed with an approved specHash forwards it into the define call",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — start with an UNAPPROVED spec errors and hands back no state",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — start with a MISSING spec errors and hands back no state",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — without a specHash the nextCall is unchanged (no specHash key anywhere)",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — the triage state token round-trips specHash, and omits it when absent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 536,
+            "titles": [
+              {
+                "title": "LLD s4 amendment proposal lands as pending AmendmentRecord",
+                "result": "pass"
+              },
+              {
+                "title": "Bad amendment proposal is dropped; the LLD still synthesizes",
+                "result": "pass"
+              },
+              {
+                "title": "Approving amendment marks existing LLD stale via effective-hash mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "ack-stale writes staleAckedAt onto LLD meta",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/brainstorm-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 443,
+            "titles": [
+              {
+                "title": "t5: a payload carrying BrainstormElicitState round-trips unchanged through save->token->load",
+                "result": "pass"
+              },
+              {
+                "title": "t5: releaseState frees the token (subsequent load throws StateTokenNotFound)",
+                "result": "pass"
+              },
+              {
+                "title": "t5: loadState for an unknown/expired token still throws unchanged — no brainstorm-specific silent-replace",
+                "result": "pass"
+              },
+              {
+                "title": "t5: BrainstormElicitState has exactly the three sc3 fields",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/define-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 475,
+            "titles": [
+              {
+                "title": "define workflow: happy path writes artifact to docs/epics/<slug>-E.../DEF.md",
+                "result": "pass"
+              },
+              {
+                "title": "define workflow: s4 sb1=missed forces synthesize hard-fail",
+                "result": "pass"
+              },
+              {
+                "title": "define workflow: ungrounded citation fails synthesize",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 467,
+            "titles": [
+              {
+                "title": "define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact",
+                "result": "pass"
+              },
+              {
+                "title": "define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story appended)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 470,
+            "titles": [
+              {
+                "title": "design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses to start without an approved Define",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses without epicHash param",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: s6 sbdry1=missed forces synthesize hard-fail",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses when a Story from Epic is missing from storyBoundaries",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses when interfaceSketch contains a return",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 491,
+            "titles": [
+              {
+                "title": "design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.../S<nnn>/LLD.md",
+                "result": "pass"
+              },
+              {
+                "title": "design.story new-capability: s7 skips, artifact has no Migration section",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: refuses without an approved HLD",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: refuses without epicHash or storyId params",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: unknown shared-contract id fails synthesize",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: migration MISSING for enhancement Epic → hard-fail",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: migration PRESENT for new-capability Epic → hard-fail",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 456,
+            "titles": [
+              {
+                "title": "stub workflow: start → plan → synthesize → done writes artifact",
+                "result": "pass"
+              },
+              {
+                "title": "stub workflow: synthesizer rejects ungrounded citation",
+                "result": "pass"
+              },
+              {
+                "title": "stub workflow: bad state token errors cleanly",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 474,
+            "titles": [
+              {
+                "title": "plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>/PLAN.md",
+                "result": "pass"
+              },
+              {
+                "title": "plan: refuses when the Story LLD is unapproved (gate)",
+                "result": "pass"
+              },
+              {
+                "title": "plan: refuses when the Story LLD is stale with no ack (gate)",
+                "result": "pass"
+              },
+              {
+                "title": "plan: finalize rejects a task graph with a dangling dependsOn",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 530,
+            "titles": [
+              {
+                "title": "start gates on an unresolved HLD open question, returns resolve_questions with options",
+                "result": "pass"
+              },
+              {
+                "title": "resolve_question resolve → HLD meta resolved, then start proceeds to emit_plan",
+                "result": "pass"
+              },
+              {
+                "title": "resolve_question ignore → HLD meta ignored, start proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "resolve_question defer → deferred does NOT re-trigger start, shows in review_deferred",
+                "result": "pass"
+              },
+              {
+                "title": "start proceeds directly when the upstream HLD has no open questions",
+                "result": "pass"
+              },
+              {
+                "title": "synthesize `done` carries the new artifact's still-open questions",
+                "result": "pass"
+              },
+              {
+                "title": "synthesize `done` omits openQuestions when the artifact carries none",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/standalone-keying.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 439,
+            "titles": [
+              {
+                "title": "augmentStandaloneParams: no-op unless standalone===true",
+                "result": "pass"
+              },
+              {
+                "title": "augmentStandaloneParams: standalone mints a 16-char self-hash + default storyId",
+                "result": "pass"
+              },
+              {
+                "title": "augmentStandaloneParams: is deterministic in the runId (same runId → same hash)",
+                "result": "pass"
+              },
+              {
+                "title": "augmentStandaloneParams: preserves a caller-provided epicHash + storyId",
+                "result": "pass"
+              },
+              {
+                "title": "epicKeyFor: a standalone design.story keys by the minted (augmented) epicHash",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 447,
+            "titles": [
+              {
+                "title": "save + load round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "release drops the entry",
+                "result": "pass"
+              },
+              {
+                "title": "load throws on unknown token",
+                "result": "pass"
+              },
+              {
+                "title": "token is URL-safe base64 (no +, /, =)",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: decodeState on an unknown/released token throws code 'not-found' with the plain message",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: decodeState on a structurally-garbage token throws code 'malformed' (distinct from 'not-found')",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: assertStage on a valid token at the wrong stage throws 'wrong-stage' (unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: the WorkflowStateDecodeError code union carries 'not-found' plus the original three",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState: mints a new token, releases the (defined+distinct) previous one — store stays ~1",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState(undefined, ...) behaves exactly like saveState (first-mint: nothing released)",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState is mint-before-release: the new token always exists even as the old is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState never deletes the just-minted token in the degenerate prev===next case",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState LRU: a run of > MAX_ENTRIES turns keeps its active token (never evicted)",
+                "result": "pass"
+              },
+              {
+                "title": "reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 477,
+            "titles": [
+              {
+                "title": "tracker.push: happy path patches Epic meta.tracker with refs",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: checklist failure refuses synthesize + leaves meta untouched",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.sync: happy path merges status + lastSyncedAt into meta.tracker",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.sync: refuses when Epic has no prior tracker refs",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: refuses without epicHash param",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: refuses when Epic is unapproved",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 521,
+            "titles": [
+              {
+                "title": "coarse push with pushTasks: execute prompt carries the TASK TIER block + the approved plan tasks",
+                "result": "pass"
+              },
+              {
+                "title": "coarse push with pushTasks but an UNAPPROVED plan: no TASK TIER (plan excluded)",
+                "result": "pass"
+              },
+              {
+                "title": "coarse push with pushTasks OFF: execute prompt has no task instructions",
+                "result": "pass"
+              },
+              {
+                "title": "coarse push synthesize persists LLM-returned taskRefs onto the plan meta.tracker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/brainstorm/__tests__/registration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 507,
+            "titles": [
+              {
+                "title": "t1: StandaloneBrainstormContext accepts a bare focus string",
+                "result": "pass"
+              },
+              {
+                "title": "t2: brainstormElicitSchema is a valid, ajv-compilable JSON Schema stub",
+                "result": "pass"
+              },
+              {
+                "title": "t3: registerBrainstormRunners is idempotent and resolves the elicit runner",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a duplicate runnerId under workflow brainstorm reproduces executor's duplicate-runner throw",
+                "result": "pass"
+              },
+              {
+                "title": "t3: k10 — the brainstorm runner module never IMPORTS the daemon layer or CALLS the addIdea stub",
+                "result": "pass"
+              },
+              {
+                "title": "t4: brainstorm is a member of the WORKFLOW_NAMES union",
+                "result": "pass"
+              },
+              {
+                "title": "t4: prepareDecompose recognizes brainstorm (not \"not yet supported\") and yields a one-step plan schema",
+                "result": "pass"
+              },
+              {
+                "title": "t4: registerWorkflowRunners() wires registerBrainstormRunners beside the existing register*Runners",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the workflow-step handler phase switch gains NO brainstorm case (new workflow value, not a new phase)",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the triage route table (classify.ts) is not modified to insert brainstorm (ac5)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "f4298fae",
+        "ranAt": "2026-10-12T11:51:53.497Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "moved review and code-review tests pass at src/daemon/steps, including the routing tests and the three conditional tests",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+                "title": "start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/routing.test.ts",
+                "title": "T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/ux-handler.test.ts",
+                "title": "start: a uxDefinition subject → emit_judgements with FIVE prompts + a schema admitting ux",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+                "title": "T13 start on a design returns the review template with next emit_findings",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+                "title": "T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step.test.ts",
+                "title": "review-step drives the full loop and stamps meta.review with model=client",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/diagram-conditional.test.ts",
+                "title": "effectiveJudges keeps diagram only for a subject with an erDefinition/diagram companion",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/functional-coverage-conditional.test.ts",
+                "title": "effectiveJudges keeps functional-coverage only for a subject with FRs",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/ux-conditional.test.ts",
+                "title": "effectiveJudges keeps ux only when hasUxAcceptance",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+                "title": "review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+                "title": "no file under src/mcp other than server.ts imports src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+                "title": "T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/routing.test.ts",
+                "title": "T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 490,
+            "titles": [
+              {
+                "title": "review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token",
+                "result": "pass"
+              },
+              {
+                "title": "code-review-step stays leak-free: release-on-consume — a resend of a released token fails loadState",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 320,
+            "titles": [
+              {
+                "title": "workflow-rpc imports nothing from src/mcp, and takes the workflow step from src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "title": "no file under src/mcp other than server.ts imports src/daemon/steps",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 529,
+            "titles": [
+              {
+                "title": "start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)",
+                "result": "pass"
+              },
+              {
+                "title": "fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "all-empty judgements => a written PASS record (vacuous but valid, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved",
+                "result": "pass"
+              },
+              {
+                "title": "resending the same judgements token after done fails loadState (no double-write)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with isProcessing:true (empty staleFiles) => confirm_wait too",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt",
+                "result": "pass"
+              },
+              {
+                "title": "S001: the timeout auto-diff releases the confirm_wait token before the diff review",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error",
+                "result": "pass"
+              },
+              {
+                "title": "s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record",
+                "result": "pass"
+              },
+              {
+                "title": "T48: the degraded review passes the Story's resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler",
+                "result": "pass"
+              },
+              {
+                "title": "T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base",
+                "result": "pass"
+              },
+              {
+                "title": "s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the response says how many were dropped, per dimension, and against how large a set",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the markdown lists the dropped findings and says they are not counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 524,
+            "titles": [
+              {
+                "title": "T10 code of controller author with fresh grounding is sent to the daemon (full) and returns done with its verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T10 code of unknown author with fresh grounding is sent to the daemon (full) and returns done with its verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "title": "T10 the invoking client is passed to the daemon when the tool knows it",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a stale index returns confirm_wait and asks no daemon; the author is not even read yet",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a declined wait asks the daemon with the degraded mode, and the tool does not assemble the diff itself",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an accepted wait that never becomes fresh asks the daemon with the degraded mode",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an accepted wait that becomes fresh asks the daemon with the full mode, and never returns emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "T17 fresh grounding with no symbols asks the daemon with the degraded mode",
+                "result": "pass"
+              },
+              {
+                "title": "T17 an unavailable freshness check and unavailable grounding each return their own error and ask no daemon",
+                "result": "pass"
+              },
+              {
+                "title": "T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped",
+                "result": "pass"
+              },
+              {
+                "title": "an older daemon that ignored the degraded mode is an error, not a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "an older daemon that stamped no reviewer is an error, not a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (unreachable) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (daemon-error) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (unknown-method) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (timeout) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon code review that fails (failed) is an error: nothing stamped, no judgements prompt offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 the tool waits 30 minutes: with a daemon that never answers it fails when that limit fires",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the judgements phase refuses controller-authored code and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 an unknown author does not stop the judgements phase (only a known controller author does)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/ux-handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 515,
+            "titles": [
+              {
+                "title": "start: a uxDefinition subject → emit_judgements with FIVE prompts + a schema admitting ux",
+                "result": "pass"
+              },
+              {
+                "title": "judgements: a UX HIGH finding withholds completion (verdict block)",
+                "result": "pass"
+              },
+              {
+                "title": "judgements: an adhering (empty) UX judgement folds to pass",
+                "result": "pass"
+              },
+              {
+                "title": "start: a subject with neither uxDefinition nor adherence → the base four (byte-shape compatible)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 922,
+            "titles": [
+              {
+                "title": "T13 start on a design returns the review template with next emit_findings",
+                "result": "pass"
+              },
+              {
+                "title": "T13 a design that answers an ISSUE gets the ISSUE template; an HLD is a design too",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the findings phase stamps the review and does not edit the design",
+                "result": "pass"
+              },
+              {
+                "title": "T13 an answer the session path rejects is rejected by the findings phase with the same errors, and nothing is stamped",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the two paths do not cross: no claims on a design run, no findings on a non-design run",
+                "result": "pass"
+              },
+              {
+                "title": "T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt",
+                "result": "pass"
+              },
+              {
+                "title": "T4 the findings phase stamps the controller on an HLD too",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the registered tool accepts phase `findings` and its phase list names it",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the ISSUE template is validated against its own items",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 509,
+            "titles": [
+              {
+                "title": "T9 a DEF of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a LLD of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a HLD of controller author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a DEF of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a LLD of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9 a HLD of unknown author is sent to the daemon and returns done with the daemon's verdict",
+                "result": "pass"
+              },
+              {
+                "title": "T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked",
+                "result": "pass"
+              },
+              {
+                "title": "T9 an older artifact with no author field is routed by its attribution labels",
+                "result": "pass"
+              },
+              {
+                "title": "T11 the tool waits 31 minutes for a design (HLD, LLD) and 90 minutes for a DEF",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (unreachable) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (daemon-error) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (unknown-method) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (closed) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a daemon review that fails (failed) is an error: nothing stamped, no controller loop offered",
+                "result": "pass"
+              },
+              {
+                "title": "T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the findings phase refuses a controller-authored LLD and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the findings phase refuses a controller-authored HLD and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12 the verdicts phase refuses a controller-authored DEF and stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, and so does findings on an LLD",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/review-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 478,
+            "titles": [
+              {
+                "title": "review-step drives the full loop and stamps meta.review with model=client",
+                "result": "pass"
+              },
+              {
+                "title": "review-step verdicts with an unknown state token returns an error envelope",
+                "result": "pass"
+              },
+              {
+                "title": "buildExtractPrompt / EXTRACT_SCHEMA export the expected shape",
+                "result": "pass"
+              },
+              {
+                "title": "buildVerifyPrompt / VERIFY_SCHEMA export the expected shape",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/diagram-conditional.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 523,
+            "titles": [
+              {
+                "title": "effectiveJudges keeps diagram only for a subject with an erDefinition/diagram companion",
+                "result": "pass"
+              },
+              {
+                "title": "DEFAULT_DEPS carries the diagram slot (conditional at run time)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a sound erDefinition runs the diagram dimension + folds to pass",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a broken (dangling) erDefinition folds a diagram HIGH to block",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a no-ER subject runs exactly the base dimensions (byte-shape compatible with pre-S003)",
+                "result": "pass"
+              },
+              {
+                "title": "expectedDimensions appends diagram only with an ER/diagram; schema enum + arity follow",
+                "result": "pass"
+              },
+              {
+                "title": "enforceCodeReviewGate: a diagram block withholds under enforce=true, is advisory-warn under false",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/functional-coverage-conditional.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 514,
+            "titles": [
+              {
+                "title": "effectiveJudges keeps functional-coverage only for a subject with FRs",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: an FR subject runs five dimensions and a functional-coverage HIGH folds to block",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a no-FR subject runs exactly the four base dimensions (absent-safe)",
+                "result": "pass"
+              },
+              {
+                "title": "DEFAULT_DEPS carries the functional-coverage slot (conditional at run time)",
+                "result": "pass"
+              },
+              {
+                "title": "expectedDimensions appends functional-coverage only with FRs; schema enum + arity follow",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/ux-conditional.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 528,
+            "titles": [
+              {
+                "title": "effectiveJudges keeps ux only when hasUxAcceptance",
+                "result": "pass"
+              },
+              {
+                "title": "DEFAULT_DEPS carries the ux slot last (conditional at run time)",
+                "result": "pass"
+              },
+              {
+                "title": "expectedDimensions: base four when neither fires; pushes ux on hasUxAcceptance",
+                "result": "pass"
+              },
+              {
+                "title": "expectedDimensions: a declared-but-uncontented adherence selection is still expected (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "buildJudgementsSchema: admits ux in the enum exactly when ux is in the computed dims",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a valid uxDefinition runs the ux dimension + folds to pass",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: a required-but-missing UX design folds a ux HIGH to block (un-forked, ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview: neither uxDefinition nor adherence → exactly the base four (byte-shape compatible)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "141bf9d7",
+        "ranAt": "2026-10-12T11:58:13.894Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "resolveRepoPath inside a step.call uses the context's cwd and envRepo, not the process's; outside one it keeps process defaults",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-context.test.ts",
+                "title": "resolveRepoPath inside a step call uses the context's cwd and envRepo, not the process's; outside one it keeps process defaults",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/step-context.test.ts",
+                "title": "the code-review handler's repo fallback reads the context's INSRC_REPO inside a step call and the process's outside one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scope directoryOf: a bare file name inside a step.call resolves against the context's cwd, and outside one against process.cwd()",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-context.test.ts",
+                "title": "scope directoryOf: a bare file name inside a step call resolves against the context's cwd, and outside one against process.cwd()",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "client identity: the context holds 'claude' / 'codex'; the code-review deps receive it as is and the one-shot analyze converts it to 'cli-claude' / 'cli-codex'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-context.test.ts",
+                "title": "client identity: the context holds 'claude' / 'codex'; the code-review deps receive it as is and the one-shot analyze converts it to 'cli-claude' / 'cli-codex'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "step context isolation: two concurrent contexts each see their own cwd and client",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-context.test.ts",
+                "title": "step context isolation: two concurrent contexts each see their own cwd and client",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/step-context.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 830,
+            "titles": [
+              {
+                "title": "resolveRepoPath inside a step call uses the context's cwd and envRepo, not the process's; outside one it keeps process defaults",
+                "result": "pass"
+              },
+              {
+                "title": "the code-review handler's repo fallback reads the context's INSRC_REPO inside a step call and the process's outside one",
+                "result": "pass"
+              },
+              {
+                "title": "scope directoryOf: a bare file name inside a step call resolves against the context's cwd, and outside one against process.cwd()",
+                "result": "pass"
+              },
+              {
+                "title": "client identity: the context holds 'claude' / 'codex'; the code-review deps receive it as is and the one-shot analyze converts it to 'cli-claude' / 'cli-codex'",
+                "result": "pass"
+              },
+              {
+                "title": "step context isolation: two concurrent contexts each see their own cwd and client",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "482c94d7",
+        "ranAt": "2026-10-12T12:13:21.637Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "in-daemon review client equivalence: timeout, aborted (code daemon-review-aborted, not retryable), daemon-error with reason, and the diff-unavailable fallback behave as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+                "title": "in-daemon client: a done frame resolves with its data and progress reaches onFrame; grounding, freshness and the cwd lookup are shaped as the socket client shapes them",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+                "title": "in-daemon review client: a wait past its limit fails with 'timeout' (retryable) and aborts the review run",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+                "title": "in-daemon review client: an aborted step signal fails with 'aborted' (code daemon-review-aborted, not retryable) and ends the inner review run",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+                "title": "in-daemon review client: an error frame fails with 'daemon-error' and its reason, and a code review whose diff cannot be read comes back as a failed daemon review naming the cause",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+                "title": "no module under src/daemon/steps imports src/mcp/daemon-stream.ts: the moved handlers reach the daemon through the in-daemon client",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+                "title": "no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 780,
+            "titles": [
+              {
+                "title": "in-daemon client: a done frame resolves with its data and progress reaches onFrame; grounding, freshness and the cwd lookup are shaped as the socket client shapes them",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon review client: a wait past its limit fails with 'timeout' (retryable) and aborts the review run",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon review client: an aborted step signal fails with 'aborted' (code daemon-review-aborted, not retryable) and ends the inner review run",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon review client: an error frame fails with 'daemon-error' and its reason, and a code review whose diff cannot be read comes back as a failed daemon review naming the cause",
+                "result": "pass"
+              },
+              {
+                "title": "no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 342,
+            "titles": [
+              {
+                "title": "workflow-rpc imports nothing from src/mcp, and takes the workflow step from src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "title": "no file under src/mcp other than server.ts imports src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "title": "no module under src/daemon/steps imports src/mcp/daemon-stream.ts: the moved handlers reach the daemon through the in-daemon client",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "0dc044c9",
+        "ranAt": "2026-10-12T12:21:21.982Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "state store miss: each of the four stores says the daemon was restarted and the run must be started again",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "state store miss: each of the four stores says the daemon was restarted and the run must be started again",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/step-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 990,
+            "titles": [
+              {
+                "title": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+                "result": "pass"
+              },
+              {
+                "title": "equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "state store miss: each of the four stores says the daemon was restarted and the run must be started again",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "10dd8589",
+        "ranAt": "2026-10-12T12:38:44.194Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "import graph (ac4): the MCP server's modules reach nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/import-graph.test.ts",
+                "title": "import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+                "title": "no file under src/mcp imports src/daemon/steps: the step tools are forwarded, not run in the MCP server (Story s11, t9)",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "source scan: the permitted-reader function's name appears only at its definition: the MCP server no longer calls it (Story s11, t9)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "MCP tool surface: the twelve tools keep their names, descriptions and input schemas",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "MCP tool surface: the twelve tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 364,
+            "titles": [
+              {
+                "title": "workflow-rpc imports nothing from src/mcp, and takes the workflow step from src/daemon/steps",
+                "result": "pass"
+              },
+              {
+                "title": "no file under src/mcp imports src/daemon/steps: the step tools are forwarded, not run in the MCP server (Story s11, t9)",
+                "result": "pass"
+              },
+              {
+                "title": "no module under src/daemon/steps imports src/mcp/daemon-stream.ts: the moved handlers reach the daemon through the in-daemon client",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 755,
+            "titles": [
+              {
+                "title": "owner check: default path with no declaration is refused and no file is created",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: after the declaration the same open succeeds, also after a close and reopen",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: a temporary path opens without a declaration",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: the live path as a relative path and through a symbolic link is refused",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: permitted-reader only opens the live path; neither declaration is refused",
+                "result": "pass"
+              },
+              {
+                "title": "source scan: the permitted-reader function's name appears only at its definition: the MCP server no longer calls it (Story s11, t9)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/forward-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 957,
+            "titles": [
+              {
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "MCP tool surface: the twelve tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/import-graph.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 328,
+            "titles": [
+              {
+                "title": "import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "92dd0e52",
+        "ranAt": "2026-10-12T12:43:21.695Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext, and the shaper provider tests pass",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/sampling-retired.test.ts",
+                "title": "sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+                "title": "shaperProvider=ollama returns an OllamaProvider",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+                "title": "shaperProvider=cli-claude returns a CliProvider (claude kind)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+                "title": "clientDefault picks the matching CLI when config does NOT pin a provider",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+                "title": "ambient runWithClientProviderContext supplies the default",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+                "title": "repoOverride beats the clientDefault in buildShaperProvider",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/shaper-provider.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 681,
+            "titles": [
+              {
+                "title": "shaperProvider=ollama returns an OllamaProvider",
+                "result": "pass"
+              },
+              {
+                "title": "shaperProvider=cli-claude returns a CliProvider (claude kind)",
+                "result": "pass"
+              },
+              {
+                "title": "shaperProvider=cli-codex returns a CliProvider",
+                "result": "pass"
+              },
+              {
+                "title": "isOllamaModelId is true for `:`-tagged ids, false for CLI model ids",
+                "result": "pass"
+              },
+              {
+                "title": "cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CLI default)",
+                "result": "pass"
+              },
+              {
+                "title": "cli-claude + a real claude shaperModel → forwarded verbatim",
+                "result": "pass"
+              },
+              {
+                "title": "cli-claude + a role-tier claude model → forwarded (role model wins)",
+                "result": "pass"
+              },
+              {
+                "title": "cli-claude + a role-tier model that is Ollama-shaped → also dropped",
+                "result": "pass"
+              },
+              {
+                "title": "ollama path is unchanged: the Ollama model id is still used",
+                "result": "pass"
+              },
+              {
+                "title": "shaperProvider=ollama honours cfg.shaperModel + cfg.shaper.ollamaNumCtx",
+                "result": "pass"
+              },
+              {
+                "title": "shaperProvider=cli-* is idempotent -- repeated calls return distinct instances",
+                "result": "pass"
+              },
+              {
+                "title": "clientDefault picks the matching CLI when config does NOT pin a provider",
+                "result": "pass"
+              },
+              {
+                "title": "explicit config shaperProvider overrides the clientDefault",
+                "result": "pass"
+              },
+              {
+                "title": "ambient runWithClientProviderContext supplies the default",
+                "result": "pass"
+              },
+              {
+                "title": "resolveShaperKind: per-repo override wins over everything below it",
+                "result": "pass"
+              },
+              {
+                "title": "resolveShaperKind: explicit global wins over the per-run caller",
+                "result": "pass"
+              },
+              {
+                "title": "resolveShaperKind: per-run caller used when repo + global are unset",
+                "result": "pass"
+              },
+              {
+                "title": "resolveShaperKind: ollama when all signals are unset",
+                "result": "pass"
+              },
+              {
+                "title": "repoOverride beats an explicit global config in buildShaperProvider",
+                "result": "pass"
+              },
+              {
+                "title": "repoOverride beats the clientDefault in buildShaperProvider",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/sampling-retired.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 356,
+            "titles": [
+              {
+                "title": "sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "d821cbc5",
+        "ranAt": "2026-10-12T12:48:06.963Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "source scan: the reader declaration's name appears nowhere under src/",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "source scan: the reader declaration's name appears nowhere under src/",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+                "title": "owner check: only the owner declaration opens the live path; without it, and after it is forgotten, the open is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/live-store-refusal.test.ts",
+                "title": "refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac6: the MCP server's process is refused the live graph store and the live vector store",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/mcp-process-refused.test.ts",
+                "title": "ac6: the MCP server's process is refused the live graph store and the live vector store",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts",
+                "title": "vector store owner rule: no declaration other than the owner's exists, and without it the live vector store is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/live-store-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 891,
+            "titles": [
+              {
+                "title": "owner check: default path with no declaration is refused and no file is created",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: after the declaration the same open succeeds, also after a close and reopen",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: a temporary path opens without a declaration",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: the live path as a relative path and through a symbolic link is refused",
+                "result": "pass"
+              },
+              {
+                "title": "owner check: only the owner declaration opens the live path; without it, and after it is forgotten, the open is refused",
+                "result": "pass"
+              },
+              {
+                "title": "source scan: the reader declaration's name appears nowhere under src/",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/live-store-refusal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1018,
+            "titles": [
+              {
+                "title": "refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused",
+                "result": "pass"
+              },
+              {
+                "title": "refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 651,
+            "titles": [
+              {
+                "title": "vector store owner rule: no declaration other than the owner's exists, and without it the live vector store is refused",
+                "result": "pass"
+              },
+              {
+                "title": "vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/mcp-process-refused.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 740,
+            "titles": [
+              {
+                "title": "ac6: the MCP server's process is refused the live graph store and the live vector store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "f1b81679",
+        "ranAt": "2026-10-13T06:00:42.483Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "the step host registers the workflow runners: a workflow run continues past its plan phase through step.call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/step-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1443,
+            "titles": [
+              {
+                "title": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+                "result": "pass"
+              },
+              {
+                "title": "equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store",
+                "result": "pass"
+              },
+              {
+                "title": "the step host registers the workflow runners: a workflow run continues past its plan phase through step.call",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "state store miss: each of the four stores says the daemon was restarted and the run must be started again",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/forward-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1046,
+            "titles": [
+              {
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "MCP tool surface: the twelve tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4254,
+            "titles": [
+              {
+                "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+                "result": "pass"
+              },
+              {
+                "title": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+                "result": "pass"
+              },
+              {
+                "title": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "284ce2c4",
+        "ranAt": "2026-10-13T06:32:04.533Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "installed daemon: an analysis through a restarted client session works",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/smoke.md section 1: insrc_analyze through the restarted session's MCP server (pid 87098, started after the update) returned a full bundle (size M, 34 files, 76 items, model=opus) grounded on src/mcp/forward-step.ts, src/mcp/server.ts, src/daemon/index.ts:1902 and src/daemon/steps/host.ts."
+            }
+          },
+          {
+            "name": "installed daemon: a multi-turn workflow step continues after the client session's MCP server restarts",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "smoke.md section 2: issue workflow started via MCP pid 87098 (emit_plan, state WNVfux58ECv6yBWX9tcJvw), continued via a new installed MCP process pid 88099 (emit_step s1, state havXUlViLBdYc1vLxFmAbw), then via pid 87098 again (emit_step s2)."
+            }
+          },
+          {
+            "name": "installed daemon after every client session has restarted: lsof shows only the daemon on the store files and the lance directory",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "smoke.md section 3: lsof of ~/.insrc/graph.lmdb and graph.lmdb-lock lists only pid 81990 (the daemon); lsof +D ~/.insrc/lance lists no holder; lsof -p of every other node process, the MCP server pid 87098 included, shows no store path."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

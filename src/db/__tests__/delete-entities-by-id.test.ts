@@ -24,6 +24,12 @@ import { outNeighbors, inNeighbors } from '../graph/edges.js';
 import { makeEntityId } from '../../indexer/parser/base.js';
 import type { Entity } from '../../shared/types.js';
 
+import { useTemporaryLance } from '../lance/__tests__/helpers/temp-lance.js';
+
+// This file reaches the vector store through code that takes no path; it gets a
+// temporary one (the default path belongs to the daemon alone).
+useTemporaryLance();
+
 const NOW = '2026-08-07T00:00:00.000Z';
 let store: string;
 let repo: string;

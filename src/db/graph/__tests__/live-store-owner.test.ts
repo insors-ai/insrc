@@ -29,7 +29,7 @@ const CWD = process.cwd();
 
 const store = await import('../store.js');
 const {
-	closeGraphStore, declareLiveStoreOwner, declareLiveStoreReaderUntilS11, getGraphStore,
+	closeGraphStore, declareLiveStoreOwner, getGraphStore,
 	LmdbStoreError, LmdbStoreNotOwnerError, resetLiveStoreDeclarationsForTests, setGraphStorePath,
 } = store;
 const { PATHS } = await import('../../../shared/paths.js');
@@ -132,32 +132,36 @@ test('owner check: the live path as a relative path and through a symbolic link 
 	}
 });
 
-test('owner check: permitted-reader only opens the live path; neither declaration is refused', async () => {
+test('owner check: only the owner declaration opens the live path; without it, and after it is forgotten, the open is refused', async () => {
 	removeLive();
 	await assert.rejects(getGraphStore(), assertRefused);
-	declareLiveStoreReaderUntilS11();
+	declareLiveStoreOwner();
 	const s = await getGraphStore();
 	await s.meta.put('r', '1');
 	assert.equal(s.meta.get('r'), '1');
 	await closeGraphStore();
 	resetLiveStoreDeclarationsForTests();
 	await assert.rejects(getGraphStore(), assertRefused);
+	// The store module offers no other way in: no export declares a reader.
+	const store = await import('../store.js');
+	assert.deepEqual(Object.keys(store).filter(k => /^declare/.test(k)), ['declareLiveStoreOwner']);
 });
 
-test('source scan: the permitted-reader function\'s name appears at exactly two places', () => {
+test('source scan: the reader declaration\'s name appears nowhere under src/', () => {
 	const SRC = fileURLToPath(new URL('../../../', import.meta.url));
-	const NAME = 'declareLiveStoreReaderUntilS11';
+	// Built from pieces, so this file does not hold the name it looks for.
+	const NAME = 'declareLiveStoreReader' + 'UntilS11';
 	const hits: string[] = [];
 	const walk = (dir: string): void => {
 		for (const entry of readdirSync(dir)) {
 			const p = join(dir, entry);
-			if (statSync(p).isDirectory()) { if (entry !== '__tests__' && entry !== 'node_modules' && entry !== 'assets') walk(p); continue; }
-			if (!/\.(ts|tsx|mts)$/.test(entry)) continue;
+			if (statSync(p).isDirectory()) { if (entry !== 'node_modules') walk(p); continue; }
+			if (!/\.(ts|tsx|mts|js|mjs|json|md)$/.test(entry)) continue;
 			readFileSync(p, 'utf8').split('\n').forEach((line, i) => { if (line.includes(NAME)) hits.push(`${relative(SRC, p)}:${i + 1}`); });
 		}
 	};
 	walk(SRC);
-	assert.equal(hits.length, 2, hits.join('\n'));
-	assert.ok(hits.some(h => h.startsWith('db/graph/store.ts:')), 'its definition');
-	assert.ok(hits.some(h => h.startsWith('mcp/server.ts:')), "the MCP server's one call");
+	assert.deepEqual(hits, []);
+	// The scan sees the name when it is there.
+	assert.ok(`x ${NAME}(); y`.includes(NAME) && !readFileSync(fileURLToPath(import.meta.url), 'utf8').includes(NAME));
 });

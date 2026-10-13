@@ -31,6 +31,12 @@ import { makeEntityId, makeExternalEndpointId } from '../parser/base.js';
 import type { Entity, Language, Relation, ResolvedTarget } from '../../shared/types.js';
 import { resolveExternalEndpoints } from '../external-endpoints.js';
 
+import { useTemporaryLance } from '../../db/lance/__tests__/helpers/temp-lance.js';
+
+// This file reaches the vector store through code that takes no path; it gets a
+// temporary one (the default path belongs to the daemon alone).
+useTemporaryLance();
+
 const NOW = '2026-08-07T00:00:00.000Z';
 
 let store: string;

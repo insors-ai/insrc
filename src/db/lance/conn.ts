@@ -27,6 +27,7 @@ import * as lancedb from '@lancedb/lancedb';
 
 import { getLogger } from '../../shared/logger.js';
 import { PATHS } from '../../shared/paths.js';
+import { isLiveStoreOwnerDeclared, resolveStorePath } from '../graph/store.js';
 
 const log = getLogger('lance-conn');
 
@@ -49,6 +50,22 @@ export function getLanceConnPath(): string {
 }
 
 /**
+ * This process may not open the live vector store: only the insrc daemon
+ * owns it (Epic c2ba6fa6, Story s11, ac7), as Story s4 made true of the graph
+ * store. Thrown before the directory is created or connected.
+ */
+export class LanceStoreNotOwnerError extends Error {
+	readonly code = 'lance-not-owner';
+	constructor(path: string) {
+		super(
+			`Refusing to open the live vector store at '${path}': only the insrc daemon may open it. ` +
+			`A test must set a temporary store with setLanceConnPath(); any other code must ask the daemon over its socket.`,
+		);
+		this.name = 'LanceStoreNotOwnerError';
+	}
+}
+
+/**
  * Lazy-init the LanceDB connection. Concurrent first-callers share
  * the same init promise; on init failure the cached promise is
  * cleared so the next caller re-attempts.
@@ -56,6 +73,10 @@ export function getLanceConnPath(): string {
 export async function getLanceConn(): Promise<lancedb.Connection> {
 	if (_instance !== null) return _instance;
 	if (_initPromise !== null) return _initPromise;
+	// Before anything touches the path: no directory, no connection.
+	if (!isLiveStoreOwnerDeclared() && resolveStorePath(_path) === resolveStorePath(PATHS.lance)) {
+		throw new LanceStoreNotOwnerError(_path);
+	}
 
 	_initPromise = (async (): Promise<lancedb.Connection> => {
 		const t0 = Date.now();

@@ -24,7 +24,7 @@
  *     review flow (`deferred` items never auto-resurface at a stage
  *     boundary).
  *
- * Lifted + generalized from the former `src/mcp/build-step/{questions,
+ * Lifted + generalized from the former `src/daemon/steps/build-step/{questions,
  * resolutions}.ts` (which scoped only the Story LLD at build time).
  */
 

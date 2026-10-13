@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791875469494-cjslp9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-13T07:11:09.786Z",
+    "model": "claude:opus",
+    "elapsedMs": 105220,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s11",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s11",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/agent/providers/__tests__/mcp-sampling-provider.test.ts",
+        "src/agent/providers/mcp-sampling-provider.ts",
+        "src/analyze/__tests__/report-head.test.ts",
+        "src/analyze/classifier/__tests__/no-size.test.ts",
+        "src/analyze/context/__tests__/bundle-report-schema.test.ts",
+        "src/analyze/context/__tests__/completeness.live.test.ts",
+        "src/analyze/context/__tests__/lookup-measure.test.ts",
+        "src/analyze/context/__tests__/sampler-context.test.ts",
+        "src/analyze/context/__tests__/shaper-provider.test.ts",
+        "src/analyze/context/role-router.ts",
+        "src/analyze/context/scope.ts",
+        "src/analyze/context/shaper-provider.ts",
+        "src/analyze/explore/__tests__/executor-lmdb.test.ts",
+        "src/config/__tests__/store-lmdb.test.ts",
+        "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+        "src/daemon/__tests__/answer-step-failed-callers.test.ts",
+        "src/daemon/index.ts",
+        "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+        "src/daemon/steps/__tests__/step-context.test.ts",
+        "src/daemon/steps/__tests__/step-host.test.ts",
+        "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts",
+        "src/daemon/steps/analyze-oneshot.ts",
+        "src/daemon/steps/daemon-client.ts",
+        "src/daemon/steps/host.ts",
+        "src/daemon/steps/resolve-repo.ts",
+        "src/daemon/workflow-rpc.ts",
+        "src/db/__tests__/conversations-lmdb.test.ts",
+        "src/db/__tests__/delete-entities-by-id.test.ts",
+        "src/db/__tests__/doc-summaries-lmdb.test.ts",
+        "src/db/__tests__/entities-lmdb.test.ts",
+        "src/db/__tests__/reindex-file-lmdb.test.ts",
+        "src/db/__tests__/repos-lmdb.test.ts",
+        "src/db/graph/__tests__/derived-indices.test.ts",
+        "src/db/graph/__tests__/helpers/store-child.ts",
+        "src/db/graph/__tests__/live-store-owner.test.ts",
+        "src/db/graph/__tests__/live-store-refusal.test.ts",
+        "src/db/graph/__tests__/no-live-store-in-tests.test.ts",
+        "src/db/graph/store.ts",
+        "src/db/lance/__tests__/helpers-opens-default-lance.fixture.ts",
+        "src/db/lance/__tests__/helpers/temp-lance.ts",
+        "src/db/lance/__tests__/live-vector-store-owner.test.ts",
+        "src/db/lance/__tests__/no-live-vector-store-in-tests.test.ts",
+        "src/db/lance/conn.ts",
+        "src/indexer/__tests__/external-endpoints.test.ts",
+        "src/indexer/__tests__/messaging-endpoints.test.ts",
+        "src/mcp/__tests__/fixtures/imports-store.fixture.ts",
+        "src/mcp/__tests__/fixtures/mcp-process-open.fixture.ts",
+        "src/mcp/__tests__/fixtures/tool-surface.golden.json",
+        "src/mcp/__tests__/forward-step.test.ts",
+        "src/mcp/__tests__/helpers/mcp-e2e.ts",
+        "src/mcp/__tests__/import-graph.test.ts",
+        "src/mcp/__tests__/mcp-process-e2e.test.ts",
+        "src/mcp/__tests__/mcp-process-refused.test.ts",
+        "src/mcp/__tests__/sampling-bridge.test.ts",
+        "src/mcp/__tests__/sampling-retired.test.ts",
+        "src/mcp/daemon-stream.ts",
+        "src/mcp/forward-step.ts",
+        "src/mcp/resolve-repo.ts",
+        "src/mcp/sampling-bridge.ts",
+        "src/mcp/server.ts",
+        "src/shared/__tests__/review-stream.test.ts",
+        "src/shared/resolve-repo-core.ts",
+        "src/shared/review-stream.ts",
+        "src/shared/step-context.ts",
+        "src/workflow/__tests__/scope-extend.test.ts",
+        "src/workflow/bugfix/types.ts",
+        "src/workflow/code-review/__tests__/diagram-conditional.test.ts",
+        "src/workflow/code-review/__tests__/functional-coverage-conditional.test.ts",
+        "src/workflow/code-review/__tests__/ux-conditional.test.ts",
+        "src/workflow/draft-deps.ts",
+        "src/workflow/questions.ts",
+        "src/workflow/runners/brainstorm/__tests__/registration.test.ts",
+        "src/workflow/runners/build/completion-record.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/mcp/server.ts:37",
+            "message": "The plan's t10 and the LLD's sampling-retirement entry say to delete src/mcp/progress-forward.ts and src/mcp/__tests__/progress-forward.test.ts, because nothing outside the tests uses them. Both files are still in the tree. server.ts now imports mcpProgressSink from it to pass the forwarders' progress frames to the client. The reuse may be reasonable, but it departs from the approved deletion, and the plan does not record the change. Either delete the module and move the relay into forward-step.ts, or record the decision to keep it.",
+            "expectationRef": "PLAN t10 summary: 'delete progress-forward.ts and its test'; LLD dataModelChanges 'MCP sampling path': 'Also deleted: src/mcp/progress-forward.ts and src/mcp/__tests__/progress-forward.test.ts, which have no non-test user.'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/mcp/__tests__/mcp-process-e2e.test.ts:67",
+            "message": "Every promised test is present, but none can be confirmed as passing. There is no build record, and running the suite here was refused by the permission gate. All 28 promised repo-level tests were found by title. Examples: in-daemon-client.test.ts (timeout, abort, daemon-error, no-loopback), step-context.test.ts, step-host.test.ts, forward-step.test.ts, import-graph.test.ts, sampling-retired.test.ts, review-stream.test.ts, live-store-owner/refusal, live-vector-store-owner, no-live-*-in-tests, mcp-process-refused.test.ts and mcp-process-e2e.test.ts (ac2/ac3/ac5/lsof). Their pass-state is unverified, not failing.",
+            "expectationRef": "all 28 repo-level promised tests (pass-state)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/index.ts:1899",
+            "message": "Not confirmed whether any test reaches the production wiring in index.ts: the step.call stream registration, the lazy getStepCallHandler, and installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers)) before new IpcServer. step-host.test.ts copies this registration by hand ('as index.ts registers them') rather than loading index.ts. Only the real-daemon e2e (mcp-process-e2e ac2/ac5) would reach it, and whether it boots this entry point, and whether it passes, is unverified. testsReaching is empty, but that grounding is file-level diff entities and is hollow, so this is not a breach.",
+            "expectationRef": "src/daemon/index.ts step.call registration + installStepDaemonClient wiring",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/mcp/forward-step.ts:1",
+            "message": "The three promised smoke tests have no test in the grounding and no build record shows that they were run. They are: an analysis through a restarted client session; a workflow step continuing after an MCP restart; and lsof showing only the daemon on the store files and the lance directory. They are manual installed-daemon checks, not repo tests, so their absence from the repo is expected. Still, nothing records them as done.",
+            "expectationRef": "smoke: installed daemon analysis / multi-turn continuation / lsof only daemon",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/steps/__tests__/step-host.test.ts:190",
+            "message": "The test helpers `untilAborted`, `CREATED`, `GROUNDING` and the code-review subject/deps fixture (`crDeps`) are copied almost verbatim from in-daemon-client.test.ts. If the fixture shape changes, the two copies can drift apart. They could move into a shared __tests__/helpers module. This is a maintenance point and does not affect behaviour.",
+            "counterpartRef": "untilAborted / crDeps in src/daemon/steps/__tests__/in-daemon-client.test.ts",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/steps/host.ts:72",
+            "message": "`{ ...table, ...opts.tools }` spreads a `Partial<Record<string, StepToolRunner>>`, so a key passed with the value `undefined` overwrites a real runner. `Object.hasOwn(table, tool)` then still accepts that tool, and `table[p.tool]!` is undefined at the call. The resulting TypeError is caught and reported as an unclear 'step-failed' instead of 'step-unknown-tool'. This only affects the test seam. Removing undefined entries before the spread, or checking `typeof run === 'function'`, would fix it.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 4
+    }
+  }
+}

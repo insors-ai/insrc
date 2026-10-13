@@ -33,7 +33,7 @@ import { judgeDiagram } from '../dimensions/diagram/index.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, ReviewDimension } from '../types.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import type { ErDefinition } from '../../artifacts/companion/er.js';
-import { expectedDimensions, buildJudgementsSchema } from '../../../mcp/code-review-step/handler.js';
+import { expectedDimensions, buildJudgementsSchema } from '../../../daemon/steps/code-review-step/handler.js';
 import { enforceCodeReviewGate } from '../gate.js';
 import { artifactJsonPath, codeReviewArtifactId, ARTIFACTS_DIR, writeAtomic } from '../../storage.js';
 

@@ -28,8 +28,23 @@ import type { RunStatus } from '../daemon/workflow-run-registry.js';
 import type { WorkflowApproveResult } from '../workflow/gates.js';
 import type { DocGenOutcome, RenderedDocumentShell, SerializableDocTypeRegistration } from '../docgen/types.js';
 import type { InsrcGuideResult } from '../daemon/guide-sections.js';
-import type { CodeReviewArtifact, CodeReviewGrounding } from '../workflow/code-review/types.js';
+import type { CodeReviewGrounding } from '../workflow/code-review/types.js';
 import type { WorkflowReviewDone } from '../daemon/workflow-review-rpc.js';
+import {
+	codeReviewRequestParams, freshnessFromReply, groundingFromReply, reviewArtifactRequestParams, runReviewStream, unavailableFromError,
+} from '../shared/review-stream.js';
+import type {
+	CodeReviewFreshnessResult, CodeReviewGroundingResult,
+	CodeReviewStreamParams, CodeReviewStreamResult, ReviewArtifactStreamParams, ReviewStreamFailure, ReviewStreamOpts,
+} from '../shared/review-stream.js';
+
+// Moved to src/shared/review-stream.ts (Epic c2ba6fa6, Story s11) so the
+// daemon's in-process review client can use them too; re-exported here so
+// existing importers are unchanged.
+export { ReviewStreamError } from '../shared/review-stream.js';
+export type {
+	CodeReviewStreamParams, CodeReviewStreamResult, ReviewArtifactStreamParams, ReviewStreamFailure, ReviewStreamOpts,
+} from '../shared/review-stream.js';
 
 const log = getLogger('mcp:workflow-run');
 
@@ -304,18 +319,10 @@ export function abortRun(runId: string, deps: UnaryRpcDeps = {}): Promise<{ ok: 
 export function fetchCodeReviewGrounding(
 	params: { repo: string; epicHash: string; storyId: string },
 	deps: UnaryRpcDeps = {},
-): Promise<{ ok: true; grounding: CodeReviewGrounding } | { ok: false; reason: string }> {
+): Promise<CodeReviewGroundingResult> {
 	return unaryRpc<{ ok?: boolean; grounding?: CodeReviewGrounding; reason?: string; error?: string }>(
 		'codeReview.grounding', params, deps,
-	).then(
-		(res) => {
-			if (res.ok === true && res.grounding !== undefined) {
-				return { ok: true as const, grounding: res.grounding };
-			}
-			return { ok: false as const, reason: res.reason ?? res.error ?? 'code-review grounding unavailable' };
-		},
-		(err: unknown) => ({ ok: false as const, reason: err instanceof Error ? err.message : String(err) }),
-	);
+	).then(groundingFromReply, unavailableFromError);
 }
 
 /** Fetch the code-review index-freshness verdict (code-review s9) over the
@@ -327,18 +334,10 @@ export function fetchCodeReviewGrounding(
 export function fetchCodeReviewFreshness(
 	params: { repo: string; epicHash: string; storyId: string; changedFiles: readonly string[] },
 	deps: UnaryRpcDeps = {},
-): Promise<{ ok: true; isProcessing: boolean; staleFiles: readonly string[] } | { ok: false; reason: string }> {
+): Promise<CodeReviewFreshnessResult> {
 	return unaryRpc<{ isProcessing?: boolean; staleFiles?: readonly string[]; error?: string }>(
 		'codeReview.freshness', params, deps,
-	).then(
-		(res) => {
-			if (res.error === undefined && typeof res.isProcessing === 'boolean') {
-				return { ok: true as const, isProcessing: res.isProcessing, staleFiles: res.staleFiles ?? [] };
-			}
-			return { ok: false as const, reason: res.error ?? 'code-review freshness unavailable' };
-		},
-		(err: unknown) => ({ ok: false as const, reason: err instanceof Error ? err.message : String(err) }),
-	);
+	).then(freshnessFromReply, unavailableFromError);
 }
 
 /** Forward a docgen generation request to the daemon `docgen.generate` IPC. The
@@ -390,35 +389,6 @@ export function guideList(
 // and report a timeout. These helpers treat a plain line as final.
 // ---------------------------------------------------------------------------
 
-/** Why a review request did not produce a review. */
-export type ReviewStreamFailure =
-	| 'unreachable'      // the daemon is not running
-	| 'unknown-method'   // the daemon is older than this request
-	| 'daemon-error'     // the daemon answered with an error (frame or plain line)
-	| 'closed'           // the connection ended before a final frame
-	| 'timeout'          // the wait limit passed
-	| 'protocol'         // a line that is not valid for a stream request
-	| 'aborted';
-
-export class ReviewStreamError extends Error {
-	constructor(
-		readonly failure: ReviewStreamFailure,
-		message: string,
-		/** The `reason` the daemon attached to its error frame, when it gave one. */
-		readonly reason?: string | undefined,
-	) {
-		super(message);
-		this.name = 'ReviewStreamError';
-	}
-}
-
-export interface ReviewStreamOpts {
-	/** How long to wait for the final frame. */
-	readonly timeoutMs: number;
-	readonly onFrame?:  ((stream: 'progress' | 'delta', data: unknown) => void) | undefined;
-	readonly signal?:   AbortSignal | undefined;
-}
-
 export interface ReviewStreamDeps {
 	readonly connect?:    (() => Socket) | undefined;
 	/** Injected timer, so a test can fire the wait limit without waiting for it. */
@@ -426,47 +396,24 @@ export interface ReviewStreamDeps {
 	readonly clearTimer?: ((handle: unknown) => void) | undefined;
 }
 
-/** One stream request, resolved by its `done` frame's data. */
+/** One stream request over the daemon socket, resolved by its `done` frame's
+ *  data. The request itself (wait limit, abort, frames) is runReviewStream's;
+ *  this is the socket transport. */
 function reviewStreamRequest<T>(
 	method: string,
 	params: Record<string, unknown>,
 	opts:   ReviewStreamOpts,
 	deps:   ReviewStreamDeps,
 ): Promise<T> {
-	return new Promise<T>((resolve, reject) => {
-		const setTimer   = deps.setTimer   ?? ((fn, ms) => setTimeout(fn, ms));
-		const clearTimer = deps.clearTimer ?? ((h) => clearTimeout(h as NodeJS.Timeout));
-		let buffer  = '';
-		let settled = false;
-		let timer: unknown;
-		let socket: Socket | undefined;
-
-		const finish = (action: () => void): void => {
-			if (settled) return;
-			settled = true;
-			if (timer !== undefined) clearTimer(timer);
-			opts.signal?.removeEventListener('abort', onAbort);
-			socket?.removeListener('data', onData);
-			action();
-		};
-		const failWith = (failure: ReviewStreamFailure, message: string, reason?: string): void =>
-			finish(() => { socket?.destroy(); reject(new ReviewStreamError(failure, message, reason)); });
-
-		function onAbort(): void { failWith('aborted', `${method}: aborted by client`); }
-		if (opts.signal?.aborted) { onAbort(); return; }
-		opts.signal?.addEventListener('abort', onAbort);
-
-		socket = deps.connect !== undefined ? deps.connect() : createConnection(PATHS.sockFile);
-		timer = setTimer(
-			() => failWith('timeout', `${method}: no result from the daemon within ${Math.round(opts.timeoutMs / 60_000)} minutes`),
-			opts.timeoutMs,
-		);
+	return runReviewStream<T>(method, opts, (sink) => {
+		let buffer = '';
+		const socket = deps.connect !== undefined ? deps.connect() : createConnection(PATHS.sockFile);
 
 		socket.on('connect', () => {
-			socket?.write(JSON.stringify({ id: _nextId++, method, stream: true, client: { label: 'mcp', pid: process.pid }, params }) + '\n');
+			socket.write(JSON.stringify({ id: _nextId++, method, stream: true, client: { label: 'mcp', pid: process.pid }, params }) + '\n');
 		});
 
-		function onData(chunk: Buffer): void {
+		socket.on('data', (chunk: Buffer) => {
 			buffer += chunk.toString();
 			const lines = buffer.split('\n');
 			buffer = lines.pop() ?? '';
@@ -478,7 +425,7 @@ function reviewStreamRequest<T>(
 					if (typeof parsed !== 'object' || parsed === null) throw new Error('not an object');
 					frame = parsed as Record<string, unknown>;
 				} catch {
-					failWith('protocol', `${method}: invalid frame from daemon`);
+					sink.fail('protocol', `${method}: invalid frame from daemon`);
 					return;
 				}
 				const stream = frame['stream'];
@@ -487,52 +434,33 @@ function reviewStreamRequest<T>(
 					if ('error' in frame) {
 						const error = typeof frame['error'] === 'string' ? frame['error'] : JSON.stringify(frame['error']);
 						if (error.startsWith('unknown method')) {
-							failWith('unknown-method', `${method}: this daemon does not support the request (${error}). Update the daemon and restart it.`);
+							sink.fail('unknown-method', `${method}: this daemon does not support the request (${error}). Update the daemon and restart it.`);
 						} else {
-							failWith('daemon-error', error);
+							sink.fail('daemon-error', error);
 						}
 						return;
 					}
 					if ('result' in frame) {
-						failWith('protocol', `${method}: the daemon answered a stream request with a plain result`);
+						sink.fail('protocol', `${method}: the daemon answered a stream request with a plain result`);
 						return;
 					}
 					continue;   // neither: not ours to interpret
 				}
-				if (stream === 'progress' || stream === 'delta') {
-					opts.onFrame?.(stream, frame['data']);
-				} else if (stream === 'done') {
-					const data = frame['data'] as T;
-					finish(() => { socket?.end(); resolve(data); });
-					return;
-				} else if (stream === 'error') {
-					const data = frame['data'] as { error?: string; reason?: string } | undefined;
-					finish(() => {
-						socket?.end();
-						reject(new ReviewStreamError('daemon-error', data?.error ?? `${method}: daemon error`, data?.reason));
-					});
-					return;
-				}
-				// Unknown stream kind — ignore (forward-compatible).
+				sink.frame({ stream: String(stream), data: frame['data'] });
 			}
-		}
-		socket.on('data', onData);
+		});
 
 		socket.on('error', (err: NodeJS.ErrnoException) => {
 			if (err.code === 'ENOENT' || err.code === 'ECONNREFUSED') {
-				failWith('unreachable', 'daemon is not running — start it with: insrc daemon start');
+				sink.fail('unreachable', 'daemon is not running — start it with: insrc daemon start');
 			} else {
-				failWith('unreachable', `${method}: cannot reach the daemon (${err.message})`);
+				sink.fail('unreachable', `${method}: cannot reach the daemon (${err.message})`);
 			}
 		});
-		socket.on('close', () => failWith('closed', `${method}: connection closed before completion`));
-	});
-}
+		socket.on('close', () => sink.fail('closed', `${method}: connection closed before completion`));
 
-export interface ReviewArtifactStreamParams {
-	/** The artifact's `.md` path. */
-	readonly artifactPath: string;
-	readonly repo?:        string | undefined;
+		return { end: () => socket.end(), cancel: () => socket.destroy() };
+	}, deps);
 }
 
 /** Ask the daemon to review an existing design artifact (`workflow.review`). */
@@ -541,24 +469,7 @@ export function reviewArtifactStream(
 	opts:   ReviewStreamOpts,
 	deps:   ReviewStreamDeps = {},
 ): Promise<WorkflowReviewDone> {
-	return reviewStreamRequest<WorkflowReviewDone>('workflow.review', {
-		artifactPath: params.artifactPath,
-		...(params.repo !== undefined ? { repo: params.repo } : {}),
-	}, opts, deps);
-}
-
-export interface CodeReviewStreamParams {
-	readonly repo?:    string | undefined;
-	readonly epicHash: string;
-	readonly storyId:  string;
-	readonly client?:  'claude' | 'codex' | undefined;
-	/** How the daemon should ground the review. Omitted means `full`. */
-	readonly groundingMode?: 'full' | 'degraded' | undefined;
-}
-
-export interface CodeReviewStreamResult {
-	readonly runId:    string;
-	readonly artifact: CodeReviewArtifact;
+	return reviewStreamRequest<WorkflowReviewDone>('workflow.review', reviewArtifactRequestParams(params), opts, deps);
 }
 
 /** Ask the daemon to review a Story's code (`codeReview.run`). */
@@ -567,11 +478,5 @@ export function codeReviewStream(
 	opts:   ReviewStreamOpts,
 	deps:   ReviewStreamDeps = {},
 ): Promise<CodeReviewStreamResult> {
-	return reviewStreamRequest<CodeReviewStreamResult>('codeReview.run', {
-		epicHash: params.epicHash,
-		storyId:  params.storyId,
-		...(params.repo          !== undefined ? { repo:          params.repo }          : {}),
-		...(params.client        !== undefined ? { client:        params.client }        : {}),
-		...(params.groundingMode !== undefined ? { groundingMode: params.groundingMode } : {}),
-	}, opts, deps);
+	return reviewStreamRequest<CodeReviewStreamResult>('codeReview.run', codeReviewRequestParams(params), opts, deps);
 }

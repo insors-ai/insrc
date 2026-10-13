@@ -16,6 +16,12 @@ import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
 import { ConfigStore } from '../store.js';
 import type { ConfigEntry } from '../../shared/types.js';
 
+import { useTemporaryLance } from '../../db/lance/__tests__/helpers/temp-lance.js';
+
+// This file reaches the vector store through code that takes no path; it gets a
+// temporary one (the default path belongs to the daemon alone).
+useTemporaryLance();
+
 let dir: string;
 
 test.beforeEach(async () => {

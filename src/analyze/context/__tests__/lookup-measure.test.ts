@@ -31,7 +31,7 @@ import { executePlan, _getRunnersForTest, _overrideRunnerForTest } from '../../e
 import { measureOwnRequest, runFreeformProbe } from '../../explore/freeform-probe.js';
 import type { ExecutedPlan, Exploration, ExplorationPlan, ExplorationRunnerContext } from '../../explore/types.js';
 import type { RequestMeasure } from '../../measure.js';
-import { renderBundleAsMarkdown } from '../../../mcp/bundle-md.js';
+import { renderBundleAsMarkdown } from '../../../daemon/steps/bundle-md.js';
 import { runShaper, _computeCacheKeyForTest, _realPipelineStepsForTest, type PipelineSteps } from '../driver.js';
 import { resolveScope } from '../scope.js';
 import type { AnalyzeContextBundle, RunShapeInput } from '../types.js';

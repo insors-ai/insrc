@@ -78,7 +78,6 @@ export type StoreChildCommand =
 	 *  (plus one function entity, which a source-root read must leave out). */
 	| { op: 'seed-repo'; repoPath: string; files: string[] }
 	| { op: 'declare-owner' }
-	| { op: 'declare-reader' }
 	/** Spawn a child of THIS process (inheriting its environment), have it
 	 *  open the store at the same path, and answer with that child's reply. */
 	| { op: 'child-open' }
@@ -256,9 +255,6 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 		case 'declare-owner':
 			(await import('../../store.js')).declareLiveStoreOwner();
 			return { ok: true };
-		case 'declare-reader':
-			(await import('../../store.js')).declareLiveStoreReaderUntilS11();
-			return { ok: true };
 		case 'child-open': {
 			const { spawnStoreChild } = await import('./store-child-driver.js');
 			const child = await spawnStoreChild(storePath as string);
@@ -276,6 +272,8 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 			if (raw) await opened().root.close(); else await closeGraphStore();
 			store = undefined;
 			return { ok: true };
+		default:
+			throw new Error(`unknown command: ${String((cmd as { op?: unknown }).op)}`);
 	}
 }
 

@@ -34,6 +34,12 @@ import { addRepo } from '../repos.js';
 import type { Entity, RegisteredRepo } from '../../shared/types.js';
 import type { DocSummary } from '../../shared/analyze-types.js';
 
+import { useTemporaryLance } from '../lance/__tests__/helpers/temp-lance.js';
+
+// This file reaches the vector store through code that takes no path; it gets a
+// temporary one (the default path belongs to the daemon alone).
+useTemporaryLance();
+
 let dir: string;
 
 const REPO_A = '/repo/alpha';

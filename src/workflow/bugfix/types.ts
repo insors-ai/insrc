@@ -17,7 +17,7 @@ import type { WorkItemRef } from '../types.js';
 import type { TrackerCreateDeps, TrackerIssueResult } from './tracker.js';
 
 /** The routed next-stage descriptor — the SAME shape `buildNextCall` emits
- *  (src/mcp/triage-step/phases/classify.ts), re-declared locally so s4 does not
+ *  (src/daemon/steps/triage-step/phases/classify.ts), re-declared locally so s4 does not
  *  import triage-step internals. */
 export interface BugfixNextCall {
 	readonly tool:   'insrc_workflow_step' | 'insrc_build_step';

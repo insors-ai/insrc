@@ -27,6 +27,12 @@ import { runMigrations, MIGRATIONS } from '../migrations.js';
 import { upsertEntities, findEntitiesByName, entityIdByU64, entityIdsByU64s } from '../../entities.js';
 import type { Entity, EntityKind } from '../../../shared/types.js';
 
+import { useTemporaryLance } from '../../lance/__tests__/helpers/temp-lance.js';
+
+// This file reaches the vector store through code that takes no path; it gets a
+// temporary one (the default path belongs to the daemon alone).
+useTemporaryLance();
+
 let dir: string;
 
 test.beforeEach(async () => {

@@ -31,7 +31,7 @@ import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, ReviewDim
 import type { LLMProvider } from '../../../shared/types.js';
 import type { UxDefinition } from '../../artifacts/companion/ux.js';
 import type { AdherenceSelection } from '../../artifacts/companion/adherence.js';
-import { expectedDimensions, buildJudgementsSchema } from '../../../mcp/code-review-step/handler.js';
+import { expectedDimensions, buildJudgementsSchema } from '../../../daemon/steps/code-review-step/handler.js';
 
 const CREATED = '2026-07-17T07:42:28.275Z';
 const EPIC = 'e1a2b3c4d5e6f708';

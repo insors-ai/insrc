@@ -61,10 +61,17 @@ import {
 // `backend offline` via the inline helpers below. Their backing files get deleted
 // in Phase 2-3.
 
-import type { RpcHandler, StreamHandler } from './server.js';
+import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
+import { createInDaemonClient, installStepDaemonClient } from './steps/daemon-client.js';
 import { listModels } from './list-models.js';
 import { makeUpdateHandlers, launchUpdate, readUpdateOutcome } from './update-runner.js';
 import { readInstalledCommit } from './installed-commit.js';
+
+/** The step.call handler, built once on first use (the step modules load lazily). */
+let _stepCallHandler: StreamHandler | undefined;
+function getStepCallHandler(mod: typeof import('./steps/host.js')): StreamHandler {
+	return _stepCallHandler ??= mod.createStepCallHandler();
+}
 
 const BACKEND_OFFLINE_REASON =
 	'backend offline: this RPC was removed during the cleanup. The next backend (Ollama + CLI subprocess) will reinstate the surface.';
@@ -488,7 +495,10 @@ async function main(): Promise<void> {
 	// socket, short enough that the detached helper's stop+start proceeds
 	// promptly (Story S001 / sc1).
 	const UPDATE_SHUTDOWN_DELAY_MS = 250;
-	const server = new IpcServer({
+	// The request handler maps, built once: the IpcServer serves them over the
+	// socket, and the step handlers call the same functions in-process through
+	// the in-daemon client (Epic c2ba6fa6, Story s11), never over a loopback.
+	const rpcHandlers: RpcHandlers = {
 		'repo.add': async (params) => {
 			const rawPath = (params as { path?: unknown })?.path;
 			let normalisedPath: string;
@@ -1832,7 +1842,8 @@ async function main(): Promise<void> {
 		'prefs.discard':           offlineRpc('prefs.discard'),
 		'prefs.confirm.list':      offlineRpc('prefs.confirm.list'),
 		'prefs.confirm.resolve':   offlineRpc('prefs.confirm.resolve'),
-	}, {
+	};
+	const streamHandlers: StreamHandlers = {
 		// Streaming handlers. All agent-driven streams (chat.send, the
 		// chat.resume variants, handoff.run, meta-task.run, gate.request-
 		// permission) emit a single `error` event and close. `todos.subscribe`
@@ -1885,6 +1896,13 @@ async function main(): Promise<void> {
 			const mod = await import('./workflow-review-rpc.js');
 			return mod.workflowReviewStart(params, send, signal);
 		},
+		// The step host (Epic c2ba6fa6, Story s11): runs one of the seven step
+		// tools for an MCP forwarder, in the caller's context, with this
+		// stream's signal; the 'done' frame carries the tool's reply unchanged.
+		'step.call': async (params, send, signal) => {
+			const mod = await import('./steps/host.js');
+			return getStepCallHandler(mod)(params, send, signal);
+		},
 		'ollama.pull': async (params, send, signal) => {
 			const { model } = params as { model: string };
 			const { Ollama } = await import('ollama');
@@ -1902,7 +1920,9 @@ async function main(): Promise<void> {
 			send({ id: 0, stream: 'done', data: { model } });
 			log.info({ model }, 'ollama.pull complete');
 		},
-	});
+	};
+	installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers));
+	const server = new IpcServer(rpcHandlers, streamHandlers);
 
 	// Initialize chat session pool
 	initChatHandlers();

@@ -31,6 +31,7 @@ import { findEntitiesByFile, listEntitiesForRepo } from '../../db/entities.js';
 import { listRepos } from '../../db/repos.js';
 import type { AnalyzeScopeRef, AnalyzeTarget } from '../../shared/analyze-types.js';
 import { getLogger } from '../../shared/logger.js';
+import { stepCwd } from '../../shared/step-context.js';
 import type { Entity, RegisteredRepo } from '../../shared/types.js';
 
 import { TARGET_TO_KINDS } from '../classifier/validate.js';
@@ -175,9 +176,11 @@ async function containingRepoOrNull(path: string, deps: ScopeDeps): Promise<stri
 	return longestPrefixRepo(path, repos)?.path ?? null;
 }
 
+/** A bare file name resolves against the caller's directory: the step
+ *  context's cwd inside a step call, process.cwd() outside one. */
 function directoryOf(filePath: string): string {
 	const dir = dirname(filePath);
-	return dir === '' || dir === '.' ? process.cwd() : dir;
+	return dir === '' || dir === '.' ? stepCwd() : dir;
 }
 
 async function resolveSymbol(value: string, deps: ScopeDeps): Promise<ResolvedScope> {

@@ -20,7 +20,6 @@ The seven tools that do their work in the MCP server's process today (one-shot a
 6. [Migration](#6-migration)
 7. [Alternatives considered](#7-alternatives-considered)
 8. [References](#8-references)
-9. [Open questions](#9-open-questions)
 
 ## 1. HLD context
 
@@ -341,6 +340,7 @@ With the one-shot analyzer in the daemon nothing calls MCP sampling. Retired tog
 | `ac4` | `integration: import graph of the MCP server reaches no store, analyzer or step-host module`, `unit: vector store owner rule` |
 | `ac5` | `integration: ac5 pass-through of prompt, schema and state` |
 | `ac6` | `unit: source scan finds declareLiveStoreReaderUntilS11 nowhere under src/`, `integration: ac6 the MCP server's process is refused the live graph and vector stores` |
+| `ac7` | `unit: vector store owner rule (live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused)`, `integration: ac6 the MCP server's process is refused the live graph and vector stores`, `smoke: installed daemon after every client session has restarted, lsof shows only the daemon holding the stores` |
 
 ## 6. Migration
 
@@ -392,10 +392,6 @@ Design each tool's phases as separate typed daemon requests and rewrite each MCP
 - **[[c3]]** `step-output` `s1 bundle: the daemon request client, repo resolution and caller identity`
 - **[[c4]]** `step-output` `s1 bundle: the owner rule of Story s4 and the vector store open`
 - **[[c5]]** `stakeholder` `Stakeholder decisions D1-D4 for Story s11, 2026-10-12`
-
-## 9. Open questions
-
-- Decision D4 (the vector store's owner rule) goes beyond the six criteria of s11 as defined; the definition may need an amendment adding it as a criterion (s1 back-flow note).
 
 <!-- insrc:review -->
 

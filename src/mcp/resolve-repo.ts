@@ -27,6 +27,7 @@
  * as "the pinned repo"). See `docs/designs/LLD-make-insrc-mcp-server-s-repo-S001.md`.
  */
 
+import { resolveRepoFrom } from '../shared/resolve-repo-core.js';
 import { resolveRepoForCwd } from './daemon-stream.js';
 
 /** Test seam: inject the CWD-containment lookup + the CWD value so the
@@ -37,24 +38,12 @@ export interface ResolveRepoDeps {
 	readonly cwd?: string | undefined;
 }
 
-/** Test seam: globally override the daemon CWD-containment lookup so
- *  handler-level tests (which cannot thread `deps`) can exercise resolution
- *  without a live daemon. Call with no argument to restore the real IPC call. */
-let _resolveForCwdOverride: ((cwd: string) => Promise<string | null>) | undefined;
-export function _setResolveForCwdForTests(fn?: (cwd: string) => Promise<string | null>): void {
-	_resolveForCwdOverride = fn;
-}
-
-/** Resolve the session repo path, or undefined when nothing matches.
- *  Async because the CWD-containment branch consults the daemon registry. */
+/** Resolve the session repo path, or undefined when nothing matches: this
+ *  process's cwd and INSRC_REPO, the cwd looked up over the daemon socket. */
 export async function resolveRepoPath(explicit: string | undefined, deps: ResolveRepoDeps = {}): Promise<string | undefined> {
-	if (explicit !== undefined && explicit.length > 0) return explicit;
-	// CWD-containment match against the live registry (daemon-side). Rejection
-	// (daemon down) propagates by design — see module header.
-	const resolveForCwd = deps.resolveForCwd ?? _resolveForCwdOverride ?? resolveRepoForCwd;
-	const match = await resolveForCwd(deps.cwd ?? process.cwd());
-	if (match !== null && match.length > 0) return match;
-	const env = process.env['INSRC_REPO'];
-	if (env !== undefined && env.length > 0) return env;
-	return undefined;
+	return resolveRepoFrom(explicit, {
+		cwd:           deps.cwd ?? process.cwd(),
+		envRepo:       process.env['INSRC_REPO'],
+		resolveForCwd: deps.resolveForCwd ?? resolveRepoForCwd,
+	});
 }

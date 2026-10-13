@@ -1,0 +1,636 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s11",
+    "createdAt": "2026-10-12T11:26:17.849Z",
+    "updatedAt": "2026-10-13T07:17:19.891Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "approvedAt": "2026-10-13T07:17:20.501Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
+      },
+      {
+        "id": "t13",
+        "passed": true
+      }
+    ],
+    "summary": "Shipped and smoke-checked; everything recorded in docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/smoke.md (commit 284ce2c4). Pushed main @99c6a8df (after two --no-ff merges of other sessions' work, each swept, see S011/sweeps.md). Installed daemon updated to 99c6a8df via the update() service function and restarted; the old daemon (pid 57247) hung after logging 'bye' (pid file and socket removed, process alive, ignored SIGTERM, MDB_LOCK_FAILURE in its log), was SIGKILLed, and startDaemon() brought up pid 81990 on 99c6a8df. The user restarted every client session; afterwards the only MCP server is pid 87098 started 11:59:44 (after the update). Smoke 1: insrc_analyze one-shot through the restarted session returned a full grounded bundle (M, 34 files, model=opus). Smoke 2: an issue workflow run started through pid 87098 (emit_plan), continued through a NEW installed MCP process pid 88099 (plan -> emit_step s1, new token), and continued again through pid 87098 (s1 -> emit_step s2); abandoned, nothing written. Smoke 3: lsof shows only the daemon (81990) on ~/.insrc/graph.lmdb and graph.lmdb-lock; no process held anything under ~/.insrc/lance at that moment; no other node process (MCP server included) has a store path open. These are smoke checks that need the running installed daemon and a person restarting sessions, so they are reported, not run by the gate.",
+    "testRecord": {
+      "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-c2ba6fa62a148ed1-s11.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-fcfdd50de84fb31a.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-c2ba6fa62a148ed1-s11.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/smoke.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/sweeps.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/decode-socket-child-process-output-utf-E20261013fcfdd50d/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/mcp-sampling-provider.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/mcp-sampling-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/__tests__/report-head.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/classifier/__tests__/no-size.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/bundle-report-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/completeness.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/lookup-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/sampler-context.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/shaper-provider.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/role-router.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/scope.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/shaper-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/executor-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/store-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/answer-step-failed-callers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/step-context.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/step-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/workflow-rpc-imports.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/analyze-oneshot.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/daemon-client.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/resolve-repo.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/conversations-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/delete-entities-by-id.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/doc-summaries-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/entities-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/reindex-file-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/repos-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/derived-indices.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/helpers/store-child.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/live-store-owner.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/live-store-refusal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/no-live-store-in-tests.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/lance/__tests__/helpers-opens-default-lance.fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/lance/__tests__/helpers/temp-lance.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/lance/__tests__/live-vector-store-owner.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/lance/__tests__/no-live-vector-store-in-tests.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/db/lance/conn.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/external-endpoints.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/messaging-endpoints.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/fixtures/imports-store.fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/fixtures/mcp-process-open.fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/fixtures/tool-surface.golden.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/forward-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/helpers/mcp-e2e.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/import-graph.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/mcp-process-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/mcp-process-refused.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/sampling-bridge.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/sampling-retired.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/daemon-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/forward-step.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/resolve-repo.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/sampling-bridge.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/review-stream.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/resolve-repo-core.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/step-context.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/scope-extend.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/bugfix/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/diagram-conditional.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/functional-coverage-conditional.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/ux-conditional.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/draft-deps.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/questions.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/brainstorm/__tests__/registration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/completion-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:17:19.891Z"
+      }
+    ],
+    "commit": "04e6636a"
+  }
+}

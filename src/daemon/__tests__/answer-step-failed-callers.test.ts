@@ -17,7 +17,7 @@ import { buildCompleteness, renderCompletenessLine } from '../../analyze/complet
 import { ShaperAnswerStepFailedError, ShaperLlmUnavailableError } from '../../analyze/context/driver.js';
 import { reportFromLookups } from '../../analyze/explore/answer-report.js';
 import type { ExecutedExploration } from '../../analyze/explore/types.js';
-import { renderAnalyzeFailure } from '../../mcp/bundle-md.js';
+import { renderAnalyzeFailure } from '../steps/bundle-md.js';
 import { _invokeForTest as invoke, type AnalyzeRpcResponse } from '../analyze-rpc.js';
 import { AnalyzeGroundingFailedError, _groundingForTest as groundingFor } from '../workflow-rpc.js';
 

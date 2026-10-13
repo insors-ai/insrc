@@ -317,21 +317,10 @@ export function setGraphStorePath(path: string): void {
 // test run or a CLI started by the daemon is refused like any other process.
 
 let _ownsLiveStore = false;
-let _mayReadLiveStore = false;          // temporary; removed by Story s11
 
 /** Called once by the daemon's entry point, before anything opens the store. */
 export function declareLiveStoreOwner(): void {
 	_ownsLiveStore = true;
-}
-
-/**
- * TEMPORARY (Epic c2ba6fa6): the MCP server runs the analyze step and some
- * daemon builtins in its own process today, and they read the store directly.
- * Story s11 moves that work into the daemon and DELETES this function and its
- * one call (src/mcp/server.ts) — criterion ac6 of that Story.
- */
-export function declareLiveStoreReaderUntilS11(): void {
-	_mayReadLiveStore = true;
 }
 
 /** The path with symbolic links resolved. For a file that does not exist
@@ -360,16 +349,30 @@ export function isLiveStoreFile(path: string): boolean {
 }
 
 /** Throws `LmdbStoreNotOwnerError` when `path` is the live store and this
- *  process has made neither declaration. */
+ *  process has not declared itself the owner. */
 function assertMayOpen(path: string): void {
-	if (_ownsLiveStore || _mayReadLiveStore) return;
+	if (_ownsLiveStore) return;
 	if (resolvedStorePath(path) === resolvedStorePath(PATHS.lmdb)) throw new LmdbStoreNotOwnerError(path);
 }
 
-/** ONLY for tests: forget both declarations. */
+/**
+ * True when this process declared itself the owner of the live stores. Read
+ * by the vector store's open: the owner declaration governs both stores
+ * (Epic c2ba6fa6, Story s11, ac7).
+ */
+export function isLiveStoreOwnerDeclared(): boolean {
+	return _ownsLiveStore;
+}
+
+/** A path with symbolic links resolved, as the owner checks compare them
+ *  (also for a path that does not exist yet). */
+export function resolveStorePath(path: string): string {
+	return resolvedStorePath(path);
+}
+
+/** ONLY for tests: forget the owner declaration. */
 export function resetLiveStoreDeclarationsForTests(): void {
 	_ownsLiveStore = false;
-	_mayReadLiveStore = false;
 }
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791871760368-1ldlf4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-13T06:10:03.483Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 43114,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "fcfdd50de84fb31a",
+    "epicSlug": "decode-socket-child-process-output-utf",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Decode socket and child-process output as a UTF-8 stream so a character split across two reads is not corrupted",
+    "reproduction": "Send any reply over the daemon socket that is large enough to arrive in more than one read and contains a multi-byte UTF-8 character (an em dash, an accented letter, an emoji) that happens to fall across the boundary between two reads. Observed: the reader decodes each read on its own, so the two halves of that character each become U+FFFD replacement characters ('���' in place of '—'). Expected: the text arrives exactly as sent. Seen in Story s11 t12 of Epic c2ba6fa6: through the MCP forwarder, the analyze step's prompt (about 30 KB) arrived with '���' in place of an em dash; a unit test that writes a reply in two chunks with the split inside an em dash reproduces it on demand (src/mcp/__tests__/forward-step.test.ts, 'forwarder: a multi-byte character split across two socket chunks arrives whole', which fails when the forwarder decodes per chunk). The same holds for child-process output read chunk by chunk (a command whose output contains such a character on a chunk boundary).",
+    "rootCause": "Each of these readers appends `chunk.toString()` (or `chunk.toString('utf8')`) for every 'data' event and only then splits the accumulated string into lines. Buffer#toString decodes the chunk in isolation: when a chunk ends inside a multi-byte sequence, the incomplete tail bytes and the continuation bytes at the start of the next chunk are each decoded as invalid sequences and replaced. The socket readers are src/mcp/daemon-stream.ts at three places (runWorkflowStream line 147, unaryRpc line 226, reviewStreamRequest line 438), src/shared/ipc-client.ts line 58 (the request client of the CLI and IDE), and src/daemon/server.ts line 146 (the daemon's reader of incoming request lines, so a large request parameter can be corrupted too). The same per-chunk decode is in child-process output readers: src/daemon/tools/shell-helper.ts (stdout and stderr), src/daemon/tools/builtins/test/index.ts, src/daemon/tools/builtins/shell/exec-detached.ts, src/daemon/tools/builtins/k8s/index.ts, src/daemon/tools/builtins/ssh/index.ts, src/daemon/tools/builtins/cloud/aws/logs.ts, src/docgen/render/fallback.ts, and vscode-plugin/src/chat/cli-adapter.ts (the chat's line reader of the CLI's stdout, which feeds what the user sees). Readers that collect the Buffers and decode once (Buffer.concat(...).toString, e.g. the http and web tools) are not affected.",
+    "fixIntent": "Every reader that accumulates a stream's text decodes the stream as one UTF-8 stream, so a character split across reads is carried over and decoded whole, as src/mcp/forward-step.ts now does. Each corrected reader is covered by a test that delivers a multi-byte character split across two chunks and expects it intact. Behaviour is otherwise unchanged: same framing, same line splitting, same size limits (for the readers that cap bytes, the cap still counts bytes)."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/mcp/daemon-stream.ts",
+      "quotedText": "buffer += chunk.toString();  (lines 147, 226, 438)"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/shared/ipc-client.ts",
+      "quotedText": "buffer += chunk.toString();  (line 58)"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/server.ts",
+      "quotedText": "buffer += chunk.toString();  (line 146, handleConnection)"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/tools/shell-helper.ts",
+      "quotedText": "if (stdoutBytes <= maxBytes) { stdout += chunk.toString('utf8'); }"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts",
+      "quotedText": "for await (const chunk of stdout) { buf += (chunk as Buffer).toString('utf8'); let nl = buf.indexOf('\\n'); ..."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/mcp/forward-step.ts",
+      "quotedText": "socket.setEncoding('utf8'); socket.on('data', (chunk: string) => { buffer += chunk;"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/mcp/__tests__/forward-step.test.ts",
+      "quotedText": "test('forwarder: a multi-byte character split across two socket chunks arrives whole', ..."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S011/BUILD.md",
+      "quotedText": "Story s11 t12: the forwarder decoded each socket chunk on its own, so a multi-byte character split across chunks arrived as replacement characters (seen on the analyze prompt's em dashes)"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/k8s/index.ts",
+      "quotedText": "buf += chunk.toString('utf8');"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/docgen/render/fallback.ts",
+      "quotedText": "child.stdout?.on('data', (c: Buffer) => { stdout += c.toString('utf8'); });"
+    }
+  ]
+}

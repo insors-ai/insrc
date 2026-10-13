@@ -113,7 +113,7 @@ test('t4: registerWorkflowRunners() wires registerBrainstormRunners beside the e
 });
 
 test('t4: the workflow-step handler phase switch gains NO brainstorm case (new workflow value, not a new phase)', () => {
-	const handler = readFileSync(join(SRC, '..', '..', '..', 'mcp', 'workflow-step', 'handler.ts'), 'utf8');
+	const handler = readFileSync(join(SRC, '..', '..', '..', 'daemon', 'steps', 'workflow-step', 'handler.ts'), 'utf8');
 	assert.doesNotMatch(handler, /case 'brainstorm'/);   // recognized via the workflow-id union, not a phase case
 });
 

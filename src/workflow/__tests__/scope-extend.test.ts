@@ -8,7 +8,7 @@
  * execution path (append Story + `storyBoundary.addStory` amendment).
  *
  * Unit coverage here; the full MCP extend walk lives in
- * `mcp/workflow-step/__tests__/define-extend-e2e.test.ts`.
+ * `daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts`.
  *
  * Run:
  *   npx tsx --test src/workflow/__tests__/scope-extend.test.ts

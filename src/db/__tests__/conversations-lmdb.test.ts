@@ -41,6 +41,12 @@ import {
 	type TurnRecord,
 } from '../conversations.js';
 
+import { useTemporaryLance } from '../lance/__tests__/helpers/temp-lance.js';
+
+// This file reaches the vector store through code that takes no path; it gets a
+// temporary one (the default path belongs to the daemon alone).
+useTemporaryLance();
+
 let dir: string;
 
 test.beforeEach(async () => {

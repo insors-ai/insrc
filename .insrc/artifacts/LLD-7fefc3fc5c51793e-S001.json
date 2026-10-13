@@ -213,6 +213,12 @@
       "reviewedAt": "2026-10-13T07:05:32.151Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-13T07:10:59.127Z",
+    "rangeBase": "a68b0832bc47a32f0bd267f802802be64f00c4cf",
+    "reviewOverride": {
+      "reason": "Approved by the user on 2026-10-13, who confirmed that the two departures from SPEC-3d2161bcef24cecf are their own decisions: (1) one derived colour, the assistant message's ground (the editor background mixed with 10% black), and (2) the assistant bubble takes the chat request border, the same as the user bubble, instead of the widget border. The review's one blocking finding is fixed in code and carried as part of this design: the body and the diff container are painted by the chat's own rules (`body.insrc-term` and `.insrc-term-diff` set ground, text and font from the named layer), which out-rank the shared sheet's `.insrc-term` and `.insrc-term-diff` rules; commit a68b0832, with a test.",
+      "at": "2026-10-13T07:10:59.127Z"
     }
   },
   "body": {

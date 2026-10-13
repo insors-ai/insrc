@@ -60,6 +60,13 @@ export interface TurnRequest {
    * re-runs the blocked action resuming the session with the tool named here, so it proceeds.
    */
   readonly allowedTools?: readonly string[];
+  /**
+   * Story E2026101259da3204:S001: directories outside `cwd` the CLI may read this turn — the
+   * session's attachments directory when the session has an attachment (claude `--add-dir`).
+   * The host sets it, never a click on an approval card. Codex needs no flag: it reads the
+   * attached paths named in the prompt.
+   */
+  readonly readDirs?: readonly string[];
 }
 
 /** The started CLI process of a turn, handed to the caller so it can tie a session lease to it. */
@@ -488,6 +495,9 @@ const claudeMapper: ProviderMapper = {
     // unknown option). `-p` is the print-mode switch; the prompt is positional.
     const args = ['-p', '--output-format=stream-json', '--verbose'];
     if (req.resume) args.push('--resume', req.resume.nativeSessionId);
+    // Attachments: the directories the turn may read, before the permission flags. The next
+    // flag (or the closing `--`) ends the variadic list. None => today's argv exactly.
+    if (req.readDirs && req.readDirs.length > 0) args.push('--add-dir', ...req.readDirs);
     // S004: permission-mode flags (k3, verified spike 7100435). Undefined => no flag,
     // byte-identical argv to today (k2). review => host answers prompts (approval cards);
     // auto => bypass so the agent never blocks. Never both.

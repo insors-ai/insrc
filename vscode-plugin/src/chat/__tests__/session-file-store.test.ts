@@ -765,3 +765,33 @@ test('a failed whole-file write leaves no temporary file behind, and a field the
   assert.deepEqual(migrateChatSessionsFromMemento({ memento: old.memento, root: ROOT, fs: target.fs }), { migrated: 1, kept: [] });
   assert.equal((createFileChatSessionStore({ root: ROOT, fs: target.fs }).get(m.id) as typeof future).pinned, true);
 });
+
+// ---- Story E2026101259da3204:S001 t3: the user row's attachments ----
+
+test('session file store: a user row with attachments round-trips unchanged', () => {
+  const { store, fake } = makeStore();
+  const attachments = [
+    { id: '1-shot.png', name: 'shot.png', kind: 'image' as const, size: 2048, path: '/home/u/.insrc/chat-attachments/s/1-shot.png' },
+    { id: '2-n.pdf', name: 'né (v2).pdf', kind: 'file' as const, size: 9, path: '/home/u/.insrc/chat-attachments/s/2-n.pdf' },
+  ];
+  const withFiles: TranscriptEntry = { role: 'user', text: 'see these', at: '2026-10-12T00:00:00.000Z', attachments };
+  const blank: TranscriptEntry = { role: 'user', text: '', at: '2026-10-12T00:00:01.000Z', attachments: [attachments[0]!] };
+  const plain: TranscriptEntry = { role: 'user', text: 'no files', at: '2026-10-12T00:00:02.000Z' };
+  const s = store.draft('claude');
+  s.transcript.push(withFiles, blank, plain);
+  store.save(s);
+
+  // On disk: the row as given; a row without attachments has no such key.
+  assert.deepEqual(rowsOnDisk(fake, s.id), [withFiles, blank, plain]);
+  assert.equal(fake.files.get(rowsPath(s.id))!.split('\n')[2], JSON.stringify(plain));
+  assert.ok(!('attachments' in (rowsOnDisk(fake, s.id)[2] as object)));
+
+  // Read back by a store that never held the object, then saved again with one more row.
+  const reopened = makeStore({ fake }).store;
+  const read = reopened.get(s.id)!;
+  assert.deepEqual(read.transcript, [withFiles, blank, plain]);
+  read.transcript.push({ role: 'assistant', text: 'ok', at: '2026-10-12T00:00:03.000Z' });
+  reopened.save(read);
+  assert.deepEqual(rowsOnDisk(fake, s.id).slice(0, 3), [withFiles, blank, plain]);
+  assert.deepEqual(makeStore({ fake }).store.get(s.id)!.transcript.slice(0, 3), [withFiles, blank, plain]);
+});

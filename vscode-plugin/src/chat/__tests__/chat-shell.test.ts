@@ -15,7 +15,9 @@ import { createChatPanelHost, type ChatPanelChannel } from '../chat-panel.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import type { ProviderRegistry, StreamAdapter } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
-import { bodyStub, fire, type BodyStub } from './fake-dom.js';
+import { createAttachmentStore } from '../attachment-store.js';
+import { allOf, bodyStub, fire, type BodyStub } from './fake-dom.js';
+import { fakeAttachmentFs } from './fake-attachment-fs.js';
 
 const ROW_PX = 10;
 const VIEW_PX = 100;
@@ -23,12 +25,33 @@ const VIEW_PX = 100;
 type Stub = BodyStub & Record<string, unknown>;
 
 /** The shell script running in its own context over fake elements; `msg` delivers a host message. */
-function runShell(): { term: BodyStub; bar: BodyStub; sent: Array<Record<string, unknown>>; msg: (payload: Record<string, unknown>) => void; maxTop: () => number } {
+interface Shell {
+  term: BodyStub;
+  bar: BodyStub;
+  sent: Array<Record<string, unknown>>;
+  msg: (payload: Record<string, unknown>) => void;
+  maxTop: () => number;
+  /** The rendered document. */
+  html: string;
+  /** The fake element the script got for an id. */
+  el: (id: string) => BodyStub;
+}
+/** `attach` gives the host its attachment seams, so the shell has the attach controls. */
+function runShell(opts: { attach?: boolean | undefined } = {}): Shell {
   let html = '';
   const channel: ChatPanelChannel = { setHtml: (h) => { html = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} };
   const adapter: StreamAdapter = { async *run(): AsyncIterable<TurnEvent> {}, cancel: () => {}, decide: () => {}, capabilities: { resume: true } };
   const providers: ProviderRegistry = { available: ['claude'], get: () => adapter };
-  createChatPanelHost({ createPanel: () => channel, providers, store: createInMemoryChatSessionStore(), cwd: () => '/repo' }).open();
+  createChatPanelHost({
+    createPanel: () => channel,
+    providers,
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'N',
+    ...(opts.attach === true
+      ? { attachments: { store: createAttachmentStore({ root: '/att', fs: fakeAttachmentFs().fs }), pickFiles: async () => [], open: () => {} } }
+      : {}),
+  }).open();
   const script = html.slice(html.indexOf('>', html.indexOf('<script nonce=')) + 1, html.lastIndexOf('</script>'));
 
   // What the shell touches beyond the shared fake DOM's surface, as inert stand-ins.
@@ -70,10 +93,16 @@ function runShell(): { term: BodyStub; bar: BodyStub; sent: Array<Record<string,
     setTimeout, clearTimeout,
     setInterval: () => 0, clearInterval: () => {},
     Date,
+    // Reads a pasted file at once: the test's file carries the data: URL it would produce.
+    FileReader: class {
+      result = '';
+      onload: (() => void) | undefined;
+      readAsDataURL(f: { dataUrl: string }): void { this.result = f.dataUrl; this.onload?.(); }
+    },
   };
   runInNewContext(script, context);
   const msg = (payload: Record<string, unknown>): void => { for (const l of listeners) l({ data: { v: 1, payload } }); };
-  return { term, bar: getElementById('insrc-older'), sent, msg, maxTop };
+  return { term, bar: getElementById('insrc-older'), sent, msg, maxTop, html, el: getElementById };
 }
 
 /** Stored rows [from, to): a user row at every multiple of 20, assistant rows between. */
@@ -144,4 +173,206 @@ test('the shell script bounds the view of a long active session: rows past the l
   v.msg({ type: 'transcript-page', sessionId: 's1', before: older, firstIndex: 0, rows: rows(0, older), total: 320 });
   assert.equal(v.term.children.length, 320);
   assert.equal(v.bar.style['display'], 'none');
+});
+
+// ---- Story E2026101259da3204:S001 t7: the attach button, the chips and the paste ----
+
+const ofType = (v: Shell, type: string): Array<Record<string, unknown>> => v.sent.filter((m) => m['type'] === type);
+const byClass = (root: BodyStub, cls: string): BodyStub[] => allOf(root).filter((n) => n.className.split(/\s+/).includes(cls));
+/** A paste event over clipboard items; counts preventDefault calls. */
+function pasteEvent(items: Array<{ kind: string; type: string; file?: { type: string; name: string; dataUrl: string } | undefined }>): { event: Record<string, unknown>; prevented: () => number } {
+  let prevented = 0;
+  return {
+    prevented: () => prevented,
+    event: {
+      clipboardData: {
+        items: items.map((i) => ({ kind: i.kind, type: i.type, getAsFile: () => i.file ?? null })),
+        files: items.filter((i) => i.file).map((i) => i.file),
+        types: [...new Set(items.map((i) => (i.kind === 'file' ? 'Files' : i.type)))],
+      },
+      preventDefault: () => { prevented++; },
+    },
+  };
+}
+const PNG_URL = 'data:image/png;base64,iVBORw0KGgo=';
+
+test('shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits', () => {
+  const v = runShell({ attach: true });
+  v.msg({ type: 'session-restored', sessionId: 's1', transcript: [], firstIndex: 0, total: 0, mode: 'manual' });
+  v.msg({ type: 'attachments-pending', sessionId: 's1', items: [] });
+  const box = v.el('insrc-input');
+  const bar = v.el('insrc-attachments');
+  const list = v.el('insrc-attlist');
+  const send = v.el('insrc-prompt');
+  assert.equal((bar as unknown as { hidden: boolean }).hidden, true, 'no chips: the row is hidden');
+
+  // A blank box with no chips does not submit.
+  box.value = '   ';
+  fire(send, 'click');
+  assert.deepEqual(ofType(v, 'submit-turn'), []);
+
+  // The attach button asks the host for its file dialog.
+  fire(v.el('insrc-attach'), 'click');
+  assert.deepEqual(ofType(v, 'pick-attachments'), [{ type: 'pick-attachments' }]);
+
+  // A paste with an image: read here, sent as base64 with its mime, and the paste is prevented.
+  const image = pasteEvent([
+    { kind: 'string', type: 'text/plain' },
+    { kind: 'file', type: 'image/png', file: { type: 'image/png', name: 'image.png', dataUrl: PNG_URL } },
+  ]);
+  fire(box, 'paste', image.event);
+  assert.deepEqual(ofType(v, 'attach-image'), [{ type: 'attach-image', mime: 'image/png', dataBase64: 'iVBORw0KGgo=', name: 'image.png', clientId: 'p1' }]);
+  assert.equal(image.prevented(), 1);
+  // Two images in one paste: one message each, with their own client ids.
+  const two = pasteEvent([
+    { kind: 'file', type: 'image/jpeg', file: { type: 'image/jpeg', name: '', dataUrl: 'data:image/jpeg;base64,AAAA' } },
+    { kind: 'file', type: 'image/gif', file: { type: 'image/gif', name: 'b.gif', dataUrl: 'data:image/gif;base64,BBBB' } },
+  ]);
+  fire(box, 'paste', two.event);
+  assert.deepEqual(ofType(v, 'attach-image').slice(1).map((m) => [m['mime'], m['dataBase64'], m['name'], m['clientId']]), [['image/jpeg', 'AAAA', '', 'p2'], ['image/gif', 'BBBB', 'b.gif', 'p3']]);
+  assert.equal(two.prevented(), 1);
+
+  // A paste with no image is left to the browser: text, a non-image file, or no clipboard at all.
+  const sentBefore = v.sent.length;
+  const text = pasteEvent([{ kind: 'string', type: 'text/plain' }, { kind: 'string', type: 'text/html' }]);
+  fire(box, 'paste', text.event);
+  assert.equal(v.el('insrc-atterr').textContent, '', 'a text paste says nothing');
+  const pdf = pasteEvent([{ kind: 'file', type: 'application/pdf', file: { type: 'application/pdf', name: 'a.pdf', dataUrl: 'data:application/pdf;base64,CCCC' } }]);
+  fire(box, 'paste', pdf.event);
+  assert.doesNotThrow(() => fire(box, 'paste', { preventDefault: () => { throw new Error('must not be prevented'); } }));
+  assert.equal(text.prevented() + pdf.prevented(), 0);
+  assert.equal(v.sent.length, sentBefore);
+  const errLine = v.el('insrc-atterr') as BodyStub & { hidden?: boolean };
+  assert.equal(errLine.textContent, 'The clipboard gave this panel no image to paste (it offered: Files).', 'a file that is not an image is named as such');
+  // An image offered only as a file (not as an item) is attached too.
+  let filePrevented = 0;
+  fire(box, 'paste', { clipboardData: { items: [], files: [{ type: 'image/png', name: 'f.png', dataUrl: 'data:image/png;base64,FFFF' }], types: ['Files'] }, preventDefault: () => { filePrevented++; } });
+  assert.deepEqual(ofType(v, 'attach-image').at(-1), { type: 'attach-image', mime: 'image/png', dataBase64: 'FFFF', name: 'f.png', clientId: 'p4' });
+  assert.equal(filePrevented, 1);
+  // A paste with neither text nor an image says what the clipboard offered, and is not prevented.
+  fire(box, 'paste', { clipboardData: { items: [], files: [], types: ['application/x-thing'] }, preventDefault: () => { throw new Error('must not be prevented'); } });
+  assert.equal(errLine.textContent, 'The clipboard gave this panel no image to paste (it offered: application/x-thing).');
+  assert.equal(errLine.hidden, false);
+  fire(box, 'paste', { clipboardData: { items: [], files: [], types: [] }, preventDefault: () => {} });
+  assert.equal(errLine.textContent, 'The clipboard gave this panel no image to paste (it offered: nothing).');
+
+  // The host's list is drawn as chips: thumbnail or glyph, name, size and a remove control.
+  v.msg({
+    type: 'attachments-pending',
+    sessionId: 's1',
+    items: [
+      { id: '1-image.png', name: 'image.png', kind: 'image', size: 2048, clientId: 'p1' },
+      { id: '2-notes.txt', name: 'notes <b>.txt', kind: 'file', size: 12 },
+      { id: '3-old.png', name: 'old.png', kind: 'image', size: 3 * 1024 * 1024, clientId: 'gone' },
+    ],
+  });
+  assert.equal((bar as unknown as { hidden: boolean }).hidden, false);
+  assert.equal(list.children.length, 3);
+  const [first, second, third] = list.children as [BodyStub, BodyStub, BodyStub];
+  // The pasted image shows the thumbnail the webview kept; the others a glyph. No path is involved.
+  assert.equal(first.children[0]!.tagName, 'img');
+  assert.equal((first.children[0] as unknown as { src: string }).src, PNG_URL);
+  assert.deepEqual(first.children.slice(1).map((c) => c.textContent), ['image.png', '2.0 KB', '×']);
+  assert.deepEqual(second.children.map((c) => c.textContent), ['▤', 'notes <b>.txt', '12 B', '×']);
+  assert.deepEqual(third.children.map((c) => c.textContent), ['▨', 'old.png', '3.0 MB', '×']);
+  for (const n of allOf(bar)) assert.ok(!n.writes.some((w) => w.prop === 'innerHTML'), 'chips are built with textContent');
+  const remove = byClass(second, 'attchip__x')[0]!;
+  assert.equal(remove.attrs['role'], 'button');
+  assert.equal(remove.attrs['aria-label'], 'remove notes <b>.txt');
+  fire(remove, 'click');
+  assert.deepEqual(ofType(v, 'remove-attachment'), [{ type: 'remove-attachment', attachmentId: '2-notes.txt' }]);
+
+  // A list for a chat that is not shown is not drawn.
+  v.msg({ type: 'attachments-pending', sessionId: 'other', items: [] });
+  assert.equal(list.children.length, 3);
+
+  // A blank box with chips submits.
+  box.value = '';
+  fire(send, 'click');
+  assert.deepEqual(ofType(v, 'submit-turn'), [{ type: 'submit-turn', text: '' }]);
+
+  // The host clears the list: the row hides, and the sent image's thumbnail is let go.
+  v.msg({ type: 'attachments-pending', sessionId: 's1', items: [] });
+  assert.equal(list.children.length, 0);
+  assert.equal((bar as unknown as { hidden: boolean }).hidden, true);
+  v.msg({ type: 'attachments-pending', sessionId: 's1', items: [{ id: '1-image.png', name: 'image.png', kind: 'image', size: 2048, clientId: 'p1' }] });
+  assert.equal(list.children[0]!.children[0]!.textContent, '▨', 'a rebuilt chip with no kept thumbnail shows the glyph');
+});
+
+test('shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged', () => {
+  const on = runShell({ attach: true }).html;
+  const off = runShell().html;
+
+  // Icon only: an inline drawing, no text, named for assistive technology and on hover.
+  const button = /<button id="insrc-attach" type="button" class="attachbtn" aria-label="attach files" title="attach files">(.*?)<\/button>/.exec(on);
+  assert.ok(button, 'the attach button is in the shell');
+  assert.match(button[1]!, /^<svg [^>]*aria-hidden="true"[^>]*><path [^>]*\/><\/svg>$/);
+  assert.equal(button[1]!.replace(/<[^>]*>/g, '').trim(), '', 'no text inside the button');
+  // First in the status bar, before the provider select.
+  assert.ok(on.includes('<div class="statusbar"><button id="insrc-attach"'));
+  assert.ok(on.indexOf('id="insrc-attach"') < on.indexOf('id="insrc-provider"'));
+  // The chip row sits between the input and the status bar, hidden until there is something in it.
+  const row = on.indexOf('<div id="insrc-attachments" class="attachbar" hidden>');
+  assert.ok(on.indexOf('<div class="inputbar">') < row && row < on.indexOf('<div class="statusbar">'));
+
+  // The policy is the same one, and the document is still one nonce'd inline script.
+  const policy = (html: string): string => /Content-Security-Policy" content="([^"]*)"/.exec(html)![1]!;
+  assert.equal(policy(on), "default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'nonce-N';");
+  assert.equal(policy(on), policy(off));
+  assert.equal((on.match(/<script\b/g) ?? []).length, 1);
+  assert.match(on, /<script nonce="N">/);
+  // Nothing new is written as markup or loaded from elsewhere.
+  const count = (html: string, re: RegExp): number => (html.match(re) ?? []).length;
+  assert.equal(count(on, /innerHTML/g), count(off, /innerHTML/g));
+  assert.equal(count(on, /https?:\/\//g), count(off, /https?:\/\//g));
+  assert.equal(count(on, /<(img|link|iframe)\b/g), count(off, /<(img|link|iframe)\b/g));
+
+  // Without the seams: no button, no chip row, no paste handler, and the submit rule as it was.
+  for (const absent of ['insrc-attach', 'attachbar', 'renderPending', "'paste'", 'attCount', 'onAttachmentOpen(function']) {
+    assert.ok(!off.includes(absent), `the shell without the seams has no ${absent}`);
+  }
+  assert.ok(off.includes('function doSubmit(){if(!box.value.trim())return;'));
+  assert.ok(on.includes('function doSubmit(){if(!box.value.trim()&&attCount===0)return;'));
+  assert.ok(off.includes('<div class="statusbar"><span class="seg"><select id="insrc-provider"'));
+});
+
+test('shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared', () => {
+  const v = runShell({ attach: true });
+  const sentFile = { id: '1-a.png', name: 'a.png', kind: 'image', size: 10, path: '/att/s1/1-a.png' };
+  v.msg({ type: 'session-restored', sessionId: 's1', transcript: [{ role: 'user', text: 'see', at: 't', attachments: [sentFile] }], firstIndex: 0, total: 1, mode: 'manual' });
+  // A restored message's chip names its file by id.
+  const restored = byClass(v.term, 'insrc-attchip');
+  assert.equal(restored.length, 1);
+  fire(restored[0]!, 'click');
+  assert.deepEqual(ofType(v, 'open-attachment'), [{ type: 'open-attachment', attachmentId: '1-a.png' }]);
+  // So does the live echo of a message just sent.
+  v.msg({ type: 'user-row', text: 'two', key: 'r1', rowIndex: 1, attachments: [{ id: '2-b.pdf', name: 'b.pdf', kind: 'file', size: 2048, path: '/att/s1/2-b.pdf' }] });
+  const chips = byClass(v.term, 'insrc-attchip');
+  assert.equal(chips.length, 2);
+  fire(chips[1]!, 'click');
+  assert.deepEqual(ofType(v, 'open-attachment').map((m) => m['attachmentId']), ['1-a.png', '2-b.pdf']);
+  // No message carries a path, and the transcript loads no image.
+  for (const m of v.sent) assert.ok(!JSON.stringify(m).includes('/att/'));
+  assert.deepEqual(allOf(v.term).filter((n) => n.tagName === 'img'), []);
+
+  // A refusal: the sentence is shown under the prompt, even with no chip, and cleared by the next list.
+  const bar = v.el('insrc-attachments') as BodyStub & { hidden?: boolean };
+  const err = v.el('insrc-atterr') as BodyStub & { hidden?: boolean };
+  v.msg({ type: 'attachments-pending', sessionId: 's1', items: [], error: 'big.png is larger than the 20 MB limit.' });
+  assert.equal(err.textContent, 'big.png is larger than the 20 MB limit.');
+  assert.deepEqual([err.hidden, bar.hidden], [false, false]);
+  assert.ok(!err.writes.some((w) => w.prop === 'innerHTML'));
+  v.msg({ type: 'attachments-pending', sessionId: 's1', items: [{ id: '3-ok.png', name: 'ok.png', kind: 'image', size: 5 }] });
+  assert.equal(err.textContent, '');
+  assert.deepEqual([err.hidden, bar.hidden], [true, false]);
+  v.msg({ type: 'attachments-pending', sessionId: 's1', items: [] });
+  assert.deepEqual([err.hidden, bar.hidden], [true, true]);
+
+  // Without the seams a message's chips are still drawn, a click does nothing, and a pending list is ignored.
+  const plain = runShell();
+  plain.msg({ type: 'session-restored', sessionId: 's1', transcript: [{ role: 'user', text: 'see', at: 't', attachments: [sentFile] }], firstIndex: 0, total: 1, mode: 'manual' });
+  const before = plain.sent.length;
+  fire(byClass(plain.term, 'insrc-attchip')[0]!, 'click');
+  assert.doesNotThrow(() => plain.msg({ type: 'attachments-pending', sessionId: 's1', items: [{ id: 'x', name: 'x', kind: 'file', size: 1 }] }));
+  assert.equal(plain.sent.length, before);
 });

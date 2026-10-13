@@ -13,10 +13,11 @@
  */
 import type { ProviderId } from './cli-adapter.js';
 import type { PermissionMode } from './protocol.js';
+import type { AttachmentRef } from './attachment-store.js';
 
 /**
  * A durable transcript row. A discriminated union over `role`:
- * - `user` / `assistant` — a plain message row carrying `text`.
+ * - `user` / `assistant` — a plain message row carrying `text` (a user row may carry `attachments`).
  * - `marker` — a lifecycle marker row (S008) carrying `text` + an optional sc1 `cssClass`.
  * - `tool-result` — S001 (dev-chat ux polish): a structured tool-output row carrying the tool
  *   `output` and an optional correlated `command` (NO `text`). Plain-serialisable, so it round-trips
@@ -34,6 +35,11 @@ export type TranscriptEntry =
       /** sc1 marker class for a role:'marker' row (S008); absent on user/assistant + pre-S008 rows. */
       readonly cssClass?: string;
       readonly at: string;
+      /**
+       * Story E2026101259da3204:S001: the files a role:'user' message carried; absent when it had
+       * none (so every other row keeps its exact shape). `text` stays the user's own words.
+       */
+      readonly attachments?: readonly AttachmentRef[];
     }
   | {
       readonly role: 'tool-result';

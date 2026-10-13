@@ -54,6 +54,7 @@ import { createFileSessionLocks } from './chat/session-lock.js';
 import { createChatGroupLock } from './chat/group-lock.js';
 import { createFileChatSessionStore, migrateChatSessionsFromMemento } from './chat/session-file-store.js';
 import { createSessionOutput } from './chat/session-output.js';
+import { createAttachmentStore } from './chat/attachment-store.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitle } from './chat/cli-adapter.js';
 import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
 import { createDocsReviewHost, type DocsReviewHost } from './chat/docs-review-panel.js';
@@ -446,19 +447,30 @@ export function activate(context: vscode.ExtensionContext): void {
     // are segments in it), so nothing is lost when a turn runs long or the window reloads. A
     // session's files go with it when the store evicts it; stale files are swept at start.
     const chatOutput = createSessionOutput({ root: join(PATHS.insrc, 'chat-output'), logger: panelLog });
+    // The images pasted and documents attached in a chat are copied to the chat's own directory
+    // under ~/.insrc/chat-attachments, the only directory a turn is allowed to read them from.
+    // They go with their session on eviction and are swept at start, like its output files.
+    const chatAttachments = createAttachmentStore({ root: join(PATHS.insrc, 'chat-attachments'), logger: panelLog });
     const chatSessionsRoot = join(PATHS.insrc, 'chat-sessions');
     const migratedChats = migrateChatSessionsFromMemento({ memento: context.globalState, root: chatSessionsRoot, logger: panelLog });
     const chatStore = createFileChatSessionStore({
       root: chatSessionsRoot,
       logger: panelLog,
       maxSessions: 200,
-      onEvict: (id) => void chatOutput.remove(id).catch((e: unknown) => panelLog.warn(`chat output of ${id} not removed: ${String(e)}`)),
+      onEvict: (id) => {
+        void chatOutput.remove(id).catch((e: unknown) => panelLog.warn(`chat output of ${id} not removed: ${String(e)}`));
+        void chatAttachments.removeSession(id).catch((e: unknown) => panelLog.warn(`chat attachments of ${id} not removed: ${String(e)}`));
+      },
     });
     const chatProviders = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput });
+    // A session the migration left in globalState is not in the store yet: its files are kept too.
+    const chatKeep = new Set([...chatStore.list().map((c) => c.id), ...migratedChats.kept]);
     void chatOutput
-      // A session the migration left in globalState is not in the store yet: its output files are kept too.
-      .sweep({ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: new Set([...chatStore.list().map((c) => c.id), ...migratedChats.kept]) })
+      .sweep({ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: chatKeep })
       .catch((e: unknown) => panelLog.warn(`chat output sweep failed: ${String(e)}`));
+    void chatAttachments
+      .sweep({ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: chatKeep })
+      .catch((e: unknown) => panelLog.warn(`chat attachments sweep failed: ${String(e)}`));
 
     // S006: edit-governance seams. All model access stays via the user's CLIs (k2); the
     // baseline shells local git (no new dependency, no cloud REST) and captures the exact
@@ -533,6 +545,16 @@ export function activate(context: vscode.ExtensionContext): void {
       return webviewChannel(panel);
     };
     const chatHost = createChatPanelHost({
+      attachments: {
+        store: chatAttachments,
+        // The file dialog is VS Code's own; a dismissed dialog attaches nothing.
+        pickFiles: async () => ((await vscode.window.showOpenDialog({ canSelectMany: true, openLabel: 'Attach' })) ?? []).map((uri) => uri.fsPath),
+        open: (path) => {
+          void vscode.commands
+            .executeCommand('vscode.open', vscode.Uri.file(path))
+            .then(undefined, (e: unknown) => panelLog.warn(`chat attachment ${path} not opened: ${String(e)}`));
+        },
+      },
       editGovernance: {
         computeDiff: defaultComputeDiff,
         diffView: () =>

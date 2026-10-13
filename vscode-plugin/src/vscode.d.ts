@@ -137,6 +137,8 @@ declare module 'vscode' {
       items: readonly T[] | PromiseLike<readonly T[]>,
       options?: { placeHolder?: string | undefined },
     ): PromiseLike<T | undefined>;
+    /** The native open-file dialog; resolves the chosen files, or undefined when dismissed (chat attachments). */
+    export function showOpenDialog(options?: { canSelectMany?: boolean | undefined; openLabel?: string | undefined }): PromiseLike<readonly Uri[] | undefined>;
     /** S001 (bugfix): register a serializer so a restored webview panel of `viewType` is handed back to the extension. */
     export function registerWebviewPanelSerializer(viewType: string, serializer: WebviewPanelSerializer): Disposable;
   }

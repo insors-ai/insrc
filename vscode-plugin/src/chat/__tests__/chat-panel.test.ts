@@ -14,6 +14,8 @@ import { transcriptPagerWebviewSource } from '../transcript-pager.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import { createFileChatSessionStore, ROWS_SUFFIX } from '../session-file-store.js';
 import { fakeSessionFs } from './fake-session-fs.js';
+import { createAttachmentStore, MAX_ATTACHMENT_BYTES, type AttachmentStore } from '../attachment-store.js';
+import { fakeAttachmentFs, type FakeAttachmentFs } from './fake-attachment-fs.js';
 import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, RunOptions } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import { markerFor, WAITING_LABEL } from '../markers.js';
@@ -3531,7 +3533,7 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   // An older page goes to prepend; live rows are tracked (stamped, then trimmed) with their row index.
   assert.match(html, /else if\(m\.type==='transcript-page'\)\{pager\.prepend\(m\);\}/);
   assert.match(html, /if\(m\.type==='turn-event'\)\{const ev=m\.event;pager\.track\(m\.rowIndex,function\(\)\{/);
-  assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text\}\),m\.key\);\}\);\}/);
+  assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments\}\),m\.key\);\}\);\}/);
   assert.match(html, /pager\.track\(undefined,function\(\)\{renderDiff\(/, 'a diff card is tracked too');
   assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
   assert.match(html, /setProvLock\(_total>0\);/, 'the provider lock settles from total');
@@ -3756,4 +3758,577 @@ test("the chat panel run over the file store: a turn's saves append only that tu
   await waitFor(() => dones() === 4);
   await settle();
   assert.deepEqual(diskRows(id), JSON.parse(JSON.stringify(store.get(id)!.transcript)), 'the rows the failed saves missed are written once by a later save');
+});
+
+// ---- Story E2026101259da3204:S001 t5: the host's pending attachments ----
+
+const ATT_ROOT = '/home/u/.insrc/chat-attachments';
+const PNG5 = Buffer.from([1, 2, 3, 4, 5]).toString('base64');
+
+interface AttachHarness {
+  fc: FakeChannel;
+  fake: FakeAttachmentFs;
+  store: AttachmentStore;
+  sessions: ReturnType<typeof createInMemoryChatSessionStore>;
+  runs: TurnRequest[];
+  opened: string[];
+  errors: string[];
+  /** What the next file dialog returns: paths, or an error to reject with. */
+  pick: { next: readonly string[] | Error; calls: number };
+  /** Every attachments-pending posted so far. */
+  pendings(): Array<{ sessionId: string; items: Array<Record<string, unknown>>; error?: string }>;
+  /** Sends a message and waits for the attachments-pending it causes. */
+  sendAndWait(type: string, extra?: Record<string, unknown>): Promise<{ sessionId: string; items: Array<Record<string, unknown>>; error?: string }>;
+}
+/** A chat host with the attachment seams: the real store over an in-memory file seam, a scripted dialog and a recording opener. */
+function attachHarness(opts: { adapter?: StreamAdapter | undefined; wrapStore?: ((store: AttachmentStore) => AttachmentStore) | undefined } = {}): AttachHarness {
+  const fc = fakeChannel();
+  const fake = fakeAttachmentFs();
+  const real = createAttachmentStore({ root: ATT_ROOT, fs: fake.fs });
+  const store = opts.wrapStore ? opts.wrapStore(real) : real;
+  const sessions = createInMemoryChatSessionStore();
+  const runs: TurnRequest[] = [];
+  const opened: string[] = [];
+  const errors: string[] = [];
+  const pick: AttachHarness['pick'] = { next: [], calls: 0 };
+  const adapter = opts.adapter ?? scriptedAdapter(
+    [{ kind: 'assistant-delta', turnId: 't1', text: 'ok' }, { kind: 'done', turnId: 't1', ok: true, sessionId: 'native-1' }],
+    { onRun: (r) => runs.push(r) },
+  );
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: sessions,
+    cwd: () => '/repo',
+    logger: { warn: () => {}, error: (m) => errors.push(m) },
+    attachments: {
+      store,
+      pickFiles: async () => {
+        pick.calls++;
+        if (pick.next instanceof Error) throw pick.next;
+        return pick.next;
+      },
+      open: (path) => opened.push(path),
+    },
+  });
+  host.open();
+  const pendings: AttachHarness['pendings'] = () => posted(fc, 'attachments-pending') as unknown as ReturnType<AttachHarness['pendings']>;
+  return {
+    fc, fake, store, sessions, runs, opened, errors, pick, pendings,
+    async sendAndWait(type, extra = {}) {
+      const before = pendings().length;
+      fc.send(env(type, extra));
+      await waitFor(() => pendings().length > before);
+      return pendings().at(-1)!;
+    },
+  };
+}
+const attFiles = (h: AttachHarness): string[] => [...h.fake.files.keys()].filter((p) => p.startsWith(ATT_ROOT)).sort();
+
+test("host: attach-image and pick-attachments add to the active session's pending list and post attachments-pending; remove-attachment removes one; errors are posted as one sentence and the list is unchanged", async () => {
+  const h = attachHarness();
+  const sid = activeId(h.fc);
+  const dir = `${ATT_ROOT}/${sid}`;
+  // The session state comes with an empty pending list.
+  assert.deepEqual(h.pendings(), [{ type: 'attachments-pending', sessionId: sid, items: [] }]);
+
+  const pasted = await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'shot.png', clientId: 'c1' });
+  assert.deepEqual(pasted, { type: 'attachments-pending', sessionId: sid, items: [{ id: '1-shot.png', name: 'shot.png', kind: 'image', size: 5, clientId: 'c1' }] });
+  assert.deepEqual([...h.fake.files.get(`${dir}/1-shot.png`)!], [1, 2, 3, 4, 5]);
+
+  h.fake.files.set('/src/a.txt', new Uint8Array(3));
+  h.fake.files.set('/src/b.pdf', new Uint8Array(7));
+  h.pick.next = ['/src/a.txt', '/src/b.pdf'];
+  const picked = await h.sendAndWait('pick-attachments');
+  assert.deepEqual(picked.items, [
+    { id: '1-shot.png', name: 'shot.png', kind: 'image', size: 5, clientId: 'c1' },
+    { id: '2-a.txt', name: 'a.txt', kind: 'file', size: 3 },
+    { id: '3-b.pdf', name: 'b.pdf', kind: 'file', size: 7 },
+  ]);
+  assert.equal(picked.error, undefined);
+  assert.deepEqual(attFiles(h), [`${dir}/1-shot.png`, `${dir}/2-a.txt`, `${dir}/3-b.pdf`]);
+  // No posted item carries a path.
+  for (const p of h.pendings()) for (const item of p.items) assert.ok(!('path' in item));
+
+  const removed = await h.sendAndWait('remove-attachment', { attachmentId: '2-a.txt' });
+  assert.deepEqual(removed.items.map((i) => i['id']), ['1-shot.png', '3-b.pdf']);
+  assert.deepEqual(attFiles(h), [`${dir}/1-shot.png`, `${dir}/3-b.pdf`]);
+
+  // Each failure: one sentence, and the list stays as it was.
+  const kept = ['1-shot.png', '3-b.pdf'];
+  const failing = async (type: string, extra: Record<string, unknown>, sentence: RegExp): Promise<void> => {
+    const res = await h.sendAndWait(type, extra);
+    assert.match(res.error ?? '', sentence);
+    assert.deepEqual(res.items.map((i) => i['id']), kept, `list unchanged after ${sentence}`);
+    assert.deepEqual(attFiles(h), [`${dir}/1-shot.png`, `${dir}/3-b.pdf`]);
+  };
+  await failing('attach-image', { mime: 'image/svg+xml', dataBase64: PNG5, name: 'a.svg' }, /^The pasted item is not a supported image \(PNG, JPEG, GIF or WebP\)\.$/);
+  await failing('attach-image', { mime: 'image/png', dataBase64: '!!!!' }, /^The pasted item is not a supported image\.$/);
+  h.fake.failOn = (c) => (c.op === 'writeFile' ? new Error('ENOSPC') : undefined);
+  await failing('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'full.png' }, /^full\.png could not be attached: ENOSPC$/);
+  h.fake.failOn = undefined;
+  assert.ok(h.errors.some((e) => /could not attach full\.png: ENOSPC/.test(e)), 'a failing write is logged');
+  h.fake.dirs.add('/src/folder');
+  h.pick.next = ['/src/folder'];
+  await failing('pick-attachments', {}, /^folder is not a readable file\.$/);
+  h.pick.next = new Error('dialog broke');
+  await failing('pick-attachments', {}, /^The file dialog could not be opened: dialog broke$/);
+
+  // One bad file in a pick does not stop the others.
+  h.pick.next = ['/src/missing.txt', '/src/a.txt'];
+  const mixed = await h.sendAndWait('pick-attachments');
+  assert.match(mixed.error ?? '', /^missing\.txt is not a readable file\.$/);
+  assert.deepEqual(mixed.items.map((i) => i['name']), ['shot.png', 'b.pdf', 'a.txt']);
+
+  // A malformed message changes nothing and posts nothing.
+  const count = h.pendings().length;
+  h.fc.send(env('attach-image', { mime: 'image/png' }));
+  h.fc.send(env('attach-image', { mime: 7, dataBase64: PNG5 }));
+  h.fc.send(env('remove-attachment', {}));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(h.pendings().length, count);
+});
+
+test("host: ready, new-chat and open-chat post each session's own pending list; an unknown or foreign attachment id in remove or open does nothing; open-attachment opens the resolved path of a row's or a pending attachment", async () => {
+  const h = attachHarness();
+  const rowFile = { id: '7-old.pdf', name: 'old.pdf', kind: 'file' as const, size: 9, path: `${ATT_ROOT}/elsewhere/7-old.pdf` };
+  const one = h.sessions.draft('claude');
+  one.transcript.push({ role: 'user', text: 'earlier', at: '2026-10-12T00:00:00.000Z', attachments: [rowFile] });
+  h.sessions.save(one);
+  const two = h.sessions.create('claude');
+
+  assert.deepEqual((await h.sendAndWait('open-chat', { chatId: one.id })).items, []);
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'one.png' });
+  const inTwo = await h.sendAndWait('open-chat', { chatId: two.id });
+  assert.deepEqual([inTwo.sessionId, inTwo.items], [two.id, []]);
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'two.png' });
+
+  // Back in the first chat: its own chip, not the other's.
+  const back = await h.sendAndWait('open-chat', { chatId: one.id });
+  assert.deepEqual([back.sessionId, back.items.map((i) => i['id'])], [one.id, ['1-one.png']]);
+  // A rebuilt webview asks again and gets the same list.
+  const again = await h.sendAndWait('ready');
+  assert.deepEqual([again.sessionId, again.items.map((i) => i['id'])], [one.id, ['1-one.png']]);
+  // The pending list is posted after the session state it belongs to.
+  const types = h.fc.posted.map((m) => m.payload.type);
+  assert.ok(types.lastIndexOf('attachments-pending') > types.lastIndexOf('session-restored'));
+
+  // An id the host did not issue for this chat: nothing removed, nothing opened, nothing posted.
+  const count = h.pendings().length;
+  const files = attFiles(h);
+  for (const bad of ['1-two.png', '9-nope.png', `../${two.id}/1-two.png`, `${ATT_ROOT}/${two.id}/1-two.png`, '/etc/passwd', '', 7, null]) {
+    h.fc.send(env('remove-attachment', { attachmentId: bad }));
+    h.fc.send(env('open-attachment', { attachmentId: bad }));
+  }
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(h.pendings().length, count);
+  assert.deepEqual(attFiles(h), files);
+  assert.deepEqual(h.opened, []);
+  assert.deepEqual(h.fake.ops('rm'), []);
+
+  // A pending attachment and one on a sent message open at the path the host holds.
+  h.fc.send(env('open-attachment', { attachmentId: '1-one.png' }));
+  h.fc.send(env('open-attachment', { attachmentId: '7-old.pdf' }));
+  assert.deepEqual(h.opened, [`${ATT_ROOT}/${one.id}/1-one.png`, rowFile.path]);
+
+  // A new chat starts with none, and the other chats keep theirs.
+  const fresh = await h.sendAndWait('new-chat', { provider: 'claude' });
+  assert.notEqual(fresh.sessionId, one.id);
+  assert.deepEqual(fresh.items, []);
+  assert.deepEqual((await h.sendAndWait('open-chat', { chatId: two.id })).items.map((i) => i['id']), ['1-two.png']);
+  // An attachment still being written when the chat is switched lands on the chat it was pasted in.
+  h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'late.png' }));
+  const switched = await h.sendAndWait('open-chat', { chatId: one.id });
+  assert.deepEqual(switched.items.map((i) => i['id']), ['1-one.png']);
+  await waitFor(() => h.fake.files.has(`${ATT_ROOT}/${two.id}/2-late.png`));
+  assert.deepEqual((await h.sendAndWait('open-chat', { chatId: two.id })).items.map((i) => i['id']), ['1-two.png', '2-late.png']);
+});
+
+test('host without the attachments seams: the shell has no attach button or chip row and the four messages are ignored', async () => {
+  const fc = fakeChannel();
+  const warns: string[] = [];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    logger: { warn: (m) => warns.push(m), error: (m) => warns.push(m) },
+  });
+  host.open();
+  const before = fc.posted.length;
+  assert.doesNotThrow(() => {
+    fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'shot.png' }));
+    fc.send(env('pick-attachments'));
+    fc.send(env('remove-attachment', { attachmentId: '1-shot.png' }));
+    fc.send(env('open-attachment', { attachmentId: '1-shot.png' }));
+  });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(fc.posted.length, before, 'nothing is posted for an attachment message');
+  // The session state is posted as before, with no pending list.
+  fc.send(env('ready'));
+  fc.send(env('new-chat', { provider: 'claude' }));
+  assert.deepEqual(posted(fc, 'attachments-pending'), []);
+  assert.deepEqual(warns, []);
+  assert.doesNotMatch(fc.html(), /insrc-attach/);
+});
+
+test('host: an attach-image whose base64 length implies more than the limit is refused without decoding and without calling the store', async () => {
+  let storeCalls = 0;
+  const h = attachHarness({
+    wrapStore: (s) => ({ ...s, addBytes: (id, input) => { storeCalls++; return s.addBytes(id, input); } }),
+  });
+  // One byte over the limit, as base64 text (4 characters per 3 bytes).
+  const over = 'A'.repeat(((MAX_ATTACHMENT_BYTES + 3) / 3) * 4);
+  assert.ok((over.length * 3) / 4 > MAX_ATTACHMENT_BYTES);
+  const realFrom = Buffer.from;
+  let decodes = 0;
+  (Buffer as unknown as { from: unknown }).from = (...args: unknown[]): unknown => {
+    if (args[1] === 'base64') decodes++;
+    return (realFrom as (...a: unknown[]) => unknown).apply(Buffer, args);
+  };
+  try {
+    const res = await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: over, name: 'huge.png' });
+    assert.equal(res.error, 'huge.png is larger than the 20 MB limit.');
+    assert.deepEqual(res.items, []);
+    assert.equal(decodes, 0, 'the oversize text is never decoded');
+    assert.equal(storeCalls, 0, 'the store is never called');
+    assert.deepEqual(h.fake.calls, []);
+    // An unnamed paste is described, not left blank.
+    assert.equal((await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: over })).error, 'The pasted image is larger than the 20 MB limit.');
+    // A paste within the limit is decoded once and stored.
+    const ok = await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'ok.png' });
+    assert.deepEqual(ok.items.map((i) => i['id']), ['1-ok.png']);
+    assert.equal(decodes, 1);
+    assert.equal(storeCalls, 1);
+  } finally {
+    (Buffer as unknown as { from: unknown }).from = realFrom;
+  }
+});
+
+test('host: a dismissed dialog posts nothing, and a pick over the limit keeps the first ten and posts one error sentence', async () => {
+  const h = attachHarness();
+  const start = h.pendings().length;
+  h.pick.next = [];
+  h.fc.send(env('pick-attachments'));
+  await waitFor(() => h.pick.calls === 1);
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(h.pendings().length, start, 'a dismissed dialog posts nothing');
+  assert.deepEqual(h.fake.calls, []);
+
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'first.png' });
+  const paths = Array.from({ length: 12 }, (_, i) => `/src/f${i}.txt`);
+  for (const p of paths) h.fake.files.set(p, new Uint8Array(1));
+  h.pick.next = paths;
+  const res = await h.sendAndWait('pick-attachments');
+  assert.equal(res.items.length, 10);
+  assert.deepEqual(res.items.map((i) => i['name']), ['first.png', ...paths.slice(0, 9).map((p) => p.slice(5))]);
+  assert.equal(res.error, 'Only 10 files can be attached to one message; 3 files were not attached.');
+  assert.equal(attFiles(h).length, 10);
+
+  // A full list takes nothing more, by paste or by pick.
+  const paste = await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'extra.png' });
+  assert.equal(paste.error, 'Only 10 files can be attached to one message; extra.png was not attached.');
+  h.pick.next = ['/src/f11.txt'];
+  const more = await h.sendAndWait('pick-attachments');
+  assert.equal(more.error, 'Only 10 files can be attached to one message; 1 file was not attached.');
+  assert.equal(more.items.length, 10);
+  assert.equal(attFiles(h).length, 10);
+
+  // Removing one makes room for one.
+  await h.sendAndWait('remove-attachment', { attachmentId: '1-first.png' });
+  const refill = await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'extra.png' });
+  assert.equal(refill.error, undefined);
+  assert.equal(refill.items.length, 10);
+});
+
+// ---- Story E2026101259da3204:S001 t6: sending attachments with a message ----
+
+const ATTACHED = 'Attached files (read them with your file tools):';
+const userRows = (fc: FakeChannel): Array<Record<string, unknown>> => posted(fc, 'user-row');
+/** A store whose addBytes for `slow.png` waits until release() is called. */
+function gatedStore(): { wrapStore: (s: AttachmentStore) => AttachmentStore; release: () => void } {
+  let release!: () => void;
+  const gate = new Promise<void>((r) => (release = r));
+  return {
+    release,
+    wrapStore: (s) => ({
+      ...s,
+      addBytes: async (id, input) => {
+        if (input.name === 'slow.png') await gate;
+        return s.addBytes(id, input);
+      },
+    }),
+  };
+}
+
+test("host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list", async () => {
+  const h = attachHarness();
+  const sid = activeId(h.fc);
+  const dir = `${ATT_ROOT}/${sid}`;
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'shot.png', clientId: 'c1' });
+  h.fake.files.set('/src/my notes.txt', new Uint8Array(3));
+  h.pick.next = ['/src/my notes.txt'];
+  await h.sendAndWait('pick-attachments');
+
+  const cleared = await h.sendAndWait('submit-turn', { text: '  look at these  ' });
+  assert.deepEqual(cleared, { type: 'attachments-pending', sessionId: sid, items: [] });
+  await waitFor(() => h.runs.length === 1);
+  const refs = [
+    { id: '1-shot.png', name: 'shot.png', kind: 'image', size: 5, path: `${dir}/1-shot.png` },
+    { id: '2-mynotes.txt', name: 'my notes.txt', kind: 'file', size: 3, path: `${dir}/2-mynotes.txt` },
+  ];
+  // The CLI gets the text, then the block of absolute paths, and may read the session's directory.
+  assert.equal(h.runs[0]!.prompt, `look at these\n\n${ATTACHED}\n${dir}/1-shot.png\n${dir}/2-mynotes.txt`);
+  assert.deepEqual(h.runs[0]!.readDirs, [dir]);
+  // The stored row keeps the user's own words and lists the files; no path block in its text.
+  const stored = h.sessions.get(sid)!.transcript[0]!;
+  assert.deepEqual({ ...stored, at: 'x' }, { role: 'user', text: 'look at these', at: 'x', attachments: refs });
+  // The live echo carries the same attachments, under the row's key.
+  assert.deepEqual(userRows(h.fc), [{ type: 'user-row', text: 'look at these', key: 'r0', rowIndex: 0, attachments: refs }]);
+  // The files stay on disk: the message refers to them.
+  assert.deepEqual(attFiles(h), [`${dir}/1-shot.png`, `${dir}/2-mynotes.txt`]);
+
+  // The next message carries none: its row, echo and prompt are as they always were.
+  await waitFor(() => turnEvents(h.fc).some((e) => e.kind === 'done'));
+  const pendingPosts = h.pendings().length;
+  h.fc.send(env('submit-turn', { text: 'and again' }));
+  await waitFor(() => h.runs.length === 2);
+  assert.equal(h.runs[1]!.prompt, 'and again');
+  const row = h.sessions.get(sid)!.transcript.filter((r) => r.role === 'user')[1]!;
+  assert.deepEqual(Object.keys(row), ['role', 'text', 'at']);
+  assert.deepEqual(Object.keys(userRows(h.fc)[1]!), ['type', 'text', 'key', 'rowIndex']);
+  assert.equal(h.pendings().length, pendingPosts, 'a message without attachments posts no pending list');
+});
+
+test('host: a submit with blank text and an attachment runs a turn and names the chat from the attachment; with blank text and none it is a no-op', async () => {
+  const h = attachHarness();
+  const sid = activeId(h.fc);
+  const dir = `${ATT_ROOT}/${sid}`;
+  // Blank and nothing attached: nothing happens.
+  h.fc.send(env('submit-turn', { text: '   ' }));
+  h.fc.send(env('submit-turn', { text: '' }));
+  await runsSettled();
+  assert.equal(h.runs.length, 0);
+  assert.deepEqual(userRows(h.fc), []);
+  assert.equal(h.sessions.get(sid), undefined, 'the draft is still unsaved');
+
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'system diagram.png' });
+  // A malformed submit is still a no-op and takes nothing.
+  h.fc.send(env('submit-turn', { text: 7 }));
+  await runsSettled();
+  assert.equal(h.runs.length, 0);
+  assert.equal(h.pendings().at(-1)!.items.length, 1);
+
+  h.fc.send(env('submit-turn', { text: '  ' }));
+  await waitFor(() => h.runs.length === 1);
+  assert.equal(h.runs[0]!.prompt, `${ATTACHED}\n${dir}/1-systemdiagram.png`);
+  assert.deepEqual(h.runs[0]!.readDirs, [dir]);
+  const s = h.sessions.get(sid)!;
+  assert.equal(s.transcript[0]!.role === 'user' ? s.transcript[0]!.text : 'x', '');
+  assert.equal(s.transcript[0]!.role === 'user' ? s.transcript[0]!.attachments?.length : 0, 1);
+  assert.equal(s.title, 'system diagram.png');
+  assert.equal(userRows(h.fc)[0]!['text'], '');
+  assert.deepEqual(h.pendings().at(-1)!.items, []);
+});
+
+test('host: a submit waits for an attachment still being written, and the message carries every chip in order', async () => {
+  const gate = gatedStore();
+  const h = attachHarness({ wrapStore: gate.wrapStore });
+  const sid = activeId(h.fc);
+  const dir = `${ATT_ROOT}/${sid}`;
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'fast.png' });
+  h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'slow.png' }));
+  h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'third.png' }));
+  h.fc.send(env('submit-turn', { text: 'all three' }));
+  // Pasted after the message was sent: it is not part of that message.
+  h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'after.png' }));
+  await runsSettled();
+  assert.equal(h.runs.length, 0, 'the submit waits for the write');
+  assert.deepEqual(userRows(h.fc), []);
+
+  gate.release();
+  await waitFor(() => h.runs.length === 1);
+  assert.equal(h.runs[0]!.prompt, `all three\n\n${ATTACHED}\n${dir}/1-fast.png\n${dir}/2-slow.png\n${dir}/3-third.png`);
+  const row = h.sessions.get(sid)!.transcript[0]!;
+  assert.deepEqual(row.role === 'user' ? row.attachments?.map((a) => a.id) : [], ['1-fast.png', '2-slow.png', '3-third.png']);
+  assert.deepEqual((userRows(h.fc)[0]!['attachments'] as Array<{ id: string }>).map((a) => a.id), ['1-fast.png', '2-slow.png', '3-third.png']);
+  await waitFor(() => h.pendings().at(-1)!.items.length === 1);
+  assert.deepEqual(h.pendings().at(-1)!.items.map((i) => i['id']), ['4-after.png']);
+});
+
+test('host: a later turn of a session with an attachment still passes readDirs, a session with none passes none, and a grant re-run keeps it', async () => {
+  const { adapter, runs } = sequenceAdapter([
+    [refused('g1', 'Bash', 't1', { command: 'ls' }), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
+    [{ kind: 'assistant-delta', turnId: 't2', text: 'ran' }, { kind: 'done', turnId: 't2', ok: true, sessionId: 'sess-1' }],
+  ]);
+  const h = attachHarness({ adapter });
+  const dir = `${ATT_ROOT}/${activeId(h.fc)}`;
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'shot.png' });
+  h.fc.send(env('submit-turn', { text: 'run it' }));
+  await waitFor(() => approvalCards(h.fc).length === 1 && turnEvents(h.fc).some((e) => e.kind === 'done'));
+  assert.deepEqual(runs[0]!.readDirs, [dir]);
+
+  // The grant re-run is the host's own message: same directory, the approved tool, no file block.
+  h.fc.send(env('permission-decision', { requestId: 'g1', decision: 'approve' }));
+  await waitFor(() => runs.length === 2);
+  assert.equal(runs[1]!.prompt, 'Approved — run exactly this now: ls');
+  assert.deepEqual([...(runs[1]!.allowedTools ?? [])], ['Bash']);
+  assert.deepEqual(runs[1]!.readDirs, [dir]);
+  assert.deepEqual(runs[1]!.resume, { provider: 'claude', nativeSessionId: 'sess-1' });
+
+  // Three messages later it is still readable.
+  await waitFor(() => turnEvents(h.fc).filter((e) => e.kind === 'done').length === 2);
+  h.fc.send(env('submit-turn', { text: 'thanks' }));
+  await waitFor(() => runs.length === 3);
+  assert.equal(runs[2]!.prompt, 'thanks');
+  assert.deepEqual(runs[2]!.readDirs, [dir]);
+
+  // A chat that never had an attachment: no readDirs at all, with the seams present.
+  await h.sendAndWait('new-chat', { provider: 'claude' });
+  h.fc.send(env('submit-turn', { text: 'plain' }));
+  await waitFor(() => runs.length === 4);
+  assert.ok(!('readDirs' in runs[3]!), 'no readDirs key on a session without attachments');
+  assert.deepEqual(Object.keys(runs[3]!).sort(), ['cwd', 'permissionMode', 'prompt', 'provider']);
+  assert.deepEqual(Object.keys(h.sessions.get(activeId(h.fc))!.transcript[0]!), ['role', 'text', 'at']);
+});
+
+test('host: a grant re-run and a selection continuation leave the pending list untouched and attach nothing', async () => {
+  const { adapter, runs } = sequenceAdapter([
+    [refused('g1', 'Bash'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
+    [
+      { kind: 'selection-request', turnId: 't2', requestId: 'sel-1', prompt: 'Pick', options: [{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }] },
+      { kind: 'done', turnId: 't2', ok: true, sessionId: 'sess-1' },
+    ],
+    [{ kind: 'done', turnId: 't3', ok: true, sessionId: 'sess-1' }],
+  ]);
+  const h = attachHarness({ adapter });
+  const sid = activeId(h.fc);
+  const dir = `${ATT_ROOT}/${sid}`;
+  h.fc.send(env('submit-turn', { text: 'start' }));
+  await waitFor(() => approvalCards(h.fc).length === 1 && turnEvents(h.fc).some((e) => e.kind === 'done'));
+  // A chip is waiting while the host sends its own two messages.
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'waiting.png' });
+  const pendingPosts = h.pendings().length;
+
+  h.fc.send(env('permission-decision', { requestId: 'g1', decision: 'approve' }));
+  await waitFor(() => runs.length === 2);
+  assert.equal(runs[1]!.prompt, 'Approved: please proceed with the Bash action you requested permission for.');
+  await waitFor(() => turnEvents(h.fc).some((e) => e.kind === 'selection-request'));
+  h.fc.send(env('selection-decision', { requestId: 'sel-1', selected: ['a'] }));
+  await waitFor(() => runs.length === 3);
+  assert.equal(runs[2]!.prompt, 'Selected: Alpha');
+
+  for (const run of runs.slice(1)) {
+    assert.ok(!run.prompt.includes(ATTACHED), 'no file block in the host\'s own message');
+    assert.ok(!('readDirs' in run), 'no row of the session carries an attachment yet');
+  }
+  const s = h.sessions.get(sid)!;
+  for (const r of s.transcript) assert.ok(!('attachments' in r), 'no row took the waiting attachment');
+  assert.equal(h.pendings().length, pendingPosts, 'the pending list was neither cleared nor re-posted');
+  assert.deepEqual(h.pendings().at(-1)!.items.map((i) => i['id']), ['1-waiting.png']);
+  assert.deepEqual(attFiles(h), [`${dir}/1-waiting.png`]);
+
+  // The user's own next message is what takes it.
+  await waitFor(() => turnEvents(h.fc).filter((e) => e.kind === 'done').length === 3);
+  h.fc.send(env('submit-turn', { text: 'now with the file' }));
+  await waitFor(() => runs.length === 4);
+  assert.equal(runs[3]!.prompt, `now with the file\n\n${ATTACHED}\n${dir}/1-waiting.png`);
+  assert.deepEqual(runs[3]!.readDirs, [dir]);
+});
+
+test('host: a submit with blank text and an attachment supersedes queued approvals', async () => {
+  const { adapter, runs } = sequenceAdapter([
+    [refused('u1', 'Edit'), refused('u2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
+    [{ kind: 'assistant-delta', turnId: 't2', text: 'ok' }, { kind: 'done', turnId: 't2', ok: true, sessionId: 'sess-1' }],
+  ]);
+  const h = attachHarness({ adapter });
+  h.fc.send(env('submit-turn', { text: 'two edits' }));
+  await waitFor(() => approvalCards(h.fc).length === 1 && turnEvents(h.fc).some((e) => e.kind === 'done'));
+
+  // Blank with nothing attached is a no-op: the requests keep waiting.
+  h.fc.send(env('submit-turn', { text: '  ' }));
+  await runsSettled();
+  assert.deepEqual(outcomes(h.fc), []);
+  assert.equal(runs.length, 1);
+
+  // Blank with an attachment is a message: both waiting requests are rejected, then it runs.
+  await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'instead.png' });
+  h.fc.send(env('submit-turn', { text: '' }));
+  await waitFor(() => runs.length === 2);
+  assert.deepEqual(outcomes(h.fc).map((o) => [o.toolName, o.decision]), [['Edit', 'rejected'], ['Write', 'rejected']]);
+  assert.ok(runs[1]!.prompt.startsWith(ATTACHED));
+  assert.equal(runs[1]!.allowedTools, undefined, 'it runs as a normal turn, with no grant');
+  // The outcome rows are written before the message's own row.
+  const roles = h.sessions.get(activeId(h.fc))!.transcript.map((r) => r.role);
+  assert.ok(roles.lastIndexOf('permission-outcome') < roles.lastIndexOf('user'));
+  // The queue is empty: a late click on the old card does nothing.
+  h.fc.send(env('permission-decision', { requestId: 'u1', decision: 'approve' }));
+  await runsSettled();
+  assert.equal(outcomes(h.fc).length, 2);
+  assert.equal(runs.length, 2);
+});
+
+test('host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first', async () => {
+  // A chat switch during the wait.
+  {
+    const gate = gatedStore();
+    const { adapter, runs } = sequenceAdapter([]);
+    const h = attachHarness({ adapter, wrapStore: gate.wrapStore });
+    const one = h.sessions.create('claude');
+    const two = h.sessions.create('claude');
+    await h.sendAndWait('open-chat', { chatId: one.id });
+    h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'slow.png' }));
+    h.fc.send(env('submit-turn', { text: 'send it' }));
+    await h.sendAndWait('open-chat', { chatId: two.id });
+    gate.release();
+    await waitFor(() => h.fake.files.has(`${ATT_ROOT}/${one.id}/1-slow.png`));
+    await runsSettled();
+    assert.equal(runs.length, 0, 'the submit is dropped');
+    assert.deepEqual(h.sessions.get(one.id)!.transcript, []);
+    assert.deepEqual(h.sessions.get(two.id)!.transcript, [], 'it does not land on the chat now shown');
+    assert.deepEqual(userRows(h.fc), []);
+    assert.deepEqual(h.pendings().at(-1)!.items, [], 'the other chat shows none');
+    // The chip is still there when the user comes back, and goes with the next message.
+    assert.deepEqual((await h.sendAndWait('open-chat', { chatId: one.id })).items.map((i) => i['id']), ['1-slow.png']);
+    h.fc.send(env('submit-turn', { text: 'send it now' }));
+    await waitFor(() => runs.length === 1);
+    assert.equal(runs[0]!.prompt, `send it now\n\n${ATTACHED}\n${ATT_ROOT}/${one.id}/1-slow.png`);
+  }
+  // The panel closing during the wait.
+  {
+    const gate = gatedStore();
+    const { adapter, runs } = sequenceAdapter([]);
+    const h = attachHarness({ adapter, wrapStore: gate.wrapStore });
+    const sid = activeId(h.fc);
+    h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'slow.png' }));
+    h.fc.send(env('submit-turn', { text: 'send it' }));
+    h.fc.fireDispose();
+    gate.release();
+    await waitFor(() => h.fake.files.has(`${ATT_ROOT}/${sid}/1-slow.png`));
+    await runsSettled();
+    assert.equal(runs.length, 0);
+    assert.equal(h.sessions.get(sid), undefined, 'nothing was stored');
+    assert.deepEqual(h.errors, []);
+  }
+  // Two submits while a write is under way: the first takes the attachment, the second follows it.
+  {
+    const gate = gatedStore();
+    const { adapter, runs } = sequenceAdapter([]);
+    const h = attachHarness({ adapter, wrapStore: gate.wrapStore });
+    const sid = activeId(h.fc);
+    h.fc.send(env('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'slow.png' }));
+    h.fc.send(env('submit-turn', { text: 'first' }));
+    h.fc.send(env('submit-turn', { text: 'second' }));
+    await runsSettled();
+    assert.equal(h.sessions.get(sid), undefined, 'neither has run yet');
+    gate.release();
+    await waitFor(() => runs.some((r) => r.prompt === 'second'));
+    const rows = h.sessions.get(sid)!.transcript.filter((r) => r.role === 'user');
+    assert.deepEqual(rows.map((r) => (r.role === 'user' ? [r.text, r.attachments?.map((a) => a.id)] : [])), [['first', ['1-slow.png']], ['second', undefined]]);
+    assert.deepEqual(userRows(h.fc).map((r) => [r['text'], r['key']]), [['first', 'r0'], ['second', 'r1']]);
+    // The attachment went once, with the first message.
+    assert.ok(!runs.at(-1)!.prompt.includes(ATTACHED));
+    assert.deepEqual(runs.at(-1)!.readDirs, [`${ATT_ROOT}/${sid}`]);
+    assert.deepEqual(h.pendings().at(-1)!.items, []);
+  }
 });

@@ -95,7 +95,7 @@ export interface RenderRegistry {
  *
  * Mapping (single-sourced with {@link renderRegistryWebviewSource}'s inline copy; a
  * parity test pins the two together):
- * - transcript role 'user'      -> { kind:'user', role:'user' }        (collapsible)
+ * - transcript role 'user'      -> { kind:'user', role:'user' }        (collapsible; `meta.attachments` when it carried files)
  * - transcript role 'assistant' -> { kind:'assistant-text', role:'assistant' } (collapsible)
  * - transcript role 'marker'    -> { kind:'fallback', cssClass }       (the sc1 marker row)
  *   (a persisted tool-call marker -> { kind:'tool-command' } so a replay pairs with its result)
@@ -106,7 +106,13 @@ export interface RenderRegistry {
 export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
   // A TranscriptEntry carries `role`; a TurnEvent carries `kind`.
   if ('role' in entry) {
-    if (entry.role === 'user') return { kind: 'user', role: 'user', text: entry.text, collapsible: true };
+    if (entry.role === 'user') {
+      // Story E2026101259da3204:S001: the files the message carried ride on `meta`; a message
+      // with none keeps exactly the shape it had.
+      return entry.attachments !== undefined && entry.attachments.length > 0
+        ? { kind: 'user', role: 'user', text: entry.text, collapsible: true, meta: { attachments: entry.attachments } }
+        : { kind: 'user', role: 'user', text: entry.text, collapsible: true };
+    }
     if (entry.role === 'assistant') return { kind: 'assistant-text', role: 'assistant', text: entry.text, collapsible: true };
     // S001 (dev-chat ux polish): a replayed tool-result row -> the structured tool-result view-model
     // (command line + separator + collapsed output). Single-sourced with the live-event branch below.
@@ -189,6 +195,14 @@ export const RENDER_REGISTRY_STYLE =
   // S001 (dev-chat ux polish): the tool-result row — a command line (green $ prompt) above a thin
   // separator, then the collapsed output. The command stays visible; only the output collapses.
   `.insrc-toolresult{}` +
+  // Story E2026101259da3204:S001: the attachment chips under a user message.
+  `.insrc-attchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}` +
+  `.insrc-bubble>.insrc-attchips:first-child{margin-top:0;}` +
+  `.insrc-attchip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:2px 8px;border:1px solid var(--border,#222a36);border-radius:4px;cursor:pointer;color:var(--fg);}` +
+  `.insrc-attchip:hover{border-color:var(--accent);}` +
+  `.insrc-attchip__glyph{color:var(--accent);flex:0 0 auto;}` +
+  `.insrc-attchip__name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}` +
+  `.insrc-attchip__size{color:var(--muted);flex:0 0 auto;}` +
   `.insrc-toolresult__cmd{color:var(--fg-strong);white-space:pre-wrap;word-break:break-word;}` +
   `.insrc-toolresult__prompt{color:var(--accent);}` +
   `.insrc-toolresult__sep{height:1px;background:var(--border,#222a36);margin:6px 0;}` +
@@ -289,6 +303,24 @@ export function renderRegistryWebviewSource(): string {
     // onSelectionDecision(cb); the widget's confirm button calls it with (requestId, selectedIds).
     // Factory-level hook so the renderer stays CSP-safe (no postMessage/vscode ref).
     `var SDEC=null;function onSelectionDecision(cb){SDEC=cb;}` +
+    // Story E2026101259da3204:S001: the attachment-open sink. chat-panel registers a callback via
+    // onAttachmentOpen(cb); a click on a message's attachment chip calls it with the attachment's
+    // id. The chip names the file by id only and loads nothing: glyph, name and size as text (k1).
+    `var ADEC=null;function onAttachmentOpen(cb){ADEC=cb;}` +
+    `function attSize(n){n=typeof n==='number'&&n>=0?n:0;` +
+    `if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(1)+' MB';}` +
+    `function attChip(a){` +
+    `var chip=document.createElement('span');chip.className='insrc-attchip insrc-attchip--'+(a.kind==='image'?'image':'file');` +
+    `chip.setAttribute('role','button');chip.setAttribute('tabindex','0');chip.setAttribute('title',String(a.name));` +
+    `var g=document.createElement('span');g.className='insrc-attchip__glyph';g.textContent=a.kind==='image'?'\\u25a8':'\\u25a4';` +
+    `var nm=document.createElement('span');nm.className='insrc-attchip__name';nm.textContent=String(a.name);` +
+    `var sz=document.createElement('span');sz.className='insrc-attchip__size';sz.textContent=attSize(a.size);` +
+    `chip.appendChild(g);chip.appendChild(nm);chip.appendChild(sz);` +
+    `chip.addEventListener('click',function(){if(ADEC)ADEC(String(a.id));});` +
+    `return chip;}` +
+    `function attChips(list){var row=document.createElement('div');row.className='insrc-attchips';` +
+    `for(var i=0;i<list.length;i++){if(list[i]&&typeof list[i].id==='string')row.appendChild(attChip(list[i]));}` +
+    `return row;}` +
     // S003 t2: a message row is role-classed (user vs assistant tone, ac1) and, when long
     // (>3 lines or a long single line), its content is wrapped in the sc1 collapse primitive
     // (default-collapsed 3-line preview, ac2). Short messages render un-wrapped. textContent only (k1).
@@ -317,6 +349,12 @@ export function renderRegistryWebviewSource(): string {
     // collapsing when long (a deliberate narrowing: long pastes stay previewable). host.collapsible
     // itself is untouched and still serves tool-command, tool-result and caption rows.
     `var content=inner||null;var longMsg=isLong(raw)&&role!=='assistant';` +
+    // A user message with files: its text (when it has any) in an element of its own, then the
+    // chips under it. A message without files takes the unchanged path below.
+    `var atts=role==='user'&&vm&&vm.meta&&vm.meta.attachments&&vm.meta.attachments.length>0?vm.meta.attachments:null;` +
+    `if(atts&&!content){` +
+    `if(raw!==''){var t=document.createElement('div');t.className='insrc-bubble__text';t.textContent=raw;bubble.appendChild(longMsg?host.collapsible(t,{defaultCollapsed:true}):t);}` +
+    `bubble.appendChild(attChips(atts));wrap.appendChild(bubble);return wrap;}` +
     `if(content){bubble.appendChild(longMsg?host.collapsible(content,{defaultCollapsed:true}):content);}` +
     `else if(longMsg){var c=document.createElement('div');c.textContent=raw;bubble.appendChild(host.collapsible(c,{defaultCollapsed:true}));}` +
     `else{bubble.textContent=raw;}` +
@@ -350,7 +388,7 @@ export function renderRegistryWebviewSource(): string {
     `function toViewModel(entry){` +
     `if(!entry)return {kind:'fallback',text:'',collapsible:false};` +
     `if('role' in entry){` +
-    `if(entry.role==='user')return {kind:'user',role:'user',text:entry.text,collapsible:true};` +
+    `if(entry.role==='user')return entry.attachments!==undefined&&entry.attachments.length>0?{kind:'user',role:'user',text:entry.text,collapsible:true,meta:{attachments:entry.attachments}}:{kind:'user',role:'user',text:entry.text,collapsible:true};` +
     `if(entry.role==='assistant')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
     // S001 (dev-chat ux polish): a replayed tool-result row -> the structured tool-result view-model.
     `if(entry.role==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:{command:entry.command,output:entry.output}};` +
@@ -549,6 +587,6 @@ export function renderRegistryWebviewSource(): string {
     `function forgetKeysBefore(idx){for(var k in KEYS){if(/^r\\d+$/.test(k)&&Number(k.slice(1))<idx)delete KEYS[k];}}` +
     `function withIsolatedPending(fn){var live=PEND;PEND=[];try{return fn();}finally{PEND=live;}}` +
     `function forgetPendingIn(nodes){PEND=PEND.filter(function(p){return nodes.indexOf(p.wrap)<0;});}` +
-    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,forgetKeysBefore:forgetKeysBefore,withIsolatedPending:withIsolatedPending,forgetPendingIn:forgetPendingIn,onSelectionDecision:onSelectionDecision};}`
+    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,forgetKeysBefore:forgetKeysBefore,withIsolatedPending:withIsolatedPending,forgetPendingIn:forgetPendingIn,onSelectionDecision:onSelectionDecision,onAttachmentOpen:onAttachmentOpen,attachmentSize:attSize};}`
   );
 }

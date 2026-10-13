@@ -252,8 +252,9 @@ test('the extension builds a session output on ~/.insrc/chat-output, passes it t
   assert.match(src, /import \{ createSessionOutput \} from '\.\/chat\/session-output\.js';/);
   assert.match(b, /const chatOutput = createSessionOutput\(\{ root: join\(PATHS\.insrc, 'chat-output'\), logger: panelLog \}\)/, 'one root under ~/.insrc');
   assert.match(b, /createProviderRegistry\(\{ spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput \}\)/, 'the registry keeps turn output in the session files');
-  assert.match(b, /onEvict: \(id\) => void chatOutput\.remove\(id\)/, "an evicted session's files are removed");
-  assert.match(b, /\.sweep\(\{ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: new Set\(\[\.\.\.chatStore\.list\(\)\.map\(\(c\) => c\.id\), \.\.\.migratedChats\.kept\]\)\s*\}\)/, 'stale files of sessions not in the store are swept at start');
+  assert.match(b, /onEvict: \(id\) => \{\s*void chatOutput\.remove\(id\)/, "an evicted session's files are removed");
+  assert.match(b, /const chatKeep = new Set\(\[\.\.\.chatStore\.list\(\)\.map\(\(c\) => c\.id\), \.\.\.migratedChats\.kept\]\);/, 'the sweep keeps the sessions in the store and those the migration left behind');
+  assert.match(b, /void chatOutput\s*\.sweep\(\{ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: chatKeep \}\)/, 'stale files of sessions not in the store are swept at start');
   assert.match(src, /const CHAT_OUTPUT_MAX_AGE_MS = 30 \* 24 \* 60 \* 60 \* 1000;/, '30 days');
 });
 
@@ -276,10 +277,53 @@ test("extension.ts runs the migration before it builds the file store over join(
   assert.ok(store, 'the store construction is present');
   assert.match(store![1]!, /root: chatSessionsRoot,/);
   assert.match(store![1]!, /maxSessions: 200,/);
-  assert.match(store![1]!, /onEvict: \(id\) => void chatOutput\.remove\(id\)/);
+  assert.match(store![1]!, /onEvict: \(id\) => \{\s*void chatOutput\.remove\(id\)/);
   // The sweep keeps the store's ids and the ids the migration left in globalState.
-  assert.match(b, /keep: new Set\(\[\.\.\.chatStore\.list\(\)\.map\(\(c\) => c\.id\), \.\.\.migratedChats\.kept\]\)/);
+  assert.match(b, /const chatKeep = new Set\(\[\.\.\.chatStore\.list\(\)\.map\(\(c\) => c\.id\), \.\.\.migratedChats\.kept\]\);/);
+  assert.match(b, /void chatOutput\s*\.sweep\(\{ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: chatKeep \}\)/);
   // The Memento store is no longer constructed by the extension, and nothing else writes chat keys.
   assert.equal(src.includes('createMementoChatSessionStore'), false);
   assert.equal(/insrc\.chat\.(index|session)/.test(src), false);
+});
+
+// ---- Story E2026101259da3204:S001 t8: chat attachments ----
+
+test('extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session\'s attachments and the start-up sweep uses the same keep set', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  assert.match(src, /import \{ createAttachmentStore \} from '\.\/chat\/attachment-store\.js';/);
+  // The store: its root is under ~/.insrc, beside the sessions and their output.
+  assert.match(b, /const chatAttachments = createAttachmentStore\(\{ root: join\(PATHS\.insrc, 'chat-attachments'\), logger: panelLog \}\);/);
+
+  // The chat host gets the store and the two VS Code calls.
+  const seams = /createChatPanelHost\(\{\s*attachments: \{([\s\S]*?)\n      \},/.exec(b);
+  assert.ok(seams, 'the attachments seams are passed to the chat host');
+  assert.match(seams![1]!, /store: chatAttachments,/);
+  assert.match(
+    seams![1]!,
+    /pickFiles: async \(\) => \(\(await vscode\.window\.showOpenDialog\(\{ canSelectMany: true, openLabel: 'Attach' \}\)\) \?\? \[\]\)\.map\(\(uri\) => uri\.fsPath\),/,
+    'the picker is the native dialog, many files, none when dismissed',
+  );
+  assert.match(seams![1]!, /open: \(path\) => \{[\s\S]*?executeCommand\('vscode\.open', vscode\.Uri\.file\(path\)\)/, 'the opener runs vscode.open on a file URI');
+  assert.match(seams![1]!, /\.then\(undefined, \(e: unknown\) => panelLog\.warn\(/, 'a failed open is logged, never thrown');
+
+  // An evicted session loses its output files and its attachments; each failure is logged.
+  const store = /createFileChatSessionStore\(\{([\s\S]*?)\n    \}\);/.exec(b);
+  assert.ok(store, 'the store construction is present');
+  assert.match(store![1]!, /onEvict: \(id\) => \{\s*void chatOutput\.remove\(id\)\.catch\(/);
+  assert.match(store![1]!, /void chatAttachments\.removeSession\(id\)\.catch\(\(e: unknown\) => panelLog\.warn\(/);
+
+  // The start-up sweeps share one keep set and one age.
+  assert.equal((b.match(/const chatKeep = /g) ?? []).length, 1);
+  assert.match(b, /void chatOutput\s*\.sweep\(\{ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: chatKeep \}\)\s*\.catch\(/);
+  assert.match(b, /void chatAttachments\s*\.sweep\(\{ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: chatKeep \}\)\s*\.catch\(\(e: unknown\) => panelLog\.warn\(/);
+  assert.ok(b.indexOf('chatAttachments\n      .sweep(') > b.indexOf('createFileChatSessionStore({'), 'the sweep runs after the store is built');
+
+  // The plugin's own declaration of the vscode module has the dialog; the store module needs no vscode.
+  const decl = read(join(HERE, '..', '..', 'vscode.d.ts'));
+  assert.match(decl, /export function showOpenDialog\(options\?: \{ canSelectMany\?: boolean \| undefined; openLabel\?: string \| undefined \}\): PromiseLike<readonly Uri\[\] \| undefined>;/);
+  const storeSrc = read(join(HERE, '..', 'attachment-store.ts'));
+  assert.doesNotMatch(storeSrc, /from ['"]vscode['"]/);
 });

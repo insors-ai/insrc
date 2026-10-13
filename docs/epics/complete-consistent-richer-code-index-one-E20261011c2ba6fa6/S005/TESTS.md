@@ -229,7 +229,7 @@ Run at 2026-10-13T13:11:56.874Z on commit `d721fee2`. Tests check: **passed**. 6
 
 ## t8
 
-Run at 2026-10-13T13:21:10.640Z on commit `0ae37186`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-13T19:36:41.442Z on commit `96d4c105`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle**
 
@@ -267,7 +267,7 @@ Run at 2026-10-13T13:21:10.640Z on commit `0ae37186`. Tests check: **passed**. 7
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/analyze/context/__tests__/run-shaper-wiring.test.ts` | 0 | 15 | 2.4 s |  |
+| `src/analyze/context/__tests__/run-shaper-wiring.test.ts` | 0 | 16 | 2.5 s |  |
 
 ## t9
 
@@ -353,7 +353,7 @@ Run at 2026-10-13T13:56:46.991Z on commit `4f78c9d2`. Tests check: **passed**. 1
 
 ## t12
 
-Run at 2026-10-13T14:10:42.058Z on commit `e9eaa614`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-13T19:39:21.039Z on commit `96d4c105`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before**
 
@@ -378,12 +378,12 @@ Run at 2026-10-13T14:10:42.058Z on commit `e9eaa614`. Tests check: **passed**. 4
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/__tests__/search-guard.test.ts` | 0 | 3 | 70.2 s |  |
-| `src/daemon/__tests__/search-request-contract.test.ts` | 0 | 1 | 2.7 s |  |
+| `src/daemon/__tests__/search-guard.test.ts` | 0 | 3 | 66.5 s |  |
+| `src/daemon/__tests__/search-request-contract.test.ts` | 0 | 1 | 3.2 s |  |
 
 ## t13
 
-Run at 2026-10-13T14:40:25.910Z on commit `c411ab88`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-13T19:41:57.790Z on commit `96d4c105`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: search.callers across repositories leaves out the entities of a repository under index**
 
@@ -407,11 +407,11 @@ Run at 2026-10-13T14:40:25.910Z on commit `c411ab88`. Tests check: **passed**. 3
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/__tests__/search-filter.test.ts` | 0 | 3 | 123.2 s |  |
+| `src/daemon/__tests__/search-filter.test.ts` | 0 | 3 | 122.5 s |  |
 
 ## t14
 
-Run at 2026-10-13T14:51:31.571Z on commit `6f82f3e0`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-13T19:37:29.276Z on commit `96d4c105`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out**
 
@@ -429,7 +429,7 @@ Run at 2026-10-13T14:51:31.571Z on commit `6f82f3e0`. Tests check: **passed**. 2
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/tools/builtins/graph/__tests__/graph-guard.test.ts` | 0 | 2 | 0.9 s |  |
+| `src/daemon/tools/builtins/graph/__tests__/graph-guard.test.ts` | 0 | 3 | 0.9 s |  |
 
 ## t15
 

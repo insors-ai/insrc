@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T19:23:26.507Z",
+    "updatedAt": "2026-10-13T19:41:57.790Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1438,8 +1438,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "0ae37186",
-        "ranAt": "2026-10-13T13:21:10.640Z",
+        "commit": "96d4c105",
+        "ranAt": "2026-10-13T19:36:41.442Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1523,7 +1523,7 @@
             "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2382,
+            "durationMs": 2460,
             "titles": [
               {
                 "title": "runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope",
@@ -1583,6 +1583,10 @@
               },
               {
                 "title": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit decides the index state by the same rule as a miss: a generic run, or a run whose caller checked the scope, about a repository being indexed is served from a warm cache as it would be built from a cold one; a code run is refused",
                 "result": "pass"
               }
             ],
@@ -1861,8 +1865,8 @@
       },
       {
         "taskId": "t12",
-        "commit": "e9eaa614",
-        "ranAt": "2026-10-13T14:10:42.058Z",
+        "commit": "96d4c105",
+        "ranAt": "2026-10-13T19:39:21.039Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1915,7 +1919,7 @@
             "file": "src/daemon/__tests__/search-guard.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 70215,
+            "durationMs": 66518,
             "titles": [
               {
                 "title": "search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
@@ -1936,7 +1940,7 @@
             "file": "src/daemon/__tests__/search-request-contract.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2734,
+            "durationMs": 3206,
             "titles": [
               {
                 "title": "search request contract: each guarded search request accepts its existing params and answers",
@@ -1949,8 +1953,8 @@
       },
       {
         "taskId": "t13",
-        "commit": "c411ab88",
-        "ranAt": "2026-10-13T14:40:25.910Z",
+        "commit": "96d4c105",
+        "ranAt": "2026-10-13T19:41:57.790Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1998,7 +2002,7 @@
             "file": "src/daemon/__tests__/search-filter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 123189,
+            "durationMs": 122514,
             "titles": [
               {
                 "title": "search.callers across repositories leaves out the entities of a repository under index",
@@ -2019,8 +2023,8 @@
       },
       {
         "taskId": "t14",
-        "commit": "6f82f3e0",
-        "ranAt": "2026-10-13T14:51:31.571Z",
+        "commit": "96d4c105",
+        "ranAt": "2026-10-13T19:37:29.276Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2055,7 +2059,7 @@
             "file": "src/daemon/tools/builtins/graph/__tests__/graph-guard.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 903,
+            "durationMs": 893,
             "titles": [
               {
                 "title": "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out",
@@ -2063,6 +2067,10 @@
               },
               {
                 "title": "graph_query from a ready repository whose closure reaches a repository under index leaves that repository's entities out",
+                "result": "pass"
+              },
+              {
+                "title": "graph_search reports as closureRepos the repositories it searched, leaving out one under index; graph_query op=imports refuses a file under index and leaves such a repository's files out of another file's imports",
                 "result": "pass"
               }
             ],

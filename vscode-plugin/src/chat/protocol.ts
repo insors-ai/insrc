@@ -21,7 +21,7 @@ import type { SectionIndex } from './docs-sections.js';
 // record's shape is declared ONCE in the daemon and the three layers cannot drift.
 // `import type` is erased at compile, so the protocol<->client type cycle is not a
 // runtime cycle and this file stays type-only / vscode-free.
-import type { DocsContent } from './docs-review-client.js';
+import type { DocsContent, ReviewDecision, ReviewDecisionComment, ReviewDecisionOutcome } from './docs-review-client.js';
 
 /**
  * sc2 (S001) — whether the structured presentation was unavailable, and the
@@ -195,7 +195,20 @@ export type HostToWebview =
       readonly items: readonly PendingAttachmentView[];
       readonly error?: string | undefined;
     }
-  | { readonly type: 'theme'; readonly theme: TerminalTheme };
+  | { readonly type: 'theme'; readonly theme: TerminalTheme }
+  // Story E202610138d4b90c9:S001: the answer to a 'docs-decision'. `ok` false means the
+  // decision was not recorded; `message` is the line the pane shows either way.
+  | {
+      readonly type: 'docs-decision-result';
+      readonly artifactId: string;
+      readonly ok: boolean;
+      readonly outcome?: ReviewDecisionOutcome | undefined;
+      readonly recorded?: number | undefined;
+      readonly message: string;
+    }
+  // Story E202610138d4b90c9:S001: the answer to an 'open-companion'. `html` is the file's
+  // text for the frame; absent when the file is not one of the document's or could not be read.
+  | { readonly type: 'docs-companion'; readonly artifactId: string; readonly relPath: string; readonly html?: string | undefined };
 
 /** Webview -> host: user intents. */
 export type WebviewToHost =
@@ -204,9 +217,12 @@ export type WebviewToHost =
   | { readonly type: 'open-chat'; readonly chatId: string }
   | { readonly type: 'set-edit-mode'; readonly mode: 'auto' | 'review' }
   | { readonly type: 'edit-decision'; readonly path: string; readonly accept: boolean }
-  // S007: `note` carries the reviewer's request-changes text on reject (accept:false) —
-  // additive-optional, existing accept-only handlers ignore it.
-  | { readonly type: 'docs-decision'; readonly artifactId: string; readonly accept: boolean; readonly note?: string }
+  // Story E202610138d4b90c9:S001: the button the reviewer pressed in the review pane, with
+  // every comment written since the last send (replaces the earlier accept/note shape).
+  | { readonly type: 'docs-decision'; readonly artifactId: string; readonly decision: ReviewDecision; readonly comments: readonly ReviewDecisionComment[] }
+  // Story E202610138d4b90c9:S001: the review pane asks for the text of one HTML document of
+  // the open artifact, by its repo-relative path. Answered with 'docs-companion'.
+  | { readonly type: 'open-companion'; readonly artifactId: string; readonly relPath: string }
   // S007: the docs-review read intent — open one pending artifact's body (additive).
   | { readonly type: 'open-doc'; readonly artifactId: string }
   // S002 (additive): the Stop control's intent — cancel the in-flight turn. The host
@@ -269,6 +285,8 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'theme',
   'transcript-page',
   'attachments-pending',
+  'docs-decision-result',
+  'docs-companion',
 ] as const;
 
 export const WEBVIEW_TO_HOST_TYPES = [
@@ -289,6 +307,7 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'pick-attachments',
   'remove-attachment',
   'open-attachment',
+  'open-companion',
 ] as const;
 
 export type HostToWebviewType = (typeof HOST_TO_WEBVIEW_TYPES)[number];

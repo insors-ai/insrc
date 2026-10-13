@@ -21,9 +21,8 @@ import { fileURLToPath } from 'node:url';
 import { deriveSectionIndex } from '../docs-sections.js';
 import { allOf, bodyStub, fire, textNode, type BodyStub } from './fake-dom.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
-import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
+import type { DocsReviewClient, DocsContent, ReviewDecisionComment, ReviewDecisionResult } from '../docs-review-client.js';
 import type { DocsArtifactSummary } from '../protocol.js';
-import type { WorkflowApproveResult } from '../../../../src/workflow/gates.js';
 // S004/t2 — the SHARED parity fixtures, consumed by BOTH the daemon renderer and
 // the client one, so the structural diff compares two RENDERERS rather than two
 // authors' intentions. They live in the plugin test tree because S004 must touch
@@ -136,27 +135,40 @@ function fakeChannel(): FakeChannel {
 const env = (type: string, extra: Record<string, unknown> = {}) => ({ v: 1, payload: { type, ...extra } });
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
+/** The repo-relative path the fake client's default content names its document by. */
+const DOC_PATH = 'docs/epics/x/S007/LLD.md';
+interface DecideCall { path: string; decision: string; comments: readonly ReviewDecisionComment[] }
 interface ClientCalls {
   pending: number;
   content: string[];
-  approve: string[];
-  comment: Array<{ id: string; note: string }>;
+  decide: DecideCall[];
 }
+/** What the daemon answers a decision with when the test does not say otherwise. */
+const decided = (call: DecideCall): ReviewDecisionResult => ({
+  artifactId: 'LLD-abc-s7',
+  decision: call.decision as ReviewDecisionResult['decision'],
+  outcome: call.decision === 'approve' ? 'approved' : call.decision === 'reject' ? 'rejected' : 'recorded',
+  recorded: call.comments.length,
+  entryIds: call.comments.map((_, i) => `e${i + 1}`),
+  author: 'Rev Iewer',
+});
 function fakeClient(over: {
   pending?: (() => DocsArtifactSummary[]) | undefined;
   content?: ((id: string) => DocsContent) | undefined;
-  approve?: ((id: string) => WorkflowApproveResult) | undefined;
-  comment?: ((id: string, note: string) => void) | undefined;
+  decide?: ((call: DecideCall) => ReviewDecisionResult) | undefined;
 } = {}): { client: DocsReviewClient; calls: ClientCalls } {
-  const calls: ClientCalls = { pending: 0, content: [], approve: [], comment: [] };
+  const calls: ClientCalls = { pending: 0, content: [], decide: [] };
   const defPending: DocsArtifactSummary[] = [
     { id: 'LLD-abc-s7', kind: 'LLD', title: 'Docs review pane', status: 'pending' },
   ];
   const client: DocsReviewClient = {
     async pending() { calls.pending++; return (over.pending ?? (() => defPending))(); },
-    async content(id) { calls.content.push(id); return (over.content ?? (() => ({ markdown: '# body', openQuestions: ['q?'], blocked: false })))(id); },
-    async approve(id) { calls.approve.push(id); return (over.approve ?? (() => ({ approved: [{ path: id, result: {} }], skipped: [], codeReview: [] } as unknown as WorkflowApproveResult)))(id); },
-    async comment(id, note) { calls.comment.push({ id, note }); (over.comment ?? (() => {}))(id, note); },
+    async content(id) { calls.content.push(id); return (over.content ?? (() => ({ markdown: '# body', openQuestions: ['q?'], blocked: false, docPath: DOC_PATH })))(id); },
+    async decide(path, decision, comments) {
+      const call = { path, decision, comments };
+      calls.decide.push(call);
+      return (over.decide ?? decided)(call);
+    },
   };
   return { client, calls };
 }
@@ -201,28 +213,51 @@ test('open-doc for a stale/unknown id does NOT fetch content — it refreshes th
   assert.ok(calls.pending > pendingBefore, 're-fetched pending instead');
 });
 
-test('docs-decision accept approves via the client and re-fetches pending', async () => {
+test("docs-decision approve records the decision through client.decide by the document's path and re-fetches pending", async () => {
   const fc = fakeChannel();
   const { client, calls } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
-  const pendingBefore = calls.pending;
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls.approve, ['LLD-abc-s7'], 'approved the artifact');
+  const pendingBefore = calls.pending;
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
+  await tick();
+  assert.deepEqual(calls.decide, [{ path: DOC_PATH, decision: 'approve', comments: [] }], 'one call, by the path the content named');
   assert.ok(calls.pending > pendingBefore, 're-fetched pending after the decision');
 });
 
-test('a blocked approve (skipped[], nothing approved) surfaces the reason non-lossily and stays pending', async () => {
+test('a docs-decision in the earlier accept/note shape, or for a document that was never opened, reaches no daemon call', async () => {
   const fc = fakeChannel();
-  const { client, calls } = fakeClient({
-    approve: () => ({ approved: [], skipped: [{ path: 'docs/x/S007/LLD.md', reason: 'unresolved HIGH finding' }], codeReview: [] } as unknown as WorkflowApproveResult),
-  });
+  const { client, calls } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
   fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'maybe', comments: [] }));
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve' }));
+  await tick();
+  assert.deepEqual(calls.decide, [], 'a malformed decision is dropped');
+  // Pending, but its content was never read: there is no path to send it by.
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
+  await tick();
+  assert.deepEqual(calls.decide, []);
+  const failed = fc.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!;
+  assert.match(String(failed.payload.markdown), /decision failed: open the document before deciding on it/);
+});
+
+test('a withheld approval surfaces the reason non-lossily and stays pending', async () => {
+  const fc = fakeChannel();
+  const { client, calls } = fakeClient({
+    decide: (call) => ({ ...decided(call), outcome: 'withheld', reason: 'unresolved HIGH finding' }),
+  });
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  host.open();
+  await tick();
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
+  await tick();
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
   await tick();
   const blocked = fc.posted.filter((p) => p.payload.type === 'docs-content').find((p) => p.payload.blocked === true);
   assert.ok(blocked, 'posted a blocked docs-content notice');
@@ -230,16 +265,25 @@ test('a blocked approve (skipped[], nothing approved) surfaces the reason non-lo
   assert.ok(calls.pending >= 2, 'still re-fetches pending (artifact stays pending)');
 });
 
-test('docs-decision reject records the reviewer note via client.comment and re-fetches', async () => {
+test('docs-decision reject and feedback send their comments through the same client.decide call and re-fetch', async () => {
   const fc = fakeChannel();
   const { client, calls } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: false, note: 'tighten error paths' }));
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls.comment, [{ id: 'LLD-abc-s7', note: 'tighten error paths' }]);
-  assert.equal(calls.approve.length, 0, 'reject never approves');
+  const pendingBefore = calls.pending;
+  const comments = [{ comment: 'tighten error paths' }, { comment: 'say which', anchor: { quote: 'the pane' } }];
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'reject', comments }));
+  await tick();
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'feedback', comments: [comments[0]] }));
+  await tick();
+  assert.deepEqual(calls.decide, [
+    { path: DOC_PATH, decision: 'reject', comments },
+    { path: DOC_PATH, decision: 'feedback', comments: [comments[0]] },
+  ], 'the decision and every comment, in one call each');
+  assert.ok(calls.pending > pendingBefore);
 });
 
 test('a stale decision (id no longer pending) is dropped, not sent to the client', async () => {
@@ -248,9 +292,9 @@ test('a stale decision (id no longer pending) is dropped, not sent to the client
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
-  fc.send(env('docs-decision', { artifactId: 'GHOST-s9', accept: true }));
+  fc.send(env('docs-decision', { artifactId: 'GHOST-s9', decision: 'approve', comments: [] }));
   await tick();
-  assert.equal(calls.approve.length, 0, 'never approved a non-pending id');
+  assert.equal(calls.decide.length, 0, 'never approved a non-pending id');
 });
 
 test('client.pending() throwing yields an empty list + an inline unavailable notice (never a blank pane)', async () => {
@@ -311,8 +355,7 @@ test('MED-3: a slow refresh response cannot overwrite a newer one (sequence guar
   const client: DocsReviewClient = {
     pending: () => new Promise<DocsArtifactSummary[]>((resolve) => { gates[call++] = resolve; }),
     async content() { return { markdown: 'b', openQuestions: [], blocked: false }; },
-    async approve(id) { return { approved: [{ path: id, result: {} }], skipped: [], codeReview: [] } as unknown as WorkflowApproveResult; },
-    async comment() {},
+    async decide(path, decision, comments) { return decided({ path, decision, comments }); },
   };
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();            // triggers refresh #1 (index 0)
@@ -341,8 +384,7 @@ function openRaceHarness() {
   const client: DocsReviewClient = {
     async pending() { return docs; },
     content: (id) => new Promise<DocsContent>((resolve, reject) => { gates.set(id, { resolve, reject }); }),
-    async approve(id) { return { approved: [{ path: id, result: {} }], skipped: [], codeReview: [] } as unknown as WorkflowApproveResult; },
-    async comment() {},
+    async decide(path, decision, comments) { return decided({ path, decision, comments }); },
   };
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   const body = (id: string): DocsContent => ({ markdown: `body of ${id}`, openQuestions: [], blocked: false });
@@ -921,25 +963,29 @@ test('t6: the shell still has exactly ONE markup-injection site after the choose
   assert.doesNotMatch(html, /insertAdjacentHTML|outerHTML|document\.write/, 'no other markup path');
 });
 
-test('t6: approve and request-changes still reach workflow.approve / workflow.resolveComment unchanged, and the COMMENTABLE_KINDS gate holds', async () => {
+test('t6: approve and send feedback reach the daemon through client.decide, and the COMMENTABLE_KINDS gate holds', async () => {
   // approve path
   const fc = fakeChannel();
   const { client, calls } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls.approve, ['LLD-abc-s7'], 'approve still passes the artifact id unchanged');
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
+  await tick();
+  assert.deepEqual(calls.decide, [{ path: DOC_PATH, decision: 'approve', comments: [] }], "approve is sent by the document's path");
 
-  // request-changes path
+  // feedback path
   const fc2 = fakeChannel();
   const { client: c2, calls: calls2 } = fakeClient();
   createDocsReviewHost({ createPanel: () => fc2.channel, client: c2 }).open();
   await tick();
-  fc2.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: false, note: 'tighten it' }));
+  fc2.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls2.comment, [{ id: 'LLD-abc-s7', note: 'tighten it' }], 'resolveComment params unchanged');
+  fc2.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'feedback', comments: [{ comment: 'tighten it' }] }));
+  await tick();
+  assert.deepEqual(calls2.decide, [{ path: DOC_PATH, decision: 'feedback', comments: [{ comment: 'tighten it' }] }], 'the comment is sent with the decision');
 
   // the gate: DEF/HLD/LLD commentable, others not
   for (const [kind, expected] of [['DEF', true], ['HLD', true], ['LLD', true], ['PLAN', false], ['ISSUE', false]] as const) {
@@ -2013,20 +2059,22 @@ test('t5: idempotence — two consecutive docs-content messages with the same re
   assert.equal(containers(w).length, 0, 'the previously placed block is gone');
 });
 
-test('t5: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked banner behave identically to before this Story', async () => {
+test('t5: approve and feedback reach the daemon, and the COMMENTABLE_KINDS gate and the blocked banner behave as before', async () => {
   // Host-side behaviour, through the real client doubles — unchanged by t5.
   const fc = fakeChannel();
   const { client, calls } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls.approve, ['LLD-abc-s7'], 'approve still reaches workflow.approve');
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
+  await tick();
+  assert.deepEqual(calls.decide, [{ path: DOC_PATH, decision: 'approve', comments: [] }], 'approve reaches the daemon');
 
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: false, note: 'please fix' }));
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'feedback', comments: [{ comment: 'please fix' }] }));
   await tick();
-  assert.deepEqual(calls.comment, [{ id: 'LLD-abc-s7', note: 'please fix' }], 'request-changes still records a comment');
+  assert.deepEqual(calls.decide.at(-1), { path: DOC_PATH, decision: 'feedback', comments: [{ comment: 'please fix' }] }, 'feedback records the comment');
 
   // Webview side: the blocked banner replaces approve, request-changes survives.
   const w = runWebview();
@@ -3355,7 +3403,7 @@ test('t6 regression: approve / request-changes, the COMMENTABLE_KINDS gate and t
   assert.equal(r.actions.children.map((c) => c.textContent).includes('approve'), false, 'approve stays suppressed');
 });
 
-test('t6 regression: the HOST decision path still reaches the daemon unchanged', async () => {
+test('t6 regression: the HOST decision path still reaches the daemon', async () => {
   // The webview harness makes addEventListener a no-op on created elements, so a
   // click cannot be driven through a button there. The host end is where the
   // behaviour actually lives, and it is exercised through the real client doubles.
@@ -3363,12 +3411,14 @@ test('t6 regression: the HOST decision path still reaches the daemon unchanged',
   const { client, calls } = fakeClient();
   createDocsReviewHost({ createPanel: () => fc.channel, client }).open();
   await tick();
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls.approve, ['LLD-abc-s7'], 'approve still reaches workflow.approve');
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: false, note: 'please fix' }));
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
   await tick();
-  assert.deepEqual(calls.comment, [{ id: 'LLD-abc-s7', note: 'please fix' }], 'request-changes still records a comment');
+  assert.deepEqual(calls.decide, [{ path: DOC_PATH, decision: 'approve', comments: [] }], 'approve reaches the daemon');
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'feedback', comments: [{ comment: 'please fix' }] }));
+  await tick();
+  assert.deepEqual(calls.decide.at(-1), { path: DOC_PATH, decision: 'feedback', comments: [{ comment: 'please fix' }] }, 'feedback records the comment');
 });
 
 test('t6: the fail-closed arm shows the blocked banner and NO slot', () => {
@@ -5448,9 +5498,9 @@ test('openArtifact opens a non-pending artifact without approve or request-chang
   assert.equal(ro.payload.artifactId, 'BUILD-abc-s7');
   assert.equal(ro.payload['readOnly'], true);
   // A decision on it is dropped by the existing guard: it is not pending.
-  fc.send(env('docs-decision', { artifactId: 'BUILD-abc-s7', accept: true }));
+  fc.send(env('docs-decision', { artifactId: 'BUILD-abc-s7', decision: 'approve', comments: [] }));
   await tick();
-  assert.deepEqual(calls.approve, []);
+  assert.deepEqual(calls.decide, []);
 
   // The pending one opens as a list-row click: no readOnly key, its actions intact.
   host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: 'docs/e/S007/LLD.md' });
@@ -5461,9 +5511,9 @@ test('openArtifact opens a non-pending artifact without approve or request-chang
   assert.equal(live.payload.artifactId, 'LLD-abc-s7');
   assert.equal('readOnly' in live.payload, false);
   assert.equal(live.payload['commentable'], true);
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
   await tick();
-  assert.deepEqual(calls.approve, ['LLD-abc-s7']);
+  assert.deepEqual(calls.decide, [{ path: DOC_PATH, decision: 'approve', comments: [] }]);
 
   // Webview side: read-only shows the note and no decision control; without the flag the controls stay.
   const w = runWebview();
@@ -5482,8 +5532,7 @@ test('openArtifact on a cold pane decides pending from its own pending read, eve
   const client: DocsReviewClient = {
     pending: () => new Promise<DocsArtifactSummary[]>((resolve) => { gates.push(resolve); }),
     async content(id) { contents.push(id); return { markdown: '# body', openQuestions: [], blocked: false }; },
-    async approve(id) { return { approved: [{ path: id, result: {} }], skipped: [], codeReview: [] } as unknown as WorkflowApproveResult; },
-    async comment() {},
+    async decide(path, decision, comments) { return decided({ path, decision, comments }); },
   };
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: 'docs/e/S007/LLD.md' }); // open()'s refresh #0, openArtifact's read #1

@@ -14,7 +14,7 @@
 import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
 import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary, type RenderDegradation } from './protocol.js';
 import { attr, type ChatPanelChannel, type ChatPanelLogger } from './chat-panel.js';
-import type { DocsReviewClient, DocsContent } from './docs-review-client.js';
+import type { DocsReviewClient, DocsContent, ReviewDecision, ReviewDecisionComment } from './docs-review-client.js';
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-style.js';
 import { deriveSectionIndex, createSectionResolver, type SectionIndex } from './docs-sections.js';
@@ -1239,6 +1239,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   // LAST, not whichever content IPC completes last. A separate counter from refreshSeq,
   // because a list refresh (every decision triggers one) must not discard an open.
   let openSeq = 0;
+  // Story E202610138d4b90c9:S001: the repo-relative .md path of each document read, by
+  // artifact id. A decision is sent to the daemon by this path, never by the id.
+  const docPaths = new Map<string, string>();
 
   const post = (msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
@@ -1339,6 +1342,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     try {
       const content = await deps.client.content(opts.path ?? artifactId);
       if (mySeq !== openSeq) return; // superseded by a newer open — drop this response
+      if (content.docPath !== undefined && content.docPath !== '') docPaths.set(artifactId, content.docPath);
       // t5 — derive the index ONCE per opened document (not per interaction) and
       // post it on the SAME message as the markdown it came from. Deriving it
       // here, from `content.markdown`, is what makes the two inseparable.
@@ -1439,30 +1443,27 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     }
   }
 
-  async function decide(artifactId: string, accept: boolean, note: string | undefined): Promise<void> {
+  /**
+   * Story E202610138d4b90c9:S001: one decision, one daemon call. The daemon records the
+   * decision first and then the comments, so nothing here is done in two steps.
+   */
+  async function decide(artifactId: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<void> {
     const commentable = COMMENTABLE_KINDS.has(pending.get(artifactId)?.kind ?? '');
     try {
-      if (accept) {
-        const res = await deps.client.approve(artifactId);
-        // A review block-verdict is NOT an error — it comes back non-lossily in skipped[]
-        // (k5, daemon-enforced). The host approves ONE artifact, so a non-empty skipped[]
-        // with nothing approved means this one was withheld; surface the reason inline and
-        // the artifact stays pending.
-        if (res.approved.length === 0 && res.skipped.length > 0) {
-          const skip = res.skipped[0]!;
-          post({
-            type: 'docs-content',
-            artifactId,
-            markdown: `not approved (blocked): ${skip.reason}`,
-            openQuestions: [],
-            blocked: true,
-            commentable,
-          });
-        }
-      } else {
-        // request-changes: record the reviewer's note; the artifact stays pending (there
-        // is no daemon reject IPC — mirrors the JetBrains annotate flow).
-        await deps.client.comment(artifactId, note && note.trim() !== '' ? note : 'changes requested');
+      const docPath = docPaths.get(artifactId);
+      if (docPath === undefined) throw new Error('open the document before deciding on it');
+      const res = await deps.client.decide(docPath, decision, comments);
+      // A review block-verdict is NOT an error — the daemon answers 'withheld' with the
+      // reason (k5, daemon-enforced). Surface it inline; the artifact stays pending.
+      if (res.outcome === 'withheld') {
+        post({
+          type: 'docs-content',
+          artifactId,
+          markdown: `not approved (blocked): ${res.reason ?? 'the review gate withheld the approval'}`,
+          openQuestions: [],
+          blocked: true,
+          commentable,
+        });
       }
     } catch (err) {
       log.warn(`[docs-review] decision ${artifactId} failed: ${String(err)}`);
@@ -1794,14 +1795,14 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         }
         return;
       case 'docs-decision':
-        if (typeof msg.artifactId !== 'string' || typeof msg.accept !== 'boolean') return;
+        if (typeof msg.artifactId !== 'string' || !isReviewDecision(msg.decision) || !Array.isArray(msg.comments)) return;
         // Only act on a live pending artifact (k5); a stale decision -> refresh, drop.
         if (!pending.has(msg.artifactId)) {
           log.warn(`[docs-review] docs-decision: unknown/stale artifact ${msg.artifactId}`);
           void refreshPending();
           return;
         }
-        void decide(msg.artifactId, msg.accept, typeof msg.note === 'string' ? msg.note : undefined);
+        void decide(msg.artifactId, msg.decision, msg.comments);
         return;
       default:
         // any chat-slice / forward variant: accepted-but-ignored seam — never an error.
@@ -1822,6 +1823,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         disposed = true;
         channel = undefined;
         pending.clear();
+        docPaths.clear();
       });
       channel.onMessage(handleMessage);
       channel.setHtml(renderShell());
@@ -1839,9 +1841,14 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       channel?.dispose();
       channel = undefined;
       pending.clear();
+      docPaths.clear();
     },
   };
   return host;
+}
+
+function isReviewDecision(v: unknown): v is ReviewDecision {
+  return v === 'approve' || v === 'reject' || v === 'feedback';
 }
 
 function errText(err: unknown): string {

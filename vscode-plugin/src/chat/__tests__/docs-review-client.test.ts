@@ -81,50 +81,76 @@ test('content() maps approvable:false -> blocked:true', async () => {
   assert.equal(content.blocked, true);
 });
 
-test('approve(id) resolves mdPath into workflow.approve { artifactPath } and returns the result', async () => {
-  const RESULT = { approved: [{ path: 'docs/epics/x/S007/LLD.md', result: {} }], skipped: [], codeReview: [] };
+test("docs review client: decide calls 'workflow.reviewDecision' once with the given path, without the id map, and throws on the error arm; content forwards the new view fields", async () => {
+  const RESULT = { artifactId: 'LLD-abc-s7', decision: 'reject', outcome: 'rejected', reason: 'tighten it', recorded: 2, entryIds: ['e1', 'e2'], author: 'Rev Iewer' };
+  const VIEW = {
+    artifactId: 'LLD-abc-s7', kind: 'LLD', renderedMarkdown: '# LLD', openQuestions: [], approvable: true,
+    docPath: 'docs/epics/x/S007/LLD.md',
+    contentVersion: '0123456789abcdef',
+    feedback: [{ id: 'f1', author: 'Rev Iewer', timestamp: '2026-10-13T09:00:00.000Z', target: { file: 'docs/epics/x/S007/LLD.md' }, comment: 'First.', decision: 'feedback', batchId: 'b1', anchor: { quote: 'LLD' } }],
+    reviewer: { name: 'Rev Iewer', source: 'git' },
+    state: 'pending',
+  };
   const { client, calls } = fakeIpc((m) => {
     if (m === 'workflow.pending') return PENDING;
-    if (m === 'workflow.approve') return RESULT;
+    if (m === 'workflow.reviewDecision') return RESULT;
+    if (m === 'workflow.artifactContent') return VIEW;
     return { error: 'x' };
   });
   const c = createDocsReviewClient(client);
-  await c.pending();
-  const res = await c.approve('LLD-abc-s7');
-  assert.equal(res.approved.length, 1);
-  const ap = calls.find((x) => x.method === 'workflow.approve');
-  assert.deepEqual(ap!.params, { artifactPath: 'docs/epics/x/S007/LLD.md' });
+  await c.pending(); // the id map now knows LLD-abc-s7 -> docs/epics/x/S007/LLD.md
+
+  const comments = [{ comment: 'tighten it' }, { comment: 'say which', version: '0123456789abcdef', anchor: { quote: 'the pane', sectionSlug: 'lld' } }];
+  const res = await c.decide('docs/standalone/y/S001/LLD.md', 'reject', comments);
+  assert.deepEqual(res, RESULT, 'the daemon result is returned as it is');
+  const sent = calls.filter((x) => x.method === 'workflow.reviewDecision');
+  assert.equal(sent.length, 1, 'one call');
+  assert.deepEqual(sent[0]!.params, { mdPath: 'docs/standalone/y/S001/LLD.md', decision: 'reject', comments });
+  assert.deepEqual(calls.map((x) => x.method), ['workflow.pending', 'workflow.reviewDecision'], 'no approve, no resolveComment, no second call');
+
+  // A path only: an artifact id is sent as it was given, never looked up.
+  await c.decide('LLD-abc-s7', 'feedback', [comments[0]!]);
+  assert.deepEqual(calls.at(-1)!.params, { mdPath: 'LLD-abc-s7', decision: 'feedback', comments: [comments[0]] }, 'the id map is not consulted');
+  // No comments is an empty list, not an absent key.
+  await c.decide('docs/standalone/y/S001/LLD.md', 'approve', []);
+  assert.deepEqual(calls.at(-1)!.params, { mdPath: 'docs/standalone/y/S001/LLD.md', decision: 'approve', comments: [] });
+
+  // A withheld approval is a result, not an error.
+  const withheld = fakeIpc(() => ({ ...RESULT, decision: 'approve', outcome: 'withheld', reason: 'unresolved HIGH finding', recorded: 0, entryIds: [] }));
+  assert.equal((await createDocsReviewClient(withheld.client).decide('docs/x/LLD.md', 'approve', [])).outcome, 'withheld');
+
+  // The error arm, and a socket failure, are thrown.
+  const refused = fakeIpc(() => ({ error: "workflow.reviewDecision: cannot approve 'LLD-abc-s7': it is already approved, not awaiting review" }));
+  await assert.rejects(() => createDocsReviewClient(refused.client).decide('docs/x/LLD.md', 'approve', []), /already approved/);
+  const down = fakeIpc(() => { throw new Error('socket closed'); });
+  await assert.rejects(() => createDocsReviewClient(down.client).decide('docs/x/LLD.md', 'approve', []), /socket closed/);
+
+  // content forwards the five new view fields unchanged, by reference.
+  const content = await c.content('LLD-abc-s7');
+  assert.equal(content.docPath, VIEW.docPath);
+  assert.equal(content.contentVersion, VIEW.contentVersion);
+  assert.equal(content.feedback, VIEW.feedback);
+  assert.equal(content.reviewer, VIEW.reviewer);
+  assert.equal(content.state, 'pending');
+  assert.equal(content.markdown, '# LLD', 'beside the existing fields');
+  // A daemon that sends none of them (older than the plugin): absent keys, not undefined values.
+  const old = fakeIpc(() => ({ artifactId: 'x', kind: 'LLD', renderedMarkdown: 'b', openQuestions: [], approvable: true }));
+  const bare = await createDocsReviewClient(old.client).content('docs/x/LLD.md');
+  for (const key of ['docPath', 'contentVersion', 'feedback', 'reviewer', 'state']) assert.equal(key in bare, false, `${key} is an absent key`);
 });
 
-test('comment() posts workflow.resolveComment with { artifactId, comments:[{body}] }', async () => {
-  const { client, calls } = fakeIpc((m) => (m === 'workflow.resolveComment' ? { recorded: 1, resolutions: [] } : { error: 'x' }));
-  const c = createDocsReviewClient(client);
-  await c.comment('LLD-abc-s7', 'please tighten the error path');
-  const rc = calls.find((x) => x.method === 'workflow.resolveComment')!.params as {
-    artifactId: string;
-    comments: Array<{ id: string; anchor: unknown; body: string }>;
-  };
-  assert.equal(rc.artifactId, 'LLD-abc-s7');
-  assert.equal(rc.comments.length, 1);
-  assert.equal(rc.comments[0]!.body, 'please tighten the error path');
-});
-
-test('MED-2: an empty mdPath (unresolvable sentinel) is NOT cached, so content/approve fall back to the raw id (never send "")', async () => {
+test('MED-2: an empty mdPath (unresolvable sentinel) is NOT cached, so content falls back to the raw id (never send "")', async () => {
   const EMPTY = { artifacts: [{ artifactId: 'LLD-legacy', kind: 'LLD', title: 'legacy', mdPath: '', openQuestionCount: 0, state: 'pending' }] };
   const { client, calls } = fakeIpc((m) => {
     if (m === 'workflow.pending') return EMPTY;
     if (m === 'workflow.artifactContent') return { artifactId: 'LLD-legacy', kind: 'LLD', renderedMarkdown: 'b', openQuestions: [], approvable: true };
-    if (m === 'workflow.approve') return { approved: [], skipped: [], codeReview: [] };
     return { error: 'x' };
   });
   const c = createDocsReviewClient(client);
   await c.pending();
   await c.content('LLD-legacy');
-  await c.approve('LLD-legacy');
   const ac = calls.find((x) => x.method === 'workflow.artifactContent')!.params as { mdPath: string };
-  const ap = calls.find((x) => x.method === 'workflow.approve')!.params as { artifactPath: string };
   assert.equal(ac.mdPath, 'LLD-legacy', 'content falls back to the raw id, not ""');
-  assert.equal(ap.artifactPath, 'LLD-legacy', 'approve falls back to the raw id, not ""');
 });
 
 test('every method throws on the daemon { error } arm (never a silent empty result)', async () => {
@@ -132,8 +158,7 @@ test('every method throws on the daemon { error } arm (never a silent empty resu
   const c = createDocsReviewClient(client);
   await assert.rejects(() => c.pending(), /repo unresolved/);
   await assert.rejects(() => c.content('x'), /repo unresolved/);
-  await assert.rejects(() => c.approve('x'), /repo unresolved/);
-  await assert.rejects(() => c.comment('x', 'n'), /repo unresolved/);
+  await assert.rejects(() => c.decide('x', 'approve', []), /repo unresolved/);
 });
 
 // ---------------------------------------------------------------------------
@@ -209,7 +234,7 @@ test('t2: content() still throws on the daemon { error } arm — unavailable sta
   assert.equal(empty.blocked, false);
 });
 
-test('t2: source-scan — no new rpc method name appears in docs-review-client', async () => {
+test('t2: source-scan — docs-review-client calls exactly its three daemon methods', async () => {
   const src = readFileSync(
     join(import.meta.dirname, '..', 'docs-review-client.ts'),
     'utf8',
@@ -217,8 +242,8 @@ test('t2: source-scan — no new rpc method name appears in docs-review-client',
   const methods = [...src.matchAll(/'(workflow\.[A-Za-z.]+)'/g)].map((m) => m[1]).sort();
   assert.deepEqual(
     [...new Set(methods)],
-    ['workflow.approve', 'workflow.artifactContent', 'workflow.pending', 'workflow.resolveComment'],
-    'the widening rides the existing four IPCs — no new rpc method name',
+    ['workflow.artifactContent', 'workflow.pending', 'workflow.reviewDecision'],
+    'the list, the content and the one decision call; approve and resolveComment are no longer called from here',
   );
 });
 

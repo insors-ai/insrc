@@ -11,7 +11,6 @@
  * approve()/comment() IPCs on daemon-tracked artifacts (k5). Persists nothing (k3).
  * All vscode API lives behind the injected {@link ChatPanelChannel}.
  */
-import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
 import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary, type RenderDegradation, type DocsDocumentTab } from './protocol.js';
 import { attr, type ChatPanelChannel, type ChatPanelLogger } from './chat-panel.js';
 import type { DocsReviewClient, DocsContent, ReviewDecision, ReviewDecisionComment, ReviewDecisionResult } from './docs-review-client.js';
@@ -30,8 +29,6 @@ const COMMENTABLE_KINDS = new Set(['DEF', 'HLD', 'LLD']);
 export interface DocsReviewHostDeps {
   createPanel(opts: { viewType: string; title: string }): ChatPanelChannel;
   readonly client: DocsReviewClient;
-  readonly renderStyle?: (theme?: TerminalTheme) => string;
-  readonly theme?: TerminalTheme;
   readonly logger?: ChatPanelLogger;
   readonly genNonce?: () => string;
   /**
@@ -1244,8 +1241,6 @@ export function companionVisualKind(kind: CompanionRefKind): CompanionVisualKind
 
 export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   const log = deps.logger ?? NOOP_LOGGER;
-  const renderStyle = deps.renderStyle ?? renderTerminalStyle;
-  const theme = deps.theme ?? terminalTheme;
   const genNonce =
     deps.genNonce ?? (() => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`);
 
@@ -1606,7 +1601,67 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   const renderShell = (): string => {
     const nonce = genNonce();
     shellNonce = nonce;
-    const style = renderStyle(theme);
+    // Story E202610138d4b90c9:S001 — the pane's own style. Every colour, font and border is
+    // a VS Code theme variable, so the pane follows whichever theme is active and has no
+    // switch of its own. The `--it-*` tokens the body, functional-requirement, diagram and
+    // experience rules below are written in are DEFINED here from theme variables, so those
+    // rules are unchanged. No literal colour anywhere: a hex or a colour name would be
+    // wrong in one theme or another.
+    //
+    // LAYOUT: the body is a column the height of the pane. The header and the comment
+    // panel take their own height and `.rv-scroll` takes the rest; it is the ONLY element
+    // that scrolls, which is what keeps the comment panel in view at every scroll position.
+    const style = `<style>` +
+      `html,body{height:100%;margin:0;}*{box-sizing:border-box;}` +
+      `body{` +
+      `--it-bg:var(--vscode-editor-background);--it-fg:var(--vscode-editor-foreground);` +
+      `--it-dim:var(--vscode-descriptionForeground);--it-accent:var(--vscode-textLink-foreground);` +
+      `--it-warn:var(--vscode-editorWarning-foreground);--it-err:var(--vscode-errorForeground);` +
+      `--it-ok:var(--vscode-charts-green);--it-sel:var(--vscode-editor-selectionBackground);` +
+      `--it-border:var(--vscode-panel-border);--it-font:var(--vscode-font-family);` +
+      `display:flex;flex-direction:column;overflow:hidden;padding:0;` +
+      `background:var(--vscode-editor-background);color:var(--vscode-foreground);` +
+      `font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);line-height:1.5;}` +
+      `.rv-dim{color:var(--vscode-descriptionForeground);}.rv-sp{flex:1;}` +
+      `.rv-badge{background:var(--vscode-badge-background);color:var(--vscode-badge-foreground);border-radius:10px;padding:0 7px;font-size:11px;}` +
+      // The header: which document, its kind and its state.
+      `.rv-head{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:6px 14px;border-bottom:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);}` +
+      `.rv-head select{background:var(--vscode-dropdown-background);color:var(--vscode-dropdown-foreground);border:1px solid var(--vscode-dropdown-border);border-radius:2px;padding:3px 6px;font:inherit;max-width:60%;}` +
+      // The document: the one scrolling region.
+      `.rv-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;}` +
+      `.rv-doc{position:relative;max-width:900px;margin:0 auto;padding:12px 28px 40px;color:var(--vscode-editor-foreground);}` +
+      `.insrc-docs-oq-item{color:var(--it-warn);margin:4px 0;}` +
+      // The comment panel, styled as the chat panel's input: one rounded box holding the
+      // field and round, icon-only buttons (the name is in the tooltip and the aria-label).
+      `.rv-bar{flex:0 0 auto;border-top:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);padding:8px 14px 10px;}` +
+      `.rv-meta{display:flex;gap:10px;align-items:center;margin-bottom:6px;font-size:12px;}` +
+      `.rv-row{display:flex;gap:6px;align-items:flex-end;border:1px solid var(--vscode-input-border);border-radius:12px;background:var(--vscode-input-background);padding:6px 8px 6px 10px;}` +
+      `.rv-row:focus-within{border-color:var(--vscode-focusBorder);}` +
+      `.rv-row textarea{flex:1;min-width:0;resize:none;background:none;color:var(--vscode-input-foreground);border:0;outline:none;padding:5px 4px;font:inherit;line-height:1.5;}` +
+      `.rv-row textarea::placeholder{color:var(--vscode-input-placeholderForeground);}` +
+      `.rv-ic{width:30px;height:30px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer;` +
+      `background:var(--vscode-button-secondaryBackground);color:var(--vscode-button-secondaryForeground);border:1px solid var(--vscode-panel-border);}` +
+      `.rv-ic:hover{background:var(--vscode-button-secondaryHoverBackground);}` +
+      `.rv-ic:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px;}` +
+      `.rv-ic:disabled{opacity:.45;cursor:default;}` +
+      `.rv-ic svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}` +
+      `.rv-ic.rv-approve{background:var(--vscode-button-background);color:var(--vscode-button-foreground);border-color:var(--vscode-button-background);}` +
+      `.rv-ic.rv-approve:hover{background:var(--vscode-button-hoverBackground);}` +
+      `.rv-ic.rv-reject{background:none;color:var(--vscode-errorForeground);border-color:var(--vscode-errorForeground);}` +
+      `.rv-result{margin-top:6px;font-size:12px;min-height:18px;color:var(--vscode-descriptionForeground);}` +
+      `.rv-result.rv-ok{color:var(--vscode-charts-green);}.rv-result.rv-err{color:var(--vscode-errorForeground);}` +
+      // The rendered document reads as an editor preview: headings in the editor's own
+      // foreground with a rule under the first two levels, code in the editor's font.
+      `#insrc-docs-body{font-size:14px;line-height:1.6;}` +
+      `#insrc-docs-body h1,#insrc-docs-body h2,#insrc-docs-body h3,#insrc-docs-body h4,#insrc-docs-body h5,#insrc-docs-body h6{color:var(--vscode-editor-foreground);}` +
+      `#insrc-docs-body h1,#insrc-docs-body h2{padding-bottom:4px;border-bottom:1px solid var(--vscode-panel-border);}` +
+      `#insrc-docs-body code,#insrc-docs-body pre{font-family:var(--vscode-editor-font-family);}` +
+      `#insrc-docs-body code{background:var(--vscode-textCodeBlock-background);border:0;color:var(--vscode-textPreformat-foreground);}` +
+      `#insrc-docs-body pre{background:var(--vscode-textCodeBlock-background);}` +
+      `#insrc-docs-body pre code{color:var(--vscode-editor-foreground);}` +
+      `#insrc-docs-body th{background:var(--vscode-sideBar-background);}` +
+      `#insrc-docs-body blockquote{border-left-color:var(--vscode-textBlockQuote-border);}` +
+      `</style>`;
     // The markdown element rules the rendered body needs. renderStyle emits CSS
     // custom properties and surface classes only — no element rules — and the
     // .insrc-md stylesheet is not in scope on this surface, so they come from the
@@ -1684,14 +1739,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.ux-size-medium{font-size:15px;}.ux-size-large{font-size:18px;}.ux-size-extraLarge{font-size:22px;}` +
       // The four Adaptive Cards colour roles map onto the theme ROLES rather than
       // onto a palette, so emphasis still means what the author meant in either
-      // theme. Three map directly. `good` has no counterpart: the shipped token set
-      // (design-tokens.ts:187-195) defines bg/fg/dim/accent/warn/err/sel and NO
-      // success role, so `--it-ok` does not exist — writing it bare would be the
-      // S001 gotcha exactly, a var() that resolves to nothing and silently drops
-      // the declaration, which is how a border once vanished here. The fallback
-      // keeps it valid: `good` reads as accent today and starts reading as itself
-      // the day a success token is added. Minting one now would mean editing the
-      // token set every chat surface shares — a different surface than this Task.
+      // theme. Three map directly. `good` maps onto `--it-ok`, which this pane
+      // defines from the theme's green (Story E202610138d4b90c9:S001). The fallback
+      // to the accent is kept: a var() that resolved to nothing would silently drop
+      // the declaration, which is how a border once vanished here.
       `.ux-color-accent{color:var(--it-accent);}.ux-color-good{color:var(--it-ok,var(--it-accent));}` +
       `.ux-color-warning{color:var(--it-warn);}.ux-color-attention{color:var(--it-err);}` +
       `.ux-container{border:1px solid var(--it-border);border-radius:5px;padding:10px;}` +
@@ -1734,29 +1785,75 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.ux-unknown{border:1px dashed var(--it-err);border-radius:5px;padding:8px;color:var(--it-err);font-size:11px;white-space:normal;}` +
       `</style>`;
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
-    const cls = surfaceClass('docs-review');
-    const listCls = surfaceClass('history-dropdown');
     const bootstrap =
       `const vs=acquireVsCodeApi();` +
       `const listEl=document.getElementById('insrc-docs-list');` +
       `const bodyEl=document.getElementById('insrc-docs-body');` +
       `const oqEl=document.getElementById('insrc-docs-oq');` +
-      `const noteEl=document.getElementById('insrc-docs-note');` +
-      `const actEl=document.getElementById('insrc-docs-actions');` +
       `const secEl=document.getElementById('insrc-docs-sections');` +
       `const noticeEl=document.getElementById('insrc-docs-notice');` +
       `const dgHostEl=document.getElementById('insrc-docs-diagram');` +
       `const uxHostEl=document.getElementById('insrc-docs-experience');` +
-      `var current='';` +
-      // docs-list: one clickable row per pending artifact (textContent only, no innerHTML).
-      `function renderList(items){while(listEl.firstChild)listEl.removeChild(listEl.firstChild);` +
-      `(items||[]).forEach(function(a){var b=document.createElement('button');b.className='insrc-docs-item';` +
-      `b.textContent='['+a.kind+'] '+(a.title||a.id)+' — '+a.status;` +
-      `b.addEventListener('click',function(){current=a.id;vs.postMessage({v:1,payload:{type:'open-doc',artifactId:a.id}});});` +
-      `listEl.appendChild(b);});` +
-      `if(!(items&&items.length)){var e=document.createElement('div');e.className='insrc-diff-ctx';e.textContent='no pending artifacts';listEl.appendChild(e);}}` +
-      // docs-content: render the verbatim body + open questions + block banner + the
-      // approve/request-changes controls (controls hidden while blocked).
+      // Story E202610138d4b90c9:S001 — the header and the comment panel. Every element is
+      // in the shell's markup; the script only sets text, values and state on them.
+      `const kindEl=document.getElementById('insrc-rv-kind');` +
+      `const stateEl=document.getElementById('insrc-rv-state');` +
+      `const whoEl=document.getElementById('insrc-rv-who');` +
+      `const fieldEl=document.getElementById('insrc-rv-field');` +
+      `const resultEl=document.getElementById('insrc-rv-result');` +
+      `const btn={approve:document.getElementById('insrc-rv-approve'),reject:document.getElementById('insrc-rv-reject'),feedback:document.getElementById('insrc-rv-feedback')};` +
+      // current: the id of the document shown. shown: its last docs-content message.
+      // busy: a decision was posted and its result has not arrived. sent: how many
+      // comments that decision carried.
+      `var current='';var items=[];var shown=null;var busy=false;var sent=0;` +
+      // docs-list: one option per document awaiting review (textContent only, no markup).
+      // The document shown is always an option, so the select names it even when it is
+      // not awaiting review.
+      `function rvOption(value,text){var o=document.createElement('option');o.value=value;o.textContent=text;return o;}` +
+      `function renderList(list){items=list||[];while(listEl.firstChild)listEl.removeChild(listEl.firstChild);` +
+      `var known=false;` +
+      `if(!current)listEl.appendChild(rvOption('',items.length?'Choose a document ('+items.length+' awaiting review)':'No documents are awaiting review'));` +
+      `items.forEach(function(a){if(a.id===current)known=true;listEl.appendChild(rvOption(a.id,a.kind+' · '+(a.title||a.id)+' · '+a.status));});` +
+      `if(current&&!known)listEl.appendChild(rvOption(current,current+' · not awaiting review'));` +
+      `listEl.value=current;}` +
+      `listEl.addEventListener('change',function(){var id=listEl.value;if(!id||id===current)return;` +
+      `vs.postMessage({v:1,payload:{type:'open-doc',artifactId:id}});});` +
+      `function rvKind(id){var i=id.indexOf('-');return i<0?id:id.slice(0,i);}` +
+      `function rvSetResult(text,cls){resultEl.textContent=text;resultEl.className='rv-result'+(cls?' '+cls:'');}` +
+      // Awaiting review: the document can be approved or rejected. A read-only open, or one
+      // the daemon says is approved or rejected, takes feedback only.
+      `function rvAwaiting(m){return !!m&&!!m.artifactId&&!m.readOnly&&(m.state===undefined||m.state==='pending');}` +
+      `function renderBar(){var m=shown;var has=!!(m&&m.artifactId);var pend=rvAwaiting(m);` +
+      `btn.feedback.disabled=busy||!has;` +
+      `btn.reject.disabled=busy||!pend;` +
+      // A blocked document was not seen in full, or its review stands against it: it is
+      // not approvable from here.
+      `btn.approve.disabled=busy||!pend||!!m.blocked;` +
+      `btn.reject.style.display=(has&&!pend)?'none':'';btn.approve.style.display=(has&&!pend)?'none':'';` +
+      `fieldEl.disabled=!has;` +
+      `kindEl.textContent=has?rvKind(m.artifactId):'';kindEl.style.display=has?'':'none';` +
+      `stateEl.textContent=!has?'':pend?(m.blocked?'pending review · blocked: it cannot be approved':'pending review'):` +
+      `((m.state==='approved'?'approved':m.state==='rejected'?'rejected':'not awaiting review')+' · feedback only');` +
+      `var r=m&&m.reviewer;whoEl.textContent=(r&&typeof r.name==='string')?('as '+r.name+(r.source==='git'?' (git user)':r.source==='os'?' (OS user)':'')):'';}` +
+      // One decision: the button pressed and the comment on the whole document, when there
+      // is one. Nothing is posted while an earlier decision is unanswered, and send
+      // feedback with no comment posts nothing.
+      `function rvSend(decision){if(busy||!shown||!shown.artifactId)return;` +
+      `var text=String(fieldEl.value||'').trim();var comments=[];` +
+      `if(text){var c={comment:text};if(typeof shown.contentVersion==='string')c.version=shown.contentVersion;comments.push(c);}` +
+      `if(decision==='feedback'&&!comments.length){rvSetResult('Write a comment before sending feedback.','rv-err');return;}` +
+      `busy=true;sent=comments.length;renderBar();rvSetResult('Sending…','');` +
+      `vs.postMessage({v:1,payload:{type:'docs-decision',artifactId:shown.artifactId,decision:decision,comments:comments}});}` +
+      `btn.approve.addEventListener('click',function(){rvSend('approve');});` +
+      `btn.reject.addEventListener('click',function(){rvSend('reject');});` +
+      `btn.feedback.addEventListener('click',function(){rvSend('feedback');});` +
+      // The result of a decision: the buttons work again and the line says what happened.
+      // The field is cleared only when the decision was recorded with every comment.
+      `function rvResult(m){if(!shown||m.artifactId!==shown.artifactId)return;busy=false;` +
+      `if(m.ok&&m.recorded===sent)fieldEl.value='';` +
+      `renderBar();rvSetResult(String(m.message||''),m.ok?'rv-ok':'rv-err');}` +
+      // docs-content: render the verbatim body + open questions, then the header and
+      // the comment panel for this document.
       DOCS_BODY_RENDERER_SOURCE +
       DOCS_SECTIONS_SOURCE +
       // S002/t2 — inlined after its two siblings, since its placement step (t5)
@@ -1848,32 +1945,33 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `renderDegradationNotice(noticeEl,(m.degradation&&m.degradation.degraded)?m.degradation:(r.degradation&&r.degradation.degraded)?r.degradation:(fr.degradation||r.degradation));` +
       `while(oqEl.firstChild)oqEl.removeChild(oqEl.firstChild);` +
       `(m.openQuestions||[]).forEach(function(q){var d=document.createElement('div');d.className='insrc-docs-oq-item';d.textContent='? '+q;oqEl.appendChild(d);});` +
-      `while(actEl.firstChild)actEl.removeChild(actEl.firstChild);` +
-      // E2 S004 — a read-only open (not awaiting review) shows a note and no decision control.
-      `if(m.artifactId&&m.readOnly){var ro=document.createElement('div');ro.className='insrc-diff-ctx';ro.textContent='read-only: not awaiting review';actEl.appendChild(ro);}` +
-      `else if(m.artifactId){` +
-      `if(m.blocked){var w=document.createElement('div');w.className='insrc-diff-del';w.textContent='blocked — not approvable';actEl.appendChild(w);}` +
-      `else{var ok=document.createElement('button');ok.textContent='approve';ok.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'docs-decision',artifactId:m.artifactId,accept:true}});});actEl.appendChild(ok);}` +
-      // request-changes only for kinds the daemon can record a comment on (commentable !== false).
-      `if(m.commentable!==false){var rc=document.createElement('button');rc.textContent='request changes';rc.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'docs-decision',artifactId:m.artifactId,accept:false,note:noteEl.value}});noteEl.value='';});actEl.appendChild(rc);}}}` +
+      // The document shown changed: an unanswered decision, the field and the result line
+      // belonged to the earlier one. A re-post of the SAME document (after a decision, or
+      // to a rebuilt shell) keeps all three.
+      `var same=!!shown&&shown.artifactId===m.artifactId;shown=m;current=m.artifactId||'';` +
+      `if(!same){busy=false;fieldEl.value='';rvSetResult('','');}` +
+      `renderList(items);renderBar();}` +
       `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
       `if(m.type==='docs-list'){renderList(m.artifacts);}` +
-      `else if(m.type==='docs-content'){renderContent(m);}});` +
+      `else if(m.type==='docs-content'){renderContent(m);}` +
+      `else if(m.type==='docs-decision-result'){rvResult(m);}});` +
+      `listEl.appendChild(rvOption('','Loading the documents awaiting review…'));renderBar();` +
       // request the pending list as soon as the script is live.
       `vs.postMessage({v:1,payload:{type:'open-doc',artifactId:''}});`;
     return (
       `<!DOCTYPE html><html><head><meta charset="utf-8">` +
       `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
       `${style}${mdStyle}</head>` +
-      // The `--it-*` tokens renderTerminalStyle emits are scoped to `.insrc-term`,
-      // so the surface div has to sit INSIDE an .insrc-term element to inherit
-      // them — exactly as the reviewed mock does
-      // (mocks/docs-review.html: <body class="insrc-term"><div class="insrc-term-review">).
-      // The shell previously put the surface class straight on <body>, leaving
-      // every var(--it-…) in this pane undefined.
-      `<body class="insrc-term">` +
-      `<div class="${cls}">` +
-      `<div id="insrc-docs-list" class="${listCls}" aria-label="pending artifacts"></div>` +
+      `<body class="insrc-rv">` +
+      // The header: outside the scrolling region.
+      `<div class="rv-head">` +
+      `<select id="insrc-docs-list" aria-label="document"></select>` +
+      `<span id="insrc-rv-kind" class="rv-badge"></span>` +
+      `<span id="insrc-rv-state" class="rv-dim"></span>` +
+      `<span class="rv-sp"></span>` +
+      `</div>` +
+      // The one scrolling region: everything of the document, and nothing else.
+      `<div id="insrc-rv-scroll" class="rv-scroll"><div class="rv-doc">` +
       // t6: the section chooser and the ac3 notice. Both are filled by DOM
       // construction with textContent — never markup — and the chooser host stays
       // EMPTY (no control at all) for a document with no headings.
@@ -1890,8 +1988,21 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `<div id="insrc-docs-experience" aria-label="experience mock"></div>` +
       `<div id="insrc-docs-body" class="insrc-docs-content" aria-label="artifact body"></div>` +
       `<div id="insrc-docs-oq" aria-label="open questions"></div>` +
-      `<textarea id="insrc-docs-note" rows="2" aria-label="request-changes note"></textarea>` +
-      `<div id="insrc-docs-actions"></div>` +
+      `</div></div>` +
+      // The comment panel: outside the scrolling region, so it is in view at every scroll
+      // position. Icon-only buttons; each one's name is its title and aria-label.
+      `<div id="insrc-rv-bar" class="rv-bar">` +
+      `<div class="rv-meta"><span class="rv-sp"></span><span id="insrc-rv-who" class="rv-dim"></span></div>` +
+      `<div class="rv-row">` +
+      `<textarea id="insrc-rv-field" rows="2" aria-label="Comment on the whole document" placeholder="Comment on the whole document (optional)…"></textarea>` +
+      `<button id="insrc-rv-feedback" type="button" class="rv-ic" aria-label="Send feedback" title="Send feedback: sends the comment; the document's state does not change">` +
+      `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 8l11-5-4 11-2-4.5z"/></svg></button>` +
+      `<button id="insrc-rv-reject" type="button" class="rv-ic rv-reject" aria-label="Reject" title="Reject: sends the comment and rejects this revision">` +
+      `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>` +
+      `<button id="insrc-rv-approve" type="button" class="rv-ic rv-approve" aria-label="Approve" title="Approve: sends the comment and approves">` +
+      `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 8.5l3.2 3.2L13 5"/></svg></button>` +
+      `</div>` +
+      `<div id="insrc-rv-result" class="rv-result" aria-live="polite"></div>` +
       `</div>` +
       `<script nonce="${nonce}">${MARKED_SRC}\n;${bootstrap}</script></body></html>`
     );
@@ -1951,7 +2062,6 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       });
       channel.onMessage(handleMessage);
       channel.setHtml(renderShell());
-      post({ type: 'theme', theme });
       // The webview boot ping also triggers refreshPending; post one now so a fast
       // consumer (test double) sees the list without waiting for the ping.
       void refreshPending();

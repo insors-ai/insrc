@@ -478,7 +478,7 @@ test('ISSUE-605c7057: a list refresh does not discard an in-flight open', async 
 // blanket doesNotMatch(/innerHTML/) passes if someone deletes the render, while
 // this fails if someone deletes the guard. Named for what it now checks, rather
 // than inheriting the stale-name drift the chat-panel precedent carries.
-test('rendered shell: one nonce, unwidened CSP, docs-review surface, guardMd present, no remote origin', () => {
+test('rendered shell: one nonce, unwidened CSP, the review pane body, guardMd present, no remote origin', () => {
   const fc = fakeChannel();
   const { client } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'NONCE123' });
@@ -495,9 +495,11 @@ test('rendered shell: one nonce, unwidened CSP, docs-review surface, guardMd pre
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'exactly one inline script tag even after MARKED_SRC is injected');
 
-  assert.match(html, /class="insrc-term-review"/, 'renders the docs-review surface class');
-  // The --it-* tokens are scoped to .insrc-term, so the surface must sit inside one.
-  assert.match(html, /<body class="insrc-term">/, 'the surface is nested in an .insrc-term element so its CSS variables resolve');
+  // The --it-* tokens are defined on the body from VS Code theme variables, so every
+  // var(--it-…) in the pane resolves without a terminal wrapper.
+  assert.match(html, /<body class="insrc-rv">/, "the pane's body");
+  assert.match(html, /body\{--it-bg:var\(--vscode-editor-background\);/, 'the tokens are defined on the body');
+  assert.doesNotMatch(html, /insrc-term/, 'no terminal surface class is left');
 
   assert.match(html, /guardMd\(/, 'the rendered markdown is scrubbed via guardMd — asserted PRESENT, so removing the guard fails this test');
   assert.doesNotMatch(html, /(src|href)="https?:/, 'no remote resource is referenced by the shell');
@@ -1194,8 +1196,18 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *   E2 S004/t3 (+172 chars, +172 bytes): the read-only branch of the decision
  *       controls. An artifact the delivery board opens that is not awaiting review
  *       arrives with readOnly, and the webview shows a 'read-only: not awaiting
- *       review' note in place of approve and request-changes. Declared below as
- *       BOOTSTRAP_DELTA_E2_S004_T3 so the accounting still closes.
+ *       review' note in place of approve and request-changes.
+ *   E202610138d4b90c9:S001/t9 (the shell REBUILT, not extended): the pane's own
+ *       style replaces the terminal style, with every colour a VS Code theme
+ *       variable and the --it-* tokens defined from them; the body becomes a
+ *       column with the header and the comment panel outside one scrolling
+ *       region; the list of buttons becomes a select; and the approve /
+ *       request-changes controls become the comment panel's field, its three
+ *       round buttons and its result line. The five source strings are inlined
+ *       unchanged. The earlier arithmetic (a base pin plus each declared delta)
+ *       ended here: a rebuilt shell has no base to add to, so the test that
+ *       summed it now checks what still holds, that each source string is
+ *       inlined verbatim and once.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -1209,47 +1221,10 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  87416,
-  bytes:  87476,
-  sha256: 'ad3fbbad6ad13d76316612be6b72a957b7d9d6e95a1893626959131800d61177',
+  chars:  92305,
+  bytes:  92350,
+  sha256: '41c9bab757d11772fa587a065e78bbcc8eb840cb2f6ef744a1143f9c4162ca23',
 } as const;
-
-/**
- * The pin BEFORE S004/t2, kept so the move can be ACCOUNTED FOR arithmetically
- * rather than merely declared. S004/t1 was data-only and did not touch it; t2 adds
- * the fifth source string and its CSS fragment; t6 additionally touches the
- * BOOTSTRAP, which is the one task in this Story licensed to. The test below proves
- * the sum closes EXACTLY:
- *
- *   79530  the pin before S004 touched the shell
- * +  4870  DOCS_UX_SOURCE, measured from the string itself
- * +  2346  the ux CSS fragment, measured from the emitted shell
- * +   498  the t6 BOOTSTRAP delta, declared below
- * = 87244
- *
- * so nothing slipped in alongside them.
- *
- * Every value here was COMPUTED at the fixed nonce and copied from the computation,
- * never typed. A number typed into a pin is a number nobody checked.
- */
-const SHELL_BASELINE_BEFORE_S004_T2 = { chars: 79530, bytes: 79582 } as const;
-
-/**
- * The t6 BOOTSTRAP delta, declared rather than absorbed. t1-t5 added only source
- * text; t6 is the task that changes the surface, and it does so in four places:
- * the `insrc-docs-experience` host div, the `uxHostEl` lookup, the slot build plus
- * mount call, and the frame's noun becoming kind-aware. Those are not measurable
- * from a single artefact the way a source string is, so the number is pinned here
- * and the accounting test makes it close — which is the point: a bootstrap change
- * that cannot be named would otherwise hide inside a moved hash.
- */
-const BOOTSTRAP_DELTA_S004_T6 = 498;
-
-/**
- * E2 S004/t3's BOOTSTRAP delta, declared the same way: the read-only branch ahead of
- * the decision controls (one note element, no control). Computed at the fixed nonce.
- */
-const BOOTSTRAP_DELTA_E2_S004_T3 = 172;
 
 function renderShellFor(nonce: string): string {
   const fc = fakeChannel();
@@ -1267,7 +1242,7 @@ test('t1: the emitted shell is byte-identical to the captured fixed-nonce baseli
   assert.equal(
     createHash('sha256').update(html, 'utf8').digest('hex'),
     SHELL_BASELINE.sha256,
-    't1 is data-only: the emitted shell is unchanged from the captured pre-S002 baseline',
+    'the emitted shell matches the current pin',
   );
   // Reported alongside the hash so a failure says HOW it moved, not just that it did.
   assert.equal(html.length, SHELL_BASELINE.chars, 'shell length in characters');
@@ -1818,13 +1793,20 @@ interface WebviewRun {
   body: BodyStub;
   notice: BodyStub;
   sections: BodyStub;
-  actions: BodyStub;
   oq: BodyStub;
   posted: unknown[];
   diagram: BodyStub;
   experience: BodyStub;
   created: string[];
   deliver(payload: Record<string, unknown>): void;
+  /** Any host message, by its type. */
+  send(type: string, payload: Record<string, unknown>): void;
+  /** The select of documents in the header. */
+  list: BodyStub;
+  /** The comment panel and the header's text. */
+  bar: { approve: BodyStub; reject: BodyStub; feedback: BodyStub; field: BodyStub; result: BodyStub; state: BodyStub; kind: BodyStub; who: BodyStub };
+  /** How each decision button stands. */
+  controls(): { approve: ControlMode; reject: ControlMode; feedback: ControlMode };
 }
 /** Evaluate the REAL bootstrap from the emitted shell against DOM stubs. */
 function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?: boolean | undefined; breakDiagram?: boolean | undefined; breakExperience?: boolean | undefined; countCreates?: boolean | undefined } = {}): WebviewRun {
@@ -1851,12 +1833,15 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
     script = script.replace('function uxBuildMockSlot(', 'function uxBuildMockSlot(){throw new Error("ux slot build blew up");}\nfunction _unusedUx(');
   }
 
-  const ids = ['insrc-docs-list', 'insrc-docs-body', 'insrc-docs-oq', 'insrc-docs-note',
-    'insrc-docs-actions', 'insrc-docs-sections', 'insrc-docs-notice', 'insrc-docs-diagram',
-    'insrc-docs-experience'];
+  const ids = ['insrc-docs-list', 'insrc-docs-body', 'insrc-docs-oq',
+    'insrc-docs-sections', 'insrc-docs-notice', 'insrc-docs-diagram',
+    'insrc-docs-experience',
+    // The header and the comment panel of the rebuilt shell (E202610138d4b90c9:S001).
+    'insrc-rv-kind', 'insrc-rv-state', 'insrc-rv-who', 'insrc-rv-field', 'insrc-rv-result',
+    'insrc-rv-approve', 'insrc-rv-reject', 'insrc-rv-feedback'];
   const byId: Record<string, BodyStub> = {};
   for (const id of ids) byId[id] = bodyStub('div', id);
-  (byId['insrc-docs-note'] as unknown as { value: string }).value = '';
+  byId['insrc-rv-field']!.value = '';
 
   const posted: unknown[] = [];
   const created: string[] = [];
@@ -1901,12 +1886,32 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
 
   return {
     body: byId['insrc-docs-body']!, notice: byId['insrc-docs-notice']!,
-    sections: byId['insrc-docs-sections']!, actions: byId['insrc-docs-actions']!,
+    sections: byId['insrc-docs-sections']!,
     oq: byId['insrc-docs-oq']!, posted,
     diagram: byId['insrc-docs-diagram']!, experience: byId['insrc-docs-experience']!, created,
     deliver: (payload) => onMessage?.({ data: { v: 1, payload: { type: 'docs-content', ...payload } } }),
+    send: (type, payload) => onMessage?.({ data: { v: 1, payload: { type, ...payload } } }),
+    list: byId['insrc-docs-list']!,
+    bar: {
+      approve: byId['insrc-rv-approve']!, reject: byId['insrc-rv-reject']!, feedback: byId['insrc-rv-feedback']!,
+      field: byId['insrc-rv-field']!, result: byId['insrc-rv-result']!,
+      state: byId['insrc-rv-state']!, kind: byId['insrc-rv-kind']!, who: byId['insrc-rv-who']!,
+    },
+    controls: () => ({
+      approve: controlMode(byId['insrc-rv-approve']!),
+      reject: controlMode(byId['insrc-rv-reject']!),
+      feedback: controlMode(byId['insrc-rv-feedback']!),
+    }),
   };
 }
+
+/** How a decision button stands: usable, shown but disabled, or not shown. */
+type ControlMode = 'on' | 'off' | 'hidden';
+function controlMode(b: BodyStub): ControlMode {
+  if (b.style['display'] === 'none') return 'hidden';
+  return (b as unknown as { disabled?: boolean }).disabled === true ? 'off' : 'on';
+}
+const ALL_ON = { approve: 'on', reject: 'on', feedback: 'on' } as const;
 
 test('t5: DOCS_FR_SOURCE is inlined into the single nonce\'d script and the placement call sits after stampSlugs and before the chooser / notice', () => {
   const fc = fakeChannel();
@@ -1993,8 +1998,7 @@ test('t5: the renderContent try/catch backstop — a forced throw inside placeme
   // being proved. A backstop that silently cost the reviewer the chooser would
   // have passed the earlier version of this test.
   assert.equal(w.oq.children.length, 1, 'open questions still render');
-  assert.equal(w.actions.children.length, 2, 'approve + request-changes still render');
-  assert.deepEqual(w.actions.children.map((c) => c.textContent), ['approve', 'request changes']);
+  assert.deepEqual(w.controls(), ALL_ON, 'the three decision controls are still usable');
   assert.equal(w.sections.children.length, 1, 'the section CHOOSER still renders');
   assert.equal(w.sections.children[0]!.tagName, 'select');
   assert.equal(w.notice.children.length, 0,
@@ -2078,15 +2082,15 @@ test('t5: approve and feedback reach the daemon, and the COMMENTABLE_KINDS gate 
   await tick();
   assert.deepEqual(calls.decide.at(-1), { path: DOC_PATH, decision: 'feedback', comments: [{ comment: 'please fix' }] }, 'feedback records the comment');
 
-  // Webview side: the blocked banner replaces approve, request-changes survives.
+  // Webview side: a blocked document cannot be approved; reject and feedback stay.
   const w = runWebview();
   w.deliver({ artifactId: 'a', markdown: 'unavailable: boom', openQuestions: [], blocked: true, commentable: true });
-  assert.equal(w.actions.children[0]!.textContent, 'blocked — not approvable');
-  assert.equal(w.actions.children.length, 2, 'blocked banner + request-changes');
-  // And a non-commentable kind still hides request-changes.
+  assert.deepEqual(w.controls(), { approve: 'off', reject: 'on', feedback: 'on' });
+  assert.equal(w.bar.state.textContent, 'pending review · blocked: it cannot be approved');
+  // Every kind takes comments now: the kind no longer hides a control.
   const w2 = runWebview();
   w2.deliver({ artifactId: 'a', markdown: '# Doc', openQuestions: [], blocked: false, commentable: false });
-  assert.deepEqual(w2.actions.children.map((c) => c.textContent), ['approve']);
+  assert.deepEqual(w2.controls(), ALL_ON);
 });
 
 test('t5: ordering — stamp, place, then re-read every heading id proves no slug was disturbed', () => {
@@ -3384,25 +3388,24 @@ test('t6 resilience: a forced throw in the slot build leaves all five other surf
   assert.ok(r.body.children.length >= 4, 'the body still rendered');
   assert.ok(r.sections.children.length > 0, 'the chooser still rendered');
   assert.equal(r.oq.children.length, 1, 'the open question still rendered');
-  const labels = r.actions.children.map((c) => c.textContent);
-  assert.deepEqual(labels, ['approve', 'request changes'], 'both controls still rendered');
+  assert.deepEqual(r.controls(), ALL_ON, 'the decision controls are still usable');
   assert.equal(dgSlotsIn(r).length, 0, 'and no half-built slot was left behind');
 });
 
-test('t6 regression: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked banner are unchanged', () => {
+test('t6 regression: the decision controls and the blocked state are the same with a diagram present', () => {
   // With a diagram present, so the regression is checked on the NEW path.
   const r = runWebview();
   const base = { markdown: DG_MD, openQuestions: [], sections: DG_SECTIONS, erDefinition: DG_ER, companions: [DG_REF] };
 
   r.deliver({ ...base, artifactId: 'LLD-x', blocked: false, commentable: true });
-  assert.deepEqual(r.actions.children.map((c) => c.textContent), ['approve', 'request changes']);
+  assert.deepEqual(r.controls(), ALL_ON);
 
   r.deliver({ ...base, artifactId: 'LLD-x', blocked: false, commentable: false });
-  assert.deepEqual(r.actions.children.map((c) => c.textContent), ['approve'], 'the COMMENTABLE_KINDS gate still hides request-changes');
+  assert.deepEqual(r.controls(), ALL_ON, 'every kind takes comments: the kind hides no control');
 
   r.deliver({ ...base, artifactId: 'LLD-x', blocked: true, commentable: true });
-  assert.equal(r.actions.children[0]!.textContent, 'blocked — not approvable');
-  assert.equal(r.actions.children.map((c) => c.textContent).includes('approve'), false, 'approve stays suppressed');
+  assert.deepEqual(r.controls(), { approve: 'off', reject: 'on', feedback: 'on' }, 'approve stays suppressed');
+  assert.match(r.bar.state.textContent, /blocked: it cannot be approved/);
 });
 
 test('t6 regression: the HOST decision path still reaches the daemon', async () => {
@@ -3429,7 +3432,8 @@ test('t6: the fail-closed arm shows the blocked banner and NO slot', () => {
   const r = runWebview();
   r.deliver({ artifactId: 'LLD-x', markdown: 'unavailable: daemon unreachable', openQuestions: [], blocked: true, commentable: true });
   assert.equal(dgSlotsIn(r).length, 0);
-  assert.equal(r.actions.children[0]!.textContent, 'blocked — not approvable');
+  assert.equal(r.controls().approve, 'off', 'and it cannot be approved');
+  assert.match(r.bar.state.textContent, /blocked: it cannot be approved/);
 });
 
 test('t6: DOCS_DIAGRAM_SOURCE is inlined in the single nonce\'d script and the call sits between stampSlugs and the chooser', () => {
@@ -3858,38 +3862,26 @@ test('t1/t2: the shell matches the pin, and NOTHING reads either new field yet',
   assert.match(html, /function uxRenderCard\(/, 'the renderer is inlined');
 });
 
-test('t2: the pin moved by EXACTLY the declared source string and CSS fragment — nothing else slipped in', () => {
+test('the shell inlines each of the five source strings verbatim and exactly once, with the ux CSS fragment', () => {
   const html = renderShellFor(SHELL_BASELINE.nonce);
 
-  // The two additions, measured from the artefacts themselves rather than from
-  // numbers typed here: the source string's own length, and the CSS fragment
-  // located in the emitted shell between its first and last rule.
+  // Until E202610138d4b90c9:S001 rebuilt the shell this test summed a base pin and
+  // each declared delta. A rebuilt shell has no base to add to. What still holds, and
+  // is still worth holding, is that the source strings are INLINED VERBATIM — which
+  // is what lets a test evaluate a string and know it evaluated what ships.
+  for (const [name, source] of [
+    ['DOCS_BODY_RENDERER_SOURCE', DOCS_BODY_RENDERER_SOURCE], ['DOCS_SECTIONS_SOURCE', DOCS_SECTIONS_SOURCE],
+    ['DOCS_FR_SOURCE', DOCS_FR_SOURCE], ['DOCS_DIAGRAM_SOURCE', DOCS_DIAGRAM_SOURCE], ['DOCS_UX_SOURCE', DOCS_UX_SOURCE],
+  ] as const) {
+    assert.equal(html.split(source).length - 1, 1, `${name} is inlined verbatim, once`);
+  }
+  // In the order the bootstrap relies on: each later string may call an earlier one.
+  const at = [DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE].map((x) => html.indexOf(x));
+  assert.deepEqual([...at].sort((a, b) => a - b), at, 'in their declared order');
+  // And the ux CSS fragment is still in the shell, between its first and last rule.
   const cssStart = html.indexOf('.ux-card{');
   const cssEnd = html.indexOf('}', html.indexOf('.ux-unknown{')) + 1;
   assert.ok(cssStart > 0 && cssEnd > cssStart, 'the ux CSS fragment is in the shell');
-  const cssChars = cssEnd - cssStart;
-
-  // ARITHMETIC, not assertion: if anything OTHER than these two had joined the
-  // shell, this sum would not close. That is what turns a moved pin from "I changed
-  // it" into "here is what changed and why it is all of it".
-  assert.equal(
-    SHELL_BASELINE_BEFORE_S004_T2.chars + DOCS_UX_SOURCE.length + cssChars + BOOTSTRAP_DELTA_S004_T6 + BOOTSTRAP_DELTA_E2_S004_T3,
-    SHELL_BASELINE.chars,
-    'the delta is exactly the source string, its CSS fragment, the declared t6 bootstrap change and the E2 S004/t3 read-only branch',
-  );
-  // The bootstrap delta is SMALL on purpose — t6 is one call and one host. If this
-  // ever needed to grow materially, the Story would be doing something other than
-  // mounting a slot.
-  assert.ok(BOOTSTRAP_DELTA_S004_T6 < 1000,
-    'the surface change stays a mount, not a rewrite');
-  // The source string really is inlined verbatim, which is what licenses using its
-  // length as the script half of the delta.
-  assert.ok(html.includes(DOCS_UX_SOURCE), 'DOCS_UX_SOURCE is inlined verbatim');
-  // And the shell still has the four earlier strings, so the delta is an ADDITION
-  // rather than a swap that happens to balance.
-  for (const earlier of [DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE]) {
-    assert.ok(html.includes(earlier), 'each earlier source string is still inlined');
-  }
 });
 
 test('t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild', (t) => {
@@ -5401,7 +5393,7 @@ test('t6: a forced throw in the experience slot build leaves SIX other surfaces 
   assert.ok(allOf(r.body).length > 0, '1. the body still rendered');
   assert.ok(allOf(r.sections).length > 0, '2. the section chooser');
   assert.ok(allOf(r.oq).length > 0, '3. the open questions');
-  assert.ok(allOf(r.actions).length > 0, '4. the approval controls');
+  assert.deepEqual(r.controls(), ALL_ON, '4. the decision controls');
   assert.equal(uxSlotsIn(r).length, 0, '5. and the experience slot simply did not appear');
   assert.equal(dgSlotsIn(r).length, 1, '6. THE DIAGRAM SLOT IS UNTOUCHED — one peer cannot take the other down');
 });
@@ -5488,7 +5480,7 @@ test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section ide
 
 // E2 S004/t3 — the delivery board's entry point: open the pane on one artifact,
 // read-only when it is not awaiting review.
-test('openArtifact opens a non-pending artifact without approve or request-changes, and a pending one as its list row does', async () => {
+test('openArtifact opens a non-pending artifact with feedback only, and a pending one as its list row does', async () => {
   const fc = fakeChannel();
   const { client, calls } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
@@ -5517,13 +5509,15 @@ test('openArtifact opens a non-pending artifact without approve or request-chang
   await tick();
   assert.deepEqual(calls.decide, [{ path: DOC_PATH, decision: 'approve', comments: [] }]);
 
-  // Webview side: read-only shows the note and no decision control; without the flag the controls stay.
+  // Webview side: read-only says so and offers feedback only; without the flag all three stay.
   const w = runWebview();
   w.deliver({ artifactId: 'BUILD-abc-s7', markdown: '# Build', openQuestions: [], blocked: false, commentable: false, readOnly: true });
-  assert.deepEqual(w.actions.children.map((c) => c.textContent), ['read-only: not awaiting review']);
+  assert.deepEqual(w.controls(), { approve: 'hidden', reject: 'hidden', feedback: 'on' });
+  assert.equal(w.bar.state.textContent, 'not awaiting review · feedback only');
   const w2 = runWebview();
   w2.deliver({ artifactId: 'LLD-abc-s7', markdown: '# Doc', openQuestions: [], blocked: false, commentable: true });
-  assert.deepEqual(w2.actions.children.map((c) => c.textContent), ['approve', 'request changes']);
+  assert.deepEqual(w2.controls(), ALL_ON);
+  assert.equal(w2.bar.state.textContent, 'pending review');
 });
 
 test('openArtifact on a cold pane decides pending from its own pending read, even when the boot ping\'s refresh is superseded', async () => {
@@ -5645,4 +5639,253 @@ test('history and compiler checks skip with a stated reason when what they need 
   assert.equal(count(/\bgitIn\(/g), 4, 'gitIn is declared once and bound only by git(t, need), and by this test for the git binary and its fixture');
   assert.equal(count(/\b(?:const|let|function)\s+git\b/g), 1, 'git(t, need) is the one history runner');
   assert.equal(count(/existsSync\(\s*tsc\b/g), 0, 'no test asserts the compiler is present');
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610138d4b90c9:S001 t9 — the rebuilt shell: a column with a fixed comment
+// panel, in VS Code theme variables.
+// ---------------------------------------------------------------------------
+
+/** Every <style> block of the emitted shell, joined. */
+function shellCss(html: string): string {
+  return [...html.matchAll(/<style>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join('\n');
+}
+
+test("docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch", async () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'N' }).open();
+  await tick();
+  const html = fc.html();
+  const markup = html.slice(html.indexOf('<body'), html.indexOf('<script'));
+
+  // THE LAYOUT, by position in the markup: header, then the scrolling region, then the
+  // comment panel; each of the first and last OUTSIDE the region.
+  const iHead = markup.indexOf('<div class="rv-head">');
+  const iScroll = markup.indexOf('<div id="insrc-rv-scroll" class="rv-scroll">');
+  const iBar = markup.indexOf('<div id="insrc-rv-bar" class="rv-bar">');
+  assert.ok(iHead > 0 && iScroll > iHead && iBar > iScroll, 'header, scrolling region, comment panel, in that order');
+  const head = markup.slice(iHead, iScroll);
+  const region = markup.slice(iScroll, iBar);
+  const bar = markup.slice(iBar);
+  // The region closes before the panel begins: its two closing tags end the slice.
+  assert.ok(region.endsWith('</div></div>'), 'the region is closed before the panel opens');
+  const count = (text: string, re: RegExp): number => (text.match(re) ?? []).length;
+  assert.equal(count(region, /<div\b/g), count(region, /<\/div>/g), 'and it is balanced, so nothing after it is inside it');
+  assert.equal(count(head, /<div\b/g), count(head, /<\/div>/g), 'the header is closed before the region opens');
+  for (const id of ['insrc-docs-sections', 'insrc-docs-notice', 'insrc-docs-diagram', 'insrc-docs-experience', 'insrc-docs-body', 'insrc-docs-oq']) {
+    assert.ok(region.includes(`id="${id}"`), `${id} is inside the scrolling region`);
+    assert.ok(!head.includes(`id="${id}"`) && !bar.includes(`id="${id}"`));
+  }
+  for (const id of ['insrc-docs-list', 'insrc-rv-kind', 'insrc-rv-state']) {
+    assert.ok(head.includes(`id="${id}"`), `${id} is in the header`);
+    assert.ok(!region.includes(`id="${id}"`), `${id} is outside the scrolling region`);
+  }
+  for (const id of ['insrc-rv-field', 'insrc-rv-approve', 'insrc-rv-reject', 'insrc-rv-feedback', 'insrc-rv-result', 'insrc-rv-who']) {
+    assert.ok(bar.includes(`id="${id}"`), `${id} is in the comment panel`);
+    assert.ok(!region.includes(`id="${id}"`), `${id} is outside the scrolling region`);
+  }
+
+  // THE RULES that make it so. The body is a column the height of the pane and does
+  // not scroll; the header and the panel keep their own height; ONE element scrolls.
+  const css = shellCss(html);
+  assert.ok(css.includes('html,body{height:100%;margin:0;}'));
+  const bodyRule = /(?:^|\})body\{([^}]*)\}/.exec(css)?.[1] ?? '';
+  assert.match(bodyRule, /display:flex;flex-direction:column;overflow:hidden;/, 'the body is a column and does not scroll');
+  assert.ok(css.includes('.rv-head{flex:0 0 auto;'), 'the header keeps its own height');
+  assert.ok(css.includes('.rv-bar{flex:0 0 auto;'), 'the comment panel keeps its own height');
+  assert.ok(css.includes('.rv-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;}'), 'the region takes the rest and scrolls');
+  assert.equal(count(css, /overflow-y\s*:/g), 1, 'it is the one vertically scrolling element');
+  assert.equal(count(css, /overflow\s*:\s*(?:auto|scroll)/g), 0, 'and nothing else scrolls both ways');
+  assert.doesNotMatch(css, /position\s*:\s*(?:fixed|sticky)/, 'the panel is held by the layout, not pinned over the document');
+
+  // THE THEME. Every --it-* token a rule uses is defined on the body from a VS Code
+  // theme variable, so none can resolve to nothing.
+  const defined = new Set([...bodyRule.matchAll(/(--it-[a-z-]+):var\(--vscode-[A-Za-z-]+\)/g)].map((m) => m[1]));
+  const used = new Set([...css.matchAll(/var\((--it-[a-z-]+)/g)].map((m) => m[1]));
+  assert.ok(used.size >= 8, 'the renderers still use the tokens');
+  for (const token of used) assert.ok(defined.has(token!), `${token} is defined from a theme variable`);
+  assert.ok(count(css, /var\(--vscode-/g) > 40, 'colours, fonts and borders come from theme variables');
+
+  // No literal colour in any declaration: not a hex, not rgb()/hsl(), not a colour name.
+  // Values are read with their var(...) calls removed, so a variable's NAME (which may
+  // contain "green" or "background") is not mistaken for a colour.
+  const NAMED = ['white', 'black', 'red', 'green', 'blue', 'grey', 'gray', 'orange', 'yellow', 'purple', 'pink', 'silver', 'navy', 'teal', 'transparent'];
+  let declarations = 0;
+  for (const m of css.matchAll(/[{;]\s*([a-z-]+)\s*:\s*([^;{}]+)/g)) {
+    declarations += 1;
+    const value = m[2]!.replace(/var\([^()]*\)/g, '');
+    assert.doesNotMatch(value, /#[0-9a-fA-F]{3,8}\b/, `no hex colour in ${m[1]}:${m[2]}`);
+    assert.doesNotMatch(value, /\b(?:rgba?|hsla?)\(/, `no rgb()/hsl() in ${m[1]}:${m[2]}`);
+    for (const named of NAMED) assert.doesNotMatch(value, new RegExp(`(?:^|[\\s,])${named}(?:$|[\\s,!])`), `no named colour in ${m[1]}:${m[2]}`);
+  }
+  assert.ok(declarations > 200, 'the scan read the declarations');
+
+  // No terminal style: neither its class, nor its import, nor its values.
+  assert.doesNotMatch(html, /insrc-term/);
+  const src = readFileSync(join(fileURLToPath(new URL('.', import.meta.url)), '..', 'docs-review-panel.ts'), 'utf8');
+  assert.doesNotMatch(src, /design-tokens|renderTerminalStyle|terminalTheme/, 'the host no longer reads the terminal theme');
+  // No theme message and no switch of its own: the host posts none, and the shell has
+  // neither a handler for one, nor a control, nor a colour-scheme rule.
+  assert.deepEqual(fc.posted.filter((p) => p.payload.type === 'theme'), [], 'no theme message is posted');
+  assert.doesNotMatch(html, /type==='theme'|prefers-color-scheme|color-scheme|data-theme/);
+  assert.doesNotMatch(markup, /theme/i, 'no theme control in the markup');
+});
+
+test('docs review shell: each of the three buttons posts one docs-decision with the whole-document comment and is disabled until the result arrives, the result line is shown, and feedback with no comment posts nothing', () => {
+  const DOC = { artifactId: 'LLD-abc-s7', markdown: '# Doc', openQuestions: [], blocked: false, contentVersion: '0123456789abcdef', state: 'pending', reviewer: { name: 'Rev Iewer', source: 'git' } };
+  const decisions = (w: WebviewRun): unknown[] =>
+    w.posted.map((p) => (p as { payload: { type: string } }).payload).filter((p) => p.type === 'docs-decision');
+  const ALL_OFF = { approve: 'off', reject: 'off', feedback: 'off' };
+
+  for (const decision of ['approve', 'reject', 'feedback'] as const) {
+    const w = runWebview();
+    w.deliver(DOC);
+    assert.deepEqual(w.controls(), ALL_ON);
+    assert.equal(w.bar.who.textContent, 'as Rev Iewer (git user)');
+    assert.equal(w.bar.kind.textContent, 'LLD');
+    w.bar.field.value = '  Needs an owner.  ';
+    fire(w.bar[decision], 'click');
+    assert.deepEqual(decisions(w), [{
+      type: 'docs-decision', artifactId: 'LLD-abc-s7', decision,
+      comments: [{ comment: 'Needs an owner.', version: '0123456789abcdef' }],
+    }], `${decision}: one decision, with the whole-document comment`);
+    assert.deepEqual(w.controls(), ALL_OFF, `${decision}: all three are disabled until the result arrives`);
+    assert.equal(w.bar.result.textContent, 'Sending…');
+    // Pressing again while it is unanswered posts nothing more.
+    fire(w.bar.approve, 'click');
+    fire(w.bar.reject, 'click');
+    fire(w.bar.feedback, 'click');
+    assert.equal(decisions(w).length, 1);
+    // A result for another document is not this one's answer.
+    w.send('docs-decision-result', { artifactId: 'PLAN-abc-s7', ok: true, recorded: 1, message: 'Approved.' });
+    assert.deepEqual(w.controls(), ALL_OFF);
+
+    w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: true, outcome: 'recorded', recorded: 1, message: 'Done. 1 comment saved. The chat has been told.' });
+    assert.deepEqual(w.controls(), ALL_ON, `${decision}: the buttons work again`);
+    assert.equal(w.bar.result.textContent, 'Done. 1 comment saved. The chat has been told.', 'the result line is shown');
+    assert.equal(w.bar.result.className, 'rv-result rv-ok');
+    assert.equal(w.bar.field.value, '', 'the comment was saved, so the field is cleared');
+    // The host posts the document again after a decision: the result line stays.
+    w.deliver(DOC);
+    assert.equal(w.bar.result.textContent, 'Done. 1 comment saved. The chat has been told.');
+  }
+
+  // Send feedback with no comment posts nothing, and says why.
+  for (const blank of ['', '   \n ']) {
+    const w = runWebview();
+    w.deliver(DOC);
+    w.bar.field.value = blank;
+    fire(w.bar.feedback, 'click');
+    assert.deepEqual(decisions(w), []);
+    assert.equal(w.bar.result.textContent, 'Write a comment before sending feedback.');
+    assert.equal(w.bar.result.className, 'rv-result rv-err');
+    assert.deepEqual(w.controls(), ALL_ON, 'nothing is waiting for an answer');
+    // Approve and reject need no comment: the decision goes with an empty list.
+    fire(w.bar.approve, 'click');
+    assert.deepEqual(decisions(w), [{ type: 'docs-decision', artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }]);
+  }
+
+  // A decision that was not recorded, or whose comment was not saved, keeps the field.
+  for (const result of [
+    { ok: false, message: 'Nothing was recorded: daemon down' },
+    { ok: true, outcome: 'approved', recorded: 0, message: 'Approved. The comment was not saved: cannot write the artifact.' },
+  ]) {
+    const w = runWebview();
+    w.deliver(DOC);
+    w.bar.field.value = 'Keep me.';
+    fire(w.bar.reject, 'click');
+    w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ...result });
+    assert.equal(w.bar.field.value, 'Keep me.');
+    assert.equal(w.bar.result.textContent, result.message);
+    assert.equal(w.bar.result.className, result.ok ? 'rv-result rv-ok' : 'rv-result rv-err');
+    assert.deepEqual(w.controls(), ALL_ON);
+  }
+
+  // Another document: the field, the result line and an unanswered decision were the earlier one's.
+  const w = runWebview();
+  w.deliver(DOC);
+  w.bar.field.value = 'For the LLD.';
+  fire(w.bar.feedback, 'click');
+  w.deliver({ ...DOC, artifactId: 'PLAN-abc-s7' });
+  assert.equal(w.bar.field.value, '');
+  assert.equal(w.bar.result.textContent, '');
+  assert.deepEqual(w.controls(), ALL_ON);
+  assert.equal(w.bar.kind.textContent, 'PLAN');
+  // No document: nothing can be sent.
+  const none = runWebview();
+  assert.deepEqual(none.controls(), { approve: 'off', reject: 'off', feedback: 'off' });
+  fire(none.bar.approve, 'click');
+  assert.deepEqual(decisions(none), []);
+  // A document the daemon says is approved takes feedback only.
+  const done = runWebview();
+  done.deliver({ ...DOC, state: 'approved' });
+  assert.deepEqual(done.controls(), { approve: 'hidden', reject: 'hidden', feedback: 'on' });
+  assert.equal(done.bar.state.textContent, 'approved · feedback only');
+});
+
+test('docs review shell: the existing section chooser, functional-requirement, diagram and experience renderers still draw', () => {
+  const w = runWebview();
+  const md = '# Low-level design\n\nIntro.\n\n## Functional requirements\n\nOld text.\n\n## Data model changes\n\nBody.\n';
+  const sections = deriveSectionIndex(md);
+  w.deliver({
+    artifactId: 'LLD-abc-s7', markdown: md, openQuestions: ['Is the limit right?'], blocked: false, sections,
+    functionalDefinition: { requirements: [{ id: 'E:FR001', statement: 'The panel stays in view.', scope: 'doc' }] },
+    erDefinition: DG_ER, companions: [DG_REF, UX_REF_T6], uxDefinition: UX_CARD_T6,
+  });
+
+  // The body, through the guarded markdown path.
+  assert.ok(w.body.children.some((c) => c.tagName === 'h1'), 'the markdown body is rendered');
+  // The section chooser: one select with an entry per section.
+  assert.equal(w.sections.children.length, 1);
+  assert.equal(w.sections.children[0]!.tagName, 'select');
+  assert.ok(w.sections.children[0]!.children.length >= sections.anchors.length, 'one entry per section');
+  // The functional requirements, as a list with the requirement's id and statement.
+  const fr = allOf(w.body).filter((n) => n.className === 'insrc-fr-item');
+  assert.equal(fr.length, 1, 'the functional requirement is drawn');
+  assert.ok(allOf(fr[0]!).some((n) => n.textContent === 'E:FR001'));
+  // The diagram and the experience mock, each in its own slot.
+  assert.equal(dgSlotsIn(w).length, 1, 'the diagram slot');
+  assert.ok(allOf(dgSlotsIn(w)[0]!).some((n) => n.tagName === 'svg'), 'with its drawing');
+  assert.equal(uxSlotsIn(w).length, 1, 'the experience slot');
+  assert.ok(allOf(uxSlotsIn(w)[0]!).some((n) => n.className === 'ux-card'), 'with its card');
+  // The open questions and the notice host are where they were.
+  assert.deepEqual(w.oq.children.map((c) => c.textContent), ['? Is the limit right?']);
+  assert.equal(w.notice.children.length, 0, 'nothing degraded');
+  // And the header and the comment panel are filled for the same document.
+  assert.deepEqual(w.controls(), ALL_ON);
+  assert.equal(w.list.value, 'LLD-abc-s7', 'the select names the document shown');
+});
+
+test('docs review shell: the shell is one inline script under a nonce CSP with no remote origin, and its recorded baseline is that of the new shell', async () => {
+  const { createHash } = await import('node:crypto');
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+
+  // One inline script, carrying the nonce the CSP names.
+  assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'exactly one script element');
+  assert.ok(html.includes(`<script nonce="${SHELL_BASELINE.nonce}">`), 'and it carries the nonce');
+  assert.doesNotMatch(html, /<script[^>]*\bsrc=/, 'inline, not loaded');
+  // The CSP, exactly: nothing by default, inline styles, scripts by the nonce only.
+  const csp = /<meta http-equiv="Content-Security-Policy" content="([^"]*)">/.exec(html)?.[1];
+  assert.equal(csp, `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${SHELL_BASELINE.nonce}';`);
+  // No remote origin: nothing is loaded by address, and the markup has no element that could.
+  assert.doesNotMatch(html, /(?:src|href|action)="https?:/, 'no remote resource is referenced');
+  const markup = html.slice(html.indexOf('<body'), html.indexOf('<script'));
+  assert.doesNotMatch(markup, /<(?:link|img|iframe|object|embed|form|a)\b/, 'the markup has nothing that loads or navigates');
+  assert.doesNotMatch(shellCss(html), /url\(|@import/, 'and the styles load nothing');
+
+  // The recorded baseline is the NEW shell's: the hash, and the two lengths that say
+  // how it moved when it does.
+  assert.equal(createHash('sha256').update(html, 'utf8').digest('hex'), SHELL_BASELINE.sha256, 'the emitted shell matches the recorded baseline');
+  assert.equal(html.length, SHELL_BASELINE.chars, 'shell length in characters');
+  assert.equal(Buffer.byteLength(html, 'utf8'), SHELL_BASELINE.bytes, 'shell length in UTF-8 bytes');
+  // And it is this shell: the comment panel is in it, the old controls are not.
+  assert.ok(html.includes('<div id="insrc-rv-bar" class="rv-bar">'));
+  assert.ok(html.includes('<body class="insrc-rv">'));
+  for (const gone of ['insrc-docs-actions', 'insrc-docs-note', 'request changes', 'insrc-term']) {
+    assert.ok(!html.includes(gone), `${gone} is not in the rebuilt shell`);
+  }
+  // A pure function of its nonce, which is what a recorded baseline rests on.
+  assert.equal(html, renderShellFor(SHELL_BASELINE.nonce));
+  assert.notEqual(html, renderShellFor('OTHER-NONCE'));
 });

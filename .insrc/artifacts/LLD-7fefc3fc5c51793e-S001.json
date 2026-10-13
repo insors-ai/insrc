@@ -212,6 +212,15 @@
       "reviewedAt": "2026-10-13T06:26:55.196Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "questionResolutions": {
+      "q5dfbc717": {
+        "question": "Which font should the assistant's markdown prose use? Today it is the one place in the chat that is not monospace: it uses a fixed sans stack ('Inter', system-ui, ...), while the approved spec says fonts are the theme's monospace editor font. Options: the VS Code interface font (--vscode-font-family), which keeps prose proportional as it is today and follows the user's settings (the design's default); or the editor's monospace font for prose too, as the spec's wording says.",
+        "status": "resolved",
+        "choice": "Editor monospace font for prose",
+        "rationale": "Chosen by the user in chat on 2026-10-13: the assistant's markdown prose uses the editor's monospace font, so --sans holds var(--vscode-editor-font-family) and the whole chat is monospace, as the approved spec says.",
+        "resolvedAt": "2026-10-13T06:31:32.286Z"
+      }
     }
   },
   "body": {

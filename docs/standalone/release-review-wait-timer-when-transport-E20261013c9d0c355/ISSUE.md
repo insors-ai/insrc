@@ -1,0 +1,25 @@
+<!-- insrc:artifact ISSUE-c9d0c355d4719346 -->
+
+# Release the review wait timer when the transport throws while opening
+
+## Reproduction
+
+Run `npx tsx --test src/daemon/steps/__tests__/in-daemon-client.test.ts` (Node 22). All 7 tests pass, but the process never exits; it sits idle in the event loop until killed, so any full test run that includes the file never finishes (observed 2026-10-13: the full sweep stalled for 10+ minutes on this file alone). Bisecting with --test-name-pattern shows only the 'no loopback' test hangs: its control half replaces net.Socket.prototype.connect with a function that throws, then calls the socket review client. Expected: the request fails as 'unreachable' and the process exits once the tests finish. Observed: the request rejects, but a timer of the review's wait limit (minutes long) stays armed and keeps the process alive.
+
+## Root cause
+
+runReviewStream (src/shared/review-stream.ts:170) arms the abort listener (:201) and the wait-limit timer (:202) and only then calls the transport (:222, `handle = transport(sink)`), inside the Promise executor with no try. The socket transport opens its connection synchronously (src/mcp/daemon-stream.ts:410, createConnection). When that throws, the exception escapes the executor: the Promise rejects with the raw error, but `finish` (:188), the only path that clears the timer and removes the abort listener, never runs. The armed timer then holds the event loop open for the full wait limit, and the caller sees a raw error instead of a ReviewStreamError with failure 'unreachable'. The in-daemon transport (src/daemon/steps/daemon-client.ts) already defers its handler so it cannot throw synchronously; the socket transport is the one exposed.
+
+## Fix intent
+
+A transport that throws while being opened settles the request the same way any other failure does: as a ReviewStreamError with failure 'unreachable' and a message naming the method and the cause, with the wait timer cleared and the abort listener removed, so nothing is left armed. The two transports do not change. A unit test drives a transport that throws synchronously and checks the failure kind and that the timer was cleared; the in-daemon-client test file then exits on its own.
+
+## Citations
+
+- **[[c1]]** `code` `src/shared/review-stream.ts:170` — "export function runReviewStream<T>("
+- **[[c2]]** `code` `src/shared/review-stream.ts:202` — "timer = setTimer("
+- **[[c3]]** `code` `src/shared/review-stream.ts:222` — "handle = transport(sink);"
+- **[[c4]]** `code` `src/shared/review-stream.ts:188` — "const finish = (how: 'end' | 'cancel', action: () => void): void => {"
+- **[[c5]]** `code` `src/mcp/daemon-stream.ts:410` — "const socket = deps.connect !== undefined ? deps.connect() : createConnection(PATHS.sockFile);"
+- **[[c6]]** `code` `src/daemon/steps/__tests__/in-daemon-client.test.ts:267` — "proto.connect = function blocked(): never { connects += 1; throw new Error('blocked: an outgoing connection'); };"
+- **[[c7]]** `step-output` `Bisect 2026-10-13: each in-daemon-client test run alone with --test-name-pattern; only 'no loopback' did not exit within 20 s; the full sweep stalled on this file.`

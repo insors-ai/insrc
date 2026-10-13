@@ -93,8 +93,8 @@ export interface TurnLifecycle {
   /**
    * Whether a turn is in progress: a turn begun by start() that is waiting for its lease, setting
    * up or being read, or a turn begun by follow() that is being read. False once the turn's
-   * terminal event has been handed to the sink (before onTerminal), once a follow is over (before
-   * onEnd), after stop(), detach() or invalidate(), and when follow() returned without following.
+   * terminal event has been handed to the sink (before onTerminal), before a turn's error is
+   * reported (onError), once a follow is over (before onEnd), after stop(), detach() or invalidate(), and when follow() returned without following.
    * A superseded turn does not make it false: the turn that superseded it keeps it true.
    */
   busy(): boolean;
@@ -173,7 +173,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   const trySave = (target: ChatSession): void => trySaveSession(deps.store, log, target);
   const isCurrent = (gen: number): boolean => deps.isOpen() && gen === generation;
   /** Reports a turn error to the panel; a failing report is logged, never thrown (start never rejects). */
-  const reportError = (sink: TurnSink, message: string, turnId: string): void => {
+  const reportError = (sink: TurnSink, message: string, turnId: string, gen: number): void => {
+    idle(gen); // the turn is over: not in progress when the panel is told
     try {
       sink.onError(message, turnId);
     } catch (err) {
@@ -226,7 +227,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       if (err instanceof LockWaitAborted || err instanceof LockWaitSuperseded) return undefined;
       const message = `could not lock chat session: ${err instanceof Error ? err.message : String(err)}`;
       log.error(`[chat] session ${s.id}: ${message}`);
-      if (isCurrent(myGen)) reportError(sink, message, 'none');
+      if (isCurrent(myGen)) reportError(sink, message, 'none', myGen);
       return undefined;
     } finally {
       if (waitCtl === ctl) waitCtl = undefined;
@@ -258,7 +259,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     try {
       adapter = deps.providers.get(s.provider);
     } catch {
-      if (isCurrent(myGen)) reportError(sink, `no adapter for provider ${s.provider}`, 'none');
+      if (isCurrent(myGen)) reportError(sink, `no adapter for provider ${s.provider}`, 'none', myGen);
       return;
     }
 
@@ -387,7 +388,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         // unread CLI could block on a full pipe and hold the lease until the lock timeout).
         if (iterator !== undefined) finishIterator(iterator);
         if (isCurrent(myGen)) {
-          reportError(sink, err instanceof Error ? err.message : String(err), activeTurnId ?? 'none');
+          reportError(sink, err instanceof Error ? err.message : String(err), activeTurnId ?? 'none', myGen);
           trySave(s);
         }
       } finally {

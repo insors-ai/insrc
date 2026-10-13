@@ -1241,3 +1241,29 @@ test('turn lifecycle: a follow whose resume fails calls its end callback exactly
   await tick(20);
   assert.deepEqual(f4.calls, [], 'stopped: no end is reported');
 });
+
+test('turn lifecycle: busy is false when a turn\'s error is reported', async () => {
+  // A failing setup, a missing adapter and a failing adapter: each is over when onError is called.
+  const seen: string[] = [];
+  const errSink = (h: Harness, over: Partial<TurnSink> = {}): TurnSink =>
+    recSink({ onError: (message) => seen.push(`${message}:${h.lc.busy()}`), ...over }).sink;
+
+  const { adapter } = scriptedAdapter();
+  const a = harness({ providers: registry(adapter) });
+  await a.lc.start(a.session, REQ, errSink(a, { beforeRun: async () => { throw new Error('setup failed'); } }));
+
+  const b = harness({ providers: { get: () => { throw new Error('gone'); }, available: [] } });
+  await b.lc.start(b.session, REQ, errSink(b));
+
+  const throwing: StreamAdapter = {
+    ...adapter,
+    // eslint-disable-next-line require-yield
+    async *run(): AsyncIterable<TurnEvent> {
+      throw new Error('spawn failed');
+    },
+  };
+  const c = harness({ providers: registry(throwing) });
+  await c.lc.start(c.session, REQ, errSink(c));
+
+  assert.deepEqual(seen, ['setup failed:false', 'no adapter for provider claude:false', 'spawn failed:false']);
+});

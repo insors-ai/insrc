@@ -83,7 +83,7 @@ export function checkOneShotArgs(raw: unknown): AnalyzeOneShotArgs | string {
 export async function runAnalyzeOneShot(
 	rawArgs: unknown,
 	deps: AnalyzeOneShotDeps = {},
-): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }> {
+): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean | undefined }> {
 	const args = checkOneShotArgs(rawArgs);
 	if (typeof args === 'string') return errorResult(args);
 	// Resolve the repo path: explicit param > CWD-contained registered repo >

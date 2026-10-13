@@ -63,15 +63,15 @@ import {
 
 import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
 import { createInDaemonClient, installStepDaemonClient } from './steps/daemon-client.js';
+import { listModels } from './list-models.js';
+import { makeUpdateHandlers, launchUpdate, readUpdateOutcome } from './update-runner.js';
+import { readInstalledCommit } from './installed-commit.js';
 
 /** The step.call handler, built once on first use (the step modules load lazily). */
 let _stepCallHandler: StreamHandler | undefined;
 function getStepCallHandler(mod: typeof import('./steps/host.js')): StreamHandler {
 	return _stepCallHandler ??= mod.createStepCallHandler();
 }
-import { listModels } from './list-models.js';
-import { makeUpdateHandlers, launchUpdate, readUpdateOutcome } from './update-runner.js';
-import { readInstalledCommit } from './installed-commit.js';
 
 const BACKEND_OFFLINE_REASON =
 	'backend offline: this RPC was removed during the cleanup. The next backend (Ollama + CLI subprocess) will reinstate the surface.';

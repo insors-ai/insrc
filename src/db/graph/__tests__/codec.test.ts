@@ -40,6 +40,27 @@ test('repo row round-trip', () => {
 	assert.deepEqual(decodeRepoRow(encodeRepoRow(r)), r);
 });
 
+test('registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined', () => {
+	const withRun: RepoRow = {
+		id: 2, kind: 'workspace', path: '/repo/bar', name: 'bar',
+		addedAt: 1_700_000_000_000, lastIndexed: 1_700_000_900_000,
+		status: 'error', errorMsg: 'walk failed',
+		lastRun: { startedAt: 1_700_000_000_000, endedAt: 1_700_000_900_000, filesSelected: 120, filesDone: 37, outcome: 'failed', error: 'walk failed' },
+	};
+	assert.deepEqual(decodeRepoRow(encodeRepoRow(withRun)), withRun);
+
+	// A row written before lastRun existed: encoded without the key, it decodes without it.
+	const older: RepoRow = {
+		id: 3, kind: 'workspace', path: '/repo/old', name: 'old',
+		addedAt: 1_600_000_000_000, lastIndexed: 1_600_000_100_000,
+		status: 'ready', errorMsg: '',
+	};
+	const decoded = decodeRepoRow(encodeRepoRow(older));
+	assert.equal(decoded.lastRun, undefined);
+	assert.ok(!('lastRun' in decoded), 'no lastRun key at all, so a strict round-trip still holds');
+	assert.deepEqual(decoded, older);
+});
+
 test('repo row round-trip -- shared-modules kind with namespace', () => {
 	const r: RepoRow = {
 		id: 0xFFFFFFFE, kind: 'shared-modules', namespace: 'jvm',

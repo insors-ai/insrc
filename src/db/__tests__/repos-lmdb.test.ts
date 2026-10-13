@@ -288,3 +288,30 @@ test('addRepo rejects empty / banned-root paths via shape validation', async () 
 	const list = await listRepos(null);
 	assert.equal(list.length, 0);
 });
+
+test('registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one', async () => {
+	await addRepo(null, makeRepo({ path: '/repo/run', name: 'run' }));
+	const finished = { startedAt: 1_700_000_000_000, endedAt: 1_700_000_600_000, filesSelected: 40, filesDone: 40, outcome: 'completed' as const };
+	// The final write of a full index: status and lastRun together.
+	await updateRepoStatus(null, '/repo/run', 'ready', LATER, undefined, finished);
+	let row = (await listRepos(null)).find(r => r.path === '/repo/run');
+	assert.deepEqual(row?.lastRun, finished, 'rowToRepo exposes lastRun');
+
+	// A later status write that says nothing of lastRun (a new run starting) keeps it.
+	await updateRepoStatus(null, '/repo/run', 'indexing');
+	row = (await listRepos(null)).find(r => r.path === '/repo/run');
+	assert.equal(row?.status, 'indexing');
+	assert.deepEqual(row?.lastRun, finished, 'the stored lastRun survives a write without one');
+
+	// The next run's final write replaces it.
+	const failed = { startedAt: 1_700_001_000_000, endedAt: 1_700_001_050_000, filesSelected: 40, filesDone: 3, outcome: 'failed' as const, error: 'disk full' };
+	await updateRepoStatus(null, '/repo/run', 'error', undefined, 'disk full', failed);
+	row = (await listRepos(null)).find(r => r.path === '/repo/run');
+	assert.deepEqual(row?.lastRun, failed);
+	assert.equal(row?.errorMsg, 'disk full');
+
+	// A row that never had a run carries no lastRun.
+	await addRepo(null, makeRepo({ path: '/repo/fresh', name: 'fresh' }));
+	const fresh = (await listRepos(null)).find(r => r.path === '/repo/fresh');
+	assert.ok(fresh !== undefined && !('lastRun' in fresh));
+});

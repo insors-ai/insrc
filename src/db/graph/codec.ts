@@ -33,6 +33,7 @@ import type {
 	PlanStatus as DomainPlanStatus,
 	PlanStepStatus as DomainPlanStepStatus,
 	PlanStepComplexity as DomainPlanStepComplexity,
+	RepoLastRun,
 } from '../../shared/types.js';
 import type {
 	TodoListStatus as DomainTodoListStatus,
@@ -100,6 +101,8 @@ export interface RepoRow {
 	lastIndexed:  number;       // unix ms; 0 if never indexed
 	status:       RepoStatus;
 	errorMsg:     string;       // empty string if no error
+	/** The last full index's final figures; absent on a row written before it was recorded. */
+	lastRun?:     RepoLastRun | undefined;
 }
 
 export const encodeRepoRow = (r: RepoRow): Buffer => encode(r);
@@ -123,6 +126,8 @@ export const decodeRepoRow = (b: Buffer): RepoRow => {
 		lastIndexed: raw.lastIndexed,
 		status:      raw.status,
 		errorMsg:    raw.errorMsg,
+		// Copied by name like every other field, or a status write would drop it.
+		...(raw.lastRun !== undefined ? { lastRun: raw.lastRun } : {}),
 	};
 };
 

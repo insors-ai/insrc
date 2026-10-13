@@ -695,6 +695,24 @@ export interface RegisteredRepo {
   lastIndexed?: string;
   status:       'pending' | 'indexing' | 'ready' | 'error';
   errorMsg?:    string;
+  /** The last full index's final figures, written once when it ended. */
+  lastRun?:     RepoLastRun | undefined;
+}
+
+/**
+ * How the last full index of a repository ended (Epic c2ba6fa6, Story s5).
+ * Written once, with the run's final status; never per file.
+ */
+export interface RepoLastRun {
+  /** Unix ms. */
+  startedAt:     number;
+  /** Unix ms. */
+  endedAt:       number;
+  filesSelected: number;
+  filesDone:     number;
+  outcome:       'completed' | 'failed';
+  /** The failure's message, for a failed run. */
+  error?:        string | undefined;
 }
 
 // ---------------------------------------------------------------------------

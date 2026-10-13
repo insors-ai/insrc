@@ -21,7 +21,7 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 
 import { guardSearchRequest, SearchRefusedError } from '../search-guard.js';
-import { startSeededDaemon } from './helpers/seeded-daemon.js';
+import { startSeededDaemon, underIndexRefusal, whileIndexing as whileIndexingRepo } from './helpers/seeded-daemon.js';
 import type { SeededDaemon } from './helpers/seeded-daemon.js';
 import type { RegisteredRepo } from '../../shared/types.js';
 
@@ -40,29 +40,9 @@ test.after(async () => {
 	await seeded?.stop();
 });
 
-const escape = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const idsOf = (rows: unknown): string[] => (rows as Array<{ id: string }>).map(r => r.id);
-
-/** The refusal a request about `repo` gets while its full index runs, with the run's figures. */
-function underIndex(repo: string): RegExp {
-	return new RegExp(`^repo-indexing: The repository ${escape(repo)} is being indexed: the run began at \\d{4}-\\d\\d-\\d\\dT[\\d:.]+Z, \\d+ of ${BIG_FILES} files done\\. Retry once the index is ready\\.$`);
-}
-
-/** Start a full index of `repo` and run `during` while it runs; the index is shown to still run afterwards. */
-async function whileIndexing(repo: string, during: () => Promise<void>): Promise<void> {
-	await seeded.call('repo.reindex', { path: repo });
-	// The index queue runs one job at a time: a full index queued behind another starts when that one ends.
-	const deadline = Date.now() + 180_000;
-	for (;;) {
-		const refused = await seeded.call('search.closure', { repoPath: repo }).then(() => undefined, (e: Error) => e.message);
-		if (refused !== undefined && underIndex(repo).test(refused)) break;
-		if (Date.now() > deadline) throw new Error(`the full index of ${repo} was never seen running (last answer: ${refused ?? 'answered'})`);
-		await new Promise(r => setTimeout(r, 20));
-	}
-	await during();
-	await assert.rejects(seeded.call('search.closure', { repoPath: repo }), (e: Error) => underIndex(repo).test(e.message),
-		'the index was still running when the requests were made');
-}
+const underIndex = (repo: string): RegExp => underIndexRefusal(repo, BIG_FILES);
+const whileIndexing = (repo: string, during: () => Promise<void>): Promise<void> => whileIndexingRepo(seeded, repo, BIG_FILES, during);
 
 test("search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before", TIMEOUT, async () => {
 	const big = seeded.big[0]!;

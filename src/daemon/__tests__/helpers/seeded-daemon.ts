@@ -23,6 +23,9 @@
  * `bigRepos` adds registered repositories of many small files that are NOT
  * indexed yet: a reindex of one is a full index that runs long enough for a
  * test to make requests about a repository under index, with its figures.
+ * `linkBig` ties each of them to the ready repositories, so that results which
+ * cross repositories reach it: A DEPENDS_ON it, its fn0 CALLS fnB, and fnB
+ * CALLS its fn0.
  */
 
 import { createServer } from 'node:http';
@@ -110,7 +113,7 @@ export interface SeededDaemon {
 	stop(): Promise<void>;
 }
 
-export async function startSeededDaemon(opts: { readonly bigRepos?: readonly number[] } = {}): Promise<SeededDaemon> {
+export async function startSeededDaemon(opts: { readonly bigRepos?: readonly number[]; readonly linkBig?: boolean } = {}): Promise<SeededDaemon> {
 	const home = mkdtempSync('/tmp/isc-');
 	const repoA = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-seeded-a-')));
 	const repoB = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-seeded-b-')));
@@ -154,12 +157,18 @@ export async function startSeededDaemon(opts: { readonly bigRepos?: readonly num
 	const doc = entity(repoA, join(repoA, DOC_DIR, 'LLD.md'), 'section', 'LLD');
 	// One function stored in each large repository, so a request can name one by an entity.
 	const bigFns = big.map(b => entity(b.path, join(b.path, 'f0.ts'), 'function', 'fn0'));
-	await upsertEntities(null, [rA, rB, fnA, fnC, fnD, fnB, doc, ...bigFns]);
+	const bigRepoEntities = opts.linkBig === true ? big.map(b => entity(b.path, '', 'repo', b.path)) : [];
+	await upsertEntities(null, [rA, rB, fnA, fnC, fnD, fnB, doc, ...bigFns, ...bigRepoEntities]);
 	await upsertRelations(null, [
 		{ kind: 'CALLS', from: fnD.id, to: fnA.id, resolved: true },
 		{ kind: 'CALLS', from: fnA.id, to: fnB.id, resolved: true },
 		{ kind: 'REFERENCES', from: fnA.id, to: fnC.id, resolved: true },
 		{ kind: 'DEPENDS_ON', from: rA.id, to: rB.id, resolved: true },
+		...(opts.linkBig === true ? big.flatMap((b, i) => [
+			{ kind: 'DEPENDS_ON' as const, from: rA.id, to: bigRepoEntities[i]!.id, resolved: true },
+			{ kind: 'CALLS' as const, from: b.fn0, to: fnB.id, resolved: true },
+			{ kind: 'CALLS' as const, from: fnB.id, to: b.fn0, resolved: true },
+		]) : []),
 	]);
 	await addEntityEmbeddings([
 		{ id: fnA.id, embedding: axis(AXIS.fnA), repo: repoA, kind: 'function', artifact: false },
@@ -199,4 +208,34 @@ export async function startSeededDaemon(opts: { readonly bigRepos?: readonly num
 		call: (method, params) => rpc(running.sock, method, params),
 		stop: cleanup,
 	};
+}
+
+const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** The refusal a request about `repo` gets while its full index of `files` files runs, with the run's figures. */
+export function underIndexRefusal(repo: string, files: number): RegExp {
+	return new RegExp(`^repo-indexing: The repository ${escapeRe(repo)} is being indexed: the run began at \\d{4}-\\d\\d-\\d\\dT[\\d:.]+Z, \\d+ of ${files} files done\\. Retry once the index is ready\\.$`);
+}
+
+/**
+ * Start a full index of `repo` (`files` files) and run `during` while it runs;
+ * the index is shown to still be running afterwards. The index queue runs one
+ * job at a time: a full index queued behind another starts when that one ends.
+ */
+export async function whileIndexing(seeded: SeededDaemon, repo: string, files: number, during: () => Promise<void>): Promise<void> {
+	await seeded.call('repo.reindex', { path: repo });
+	const refused = async (): Promise<string | undefined> =>
+		seeded.call('search.closure', { repoPath: repo }).then(() => undefined, (e: Error) => e.message);
+	const deadline = Date.now() + 180_000;
+	for (;;) {
+		const answer = await refused();
+		if (answer !== undefined && underIndexRefusal(repo, files).test(answer)) break;
+		if (Date.now() > deadline) throw new Error(`the full index of ${repo} was never seen running (last answer: ${answer ?? 'answered'})`);
+		await new Promise(r => setTimeout(r, 20));
+	}
+	await during();
+	const after = await refused();
+	if (after === undefined || !underIndexRefusal(repo, files).test(after)) {
+		throw new Error(`the full index of ${repo} ended before the requests were done (answer after: ${after ?? 'answered'})`);
+	}
 }

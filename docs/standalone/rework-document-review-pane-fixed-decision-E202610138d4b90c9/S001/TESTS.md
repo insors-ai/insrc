@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 51 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 53 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -350,3 +350,25 @@ Run at 2026-10-13T13:07:10.483Z on commit `e0d1a19f`. Tests check: **passed**. 6
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 208 | 18.5 s |  |
+
+## t10
+
+Run at 2026-10-13T13:15:23.105Z on commit `c3181c44`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: docs review shell: an HTML document's tab posts open-companion, and docs-companion sets the text as the srcdoc of a frame with sandbox allow-scripts and shows the file's path; with no html it shows the path and a line of text**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: an HTML document's tab posts open-companion, and docs-companion sets the text as the srcdoc of a frame with sandbox allow-scripts and shows the file's path; with no html it shows the path and a line of text | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: there is one tab per document, the markdown first, and a comment sent from an HTML tab names that file and has no anchor**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: there is one tab per document, the markdown first, and a comment sent from an HTML tab names that file and has no anchor | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 210 | 18.8 s |  |

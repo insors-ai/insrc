@@ -2,9 +2,9 @@
 
 # Build (standalone small) — Story S001
 
-**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-13T18:16:07.404Z  ·  **Updated:** 2026-10-13T18:16:07.404Z
+**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-13T18:16:07.404Z  ·  **Updated:** 2026-10-13T19:24:37.284Z
 
-**Commit:** b1c2f5d9
+**Commit:** bd3a9e47
 
 ## Summary
 
@@ -12,32 +12,44 @@ A document a chat turn presents for approval is opened in the review pane. New m
 
 ## Tasks validated
 
-- ✗ `S001`
+- ✓ `S001`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `.insrc/artifacts/CR-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `.insrc/artifacts/TESTS-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `.insrc/build-start/cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `docs/standalone/show-epic-s-own-records-its-E20261013cb09a32c/S001/BUILD.md` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `docs/standalone/show-epic-s-own-records-its-E20261013cb09a32c/S001/CR.md` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `docs/standalone/show-epic-s-own-records-its-E20261013cb09a32c/S001/TESTS.md` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/chat/__tests__/docs-review-client.test.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/chat/__tests__/review-presenter.test.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/chat/__tests__/review-wiring.test.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/chat/docs-review-client.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/chat/docs-review-panel.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/chat/review-presenter.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/chat/webview-channel.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/delivery/__tests__/epic-records.test.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/delivery/board-host.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/delivery/board-model.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/delivery/board-protocol.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/delivery/board-state.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
-- `vscode-plugin/src/vscode.d.ts` — **insrc-build** (2026-10-13T18:16:07.404Z)
+- `.insrc/artifacts/BUILD-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `.insrc/artifacts/BUILD-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `.insrc/artifacts/CR-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `.insrc/artifacts/LLD-dd277f9cddd6d879-S001.json` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `.insrc/artifacts/TESTS-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `.insrc/artifacts/TESTS-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `.insrc/build-start/cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `.insrc/build-start/dd277f9cddd6d879-S001.json` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `docs/standalone/list-pending-build-records-review-E20261013dd277f9c/S001/LLD.md` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `docs/standalone/review-pane-document-table-search-live-E202610131f74c81f/S001/BUILD.md` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `docs/standalone/review-pane-document-table-search-live-E202610131f74c81f/S001/TESTS.md` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `docs/standalone/show-epic-s-own-records-its-E20261013cb09a32c/S001/BUILD.md` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `docs/standalone/show-epic-s-own-records-its-E20261013cb09a32c/S001/CR.md` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `docs/standalone/show-epic-s-own-records-its-E20261013cb09a32c/S001/TESTS.md` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `src/workflow/__tests__/artifact-content.test.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `src/workflow/__tests__/pending.test.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `src/workflow/__tests__/review-decision.test.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `src/workflow/pending.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/chat/__tests__/docs-review-client.test.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/chat/__tests__/review-presenter.test.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/chat/__tests__/review-wiring.test.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/chat/docs-review-client.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/chat/docs-review-panel.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/chat/review-presenter.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/chat/webview-channel.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/delivery/__tests__/epic-records.test.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/delivery/board-host.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/delivery/board-model.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/delivery/board-protocol.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/delivery/board-state.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)
+- `vscode-plugin/src/vscode.d.ts` — **insrc-build** (2026-10-13T19:24:37.284Z)

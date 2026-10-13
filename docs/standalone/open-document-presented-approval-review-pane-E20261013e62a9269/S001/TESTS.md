@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## S001
 
-Run at 2026-10-13T18:16:07.404Z on commit `b1c2f5d9`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+Run at 2026-10-13T19:24:37.284Z on commit `bd3a9e47`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 **unit: review presenter: a tool result that carries a pendingApproval path opens the pending document with that absolute path once; the same path again in the turn does not; a path that is not pending, a result with no such block and one that is not JSON open nothing**
 
@@ -76,13 +76,13 @@ Reported by the builder, not run by the gate: **pass**. Evidence: Plugin suite a
 
 **smoke: By hand in VS Code: a workflow run in the chat that writes a document awaiting approval opens the review pane on that document without any action, once, with the cursor left in the chat; a second document in a later turn replaces it**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: Checked by the user in VS Code on 2026-10-13 with the installed plugin 0.5.14: a turn that made a build record and a code review record pending opened the review pane by itself ('yes, pane opened with the right doc')
+Reported by the builder, not run by the gate: **pass**. Evidence: Checked by the user in VS Code with the installed plugin 0.5.14. 2026-10-13: a turn that made a code review record pending opened the review pane by itself ('yes, pane opened with the right doc'). 2026-10-14: asked item by item whether the cursor stayed in the chat when the pane opened, whether it opened once, and whether a later document replaced the earlier one, the user answered 'yes for the 3 earlier stories'
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 164 | 4.9 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 164 | 4.8 s |  |
 | `vscode-plugin/src/chat/__tests__/docs-review-client.test.ts` | 0 | 16 | 0.4 s |  |
 | `vscode-plugin/src/chat/__tests__/review-presenter.test.ts` | 0 | 5 | 1 s |  |
 | `vscode-plugin/src/chat/__tests__/review-wiring.test.ts` | 0 | 4 | 0.3 s |  |

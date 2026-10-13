@@ -156,7 +156,7 @@ Run at 2026-10-13T16:38:06.477Z on commit `2800f2a0`. Tests check: **passed**. 1
 
 ## t6
 
-Run at 2026-10-13T18:47:18.015Z on commit `43ee0e20`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+Run at 2026-10-13T19:26:08.094Z on commit `bd3a9e47`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 the gate ran no test: every named test of this Task was reported by the builder
 
@@ -166,7 +166,7 @@ Reported by the builder, not run by the gate: **pass**. Evidence: Plugin suite a
 
 **smoke: By hand in VS Code: the tab shows the review icon in a light and a dark theme; the table pages, searches with suggestions and filters by type over the real pending list; and a document edited on disk while open is reloaded in place with the scroll position kept**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: The user used the installed plugin 0.5.14 in VS Code on 2026-10-13 (opened documents from the table and the board) and, asked for these checks by item, answered 'epic board changes work. now only pending is the auto-open'; no item of this list was reported failing. The user did not confirm each item separately
+Reported by the builder, not run by the gate: **pass**. Evidence: Checked by the user in VS Code with the installed plugin 0.5.14. 2026-10-14: asked item by item whether the icon shows in a light and a dark theme, the table pages, searches with suggestions and filters by type, and a document edited on disk reloads in place with the scroll position kept, the user answered 'yes for the 3 earlier stories'
 
 **smoke: Headless Chrome render of the real shell's list view with 240 rows: the toolbar and pager stay in view and the table scrolls**
 

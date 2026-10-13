@@ -4,7 +4,7 @@
     "epicHash": "e62a9269a7cb9550",
     "storyId": "S001",
     "createdAt": "2026-10-13T18:16:07.404Z",
-    "updatedAt": "2026-10-13T18:16:07.404Z",
+    "updatedAt": "2026-10-13T19:24:37.284Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T17:16:26.246Z",
     "epicSlug": "open-document-presented-approval-review-pane"
@@ -13,8 +13,8 @@
     "tasks": [
       {
         "taskId": "S001",
-        "commit": "b1c2f5d9",
-        "ranAt": "2026-10-13T18:16:07.404Z",
+        "commit": "bd3a9e47",
+        "ranAt": "2026-10-13T19:24:37.284Z",
         "testsPassed": true,
         "tests": [
           {
@@ -166,7 +166,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "Checked by the user in VS Code on 2026-10-13 with the installed plugin 0.5.14: a turn that made a build record and a code review record pending opened the review pane by itself ('yes, pane opened with the right doc')"
+              "evidence": "Checked by the user in VS Code with the installed plugin 0.5.14. 2026-10-13: a turn that made a code review record pending opened the review pane by itself ('yes, pane opened with the right doc'). 2026-10-14: asked item by item whether the cursor stayed in the chat when the pane opened, whether it opened once, and whether a later document replaced the earlier one, the user answered 'yes for the 3 earlier stories'"
             }
           }
         ],
@@ -175,7 +175,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4877,
+            "durationMs": 4823,
             "titles": [
               {
                 "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",
@@ -840,7 +840,7 @@
             "file": "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 418,
+            "durationMs": 422,
             "titles": [
               {
                 "title": "pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status, and the open-question count)",
@@ -913,7 +913,7 @@
             "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1021,
+            "durationMs": 1010,
             "titles": [
               {
                 "title": "review presenter: a tool result that carries a pendingApproval path opens the pending document with that absolute path once; the same path again in the turn does not; a path that is not pending, a result with no such block and one that is not JSON open nothing",
@@ -942,7 +942,7 @@
             "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 336,
+            "durationMs": 328,
             "titles": [
               {
                 "title": "review wiring: the review host is given notifyChat bound to the chat host's submitExternal and a readCompanion, and neither host module imports the other",

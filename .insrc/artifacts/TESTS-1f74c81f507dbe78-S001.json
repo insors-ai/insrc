@@ -4,7 +4,7 @@
     "epicHash": "1f74c81f507dbe78",
     "storyId": "S001",
     "createdAt": "2026-10-13T16:14:59.110Z",
-    "updatedAt": "2026-10-13T18:47:18.015Z",
+    "updatedAt": "2026-10-13T19:26:08.094Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T14:35:06.077Z",
     "epicSlug": "review-pane-document-table-search-live"
@@ -2310,8 +2310,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "43ee0e20",
-        "ranAt": "2026-10-13T18:47:18.015Z",
+        "commit": "bd3a9e47",
+        "ranAt": "2026-10-13T19:26:08.094Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2333,7 +2333,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "The user used the installed plugin 0.5.14 in VS Code on 2026-10-13 (opened documents from the table and the board) and, asked for these checks by item, answered 'epic board changes work. now only pending is the auto-open'; no item of this list was reported failing. The user did not confirm each item separately"
+              "evidence": "Checked by the user in VS Code with the installed plugin 0.5.14. 2026-10-14: asked item by item whether the icon shows in a light and a dark theme, the table pages, searches with suggestions and filters by type, and a document edited on disk reloads in place with the scroll position kept, the user answered 'yes for the 3 earlier stories'"
             }
           },
           {

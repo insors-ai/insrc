@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "b2e8109f42afc0dd",
+    "storyId": "S001",
+    "createdAt": "2026-10-13T08:48:39.843Z",
+    "updatedAt": "2026-10-13T08:48:39.843Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-13T07:52:45.476Z",
+    "epicSlug": "show-each-changed-section-turn-s"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "1c43f9ad",
+        "ranAt": "2026-10-13T08:48:39.843Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "parsePatch: one entry per section, with path, ranges, counts and lines, for two sections of one file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts",
+                "title": "parsePatch: one entry per section, with path, ranges, counts and lines, for two sections of one file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "parsePatch: a new file, a deleted file, a binary file, a name with a space and a quoted name",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts",
+                "title": "parsePatch: a new file, a deleted file, a binary file, a name with a space and a quoted name",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "parsePatch: a section over 400 lines is cut, the rest counted in omitted, and added and removed count the whole section",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts",
+                "title": "parsePatch: a section over 400 lines is cut, the rest counted in omitted, and added and removed count the whole section",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "parsePatch: an empty patch gives no sections and an unreadable file part is skipped without a throw",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts",
+                "title": "parsePatch: an empty patch gives no sections and an unreadable file part is skipped without a throw",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reconcileSections: a new section is added, an unchanged one gives no operation and a changed one is updated under the same id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts",
+                "title": "reconcileSections: a new section is added, an unchanged one gives no operation and a changed one is updated under the same id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reconcileSections: sections that join update the lower id and withdraw the other, and a section that is gone is withdrawn",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts",
+                "title": "reconcileSections: sections that join update the lower id and withdraw the other, and a section that is gone is withdrawn",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reconcileSections: beyond the limit new sections are kept hidden, counted in overflow, and never produce an operation later",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts",
+                "title": "reconcileSections: beyond the limit new sections are kept hidden, counted in overflow, and never produce an operation later",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 327,
+            "titles": [
+              {
+                "title": "parsePatch: one entry per section, with path, ranges, counts and lines, for two sections of one file",
+                "result": "pass"
+              },
+              {
+                "title": "parsePatch: a new file, a deleted file, a binary file, a name with a space and a quoted name",
+                "result": "pass"
+              },
+              {
+                "title": "parsePatch: a section over 400 lines is cut, the rest counted in omitted, and added and removed count the whole section",
+                "result": "pass"
+              },
+              {
+                "title": "parsePatch: an empty patch gives no sections and an unreadable file part is skipped without a throw",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileSections: a new section is added, an unchanged one gives no operation and a changed one is updated under the same id",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileSections: sections that join update the lower id and withdraw the other, and a section that is gone is withdrawn",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileSections: beyond the limit new sections are kept hidden, counted in overflow, and never produce an operation later",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

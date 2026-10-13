@@ -94,6 +94,14 @@ export interface BundleMeta {
 	readonly schemaVersion:  number;
 	/** Indexer's lastIndexedAt at bundle-build time -- used for cache invalidation. */
 	readonly repoLastIndexedAt?: number;
+	/**
+	 * The registered repository the bundle was built over, or null for one
+	 * built over none (a connection scope, or a path no registered repository
+	 * contains). A cache hit is checked against it without resolving the
+	 * scope. Absent on a bundle written before it was recorded: such a bundle
+	 * is a cache miss.
+	 */
+	readonly repoPath?: string | null | undefined;
 }
 
 /** Named layers (matches AnalyzeContextBundle's readable string fields). */
@@ -111,6 +119,12 @@ export interface ShapeOpts {
 	readonly runId: string;
 	/** Force-rebuild even if cache hits. Tests only -- no CLI surface. */
 	readonly bypassCache?: boolean;
+	/**
+	 * The caller (runAnalyze) already made the scope checks -- the pairing,
+	 * the indexed check and the under-index check -- before it measured, so
+	 * the context builder does not make them again. Not part of the cache key.
+	 */
+	readonly scopeChecked?: boolean | undefined;
 	/**
 	 * Optional trace callback fired inside the shaper's tool loop +
 	 * final structured emit. Wired up-stack by the orchestrator so the

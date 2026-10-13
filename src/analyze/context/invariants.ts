@@ -40,7 +40,7 @@ import type { RegisteredRepo } from '../../shared/types.js';
 import { readIndexRun } from '../../indexer/run-record.js';
 import type { IndexRunView } from '../../indexer/run-record.js';
 
-import { freshnessPathOf } from './scope.js';
+import { freshnessPathOf, longestPrefixRepo } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 
 const log = getLogger('analyze:context:invariants');
@@ -277,7 +277,7 @@ export async function ensureNonEmptyClosure(
 		return undefined;
 	}
 
-	const best = containingRepo(scopePath, repos);
+	const best = longestPrefixRepo(scopePath, repos);
 	// A repository under index is refused first, with how far its run got,
 	// before its entity count is read: a half-built index is not an answer.
 	if (best !== undefined) refuseIfUnderIndex(best, deps?.indexRun);
@@ -309,16 +309,6 @@ export async function ensureNonEmptyClosure(
 	return best.path;
 }
 
-/** The registered repository that contains `scopePath`: the longest registered prefix. */
-function containingRepo(scopePath: string, repos: readonly RegisteredRepo[]): RegisteredRepo | undefined {
-	let best: RegisteredRepo | undefined;
-	for (const r of repos) {
-		const isPrefix = scopePath === r.path || scopePath.startsWith(`${r.path}/`);
-		if (!isPrefix) continue;
-		if (best === undefined || r.path.length > best.path.length) best = r;
-	}
-	return best;
-}
 
 /**
  * Refuse a scope whose repository is being indexed, or whose last index ended
@@ -354,7 +344,7 @@ export async function ensureRepoQueryable(
 		log.debug({ scope: scopePath }, 'ensureRepoQueryable: registry pristine; skipping the check');
 		return;
 	}
-	const repo = containingRepo(scopePath, repos);
+	const repo = longestPrefixRepo(scopePath, repos);
 	if (repo === undefined) return;
 	refuseIfUnderIndex(repo, deps?.indexRun);
 }

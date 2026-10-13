@@ -126,6 +126,9 @@ export const ANALYZE_CONTEXT_BUNDLE_SCHEMA = {
 					type: 'string',
 					enum: ['classification', 'generic', 'code', 'data', 'infra', 'docs'],
 				},
+				repoPath: {
+					type: ['string', 'null'],
+				},
 				toolCalls: {
 					type:    'integer',
 					minimum: 0,

@@ -71,11 +71,13 @@ import { CONTRACT_FOOTER_MD } from '../contract.js';
 
 import {
 	cacheFilePathFor,
+	invalidateBundle,
+	isStaleByIndexer,
 	readBundle,
 	writeBundle,
 	type CacheKey,
 } from './cache.js';
-import { ensureNonEmptyClosure } from './invariants.js';
+import { ensureNonEmptyClosure, ensureRepoQueryable } from './invariants.js';
 import { freshnessPathOf, resolveScope, resolveScopeForTarget } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import {
@@ -345,6 +347,36 @@ export class ShaperAnswerStepFailedError extends Error {
 // runShaper -- public entry point
 // ---------------------------------------------------------------------------
 
+/** The registered repository a bundle is built over, or null for none. */
+function bundleRepoPathOf(scope: ResolvedScope): string | null {
+	return scope.kind === 'connection' ? null : scope.repoPath;
+}
+
+/**
+ * Whether a cached bundle may be served, judged from what it recorded,
+ * without resolving the request's scope:
+ *   - no repoPath key (written before it was recorded): a miss;
+ *   - repoPath null (built over no repository): served, as today;
+ *   - a repository: refused with RepoIndexingError when it is now under index
+ *     (unless the caller checked the scope already), and a miss when its
+ *     last-indexed time has moved past the bundle's.
+ */
+async function servedFromCache(
+	bundle:        AnalyzeContextBundle,
+	opts:          ShapeOpts,
+	lastIndexedOf: (path: string) => Promise<number | undefined>,
+): Promise<boolean> {
+	const meta = bundle.meta;
+	if (meta === undefined || !('repoPath' in meta) || meta.repoPath === undefined) return false;
+	if (meta.repoPath === null) return true;
+	const repo = meta.repoPath;
+	if (opts.scopeChecked !== true) {
+		await ensureRepoQueryable({ kind: 'repo', value: repo, repoPath: repo, lookupPath: repo });
+	}
+	const current = await lastIndexedOf(repo);
+	return current === undefined || !isStaleByIndexer(bundle, current);
+}
+
 export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle> {
 	const cfg = loadAnalyzeConfig();
 	const { promptPath, invocationMode, shaperId, inputs, opts } = args;
@@ -362,7 +394,36 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 			: {}),
 	};
 
-	// (2.5) Resolve the scope ONCE, for every mode. Everything below
+	// The last-indexed read goes through the same injectable reader as the
+	// pipeline's, and a throw from it is the 'index-state-read-failed' cause.
+	// `undefined` means the path is in no registered repo (or the registry
+	// cannot be read): there is no freshness watermark to check.
+	const steps = args.pipelineSteps ?? REAL_PIPELINE_STEPS;
+	const lastIndexedOf = async (path: string): Promise<number | undefined> => {
+		try {
+			return await steps.lastIndexedAt(path);
+		} catch (err) {
+			throw errorForPipelineCause('index-state-read-failed', errorText(err));
+		}
+	};
+
+	// (3) Cache lookup, BEFORE the scope is resolved: the key does not depend
+	// on the resolved scope, so a hit needs none of it. A failure to resolve
+	// something the cache does not depend on cannot make a hit unreachable.
+	const cached = readBundle(runId, cacheKey, opts);
+	if (cached !== null) {
+		const served = await servedFromCache(cached, opts, lastIndexedOf);
+		if (served) {
+			log.debug(
+				{ runId, mode: invocationMode, shaperId, file: cacheFilePathFor(runId, cacheKey) },
+				'shaper cache hit',
+			);
+			return withCurrentHint(cached, inputs);
+		}
+		invalidateBundle(runId, cacheKey);
+	}
+
+	// (4) A miss. Resolve the scope ONCE, for every mode. Everything below
 	// that needs the scope's repo, its lookup directory, its entity or
 	// its connection takes it from here. For run mode the pairing of
 	// the scope's kind with the kind of source is checked first: a
@@ -370,44 +431,26 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// validated.
 	const scope = await prepareScope(invocationMode, inputs, args.scopeDeps);
 
-	// (3) Resolve the scope's repo lastIndexedAt from the registry. Used
-	// for both the cache freshness check below + stamping into meta on
-	// write. `undefined` here means the scope target isn't a registered
-	// repo (e.g. a 'connection' scope ref) -- the cache layer treats
-	// that as "no freshness watermark to check" and skips the check.
-	// The read goes through the same injectable reader as the pipeline's,
-	// and a throw from it is the 'index-state-read-failed' cause.
-	const steps = args.pipelineSteps ?? REAL_PIPELINE_STEPS;
-	let currentLastIndexedAt: number | undefined;
-	try {
-		currentLastIndexedAt = await steps.lastIndexedAt(freshnessPathOf(scope));
-	} catch (err) {
-		throw errorForPipelineCause('index-state-read-failed', errorText(err));
+	// (4.5) Before any model call, unless the caller made these checks
+	// already (runAnalyze, before it measured):
+	//   - a run of any source but the generic one is refused when the
+	//     scope's repository is being indexed or its last index failed;
+	//   - the code source also needs a non-empty graph closure (the
+	//     empty-closure check, which makes the under-index check first).
+	// classification + task modes skip both: by the time a task fires,
+	// the run-mode invocation has already checked its scope.
+	if (invocationMode === 'run' && opts.scopeChecked !== true) {
+		if (shaperId === 'code') {
+			await ensureNonEmptyClosure(scope);
+		} else if (shaperId !== 'generic') {
+			await ensureRepoQueryable(scope);
+		}
 	}
 
-	// (4) Cache lookup.
-	const cached = readBundle(runId, cacheKey, opts, currentLastIndexedAt);
-	if (cached !== null) {
-		log.debug(
-			{ runId, mode: invocationMode, shaperId, file: cacheFilePathFor(runId, cacheKey) },
-			'shaper cache hit',
-		);
-		return withCurrentHint(cached, inputs);
-	}
-
-	// (4.5) Pre-LLM invariant: code-shaper at run-mode against an
-	// unindexed scope is a useless invocation (graph queries return
-	// empty, dep-closure analysis is impossible) -- abort before
-	// paying the Ollama cost. Only the code shaper depends on the
-	// indexed graph; data + infra + classification + generic produce
-	// reasonable bundles via the filesystem + DB-driver fallbacks
-	// even without graph state, so we skip the invariant for them.
-	// classification + task modes skip this check too -- by the time
-	// a task fires, the run-mode invocation has already validated
-	// the closure.
-	if (invocationMode === 'run' && shaperId === 'code') {
-		await ensureNonEmptyClosure(scope);
-	}
+	// The scope's repo lastIndexedAt, stamped into meta for the next
+	// invocation's freshness check.
+	const currentLastIndexedAt = await lastIndexedOf(freshnessPathOf(scope));
+	const repoPath = bundleRepoPathOf(scope);
 
 	// (4.6) The lookup pipeline: plan lookups -> execute them -> write
 	// the answer. Every run-mode request goes through it. It returns a
@@ -434,6 +477,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 			emptyLayers:   deriveEmptyLayers(raw),
 			schemaVersion: SCHEMA_VERSION,
 			...(currentLastIndexedAt !== undefined ? { repoLastIndexedAt: currentLastIndexedAt } : {}),
+			repoPath,
 		},
 	}));
 	if (pipelineBundle !== null) {
@@ -498,6 +542,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 			emptyLayers:   deriveEmptyLayers(rawBundle),
 			schemaVersion: SCHEMA_VERSION,
 			...(currentLastIndexedAt !== undefined ? { repoLastIndexedAt: currentLastIndexedAt } : {}),
+			repoPath,
 		},
 	};
 

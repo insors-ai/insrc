@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -128,3 +128,34 @@ Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-val
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` | 0 | 82 | 1.3 s |  |
+
+## t4
+
+Run at 2026-10-13T08:57:09.782Z on commit `09512a99`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: transcript window: a diff row is given with the content of the last later row that replaces its sid, wherever those rows sit; a withdrawn one as withdrawn; a row with replaces as it is; firstIndex and the row count do not change**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | transcript window: a diff row is given with the content of the last later row that replaces its sid, wherever those rows sit; a withdrawn one as withdrawn; a row with replaces as it is; firstIndex and the row count do not change | `vscode-plugin/src/chat/__tests__/transcript-window.test.ts` |
+
+**unit: toViewModel: a diff row maps to the diff kind in the host and in the webview mirror**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | toViewModel: a diff row maps to the diff kind in the host and in the webview mirror | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` |
+| pass | parity: eval(webview toViewModel) equals host toViewModel for every sample (drift fails build) | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` |
+
+**integration: session file store: a diff row, a row that replaces it and a withdrawing row are appended by separate saves, with another writer's rows appended between them, and a new store over the same files reads them back so that pageBefore gives the latest version at the first row's place**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | session file store: a diff row, a row that replaces it and a withdrawing row are appended by separate saves, with another writer's rows appended between them, and a new store over the same files reads them back so that pageBefore gives the latest version at the first row's place | `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/render-registry.test.ts` | 0 | 72 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` | 0 | 20 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/transcript-window.test.ts` | 0 | 6 | 0.3 s |  |

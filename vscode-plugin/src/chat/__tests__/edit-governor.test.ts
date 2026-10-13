@@ -42,6 +42,8 @@ function harness(opts?: { gitAvailable?: boolean; diffView?: DiffView }): Harnes
     available: async () => gitAvailable,
     snapshot: async (): Promise<BaselineHandle> => ({ ref: 'SNAP' }),
     read: async (_h, path) => baselineContent.get(path),
+    changes: async () => '',
+    release: async () => {},
   };
   const fs: FsSeam = {
     read: async (path) => disk.get(path),
@@ -186,6 +188,8 @@ test('S006 governor: a late observe from a SUPERSEDED turn does not render into 
       available: async () => true,
       snapshot: async () => ({ ref: 'SNAP' }),
       read: async (_h, _p) => { await gate; return 'old\n'; },
+      changes: async () => '',
+      release: async () => {},
     },
     fs: { read: async () => 'new\n', write: async () => {}, remove: async () => {} },
     computeDiff: defaultComputeDiff,

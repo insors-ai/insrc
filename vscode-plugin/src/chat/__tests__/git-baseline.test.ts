@@ -1,111 +1,145 @@
 /**
- * Story E20260925edb76e2e:S006 / t7 — git-baseline seam unit suite.
- *
- * Pins the two data-loss-critical behaviors the cold review caught, with a fake
- * runGit + readText (no real git): (1) an untracked-but-existing file is captured
- * so a reject RESTORES it (baseline defined, not undefined -> no delete); (2) the
- * git-show path is cwd-relative via a `./` prefix (correct in a subdir workspace).
+ * Story E20260925edb76e2e:S006 / t7, Story E20261013b2e8109f:S001 / t2 — the git-baseline seam
+ * over a fake runGit (no real git; git-baseline.integration.test.ts runs the real one).
  *
  * Run: npx tsx --test vscode-plugin/src/chat/__tests__/git-baseline.test.ts
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGitBaseline } from '../git-baseline.js';
+import { createGitBaseline, DIFF_ARGS } from '../git-baseline.js';
 
+const CWD = '/repo/pkg';
 const toRel = (cwd: string, p: string): string => (p.startsWith(cwd + '/') ? p.slice(cwd.length + 1) : p).split('\\').join('/');
 const toAbs = (cwd: string, rel: string): string => (rel.startsWith('/') ? rel : `${cwd}/${rel}`);
 
-interface FakeGit {
-  gitCalls: string[][];
-  make: (opts: {
-    isRepo?: boolean;
-    stashSha?: string; // '' -> clean tree -> HEAD fallback
-    tree?: Record<string, string>; // rel -> content resolvable by `show <ref>:./<rel>`
-    untrackedList?: string[]; // rel paths ls-files --others returns
-    disk?: Record<string, string>; // abs -> content for readText
-  }) => ReturnType<typeof createGitBaseline>;
-}
+interface Call { args: string[]; env: Record<string, string> | undefined }
+type Answer = { ok: boolean; stdout: string };
 
-function fakeGit(cwd: string): FakeGit {
-  const gitCalls: string[][] = [];
-  return {
-    gitCalls,
-    make: (opts) => {
-      const disk = opts.disk ?? {};
-      const runGit = async (_cwd: string, args: string[]): Promise<{ ok: boolean; stdout: string }> => {
-        gitCalls.push(args);
-        if (args[0] === 'rev-parse') return { ok: opts.isRepo ?? true, stdout: 'true\n' };
-        if (args[0] === 'stash' && args[1] === 'create') return { ok: true, stdout: (opts.stashSha ?? 'STASHSHA') + '\n' };
-        if (args[0] === 'ls-files') return { ok: true, stdout: (opts.untrackedList ?? []).join('\n') };
-        if (args[0] === 'show') {
-          // arg is `${ref}:./${rel}`
-          const spec = args[1] ?? '';
-          const m = /^[^:]+:\.\/(.+)$/.exec(spec);
-          const rel = m?.[1];
-          if (rel !== undefined && opts.tree && rel in opts.tree) return { ok: true, stdout: opts.tree[rel]! };
-          return { ok: false, stdout: `fatal: path not in tree` };
-        }
-        return { ok: false, stdout: '' };
-      };
-      const readText = async (abs: string): Promise<string | undefined> => (abs in disk ? disk[abs] : undefined);
-      return createGitBaseline({ runGit, readText, cwd: () => cwd, toAbs, toRel });
+/** A scripted git: `answer` sees each call and says what git printed. Records args and env. */
+function fake(answer: (args: string[], n: number) => Answer | undefined, opts?: { indexExists?: boolean }) {
+  const calls: Call[] = [];
+  const copies: Array<[string, string]> = [];
+  const removed: string[] = [];
+  let seq = 0;
+  const baseline = createGitBaseline({
+    runGit: async (_cwd, args, env) => {
+      calls.push({ args, env });
+      return answer(args, calls.length) ?? { ok: false, stdout: '' };
     },
-  };
+    cwd: () => CWD,
+    toAbs,
+    toRel,
+    tempIndexPath: () => `/tmp/idx-${seq++}`,
+    copyFile: async (from, to) => {
+      copies.push([from, to]);
+      return opts?.indexExists ?? true;
+    },
+    removeFile: async (p) => {
+      removed.push(p);
+    },
+  });
+  return { baseline, calls, copies, removed };
 }
 
-test('S006 git-baseline: a TRACKED file resolves via `show <ref>:./<rel>` (cwd-relative; subdir-safe)', async () => {
-  const cwd = '/r/pkg';
-  const fg = fakeGit(cwd);
-  const bl = fg.make({ tree: { 'a.ts': 'old\n' } });
-  const h = await bl.snapshot(cwd);
-  const content = await bl.read(h, '/r/pkg/a.ts');
-  assert.equal(content, 'old\n', 'tracked file returns its pre-turn content');
-  // the show spec MUST carry the ./ prefix (bare path would resolve at repo top-level).
-  const show = fg.gitCalls.find((c) => c[0] === 'show');
-  assert.ok(show, 'a git show ran');
-  assert.match(show![1]!, /:\.\//, 'git show uses a ./-prefixed (cwd-relative) path');
-});
-
-test('S006 git-baseline: an UNTRACKED-but-existing file is captured at snapshot -> read returns its content (reject restores, not deletes)', async () => {
-  const cwd = '/r';
-  const fg = fakeGit(cwd);
-  const bl = fg.make({
-    stashSha: '', // clean tracked tree -> HEAD fallback
-    tree: {}, // notes.txt is NOT tracked
-    untrackedList: ['notes.txt'],
-    disk: { '/r/notes.txt': 'user content\n' },
+test("git-baseline: snapshot resolves the printed index path against cwd, copies it, adds and writes a tree with GIT_INDEX_FILE set to the copy, and returns the tree id and the copy's path", async () => {
+  const f = fake((args) => {
+    if (args[0] === 'rev-parse' && args[1] === '--is-inside-work-tree') return { ok: true, stdout: 'true\n' };
+    if (args[0] === 'rev-parse' && args[1] === '--git-path') return { ok: true, stdout: '../.git/index\n' };
+    if (args[0] === 'add') return { ok: true, stdout: '' };
+    if (args[0] === 'write-tree') return { ok: true, stdout: 'TREE1\n' };
+    return undefined;
   });
-  const h = await bl.snapshot(cwd);
-  const content = await bl.read(h, '/r/notes.txt');
-  assert.equal(content, 'user content\n', 'untracked-existing file has a captured baseline -> NOT treated as new');
+  assert.equal(await f.baseline.available(CWD), true);
+  const handle = await f.baseline.snapshot(CWD);
+  assert.deepEqual(handle, { ref: 'TREE1', index: '/tmp/idx-0' });
+  // git printed the path relative to the directory it ran in: it is resolved against cwd.
+  assert.deepEqual(f.copies, [[`${CWD}/../.git/index`, '/tmp/idx-0']]);
+  const [, where, add, write] = f.calls;
+  assert.deepEqual(where!.args, ['rev-parse', '--git-path', 'index']);
+  assert.equal(where!.env, undefined);
+  assert.deepEqual(add!.args, ['add', '-A', '--ignore-errors']);
+  assert.deepEqual(add!.env, { GIT_INDEX_FILE: '/tmp/idx-0' });
+  assert.deepEqual(write!.args, ['write-tree']);
+  assert.deepEqual(write!.env, { GIT_INDEX_FILE: '/tmp/idx-0' });
+
+  // An absolute printed path is used as it is; a repository with no index file still snapshots.
+  const abs = fake((args) => (args[0] === 'rev-parse' ? { ok: true, stdout: '/elsewhere/worktrees/w/index\n' } : args[0] === 'write-tree' ? { ok: true, stdout: 'T\n' } : { ok: true, stdout: '' }), { indexExists: false });
+  assert.deepEqual(await abs.baseline.snapshot(CWD), { ref: 'T', index: '/tmp/idx-0' });
+  assert.deepEqual(abs.copies, [['/elsewhere/worktrees/w/index', '/tmp/idx-0']]);
+
+  // write-tree failing fails the snapshot and leaves no private index behind.
+  const bad = fake((args) => (args[0] === 'write-tree' ? { ok: false, stdout: '' } : { ok: true, stdout: 'x\n' }));
+  await assert.rejects(() => bad.baseline.snapshot(CWD), /write-tree failed/);
+  assert.deepEqual(bad.removed, ['/tmp/idx-0']);
+  const empty = fake((args) => (args[0] === 'write-tree' ? { ok: true, stdout: '\n' } : { ok: true, stdout: 'x\n' }));
+  await assert.rejects(() => empty.baseline.snapshot(CWD), /write-tree failed/);
+  // Outside a repository.
+  assert.equal(await fake(() => ({ ok: false, stdout: '' })).baseline.available(CWD), false);
 });
 
-test('S006 git-baseline: a genuinely NEW file (not tracked, not captured) reads undefined -> reject removes it', async () => {
-  const cwd = '/r';
-  const fg = fakeGit(cwd);
-  const bl = fg.make({ tree: {}, untrackedList: [], disk: {} });
-  const h = await bl.snapshot(cwd);
-  const content = await bl.read(h, '/r/created-this-turn.ts');
-  assert.equal(content, undefined, 'a file absent from tree AND the untracked snapshot is a genuine new file');
+test('git-baseline: changes returns an empty string for an unchanged tree, the patch for a changed one and undefined when write-tree or diff fails', async () => {
+  let tree = 'TREE1';
+  let diffOk = true;
+  let writeOk = true;
+  const f = fake((args) => {
+    if (args[0] === 'add') return { ok: true, stdout: '' };
+    if (args[0] === 'write-tree') return { ok: writeOk, stdout: `${tree}\n` };
+    if (args.includes('diff')) return { ok: diffOk, stdout: 'PATCH' };
+    return undefined;
+  });
+  const handle = { ref: 'TREE1', index: '/tmp/idx-9' };
+  assert.equal(await f.baseline.changes(handle), '');
+  assert.equal(f.calls.some((c) => c.args.includes('diff')), false, 'an unchanged tree is not diffed');
+  assert.deepEqual(f.calls.map((c) => c.env), [{ GIT_INDEX_FILE: '/tmp/idx-9' }, { GIT_INDEX_FILE: '/tmp/idx-9' }]);
+
+  tree = 'TREE2';
+  assert.equal(await f.baseline.changes(handle), 'PATCH');
+  const diff = f.calls.at(-1)!;
+  assert.deepEqual(diff.args, [...DIFF_ARGS, 'TREE1', 'TREE2']);
+  assert.deepEqual(diff.args.slice(0, 3), ['-c', 'core.quotepath=false', 'diff']);
+  for (const flag of ['--no-renames', '-U3', '--relative', '--src-prefix=a/', '--dst-prefix=b/', '--no-ext-diff', '--no-textconv', '--no-color']) {
+    assert.ok(diff.args.includes(flag), flag);
+  }
+  assert.equal(diff.env, undefined, 'the diff of two trees needs no index');
+
+  diffOk = false;
+  assert.equal(await f.baseline.changes(handle), undefined);
+  diffOk = true;
+  writeOk = false;
+  assert.equal(await f.baseline.changes(handle), undefined);
+  // A handle with no private index (not made by this baseline) cannot be compared.
+  assert.equal(await f.baseline.changes({ ref: 'TREE1' }), undefined);
 });
 
-test('S006 git-baseline: snapshot uses the stash sha when non-empty, else HEAD; available reflects rev-parse', async () => {
-  const cwd = '/r';
-  const fg = fakeGit(cwd);
-  const bl = fg.make({ stashSha: 'ABC123', tree: { 'a.ts': 'x' } });
-  assert.equal(await bl.available(cwd), true);
-  const h = await bl.snapshot(cwd);
-  await bl.read(h, '/r/a.ts');
-  const show = fg.gitCalls.find((c) => c[0] === 'show');
-  assert.match(show![1]!, /^ABC123:/, 'uses the stash-create sha as the ref');
+test('git-baseline: read resolves a path with show <tree>:./<rel> and gives undefined for a path not in the tree', async () => {
+  const files: Record<string, string> = { 'src/a.ts': 'OLD\n', 'notes.txt': 'was untracked\n' };
+  const f = fake((args) => {
+    if (args[0] !== 'show') return undefined;
+    const rel = /^TREE1:\.\/(.+)$/.exec(args[1] ?? '')?.[1];
+    return rel !== undefined && rel in files ? { ok: true, stdout: files[rel]! } : { ok: false, stdout: 'fatal: path not in tree' };
+  });
+  const handle = { ref: 'TREE1', index: '/tmp/idx-0' };
+  // An absolute path is made cwd-relative; the `./` keeps it relative to cwd in a subfolder workspace.
+  assert.equal(await f.baseline.read(handle, `${CWD}/src/a.ts`), 'OLD\n');
+  assert.deepEqual(f.calls.at(-1)!.args, ['show', 'TREE1:./src/a.ts']);
+  // A file that was untracked when the turn started is in the tree too.
+  assert.equal(await f.baseline.read(handle, 'notes.txt'), 'was untracked\n');
+  // A file the turn created is not: undefined (a reject removes it).
+  assert.equal(await f.baseline.read(handle, 'src/new.ts'), undefined);
+});
 
-  const fg2 = fakeGit(cwd);
-  const bl2 = fg2.make({ stashSha: '', tree: { 'a.ts': 'x' } });
-  const h2 = await bl2.snapshot(cwd);
-  await bl2.read(h2, '/r/a.ts');
-  assert.match(fg2.gitCalls.find((c) => c[0] === 'show')![1]!, /^HEAD:/, 'clean tree -> HEAD fallback');
-
-  const fg3 = fakeGit(cwd);
-  const bl3 = fg3.make({ isRepo: false });
-  assert.equal(await bl3.available(cwd), false, 'non-git workspace -> not available');
+test('git-baseline: release removes the private index, and a failed git add does not fail snapshot', async () => {
+  const f = fake((args) => {
+    if (args[0] === 'rev-parse') return { ok: true, stdout: '.git/index\n' };
+    if (args[0] === 'add') return { ok: false, stdout: 'error: open("locked"): Permission denied' };
+    if (args[0] === 'write-tree') return { ok: true, stdout: 'TREE1\n' };
+    return undefined;
+  });
+  const handle = await f.baseline.snapshot(CWD);
+  assert.deepEqual(handle, { ref: 'TREE1', index: '/tmp/idx-0' });
+  await f.baseline.release(handle);
+  assert.deepEqual(f.removed, ['/tmp/idx-0', '/tmp/idx-0.lock']);
+  // Nothing to remove for a handle with no private index.
+  await f.baseline.release({ ref: 'X' });
+  assert.equal(f.removed.length, 2);
 });

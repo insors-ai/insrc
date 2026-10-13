@@ -18,6 +18,8 @@ export type DiffView = 'chat' | 'editor';
 /** An opaque handle to a pre-turn workspace baseline (e.g. a git tree/stash object id). */
 export interface BaselineHandle {
   readonly ref: string;
+  /** The private index file the snapshot was written through; removed by release. */
+  readonly index?: string;
 }
 
 /** Captures an exact pre-turn working-tree baseline (git tree/stash), no working-tree disturbance. */
@@ -28,6 +30,13 @@ export interface WorkspaceBaseline {
   snapshot(cwd: string): Promise<BaselineHandle>;
   /** The path's pre-turn content from the baseline, or undefined if it did not exist. */
   read(handle: BaselineHandle, path: string): Promise<string | undefined>;
+  /**
+   * The patch between the snapshot and the working tree as it is now ('' when nothing changed),
+   * or undefined when it cannot be read.
+   */
+  changes(handle: BaselineHandle): Promise<string | undefined>;
+  /** Free what the snapshot holds outside the repository (its private index file). */
+  release(handle: BaselineHandle): Promise<void>;
 }
 
 /** Current on-disk file IO (used to compute the after-content + apply a revert). */

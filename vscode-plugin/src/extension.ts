@@ -65,6 +65,7 @@ import { webviewChannel } from './chat/webview-channel.js';
 import { execFile as nodeExecFile } from 'node:child_process';
 import { promises as nodeFsp } from 'node:fs';
 import { relative as pathRelative, isAbsolute as pathIsAbsolute, join as pathJoin } from 'node:path';
+import { tmpdir as osTmpdir } from 'node:os';
 
 /** The workspaceState key prefix for the one-time register-prompt dismissal flag (S004). */
 const REGISTER_DISMISSED_KEY = 'insrc.workspace.register.dismissed';
@@ -476,9 +477,10 @@ export function activate(context: vscode.ExtensionContext): void {
     // baseline shells local git (no new dependency, no cloud REST) and captures the exact
     // pre-turn working tree without disturbing it. Everything stays extension-local (k3).
     const chatCwd = (): string => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
-    const runGit = (cwd: string, args: string[]): Promise<{ ok: boolean; stdout: string }> =>
+    const runGit = (cwd: string, args: string[], env?: Record<string, string>): Promise<{ ok: boolean; stdout: string }> =>
       new Promise((resolve) => {
-        nodeExecFile('git', ['-C', cwd, ...args], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }, (err, stdout) => {
+        const opts = { encoding: 'utf8' as const, maxBuffer: 64 * 1024 * 1024, ...(env !== undefined ? { env: { ...process.env, ...env } } : {}) };
+        nodeExecFile('git', ['-C', cwd, ...args], opts, (err, stdout) => {
           resolve({ ok: err === null, stdout: stdout ?? '' });
         });
       });
@@ -493,8 +495,25 @@ export function activate(context: vscode.ExtensionContext): void {
         return undefined;
       }
     };
-    // S006: git-backed baseline (untracked-safe + subdir-safe; see git-baseline.ts).
-    const workspaceBaseline = createGitBaseline({ runGit, readText, cwd: chatCwd, toAbs: absForFs, toRel: relForGit });
+    // S006: git-backed baseline (untracked-safe + subdir-safe; see git-baseline.ts). Each turn's
+    // snapshot is written through a private copy of the index, in the system temporary directory.
+    let indexSeq = 0;
+    const workspaceBaseline = createGitBaseline({
+      runGit,
+      cwd: chatCwd,
+      toAbs: absForFs,
+      toRel: relForGit,
+      tempIndexPath: () => pathJoin(osTmpdir(), `insrc-chat-index-${process.pid}-${Date.now().toString(36)}-${indexSeq++}`),
+      copyFile: async (from, to) => {
+        try {
+          await nodeFsp.copyFile(from, to);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      removeFile: (path) => nodeFsp.rm(path, { force: true }),
+    });
     // Baseline docs for the native editor-diff (read-only left side), keyed by fs path.
     const baselineDocs = new Map<string, string>();
     const BASELINE_SCHEME = 'insrc-baseline';

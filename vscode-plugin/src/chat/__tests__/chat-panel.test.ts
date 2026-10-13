@@ -811,6 +811,8 @@ function fakeGovernance(): FakeGov {
       available: async () => true,
       snapshot: async () => ({ ref: 'SNAP' }),
       read: async (_h, path) => baseline.get(path),
+      changes: async () => '',
+      release: async () => {},
     },
     fs: {
       read: async (path) => disk.get(path),

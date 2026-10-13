@@ -8,7 +8,9 @@
  *
  * The run-level tests use a sandboxed graph store and a request with a stated
  * kind of source and size, so nothing here reaches a model: such a run passes
- * classification and stops at the context builder's indexed check.
+ * classification (its scope is in an indexed repository, so the run's own
+ * scope check before the measure passes) and stops at the context builder,
+ * which here stands in for the real one and refuses as its indexed check did.
  */
 
 import { test } from 'node:test';
@@ -28,7 +30,9 @@ import type { AnswerReport } from '../../completeness.js';
 import { runWithRoutingContext } from '../../context/shaper-provider.js';
 import { _setMeasureDepsForTest } from '../../measure.js';
 import type { RoutingSeamContext } from '../../context/shaper-provider.js';
-import { runAnalyze } from '../driver.js';
+import { ScopeNotIndexedError } from '../../context/invariants.js';
+import type { RunShaper } from '../../context/types.js';
+import { _setRunShaperForTest, runAnalyze } from '../driver.js';
 import { isRunLive } from '../index.js';
 import { purgeRunForTests, readRunRecord, runRecordPathFor, writeRunRecord } from '../persistence.js';
 import type { AnalyzeRunEvent, RunAnalyzeArgs, RunRecord } from '../types.js';
@@ -52,10 +56,23 @@ test.beforeEach(async () => {
 		id: makeEntityId(REGISTERED, fixtureFile, 'function', 'fn'), repo: REGISTERED, file: fixtureFile, kind: 'function', name: 'fn',
 		language: 'typescript', startLine: 1, endLine: 3,
 	} as unknown as Entity]);
+	// The request's own directory is an indexed repository: the run's scope check,
+	// made before the request is measured, passes and the run reaches the plan stage.
+	await addRepo(null, { path: dirPath, name: dirPath, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' });
+	await upsertEntities(null, [{
+		id: makeEntityId(dirPath, join(dirPath, 'a.ts'), 'variable', 'a'), repo: dirPath, file: join(dirPath, 'a.ts'), kind: 'variable', name: 'a',
+		language: 'typescript', startLine: 1, endLine: 1,
+	} as unknown as Entity]);
+	// The context builder stops the run at the plan stage, before any model
+	// call, with the indexed check's own failure.
+	_setRunShaperForTest(() => ({
+		buildRunBundle: async () => { throw new ScopeNotIndexedError(dirPath, dirPath, 'the context builder stands in for the test'); },
+	}) as unknown as RunShaper);
 });
 
 test.afterEach(async () => {
 	_setMeasureDepsForTest(undefined);
+	_setRunShaperForTest(undefined);
 	await closeGraphStore();
 	rmSync(sandbox, { recursive: true, force: true });
 });

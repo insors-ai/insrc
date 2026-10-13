@@ -306,11 +306,35 @@ async function runStages(
 		}
 	}
 
+	// The run checks its scope once, BEFORE any size is measured or announced,
+	// with the scope function every plan task will use: a request about code
+	// the index does not hold is refused, with the code and message it has
+	// always had, and never announced at a size first. For the code and docs
+	// sources it is the indexed check; for every source it also refuses a
+	// repository being indexed or whose last index failed. A generic intent
+	// has no family row and is not checked.
+	const scopeChecked = unsized.target !== 'generic';
+	if (scopeChecked) {
+		try {
+			await resolveTaskScope(unsized.scopeRef, unsized.target as Exclude<typeof unsized.target, 'generic'>, 'the run');
+		} catch (err) {
+			const scoped = scopeErrorMapping(err);
+			// Anything that is not a refused scope goes to runAnalyze's handler.
+			if (scoped === undefined) throw err;
+			// The mapping is a run failure as it stands: the code, the message and,
+			// for a scope that is not indexed or under index, its data.
+			const failure: RunFailure = scoped;
+			record = patch(record, { stage: 'classify', status: 'failed', error: failure });
+			saveRunRecord(record);
+			log.warn({ runId, code: failure.code }, "runAnalyze: the run's scope was refused before it was measured");
+			return emitDoneAndReturn(failResult('classify', failure, undefined, start, runId));
+		}
+	}
+
 	// The request's size: counted from what its scope names, by code. A size
 	// the caller stated (a slash command's suffix) is kept as the hint and
 	// never becomes the size. The pass never throws: a scope it cannot count
-	// is the largest size, with the reason, and the scope checks below refuse
-	// the request where they did before.
+	// is the largest size, with the reason.
 	emit({
 		type: 'stage-substep',
 		stage: 'classify',
@@ -357,6 +381,8 @@ async function runStages(
 			{
 				runId,
 				onTrace: (traceEvent) => forwardShaperTrace('plan', traceEvent, emit),
+				// The checks above were made: the builder does not make them again.
+				scopeChecked,
 			},
 		);
 	} catch (err) {
@@ -365,28 +391,6 @@ async function runStages(
 		saveRunRecord(record);
 		log.warn({ runId, code: failure.code }, 'runAnalyze: bundle build failed');
 		return emitDoneAndReturn(failResult('plan', failure, intent, start, runId));
-	}
-	// The run checks its intent's scope once, before it plans, with the scope
-	// function every plan task will use. For a docs run this is the first place
-	// the index is checked (the context builder checks it for the code source
-	// only): without it, a docs run on a scope in no registered repo would be
-	// planned and then fail in every task. A generic intent has no family row
-	// and is not checked.
-	if (intent.target !== 'generic') {
-		try {
-			await resolveTaskScope(intent.scopeRef, intent.target, 'the run');
-		} catch (err) {
-			const scoped = scopeErrorMapping(err);
-			// Anything that is not a refused scope goes to runAnalyze's handler.
-			if (scoped === undefined) throw err;
-			// The mapping is a run failure as it stands: the code, the message and,
-			// for a scope that is not indexed, the scope's path and its registration.
-			const failure: RunFailure = scoped;
-			record = patch(record, { stage: 'plan', status: 'failed', error: failure });
-			saveRunRecord(record);
-			log.warn({ runId, code: failure.code }, "runAnalyze: the run's scope was refused before planning");
-			return emitDoneAndReturn(failResult('plan', failure, intent, start, runId));
-		}
 	}
 	emit({
 		type: 'stage-substep',

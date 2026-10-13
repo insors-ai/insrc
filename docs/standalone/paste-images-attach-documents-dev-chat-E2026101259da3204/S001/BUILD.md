@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-12T10:25:29.172Z  ·  **Updated:** 2026-10-12T12:17:54.221Z
+**Standalone:** yes  ·  **Created:** 2026-10-12T10:25:29.172Z  ·  **Updated:** 2026-10-13T06:09:34.817Z
 
-**Commit:** bdd0a0ef
+**Commit:** f21955c6
 
 ## Summary
 
@@ -26,21 +26,5 @@ Pasted images and picked documents are copied to the chat's own folder under ~/.
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-59da3204a44afd1b-S001.json` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/__tests__/attachment-store.test.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/__tests__/fake-attachment-fs.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/__tests__/protocol.test.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/__tests__/render-registry.test.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/attachment-store.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/cli-adapter.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/render-registry.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/chat/session-store.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
-- `vscode-plugin/src/vscode.d.ts` — **insrc-build** (2026-10-12T12:17:54.221Z)
+- `.insrc/artifacts/BUILD-2284d9b47fc9c35e-S001.json` — **insrc-build** (2026-10-13T06:09:34.817Z)
+- `docs/standalone/codex-chat-turns-hang-because-cli-E202610122284d9b4/S001/BUILD.md` — **insrc-build** (2026-10-13T06:09:34.817Z)

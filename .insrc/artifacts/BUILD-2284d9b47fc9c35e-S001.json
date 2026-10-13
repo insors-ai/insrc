@@ -10,12 +10,13 @@
     "triageRationale": "Small bugfix: one clear approach in one file (vscode-plugin/src/chat/cli-adapter.ts), one spawn call site, one production user of the launcher.",
     "epicCreatedAt": "2026-10-12T12:38:41.569Z",
     "epicSlug": "codex-chat-turns-hang-because-cli",
-    "updatedAt": "2026-10-13T05:59:13.962Z"
+    "updatedAt": "2026-10-13T06:09:34.368Z",
+    "approvedAt": "2026-10-13T06:09:34.685Z"
   },
   "body": {
     "focus": "ISSUE-2284d9b47fc9c35e: codex chat turns hang because the CLI's input is left open. Start a CLI that reads its input as prompt text (codex) with that input closed; keep it open for claude, whose approval answers are written to it. A codex approval answer is then reported as undeliverable. The live codex tests in vscode-plugin/src/chat/__tests__/live-cli.test.ts must pass through the production launcher.",
     "producesLld": false,
-    "commit": "b1c7ffcc",
+    "commit": "f21955c6",
     "tasks": [
       {
         "id": "S001",
@@ -29,31 +30,59 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/CR-2284d9b47fc9c35e-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:09:34.368Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-59da3204a44afd1b-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:09:34.368Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/ISSUE-2284d9b47fc9c35e.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T05:59:13.962Z"
+        "timestamp": "2026-10-13T06:09:34.368Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/codex-chat-turns-hang-because-cli-E202610122284d9b4/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:09:34.368Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/paste-images-attach-documents-dev-chat-E2026101259da3204/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:09:34.368Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T05:59:13.962Z"
+        "timestamp": "2026-10-13T06:09:34.368Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T05:59:13.962Z"
+        "timestamp": "2026-10-13T06:09:34.368Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/cli-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T05:59:13.962Z"
+        "timestamp": "2026-10-13T06:09:34.368Z"
       }
     ]
   }

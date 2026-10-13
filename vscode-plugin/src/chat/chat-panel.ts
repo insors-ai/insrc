@@ -587,27 +587,55 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // (docs/epics/…/S001/mocks.html): a single-dark terminal .box (chrome header · .pad transcript
     // with row/gutter markers · dashed .inputline with a ❯ caret · .statusbar), filling the panel
     // edge to edge. The sc1 renderTerminalStyle still supplies the marker ::before glyphs; this
-    // owns the frame + palette (deliberately single-dark hex, not VS Code theme vars — it's a
-    // terminal). The sc1 marker classes are re-toned to the design's accent/cyan/amber/green/red.
+    // owns the frame and the colours.
+    // Story E202610137fefc3fc:S001: the chat follows the VS Code theme. The `:root` rule is the one
+    // place its colours are chosen: every name holds a --vscode-* theme variable, and a fallback is
+    // always another theme variable, never a literal. Every border name leads with the
+    // high-contrast border. The rules below, RENDER_REGISTRY_STYLE and CHAT_MARKDOWN_TOKENS use
+    // only these names: no hex, rgb, hsl, color-mix or tint gradient anywhere in the chat's style.
     const layoutStyle =
       `<style>` +
-      `:root{color-scheme:dark;--font:"JetBrains Mono",ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;` +
-      `--bg:#0b0e14;--bg-alt:#10141c;--bg-inset:#0d1119;--panel:#11161f;--fg:#c6cdd8;--fg-strong:#e8edf4;--muted:#6b7688;--dim:#4a5464;` +
-      `--border:#222a36;--border-lit:#2f3a4a;--accent:#4ade80;--accent2:#38bdf8;--amber:#fbbf24;--magenta:#c084fc;--red:#f87171;--user:#8ab4ff;--sel:rgba(74,222,128,.22);` +
-      `--sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}` +
+      `:root{--font:var(--vscode-editor-font-family);--sans:var(--vscode-editor-font-family);` +
+      // grounds
+      `--bg:var(--vscode-editor-background);--panel:var(--vscode-editor-background);--bg-inset:var(--vscode-editorWidget-background);` +
+      `--code-bg:var(--vscode-textCodeBlock-background);--pre-bg:var(--vscode-textPreformat-background,var(--vscode-textCodeBlock-background));` +
+      `--user-bg:var(--vscode-chat-requestBackground,var(--vscode-editor-inactiveSelectionBackground));--warn-bg:var(--vscode-inputValidation-warningBackground);` +
+      `--add-bg:var(--vscode-diffEditor-insertedLineBackground,var(--vscode-diffEditor-insertedTextBackground));--del-bg:var(--vscode-diffEditor-removedLineBackground,var(--vscode-diffEditor-removedTextBackground));` +
+      `--quote-bg:var(--vscode-textBlockQuote-background);--sel:var(--vscode-editor-selectionBackground);` +
+      // text
+      `--fg:var(--vscode-editor-foreground);--fg-strong:var(--vscode-editor-foreground);--muted:var(--vscode-descriptionForeground);--dim:var(--vscode-descriptionForeground);` +
+      `--input-fg:var(--vscode-input-foreground);--placeholder:var(--vscode-input-placeholderForeground);--link:var(--vscode-textLink-foreground);--pre-fg:var(--vscode-textPreformat-foreground);` +
+      // borders (the high-contrast border first, so high-contrast themes get their outline)
+      `--border:var(--vscode-contrastBorder,var(--vscode-panel-border));--border-lit:var(--vscode-contrastBorder,var(--vscode-editorWidget-border,var(--vscode-panel-border)));` +
+      `--user-border:var(--vscode-contrastBorder,var(--vscode-chat-requestBorder,var(--vscode-editorWidget-border,var(--vscode-panel-border))));` +
+      `--warn-border:var(--vscode-contrastBorder,var(--vscode-inputValidation-warningBorder));--quote-border:var(--vscode-textBlockQuote-border);--sep:var(--vscode-textSeparator-foreground);` +
+      // In a high-contrast theme a diff line has no ground of its own; the theme outlines it instead.
+      `--add-border:var(--vscode-diffEditor-insertedTextBorder,transparent);--del-border:var(--vscode-diffEditor-removedTextBorder,transparent);--focus:var(--vscode-focusBorder);` +
+      // the theme's terminal palette: markers, role labels, the send control
+      `--accent:var(--vscode-terminal-ansiGreen);--accent2:var(--vscode-terminal-ansiCyan);--amber:var(--vscode-terminal-ansiYellow);--magenta:var(--vscode-terminal-ansiMagenta);--user:var(--vscode-terminal-ansiBlue);` +
+      // states
+      `--red:var(--vscode-errorForeground);--warn:var(--vscode-editorWarning-foreground);--pass:var(--vscode-testing-iconPassed);--fail:var(--vscode-testing-iconFailed);--progress:var(--vscode-progressBar-background);` +
+      // controls
+      `--btn-bg:var(--vscode-button-background);--btn-fg:var(--vscode-button-foreground);--btn-hover:var(--vscode-button-hoverBackground);` +
+      `--btn2-bg:var(--vscode-button-secondaryBackground);--btn2-fg:var(--vscode-button-secondaryForeground);--btn2-hover:var(--vscode-button-secondaryHoverBackground);` +
+      `--dropdown-bg:var(--vscode-dropdown-background);--dropdown-fg:var(--vscode-dropdown-foreground);--dropdown-border:var(--vscode-contrastBorder,var(--vscode-dropdown-border));` +
+      `--check-bg:var(--vscode-checkbox-background);--check-fg:var(--vscode-checkbox-foreground);--check-border:var(--vscode-contrastBorder,var(--vscode-checkbox-border));}` +
+      // The colour scheme (form controls, scrollbars) follows the theme-kind class VS Code puts on
+      // the body. High-contrast light also carries the plain high-contrast class, so it comes last.
+      `body.vscode-light{color-scheme:light;}body.vscode-dark{color-scheme:dark;}body.vscode-high-contrast{color-scheme:dark;}body.vscode-high-contrast-light{color-scheme:light;}` +
       `*{box-sizing:border-box;}html,body{height:100%;width:100%;}` +
-      `body{margin:0;padding:0;display:flex;background:radial-gradient(1200px 600px at 80% -10%,rgba(56,189,248,.06),transparent 60%),radial-gradient(900px 500px at -5% 10%,rgba(74,222,128,.05),transparent 55%),var(--bg);color:var(--fg);font-family:var(--font);font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased;}` +
-      `::selection{background:var(--sel);}a{color:var(--accent2);}` +
+      `body{margin:0;padding:0;display:flex;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased;}` +
+      `::selection{background:var(--sel);}a{color:var(--link);}` +
       // Full-bleed: the .box IS the whole panel (approved --panel surface), edge to edge — no floating
       // card border/radius/shadow (that framing was the mock's page card; in-panel it fills).
       `.box{flex:1 1 auto;width:100%;min-width:0;display:flex;flex-direction:column;min-height:0;background:var(--panel);overflow:hidden;}` +
-      `.chrome{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-inset);border-bottom:1px solid var(--border);color:var(--muted);font-size:12px;flex:0 0 auto;flex-wrap:wrap;}` +
-      `.chrome .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(74,222,128,.14);flex:0 0 auto;}` +
+      `.chrome{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-inset);border-bottom:1px solid var(--border-lit);color:var(--muted);font-size:12px;flex:0 0 auto;flex-wrap:wrap;}` +
+      `.chrome .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);flex:0 0 auto;}` +
       `.chrome .title{color:var(--fg-strong);font-weight:600;letter-spacing:.02em;}` +
       `.chrome .right{margin-left:auto;display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;}` +
       // The scrolling transcript band (mock .term): the only overflow region, its own padding +
       // subtle top gradient. Replaces the former inset .pad wrapper so progress/input are full bars.
-      `#insrc-term{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:16px 14px;white-space:pre-wrap;word-break:break-word;color:var(--fg);background:radial-gradient(1200px 300px at 50% -10%,rgba(56,189,248,.05),transparent 60%),var(--panel);}` +
+      `#insrc-term{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:16px 14px;white-space:pre-wrap;word-break:break-word;color:var(--fg);background:var(--panel);}` +
       `#insrc-term>div{white-space:pre-wrap;}` +
       // Story E20261012ddc4ede1:S001: the 'load earlier' bar above the transcript. The pager shows
       // it (with the count of older rows) only while rows older than the first held one exist.
@@ -619,7 +647,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-term__marker--done{color:var(--muted);}.insrc-term__marker--done::before{color:var(--accent)!important;margin-right:.55em;}` +
       `.insrc-term__marker--error{color:var(--red);}.insrc-term__marker--error::before{color:var(--red)!important;margin-right:.55em;}` +
       // Bottom-pinned input bar (mock .inputbar): a full-width band with a top border + inset ground.
-      `.inputbar{display:flex;gap:9px;align-items:flex-end;padding:11px 12px;border-top:1px solid var(--border);background:var(--bg-inset);flex:0 0 auto;}` +
+      `.inputbar{display:flex;gap:9px;align-items:flex-end;padding:11px 12px;border-top:1px solid var(--border-lit);background:var(--bg-inset);flex:0 0 auto;}` +
       // S002 (ux-polish): the leading '>' prompt IS the clickable send/stop control — ❯ (terminal-green
       // shell prompt) at rest, ■ (red) while a turn runs. The separate trailing send button is retired,
       // so there is exactly one send/stop affordance. A comfortably clickable target, bottom-aligned to
@@ -630,10 +658,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `#insrc-prompt:hover{filter:brightness(1.15);}#insrc-prompt:focus-visible{color:var(--fg-strong);}#insrc-prompt.stop{color:var(--red);font-size:13px;}` +
       // S002 ac3: the SINGLE animated progress bar above the input (mock .progress; live-only, never
       // persisted): 3 blinking dots + a label + a right-aligned tabular elapsed timer.
-      `#insrc-progress{display:flex;align-items:center;gap:10px;padding:7px 14px;border-top:1px solid var(--border);background:var(--bg-inset);color:var(--muted);font-size:12px;flex:0 0 auto;}` +
+      `#insrc-progress{display:flex;align-items:center;gap:10px;padding:7px 14px;border-top:1px solid var(--border-lit);background:var(--bg-inset);color:var(--muted);font-size:12px;flex:0 0 auto;}` +
       `#insrc-progress[hidden]{display:none;}` +
       `#insrc-progress .spin{display:inline-flex;gap:4px;flex:0 0 auto;}` +
-      `#insrc-progress .spin i{width:6px;height:6px;border-radius:50%;background:var(--accent2);opacity:.35;animation:insrc-blink 1.1s infinite;}` +
+      `#insrc-progress .spin i{width:6px;height:6px;border-radius:50%;background:var(--progress);opacity:.35;animation:insrc-blink 1.1s infinite;}` +
       `#insrc-progress .spin i:nth-child(2){animation-delay:.18s;}#insrc-progress .spin i:nth-child(3){animation-delay:.36s;}` +
       `#insrc-progress .elapsed{margin-left:auto;color:var(--dim);font-variant-numeric:tabular-nums;}` +
       `@keyframes insrc-blink{0%,100%{opacity:.30;transform:translateY(0);}40%{opacity:1;transform:translateY(-2px);}}` +
@@ -642,9 +670,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // box (no border/border-radius/background). rows=2 (no auto-grow) pins the visible height at 2 lines
       // and a longer message scrolls natively inside it (a textarea scrolls its own content by default —
       // we deliberately do NOT add overflow-y:auto so #insrc-term stays the panel's single scroll region).
-      `#insrc-input{flex:1 1 auto;min-width:0;resize:none;height:40px;background:transparent;color:var(--fg-strong);caret-color:var(--accent);padding:9px 4px;font-family:var(--font);font-size:13px;line-height:1.5;outline:none;}` +
-      `#insrc-input::placeholder{color:var(--dim);}` +
-      `.statusbar{display:flex;gap:12px;align-items:center;padding:7px 13px;background:var(--bg-inset);border-top:1px solid var(--border);color:var(--muted);font-size:11.5px;flex-wrap:wrap;flex:0 0 auto;}` +
+      `#insrc-input{flex:1 1 auto;min-width:0;resize:none;height:40px;background:transparent;color:var(--input-fg);caret-color:var(--accent);padding:9px 4px;font-family:var(--font);font-size:13px;line-height:1.5;outline:none;}` +
+      `#insrc-input::placeholder{color:var(--placeholder);}` +
+      `.statusbar{display:flex;gap:12px;align-items:center;padding:7px 13px;background:var(--bg-inset);border-top:1px solid var(--border-lit);color:var(--muted);font-size:11.5px;flex-wrap:wrap;flex:0 0 auto;}` +
       // ISSUE-6ae99f6e: the functional provider + mode (edits) selects live in the status bar, styled as
       // segments; the mode seg carries the amber 'auto-approve' pill (S004 k6 i) via .statusbar .perm-auto.
       `.statusbar .seg{display:inline-flex;align-items:center;gap:5px;}` +
@@ -666,11 +694,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           `.attchip__x{cursor:pointer;color:var(--muted);padding:0 4px;flex:0 0 auto;}` +
           `.attchip__x:hover,.attchip__x:focus-visible{color:var(--red);outline:none;}` +
           `.atterr{color:var(--red);font-size:11.5px;padding-top:4px;}`) +
-      `.statusbar .perm-auto{color:var(--amber);border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:2px 9px;}` +
+      `.statusbar .perm-auto{color:var(--warn);border:1px solid var(--warn);border-radius:999px;padding:2px 9px;}` +
       // The provider/session/edits selects, styled as the bold segment value (transparent, borderless).
       `.segsel{appearance:none;-webkit-appearance:none;background:transparent;border:none;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;line-height:1.2;padding:0 14px 0 2px;margin:0;cursor:pointer;outline:none;` +
       `background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 6px) 55%,calc(100% - 3px) 55%;background-size:3px 3px,3px 3px;background-repeat:no-repeat;}` +
-      `.segsel:hover{color:var(--accent);}.segsel:disabled{opacity:.5;cursor:default;}.segsel option{background:var(--bg-alt);color:var(--fg);font-weight:400;}` +
+      `.segsel:hover{color:var(--accent);}.segsel:disabled{opacity:.5;cursor:default;}.segsel option{background:var(--dropdown-bg);color:var(--dropdown-fg);font-weight:400;}` +
       // Keep the header session switcher compact so a long session name can't overflow the chrome —
       // it is the only control in the header now (its selected option shows the active session).
       // ISSUE-bd2d6b6a: it is rendered as a CHIP — a bordered, faintly-filled, rounded container —
@@ -680,20 +708,23 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Enclosure binds them whatever the session name happens to be. This is a DELIBERATE departure
       // from the borderless .segsel seg language kept by the footer provider/edits selects: this is
       // the sole header control and the only one carrying an icon.
-      // The three background layers must be redeclared together (icon + the two .segsel arrow
-      // gradients); the icon sits inside the chip's left padding, not at its bare edge.
-      `.chrome #insrc-history{max-width:36ch;padding:3px 16px 3px 22px;` +
-      `background-color:rgba(255,255,255,.045);border:1px solid var(--border);border-radius:6px;` +
-      `background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%23c6cdd8' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 8a5.5 5.5 0 1 0 1.6-3.9'/%3E%3Cpath d='M2.4 3.1v2.2h2.2'/%3E%3Cpath d='M8 5.2V8l2 1.2'/%3E%3C/svg%3E"),linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);` +
-      `background-position:left 6px center,calc(100% - 6px) 55%,calc(100% - 3px) 55%;background-size:12px 12px,3px 3px,3px 3px;background-repeat:no-repeat,no-repeat,no-repeat;}` +
+      // Story E202610137fefc3fc:S001: the chip is a wrapper around the select, so its ground,
+      // border and glyph can all come from the theme; the glyph sits inside the chip's left
+      // padding, not at its bare edge. The select keeps its own two arrow layers from .segsel.
+      `.histchip{position:relative;display:inline-flex;align-items:center;max-width:36ch;padding:3px 2px 3px 22px;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;color:var(--fg);}` +
+      // The glyph is a mask filled with the chip's text colour, so it follows the theme. A mask
+      // image is fetched under `img-src`, which allows `data:`.
+      `.histchip::before{content:"";position:absolute;left:6px;top:50%;width:12px;height:12px;margin-top:-6px;background-color:currentColor;pointer-events:none;` +
+      `-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 8a5.5 5.5 0 1 0 1.6-3.9'/%3E%3Cpath d='M2.4 3.1v2.2h2.2'/%3E%3Cpath d='M8 5.2V8l2 1.2'/%3E%3C/svg%3E") center/12px 12px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 8a5.5 5.5 0 1 0 1.6-3.9'/%3E%3Cpath d='M2.4 3.1v2.2h2.2'/%3E%3Cpath d='M8 5.2V8l2 1.2'/%3E%3C/svg%3E") center/12px 12px no-repeat;}` +
+      `.chrome #insrc-history{max-width:100%;}` +
       `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;}` +
       `.insrc-diff-path{color:var(--dim);padding:4px 10px;background:var(--bg-inset);border-bottom:1px solid var(--border);}` +
-      `.insrc-diff-add{background:rgba(74,222,128,.10);color:var(--fg-strong);padding:0 10px;}` +
-      `.insrc-diff-del{background:rgba(248,113,113,.10);color:var(--fg);padding:0 10px;}` +
+      `.insrc-diff-add{background:var(--add-bg);outline:1px solid var(--add-border);outline-offset:-1px;color:var(--fg-strong);padding:0 10px;}` +
+      `.insrc-diff-del{background:var(--del-bg);outline:1px solid var(--del-border);outline-offset:-1px;color:var(--fg);padding:0 10px;}` +
       `.insrc-diff-ctx{color:var(--muted);padding:0 10px;}` +
       `.insrc-diff-actions{display:flex;gap:8px;padding:8px 10px;background:var(--bg-inset);}` +
-      `.insrc-diff-actions button{border:1px solid var(--border-lit);background:var(--bg-alt);color:var(--fg);border-radius:6px;padding:4px 12px;font-family:var(--font);cursor:pointer;}` +
-      `.insrc-diff-actions button:hover{border-color:var(--accent);}` +
+      `.insrc-diff-actions button{border:1px solid var(--border-lit);background:var(--btn2-bg);color:var(--btn2-fg);border-radius:6px;padding:4px 12px;font-family:var(--font);cursor:pointer;}` +
+      `.insrc-diff-actions button:hover{background:var(--btn2-hover);}` +
       // S001 sc1: the shared collapse/chevron primitive styles (icon-only chevron + 3-line clamp, k6 a/b).
       RENDER_REGISTRY_STYLE +
       // S001 (bugfix) — full mock parity (k5, docs/epics/…/mocks.html): the .msg card system.
@@ -704,12 +735,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-who{font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px;white-space:normal;}` +
       `.insrc-who .insrc-glyph{font-size:12px;}` +
       `.insrc-msg--user{align-items:flex-end;}.insrc-who--user{color:var(--user);}` +
-      `.insrc-bubble--user{background:rgba(138,180,255,.08);border:1px solid rgba(138,180,255,.30);border-radius:10px 10px 2px 10px;padding:9px 12px;color:var(--fg-strong);max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
+      `.insrc-bubble--user{background:var(--user-bg);border:1px solid var(--user-border);border-radius:10px 10px 2px 10px;padding:9px 12px;color:var(--fg-strong);max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
       `.insrc-who--assistant{color:var(--magenta);}` +
-      `.insrc-bubble--assistant{background:var(--bg-inset);border:1px solid var(--border);border-radius:2px 10px 10px 10px;padding:10px 13px;max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
+      `.insrc-bubble--assistant{background:var(--panel);border:1px solid var(--border-lit);border-radius:2px 10px 10px 10px;padding:10px 13px;max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
       // tool-call: the mock's bordered .toolrow with a green $ prompt, under a cyan '▸ tool' label.
       `.insrc-who--tool{color:var(--accent2);}` +
-      `.insrc-toolrow{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:8px 11px;max-width:100%;}` +
+      `.insrc-toolrow{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--border-lit);border-radius:8px;background:var(--code-bg);padding:8px 11px;max-width:100%;}` +
       `.insrc-toolrow__cmd{color:var(--fg-strong);white-space:pre-wrap;word-break:break-word;font-family:var(--font);}` +
       `.insrc-toolrow__prompt{color:var(--accent);}` +
       // rendered markdown reads as "rendered": the sans face, mock spacing, cyan inline code chips.
@@ -718,10 +749,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // copied: emitted output here is byte-identical to the previous inline rules,
       // verified by a dedicated test, and this surface keeps its own `:root` palette.
       renderMarkdownStyle(CHAT_MARKDOWN_TOKENS) +
+      // What the shared markdown rules have no token for: inline code's own ground (a fenced
+      // block keeps the code-block ground), block quotes, rules and links.
+      `.insrc-md code{background:var(--pre-bg);}.insrc-md pre code{background:none;}` +
+      `.insrc-md blockquote{background:var(--quote-bg);border-left-color:var(--quote-border);}` +
+      `.insrc-md hr{border-top-color:var(--sep);}.insrc-md a{color:var(--link);}` +
       // JSON widget: a bordered code surface with key/value/punct tones (mock .jsonw).
-      `.insrc-json{font-family:var(--font);border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:8px 11px;font-size:12.5px;line-height:1.55;}` +
+      `.insrc-json{font-family:var(--font);border:1px solid var(--border-lit);border-radius:8px;background:var(--code-bg);padding:8px 11px;font-size:12.5px;line-height:1.55;}` +
       `.insrc-json .insrc-json-key{color:var(--accent2);}.insrc-json .insrc-json-val{color:var(--accent);}.insrc-json .insrc-json-punct{color:var(--dim);}` +
       `.insrc-caption{color:var(--muted);cursor:default;font-size:11px;letter-spacing:.05em;text-transform:uppercase;}` +
+      // Keyboard focus is shown in the theme's focus colour (last, so it wins over the rules above).
+      `#insrc-prompt:focus-visible,#insrc-older:focus-visible,.segsel:focus-visible,.attachbtn:focus-visible,.attchip__x:focus-visible,.insrc-attchip:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
       `</style>`;
     const provCls = surfaceClass('provider-dropdown');
     const histCls = surfaceClass('history-dropdown');
@@ -940,7 +978,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // duplication). The provider + mode selects live in the footer status bar now.
       `<div class="chrome">` +
       `<span class="dot"></span><span class="title">insrc</span>` +
-      `<span class="right"><select id="insrc-history" class="segsel ${histCls}" aria-label="session"><option value="">new…</option></select></span>` +
+      `<span class="right"><span class="histchip"><select id="insrc-history" class="segsel ${histCls}" aria-label="session"><option value="">new…</option></select></span></span>` +
       `</div>` +
       // Full-width bars (mock): the scrolling transcript, then the live progress bar, then the input
       // bar — each a flex:0 band with its own top border + inset ground, NOT inset inside a .pad.

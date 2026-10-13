@@ -94,8 +94,9 @@ export function renderMarkdownStyle(t: MarkdownStyleTokens): string {
 	].join('');
 }
 
-/** The chat surface's palette — its `:root` variables. Reproduces the rules
- *  exactly as they were authored inline, so the generated shell is unchanged. */
+/** The chat surface's palette: names from its `:root` rule, each of which holds a VS Code theme
+ *  variable (Story E202610137fefc3fc:S001). `accent` colours inline code; the chat shell sets
+ *  the link colour, inline code's own ground, block quotes and rules after these rules. */
 export const CHAT_MARKDOWN_TOKENS: MarkdownStyleTokens = {
 	fontSans:  'var(--sans)',
 	fontMono:  'var(--font)',
@@ -106,8 +107,8 @@ export const CHAT_MARKDOWN_TOKENS: MarkdownStyleTokens = {
 	borderLit: 'var(--border-lit)',
 	bgInset:   'var(--bg-inset)',
 	muted:     'var(--muted)',
-	accent:    'var(--accent2)',
-	codeBg:    '#0a0d14',
+	accent:    'var(--pre-fg)',
+	codeBg:    'var(--code-bg)',
 };
 
 /**

@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1791873310050-brbiiw",
+    "runId": "cr-1791874023548-suhbm9",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-13T06:35:10.316Z",
+    "createdAt": "2026-10-13T06:47:03.818Z",
     "model": "claude:opus",
-    "elapsedMs": 125603,
+    "elapsedMs": 107332,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "c2ba6fa62a148ed1",
@@ -60,6 +60,7 @@
         "src/db/graph/__tests__/no-live-store-in-tests.test.ts",
         "src/db/graph/store.ts",
         "src/db/lance/__tests__/helpers-opens-default-lance.fixture.ts",
+        "src/db/lance/__tests__/helpers/temp-lance.ts",
         "src/db/lance/__tests__/live-vector-store-owner.test.ts",
         "src/db/lance/__tests__/no-live-vector-store-in-tests.test.ts",
         "src/db/lance/conn.ts",
@@ -77,9 +78,11 @@
         "src/mcp/__tests__/sampling-retired.test.ts",
         "src/mcp/daemon-stream.ts",
         "src/mcp/forward-step.ts",
+        "src/mcp/resolve-repo.ts",
         "src/mcp/sampling-bridge.ts",
         "src/mcp/server.ts",
         "src/shared/__tests__/review-stream.test.ts",
+        "src/shared/resolve-repo-core.ts",
         "src/shared/review-stream.ts",
         "src/shared/step-context.ts",
         "src/workflow/__tests__/scope-extend.test.ts",
@@ -96,22 +99,7 @@
     "dimensions": [
       {
         "dimension": "adherence",
-        "findings": [
-          {
-            "dimension": "adherence",
-            "severity": "LOW",
-            "location": "src/daemon/steps/__tests__/step-host.test.ts:108",
-            "message": "The equivalence test checks that each tool gives the same reply through step.call as when its handler is called directly. Both sides run the moved handlers, so the test cannot catch a change in behaviour introduced by the move itself. The LLD's migration step 2 and its test fixtures call for 'golden replies captured from the in-process handlers before the move'. No such golden fixture is used. Also, several tools reach only an early error reply in this test: insrc_analyze with no repo resolves to 'no repo', and review start against empty stream maps fails with unknown-method. This meets the plan's t8 check as written, but it falls short of the LLD's proof of ac1 ('same envelope as before the move').",
-            "expectationRef": "LLD migrationSteps[1] 'Capture golden replies of each tool called in-process for the equivalence tests' / testStrategy integration fixture 'golden replies captured from the in-process handlers before the move' (ac1)"
-          },
-          {
-            "dimension": "adherence",
-            "severity": "LOW",
-            "location": "src/shared/step-context.ts:1",
-            "message": "StepCallContext, StepToolName and their accessors (runInStepContext, stepCwd, stepEnvRepo, stepClient) are in src/shared/step-context.ts. The LLD places StepCallContext 'in the daemon's step host', and its callSites do not list src/shared. The move looks necessary: under the import-graph rule (ac4), the MCP forwarder cannot import src/daemon/steps, and src/analyze/context/scope.ts must also read the context. Still, it departs from the approved data model and should be written down in the build record.",
-            "expectationRef": "LLD dataModelChanges 'StepCallContext (new, in the daemon's step host)'"
-          }
-        ]
+        "findings": []
       },
       {
         "dimension": "conventions",
@@ -119,42 +107,18 @@
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/daemon/steps/analyze-oneshot.ts:22",
-            "message": "The module moved from src/mcp/server.ts into the daemon's step tree but still logs as getLogger('mcp:server'). Its sibling host.ts uses 'daemon:step-host', so lines from this daemon-side code will be filed under the MCP server's logger name. Rename it to something like 'daemon:step-analyze-oneshot'.",
-            "expectationRef": "logger-module-name-idiom",
-            "confidence": "observation"
+            "location": "src/daemon/steps/analyze-oneshot.ts:47",
+            "message": "The optional properties of `AnalyzeOneShotArgs` (`repo?`, `target?`, `scope?`) are declared without `| undefined`. With exactOptionalPropertyTypes on, the documented convention is to declare optional props as `| undefined`. The `AnalyzeOneShotDeps` interface in the same file (and `ResolveRepoDeps`, `StepHostOptions` and `InDaemonClientDeps` elsewhere in this change) already follows that convention, so this interface is the inconsistent one.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
           },
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/daemon/steps/analyze-oneshot.ts:56",
-            "message": "AnalyzeOneShotDeps still declares `samplingSupported` and logs it, but this Story retires MCP sampling (McpSamplingProvider and the sampler context are deleted). The field is now unused and suggests sampling still matters. Drop it.",
-            "expectationRef": "dead-sampling-remnant",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "conventions",
-            "severity": "LOW",
-            "location": "src/config/__tests__/store-lmdb.test.ts:10",
-            "message": "The temporary-Lance setup is pasted in between the existing imports. It brings in a second copy of node:test's `after` and of the node:fs, node:os and node:path imports under aliases (afterAllLance, mkdtempSyncLance, rmSyncLance, tmpdirLance, joinLance), even though mkdtempSync, rmSync, tmpdir and join are already imported a few lines below. Other test files put their imports first and setup after, without duplicate aliased imports.",
-            "expectationRef": "test-file-import-layout-idiom",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "conventions",
-            "severity": "LOW",
-            "location": "src/analyze/context/shaper-provider.ts:164",
-            "message": "Removing the sampler paragraph from the resolveShaperKind doc comment left a stray ` * *` line in the JSDoc block.",
-            "expectationRef": "doc-comment-idiom",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "conventions",
-            "severity": "LOW",
-            "location": "src/daemon/steps/resolve-repo.ts:17",
-            "message": "In the module header, a paragraph about the step context sits between items 3 and 4 of the numbered 'Resolution order' list, so item 4 ('undefined') reads as part of that paragraph. Move the paragraph after the list.",
-            "expectationRef": "doc-comment-idiom",
-            "confidence": "observation"
+            "location": "src/daemon/steps/analyze-oneshot.ts:32",
+            "message": "The inline parameter type of `oneShotRunParams` declares `target?` and `scope?` without `| undefined`, which departs from the documented optional-property convention under exactOptionalPropertyTypes.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
           }
         ]
       },
@@ -165,56 +129,24 @@
             "dimension": "coverage",
             "severity": "MED",
             "location": "src/daemon/steps/host.ts:1",
-            "message": "No build record was given, so I can't confirm that any promised test passes. Every promised test that can be seen in the diff is present but unverified: step host, equivalence of the seven tools, cancellation, state-store miss, in-daemon client equivalence, no loopback, resolveRepoPath, scope directoryOf, client identity, context isolation, and the workflow-rpc import checks. This is an unverified pass-state, not missing tests. Every changed symbol's testsReaching is empty, but this is diff-mode grounding (diff:<file> entities, no graph edges). The new tests in step-host.test.ts, in-daemon-client.test.ts and step-context.test.ts call host.ts, daemon-client.ts, resolve-repo.ts, analyze-oneshot.ts, scope.ts and shared/step-context.ts directly. So I'm not reporting the empty edges as coverage gaps.",
-            "expectationRef": "pass-state of all promised tests",
+            "message": "Present but unverified: the review was not given a build record, so none of the promised tests has a confirmed pass. I could not run them either, because running the suites needs approval. All 28 automated promised tests exist by exact title: in-daemon-client.test.ts, step-context.test.ts, step-host.test.ts, workflow-rpc-imports.test.ts, forward-step.test.ts, import-graph.test.ts, sampling-retired.test.ts, mcp-process-e2e.test.ts, mcp-process-refused.test.ts, shared/review-stream.test.ts, lance live-vector-store-owner/no-live-vector-store-in-tests, and graph live-store-owner/live-store-refusal. The moved step suites also exist under src/daemon/steps/*/__tests__. A BUILD/TESTS record for s11 was committed in 2cd169d7 but did not reach this review's grounding, so do not read these as green.",
+            "expectationRef": "all promised tests (pass-state)",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
             "severity": "MED",
-            "location": "src/daemon/index.ts:1899",
-            "message": "The 'step.call' registration and installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers)) in main() are not exercised by any test visible in the grounding. step-host.test.ts builds its own copy of this wiring ('as index.ts registers them'). workflow-rpc-imports.test.ts only checks the import statically. The daemon's real wiring is reached only if mcp-process-e2e.test.ts or the smoke checks start a real daemon, and their content can't be seen here.",
-            "expectationRef": "src/daemon/index.ts step.call registration + installStepDaemonClient wiring",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "MED",
-            "location": "src/mcp/__tests__/forward-step.test.ts:1",
-            "message": "Present but unverified. forward-step.test.ts is in the changed set, but its hunk text was not provided, so I can't confirm the promised cases for the named forwarder errors and for progress relay are in it, or that they pass.",
-            "expectationRef": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs; forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "MED",
-            "location": "src/mcp/__tests__/mcp-process-e2e.test.ts:1",
-            "message": "Present but unverified. The real-process integration tests (lsof shows no store, ac2 restart continuation, ac5 byte-identical pass-through, ac3 DaemonUnreachableError/DaemonTooOldError) presumably live in mcp-process-e2e.test.ts and mcp-process-refused.test.ts. Their hunk text is absent, and these suites may be gated behind INSRC_LIVE_TESTS, so whether they ran and passed can't be confirmed.",
-            "expectationRef": "no store in the MCP process (lsof); ac2 restart; ac5 pass-through; ac3; ac6 MCP process refused live stores",
+            "location": "src/daemon/steps/daemon-client.ts:1",
+            "message": "The coverage evidence is empty, so it can't decide anything. All 70 changed entries are file-level diff stubs, and every testsReaching is empty, including the test files themselves and new modules that their own new tests import directly. Examples: daemon-client.ts is imported by in-daemon-client.test.ts, host.ts by step-host.test.ts, and resolve-repo.ts and analyze-oneshot.ts by step-context.test.ts. The empty testsReaching shows the graph has not been grounded yet. It does not show that the code is unexercised, so I report no HIGH not-exercised findings from it. Re-ground once the index has caught up, or judge coverage from a run of the suites.",
+            "expectationRef": "testsReaching grounding for changed symbols",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
             "severity": "LOW",
-            "location": "src/mcp/__tests__/import-graph.test.ts:1",
-            "message": "Present but unverified. The files for the import graph (ac4, with the imports-store fixture), sampling retired, the tool-surface golden, the vector-store owner rule, the no-live-vector-store sweep, third-process refusal and review-stream are all in the changed set. None has hunk text, so whether each promised case is present and passing can't be confirmed. 'source scan: the reader declaration's name appears nowhere under src/' has no file in the changed set that clearly contains it.",
-            "expectationRef": "import graph (ac4); sampling retired; MCP tool surface; vector store owner rule; no test opens the live vector store; refusal of a third process; review stream module; source scan of the reader declaration",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "LOW",
-            "location": "src/analyze/__tests__/report-head.test.ts:20",
-            "message": "Present but unverified. The repointed importers and source scans are visible (report-head, no-size, bundle-report-schema, lookup-measure, executor-lmdb, analyze-rpc-measure, answer-step-failed-callers), along with the three conditional code-review tests. The moved suites under src/daemon/steps themselves (analyze-step, bundle-md, workflow/build/triage, and the review/code-review routing tests) are not in the grounding, so I can't confirm they are present at their new location or pass.",
-            "expectationRef": "moved analyze tests; moved workflow, build and triage tests; moved review and code-review tests including routing tests",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "LOW",
-            "location": "src/daemon/steps/host.ts:1",
-            "message": "The three promised installed-daemon smoke checks are not automated tests and have no record in this grounding. In particular, 'lsof shows only the daemon on the store files after every client session has restarted' can't be confirmed as done.",
-            "expectationRef": "smoke: analysis through restarted session; workflow step continues after MCP restart; lsof shows only the daemon on store files",
+            "location": "src/daemon/index.ts:1923",
+            "message": "No unit or integration test runs the daemon's real start-up wiring: installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers)) and the 'step.call' entry in the stream handler map. step-host.test.ts builds its own IpcServer and handler maps instead, and the ac3 e2e test covers only a daemon without step.call. The only evidence for the production path is the three manual smoke checks of the installed daemon, recorded in S011/smoke.md (commit 284ce2c4). They are present as a record, not as runnable tests.",
+            "expectationRef": "installed daemon smoke checks / index.ts step.call wiring",
             "confidence": "observation"
           }
         ]
@@ -224,67 +156,24 @@
         "findings": [
           {
             "dimension": "quality",
-            "severity": "MED",
-            "location": "src/daemon/steps/resolve-repo.ts:1",
-            "message": "Duplication: by its own header this file is 'a copy of src/mcp/resolve-repo.ts'. The same precedence chain (explicit repo > the registered repo containing cwd > INSRC_REPO > undefined) and the global _setResolveForCwdForTests override now live in two places. A later fix to the order or to the empty-string handling has to be made twice, or the MCP docgen/approve tools and the moved step tools will resolve repos differently. Better: one resolver in src/shared that takes the cwd/env/lookup sources as parameters, with each side passing its own.",
-            "counterpartRef": "resolveRepoPath (src/mcp/resolve-repo.ts)",
-            "confidence": "breach"
-          },
-          {
-            "dimension": "quality",
-            "severity": "MED",
-            "location": "src/daemon/steps/host.ts:66",
-            "message": "Unhandled error path: the insrc_analyze entry casts args unchecked (`args as AnalyzeOneShotArgs`), and runAnalyzeOneShot never checks `focus`. The other six handlers parse their own args. If a forwarder sends args without a string `focus`, `intent.focus.slice(0, 80)` in the log call throws a TypeError, and the caller sees a 'step-failed' frame saying \"Cannot read properties of undefined\" instead of a clear 'focus is required' error. Check `focus` (and `repo`/`target`/`scope` types) before building the run params.",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "quality",
-            "severity": "MED",
-            "location": "src/daemon/steps/host.ts:63",
-            "message": "Correctness/resource risk: the stream signal is passed only to the review and code-review runners. insrc_analyze, insrc_analyze_step, insrc_workflow_step, insrc_build_step and insrc_triage ignore it. Now that these run inside the long-lived daemon instead of the per-session MCP process, a forwarder that disconnects (session closed, MCP restarted) no longer ends the work. A one-shot analyze or a workflow synthesize keeps running in the daemon, making model calls and possibly writing artifacts, with nobody to receive the result. Before the move, killing the MCP process stopped it.",
+            "severity": "LOW",
+            "location": "src/daemon/steps/analyze-oneshot.ts:65",
+            "message": "The allowed target and size values are written out three times in this file: the inline union types in `oneShotRunParams`, the `AnalyzeOneShotArgs` interface, and the `TARGETS`/`SIZES` arrays used by `checkOneShotArgs`. Adding a value in one place but not the others would let the runtime check reject a value the types accept, or the reverse. Derive the types from the arrays (`(typeof TARGETS)[number]`) so there is one source.",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/daemon/steps/daemon-client.ts:117",
-            "message": "If a stream handler throws synchronously instead of returning a rejected promise, the throw escapes `handler(params, send, inner.signal)` inside the Promise executor. The promise rejects, but `finish` never runs: the wait timer stays armed and the abort listener stays attached to opts.signal until the timer fires. Wrapping the call as `Promise.resolve().then(() => handler(...))` sends every failure through failWith.",
+            "location": "src/daemon/steps/daemon-client.ts:101",
+            "message": "`streamRequest` repeats the socket client's handling of stream frames: progress and delta go to `onFrame`, `done` resolves, an `error` frame becomes `ReviewStreamError('daemon-error', error, reason)`, and other frames are ignored. The parameter shaping for `workflow.review` and `codeReview.run` is repeated too. The shared types and reply helpers already live in `shared/review-stream.ts`, but the frame-to-failure mapping is now in two places, and the two clients could drift apart. That parity is guarded only by tests.",
+            "counterpartRef": "reviewArtifactStream / codeReviewStream in src/mcp/daemon-stream.ts",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/daemon/steps/daemon-client.ts:113",
-            "message": "The timeout message rounds `opts.timeoutMs / 60_000`, so any limit under 30 s reports 'within 0 minutes'.",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "quality",
-            "severity": "LOW",
-            "location": "src/daemon/steps/analyze-oneshot.ts:22",
-            "message": "Taste: the moved module still logs as 'mcp:server', and its deps keep `samplingSupported`, which MCP sampling's retirement in this same change makes meaningless. Daemon-side runs will be logged under the MCP server's name.",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "quality",
-            "severity": "LOW",
-            "location": "src/analyze/context/shaper-provider.ts:166",
-            "message": "Taste: removing the sampler paragraph left a stray ` * *` line in the resolveShaperKind doc comment.",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "quality",
-            "severity": "LOW",
-            "location": "src/config/__tests__/store-lmdb.test.ts:10",
-            "message": "Taste: the Lance isolation preamble imports mkdtempSync/rmSync/tmpdir/join a second time under aliases (`mkdtempSyncLance` etc.) right above the file's existing imports of the same functions, and adds a second `after` import from node:test.",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "quality",
-            "severity": "LOW",
-            "location": "src/daemon/steps/__tests__/step-host.test.ts:191",
-            "message": "Test-helper duplication: `untilAborted` and the code-review deps/subject fixture (CREATED, GROUNDING, crSubject/crDeps) are re-declared almost word for word from in-daemon-client.test.ts. A shared test helper would keep the two in step.",
-            "counterpartRef": "untilAborted / crDeps (src/daemon/steps/__tests__/in-daemon-client.test.ts)",
+            "location": "src/daemon/steps/daemon-client.ts:76",
+            "message": "`waitText` rounds to the nearest minute, so a 90-second limit is reported as '2 minutes' (and the test asserts this). The timeout message 'no result from the daemon within 2 minutes' then overstates how long the wait actually lasted. This only affects the wording of the message.",
             "confidence": "observation"
           }
         ]
@@ -293,8 +182,8 @@
     "verdict": "warn",
     "counts": {
       "high": 0,
-      "med": 7,
-      "low": 16
+      "med": 2,
+      "low": 6
     }
   }
 }

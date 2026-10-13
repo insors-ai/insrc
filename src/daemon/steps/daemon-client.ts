@@ -71,13 +71,14 @@ export interface InDaemonClientDeps {
 	readonly clearTimer?: ((handle: unknown) => void) | undefined;
 }
 
-/** A wait limit in words: minutes from one minute up, seconds below. */
+/** A wait limit in words, never more than the limit: whole minutes when it is
+ *  a whole number of minutes, otherwise seconds. */
 export function waitText(ms: number): string {
-	if (ms >= 60_000) {
-		const min = Math.round(ms / 60_000);
+	if (ms >= 60_000 && ms % 60_000 === 0) {
+		const min = ms / 60_000;
 		return `${min} minute${min === 1 ? '' : 's'}`;
 	}
-	const sec = Math.max(1, Math.round(ms / 1000));
+	const sec = Math.max(1, Math.floor(ms / 1000));
 	return `${sec} second${sec === 1 ? '' : 's'}`;
 }
 

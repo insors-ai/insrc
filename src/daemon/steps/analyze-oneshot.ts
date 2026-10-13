@@ -21,6 +21,12 @@ import { renderAnalyzeFailure, renderBundleAsMarkdown } from './bundle-md.js';
 
 const log = getLogger('daemon:step-analyze-oneshot');
 
+/** The kinds of source and the size hints the tool accepts: one list each, the types derive from them. */
+const TARGETS = ['code', 'docs', 'data', 'infra', 'generic'] as const;
+const SIZES   = ['XS', 'S', 'M', 'L', 'XL'] as const;
+type OneShotTarget = typeof TARGETS[number];
+type OneShotSize   = typeof SIZES[number];
+
 /**
  * The run-level request the one-shot tool sends for a call.
  *
@@ -29,7 +35,7 @@ const log = getLogger('daemon:step-analyze-oneshot');
  * with none stated no size is sent at all.
  */
 export function oneShotRunParams(
-	args:     { readonly focus: string; readonly target?: 'code' | 'docs' | 'data' | 'infra' | 'generic'; readonly scope?: 'XS' | 'S' | 'M' | 'L' | 'XL' },
+	args:     { readonly focus: string; readonly target?: OneShotTarget | undefined; readonly scope?: OneShotSize | undefined },
 	repoPath: string,
 	runId:    string,
 ) {
@@ -44,10 +50,10 @@ export function oneShotRunParams(
 }
 
 export interface AnalyzeOneShotArgs {
-	readonly repo?:   string;
+	readonly repo?:   string | undefined;
 	readonly focus:   string;
-	readonly target?: 'code' | 'docs' | 'data' | 'infra' | 'generic';
-	readonly scope?:  'XS' | 'S' | 'M' | 'L' | 'XL';
+	readonly target?: OneShotTarget | undefined;
+	readonly scope?:  OneShotSize | undefined;
 }
 
 export interface AnalyzeOneShotDeps {
@@ -61,8 +67,6 @@ export interface AnalyzeOneShotDeps {
 	readonly buildRun?: typeof buildRun | undefined;
 }
 
-const TARGETS = ['code', 'docs', 'data', 'infra', 'generic'] as const;
-const SIZES   = ['XS', 'S', 'M', 'L', 'XL'] as const;
 
 /** The tool's arguments, checked: a message naming the first bad field, or the args.
  *  The MCP registration validates them too, but step.call takes them raw. */

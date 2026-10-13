@@ -304,10 +304,11 @@ test('in-daemon client: a stream handler that throws synchronously settles the r
 	ac.abort();
 });
 
-test('in-daemon client: the wait limit is named in minutes from one minute up and in seconds below', () => {
+test('in-daemon client: the wait limit is named in whole minutes when it is one, otherwise in seconds, never more than the limit', () => {
 	assert.equal(waitText(30 * 60_000), '30 minutes');
 	assert.equal(waitText(60_000), '1 minute');
-	assert.equal(waitText(90_000), '2 minutes');
+	assert.equal(waitText(90_000), '90 seconds');
+	assert.equal(waitText(1_500), '1 second');
 	assert.equal(waitText(20_000), '20 seconds');
 	assert.equal(waitText(1_000), '1 second');
 	assert.equal(waitText(10), '1 second');

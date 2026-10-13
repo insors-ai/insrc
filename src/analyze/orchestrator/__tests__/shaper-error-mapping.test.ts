@@ -11,8 +11,10 @@ import assert from 'node:assert/strict';
 
 import {
 	ShaperAnswerStepFailedError,
+	ShaperIndexStateReadError,
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
+	ShaperLookupFailedError,
 	ShaperNoPlanError,
 	ShaperPromptMissingError,
 	ShaperSchemaUnrecoverable,
@@ -73,12 +75,29 @@ test('an error neither mapping knows stays internal-error on both sides', () => 
 	assert.equal(daemonClassify(err).code, 'internal-error');
 });
 
-test('the three new cause codes are declared in both lists', () => {
+test('the cause codes are declared in both lists', () => {
 	assert.deepEqual([...CAUSE_CODES_IN_BOTH_LISTS], [
 		'no-plan-for-request',
 		'answer-step-failed',
+		'index-state-read-failed',
+		'lookup-failed',
 		'run-abandoned',
 	]);
+});
+
+test('classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings', () => {
+	const cases: ReadonlyArray<readonly [Error, string]> = [
+		[new ShaperIndexStateReadError('MDB_BAD_TXN'), 'index-state-read-failed'],
+		[new ShaperLookupFailedError('the graph store is closed'), 'lookup-failed'],
+	];
+	for (const [err, code] of cases) {
+		for (const [side, f] of [['plan tree', planTreeClassify], ['daemon', daemonClassify]] as const) {
+			const out = f(err);
+			assert.equal(out.code, code, `${side}: ${err.name}`);
+			assert.equal(out.message, err.message, `${side}: the error's own message`);
+			assert.notEqual(out.code, 'internal-error');
+		}
+	}
 });
 
 // ---------------------------------------------------------------------------

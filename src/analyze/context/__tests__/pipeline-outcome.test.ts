@@ -28,8 +28,10 @@ import {
 	PIPELINE_CAUSES,
 	settlePipelineOutcome,
 	ShaperAnswerStepFailedError,
+	ShaperIndexStateReadError,
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
+	ShaperLookupFailedError,
 	ShaperNoPlanError,
 	ShaperPromptMissingError,
 	ShaperSchemaUnrecoverable,
@@ -45,6 +47,8 @@ import {
 	SynthesizerSchemaUnrecoverable,
 } from '../synthesizer.js';
 import { SCHEMA_VERSION } from '../schema.js';
+import { _classifyShaperErrorForTest as daemonClassify } from '../../../daemon/analyze-rpc.js';
+import { _classifyShaperErrorForTest as planTreeClassify } from '../../orchestrator/driver.js';
 import { resolveScope, type ResolvedScope, type ScopeDeps } from '../scope.js';
 import type { AnalyzeContextBundle } from '../types.js';
 
@@ -413,6 +417,8 @@ test('cause-to-error table: one case per cause, ShaperLlmUnavailableError only f
 		'answer-invalid':         ShaperAnswerStepFailedError,
 		'empty-plan':             ShaperNoPlanError,
 		'bundle-invalid':         ShaperAnswerStepFailedError,
+		'index-state-read-failed': ShaperIndexStateReadError,
+		'lookup-failed':          ShaperLookupFailedError,
 	};
 	// Every member of the cause list has a row here and a case in the table.
 	assert.deepEqual([...PIPELINE_CAUSES].sort(), Object.keys(expected).sort());
@@ -686,4 +692,24 @@ test("a caller that hands the context builder no measure, or a measure of lookup
 	// A stated size still reaches the builder's step as the hint.
 	const hinted = await runCounting({ intent: INTENT, sizeHint: 'S' });
 	assert.deepEqual([hinted.measured, hinted.planned.scope], [1, AREA.size]);
+});
+
+test("pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member", async () => {
+	const { steps: s } = steps();
+	const failing: PipelineSteps = { ...s, executePlan: async () => { throw new Error('the graph store is closed'); } };
+	const outcome = await runPipeline(
+		{ invocationMode: 'run', shaperId: 'code', inputs: { intent: INTENT } as never, runId: 'r-lookup', scope: dirScope(INTENT) },
+		failing,
+	);
+	assert.equal(cause(outcome), 'lookup-failed');
+	const err = (() => { try { settlePipelineOutcome(outcome, stamp); } catch (e) { return e; } return undefined; })();
+	assert.ok(err instanceof ShaperLookupFailedError, String(err));
+	assert.equal(err.message, 'The lookups could not be run: the graph store is closed');
+	assert.equal(planTreeClassify(err).code, 'lookup-failed');
+	assert.equal(daemonClassify(err).code, 'lookup-failed');
+
+	// The two new causes each have their own case, and every member has exactly one.
+	assert.ok(PIPELINE_CAUSES.includes('lookup-failed') && PIPELINE_CAUSES.includes('index-state-read-failed'));
+	assert.ok(errorForPipelineCause('index-state-read-failed', 'x') instanceof ShaperIndexStateReadError);
+	assert.equal(new Set(PIPELINE_CAUSES).size, PIPELINE_CAUSES.length, 'no cause listed twice');
 });

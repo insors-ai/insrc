@@ -39,11 +39,14 @@ import {
 	ClassifierValidationExhausted,
 } from '../classifier/driver.js';
 import { shaperFor } from '../context/index.js';
+import type { RunShaper, RunTarget } from '../context/types.js';
 import {
 	ShaperAnswerStepFailedError,
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
 	ShaperNoPlanError,
+	ShaperIndexStateReadError,
+	ShaperLookupFailedError,
 	ShaperPromptMissingError,
 	ShaperSchemaUnrecoverable,
 	ShaperToolLoopExhausted,
@@ -346,7 +349,7 @@ async function runStages(
 	});
 	let contextBundle;
 	try {
-		const shaper = shaperFor('run', intent.target);
+		const shaper = runShaperFor(intent.target);
 		// The run's measure is handed on: the builder uses it for its planning
 		// call and does not measure the same area a second time.
 		contextBundle = await shaper.buildRunBundle(
@@ -497,6 +500,13 @@ let classifyImpl: typeof classify = classify;
 /** Test seam: pass undefined to go back to the real classifier. */
 export function _setClassifyForTest(impl: typeof classify | undefined): void {
 	classifyImpl = impl ?? classify;
+}
+
+/** The run's context builder. A test stands one in to make its build fail a given way. */
+let runShaperFor: (target: RunTarget) => RunShaper = (target) => shaperFor('run', target);
+/** Test seam: pass undefined to go back to the real context builder. */
+export function _setRunShaperForTest(impl: typeof runShaperFor | undefined): void {
+	runShaperFor = impl ?? ((target) => shaperFor('run', target));
 }
 
 // ---------------------------------------------------------------------------
@@ -718,6 +728,8 @@ function classifyShaperError(err: unknown): RunFailure {
 	}
 	if (err instanceof ShaperInvalidInputError) return wrap('invalid-input', err);
 	if (err instanceof ShaperNoPlanError) return wrap('no-plan-for-request', err);
+	if (err instanceof ShaperIndexStateReadError) return wrap('index-state-read-failed', err);
+	if (err instanceof ShaperLookupFailedError) return wrap('lookup-failed', err);
 	// The lookups ran and the answer could not be written: the failure
 	// carries what they found, and the report says the answer step failed.
 	if (err instanceof ShaperAnswerStepFailedError) {

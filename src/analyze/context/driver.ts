@@ -289,6 +289,23 @@ export class ShaperInvalidInputError extends Error {
 }
 
 /** The plan about to be executed has no lookups. */
+/** A read of the scope's last-indexed time failed (a store error), so the
+ *  freshness of a cached bundle or of a lookup could not be established. */
+export class ShaperIndexStateReadError extends Error {
+	constructor(detail: string) {
+		super(`The repository's last-indexed time could not be read: ${detail}`);
+		this.name = 'ShaperIndexStateReadError';
+	}
+}
+
+/** The lookup executor itself failed (a lookup that crashed, a store error). */
+export class ShaperLookupFailedError extends Error {
+	constructor(detail: string) {
+		super(`The lookups could not be run: ${detail}`);
+		this.name = 'ShaperLookupFailedError';
+	}
+}
+
 export class ShaperNoPlanError extends Error {
 	constructor(detail: string) {
 		super(`No plan could be made for this request: ${detail}`);
@@ -358,7 +375,15 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// write. `undefined` here means the scope target isn't a registered
 	// repo (e.g. a 'connection' scope ref) -- the cache layer treats
 	// that as "no freshness watermark to check" and skips the check.
-	const currentLastIndexedAt = await resolveRepoLastIndexedAt(freshnessPathOf(scope));
+	// The read goes through the same injectable reader as the pipeline's,
+	// and a throw from it is the 'index-state-read-failed' cause.
+	const steps = args.pipelineSteps ?? REAL_PIPELINE_STEPS;
+	let currentLastIndexedAt: number | undefined;
+	try {
+		currentLastIndexedAt = await steps.lastIndexedAt(freshnessPathOf(scope));
+	} catch (err) {
+		throw errorForPipelineCause('index-state-read-failed', errorText(err));
+	}
 
 	// (4) Cache lookup.
 	const cached = readBundle(runId, cacheKey, opts, currentLastIndexedAt);
@@ -390,7 +415,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// 'not-applicable' for a mode it does not serve.
 	const outcome = await tryExplorationPipeline(
 		{ invocationMode, shaperId, inputs, runId, scope },
-		args.pipelineSteps ?? REAL_PIPELINE_STEPS,
+		steps,
 	);
 	// A cause the pipeline names becomes its own typed error here, in
 	// one place; an invalid bundle is one more cause. Only a mode the
@@ -1208,6 +1233,8 @@ export const PIPELINE_CAUSES = [
 	'answer-invalid',          // the answer-writing step failed for any other reason
 	'empty-plan',              // the plan that would be executed has no lookups
 	'bundle-invalid',          // the pipeline's bundle fails validation (set by settlePipelineOutcome)
+	'index-state-read-failed', // the read of the scope's last-indexed time threw
+	'lookup-failed',           // the lookup executor threw
 ] as const;
 export type PipelineCause = (typeof PIPELINE_CAUSES)[number];
 
@@ -1298,6 +1325,10 @@ export function errorForPipelineCause(
 			return answerStepFailed('invalid-bundle');
 		case 'empty-plan':
 			return new ShaperNoPlanError(message);
+		case 'index-state-read-failed':
+			return new ShaperIndexStateReadError(message);
+		case 'lookup-failed':
+			return new ShaperLookupFailedError(message);
 		default: {
 			const unreachable: never = cause;
 			throw new Error(`errorForPipelineCause: unhandled cause ${String(unreachable)}`);
@@ -1326,6 +1357,11 @@ export function settlePipelineOutcome(
 		throw errorForPipelineCause('bundle-invalid', v.errors.join('; '), { found: outcome.found });
 	}
 	return { bundle, explorationCount: outcome.explorationCount };
+}
+
+/** A thrown value's own words. */
+function errorText(err: unknown): string {
+	return err instanceof Error ? err.message : String(err);
 }
 
 function didNotProceed(cause: PipelineCause, message: string, extra: PipelineCauseExtra = {}): PipelineOutcome {
@@ -1472,18 +1508,29 @@ async function tryExplorationPipeline(
 	// All seven kinds of scope are served: the lookups run in the
 	// directory the scope resolved to.
 	const repoPath = args.scope.lookupPath;
-	const lastIndexedMs = await steps.lastIndexedAt(freshnessPathOf(args.scope));
+	// A throw from either read is a named cause, never a raw rejection.
+	let lastIndexedMs: number | undefined;
+	try {
+		lastIndexedMs = await steps.lastIndexedAt(freshnessPathOf(args.scope));
+	} catch (err) {
+		return didNotProceed('index-state-read-failed', errorText(err));
+	}
 	const lastIndexedBigInt = BigInt(lastIndexedMs ?? 0);
-	const executed = await steps.executePlan({
-		runId:            args.runId,
-		repoPath,
-		closureRepos:     [repoPath],
-		repoLastIndexedAtMs: lastIndexedBigInt,
-		plan,
-		scope:            args.scope,
-		// A lookup that sizes its own work (the free-form one) takes the request's size from here.
-		requestSize:      area.size,
-	});
+	let executed: Awaited<ReturnType<PipelineSteps['executePlan']>>;
+	try {
+		executed = await steps.executePlan({
+			runId:            args.runId,
+			repoPath,
+			closureRepos:     [repoPath],
+			repoLastIndexedAtMs: lastIndexedBigInt,
+			plan,
+			scope:            args.scope,
+			// A lookup that sizes its own work (the free-form one) takes the request's size from here.
+			requestSize:      area.size,
+		});
+	} catch (err) {
+		return didNotProceed('lookup-failed', errorText(err));
+	}
 
 	// (c.0) The answer report, derived from the lookups' own records before any
 	// answer is written. It does not depend on the answer. A lookup output

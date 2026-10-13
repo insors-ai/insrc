@@ -72,6 +72,8 @@ import {
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
 	ShaperNoPlanError,
+	ShaperIndexStateReadError,
+	ShaperLookupFailedError,
 	ShaperPromptMissingError,
 	ShaperSchemaUnrecoverable,
 	ShaperToolLoopExhausted,
@@ -149,6 +151,8 @@ export type AnalyzeRpcErrorCode =
 	| 'shaper-prompt-missing'
 	| 'no-plan-for-request'
 	| 'answer-step-failed'
+	| 'index-state-read-failed'
+	| 'lookup-failed'
 	| 'run-abandoned'
 	| 'classifier-llm-unavailable'
 	| 'classifier-schema-unrecoverable'
@@ -991,6 +995,12 @@ function classifyShaperError(err: unknown): AnalyzeRpcErrorPayload {
 	if (err instanceof ShaperNoPlanError) {
 		return { code: 'no-plan-for-request', message: err.message };
 	}
+	if (err instanceof ShaperIndexStateReadError) {
+		return { code: 'index-state-read-failed', message: err.message };
+	}
+	if (err instanceof ShaperLookupFailedError) {
+		return { code: 'lookup-failed', message: err.message };
+	}
 	// The lookups ran and the answer could not be written: the failure
 	// carries what they found, and the report says the answer step failed.
 	if (err instanceof ShaperAnswerStepFailedError) {
@@ -1012,6 +1022,8 @@ function classifyShaperError(err: unknown): AnalyzeRpcErrorPayload {
 export const CAUSE_CODES_IN_BOTH_LISTS = [
 	'no-plan-for-request',
 	'answer-step-failed',
+	'index-state-read-failed',
+	'lookup-failed',
 	'run-abandoned',
 ] as const satisfies ReadonlyArray<AnalyzeRpcErrorCode & RunErrorCode>;
 

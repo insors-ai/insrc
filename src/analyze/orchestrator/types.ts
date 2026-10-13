@@ -288,6 +288,8 @@ export type RunErrorCode =
 	| 'shaper-prompt-missing'
 	| 'no-plan-for-request'
 	| 'answer-step-failed'
+	| 'index-state-read-failed'
+	| 'lookup-failed'
 	// planner
 	| 'plan-builder-llm-unavailable'
 	| 'plan-builder-schema-unrecoverable'

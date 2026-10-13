@@ -29,12 +29,15 @@ import {
 	runShaper,
 	ShaperAnswerStepFailedError,
 	ShaperLlmUnavailableError,
+	ShaperIndexStateReadError,
 	_realPipelineStepsForTest,
 	type PipelineSteps,
 	_computeCacheKeyForTest,
 	_stableStringifyForTest,
 } from '../driver.js';
 import { ScopeKindTargetMismatchError, ScopeNotIndexedError } from '../invariants.js';
+import { _classifyShaperErrorForTest as daemonClassify } from '../../../daemon/analyze-rpc.js';
+import { _classifyShaperErrorForTest as planTreeClassify } from '../../orchestrator/driver.js';
 import type { ResolvedScope } from '../scope.js';
 import type { AnalyzeContextBundle } from '../types.js';
 import { buildCompleteness } from '../../completeness.js';
@@ -399,4 +402,31 @@ test("the tool loop's final answer is asked for with a schema that has no report
 	assert.equal(bundle.summary, 'classified');
 	assert.equal(bundle.report, undefined, 'a classification bundle has no report: no lookups were run for it');
 	assert.equal(bundle.meta.mode, 'classification');
+});
+
+test("runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline", async () => {
+	const loop = forbiddenLoop();
+	const intent = unfocused({ kind: 'module', value: join(repo, 'src') });
+
+	// (a) runShaper's own freshness read: the first read throws.
+	const reads: string[] = [];
+	const first = standIns({ lastIndexedAt: async (path) => { reads.push(path); throw new Error('MDB_BAD_TXN: the registry could not be read'); } });
+	const atRead = await call(intent, first.steps, loop.provider, 'state-read').then(() => undefined, (e: unknown) => e);
+	assert.ok(atRead instanceof ShaperIndexStateReadError, `runShaper's read: ${String(atRead)}`);
+	assert.match(atRead.message, /MDB_BAD_TXN: the registry could not be read/);
+	assert.equal(reads.length, 1, 'the read went through the injected reader');
+	assert.equal(first.seen.decompose.length, 0, 'nothing ran after the failed read');
+	assert.equal(planTreeClassify(atRead).code, 'index-state-read-failed');
+	assert.equal(daemonClassify(atRead).code, 'index-state-read-failed');
+
+	// (b) inside the pipeline: runShaper's read succeeds, the pipeline's read throws.
+	let n = 0;
+	const second = standIns({ lastIndexedAt: async () => { n += 1; if (n === 1) return 1_700_000_000_000; throw new Error('MDB_READERS_FULL'); } });
+	const inPipeline = await call(intent, second.steps, loop.provider, 'state-read-pipeline').then(() => undefined, (e: unknown) => e);
+	assert.ok(inPipeline instanceof ShaperIndexStateReadError, `pipeline: ${String(inPipeline)}`);
+	assert.match(inPipeline.message, /MDB_READERS_FULL/);
+	assert.equal(n, 2, 'both reads went through the one injected reader');
+	assert.equal(second.seen.decompose.length, 1, 'the plan was made');
+	assert.equal(second.seen.executePlan.length, 0, 'no lookup ran without the watermark');
+	assert.equal(loop.used(), false);
 });

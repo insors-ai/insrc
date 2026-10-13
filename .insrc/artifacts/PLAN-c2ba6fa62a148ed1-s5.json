@@ -1,0 +1,1361 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791879038229-z2bnv7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-13T08:19:14.756Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 516492,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s5",
+    "lldRunId": "wf-1791876073725-do7qf3",
+    "lldEffectiveHash": "8ec1c5d92f54afdc0d6aef730ad53d5532a042d9e25ec6621e5ddebe2fabdff2",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/agent/providers/ollama.ts defines wrapOllamaError, and the provider's complete/stream paths rethrow transport errors through it.",
+          "evidence": "The evidence confirms both parts of the premise. The definition is at `src/agent/providers/ollama.ts:759`: `function wrapOllamaError(err: unknown): Error {`. The grep for /wrapOllamaError/ finds four rethrow sites in the same file. Two are in the retry flow of complete: `ollama.ts:341` (`throw wrapOllamaError(err);`) and `ollama.ts:347` (`throw wrapOllamaError(lastErr);`, the throw after the last retry). The other two are in the stream paths: `ollama.ts:518` follows the `for await (const chunk of response)` loop at `ollama.ts:512`, and `ollama.ts:621` follows the loop at `ollama.ts:578`. So stream creation and stream iteration also rethrow through wrapOllamaError. One more `for await` at `ollama.ts:428` has no wrapOllamaError call close by. The premise does not claim that every stream site is wrapped, so this does not contradict it, but S005 should check that site when it routes all transport failures through ModelCallFailedError.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise: wrapOllamaError is defined at ollama.ts:759, and complete (341, 347) and the stream paths (518, 621) rethrow through it. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p2",
+          "ref": "t1",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A ModelCallFailedError class exists that the local provider and the retry helper in src/agent/providers/structured-output.ts can construct, with a cause.",
+          "evidence": "The class exists. `grep /class ModelCallFailedError/` finds the declaration at `src/agent/providers/model-call-error.ts:12`: `export class ModelCallFailedError extends Error {`. It is exported, so `ollama.ts` and `structured-output.ts` can both import and construct it. A `detail` field also exists: the live-run capture of `model-failure.ts` shows `if (err instanceof ModelCallFailedError) return err.detail;`. Earlier work already raises this error from a provider: S006 PLAN says the sampling provider raises ModelCallFailedError, and the S006 CR cites `mcp-sampling-provider.ts:189`. That shows outside callers can construct it. Two things are not in the evidence. First, the 'with a cause' part: no constructor signature was gathered, so it is unknown whether the class accepts a `cause` (an `ErrorOptions`/`{ cause }` argument passed to `super`) or only a detail string. Second, the class lives in `model-call-error.ts`, not in the anchored `structured-output.ts`. The anchor names the file that consumes the class, not where it is defined. This is imprecise but still points at the right place. Neither gap changes what t1 builds: wrap transport failures in ModelCallFailedError and keep the type through the retry helper. That holds even if the cause has to be added or carried another way.",
+          "action": "Read the constructor of `src/agent/providers/model-call-error.ts:12`. If it already takes a cause (for example `constructor(detail: string, options?: { cause?: unknown })`), mark this premise verified. If it does not, have t1 add an optional `{ cause }` argument that is passed to `super`, or drop 'with a cause' from the premise. Also name `src/agent/providers/model-call-error.ts` as the file that defines the class, and keep `structured-output.ts` as the file that consumes it.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The class exists and is exported (model-call-error.ts:12), and callers already use its `detail` field. The evidence does not show whether its constructor accepts a cause. That is a gap in what was gathered, not a contradiction of the premise. It does not change what t1 builds, so the fix is to confirm or reword, not to redesign.",
+            "options": [
+              "Confirm the constructor at src/agent/providers/model-call-error.ts accepts a cause (e.g. `{ cause }` passed to super), and record the premise as verified, citing that line.",
+              "Extend t1: add an optional `{ cause?: unknown }` argument to ModelCallFailedError's constructor and pass it to `super(message, { cause })`, so wrapOllamaError and the retry helper can keep the original error.",
+              "Reword the premise so 'with a cause' is dropped and the defining file is named: 'A ModelCallFailedError class exported from src/agent/providers/model-call-error.ts exists, carrying a `detail`; the local provider and the retry helper in src/agent/providers/structured-output.ts can construct it.'"
+            ]
+          }
+        },
+        {
+          "claimId": "p3",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "In src/analyze/context/model-failure.ts the CLI_FAILURE_TEXTS list is at :35, is matched only at message start at :75-77, and the Ollama/socket texts are matched anywhere in the message at :81-83.",
+          "evidence": "All three anchors point to the code the premise describes:\n- `src/analyze/context/model-failure.ts:35` is `const CLI_FAILURE_TEXTS: readonly string[] = [`, which is the list declaration.\n- `src/analyze/context/model-failure.ts:75` is `for (const text of CLI_FAILURE_TEXTS) {`, which is the loop that checks the CLI wordings.\n- `src/analyze/context/model-failure.ts:81` is `for (const text of OLLAMA_FAILURE_TEXTS) {`, which is the loop that checks the Ollama/socket texts.\n\nThe indexed body of isModelCallFailure in the t06.json capture supports the claim that CLI texts are matched only at the start. It computes `own = msg.replace(RETRY_PREFIX, '')` right before the loop at :75. Its comment says the provider's wording \"opens the message ... It is never matched further in.\" The S005 LLD backs the claim that Ollama/socket texts are matched anywhere: it says isModelCallFailure \"matches Ollama/socket texts anywhere outside ' text='\".\n\nThe evidence does not show the end lines of the two ranges (:77 and :83). Each range starts at the right loop, so this does not change what the task builds. An earlier finding at PLAN.md:247 reported the ranges as 78-81 and 85-87. This premise has already been corrected to 75 and 81, and the reads confirm the correction.",
+          "action": "None needed: the premise is verified.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The reads at :35, :75 and :81 resolve to the CLI_FAILURE_TEXTS list, the CLI start-of-message loop and the Ollama loop. The described matching behaviour is supported by the indexed function body and the LLD. No edit is required."
+          }
+        },
+        {
+          "claimId": "p4",
+          "ref": "t2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "isModelCallFailure has exactly seven consumers: classifier, planner, summariser, aggregator, synthesizer, decomposer, and the context driver (the test row lists six families).",
+          "evidence": "The import grep, with tests and docs left out, finds exactly seven source files that import isModelCallFailure from model-failure: src/analyze/classifier/driver.ts:42, src/analyze/context/decomposer.ts:29, src/analyze/context/driver.ts:62, src/analyze/context/synthesizer.ts:28, src/analyze/planner/driver.ts:40, src/analyze/runtimes/shared/aggregator.ts:33 and src/analyze/summariser/driver.ts:37. The call grep confirms each one calls it: classifier/driver.ts:303, decomposer.ts:391, context/driver.ts:1028, synthesizer.ts:340, planner/driver.ts:516, aggregator.ts:355 and summariser/driver.ts:368. The only other non-doc match is model-failure.test.ts, which is the test, not a consumer. The definition is at model-failure.ts:67. The seven consumers match the premise exactly. The evidence does not check the note that the test row lists six families, but that note does not change the inventory.",
+          "action": "None. The evidence confirms the premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise: there are exactly seven source consumers, and they are the ones listed. No change is needed."
+          }
+        },
+        {
+          "claimId": "p5",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "classifyOllamaError is defined at src/analyze/context/driver.ts:1019 and called from the tool loop at :793 and from runFinalStructuredEmit at :959; these are its only two callers.",
+          "evidence": "All three line anchors check out. `src/analyze/context/driver.ts:1019` reads `function classifyOllamaError(err: unknown): Error {`, which is the definition, and it does not take a `call` argument yet. `:793` reads `throw classifyOllamaError(err);`, the tool-loop call. `:959` reads `const errClass = classifyOllamaError(err);`. The evidence shows `runFinalStructuredEmit` starting at `driver.ts:868`, so line 959 plausibly sits inside it.\n\nThe claim that these are the \"only two callers\" cannot be checked from this evidence. The grep `/classifyOllamaError\\(/` hit the 50-match cap, and every match shown is under `docs/`. None of the `src/` matches were listed, so other call sites can't be ruled out. The evidence also points to a likely third reference: PLAN.md:59 names the test seam `_classifyOllamaErrorForTest` at `driver.ts:1683`, which tests call directly. A seam with that name almost certainly forwards to `classifyOllamaError`. If t3 changes the signature to `(err, call)` and updates only :793 and :959, that seam would either fail to type-check or need its own `call` value. The seam's body was not read, so this is plausible rather than confirmed.",
+          "action": "Rerun the grep limited to `src/` (for example `rg 'classifyOllamaError\\(' src/`) to list the real call sites. Read `driver.ts:1683` to see whether `_classifyOllamaErrorForTest` calls `classifyOllamaError`. If it does, change the premise to \"two production callers (:793, :959) plus the test seam at :1683\". Also make t3 explicitly update the seam's signature, adding a `call` parameter or a default value, along with its direct test callers (driver-unit.test.ts, model-failure-callers.test.ts).",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The line anchors are verified. Only the exclusivity claim is in doubt, because the grep was truncated and the plan itself names a test seam at :1683 that probably forwards to classifyOllamaError. The seam needs a quick read before the inventory is reworded, so this is not a fully mechanical fix.",
+            "options": [
+              "Reword the premise to: two production callers (:793 tool loop, :959 runFinalStructuredEmit) plus the test seam _classifyOllamaErrorForTest at :1683, which t3 must also update.",
+              "Keep 'two callers' but restrict it to production code, and add a separate task note that the :1683 seam and its test callers must change to match the new (err, call) signature.",
+              "If a src-only grep shows the seam does not call classifyOllamaError, leave the premise as written."
+            ]
+          }
+        },
+        {
+          "claimId": "p6",
+          "ref": "t3",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The test seam _classifyOllamaErrorForTest (driver.ts:1683) is called directly only by driver-unit.test.ts:84-137 and model-failure-callers.test.ts:32.",
+          "evidence": "The grep for /_classifyOllamaErrorForTest/ returns 18 matches. 4 are in docs/…/S005/PLAN.md, which is the artifact itself, so they don't count as code references. That leaves source references in three files. (1) src/analyze/context/driver.ts:1683 reads `export const _classifyOllamaErrorForTest = classifyOllamaError;`, which confirms the definition anchor. (2) src/analyze/context/__tests__/driver-unit.test.ts mentions the seam in a doc comment at :15, imports it at :34, has a section comment at :81, and calls it directly at :86, :93, :99, :105, :114, :120, :126, :132 and :137. All of those calls fall inside the cited 84-137 range. (3) src/analyze/context/__tests__/model-failure-callers.test.ts:32 reads `_classifyOllamaErrorForTest as toolLoopClassify,`. That line is an aliased import, not a call, so the file's actual direct calls go through the name `toolLoopClassify` at lines the grep doesn't show. No other file under src/ references the seam. The claim that exactly these two test files use the seam directly holds.",
+          "action": "None. The premise checks out against the evidence. Optional: when t3 changes the signature to take a ShaperModelCall, also update the calls in model-failure-callers.test.ts that use the `toolLoopClassify` alias, not only the import at :32.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The inventory is accurate. Only two test files reference the seam, and the definition anchor resolves correctly. The :32 anchor is the aliased import rather than a call site, but it points to the right file and the right concept, and the prescribed change is unaffected. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p7",
+          "ref": "t3",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "ShaperModelCall is a string union type and ShaperLlmUnavailableError can be built without a call and carries Ollama-specific wording today.",
+          "evidence": "Two parts are confirmed. (1) `src/analyze/context/driver.ts:147` reads `export type ShaperModelCall = 'planning' | 'answer writing';`, a string union. (2) The error can be built without a call: `driver.ts:1029` has `return new ShaperLlmUnavailableError(modelCallFailureDetail(err));`, and the tests do the same at `driver-unit.test.ts:206` (`new ShaperLlmUnavailableError('ECONNREFUSED')`) and `shaper-errors.test.ts:29`. The third part, 'carries Ollama-specific wording today', cannot be checked here. The live class declaration at `driver.ts:149` came back without its constructor body. The only copy of that body is an older measurement snapshot (`S008/.../t06.json:218`), and it is cut off. It shows `constructor(cause: string, call?: ShaperModelCall)`, and with a call the message is provider-neutral: `The model call for ${call} failed: ${cause}`. The doc comment says the no-call message is 'the tool loop's, where the provider is the local one'. The live source also already passes a call in `driver.ts:1288` (`new ShaperLlmUnavailableError(message, 'planning')`), and the tests pass `'planning'` and `'answer writing'` (`shaper-errors.test.ts:21,25`). So the error is already provider-neutral whenever a call is given. Ollama-local wording, if any, can only be on the no-call path, and the evidence does not show that text.",
+          "action": "Change the premise to match the source. The constructor already accepts an optional `call?: ShaperModelCall` and words the message provider-neutrally when one is given (`driver.ts:1288` uses this already). Only the no-call branch, which `classifyOllamaError` reaches at `driver.ts:1029`, may keep local/Ollama wording. Read `driver.ts:149` onward to get the exact no-call message before t3 changes it. t3 should pass the call through at `driver.ts:1029` and not add a new constructor parameter.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The type and the no-call claims hold. The 'Ollama-specific wording' claim is too broad: the constructor already has a provider-neutral path that takes a call (driver.ts:1288, snapshot t06.json:218), and the evidence does not show the no-call message text. Changing the wording does not change what t3 builds: pass the call into the error at driver.ts:1029.",
+            "options": [
+              "Change the premise to: 'ShaperModelCall is a string union; ShaperLlmUnavailableError takes an optional call (provider-neutral message when given, as at driver.ts:1288), and only the no-call path used by classifyOllamaError (driver.ts:1029) carries local-provider wording.'",
+              "Keep the premise and add a step to t3 that reads driver.ts:149+ to confirm the exact no-call message before any edit.",
+              "Keep the premise as is and note it as unverified for the wording part."
+            ]
+          }
+        },
+        {
+          "claimId": "p8",
+          "ref": "t4",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "PIPELINE_CAUSES is a closed list with exactly one case per member in errorForPipelineCause, and the expected map in pipeline-outcome.test.ts (asserted at :418) enumerates it.",
+          "evidence": "The evidence supports the premise. (1) It is a closed list: `src/analyze/context/driver.ts:1198` declares `export const PIPELINE_CAUSES = [`, and `driver.ts:1208` derives `export type PipelineCause = (typeof PIPELINE_CAUSES)[number];`. That gives a finite union of literals. The `as const` sits on lines 1199–1207, which the evidence does not show, but the per-literal calls in the test (`errorForPipelineCause('planner-model-failed', …)`, `'answer-prompt-missing'`, and so on at :433–:453) only type-check against a narrow literal union. (2) There is one case per member: the doc comment at `driver.ts:1195` says \"`errorForPipelineCause` has one case per member\". The function begins at `driver.ts:1264`. Its fallthrough at `driver.ts:1299` is a never-check, `throw new Error(\\`errorForPipelineCause: unhandled cause ${String(unreachable)}\\`)`, so a member with no case fails to compile. (3) The test enumerates the list: `pipeline-outcome.test.ts:418` is `assert.deepEqual([...PIPELINE_CAUSES].sort(), Object.keys(expected).sort());`, and :420 loops `for (const c of PIPELINE_CAUSES)` to call `errorForPipelineCause(c, …)` at :421. Adding 'index-state-read-failed' and 'lookup-failed' to the list therefore forces two new switch cases and two new keys in the `expected` map. That is what t4 prescribes in PLAN.md:68/:72.",
+          "action": "None needed; the evidence confirms the premise. When building t4, add both new members to the `expected` map in pipeline-outcome.test.ts, or the assertion at :418 fails.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is confirmed: a const-derived union, an exhaustive switch with a never-check at driver.ts:1299, and a test at :418 that pins the full set of members. No edit to the artifact is needed."
+          }
+        },
+        {
+          "claimId": "p9",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "runShaper reads freshness directly via resolveRepoLastIndexedAt at driver.ts:357; the pipeline reads steps.lastIndexedAt at :1471 and awaits executePlan bare at :1473; REAL_PIPELINE_STEPS is at :1582 with lastIndexedAt bound to resolveRepoLastIndexedAt at :1587.",
+          "evidence": "All five anchors check out against the source. src/analyze/context/driver.ts:357 is `const currentLastIndexedAt = await resolveRepoLastIndexedAt(freshnessPathOf(scope));`, so runShaper reads freshness directly. Line 1471 is `const lastIndexedMs = await steps.lastIndexedAt(freshnessPathOf(args.scope));`, the pipeline's read. Line 1473 is `const executed = await steps.executePlan({`, a bare await, with no try wrapping shown at that line. Line 1582 is `const REAL_PIPELINE_STEPS: PipelineSteps = {`, which declares the steps object; grep confirms this is the only declaration, and the other hits at :389, :1352 and :1691 are uses. Line 1587 is `lastIndexedAt: resolveRepoLastIndexedAt,`. The premise already includes the earlier correction from PLAN.md:299-300, where the stale :1587 declaration anchor was changed to :1582.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Every cited file:line points at the entity the premise names, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p10",
+          "ref": "t4",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "There are exactly two classifyShaperError mappings: src/daemon/analyze-rpc.ts and src/analyze/orchestrator/driver.ts, with error-code unions AnalyzeRpcErrorCode and RunErrorCode respectively.",
+          "evidence": "grep /function classifyShaperError/ found 6 matches, and only 2 are source definitions: src/analyze/orchestrator/driver.ts:702 (`function classifyShaperError(err: unknown): RunFailure {`) and src/daemon/analyze-rpc.ts:967 (`function classifyShaperError(err: unknown): AnalyzeRpcErrorPayload {`). The other 4 are in docs (PLAN.md:265, the S006 LLD.md:197-198, and a measurements t04.json snapshot). grep /classifyShaperError\\s*=/ found 0 matches, so no arrow-function or const variant exists. That confirms exactly two mappings. Both unions exist: `export type AnalyzeRpcErrorCode =` at src/daemon/analyze-rpc.ts:143, which is the same file as its mapping, and `export type RunErrorCode =` at src/analyze/orchestrator/types.ts:274. RunErrorCode is defined in types.ts, not in driver.ts, but the premise only names driver.ts as the location of the mapping, not of the union. The driver mapping returns RunFailure, which is presumably what carries RunErrorCode. The pairing of each mapping with its union holds.",
+          "action": "None needed: the evidence confirms the premise. If you want the anchor to be more exact, you could note that RunErrorCode is declared in src/analyze/orchestrator/types.ts:274, not in driver.ts.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is confirmed: there are exactly two source definitions, and both unions exist. The only imprecision is that RunErrorCode lives in orchestrator/types.ts and not in driver.ts. This does not change what gets built, so no edit is required."
+          }
+        },
+        {
+          "claimId": "p11",
+          "ref": "t5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "RepoRow is at src/db/graph/codec.ts:89, encodeRepoRow at :105, decodeRepoRow at :114-127 as a const arrow building the row field by field.",
+          "evidence": "All three cited anchors resolve to the claimed entities. `read src/db/graph/codec.ts:89` returns `export interface RepoRow {`. `read src/db/graph/codec.ts:105` returns `export const encodeRepoRow = (r: RepoRow): Buffer => encode(r);`. `read src/db/graph/codec.ts:114` returns `export const decodeRepoRow = (b: Buffer): RepoRow => {`, which confirms decodeRepoRow is a const arrow. The grep for /interface RepoRow/ finds one source definition at codec.ts:89. The other match, vscode-plugin/src/workspace/registrar.ts:15, is a separate local interface and doesn't conflict. The reads only show line 114, so the 114-127 span and the field-by-field body aren't directly visible. They are backed by an earlier grounded finding (S001 LLD.md:229), which cites `src/db/graph/codec.ts:117 kind: raw.kind ?? 'workspace'`. That is a per-field default inside the decoder, so the row is built from named fields and not passed straight through. This supports the conclusion that a new optional field such as lastRun has to be copied explicitly. Callers in src/db/repos.ts:173/267 (encode) and :217/260/286 (decode) show that every registry read and write goes through this codec pair.",
+          "action": "None needed: the premise holds against the evidence.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms every anchor and the const-arrow shape of the decoder, and the earlier grounded read at codec.ts:117 backs the field-by-field claim. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p12",
+          "ref": "t5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "updateRepoStatus is at src/db/repos.ts:243, rowToRepo at :340, and RegisteredRepo at src/shared/types.ts:678.",
+          "evidence": "All three anchors resolve to the entity the premise names. Reading `src/db/repos.ts:243` gives `export async function updateRepoStatus(`. Reading `src/db/repos.ts:340` gives `function rowToRepo(row: RepoRow): RegisteredRepo {`. Reading `src/shared/types.ts:678` gives `export interface RegisteredRepo {`. The greps agree. `/function rowToRepo/` has exactly one match under src/, at src/db/repos.ts:340, and its only other match is the PLAN.md review row. `/interface RegisteredRepo/` has exactly one match under src/, at src/shared/types.ts:678. The other matches are doc references and a different Kotlin type (`RegisteredReposResult` in DaemonGateway.kt:327). One doc reference cites types.ts:670, but that is a stale citation in an older Epic's PLAN, not the current location. The `/updateRepoStatus/` grep hit its 50-match cap, but every src/ hit is a caller or a test importing from `../../../db/repos.js`, so nothing points to a second definition. The citation c12 in S005/LLD.md:503 gives the same spans (repos.ts:243-269, rowToRepo :340-352, types.ts:678-698).",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "All three citations resolve to the declarations the premise names, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p13",
+          "ref": "t5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Strict round-trip tests for the repo row exist in src/db/graph/__tests__/codec.test.ts at :40 and :50.",
+          "evidence": "Both anchors check out against the source. `read src/db/graph/__tests__/codec.test.ts:40` and `read src/db/graph/__tests__/codec.test.ts:50` each return `assert.deepEqual(decodeRepoRow(encodeRepoRow(r)), r);`, which is a full encode→decode round-trip of a repo row compared deeply against the original. The grep also shows that `src/db/graph/__tests__/codec.test.ts:14` imports `encodeRepoRow, decodeRepoRow`, and that the codec functions under test are at `src/db/graph/codec.ts:105` (encodeRepoRow) and `:114` (decodeRepoRow). The evidence doesn't show whether `assert` is the `node:assert/strict` import, so the word \"strict\" can't be checked directly. That doesn't affect the task: deepEqual round-trip tests exist at both cited lines, and t5 can add or extend its lastRun round-trip cases next to them.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both cited lines resolve to repo-row round-trip assertions (decodeRepoRow(encodeRepoRow(r)) deepEqual r), so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p14",
+          "ref": "t6",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Indexer.fullIndex has exactly two final status writes: 'ready' at src/indexer/index.ts:726 and 'error' at :735; status 'indexing' is set at :596 when the queued full index starts.",
+          "evidence": "All three anchors read back as the premise states. `src/indexer/index.ts:596` is `await updateRepoStatus(this.db, repoPath, 'indexing');`. `:726` is `await updateRepoStatus(this.db, repoPath, 'ready', new Date().toISOString());`. `:735` is `await updateRepoStatus(this.db, repoPath, 'error', undefined, msg);`. The grep for /updateRepoStatus\\(/ finds exactly four calls in src/indexer/index.ts: :309, :596, :726 and :735. Line :309 (`await updateRepoStatus(this.db, repo.path, 'ready', ...)`) sits in the start-up path, next to the re-queue predicate at :289 (`repo.status === 'indexing' && !repo.lastIndexed`). The c12 citation places `start` at index.ts:246-335, so :309 is outside fullIndex. That leaves 'indexing' at :596, then 'ready' at :726 and 'error' at :735 as the only status writes in the fullIndex range. This matches the premise's count of exactly two final writes. The ready/error pair at :726 and :735 has the success/catch shape: the ready write carries a timestamp and the error write carries undefined plus msg.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms all three anchors and confirms there is no other updateRepoStatus call inside fullIndex. The :309 'ready' write belongs to start, not fullIndex. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p15",
+          "ref": "t6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The start-up re-queue predicate (repos left 'indexing' without lastIndexed) is at src/indexer/index.ts:289.",
+          "evidence": "The read of src/indexer/index.ts:289 returned `(repo.status === 'indexing' && !repo.lastIndexed)`. That line is the start-up re-queue predicate the premise describes: it selects repos left in 'indexing' status with no lastIndexed. The anchor resolves to the cited entity. The grep matches agree with it: S005/LLD.md:415 says \"the start-up re-queue of a repository left 'indexing' without lastIndexed is unchanged\", PLAN.md:92 says the same, and an earlier review row (PLAN.md:249) records the same read result at index.ts:289.",
+          "action": "None. The premise checks out against the evidence.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The anchor resolves to exactly the predicate the premise names, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p16",
+          "ref": "t6",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "repo.reindex is registered at src/daemon/index.ts:806 and only enqueues a full index.",
+          "evidence": "The anchor is confirmed. The read of src/daemon/index.ts:806 returned `'repo.reindex': async (params) => {`, and the grep for 'repo.reindex' found it registered in the daemon handler map there (src/daemon/index.ts:806). It is called from src/cli/services/repo.ts:80 as `await rpc('repo.reindex', { path: abs });`. The second half of the premise, that the handler \"only enqueues a full index\", is not covered by the evidence. Only the opening signature line was read, not the handler body, so nothing shows what the handler does: whether it only enqueues a full index, or also clears state, resets status, or runs an incremental path. The S005/PLAN.md:249 row says this anchor checked out before, but that is an earlier review's claim, not a read of the source.",
+          "action": "Read the handler body that starts at src/daemon/index.ts:806, up to the closing brace, and check that it only enqueues a full index job. Look for any side effects such as status reset, cache or graph clearing, or incremental routing. If the body does more, change t6's premise to describe what it really does before building on it.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The file and line are verified, but the claim about what the handler does is not. Someone has to read the handler body before the premise is either confirmed or reworded.",
+            "options": [
+              "Confirm by reading src/daemon/index.ts:806 onward; if the body is only an enqueue of a full index, mark verified (LOW) with no edit.",
+              "If the handler does more than enqueue (e.g. resets repo status or clears index data), reword t6's premise to state the actual behavior and re-check whether t6's prescribed change still holds.",
+              "Narrow the premise to the verified part only: 'repo.reindex is registered at src/daemon/index.ts:806'. Then move the behavioral claim to an explicit task step to confirm while building."
+            ]
+          }
+        },
+        {
+          "claimId": "p17",
+          "ref": "t6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "src/indexer/run-record.ts does not yet exist and a leaf module importing only types can be read by src/analyze/context/invariants.ts without importing the indexer.",
+          "evidence": "grep /run-record/ found 5 matches, and none of them is a source file at src/indexer/run-record.ts or an import of one. Three are design text: S005/PLAN.md:85, :96 and :269. One is an unrelated line in an older LLD (make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/LLD.md:447). The last is a test comment (src/analyze/__tests__/report-head.test.ts:11, \" * the real run-record store. No model.\"). So the module does not exist yet, as the premise says. On the layering point, grep /from '\\.\\.\\/\\.\\.\\/indexer/ shows the analyzer already imports leaf modules from src/indexer without loading the Indexer class. src/analyze/explore/item-measure.ts:17 imports makeEntityId from '../../indexer/parser/base.js', and several analyze tests import from indexer/parser too. src/analyze/context/invariants.ts does not appear in those matches, so it has no indexer import today. A new types-only leaf at src/indexer/run-record.ts, imported as '../../indexer/run-record.js', follows the same pattern. It would not pull in src/indexer/index.ts.",
+          "action": "none — verified sound. When building, keep src/indexer/run-record.ts free of runtime imports from src/indexer/index.ts or any other indexer module, so invariants.ts stays decoupled from the Indexer.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence supports the premise: the module is absent, and the analyzer already imports leaf modules from src/indexer (for example item-measure.ts:17 → indexer/parser/base.js). No artifact edit is needed."
+          }
+        },
+        {
+          "claimId": "p18",
+          "ref": "t7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "In src/analyze/context/invariants.ts: ensureNonEmptyClosure's longest-prefix lookup is at :185-217, ScopeErrorCode at :100, scopeErrorMapping at :118, TaskRefusalCode at :129 (derived from ScopeErrorCode), taskRefusalMapping at :137.",
+          "evidence": "I read every cited line, and each one matches the premise. `src/analyze/context/invariants.ts:100` is `export type ScopeErrorCode = 'scope-not-indexed' | 'scope-ref-unresolved' | 'scope-ref-kind-target-mismatch';`. `:118` is `export function scopeErrorMapping(err: unknown): ScopeErrorMapping | undefined {`. `:129` is `export type TaskRefusalCode = ScopeErrorCode | 'connection-outside-scope';`, which confirms that TaskRefusalCode is built from ScopeErrorCode. `:137` is `export function taskRefusalMapping(err: unknown): { readonly code: TaskRefusalCode; readonly message: string } | undefined {`. `:185` is `// Find the longest-prefix registered repo containing the scope.`, which is the start of the longest-prefix lookup. The end of the range (:217) was not read, but the start is correct. The grep results also show `:139` calling `scopeErrorMapping(err)` inside taskRefusalMapping, which fits the derivation.",
+          "action": "None needed. The premise checks out against the source.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "All five anchors point at the entities the premise names, so the artifact needs no edit."
+          }
+        },
+        {
+          "claimId": "p19",
+          "ref": "t7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The plan walker calls taskRefusalMapping at src/analyze/executor/walker.ts:265.",
+          "evidence": "I read src/analyze/executor/walker.ts:265 directly. It returns `const refused = taskRefusalMapping(err);`, so the call is on the cited line. The grep agrees with that read. walker.ts:47 imports the function (`import { taskRefusalMapping, type TaskRefusalCode } from '../context/invariants.js';`). src/analyze/context/invariants.ts:137 defines it (`export function taskRefusalMapping(err: unknown): ...`). The doc comment at invariants.ts:115 also names the plan walk as a caller through `taskRefusalMapping`.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited file:line holds the call the premise describes, so the artifact needs no change."
+          }
+        },
+        {
+          "claimId": "p20",
+          "ref": "t7",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The registry has a 'pristine' state and statuses 'pending' / 'indexing' / 'ready' / 'error' with an errorMsg field; ScopeNotIndexedError exists.",
+          "evidence": "ScopeNotIndexedError exists: `src/analyze/context/invariants.ts:67: export class ScopeNotIndexedError extends Error {`. The status union is defined in source as `'pending' | 'indexing' | 'ready' | 'error'` at `src/shared/types.ts:696` (RegisteredRepo.status), `src/shared/types.ts:966` (RepoStatus) and `src/db/graph/codec.ts:68` (RepoStatus). `src/indexer/index.ts:287` also reads `repo.status === 'pending'`. A pristine registry is a real, tested condition. The test logs show `ok 289 - ensureNonEmptyClosure: pristine registry -> skipped silently, returns undefined`, the debug line `[analyze:context:invariants] ensureNonEmptyClosure: registry pristine; skipping invariant`, and `symbol exception: ... with a pristine registry -> ScopeNotIndexedError`. 'Pristine' means the registry has no repos registered (S005/LLD.md:116). It is not a value of the status union, and the premise does not say it is. On errorMsg: the grep hit cap of 50 was filled by doc and jetbrains-plugin matches, so no src/ line was returned. Its existence on the registry row rests on `design/indexer.html:223` (`errorMsg STRING`), `docs/plans/repo-registry-strict-contract.md:105` (`status: enum, errorMsg: string`), and the LLD's cited signature `updateRepoStatus(..., errorMsg?: string, ...) // src/db/repos.ts` (S005/LLD.md:226). These are consistent but indirect.",
+          "action": "None needed; the premise holds. As an optional check, before building t7 confirm that `errorMsg?` is on RegisteredRepo in src/shared/types.ts (around :678-698) and on RepoRow in src/db/graph/codec.ts. The capped grep did not return a src/ line for errorMsg.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms ScopeNotIndexedError at invariants.ts:67, the four-value status union in src/shared/types.ts and src/db/graph/codec.ts, and the pristine-registry skip in ensureNonEmptyClosure. errorMsg is supported by the design, plan and LLD signature documents. Nothing in the evidence contradicts the premise, so no edit to the artifact is needed."
+          }
+        },
+        {
+          "claimId": "p21",
+          "ref": "t8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "runShaper today builds the cache key at driver.ts:336, resolves scope via prepareScope at :350, reads freshness at :357, and looks up the cache at :360.",
+          "evidence": "Three of the four anchors were read and match the premise. `read src/analyze/context/driver.ts:336 → FOUND: const cacheKey: CacheKey = {` confirms the cache key is built at :336, and the grep for cacheKey also places it at driver.ts:336. `read src/analyze/context/driver.ts:350 → FOUND: const scope = await prepareScope(invocationMode, inputs, args.scopeDeps);` confirms scope is resolved through prepareScope at :350. `read src/analyze/context/driver.ts:360 → FOUND: const cached = readBundle(runId, cacheKey, opts, currentLastIndexedAt);` confirms the cache lookup at :360. No read of :357 was gathered, so the freshness-read anchor is not directly confirmed. It is indirectly supported: line 360 passes `currentLastIndexedAt`, so that value must be computed between :350 and :360, which is where the premise puts the freshness read. The order the premise states (key, then scope, then freshness, then lookup) matches the line numbers. It also agrees with the S006 code review note that \"prepareScope now runs before the bundle cache lookup\".",
+          "action": "None needed; the premise holds. If you want to be strict, read driver.ts:357 during the build to confirm `currentLastIndexedAt` is assigned there. The task's prescribed change does not depend on that exact line.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Anchors :336, :350 and :360 resolve exactly to the entities the premise names. :357 was not read, but :360 consuming currentLastIndexedAt shows the freshness value is computed in the 351–359 range. No edit is warranted."
+          }
+        },
+        {
+          "claimId": "p22",
+          "ref": "t8",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The factory in src/analyze/context/index.ts passes caller ShapeOpts whole as runShaper's opts at three sites (:93-100, :113-120, :138-145).",
+          "evidence": "The evidence backs up the structure the premise describes, but not the specific claim it makes. The three anchors match. `src/analyze/context/index.ts:93` and `:113` each read `opts:  ShapeOpts,`, and `:138` reads the same line with one less tab. Each is a closure parameter that comes just before a `runShaper({` call: index.ts:95, :115 and :140, as the grep for /runShaper\\(/ shows. So there are three factory call sites, each with a ShapeOpts parameter in scope. What the evidence does not show is the body of any of the three `runShaper({ ... })` calls (lines 96–100, 116–120 and 141–145). So it cannot show whether `opts` is passed through unchanged (`opts` or `opts: opts`), spread, or rebuilt from chosen fields such as `{ runId: opts.runId, ... }`. The only other look at the factory body is the shaperFor snippet in docs/.../S008/.../t06.json:421, and it is cut off at `promptPath: PROMPT_PATHS[shaperId],` before the opts field. The rest of the claim, that a new ShapeOpts.scopeChecked reaches runShaper with no new pass-through, depends on exactly that unseen fact. The claim cannot be checked from this evidence, but the anchors still point at the right place.",
+          "action": "Before building t8, read src/analyze/context/index.ts:95-145 and look at the `opts` field of each of the three `runShaper({...})` calls. If all three pass `opts` unchanged or spread it, keep the premise as it is. If any of them builds a new opts object field by field, t8 must add `scopeChecked` at that site. Either way, add a unit test showing that `ShapeOpts.scopeChecked` set on `buildRunBundle` reaches `runShaper`'s `args.opts`. That test turns the premise from an assumption into something the build checks.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchors and the number of sites (three) are confirmed, but the evidence does not show how opts is forwarded. The right edit depends on index.ts:96-145, which is not in the evidence, so no find/replace edit can be safely derived. A person needs to choose between checking the claim and making the forwarding explicit.",
+            "options": [
+              "Read index.ts:95-145. If all three runShaper calls pass `opts` unchanged or spread it, keep the premise and add a unit test that ShapeOpts.scopeChecked reaches runShaper's args.opts.",
+              "Change t8 so it makes the forwarding explicit at all three sites (`opts: { ...opts }`, or `opts` passed unchanged), whatever the current form is, and add the unit test. That way a later ShapeOpts field cannot be dropped without anyone noticing.",
+              "If any site builds opts field by field, reword the premise to say t8 adds a `scopeChecked: opts.scopeChecked` pass-through at that site, and list which sites need it."
+            ]
+          }
+        },
+        {
+          "claimId": "p23",
+          "ref": "t8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "BundleMeta in src/analyze/context/types.ts and the bundle schema meta in src/analyze/context/schema.ts exist, and validateBundleWithErrors validates bundles.",
+          "evidence": "The evidence supports each part of the premise. (1) BundleMeta exists at `src/analyze/context/types.ts:88: export interface BundleMeta {`. (2) validateBundleWithErrors is exported from src/analyze/context/schema.ts: `src/analyze/context/__tests__/bundle-report-schema.test.ts:14: import { ANALYZE_CONTEXT_BUNDLE_SCHEMA, modelFacingBundleSchema, SCHEMA_VERSION, validateBundleWithErrors } from '../schema.js';`, and the driver imports it at `src/analyze/context/driver.ts:84`. (3) It validates whole bundles, meta included: `bundle-report-schema.test.ts:33: assert.deepEqual(validateBundleWithErrors({ ...LAYERS, meta: META, report: REPORT }), { ok: true, errors: [] });` and `:48: validateBundleWithErrors({ ...LAYERS, meta: { ...META, schemaVersion: 1 } })`, which shows meta is part of the schema it checks. `schema.test.ts:106` (\"returns ok=true on a valid bundle\") and `:142`/`:151` (invalid bundles) show it accepting and rejecting bundles. Its body, recorded in the S008 measurement, compiles a validator and returns `{ ok, errors }`. One gap: the meta sub-schema inside schema.ts is not shown line by line. It is still clearly validated, because meta-carrying bundles go through validateBundleWithErrors from that module.",
+          "action": "None needed. The premise checks out against the evidence.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise checks out against the evidence. BundleMeta is at types.ts:88, validateBundleWithErrors is exported from schema.ts and the driver uses it, and the tests run bundles with a meta field through it. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p24",
+          "ref": "t9",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "In src/analyze/orchestrator/driver.ts runAnalyze has a classifier branch and a hinted-target branch, calls measureRequestScope and emits a 'classified' event, and later in the plan stage calls resolveTaskScope(intent.scopeRef, intent.target, 'the run').",
+          "evidence": "The source confirms the parts of the premise that matter for t9. `src/analyze/orchestrator/driver.ts:325` emits `emit({ type: 'classified', intent, measure });`, so the measure exists by the time the 'classified' event goes out. `src/analyze/orchestrator/driver.ts:374` calls `await resolveTaskScope(intent.scopeRef, intent.target, 'the run');`. Line 374 comes after line 325, which matches \"later in the plan stage\". The ISSUE also cites both lines from driver.ts as code: `emit({ type: 'classified', intent, measure });` at [[c1]] and `await resolveTaskScope(intent.scopeRef, intent.target, 'the run');` at [[c2]].\n\nTwo parts are supported only indirectly. The grep for /measureRequestScope/ stopped at its cap before reaching any src/ match, so no driver.ts line shows the measure call itself. It is backed by the `measure` variable passed in the line 325 event and by the S002 CR, which places `measureRequestScope` at driver.ts:317 in the classify stage. The two branches have no driver.ts line in the evidence either. The hinted branch is backed by the test file `src/analyze/orchestrator/__tests__/hinted-branch.test.ts:169-171`, which checks for the 'classified' event, and by the S002 LLD (\"After either classification branch ... the driver calls measureRequestScope\"). The earlier PLAN review row s5/t9 reached the same verdict, LOW.",
+          "action": "None. The premise is verified sound. The order is: measure, then the 'classified' event at :325, then resolveTaskScope at :374. That is the order t9 is written to change.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence directly confirms the order the task relies on: the 'classified' event at driver.ts:325 comes before resolveTaskScope(intent.scopeRef, intent.target, 'the run') at driver.ts:374. The measure call and the two branches are supported only by secondary evidence, but that gap does not change what t9 builds. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p25",
+          "ref": "t10",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "src/daemon/analyze-rpc.ts:347-348 calls the classifier then measureRequestScope with no scope check between.",
+          "evidence": "Part of the premise checks out. The read of src/daemon/analyze-rpc.ts:347 found `const unsized = await classifierImpl({ input, opts });`, so the classifier call is on the cited line. Line 348 was not read. The grep for /measureRequestScope/ stopped at its 50-match cap, and every returned match is in docs/ (LLD.md, PLAN.md, CR.md, TESTS.md, .tap measurement files); none is in src/daemon/analyze-rpc.ts. So nothing here shows that measureRequestScope is called on line 348, or that no scope check sits between the two calls. The only place the claim appears is the artifact's own wording in PLAN.md:125 (\"Grounding: src/daemon/analyze-rpc.ts:347-348 calls the classifier and then measureRequestScope with no scope check between them\"). An earlier review row, PLAN.md:252, flagged the same citation at 344-345 as stale. The anchor now points at the right concept (the classifier call). The planned change, adding resolveTaskScope + ensureRepoQueryable after classification and before measureRequestScope in analyze.classify, does not depend on the exact line numbers. So if the cite is wrong, the work is still the same.",
+          "action": "Read src/daemon/analyze-rpc.ts lines 347-350. Confirm that line 348 (or the next statement) is `measureRequestScope(unsized.scopeRef …)` / `measureRequestScope(parsed.intent.scopeRef, …)` and that no resolveTaskScope / ensureRepoQueryable / ensureNonEmptyClosure call sits between it and the classifier call. Then either keep the 347-348 range or change the premise so it does not rely on line numbers.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence confirms the classifier call at line 347. It does not confirm the measureRequestScope call at 348 or that no scope check sits between the calls. The prescribed change is the same either way, so the fix is to re-check the anchor or drop the line numbers. There is no evidence to support a different line value.",
+            "artifactEdits": [
+              {
+                "find": "Grounding: src/daemon/analyze-rpc.ts:347-348 calls the classifier and then measureRequestScope with no scope check between them.",
+                "replace": "Grounding: src/daemon/analyze-rpc.ts calls the classifier (`const unsized = await classifierImpl({ input, opts });`, line 347) and then measureRequestScope with no scope check between them."
+              }
+            ],
+            "options": [
+              "Re-anchor: read src/daemon/analyze-rpc.ts:347-350, confirm that measureRequestScope directly follows `const unsized = await classifierImpl({ input, opts });` with no scope check between them, and keep or adjust the 347-348 range.",
+              "Re-word the premise so it does not rely on line numbers: 'src/daemon/analyze-rpc.ts calls classifierImpl and then measureRequestScope with no scope check (resolveTaskScope / ensureRepoQueryable) between them.'"
+            ]
+          }
+        },
+        {
+          "claimId": "p26",
+          "ref": "t11",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The graph-reading search requests in src/daemon/index.ts are exactly twelve: search.callers, search.callees, search.callers_nhop, search.by_file, search.closure, entity.summary, entity.closure, entity.unreachable, repo.depends_on, repo.search_cross_repo, locate.inferParents, search.query.",
+          "evidence": "The source tree directly confirms 6 of the 12 named requests as handlers in src/daemon/index.ts: 'locate.inferParents' at :1081, 'entity.summary' at :1102, 'entity.closure' at :1107, 'entity.unreachable' at :1123, 'repo.depends_on' at :1184 and 'repo.search_cross_repo' at :1203. The other six (search.query, search.closure, search.callers, search.callees, search.by_file, search.callers_nhop) were never seen in src/daemon/index.ts. The grep for /'search\\.[a-z_]+'/ hit its 50-match cap, and the matches it did return all come from docs, src/analyze tests and the analyze 'search.text' exploration type. The only support for those six is the artifact's own PLAN.md table (lines 253 and 274), which claims search.query :1048, search.closure :1060, search.callers :1065, search.callees :1070 and search.by_file :1216. The search.callers_nhop citation is cut off there. That table is self-referential and does not count as ground truth. The word \"exactly\" is also unchecked: none of the probes listed every handler key in src/daemon/index.ts, so other graph-reading requests may exist that are not on the list. Nothing here contradicts the premise. Half of it is confirmed and the rest, including the claim that the list is complete, cannot be checked from this evidence.",
+          "action": "Re-run the probe on src/daemon/index.ts alone with no truncation, for example `rg -n \"^\\s*'(search|entity|repo|locate)\\.[A-Za-z_]+'\\s*:\" src/daemon/index.ts`. Check that all six search.* handlers exist at their cited lines. Then list every handler that reads the graph store to confirm there is no 13th graph-reading request. If any are missing or extra, update the t11 contract-test inventory and t12's guarded set of 11 to match.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "Six of the twelve names are confirmed against source. The six search.* handlers, and the claim that there are exactly twelve, cannot be checked because the search grep was truncated before it reached src/daemon/index.ts. A person needs to re-run a probe limited to that file before the inventory gets pinned in a contract test.",
+            "options": [
+              "Re-probe src/daemon/index.ts on its own and keep the list of 12 as written if all six search.* handlers turn up and no other graph-reading handler exists",
+              "If more graph-reading handlers turn up, add them to the t11 inventory and to t12's guarded set, and update the count",
+              "Reword the premise from 'exactly twelve' to 'at least these twelve', and have the t11 test pin the list it actually enumerates from the handler table instead of a hard-coded count"
+            ]
+          }
+        },
+        {
+          "claimId": "p27",
+          "ref": "t12",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "Handler lines and params in src/daemon/index.ts: search.query :1048 (none), search.closure :1060 {repoPath}, search.callers :1065, search.callees :1070 {entityId}, locate.inferParents :1081 {repoPath}, entity.summary :1102 {entityId}, entity.closure :1107 and entity.unreachable :1123 {rootIds}, repo.depends_on :1184 and repo.search_cross_repo :1203 {repoId}, search.by_file :1216 {filePath}, search.callers_nhop :1221 {entityId}.",
+          "evidence": "All 12 cited line anchors resolve to the named handlers in src/daemon/index.ts: :1048 'search.query', :1060 'search.closure', :1065 'search.callers', :1070 'search.callees', :1081 'locate.inferParents', :1102 'entity.summary', :1107 'entity.closure', :1123 'entity.unreachable', :1184 'repo.depends_on', :1203 'repo.search_cross_repo', :1216 'search.by_file', :1221 'search.callers_nhop'. Each read returned only the handler's opening line (`'<name>': async (params) => {`). None of the gathered evidence shows the handler bodies, so the parameter names the premise assigns ({repoPath}, {entityId}, {rootIds}, {repoId}, {filePath}, and \"none\" for search.query) can't be confirmed or refuted. The premise also lists params for some handlers only by grouping (search.callers shares {entityId} with search.callees, entity.closure shares {rootIds} with entity.unreachable, repo.depends_on shares {repoId} with repo.search_cross_repo). The PLAN.md row s5/t12 states these params per handler, and they agree with the grouping.",
+          "action": "The line anchors need no change. Before building t12's guard, read the body of each handler at the cited lines and check which params field it actually reads, for example `params.repoPath` versus `params.repo`, and `params.rootIds` versus `params.ids`. Fix any param name that doesn't match the code. If a param name is wrong, the guard would read a field that is always undefined and could never fire, or would always refuse.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The handler line citations are confirmed. The per-handler param names are what the guard depends on, and the evidence doesn't cover them. The evidence gives no value to substitute, so no automatic edit is safe. Someone has to read the handler bodies at the cited lines to confirm the params.",
+            "options": [
+              "Read the handler bodies at :1048 to :1225 and confirm each params field name. Keep the premise if they all match.",
+              "If any handler reads a different field, correct the param name in the premise and in t12's guard spec before building."
+            ]
+          }
+        },
+        {
+          "claimId": "p28",
+          "ref": "t12",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The only other graph-reading daemon requests deliberately outside the guard are repo.stats (index.ts:588), codeReview.grounding (:762), repo.entitiesForSourceRoots (source-roots-rpc.ts:21), and analyze.*; the workflow locate path (src/workflow/locate/infer-daemon.ts:65) calls resolveClosure itself.",
+          "evidence": "All four anchors check out. src/daemon/index.ts:588 is `'repo.stats': async (params) => {`. src/daemon/index.ts:762 is `'codeReview.grounding': async (params) => {`. src/daemon/source-roots-rpc.ts:21 is `export const METHOD_ENTITIES_FOR_SOURCE_ROOTS = 'repo.entitiesForSourceRoots';`. src/workflow/locate/infer-daemon.ts:65 is `const closure = await resolveClosure(db, repoPath);`, so the locate path does call resolveClosure itself.\n\nThe premise also claims the list is complete (\"the only other\"), and the evidence cannot confirm that. The grep for resolveClosure( finds three more graph-reading call sites in the daemon:\n- index.ts:1062 (`return resolveClosure(db, repoPath);`, the search.closure handler)\n- index.ts:1186 (`const closurePaths = await resolveClosure(db, repoId);`)\n- index.ts:1209 (`const closurePaths = await resolveClosure(db, repoId);`)\n\nThe evidence does not show whether these sit inside the guard. The S011 LLD row also names other daemon handlers that reach graph-derived data: 'codeReview.freshness' (:772), 'codeReview.run' (:1877, a stream handler that wraps the grounding assembler), 'repo.resolveForCwd' (:615) and 'workflow.review' (:1884). The premise lists none of them, and the evidence does not show whether they are guarded or deliberately left out. A previous review of this same story (S005/PLAN.md:245, s5/t12) already flagged this kind of list as HIGH for leaving out graph-reading handlers. So each listed member is real, but the evidence cannot show the list is complete.",
+          "action": "Check every handler in index.ts that reaches the graph store (getGraphStore, resolveClosure, or assembleCodeReviewGrounding). That covers the plain handlers and the stream handlers, including the ones at :1062, :1186, :1209, :615, :772, :1877 and :1884. Mark each one as either inside the guard (part of the twelve) or deliberately outside it, and add any that are missing to the exclusion list. Without that, someone building t12 could leave one of these handlers unguarded without knowing it.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "All four named anchors exist, but the evidence shows more graph-reading call sites (resolveClosure at index.ts:1062/:1186/:1209, plus codeReview.run/freshness, repo.resolveForCwd and workflow.review) whose guard status the premise does not cover. Someone has to sort each one as guarded or excluded before the list can be called complete.",
+            "options": [
+              "Enumerate every graph-reading handler in index.ts (including those at :1062, :1186, :1209, :772, :1877) and confirm that each is in the guarded twelve or added to this exclusion list",
+              "Drop the word 'only' and describe the list as the known exclusions, then add a source-scan test asserting that every getGraphStore/resolveClosure caller in index.ts is either guarded or on an explicit allowlist",
+              "Bring codeReview.freshness / codeReview.run / repo.resolveForCwd / workflow.review under the guard if they read graph data that should be index-consistent"
+            ]
+          }
+        },
+        {
+          "claimId": "p29",
+          "ref": "t13",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "search.closure goes through resolveClosure and repo.depends_on / repo.search_cross_repo go through the DEPENDS_ON closure; the cross-repo result set comprises seven requests plus search.query.",
+          "evidence": "The routing part of the premise checks out. src/daemon/index.ts:1060-1062 is the `'search.closure'` handler, and it returns `resolveClosure(db, repoPath)`. The calls at src/daemon/index.ts:1186 and :1209 (`const closurePaths = await resolveClosure(db, repoId);`) sit inside the `'repo.depends_on'` and `'repo.search_cross_repo'` handlers. resolveClosure is defined at src/db/search.ts:65 and documents itself as 'transitive DEPENDS_ON repos from a root repo' (search.ts:6). So filtering at these points does affect the DEPENDS_ON closure.\n\nThe count is wrong. PLAN.md:150 and LLD.md:204 list the cross-repo requests as search.callers, search.callees, search.callers_nhop, entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo. That is eight requests plus search.query, not seven.\n\nThe count error does not change what gets built, because the list of handlers t13 has to filter is spelled out in the plan. There is also a fourth caller of resolveClosure at src/workflow/locate/infer-daemon.ts:65. A filter placed only at the handler level would not cover it, which matches the open design point already noted at PLAN.md:351-353.",
+          "action": "Change 'seven requests plus search.query' to 'eight requests plus search.query', and list all eight so none is missed: search.callers, search.callees, search.callers_nhop, entity.closure, entity.unreachable, search.closure, repo.depends_on, repo.search_cross_repo. Separately, decide whether the under-index filter goes inside resolveClosure (src/db/search.ts:65), which would also cover infer-daemon.ts:65, or stays at the three daemon call sites (index.ts:1062/1186/1209).",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The routing claim checks out against the code: the three daemon handlers call resolveClosure, and resolveClosure follows DEPENDS_ON. Only the count is wrong: the evidence lists eight cross-repo requests, not seven. No artifact edit is included because the exact 'seven requests' wording could not be found verbatim in the artifact file on disk (PLAN.md was not present at the expected path), so a find/replace edit could fail or hit the wrong text.",
+            "options": [
+              "Correct the count to 'eight requests plus search.query' and list all eight handlers explicitly",
+              "Drop the numeric count and refer to the explicit handler list in PLAN.md:150 instead",
+              "As well as fixing the count, move the under-index filtering into resolveClosure (src/db/search.ts:65) so the infer-daemon.ts:65 caller is covered too"
+            ]
+          }
+        },
+        {
+          "claimId": "p30",
+          "ref": "t14",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/tools/builtins/graph/index.ts defines graph_entity (:73), graph_search (:113), graph_callers and graph_callees from one factory (:157-167), and graph_query (:308) — five graph tools.",
+          "evidence": "All four anchors resolve to what the premise names. `read src/daemon/tools/builtins/graph/index.ts:73` → `id: 'graph_entity',`; `:113` → `id: 'graph_search',`; `:157` → `// graph_callers / graph_callees`, the header comment of the shared factory block the premise cites as :157-167; `:308` → `id: 'graph_query',`. So three tool ids are written out as literals, and the callers/callees pair is set up in one commented factory block, which fits the premise's 'from one factory' wording. That makes five tools. The grep /graph_(entity|search|callers|callees|query)/ was cut off at 50 matches, all of them in docs/ (LLD.md:254, PLAN.md:36/159/215, and the S002/S007 test baselines that show graph_query ops). It adds nothing against the premise. PLAN.md:246 records an earlier closed-union finding that found no literal 'graph_callers'/'graph_callees' ids. That fits ids the factory builds rather than writes out as literals, and the comment at :157 confirms the factory exists. PLAN.md:276 also records an earlier pass on this same citation that judged it LOW.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Every cited anchor resolves to the entity the premise names, and the :157 comment confirms the callers/callees factory. No correction is needed. The earlier closed-union finding at PLAN.md:246 (that the tools are 'exactly three') looks like it came from a grep for quoted literals, which cannot see ids the factory builds. Before anyone applies its 'three tools' edit, they should read :157-167 to confirm the ids that block generates."
+          }
+        },
+        {
+          "claimId": "p31",
+          "ref": "t15",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "step.call is registered at src/daemon/index.ts:1902 and analyze.context.buildRun at :1740; src/daemon/steps/host.ts maps insrc_analyze to runAnalyzeOneShot and insrc_analyze_step to handleAnalyzeStep.",
+          "evidence": "All four parts of the claim match the source. The read of src/daemon/index.ts:1902 returns `'step.call': async (params, send, signal) => {`, and the read of src/daemon/index.ts:1740 returns `'analyze.context.buildRun': async (params) => {`. The step table in src/daemon/steps/host.ts maps both analyze tools as stated: line 64 has `insrc_analyze: (args) => runAnalyzeOneShot(args),` (imported at host.ts:23 from './analyze-oneshot.js'), and line 65 has `insrc_analyze_step: (args) => handleAnalyzeStep(args),` (imported at host.ts:24 from './analyze-step/handler.js'). The definitions exist at src/daemon/steps/analyze-oneshot.ts:83 (`export async function runAnalyzeOneShot(`) and src/daemon/steps/analyze-step/handler.ts:56 (`export async function handleAnalyzeStep`). The MCP side calls 'step.call' from src/mcp/forward-step.ts:119, so the method is reachable.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Every anchor points at the claimed entity. No edit needed."
+          }
+        },
+        {
+          "claimId": "p32",
+          "ref": "t16",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Task dependency chain holds: t2←t1, t3←t2, t4←t3, t6←t5, t7←t4,t6, t8←t7, t9←t8, t10←t7, t12←t7,t11, t13←t12, t14←t12,t13, t15←t9,t10, t16←all; t11 precedes the guard (decision q4e48e4a6) and the plan has exactly 16 tasks.",
+          "evidence": "The gathered evidence covers only part of the chain. Nothing in it contradicts the premise. Confirmed: PLAN.md:29 lists `t7` with dependencies `t4`, `t6`, which matches t7←t4,t6. PLAN.md:30 lists `t8` with dependency `t7`, which matches t8←t7. PLAN.md:159 (the graph-tools task) says \"Reuses the guard of t12 and the filtering of t13\", which fits t14←t12,t13. Not covered: the evidence has no task-table rows for t1–t6 or t9–t16. Nothing shows the dependencies of t2, t3, t4, t6, t9, t10, t12, t13, t15 or t16 (←all). Nothing shows where t11 sits relative to the guard, and the evidence never mentions decision q4e48e4a6. The task count of exactly 16 is also not shown. The greps were for ensureRepoQueryable and RepoIndexingError, so they only touched the t7/t8/t14 rows and do not test the ordering claim as a whole.",
+          "action": "Re-run the probe against the PLAN.md task table (the `| n | **`tN`** … | deps |` rows) for every task t1–t16. Confirm each dependency edge, that t16 depends on all of t1–t15, and that the table has exactly 16 rows. Grep PLAN.md and LLD.md for q4e48e4a6 and confirm t11 (the indexer run record) is ordered before the guard tasks t7 and t12. Until that is done, treat the premise as partly verified: the t7, t8 and t14 edges hold, and the rest is unverifiable.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Nothing in the evidence contradicts the premise, and the edges it does show (t7←t4,t6; t8←t7; t14←t12,t13) match. The remaining edges, the t11/q4e48e4a6 ordering and the 16-task count are not in the evidence, so no edit can be derived from it. The fix is to verify further, not to change the artifact.",
+            "options": [
+              "Re-probe the PLAN.md dependency table rows t1–t16 and the q4e48e4a6 decision, then re-judge",
+              "Accept with a note: the dependency edges shown are consistent, and the rest of the chain is to be checked when the plan is approved"
+            ]
+          }
+        },
+        {
+          "claimId": "p33",
+          "ref": "t1",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "The Ollama JS client surfaces transport failures as Error('connect ECONNREFUSED'), 'socket hang up', TypeError('fetch failed'), TypeError('terminated'), or rejections during for-await stream iteration.",
+          "evidence": "None of the evidence comes from the `ollama` client library, so this premise cannot be checked against the library itself.\n- grep /from 'ollama'/ found only the two places that use the client: src/agent/providers/ollama.ts:1 and src/indexer/embedder.ts:1, both `import { Ollama } from 'ollama';`. No library source was searched.\n- grep /ECONNREFUSED|fetch failed|socket hang up/ hit the 50-match cap. Every match shown is in docs/epics/** and comes from this project's own documents and test output:\n  - S005/PLAN.md:45 describes a stand-in client that throws Error('connect ECONNREFUSED'), Error('socket hang up'), TypeError('fetch failed') or TypeError('terminated').\n  - The baseline test output (analyze.txt:199/202/205) feeds those strings into classifyOllamaError.\n  - S006/CR.md:43 says that undici/fetch raise `TypeError: fetch failed` and `TypeError: terminated`.\n- These lines show what the project assumes, not what the library guarantees. S005/PLAN.md:255 records the same UNVERIFIABLE verdict for this premise from an earlier review.\n- This is MED, not HIGH. Task t1 wraps every failure from the request call or from stream iteration as ModelCallFailedError at the call site. That change is still correct even if the library's exact error texts or types differ from the list, so no build-breaking failure follows.",
+          "action": "Reword the premise so it no longer depends on the library's exact error strings. It should say that any rejection from the Ollama client's request call or from async iteration of its response stream counts as a transport failure, wrapped as ModelCallFailedError by call site. Keep the listed texts only as example inputs for the stand-in client in the tests. Alternatively, confirm the texts by reading node_modules/ollama (its fetch/undici path) and cite those lines.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence cannot confirm the library's error texts. The prescribed change, wrapping errors at the call site, does not depend on them, so rewording the premise around call-site wrapping makes it verifiable without changing what gets built. No artifactEdits are given because the evidence does not show the premise's exact wording in the artifact.",
+            "options": [
+              "Reword t1's premise to: 'Every failure the Ollama client raises from the request call or from async iteration of its response stream (such as ECONNREFUSED, socket hang up, fetch failed or terminated) is a transport failure, wrapped as ModelCallFailedError by call site and not matched by message text.' (the same wording as the option at S005/PLAN.md:332)",
+              "Keep the premise but add a citation from node_modules/ollama (its fetch/stream code) and undici showing the listed error types and texts",
+              "Downgrade the premise to a test-fixture assumption: the listed texts are only the inputs the stand-in client throws, and nothing claims that the real library produces exactly these"
+            ]
+          }
+        },
+        {
+          "claimId": "p34",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "Every LLD s5 test-strategy item (32 rows) is covered by a plan task, and every task traces to LLD refs c1-c14; the plan ships with no store migration and no re-index (LLD migration step 5).",
+          "evidence": "The evidence supports part of the premise. On no migration and no re-index: LLD.md:276 says lastRun is optional and that \"No key, kind byte or existing field changes, and no migrati[on]\", and that an older row decodes with lastRun undefined. PLAN.md:175 (t16) says \"restart it (no store migration, no re-index)\". The earlier review row at PLAN.md:277 (s5/t16, LOW) confirms decodeRepoRow at src/db/graph/codec.ts:114 handles older rows. On traceability: the matched tasks cite refs inside c1–c14. t5 cites [[c9]] (PLAN.md:27), t16 cites [[c14]] (PLAN.md:38), and the refs c6 and c9 are defined at PLAN.md:225 and :228. On coverage: the lastRun-related LLD s5 test subjects map to plan tasks in the PLAN coverage table. PLAN.md:188 and :200 map to t7, :196 and :202 to t5, and :210 to t6. Each matches LLD test subjects at LLD.md:425, :428 and :438. The probe was a single grep for /lastRun/, so it covers only the lastRun rows. It cannot confirm the claimed total of 32 LLD s5 test-strategy rows, that every one of them has a covering task, or that every task t1–t16 traces into c1–c14. Rows and tasks not about lastRun (for example t1–t4 and t8–t15) were not in the evidence. The count and the \"every\" claims are therefore UNVERIFIABLE from what was gathered. Nothing in the evidence contradicts them.",
+          "action": "Re-run the check with probes that cover everything, not just lastRun. (1) Count the rows in the LLD s5 test-strategy / acceptance table and the rows in the PLAN.md coverage table that starts around line 186, and confirm both are 32. (2) Check that each LLD test subject appears verbatim in a PLAN coverage row with a non-empty task. (3) Grep the PLAN task table, lines 23–38, for the [[cN]] ref of each task t1–t16, and confirm all fall in c1–c14 and that the refs list, around line 220, defines exactly c1–c14. The no-migration / no-re-index part needs no action.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The no-migration / no-re-index claim and the lastRun slice of the coverage claim are confirmed. The 32-row count and the 'every row / every task' claims were not addressed by the lastRun-only grep. The premise needs either a fuller probe or softer wording, so there is no evidence-derived text edit to make.",
+            "options": [
+              "Re-probe: count the LLD s5 test-strategy rows and the PLAN coverage-table rows, and grep each task's [[cN]] refs, to confirm 32 rows and c1–c14 traceability. Keep the premise if they check out.",
+              "Reword the premise to drop the exact count (for example 'every LLD s5 test-strategy item is covered by a plan task') until the 32 has been counted against the tables.",
+              "Accept with a note: the lastRun rows (t5/t6/t7/t16) are verified covered and traced, and no migration or re-index is confirmed. Full-table coverage still needs a manual check before approval."
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 13,
+        "low": 21
+      },
+      "reviewedAt": "2026-10-13T11:07:09.420Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-13T11:23:56.069Z",
+    "rangeBase": "6960851f9b25c3f2980a54b395c787fad026e3ae",
+    "reviewOverride": {
+      "reason": "Approved by the user in chat on 2026-10-13 (option A) after three daemon review rounds. Every HIGH was checked against source and was a reviewer probe artifact (bare-path anchors read as NOT FOUND; graph_callers/graph_callees are registered in registerGraphTools). All real findings were applied (two final status writes in fullIndex, direct test callers of classifyOllamaError, explicit list of graph readers outside the guard, ModelCallFailedError cause option, required ShaperModelCall). The remaining MEDs are probes truncated at the 50-match cap, each verified by hand against src.",
+      "at": "2026-10-13T11:23:56.066Z"
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building s5 is mostly re-ordering and naming inside the analyzer, plus one new piece of state in the daemon. The analyzer's four context-builder defects are closed first (typed model failures, the call named, two named pipeline causes, cache before scope), then the run's scope refusal moves ahead of the size announcement. The full index gains an in-memory record of its progress and writes its final figures once onto the registry row; one check reads them to refuse, with 'repo-indexing', any analyzer request or graph-reading search request or graph tool about a repository under index, and cross-repository results leave such a repository out. It ships with a daemon update; no store migration and no re-index."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "The local provider raises ModelCallFailedError on every transport failure; the retry helper keeps the type",
+        "summary": "In src/agent/providers/ollama.ts, wrapOllamaError and every call site that rethrows a transport error (complete with its retry, stream creation, an error thrown while a stream is iterated) raise ModelCallFailedError. In src/agent/providers/structured-output.ts the retry helper re-throws a ModelCallFailedError (detail prefixed with its attempt count) when its last attempt threw one, instead of a plain Error. The provider wraps every transport failure the Ollama client raises (from the call and from inside each for-await stream loop) as ModelCallFailedError with the original as cause; it does not filter on a list of message texts. ModelCallFailedError (src/agent/providers/model-call-error.ts:12) takes only a detail today (constructor at :16); t1 adds an optional second argument { cause?: unknown } passed to super, so the original failure is kept.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A stand-in Ollama client that throws Error('connect ECONNREFUSED'), Error('socket hang up'), TypeError('fetch failed'), TypeError('terminated') or rejects mid-iteration makes the provider raise ModelCallFailedError on complete, on stream creation and during stream iteration.",
+          "The retry helper re-throws a ModelCallFailedError when its last attempt threw one; its message carries the helper's attempt prefix.",
+          "A ModelCallFailedError raised by the provider carries the client's original error as its cause."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError"
+          },
+          {
+            "level": "unit",
+            "name": "OllamaProvider: a socket failure during stream iteration is raised as ModelCallFailedError"
+          },
+          {
+            "level": "unit",
+            "name": "retry helper: a ModelCallFailedError on the last attempt is re-thrown as a ModelCallFailedError with the attempt prefix"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "isModelCallFailure recognises a failed call by type or by the start of the provider's own message",
+        "summary": "src/analyze/context/model-failure.ts: true for a ModelCallFailedError, or for a message that BEGINS (after the retry helper's prefix) with a CLI provider's failure wording or 'Model call failed: '. The Ollama and socket texts are no longer matched anywhere inside a message. All seven consumers (classifier, planner, summariser, aggregator, synthesizer, decomposer, context driver) are reached by the same change. Grounding: today the CLI wordings (CLI_FAILURE_TEXTS) are already matched only at the start of the message (src/analyze/context/model-failure.ts:75-77; the list CLI_FAILURE_TEXTS is at :35) and stay as they are; only the Ollama/socket texts, matched anywhere today (:81-83), move to the type and the 'Model call failed: ' start.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A validation message quoting 'ECONNREFUSED', 'Model not found', 'EPIPE' or 'fetch failed' without ' text=' is not a failed call.",
+          "A ModelCallFailedError, bare and behind the retry helper's prefix, is a failed call; a plain 'structured-output: ... attempts: Model call failed: ...' message is too.",
+          "Each consumer family, on a stand-in Ollama socket failure, still reports the model as unavailable, not a shape failure."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is"
+          },
+          {
+            "level": "unit",
+            "name": "isModelCallFailure: a plain 'structured-output: ... attempts: Model call failed: ...' message is a failed call"
+          },
+          {
+            "level": "unit",
+            "name": "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "The tool loop and the final structured emit name the call that failed",
+        "summary": "src/analyze/context/driver.ts: ShaperModelCall gains 'tool loop' and 'final structured emit'; classifyOllamaError(err, call) takes the call from its two callers; ShaperLlmUnavailableError is always built with a call, and its Ollama-specific wording is retired. Grounding: callers at src/analyze/context/driver.ts:793 (tool loop) and :959 (runFinalStructuredEmit); the definition is at :1019. The test seam _classifyOllamaErrorForTest (:1683) is called directly by src/analyze/context/__tests__/driver-unit.test.ts:84-137 and model-failure-callers.test.ts:32; those tests are updated to pass a ShaperModelCall. ShaperLlmUnavailableError (driver.ts:149) already takes an optional call (provider-neutral wording with it, 'Local Ollama unavailable ...' without); t3 makes call required, passes it from classifyOllamaError at :1029, and updates the constructions without a call: src/analyze/context/__tests__/driver-unit.test.ts:206, shaper-errors.test.ts:29, src/analyze/orchestrator/__tests__/orchestrator.test.ts:102 and :135, shaper-error-mapping.test.ts:39, :184 and :187.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama.",
+          "A failure from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'; an Ollama failure's own detail is kept.",
+          "The direct test callers of _classifyOllamaErrorForTest (driver-unit.test.ts, model-failure-callers.test.ts) pass a ShaperModelCall and still pass."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept"
+          },
+          {
+            "level": "unit",
+            "name": "classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "A failed last-indexed read and a failed lookup are named pipeline causes with their own codes",
+        "summary": "PIPELINE_CAUSES gains 'index-state-read-failed' and 'lookup-failed', with ShaperIndexStateReadError and ShaperLookupFailedError and one case each in errorForPipelineCause. tryExplorationPipeline catches the awaited steps.lastIndexedAt and steps.executePlan; runShaper's own freshness reads go through the same injectable reader (PipelineSteps.lastIndexedAt). Both classifyShaperError mappings (src/daemon/analyze-rpc.ts and src/analyze/orchestrator/driver.ts) map them to their codes; AnalyzeRpcErrorCode and RunErrorCode gain the two codes. Grounding: runShaper reads the freshness watermark directly through resolveRepoLastIndexedAt at src/analyze/context/driver.ts:357 (outside the injectable reader); the pipeline reads it through steps.lastIndexedAt at :1471 and awaits executePlan bare at :1473. t4 routes the :357 read through PipelineSteps.lastIndexedAt (REAL_PIPELINE_STEPS declared at :1582; its lastIndexedAt member binds resolveRepoLastIndexedAt at :1587). The two new causes are added to the expected map of src/analyze/context/__tests__/pipeline-outcome.test.ts (asserted at :418)..",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed') at runShaper's freshness read and inside the pipeline.",
+          "An executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); every PIPELINE_CAUSES member has exactly one case in errorForPipelineCause.",
+          "runAnalyze ends with 'index-state-read-failed' / 'lookup-failed' for these causes, never 'internal-error'."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline"
+          },
+          {
+            "level": "unit",
+            "name": "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member"
+          },
+          {
+            "level": "unit",
+            "name": "classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings"
+          },
+          {
+            "level": "unit",
+            "name": "runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "The registry row carries the last full index's figures (lastRun)",
+        "summary": "RepoLastRun type and optional lastRun on RepoRow (src/db/graph/codec.ts) and RegisteredRepo (src/shared/types.ts); encodeRepoRow writes it, decodeRepoRow copies it explicitly; updateRepoStatus (src/db/repos.ts) takes an optional lastRun argument and keeps the stored one when omitted; rowToRepo maps it. Grounding: RepoRow at src/db/graph/codec.ts:89, encodeRepoRow :105 and decodeRepoRow :114-127 (a const arrow that builds the row field by field, so lastRun must be copied explicitly); updateRepoStatus src/db/repos.ts:243, rowToRepo :340; RegisteredRepo src/shared/types.ts:678. decodeRepoRow copies lastRun only when present (...(raw.lastRun !== undefined ? { lastRun: raw.lastRun } : {})), so the strict round-trip tests in src/db/graph/__tests__/codec.test.ts (:40, :50) still hold for a row without it.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A row with lastRun round-trips through the codec; an older row decodes with lastRun undefined.",
+          "A status write without lastRun keeps the stored lastRun; a write with it replaces it; rowToRepo exposes it."
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined"
+          },
+          {
+            "level": "unit",
+            "name": "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "The full index keeps an in-process running record and writes lastRun once at its end",
+        "summary": "A new leaf module src/indexer/run-record.ts holds the daemon's in-process index-run record (IndexRunView { repoPath, startedAt, filesSelected?, filesDone }) and exports open / update / close / read-by-path; it imports nothing beyond types, so the analyzer's invariants.ts can read it without importing the indexer. Indexer.fullIndex (src/indexer/index.ts) opens the record when it sets 'indexing', sets filesSelected once the walk has counted, bumps filesDone per finished file in memory, and at its end writes lastRun in whichever of its two final status writes runs: outcome 'completed' with the 'ready' write (src/indexer/index.ts:726) and outcome 'failed' with the error with the 'error' write (:735); the record is closed on both paths (a finally block). No store write per file. The start-up re-queue is unchanged. Grounding: repo.reindex (src/daemon/index.ts:806) only enqueues a full index; status 'indexing' is set when that queued full index starts (src/indexer/index.ts:596). The start-up re-queue predicate is at src/indexer/index.ts:289.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "During a real full index of a small temporary repository held mid-walk, the record shows began and files done of selected.",
+          "At the end the row's lastRun is written once with outcome 'completed'; a failure forced mid-walk writes outcome 'failed' with the error and how far it got; the record is closed either way.",
+          "The number of registry writes during the run does not grow with the number of files (counted).",
+          "After a repo.reindex of a 'ready' repository, once the queued full index has started, the status is 'indexing' and the running record carries the new run's figures.",
+          "The start-up re-queue's selection of repositories left 'indexing' without lastIndexed is unchanged (its existing test stays green, or one is added that pins it)."
+        ],
+        "derivedFrom": [
+          "c6",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)"
+          },
+          {
+            "level": "integration",
+            "name": "reindex of a ready repository: status indexing and the running record carries the new run's figures"
+          },
+          {
+            "level": "unit",
+            "name": "start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "RepoIndexingError and ensureRepoQueryable; ensureNonEmptyClosure and the scope mappings refuse a repository under index",
+        "summary": "src/analyze/context/invariants.ts: RepoIndexingError (code 'repo-indexing', data: repoPath, status, run figures) and ensureRepoQueryable(scope, deps?) reading the registry (longest registered prefix) and the running record (default: src/indexer/run-record.ts): 'indexing' with figures, or figures not known with no record; 'error' with lastRun's figures, or unknown figures and errorMsg for a row without lastRun. It skips (logs, no throw) when the registry read fails or the registry is pristine, and does not check a connection scope. ensureNonEmptyClosure calls it first. scopeErrorMapping maps it; ScopeErrorCode/TaskRefusalCode, RunErrorCode and AnalyzeRpcErrorCode gain 'repo-indexing'; both classifyShaperError mappings carry the data; the walker records a refused task through taskRefusalMapping. Grounding: the existing longest-prefix lookup of ensureNonEmptyClosure (src/analyze/context/invariants.ts:185-217) is reused by ensureRepoQueryable, not duplicated; ScopeErrorCode :100, scopeErrorMapping :118, TaskRefusalCode :129 (derived from ScopeErrorCode, so it gains the code), taskRefusalMapping :137; the walker calls it at src/analyze/executor/walker.ts:265.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t4",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; with no record it says the figures are not known; 'error' with a failed lastRun throws with its figures and error; an 'error' row without lastRun throws with figures unknown and its errorMsg.",
+          "'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message; a registry read that throws and a pristine registry skip the check with no refusal and no raw error.",
+          "A docs, data and infra scope on a repository under index is refused by ensureRepoQueryable; a generic intent and a connection scope are not checked.",
+          "classifyShaperError maps RepoIndexingError to 'repo-indexing' with its data in both mappings; the plan walk records a task on a repository under index with code 'repo-indexing'."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message"
+          },
+          {
+            "level": "unit",
+            "name": "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg"
+          },
+          {
+            "level": "unit",
+            "name": "ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)"
+          },
+          {
+            "level": "unit",
+            "name": "plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping"
+          },
+          {
+            "level": "unit",
+            "name": "classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "runShaper looks up the cache before resolving the scope; bundles record their repository",
+        "summary": "BundleMeta.repoPath: string | null (src/analyze/context/types.ts), admitted by the bundle schema's meta (src/analyze/context/schema.ts) as optional ['string','null'], written on every bundle. runShaper (src/analyze/context/driver.ts) looks up the cache first: a hit with a string repoPath runs ensureRepoQueryable and the freshness read for that repository only; null is served as today; a missing key is a miss. On a miss the scope is resolved once, ensureRepoQueryable runs for every source, then the pairing check, the code-only empty-closure check and the pipeline as today. ShapeOpts.scopeChecked (passed by the factory in src/analyze/context/index.ts into RunShaperArgs.opts) skips the repeated checks; it is not part of the cache key. Grounding: the factory in src/analyze/context/index.ts passes the caller's ShapeOpts whole as runShaper's opts (:93-100, :113-120, :138-145), so scopeChecked reaches runShaper without a new pass-through. Grounding of today's order: src/analyze/context/driver.ts builds the cache key at :336, resolves the scope at :350 (prepareScope), reads freshness from the resolved scope at :357 and looks up the cache at :360. After the change a hit takes its freshness path from the bundle's recorded repoPath, not from a resolved scope.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "A cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a connection-scope hit while another repository's connections file is broken returns the bundle.",
+          "A hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and not returned; a bundle without repoPath is a miss; a repoPath null bundle is served without either check.",
+          "A hit whose recorded repository has a newer last-indexed time than the bundle is a miss, and the request is built normally.",
+          "A freshly built bundle with repoPath (string and null) passes validateBundleWithErrors on the tool-loop and pipeline paths; an older bundle still validates; scopeChecked does not change the cache key."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle"
+          },
+          {
+            "level": "unit",
+            "name": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss"
+          },
+          {
+            "level": "unit",
+            "name": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built"
+          },
+          {
+            "level": "unit",
+            "name": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates"
+          },
+          {
+            "level": "unit",
+            "name": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "runAnalyze refuses a scope before it measures or announces a size",
+        "summary": "src/analyze/orchestrator/driver.ts: after classification (classifier and hinted-target branches) and before measureRequestScope and the 'classified' event, the run makes the moved resolveTaskScope(intent.scopeRef, intent.target, 'the run') check (code and docs families) and ensureRepoQueryable for every non-generic source; the later check in the plan stage is removed. A refusal ends the run failed at classify with today's code and message through scopeErrorMapping and the orchestrator's classifyShaperError. The run passes scopeChecked to shaper.buildRunBundle.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "A code request on a path no registered repository contains emits no 'classified' event and no measure substep and ends failed at classify with the same code and message as today's refusal (recorded from today's code before the change); the same on the hinted-target branch and for a docs request.",
+          "A request that passes the check still emits 'classified' with its measure as before.",
+          "A request about a repository under index ends with code 'repo-indexing' (not 'internal-error'); scopeChecked reaches runShaper through ShapeOpts."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)"
+          },
+          {
+            "level": "unit",
+            "name": "run order: the same on the hinted-target branch"
+          },
+          {
+            "level": "unit",
+            "name": "run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message"
+          },
+          {
+            "level": "unit",
+            "name": "run order: a request that passes the check still emits 'classified' with its measure, as before"
+          },
+          {
+            "level": "unit",
+            "name": "runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')"
+          },
+          {
+            "level": "unit",
+            "name": "runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "analyze.classify refuses a scope before returning a size",
+        "summary": "src/daemon/analyze-rpc.ts: after the classifier names the scope and before measureRequestScope, the request runs resolveTaskScope for a non-generic target and ensureRepoQueryable for every non-generic source; a refused scope is answered with its code and message through scopeErrorMapping and no size. Grounding: src/daemon/analyze-rpc.ts:347-348 calls the classifier and then measureRequestScope with no scope check between them.",
+        "size": "S",
+        "order": 10,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "analyze.classify on an unindexed scope answers 'scope-not-indexed' with today's message and returns no measured size.",
+          "On a repository under index it answers 'repo-indexing'."
+        ],
+        "derivedFrom": [
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Contract test pinning the parameters of each guarded search request",
+        "summary": "Before the guard is added (decision q4e48e4a6), a test that calls each graph-reading request of src/daemon/index.ts (search.callers, search.callees, search.callers_nhop, search.by_file, search.closure, entity.summary, entity.closure, entity.unreachable, repo.depends_on, repo.search_cross_repo, locate.inferParents, search.query) with its existing parameters against a temporary store and asserts each is accepted and answers, so a change to a handler's params fails the test.",
+        "size": "S",
+        "order": 11,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The test passes on the code before the guard and names each request it pins.",
+          "Renaming or removing a parameter a handler reads (a mutation) makes it fail."
+        ],
+        "derivedFrom": [
+          "c13",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "search request contract: each guarded search request accepts its existing params and answers"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "The daemon's search requests refuse a request that names a repository under index",
+        "summary": "src/daemon/index.ts: one guard helper resolves the repositories a request names (by repoPath, repoId, filePath, entityId's stored root path, or every one of rootIds) and, through ensureRepoQueryable's rule and wording, refuses with an error string starting 'repo-indexing: ' when any of them is under index. Applied to search.callers, search.callees, search.callers_nhop, search.by_file, search.closure, entity.summary, entity.closure, entity.unreachable, repo.depends_on, repo.search_cross_repo and locate.inferParents. Parameters and results are unchanged otherwise. Grounding (src/daemon/index.ts): search.closure :1060 {repoPath}; search.callers :1065, search.callees :1070, entity.summary :1102 and search.callers_nhop :1221 {entityId}; locate.inferParents :1081 {repoPath}; entity.closure :1107 and entity.unreachable :1123 {rootIds}; repo.depends_on :1184 and repo.search_cross_repo :1203 {repoId}; search.by_file :1216 {filePath}; search.query :1048 names none. Other daemon requests that read the graph are deliberately outside this guard, as the LLD scopes it to the search requests: repo.stats (src/daemon/index.ts:588, the status and counts read that must answer during an index), codeReview.grounding (:762, the code review's grounding), repo.entitiesForSourceRoots (src/daemon/source-roots-rpc.ts:21) and the analyze.* requests together with the analyze.run.start (:1870) and workflow.run (:1878) stream requests, which reach the graph only through the analyzer, whose own check refuses (t7-t10). The workflow-internal locate path (src/workflow/locate/infer-daemon.ts:65) calls resolveClosure itself and is likewise unchanged.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t7",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "Each named request about a repository being indexed answers 'repo-indexing: ...' with the figures and no result; about another, ready repository it answers as before (the t11 contract test stays green).",
+          "entity.closure / entity.unreachable with any root in a repository under index are refused.",
+          "A registry read that throws skips the guard and the request is answered as today."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before"
+          },
+          {
+            "level": "integration",
+            "name": "entity.closure / entity.unreachable with a root in a repository under index are refused"
+          },
+          {
+            "level": "integration",
+            "name": "search guard: a registry read that throws skips the guard and the request is answered as today"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Cross-repository results leave out a repository under index; search.query skips it",
+        "summary": "src/daemon/index.ts: results that follow the graph or a closure across repositories (search.callers, search.callees, search.callers_nhop, entity.closure, entity.unreachable, search.closure through resolveClosure, repo.depends_on and repo.search_cross_repo through the DEPENDS_ON closure) leave out the entities or repositories under index; search.query leaves repositories under index out of the set it searches and answers from the others, without refusing.",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "search.callers for an entity in a ready repository whose callers include entities of a repository being indexed returns the callers from the ready repository only.",
+          "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out.",
+          "search.query while one repository is being indexed returns rows from the other repositories only."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "search.callers across repositories leaves out the entities of a repository under index"
+          },
+          {
+            "level": "integration",
+            "name": "search.query while one repository is being indexed returns rows from the other repositories only"
+          },
+          {
+            "level": "integration",
+            "name": "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "The daemon's built-in graph tools apply the same guard and filtering",
+        "summary": "src/daemon/tools/builtins/graph/index.ts: graph_entity, graph_callers, graph_callees and graph_query fail with the RepoIndexingError message ('repo-indexing' first) for a named entity (or any root) under index, and leave such entities out of traversal and closure results; graph_search skips repositories under index as search.query does. Reuses the guard of t12 and the filtering of t13. Grounding: src/daemon/tools/builtins/graph/index.ts defines graph_entity (:73), graph_search (:113), graph_callers and graph_callees (one factory, :157-167) and graph_query (:308).",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t12",
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "graph_entity, graph_callers, graph_callees and graph_query about a repository under index fail with 'repo-indexing'.",
+          "graph_search leaves a repository under index out; graph_query from a ready repository leaves out the entities of a repository under index."
+        ],
+        "derivedFrom": [
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out"
+          },
+          {
+            "level": "integration",
+            "name": "graph_query from a ready repository whose closure reaches a repository under index leaves that repository's entities out"
+          }
+        ]
+      },
+      {
+        "id": "t15",
+        "title": "The step tools pass 'repo-indexing' on; end-to-end refusal through the daemon",
+        "summary": "The analyze step and the one-shot analyze (src/daemon/steps) map RepoIndexingError to an error reply with code 'repo-indexing' and the figures; the workflow steps, triage and code review pass that reply on unchanged. An integration test drives analyze.context.buildRun and the step tools through step.call on a repository being indexed. Grounding: step.call is registered at src/daemon/index.ts:1902 and analyze.context.buildRun at :1740; the step table src/daemon/steps/host.ts maps insrc_analyze (runAnalyzeOneShot) and insrc_analyze_step (handleAnalyzeStep). The pass-through claim is proven by the t15 integration test, not assumed.",
+        "size": "S",
+        "order": 15,
+        "dependsOn": [
+          "t9",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "analyze.context.buildRun and insrc_analyze / insrc_analyze_step through step.call on a repository being indexed return code 'repo-indexing' with the figures.",
+          "A workflow step that reaches the analyzer passes the reply on unchanged."
+        ],
+        "derivedFrom": [
+          "c8",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "analyze through the daemon (analyze.context.buildRun and the step tools via step.call) on a repository being indexed returns code 'repo-indexing' with the figures; the workflow step that reaches it passes the reply on unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t16",
+        "title": "Ship and smoke check",
+        "summary": "Push main, update the installed daemon with the update service function and restart it (no store migration, no re-index), then check against the installed daemon: an analyze on an unindexed path is refused before any size is announced; a request during a reindex of a registered repository is refused with 'repo-indexing' and its figures; after the reindex the row shows lastRun.",
+        "size": "S",
+        "order": 16,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t11",
+          "t12",
+          "t13",
+          "t14",
+          "t15"
+        ],
+        "acceptanceChecks": [
+          "The installed daemon runs the shipped commit and starts without a migration or re-index.",
+          "The three smoke checks are recorded with what was seen in the Story's smoke notes."
+        ],
+        "derivedFrom": [
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "installed daemon: an analyze on an unindexed path is refused before any size is announced"
+          },
+          {
+            "level": "smoke",
+            "name": "installed daemon: a request during a reindex is refused with 'repo-indexing' and its figures; after it the row shows lastRun"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "run order: the same on the hinted-target branch",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "run order: a request that passes the check still emits 'classified' with its measure, as before",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "classifyShaperError: the three new errors map to 'repo-indexing' (with data), 'index-state-read-failed' and 'lookup-failed'",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error'); index-state-read-failed and lookup-failed likewise",
+        "coveredByTaskIds": [
+          "t9",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "isModelCallFailure: a ModelCallFailedError thrown on the last attempt of the retry helper is still a ModelCallFailedError (and a plain 'structured-output: ... attempts: Model call failed: ...' message is recognised); classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "runShaper: a connection-scope bundle (repoPath null) is served from cache; runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key",
+        "coveredByTaskIds": [
+          "t8",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "OllamaProvider: a socket failure during stream iteration is raised as ModelCallFailedError",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "search.query while one repository is being indexed returns rows from the other repositories only",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "analyze through the daemon (analyze.context.buildRun and the step tools via step.call) on a repository being indexed returns code 'repo-indexing' with the figures; the workflow step that reaches it passes the reply on unchanged",
+        "coveredByTaskIds": [
+          "t15"
+        ]
+      },
+      {
+        "lldStrategyItem": "entity.closure / entity.unreachable with a root in a repository under index are refused; search.callers across repositories leaves out the entities of a repository under index",
+        "coveredByTaskIds": [
+          "t12",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "entity.closure, entity.unreachable, search.closure, repo.depends_on, repo.search_cross_repo and graph_query from a ready repository whose closure reaches a repository under index leave that repository's entities out",
+        "coveredByTaskIds": [
+          "t13",
+          "t14"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 api: runAnalyze (scope refusal before measureRequestScope and the 'classified' event; scopeChecked through ShapeOpts)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 api: ensureNonEmptyClosure, ensureRepoQueryable and RepoIndexingError (code 'repo-indexing'); scopeErrorMapping and taskRefusalMapping"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 api: runShaper (cache before scope; BundleMeta.repoPath check on a hit; ShaperIndexStateReadError and ShaperLookupFailedError as pipeline causes)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 api: classifyOllamaError(err, call) and dataModelChanges ShaperModelCall ('tool loop', 'final structured emit')"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 api: isModelCallFailure (typed ModelCallFailedError from the local provider and the retry helper; start-of-message matching; seven consumers)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 api: fullIndex (in-process running record; lastRun written once at the end) and dataModelChanges IndexRunView"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 api: the daemon search requests (search.callers / callees / callers_nhop / by_file / closure, entity.summary / closure / unreachable, repo.depends_on / search_cross_repo, locate.inferParents) guard and filtering; search.query skip"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 api: classifyShaperError (analyze-rpc.ts and orchestrator/driver.ts) and dataModelChanges ScopeErrorCode / TaskRefusalCode, RunErrorCode, AnalyzeRpcErrorCode; the step tools pass 'repo-indexing' on"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 api: updateRepoStatus (optional lastRun) and dataModelChanges RepoRow / RegisteredRepo lastRun (decodeRepoRow copies it)"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 api: analyze.classify (scope checks before measureRequestScope; no size for a refused scope)"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 api: graph_entity / graph_search / graph_callers / graph_callees / graph_query (src/daemon/tools/builtins/graph/index.ts) guard and filtering"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 dataModelChanges: BundleMeta.repoPath (string | null) and the bundle schema's meta in src/analyze/context/schema.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "stakeholder",
+      "ref": "Plan question q4e48e4a6 resolved 2026-10-13: pin the guarded search requests' params with a contract test (commit fcc1274f)",
+      "quotedText": "keep 'as today' in the LLD and add a plan task with a test asserting each guarded search request still accepts its existing params, so a change to a handler's params fails the test."
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 migration step 5: ship with the daemon update; no store migration and no re-index"
+    }
+  ]
+}

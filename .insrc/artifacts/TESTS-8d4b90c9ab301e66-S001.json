@@ -4,7 +4,7 @@
     "epicHash": "8d4b90c9ab301e66",
     "storyId": "S001",
     "createdAt": "2026-10-13T12:12:45.679Z",
-    "updatedAt": "2026-10-13T12:37:48.576Z",
+    "updatedAt": "2026-10-13T12:43:36.906Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T11:21:58.998Z",
     "epicSlug": "rework-document-review-pane-fixed-decision"
@@ -1578,6 +1578,156 @@
               },
               {
                 "title": "turn lifecycle: busy is false when a turn's error is reported",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "347bb43b",
+        "ranAt": "2026-10-13T12:43:36.906Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "docs review client: decide calls 'workflow.reviewDecision' once with the given path, without the id map, and throws on the error arm; content forwards the new view fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts",
+                "title": "docs review client: decide calls 'workflow.reviewDecision' once with the given path, without the id map, and throws on the error arm; content forwards the new view fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+                "title": "plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 349,
+            "titles": [
+              {
+                "title": "pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status)",
+                "result": "pass"
+              },
+              {
+                "title": "content(id) resolves the retained mdPath and maps renderedMarkdown/openQuestions/blocked",
+                "result": "pass"
+              },
+              {
+                "title": "content() maps approvable:false -> blocked:true",
+                "result": "pass"
+              },
+              {
+                "title": "docs review client: decide calls 'workflow.reviewDecision' once with the given path, without the id map, and throws on the error arm; content forwards the new view fields",
+                "result": "pass"
+              },
+              {
+                "title": "MED-2: an empty mdPath (unresolvable sentinel) is NOT cached, so content falls back to the raw id (never send \"\")",
+                "result": "pass"
+              },
+              {
+                "title": "every method throws on the daemon { error } arm (never a silent empty result)",
+                "result": "pass"
+              },
+              {
+                "title": "t2: content() round-trips a view carrying all four structured records, each one unmodified",
+                "result": "pass"
+              },
+              {
+                "title": "t2: content() on a view carrying none of the four yields all four ABSENT",
+                "result": "pass"
+              },
+              {
+                "title": "t2: content() still throws on the daemon { error } arm — unavailable stays distinguishable from empty",
+                "result": "pass"
+              },
+              {
+                "title": "t2: source-scan — docs-review-client calls exactly its three daemon methods",
+                "result": "pass"
+              },
+              {
+                "title": "t2/s3: content() carries sequenceDefinition through by REFERENCE, unmodified",
+                "result": "pass"
+              },
+              {
+                "title": "t2/s3: a view carrying sequenceDefinition but no other record leaves the other four ABSENT",
+                "result": "pass"
+              },
+              {
+                "title": "t2/s3: DocsContent indexes sequenceDefinition off ArtifactReviewView rather than restating it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 344,
+            "titles": [
+              {
+                "title": "WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "a { type: 'cancel-turn' } WebviewToHost message typechecks and carries no other field",
+                "result": "pass"
+              },
+              {
+                "title": "every existing WebviewToHost message still constructs with its original shape (no drift, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S004: WEBVIEW_TO_HOST_TYPES reserves 'permission-decision' + 'set-permission-mode' (additive, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): WEBVIEW_TO_HOST_TYPES reserves 'selection-decision' (additive, exhaustiveness passes, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision message typechecks with requestId + selected ids",
+                "result": "pass"
+              },
+              {
+                "title": "S004: permission-decision typechecks with optional accepted-but-inert scope; set-permission-mode carries a PermissionMode",
+                "result": "pass"
+              },
+              {
+                "title": "WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', alongside every prior kind",
+                "result": "pass"
+              },
+              {
+                "title": "protocol: the four new webview messages and attachments-pending are in the type lists, and user-row carries attachments",
+                "result": "pass"
+              },
+              {
+                "title": "protocol: transcript-row is a host message and edit-prompt is not",
+                "result": "pass"
+              },
+              {
+                "title": "plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list",
                 "result": "pass"
               }
             ],

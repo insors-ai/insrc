@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -222,3 +222,26 @@ Run at 2026-10-13T12:37:48.576Z on commit `a509e0a3`. Tests check: **passed**. 8
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 161 | 4.4 s |  |
 | `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` | 0 | 31 | 1.7 s |  |
+
+## t7
+
+Run at 2026-10-13T12:43:36.906Z on commit `347bb43b`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: docs review client: decide calls 'workflow.reviewDecision' once with the given path, without the id map, and throws on the error arm; content forwards the new view fields**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review client: decide calls 'workflow.reviewDecision' once with the given path, without the id map, and throws on the error arm; content forwards the new view fields | `vscode-plugin/src/chat/__tests__/docs-review-client.test.ts` |
+
+**unit: plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list | `vscode-plugin/src/chat/__tests__/protocol.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/docs-review-client.test.ts` | 0 | 13 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/protocol.test.ts` | 0 | 11 | 0.3 s |  |

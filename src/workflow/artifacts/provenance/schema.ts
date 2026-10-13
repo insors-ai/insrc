@@ -32,6 +32,19 @@ export const FEEDBACK_PROPERTY_SCHEMA: Record<string, unknown> = {
 			timestamp: { type: 'string' },
 			comment:   { type: 'string' },
 			kind:      { enum: ['feedback', 'suggestion', 'comment'] },
+			anchor: {
+				type: 'object',
+				required: ['quote'],
+				additionalProperties: false,
+				properties: {
+					quote:       { type: 'string' },
+					sectionSlug: { type: 'string' },
+					prefix:      { type: 'string' },
+					suffix:      { type: 'string' },
+				},
+			},
+			decision:  { enum: ['approve', 'reject', 'feedback'] },
+			batchId:   { type: 'string' },
 			target: {
 				type: 'object',
 				required: ['file'],

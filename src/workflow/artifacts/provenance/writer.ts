@@ -53,6 +53,20 @@ export interface AppendFeedbackRequest {
 	readonly entry: Omit<FeedbackEntry, 'id' | 'timestamp'> & { readonly timestamp?: string | undefined };
 }
 
+/** One entry of a batch: what the caller supplies; the id and the timestamp are minted. */
+export type FeedbackEntryInput = Omit<FeedbackEntry, 'id' | 'timestamp'>;
+
+export interface AppendFeedbackBatchRequest {
+	readonly artifactPath: string;
+	readonly entries: readonly FeedbackEntryInput[];
+}
+
+export interface AppendFeedbackBatchResult {
+	readonly artifactPath: string;
+	readonly entryIds:     string[];
+	readonly total:        number;
+}
+
 export interface AppendFeedbackResult {
 	readonly artifactPath: string;
 	readonly entryId:      string;
@@ -118,10 +132,7 @@ export function appendFeedback(req: AppendFeedbackRequest): AppendFeedbackResult
 	const abs = resolve(req.artifactPath);
 	assertUnderArtifactRoot(abs);
 
-	const author  = typeof req.entry.author === 'string' ? req.entry.author.trim() : '';
-	const comment = typeof req.entry.comment === 'string' ? req.entry.comment.trim() : '';
-	if (author.length === 0) throw new ArtifactFeedbackError('feedback entry requires a non-empty author');
-	if (comment.length === 0) throw new ArtifactFeedbackError('feedback entry requires a non-empty comment');
+	const checked = checkedEntry(req.entry);
 
 	const artifact = readArtifact(abs);
 	const existing = Array.isArray(artifact.body.feedback) ? artifact.body.feedback : [];
@@ -131,14 +142,7 @@ export function appendFeedback(req: AppendFeedbackRequest): AppendFeedbackResult
 		? req.entry.timestamp
 		: new Date().toISOString();
 
-	const entry: FeedbackEntry = {
-		id:      entryId,
-		author,
-		timestamp,
-		target:  req.entry.target,
-		comment,
-		...(req.entry.kind !== undefined ? { kind: req.entry.kind } : {}),
-	};
+	const entry = storedEntry(checked, entryId, timestamp);
 
 	const next: ArtifactShape = {
 		...artifact,
@@ -147,4 +151,73 @@ export function appendFeedback(req: AppendFeedbackRequest): AppendFeedbackResult
 	writeArtifactJson(abs, next);
 	log.info({ artifactPath: abs, entryId, total: existing.length + 1 }, 'appended feedback entry');
 	return { artifactPath: abs, entryId, total: existing.length + 1 };
+}
+
+/** The author and comment of an entry, trimmed; throws when either is blank. */
+function checkedEntry(entry: FeedbackEntryInput): FeedbackEntryInput {
+	const author  = typeof entry.author === 'string' ? entry.author.trim() : '';
+	const comment = typeof entry.comment === 'string' ? entry.comment.trim() : '';
+	if (author.length === 0) throw new ArtifactFeedbackError('feedback entry requires a non-empty author');
+	if (comment.length === 0) throw new ArtifactFeedbackError('feedback entry requires a non-empty comment');
+	return { ...entry, author, comment };
+}
+
+/** The entry as it is stored: a fixed set of keys, the optional ones only when present.
+ *  Both writers build their entries here, so they store the same shape. */
+function storedEntry(entry: FeedbackEntryInput, id: string, timestamp: string): FeedbackEntry {
+	return {
+		id,
+		author:  entry.author,
+		timestamp,
+		target:  entry.target,
+		comment: entry.comment,
+		...(entry.kind !== undefined ? { kind: entry.kind } : {}),
+		...(entry.anchor !== undefined ? { anchor: entry.anchor } : {}),
+		...(entry.decision !== undefined ? { decision: entry.decision } : {}),
+		...(entry.batchId !== undefined ? { batchId: entry.batchId } : {}),
+	};
+}
+
+/**
+ * Append the entries of one review decision, in order, in ONE write (Story
+ * E202610138d4b90c9:S001). Every entry is validated before the artifact is read, so
+ * either all are written or none; they share one timestamp. Like appendFeedback it
+ * never edits or removes an existing entry and touches no other key.
+ */
+export function appendFeedbackBatch(req: AppendFeedbackBatchRequest): AppendFeedbackBatchResult {
+	const abs = resolve(req.artifactPath);
+	assertUnderArtifactRoot(abs);
+	if (!Array.isArray(req.entries) || req.entries.length === 0) {
+		throw new ArtifactFeedbackError('feedback batch requires at least one entry');
+	}
+	const checked = req.entries.map(checkedEntry);
+
+	const artifact = readArtifact(abs);
+	const existing = Array.isArray(artifact.body.feedback) ? artifact.body.feedback : [];
+	const timestamp = new Date().toISOString();
+	const added = checked.map(e => storedEntry(e, randomUUID().slice(0, 8), timestamp));
+
+	writeArtifactJson(abs, { ...artifact, body: { ...artifact.body, feedback: [...existing, ...added] } });
+	const total = existing.length + added.length;
+	log.info({ artifactPath: abs, added: added.length, total }, 'appended feedback batch');
+	return { artifactPath: abs, entryIds: added.map(e => e.id), total };
+}
+
+/**
+ * The feedback list stored in the artifact JSON at `jsonPath`, or `[]` when the file
+ * is missing, unreadable, malformed or carries none. Read-only: used to carry a
+ * document's comments into its re-authored version.
+ */
+export function priorFeedback(jsonPath: string): FeedbackEntry[] {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(readFileSync(resolve(jsonPath), 'utf8'));
+	} catch (err) {
+		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+			log.warn({ jsonPath, err: (err as Error).message }, 'prior feedback unreadable; none is carried');
+		}
+		return [];
+	}
+	const feedback = (parsed as { body?: { feedback?: unknown } } | null)?.body?.feedback;
+	return Array.isArray(feedback) ? (feedback as FeedbackEntry[]) : [];
 }

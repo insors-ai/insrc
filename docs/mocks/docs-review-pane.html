@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mock: document review pane</title>
+<!--
+  Mock of the reworked document viewer / approver pane (VS Code webview).
+  Static and self-contained: no network, no build. In VS Code the --vscode-* variables come from
+  the active theme; here two sets (dark, light) stand in for them, switched by the toggle.
+
+  What it shows:
+    - the document rendered by its type (markdown here; the "HTML" tab shows an HTML document);
+    - a fixed bar at the bottom: comment box, Approve / Reject / Send feedback;
+    - inline comments: select text in the document, press "Comment", type, "Add";
+      new comments are drafts until one of the three buttons sends them all;
+    - earlier comments: a marker in the margin, click to open; oldest first, with author and time.
+-->
+<style>
+  body.dark {
+    --vscode-editor-background:#1f1f1f; --vscode-editor-foreground:#cccccc; --vscode-foreground:#cccccc;
+    --vscode-descriptionForeground:#9d9d9d; --vscode-panel-border:#2b2b2b; --vscode-sideBar-background:#181818;
+    --vscode-textLink-foreground:#4daafc; --vscode-textCodeBlock-background:#2b2b2b; --vscode-textBlockQuote-border:#616161;
+    --vscode-button-background:#0078d4; --vscode-button-foreground:#ffffff; --vscode-button-hoverBackground:#026ec1;
+    --vscode-button-secondaryBackground:#313131; --vscode-button-secondaryForeground:#cccccc; --vscode-button-secondaryHoverBackground:#3c3c3c;
+    --vscode-input-background:#313131; --vscode-input-foreground:#cccccc; --vscode-input-border:#3c3c3c; --vscode-focusBorder:#0078d4;
+    --vscode-badge-background:#616161; --vscode-badge-foreground:#f8f8f8; --vscode-errorForeground:#f85149;
+    --vscode-editor-findMatchHighlightBackground:rgba(234,92,0,.33); --vscode-editor-selectionBackground:#264f78;
+    --vscode-editorWidget-background:#202020; --vscode-editorWidget-border:#454545; --vscode-widget-shadow:rgba(0,0,0,.36);
+    --vscode-editorGutter-commentRangeForeground:#37373d; --vscode-charts-yellow:#cca700; --vscode-charts-green:#89d185;
+    --vscode-list-hoverBackground:#2a2d2e; --vscode-list-activeSelectionBackground:#04395e;
+  }
+  body.light {
+    --vscode-editor-background:#ffffff; --vscode-editor-foreground:#3b3b3b; --vscode-foreground:#3b3b3b;
+    --vscode-descriptionForeground:#6b6b6b; --vscode-panel-border:#e5e5e5; --vscode-sideBar-background:#f8f8f8;
+    --vscode-textLink-foreground:#005fb8; --vscode-textCodeBlock-background:#f2f2f2; --vscode-textBlockQuote-border:#c8c8c8;
+    --vscode-button-background:#005fb8; --vscode-button-foreground:#ffffff; --vscode-button-hoverBackground:#0258a8;
+    --vscode-button-secondaryBackground:#e5e5e5; --vscode-button-secondaryForeground:#3b3b3b; --vscode-button-secondaryHoverBackground:#cccccc;
+    --vscode-input-background:#ffffff; --vscode-input-foreground:#3b3b3b; --vscode-input-border:#cecece; --vscode-focusBorder:#005fb8;
+    --vscode-badge-background:#cccccc; --vscode-badge-foreground:#3b3b3b; --vscode-errorForeground:#c72e0f;
+    --vscode-editor-findMatchHighlightBackground:rgba(234,92,0,.25); --vscode-editor-selectionBackground:#add6ff;
+    --vscode-editorWidget-background:#f8f8f8; --vscode-editorWidget-border:#c8c8c8; --vscode-widget-shadow:rgba(0,0,0,.16);
+    --vscode-editorGutter-commentRangeForeground:#d5d8e9; --vscode-charts-yellow:#bf8803; --vscode-charts-green:#388a34;
+    --vscode-list-hoverBackground:#f2f2f2; --vscode-list-activeSelectionBackground:#e8e8e8;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex; flex-direction: column;
+    background: var(--vscode-editor-background); color: var(--vscode-foreground);
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-size: 13px; line-height: 1.5;
+  }
+  button { font: inherit; cursor: pointer; border: 1px solid transparent; border-radius: 2px; padding: 4px 12px; }
+  .btn { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+  .btn:hover { background: var(--vscode-button-hoverBackground); }
+  .btn2 { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
+  .btn2:hover { background: var(--vscode-button-secondaryHoverBackground); }
+  .btn-danger { background: transparent; color: var(--vscode-errorForeground); border-color: var(--vscode-errorForeground); }
+  .dim { color: var(--vscode-descriptionForeground); }
+  .badge { background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); border-radius: 10px; padding: 0 7px; font-size: 11px; }
+
+  /* ---- header: which document, its type and state ---- */
+  .rv-head { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 6px 14px; border-bottom: 1px solid var(--vscode-panel-border); background: var(--vscode-sideBar-background); }
+  .rv-head select { background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); padding: 3px 6px; font: inherit; max-width: 46%; }
+  .rv-head .sp { flex: 1; }
+  .rv-tabs button { background: transparent; color: var(--vscode-descriptionForeground); border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 3px 8px; }
+  .rv-tabs button.on { color: var(--vscode-foreground); border-bottom-color: var(--vscode-focusBorder); }
+
+  /* ---- the document: the only scrolling region ---- */
+  .rv-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  .rv-doc { position: relative; max-width: 900px; margin: 0 auto; padding: 16px 64px 40px 28px; color: var(--vscode-editor-foreground); font-size: 14px; line-height: 1.6; }
+  .rv-doc h1 { font-size: 1.9em; font-weight: 600; margin: .4em 0 .5em; padding-bottom: .25em; border-bottom: 1px solid var(--vscode-panel-border); }
+  .rv-doc h2 { font-size: 1.4em; font-weight: 600; margin: 1.3em 0 .5em; padding-bottom: .2em; border-bottom: 1px solid var(--vscode-panel-border); }
+  .rv-doc h3 { font-size: 1.15em; font-weight: 600; margin: 1.1em 0 .4em; }
+  .rv-doc p, .rv-doc li { margin: .5em 0; }
+  .rv-doc a { color: var(--vscode-textLink-foreground); text-decoration: none; }
+  .rv-doc code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .9em; background: var(--vscode-textCodeBlock-background); padding: 1px 4px; border-radius: 3px; }
+  .rv-doc pre { background: var(--vscode-textCodeBlock-background); padding: 10px 12px; border-radius: 4px; overflow-x: auto; }
+  .rv-doc pre code { background: none; padding: 0; }
+  .rv-doc table { border-collapse: collapse; margin: .8em 0; }
+  .rv-doc th, .rv-doc td { border: 1px solid var(--vscode-panel-border); padding: 4px 10px; text-align: left; }
+  .rv-doc th { background: var(--vscode-sideBar-background); }
+  .rv-doc blockquote { margin: .8em 0; padding: 0 12px; border-left: 4px solid var(--vscode-textBlockQuote-border); color: var(--vscode-descriptionForeground); }
+  .rv-html { width: 100%; height: 520px; border: 1px solid var(--vscode-panel-border); border-radius: 4px; background: #fff; }
+
+  /* ---- inline comments ---- */
+  mark.rv-anno { background: var(--vscode-editor-findMatchHighlightBackground); color: inherit; border-bottom: 2px solid var(--vscode-charts-yellow); cursor: pointer; border-radius: 2px; }
+  mark.rv-anno.draft { border-bottom-style: dashed; }
+  mark.rv-anno.old { background: transparent; border-bottom-color: var(--vscode-descriptionForeground); }
+  .rv-marker { position: absolute; right: 18px; width: 34px; height: 22px; display: flex; align-items: center; justify-content: center; gap: 3px; font-size: 11px; border-radius: 11px; cursor: pointer; background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border: 1px solid var(--vscode-editorWidget-border); }
+  .rv-marker.draft { border-color: var(--vscode-charts-yellow); color: var(--vscode-charts-yellow); }
+  .rv-thread { margin: 6px 0 10px; border: 1px solid var(--vscode-editorWidget-border); border-left: 3px solid var(--vscode-charts-yellow); border-radius: 3px; background: var(--vscode-editorWidget-background); font-size: 13px; line-height: 1.45; }
+  .rv-thread .q { padding: 6px 10px; color: var(--vscode-descriptionForeground); border-bottom: 1px solid var(--vscode-editorWidget-border); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rv-c { padding: 7px 10px; border-bottom: 1px solid var(--vscode-editorWidget-border); }
+  .rv-c:last-child { border-bottom: 0; }
+  .rv-c .who { font-weight: 600; }
+  .rv-c .when, .rv-c .tag { color: var(--vscode-descriptionForeground); font-size: 11px; margin-left: 6px; }
+  .rv-c .tag.draft { color: var(--vscode-charts-yellow); }
+  .rv-c .tag.approve { color: var(--vscode-charts-green); }
+  .rv-c .tag.reject { color: var(--vscode-errorForeground); }
+  .rv-c .x { float: right; background: transparent; color: var(--vscode-descriptionForeground); border: 0; padding: 0 4px; }
+  .rv-compose { padding: 8px 10px; display: flex; gap: 8px; align-items: flex-end; }
+  .rv-compose textarea, .rv-bar textarea { flex: 1; resize: vertical; min-height: 34px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 2px; padding: 5px 7px; font: inherit; }
+  textarea:focus { outline: 1px solid var(--vscode-focusBorder); }
+  .rv-pop { position: absolute; z-index: 5; display: none; background: var(--vscode-editorWidget-background); border: 1px solid var(--vscode-editorWidget-border); box-shadow: 0 2px 8px var(--vscode-widget-shadow); border-radius: 3px; padding: 3px; }
+
+  /* ---- earlier general comments, above the bar ---- */
+  .rv-hist { flex: 0 0 auto; border-top: 1px solid var(--vscode-panel-border); background: var(--vscode-sideBar-background); }
+  .rv-hist summary { padding: 5px 14px; cursor: pointer; color: var(--vscode-descriptionForeground); }
+  .rv-hist .rv-c { background: var(--vscode-editor-background); }
+  .rv-hist .list { max-height: 170px; overflow-y: auto; border-top: 1px solid var(--vscode-panel-border); }
+
+  /* ---- the fixed bar ---- */
+  .rv-bar { flex: 0 0 auto; border-top: 1px solid var(--vscode-panel-border); background: var(--vscode-sideBar-background); padding: 8px 14px 10px; }
+  .rv-bar .row { display: flex; gap: 8px; align-items: flex-end; }
+  .rv-bar .meta { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; font-size: 12px; }
+  .rv-bar .meta .sp { flex: 1; }
+  .rv-toast { display: none; margin-top: 6px; font-size: 12px; color: var(--vscode-charts-green); }
+</style>
+</head>
+<body class="dark">
+
+<div class="rv-head">
+  <select aria-label="document">
+    <option>LLD · Show each changed section of a turn as a diff widget · pending</option>
+    <option>HLD · Complete, consistent, richer code index · pending</option>
+    <option>PLAN · Diff widget · pending</option>
+  </select>
+  <span class="badge">LLD</span><span class="dim">pending review · revision 3</span>
+  <span class="sp"></span>
+  <span class="rv-tabs" title="mock only: the pane picks the viewer from the document's type">
+    <button id="tab-md" class="on">Markdown document</button><button id="tab-html">HTML document</button>
+  </span>
+  <button class="btn2" id="theme" title="mock only">light / dark</button>
+</div>
+
+<div class="rv-scroll" id="scroll">
+  <div class="rv-doc" id="doc">
+    <div id="pop" class="rv-pop"><button class="btn2" id="pop-btn">💬 Comment</button></div>
+    <div id="md">
+      <h1>LLD: Show each changed section of a turn as a diff widget</h1>
+      <p><strong>Epic:</strong> <code>show-each-changed-section-turn-s</code> &nbsp; <strong>Story:</strong> <code>S001</code> &nbsp; <strong>Rollout:</strong> standalone</p>
+      <h2>Summary</h2>
+      <p id="p1">When the assistant changes files during a chat turn, the dev chat shows each changed section of each file as its own widget: the path, the lines added and removed, line numbers and the theme's diff colours, <mark class="rv-anno old" data-t="t1">cut to 8 lines until the reader opens it</mark>. The plugin gets the sections by asking git, after every tool call, how the working tree differs from the snapshot it took when the turn started.</p>
+      <p id="p2">A section that changes again updates its widget in place, and the widgets are saved with the chat so they are still there, in their latest form, after a reload. One limit: <mark class="rv-anno old" data-t="t2">if the reader switches chat, closes the panel or reloads the window while a turn is running</mark>, the rest of that turn shows path lines as today, not widgets.</p>
+      <h2>1. Contract details</h2>
+      <h3>1.1 <code>createGitBaseline</code></h3>
+      <pre><code>createGitBaseline(deps: GitBaselineDeps): WorkspaceBaseline
+// snapshot(cwd)  -> { ref: tree id, index: private index path }
+// changes(handle) -> patch | '' | undefined</code></pre>
+      <p id="p3">The snapshot is a git tree written through a private copy of the index, so the user's own index and status are never touched. A check writes a second tree and diffs the two.</p>
+      <table>
+        <tr><th>Limit</th><th>Value</th><th>Why</th></tr>
+        <tr><td>Lines shown folded</td><td>8</td><td>Chosen by the user</td></tr>
+        <tr><td>Lines kept per section</td><td>400</td><td>Keeps the saved chat small</td></tr>
+        <tr><td>New widgets per check</td><td>20</td><td>A generated tree must not flood the chat</td></tr>
+      </table>
+      <h2>2. Error paths</h2>
+      <ul>
+        <li id="l1">Not a git folder: no snapshot, no widgets; path lines as today.</li>
+        <li id="l2">The comparison cannot be read: one line says so, once per turn; later checks still run.</li>
+        <li id="l3">A file git ignores: no widget; the path line is written so the edit leaves a trace.</li>
+      </ul>
+      <blockquote>Open question: should a withdrawn section leave a trace in the chat?</blockquote>
+      <h2>3. Test strategy</h2>
+      <p id="p4">Unit tests for the parser and the reconciliation; integration tests for the host over a fake governor; real git in temporary repositories; two live tests against the installed CLIs.</p>
+    </div>
+    <div id="html" style="display:none">
+      <p class="dim">An HTML document (a sequence diagram, a mock, a generated code map) is shown as the page it is, in a sandboxed frame. Comments on it go in the box below; inline comments are for markdown documents.</p>
+      <iframe class="rv-html" sandbox srcdoc="<body style='font-family:sans-serif;padding:24px'><h2>Sequence: a check after a tool call</h2><svg width='560' height='210' font-size='12'><g stroke='#555' fill='none'><line x1='70' y1='40' x2='70' y2='200'/><line x1='280' y1='40' x2='280' y2='200'/><line x1='490' y1='40' x2='490' y2='200'/><line x1='70' y1='80' x2='280' y2='80' marker-end='url(#a)'/><line x1='280' y1='115' x2='490' y2='115'/><line x1='490' y1='150' x2='280' y2='150' stroke-dasharray='4 3'/><line x1='280' y1='185' x2='70' y2='185' stroke-dasharray='4 3'/></g><g fill='#222'><text x='45' y='30'>Chat host</text><text x='255' y='30'>Governor</text><text x='480' y='30'>git</text><text x='140' y='74'>check()</text><text x='330' y='109'>write-tree, diff</text><text x='365' y='144'>patch</text><text x='110' y='179'>add / update / withdraw</text></g></svg></body>"></iframe>
+    </div>
+  </div>
+</div>
+
+<details class="rv-hist" id="hist">
+  <summary>💬 Earlier comments on the whole document (3)</summary>
+  <div class="list">
+    <div class="rv-c"><span class="who">Subho Ghosh</span><span class="when">2026-10-12 16:02</span><span class="tag reject">rejected · revision 1</span><div>Edits made by shell commands are missed. The source must not be the edit tool events.</div></div>
+    <div class="rv-c"><span class="who">Subho Ghosh</span><span class="when">2026-10-12 18:40</span><span class="tag">feedback · revision 2</span><div>Better. State the limit for a reload in mid-turn in the summary.</div></div>
+    <div class="rv-c"><span class="who">Priya N</span><span class="when">2026-10-13 09:15</span><span class="tag">feedback · revision 3</span><div>Fine with the 400 line cap.</div></div>
+  </div>
+</details>
+
+<div class="rv-bar">
+  <div class="meta">
+    <span id="drafts" class="dim">No inline comments drafted. Select text in the document to add one.</span>
+    <span class="sp"></span>
+    <span class="dim">as <strong>Subho Ghosh</strong> (git user)</span>
+  </div>
+  <div class="row">
+    <textarea id="general" rows="2" placeholder="Comment on the whole document (optional)…"></textarea>
+    <button class="btn2" data-d="feedback" title="Send the comments; the document stays pending">Send feedback</button>
+    <button class="btn-danger" data-d="reject" title="Send the comments and reject this revision">Reject</button>
+    <button class="btn" data-d="approve" title="Send the comments and approve">Approve</button>
+  </div>
+  <div class="rv-toast" id="toast"></div>
+</div>
+
+<script>
+(function () {
+  var ME = 'Subho Ghosh';
+  var doc = document.getElementById('doc'), md = document.getElementById('md'), pop = document.getElementById('pop');
+  // Earlier inline comments, oldest first; drafts are added to the same threads.
+  var threads = {
+    t1: [{ who: 'Subho Ghosh', when: '2026-10-12 16:05', tag: 'rejected · revision 1', cls: 'reject', text: 'Say what the header shows when folded.' },
+         { who: 'Priya N', when: '2026-10-13 09:12', tag: 'feedback · revision 3', cls: '', text: 'Header now lists path and counts. OK.' }],
+    t2: [{ who: 'Subho Ghosh', when: '2026-10-12 18:44', tag: 'feedback · revision 2', cls: '', text: 'Accepted as a limit for now.' }]
+  };
+  var seq = 0;
+  function now() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function drafts() { var n = 0; Object.keys(threads).forEach(function (k) { threads[k].forEach(function (c) { if (c.draft) n++; }); }); return n; }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  function block(mark) { var b = mark; while (b && b.parentNode !== md) b = b.parentNode; return b; }
+  function closeThread(id) { var t = document.getElementById('th-' + id); if (t) t.remove(); }
+  function openThread(id, compose) {
+    var mark = md.querySelector('mark[data-t="' + id + '"]'); if (!mark) return;
+    closeThread(id);
+    var box = el('div', 'rv-thread'); box.id = 'th-' + id;
+    box.appendChild(el('div', 'q', '“' + mark.textContent + '”'));
+    threads[id].forEach(function (c, i) {
+      var row = el('div', 'rv-c');
+      if (c.draft) { var x = el('button', 'x', '✕'); x.title = 'Remove this draft'; x.onclick = function () { threads[id].splice(i, 1); if (!threads[id].length) { unwrap(mark); delete threads[id]; closeThread(id); } else openThread(id); refresh(); }; row.appendChild(x); }
+      row.appendChild(el('span', 'who', c.who)); row.appendChild(el('span', 'when', c.when));
+      row.appendChild(el('span', 'tag ' + (c.draft ? 'draft' : c.cls), c.draft ? 'draft, not sent' : c.tag));
+      row.appendChild(el('div', '', c.text)); box.appendChild(row);
+    });
+    var comp = el('div', 'rv-compose'), ta = el('textarea'); ta.rows = 1; ta.placeholder = 'Reply or add a comment on this text…';
+    var add = el('button', 'btn2', 'Add'), close = el('button', 'btn2', 'Close');
+    add.onclick = function () { var v = ta.value.trim(); if (!v) return; threads[id].push({ who: ME, when: now(), draft: true, text: v }); mark.classList.remove('old'); mark.classList.add('draft'); openThread(id); refresh(); };
+    close.onclick = function () { if (!threads[id].length) { unwrap(mark); delete threads[id]; } closeThread(id); refresh(); };
+    comp.appendChild(ta); comp.appendChild(add); comp.appendChild(close); box.appendChild(comp);
+    var b = block(mark); b.parentNode.insertBefore(box, b.nextSibling);
+    if (compose) ta.focus();
+  }
+  function unwrap(mark) { var p = mark.parentNode; while (mark.firstChild) p.insertBefore(mark.firstChild, mark); p.removeChild(mark); p.normalize(); }
+
+  // Margin markers: one per annotated passage, with the number of comments; click opens the thread.
+  function refresh() {
+    doc.querySelectorAll('.rv-marker').forEach(function (m) { m.remove(); });
+    md.querySelectorAll('mark.rv-anno').forEach(function (mark) {
+      var id = mark.getAttribute('data-t'), list = threads[id] || [];
+      var hasDraft = list.some(function (c) { return c.draft; });
+      var m = el('div', 'rv-marker' + (hasDraft ? ' draft' : ''), '💬 ' + list.length);
+      m.title = hasDraft ? 'Has a draft comment' : 'Earlier comments: click to open';
+      m.style.top = (mark.getBoundingClientRect().top - doc.getBoundingClientRect().top) + 'px';
+      m.onclick = function () { if (document.getElementById('th-' + id)) closeThread(id); else openThread(id); refresh(); };
+      doc.appendChild(m);
+    });
+    var n = drafts();
+    document.getElementById('drafts').textContent = n ? n + ' inline comment' + (n === 1 ? '' : 's') + ' drafted. They are sent with the button you press.' : 'No inline comments drafted. Select text in the document to add one.';
+  }
+
+  // Select text inside one block of the document -> a "Comment" button at the selection.
+  var pending = null;
+  document.addEventListener('mouseup', function (e) {
+    if (pop.contains(e.target)) return;
+    var s = window.getSelection();
+    if (!s || s.isCollapsed || !md.contains(s.anchorNode) || !md.contains(s.focusNode)) { pop.style.display = 'none'; return; }
+    var r = s.getRangeAt(0);
+    if (r.startContainer.parentNode.closest('.rv-thread') || r.endContainer.parentNode.closest('.rv-thread')) return;
+    pending = r.cloneRange();
+    var rect = r.getBoundingClientRect(), base = doc.getBoundingClientRect();
+    pop.style.left = (rect.left - base.left) + 'px'; pop.style.top = (rect.bottom - base.top + 4) + 'px'; pop.style.display = 'block';
+  });
+  document.getElementById('pop-btn').onclick = function () {
+    pop.style.display = 'none'; if (!pending) return;
+    var mark = el('mark', 'rv-anno draft'), id = 'n' + (++seq); mark.setAttribute('data-t', id);
+    try { pending.surroundContents(mark); } catch (err) { toast('Select text inside one paragraph, list item or cell.', true); return; }
+    window.getSelection().removeAllRanges(); threads[id] = []; openThread(id, true); refresh();
+  };
+  md.addEventListener('click', function (e) { var m = e.target.closest && e.target.closest('mark.rv-anno'); if (m && window.getSelection().isCollapsed) { openThread(m.getAttribute('data-t')); refresh(); } });
+
+  // The three buttons: every draft and the general comment go together with the decision.
+  function toast(text, bad) { var t = document.getElementById('toast'); t.textContent = text; t.style.color = bad ? 'var(--vscode-errorForeground)' : 'var(--vscode-charts-green)'; t.style.display = 'block'; }
+  document.querySelectorAll('.rv-bar button[data-d]').forEach(function (b) {
+    b.onclick = function () {
+      var d = b.getAttribute('data-d'), g = document.getElementById('general').value.trim(), n = drafts();
+      if (d !== 'approve' && !g && !n) { toast(d === 'reject' ? 'Say why: add a comment before rejecting.' : 'Nothing to send: add a comment first.', true); return; }
+      var tag = { approve: 'approved', reject: 'rejected', feedback: 'feedback' }[d] + ' · revision 3', cls = d === 'feedback' ? '' : d;
+      Object.keys(threads).forEach(function (k) { threads[k].forEach(function (c) { if (c.draft) { delete c.draft; c.tag = tag; c.cls = cls; } }); if (document.getElementById('th-' + k)) openThread(k); });
+      md.querySelectorAll('mark.rv-anno.draft').forEach(function (m) { m.classList.remove('draft'); });
+      if (g) {
+        var row = el('div', 'rv-c'); row.appendChild(el('span', 'who', ME)); row.appendChild(el('span', 'when', now())); row.appendChild(el('span', 'tag ' + cls, tag)); row.appendChild(el('div', '', g));
+        document.querySelector('#hist .list').appendChild(row);
+        var c = document.querySelectorAll('#hist .rv-c').length; document.querySelector('#hist summary').textContent = '💬 Earlier comments on the whole document (' + c + ')';
+        document.getElementById('general').value = '';
+      }
+      refresh();
+      toast({ approve: 'Approved.', reject: 'Rejected.', feedback: 'Feedback sent; the document stays pending.' }[d] + ' ' + (n + (g ? 1 : 0)) + ' comment(s) saved as ' + ME + '.');
+    };
+  });
+
+  document.getElementById('theme').onclick = function () { document.body.className = document.body.className === 'dark' ? 'light' : 'dark'; };
+  function tab(html) { document.getElementById('md').style.display = html ? 'none' : ''; document.getElementById('html').style.display = html ? '' : 'none'; document.getElementById('tab-md').className = html ? '' : 'on'; document.getElementById('tab-html').className = html ? 'on' : ''; refresh(); if (html) doc.querySelectorAll('.rv-marker').forEach(function (m) { m.remove(); }); }
+  document.getElementById('tab-md').onclick = function () { tab(false); };
+  document.getElementById('tab-html').onclick = function () { tab(true); };
+  document.getElementById('scroll').addEventListener('scroll', function () { pop.style.display = 'none'; });
+  window.addEventListener('resize', refresh);
+
+  // The mock opens with one earlier thread expanded, so the screenshot shows it.
+  if (location.hash === '#demo') {
+    openThread('t1');
+    var p = document.getElementById('p3'), r = document.createRange(), tn = p.firstChild, i = tn.textContent.indexOf('a private copy of the index');
+    r.setStart(tn, i); r.setEnd(tn, i + 'a private copy of the index'.length);
+    var mark = el('mark', 'rv-anno draft'); mark.setAttribute('data-t', 'n0'); r.surroundContents(mark);
+    threads.n0 = [{ who: ME, when: now(), draft: true, text: 'Where is the copy kept, and who removes it if the window crashes?' }];
+    openThread('n0');
+    document.getElementById('general').value = 'Good overall. Two points inline.';
+  }
+  refresh();
+})();
+</script>
+</body>
+</html>

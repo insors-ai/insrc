@@ -10,12 +10,13 @@
     "triageRationale": "bugfix/small: one function in one shared module plus its test; reuses the existing failWith settle path.",
     "epicCreatedAt": "2026-10-13T11:57:18.047Z",
     "epicSlug": "release-review-wait-timer-when-transport",
-    "updatedAt": "2026-10-13T12:20:19.371Z"
+    "updatedAt": "2026-10-13T12:27:14.617Z",
+    "approvedAt": "2026-10-13T12:27:14.681Z"
   },
   "body": {
     "focus": "Fix ISSUE-c9d0c355: in runReviewStream (src/shared/review-stream.ts), a transport that throws while being opened settles the request as a ReviewStreamError with failure 'unreachable' (message naming the method and the cause), with the wait timer cleared and the abort listener removed. Neither transport changes. Add a unit test in src/shared/__tests__/review-stream.test.ts that a synchronously throwing transport settles 'unreachable' and clears its timer; src/daemon/steps/__tests__/in-daemon-client.test.ts then exits on its own.",
     "producesLld": false,
-    "commit": "eab631b8",
+    "commit": "cf6df4d2",
     "tasks": [
       {
         "id": "S001",
@@ -32,7 +33,7 @@
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:20:19.371Z"
+        "timestamp": "2026-10-13T12:27:14.617Z"
       }
     ]
   }

@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-13T11:58:35.412Z  ·  **Updated:** 2026-10-13T12:20:19.371Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-13T11:58:35.412Z  ·  **Updated:** 2026-10-13T12:27:14.617Z
 
-**Commit:** eab631b8
+**Commit:** cf6df4d2
 
 ## Scope
 
@@ -26,4 +26,4 @@ runReviewStream now settles a transport that throws while opening as 'unreachabl
 
 ## Changes
 
-- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T12:20:19.371Z)
+- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T12:27:14.617Z)

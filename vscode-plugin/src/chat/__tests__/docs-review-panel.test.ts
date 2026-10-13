@@ -1226,6 +1226,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *       string (the table with search, type filter and paging, and which view is on
  *       show); the list view's markup and styles; a back button and the title in the
  *       header in place of the select of documents.
+ *   E202610131f74c81f:S001/t5 (+283 chars): the reload in place. A content for the document
+ *       already shown keeps the scroll position of the document region, and one marked
+ *       changed with a different version says the document changed on disk.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -1239,9 +1242,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  131414,
-  bytes:  131478,
-  sha256: 'b3a805fb017da14a9a927066fb768fa5eb104c30fc6a8de7f9dbff6201e3c0ed',
+  chars:  131697,
+  bytes:  131761,
+  sha256: 'f472bc975268cf06e5692d2cdb7dcd30e9a629d36ed1741dcc0354a25aff0a09',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1821,6 +1824,8 @@ interface WebviewRun {
   send(type: string, payload: Record<string, unknown>): void;
   /** The select of documents in the header. */
   list: BodyStub;
+  /** The document's scrolling region. */
+  scroll: BodyStub;
   /** The comment panel and the header's text. */
   bar: { approve: BodyStub; reject: BodyStub; feedback: BodyStub; field: BodyStub; result: BodyStub; state: BodyStub; kind: BodyStub; who: BodyStub };
   /** The comment button a selection offers, its own button, and the line that counts the drafts. */
@@ -1887,7 +1892,9 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
     'insrc-rv-hist', 'insrc-rv-hist-sum', 'insrc-rv-hist-list',
     // The two views and the list view's controls (E202610131f74c81f:S001).
     'insrc-rv-listview', 'insrc-rv-docview', 'insrc-rv-q', 'insrc-rv-suggest', 'insrc-rv-kindsel', 'insrc-rv-count',
-    'insrc-rv-listnote', 'insrc-rv-prev', 'insrc-rv-next', 'insrc-rv-page', 'insrc-rv-back', 'insrc-rv-title'];
+    'insrc-rv-listnote', 'insrc-rv-prev', 'insrc-rv-next', 'insrc-rv-page', 'insrc-rv-back', 'insrc-rv-title',
+    // The document's scrolling region.
+    'insrc-rv-scroll'];
   const byId: Record<string, BodyStub> = {};
   for (const id of ids) byId[id] = bodyStub('div', id);
   byId['insrc-rv-field']!.value = '';
@@ -1970,6 +1977,7 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
     deliver: (payload) => onMessage?.({ data: { v: 1, payload: { type: 'docs-content', ...payload } } }),
     send: (type, payload) => onMessage?.({ data: { v: 1, payload: { type, ...payload } } }),
     list: byId['insrc-docs-list']!,
+    scroll: byId['insrc-rv-scroll']!,
     bar: {
       approve: byId['insrc-rv-approve']!, reject: byId['insrc-rv-reject']!, feedback: byId['insrc-rv-feedback']!,
       field: byId['insrc-rv-field']!, result: byId['insrc-rv-result']!,
@@ -7107,4 +7115,90 @@ test("docs review shell: the host's notice of a failed read is shown in the list
   d.deliver({ ...INLINE_DOC, artifactId: 'LLD-b', reveal: true });
   fire(d.lv.back, 'click');
   assert.equal(d.lv.note.style['display'], 'none');
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610131f74c81f:S001 t5 — a content for the document already shown is a reload
+// in place.
+// ---------------------------------------------------------------------------
+
+test("docs review shell: a reload marked changed keeps the scroll position and the drafts and says the document changed; a reload after the shell's own decision keeps the decision's result line", () => {
+  const CHANGED_LINE = 'This document changed on disk and was reloaded.';
+  const w = listed({ textNodes: true });
+  const scroll = w.scroll as unknown as { scrollTop: number };
+  // As a browser does: rendering the body again puts its region back at the top.
+  const own = Object.getOwnPropertyDescriptor(w.body, 'innerHTML')!;
+  Object.defineProperty(w.body, 'innerHTML', {
+    configurable: true,
+    get: () => own.get!.call(w.body) as string,
+    set: (v: string) => { own.set!.call(w.body, v); scroll.scrollTop = 0; },
+  });
+  const DOC = { ...INLINE_DOC, artifactId: 'LLD-a' };
+  const revised = INLINE_MD.replace('# ', '# Revised: ');
+  const REVISED = { ...DOC, markdown: revised, sections: deriveSectionIndex(revised), contentVersion: 'fedcba9876543210' };
+
+  scroll.scrollTop = 77;
+  w.deliver({ ...DOC, reveal: true });
+  assert.equal(scroll.scrollTop, 0, 'a document newly opened starts where the render left it');
+  draftOn(w, SUMMARY_P, 'cut to 8 lines', 'Say what the header shows.');
+  w.bar.field.value = 'Overall.';
+  fire(w.bar.field, 'input');
+  scroll.scrollTop = 420;
+
+  // THE RELOAD: the file changed on disk, the host re-read it and marked the content changed.
+  w.deliver({ ...REVISED, changed: true });
+  assert.equal(scroll.scrollTop, 420, 'the scroll position is kept');
+  assert.equal(marksIn(w.body).length, 1, 'the draft is put back on its passage');
+  assert.equal(w.drafts.textContent, '1 inline comment drafted. Sent with the button you press.');
+  assert.equal(w.bar.field.value, 'Overall.', 'the whole-document field is untouched');
+  assert.equal(w.bar.result.textContent, CHANGED_LINE);
+  assert.equal(w.bar.result.className, 'rv-result', 'said plainly, not as an error or a success');
+  assert.equal(w.lv.view(), 'doc');
+  assert.ok(w.body.children.some((c) => c.textContent.startsWith('Revised: ')), 'and the new text is shown');
+
+  // The line is only for a reload marked changed WITH a different version.
+  const line = (first: Record<string, unknown>, then: Record<string, unknown>): string => {
+    const x = runWebview({ textNodes: true });
+    x.deliver({ ...first, reveal: true });
+    x.deliver(then);
+    return x.bar.result.textContent;
+  };
+  assert.equal(line(DOC, { ...DOC, changed: true }), '', 'marked changed, the same version: nothing is said');
+  assert.equal(line(DOC, REVISED), '', 'a different version, not marked changed: nothing is said');
+  assert.equal(line(DOC, { ...REVISED, changed: 'yes' }), '', 'changed must be true itself');
+  assert.equal(line(DOC, { ...REVISED, changed: true }), CHANGED_LINE);
+  assert.equal(line({ ...DOC, artifactId: 'LLD-b' }, { ...REVISED, changed: true }), '', 'another document is not a reload');
+  // Without a version on either side there is nothing to compare: nothing is said.
+  const { contentVersion: _a, ...BARE } = DOC;
+  assert.equal(line(BARE, { ...BARE, changed: true }), '');
+
+  // The scroll position is kept on every reload of the shown document, marked or not,
+  scroll.scrollTop = 133;
+  w.deliver(REVISED);
+  assert.equal(scroll.scrollTop, 133);
+  // and not carried over to another document.
+  w.deliver({ ...DOC, artifactId: 'LLD-b', reveal: true });
+  assert.equal(scroll.scrollTop, 0);
+
+  // THE SHELL'S OWN DECISION: its re-read is not marked changed, so the result line stays
+  // whatever the version; the watch's report of the same write then carries the version
+  // already shown and says nothing either.
+  w.deliver({ ...DOC, reveal: true });
+  w.bar.field.value = 'Please revise.';
+  fire(w.bar.field, 'input');
+  scroll.scrollTop = 250;
+  fire(w.bar.feedback, 'click');
+  assert.equal(w.bar.result.textContent, 'Sending…');
+  const RESULT = 'Done. 1 comment saved. The chat has been told.';
+  w.send('docs-decision-result', { artifactId: 'LLD-a', ok: true, outcome: 'recorded', recorded: 1, message: RESULT });
+  w.deliver(REVISED);
+  assert.equal(w.bar.result.textContent, RESULT, "the decision's own re-read keeps its result line");
+  assert.equal(w.bar.result.className, 'rv-result rv-ok');
+  assert.equal(scroll.scrollTop, 250);
+  w.deliver({ ...REVISED, changed: true });
+  assert.equal(w.bar.result.textContent, RESULT, 'the watch reporting that same write changes nothing');
+  // A later change from outside does replace it.
+  w.deliver({ ...DOC, contentVersion: '1111111111111111', changed: true });
+  assert.equal(w.bar.result.textContent, CHANGED_LINE);
+  assert.equal(scroll.scrollTop, 250);
 });

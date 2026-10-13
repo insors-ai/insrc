@@ -1968,6 +1968,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `const whoEl=document.getElementById('insrc-rv-who');` +
       `const fieldEl=document.getElementById('insrc-rv-field');` +
       `const resultEl=document.getElementById('insrc-rv-result');` +
+      `const scrollEl=document.getElementById('insrc-rv-scroll');` +
       `const btn={approve:document.getElementById('insrc-rv-approve'),reject:document.getElementById('insrc-rv-reject'),feedback:document.getElementById('insrc-rv-feedback')};` +
       // The tabs, and the two views of the region: the markdown document's hosts, and an
       // HTML document's path, note and frame.
@@ -2100,6 +2101,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // A content with no artifact id is the host's notice that the list could not be read:
       // it belongs to the list view and is not a document.
       `function renderContent(m){if(!m.artifactId){rvListNotice(m.markdown);return;}` +
+      // A content for the document already shown is a reload in place: the reviewer's place
+      // in the document region is taken before the body is rendered again and put back after.
+      `var same=!!shown&&shown.artifactId===m.artifactId;` +
+      `var top=same?scrollEl.scrollTop:0,before=same?shown.contentVersion:undefined;` +
       `var r=renderMarkdownBody(bodyEl,m.markdown||'');` +
       // Stamp FIRST, and let the stamped count gate the chooser. On the degraded
       // path the body is plain text with no heading elements, so nothing can be
@@ -2180,7 +2185,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // The document shown changed: an unanswered decision and the result line belonged to
       // the earlier one. A re-post of the SAME document (after a decision, or to a rebuilt
       // shell) keeps them, and the field and the drafts with them.
-      `var same=!!shown&&shown.artifactId===m.artifactId;shown=m;` +
+      `shown=m;` +
       // Its field and its drafts come from the saved state, where they are kept per artifact.
       `if(!same){busy=false;rvSetResult('','');rvLoad();}` +
       // The documents of this artifact. Another artifact, or an HTML document that is no
@@ -2192,6 +2197,11 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // passages, and the rest of the saved comments in the strip.
       `rvHidePop();rvPlaceAll();rvSync();` +
       `renderBar();` +
+      // The reload in place. The line that says so is for a change made outside the pane
+      // (the host marks that re-read changed) that gave a different document; the re-read
+      // after the shell's own decision is not marked, so the decision's result line stays.
+      `if(same){scrollEl.scrollTop=top;` +
+      `if(m.changed===true&&m.contentVersion!==before){rvSetResult('This document changed on disk and was reloaded.','');}}` +
       // The header names the document. The reviewer is brought to it only when they asked
       // for it (reveal); a re-read updates what is held and leaves the view as it is.
       `var known=null;items.forEach(function(a){if(a.id===m.artifactId)known=a;});` +

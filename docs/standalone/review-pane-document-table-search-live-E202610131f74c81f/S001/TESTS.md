@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -85,3 +85,55 @@ Run at 2026-10-13T16:20:17.087Z on commit `a6475dad`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` | 0 | 14 | 0.8 s |  |
 | `vscode-plugin/src/chat/__tests__/review-wiring.test.ts` | 0 | 3 | 0.4 s |  |
+
+## t4
+
+Run at 2026-10-13T16:32:19.913Z on commit `74ad686f`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: docs review shell: the list view shows 25 rows a page ordered by type then title, and the pager moves between pages and is disabled at the ends**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: the list view shows 25 rows a page ordered by type then title, and the pager moves between pages and is disabled at the ends | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: the search matches every word in the title, id or work item id without regard to case, the type select filters with counts, and either change goes to page 1**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: the search matches every word in the title, id or work item id without regard to case, the type select filters with counts, and either change goes to page 1 | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: the datalist offers at most 50 titles and ids of the chosen type**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: the datalist offers at most 50 titles and ids of the chosen type | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: pressing a row's title posts open-doc, a content with reveal switches to the document view (an unavailable one too), a content without it never changes the view, and the back button returns to the list with the document and its drafts kept**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: pressing a row's title posts open-doc, a content with reveal switches to the document view (an unavailable one too), a content without it never changes the view, and the back button returns to the list with the document and its drafts kept | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: the search, type, page and the view on show are restored from the saved state when the shell is rebuilt, a re-post to the rebuilt shell does not leave the list view, a draft saved after the list state keeps it and the reverse, and a saved state of another shape gives the defaults**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: the search, type, page and the view on show are restored from the saved state when the shell is rebuilt, a re-post to the rebuilt shell does not leave the list view, a draft saved after the list state keeps it and the reverse, and a saved state of another shape gives the defaults | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: the list view's table is its own scrolling region, the toolbar and pager are outside it, titles and ids are set as text, and the recorded baseline is that of the new shell**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: the list view's table is its own scrolling region, the toolbar and pager are outside it, titles and ids are set as text, and the recorded baseline is that of the new shell | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: the host's notice of a failed read is shown in the list view's notice line, does not change the view, and is cleared by the next list that carries documents**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: the host's notice of a failed read is shown in the list view's notice line, does not change the view, and is cleared by the next list that carries documents | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 225 | 18.2 s |  |

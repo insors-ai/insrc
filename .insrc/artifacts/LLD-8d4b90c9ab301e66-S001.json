@@ -1,0 +1,1092 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791889940143-a7v5d3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T11:21:58.998Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 578852,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8d4b90c9ab301e66",
+    "epicSlug": "rework-document-review-pane-fixed-decision",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1791889940143-a7v5d3",
+    "hldEffectiveHash": "8d4b90c9ab301e666d6a52192cebf01bc2569e8b990281293d6611d33de6894d",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive story under a single design: the daemon side extends the existing feedback record, reject function and user lookup; the plugin side reworks one pane and adds one path to the chat host. Design choices remain (inline anchor and re-finding it after a revision, the sandboxed HTML viewer under the CSP, a decision message waiting for a running chat turn).",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "The document review pane in VS Code is rebuilt around a comment panel that stays at the bottom while the document scrolls: a rounded box with a comment field and three round icon buttons for send feedback, reject and approve, in the VS Code theme's own colours. A reviewer can select text in a markdown document and comment on it; comments are drafts until one of the three buttons is pressed, which saves them all with the decision in one step, under the reviewer's git name and the time, in the artifact's own feedback list. Earlier comments stay with the document, are shown as margin markers that open on click, oldest first, and survive a revision; HTML documents that belong to an artifact open as the page itself. The decision and the new comments are also sent to the chat as a message, so the assistant can revise or move on."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Rework the document review pane: fixed decision bar, saved inline comments, decision sent to the chat"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "appendFeedback",
+          "signature": "appendFeedback(req: AppendFeedbackRequest): AppendFeedbackResult  // unchanged. New beside it in src/workflow/artifacts/provenance/writer.ts: appendFeedbackBatch(req: { artifactPath: string; entries: readonly (Omit<FeedbackEntry, 'id' | 'timestamp'>)[] }): { artifactPath: string; entryIds: string[]; total: number }  and  priorFeedback(jsonPath: string): FeedbackEntry[]",
+          "parameters": [
+            {
+              "name": "req.artifactPath",
+              "type": "string",
+              "purpose": "The artifact JSON to append to; guarded under the artifact root as today.",
+              "optional": false
+            },
+            {
+              "name": "req.entries",
+              "type": "readonly Omit<FeedbackEntry, 'id' | 'timestamp'>[]",
+              "purpose": "The entries of one decision, in the order the reviewer made them. Each has author, target and comment, and may carry kind, anchor, decision and batchId.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ artifactPath: string; entryIds: string[]; total: number }",
+            "meaning": "appendFeedbackBatch validates every entry first (non-empty author and comment, as appendFeedback does), then reads the artifact once, gives each entry an id and the same timestamp, pushes them all onto body.feedback and writes the JSON once. Either all entries are written or none. priorFeedback returns body.feedback of the JSON at that path, or [] when the file is missing, unreadable or has none. The design finalizers in src/workflow/orchestrator.ts (finalizeDefine, finalizeDesignEpic, finalizeDesignStory, finalizeStandaloneLld, finalizePlan) put priorFeedback of the artifact they are about to replace into the new body before they render it, so a re-authored document keeps its comments."
+          },
+          "errors": [
+            {
+              "type": "ArtifactFeedbackError",
+              "condition": "The path is outside the artifact root, the JSON is missing or malformed, the list is empty, or any entry has a blank author or comment; nothing is written."
+            }
+          ],
+          "preconditions": [
+            "The artifact JSON exists under .insrc/artifacts or docs/"
+          ],
+          "postconditions": [
+            "No key of the artifact other than body.feedback changes, and no existing entry is edited or removed",
+            "The .md is not re-rendered by an append, as today",
+            "A document re-authored through the workflow keeps every earlier feedback entry, in order",
+            "appendFeedback and the 'artifact.feedback.append' IPC behave as before"
+          ]
+        },
+        {
+          "name": "feedbackBodyLines",
+          "signature": "feedbackBodyLines(feedback: FeedbackRecord | undefined): string[]",
+          "parameters": [
+            {
+              "name": "feedback",
+              "type": "FeedbackRecord | undefined",
+              "purpose": "The artifact's feedback list.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string[]",
+            "meaning": "One bullet per entry as today. An entry with a decision shows it after the kind; an entry with an anchor shows the quoted text (cut to 120 characters) before the comment. An entry with neither renders exactly as today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Existing artifacts with feedback render byte-identically",
+            "No feedback still gives no section"
+          ]
+        },
+        {
+          "name": "handleArtifactContent",
+          "signature": "handleArtifactContent(params: { repo?: string; mdPath?: string } | undefined, repoEnv: string | undefined): ArtifactReviewView | ArtifactContentError  // ArtifactReviewView gains: docPath: string; contentVersion: string; feedback?: readonly FeedbackEntry[]; reviewer: { name: string; source: 'git' | 'os' | 'unknown' }; state: 'pending' | 'approved' | 'rejected'",
+          "parameters": [
+            {
+              "name": "params.mdPath",
+              "type": "string",
+              "purpose": "The artifact's .md under docs/, as today.",
+              "optional": false
+            },
+            {
+              "name": "params.repo",
+              "type": "string",
+              "purpose": "The repository; falls back to the daemon's repo as today.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ArtifactReviewView | ArtifactContentError",
+            "meaning": "The view as today plus five additive fields. docPath is the .md's repo-relative path. contentVersion is the first 16 hex characters of the SHA-256 of the markdown text returned. feedback is body.feedback as stored (absent when there is none). reviewer is the name comments would be saved under: git config user.name in the repo, else the OS login, else 'unknown', from the lookup in src/workflow/artifacts/companion/header.ts, which is exported for this. state is read from meta.approvedAt and meta.rejectedAt."
+          },
+          "errors": [
+            {
+              "type": "ArtifactContentError",
+              "condition": "As today: repo or mdPath missing, the path outside docs/, not a .md, unreadable, or its JSON unreadable."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Every existing field keeps its name, type and meaning, so the JetBrains plugin's reader is unaffected",
+            "The feedback list is forwarded as stored: no entry is dropped, reordered or reshaped"
+          ]
+        },
+        {
+          "name": "workflow.approve",
+          "signature": "'workflow.approve' is unchanged. New in the same handler map of src/daemon/index.ts: 'workflow.reviewDecision': (params: { repo?: string; mdPath: string; decision: 'approve' | 'reject' | 'feedback'; comments?: readonly ReviewDecisionComment[] }) => ReviewDecisionResult | { error: string }, delegating to handleReviewDecision in the new src/workflow/review-decision.ts.  ReviewDecisionComment = { comment: string; file?: string; version?: string; anchor?: FeedbackAnchor }.  ReviewDecisionResult = { artifactId: string; decision: 'approve' | 'reject' | 'feedback'; outcome: 'approved' | 'withheld' | 'rejected' | 'recorded'; reason?: string; recorded: number; entryIds: string[]; author: string; commentsError?: string }",
+          "parameters": [
+            {
+              "name": "mdPath",
+              "type": "string",
+              "purpose": "The artifact's .md under docs/, resolved and guarded exactly as workflow.artifactContent does.",
+              "optional": false
+            },
+            {
+              "name": "decision",
+              "type": "'approve' | 'reject' | 'feedback'",
+              "purpose": "The button the reviewer pressed.",
+              "optional": false
+            },
+            {
+              "name": "comments",
+              "type": "readonly ReviewDecisionComment[]",
+              "purpose": "The new comments, in order. file is the repo-relative path of the document commented on (the .md, or an .html companion of this artifact) and defaults to the .md; version is the contentVersion the reviewer saw; anchor is present for an inline comment.",
+              "optional": true
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "The repository; falls back to the daemon's repo.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ReviewDecisionResult | { error: string }",
+            "meaning": "The daemon validates the request, resolves the author once, then acts in a fixed order: the decision first, the comments second. approve calls the existing approveWorkflowTarget for this one artifact (and the existing follow-on for an approved bugfix issue, as 'workflow.approve' does); outcome is 'approved', or 'withheld' with the skip reason when the review gate holds it back. reject calls the existing rejectArtifactByJsonPath with the reason: the first whole-document comment if there is one, else 'Rejected in the review pane by <author>'; outcome is 'rejected'. feedback changes no state; outcome is 'recorded'. Then every comment is appended in one appendFeedbackBatch call with kind 'comment', the author, one batchId, and decision set to what happened: 'approve' or 'reject' when that took effect, 'feedback' for a feedback send and for an approval that was withheld. If the append fails after the decision took effect, the result still reports the outcome and carries commentsError, with recorded 0."
+          },
+          "errors": [
+            {
+              "type": "{ error: string }",
+              "condition": "repo or mdPath missing or failing the docs/ guard; an unknown decision; a comment that is blank, longer than 10,000 characters, or whose file is neither the .md nor a companion listed in the artifact's body; more than 200 comments; feedback with no comments; the artifact not being a pending one for approve or reject; or the approve or reject call throwing. In each of these nothing is written."
+            }
+          ],
+          "preconditions": [
+            "approve and reject need a pending artifact (no approvedAt, no rejectedAt); feedback is accepted in any state"
+          ],
+          "postconditions": [
+            "A comment is never saved with a decision that did not take effect",
+            "A decision with no comments writes no feedback entry",
+            "The existing IPCs workflow.pending, workflow.artifactContent, workflow.approve, workflow.resolveComment and artifact.feedback.append keep their shapes and behaviour",
+            "The author is decided by the daemon, never by the caller"
+          ]
+        },
+        {
+          "name": "DocsReviewClient",
+          "signature": "interface DocsReviewClient { pending(): Promise<DocsArtifactSummary[]>; content(idOrPath: string): Promise<DocsContent>; decide(idOrPath: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<ReviewDecisionResult> }  // approve() and comment() are removed; DocsContent gains docPath, contentVersion, feedback, reviewer, state",
+          "parameters": [
+            {
+              "name": "idOrPath",
+              "type": "string",
+              "purpose": "The artifact id, resolved to its .md path from the map pending() keeps, or a path.",
+              "optional": false
+            },
+            {
+              "name": "decision",
+              "type": "'approve' | 'reject' | 'feedback'",
+              "purpose": "The button pressed.",
+              "optional": false
+            },
+            {
+              "name": "comments",
+              "type": "readonly ReviewDecisionComment[]",
+              "purpose": "The drafts and the whole-document comment.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ReviewDecisionResult>",
+            "meaning": "decide calls 'workflow.reviewDecision' once and throws on the daemon's { error } arm, like the other methods. content forwards the five new view fields unchanged."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "The daemon answered { error } or the socket failed."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The pane no longer calls workflow.resolveComment or workflow.approve"
+          ]
+        },
+        {
+          "name": "createDocsReviewHost",
+          "signature": "createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost  // DocsReviewHostDeps gains: notifyChat?: (text: string) => 'sent' | 'queued' | 'unavailable'; companionUri?: (relPath: string) => string | undefined; frameSource?: () => string. DocsReviewHost is unchanged (open, dispose, openArtifact).",
+          "parameters": [
+            {
+              "name": "deps.notifyChat",
+              "type": "(text: string) => 'sent' | 'queued' | 'unavailable'",
+              "purpose": "Hands a decision message to the chat. Absent means no chat message is sent.",
+              "optional": true
+            },
+            {
+              "name": "deps.companionUri",
+              "type": "(relPath: string) => string | undefined",
+              "purpose": "The webview address of an HTML companion under the repo's docs/ folder, or undefined when it may not be shown.",
+              "optional": true
+            },
+            {
+              "name": "deps.frameSource",
+              "type": "() => string",
+              "purpose": "The webview's own resource origin, for the frame-src directive of the shell's CSP.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "DocsReviewHost",
+            "meaning": "LAYOUT. The shell is a column the height of the pane: a header (a select of pending documents, the open document's kind and state, and one tab per document of the artifact: the markdown first, then each HTML companion by title), a scroll region that holds the document, a collapsed strip of comments on the whole document, and the comment panel. Only the scroll region scrolls. THEME. Every colour, font and border comes from --vscode-* variables. The --it-* tokens the body, functional-requirement, diagram and experience renderers already use are defined for this surface from --vscode-* variables, so those renderers are not rewritten; renderTerminalStyle is no longer used by this pane and there is no theme message or switch. VIEWERS. A markdown document is rendered as today (marked, the section chooser, the functional, diagram and experience slots). An HTML companion is shown in an iframe whose src is deps.companionUri(relPath) and whose sandbox attribute is 'allow-scripts' only; when companionUri is absent or returns undefined the tab shows the file's path and a line saying it cannot be shown here. COMMENTS. On a markdown document, selecting text inside one block shows a round comment button; pressing it wraps the selection in a mark and opens a thread card under that block with a field and round add and close buttons. An added comment is a draft: dashed underline, tagged 'draft, not sent', removable. Its anchor is { quote, sectionSlug, prefix, suffix }: the selected text, the slug of the nearest heading above it from the section index, and up to 40 characters of the block's text on each side. Saved entries with an anchor are placed by finding the quote in the current document (first in the anchor's section with the prefix and suffix, then in that section, then anywhere when it occurs once; the document's own Feedback section is never searched); a placed passage gets a mark and a margin marker with the count, and clicking either opens its thread, oldest first, each with author, time and decision. An entry whose quote is not found, and every entry without an anchor, is listed in the whole-document strip, oldest first; one whose target.version differs from the view's contentVersion is tagged 'on an earlier revision' and shows its quote. Comments on an HTML companion are whole-document comments with that file as target. Drafts and the whole-document field are kept per artifact in the webview's saved state, so hiding and showing the pane does not lose them. DECISION. The three buttons post one 'docs-decision' { artifactId, decision, comments } with every draft and the whole-document comment; send feedback with no comment is refused in the webview with a line of text. The host calls client.decide once, posts 'docs-decision-result' { artifactId, ok, outcome, recorded, message }, and on success re-reads the pending list and the document. The webview clears its drafts only on ok with no commentsError. A read-only open (not awaiting review) shows the history and offers send feedback only. CHAT. After a successful decide the host builds one message and calls deps.notifyChat: the decision and outcome, the artifact id, title and docPath, the reviewer, and the new comments numbered in order, each with its quote and section when it has them; with no comments the message is the decision line alone. The result line in the pane says whether the chat message was sent, is waiting for the running turn, or could not be sent."
+          },
+          "errors": [
+            {
+              "type": "none thrown",
+              "condition": "A failing decide, content or pending call is logged and shown as a line in the pane; drafts are kept. A failing or absent notifyChat never undoes a saved decision."
+            }
+          ],
+          "preconditions": [
+            "The channel's panel was created with scripts enabled and, for HTML companions, with the repo's docs/ folder among its local resource roots"
+          ],
+          "postconditions": [
+            "The comment panel is visible at every scroll position of the document",
+            "No colour in the shell is a literal or a terminal token value",
+            "Nothing from an artifact reaches the DOM as markup except through the guarded markdown path that exists today; comments, authors and quotes are set as text",
+            "The pane holds no saved state of its own besides unsent drafts",
+            "The 'docs-list' and 'open-doc' messages and openArtifact behave as today"
+          ]
+        },
+        {
+          "name": "createChatPanelHost",
+          "signature": "createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost  // ChatPanelHost gains: submitExternal(text: string): 'sent' | 'queued' | 'unavailable'",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "purpose": "A message to submit in the chat's current session as if the user had typed it.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "'sent' | 'queued' | 'unavailable'",
+            "meaning": "'unavailable' when no agentic CLI is installed or the text is blank. Otherwise the chat panel is opened if it is closed (as open() does). If no turn of this host is running or waiting, the message is run at once through the same path a typed message takes (queued approvals are superseded, the user row is echoed and saved) and the answer is 'sent'. If a turn is running, the message is put on a first-in first-out list and the answer is 'queued'; when that turn reaches its end, errors or is stopped, the next waiting message is run, in the session that is active then. The list lives in memory only and is dropped when the panel is disposed."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A message from another pane never supersedes a running turn",
+            "Messages typed by the user behave as today, including superseding a running turn",
+            "extension.ts passes notifyChat: (text) => chatHost.submitExternal(text) to createDocsReviewHost; the two hosts still do not import each other"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "FeedbackEntry",
+        "change": "field-add",
+        "details": "Three optional fields. anchor?: FeedbackAnchor = { quote: string (the selected text, at most 500 characters); sectionSlug?: string; prefix?: string; suffix?: string (at most 40 characters each) } marks an inline comment. decision?: 'approve' | 'reject' | 'feedback' is the decision the entry was saved with. batchId?: string is shared by the entries of one decision. The existing target.file holds the repo-relative path of the document commented on and the existing target.version holds the contentVersion the reviewer saw. Entries written before this change have none of the new fields and stay valid. The JSON schema in provenance/schema.ts and coerceRequest in provenance/tool.ts accept the new fields.",
+        "schemaDiff": "FeedbackEntry { id; author; timestamp; target { file; version?; segment? }; comment; kind?; + anchor?: { quote; sectionSlug?; prefix?; suffix? }; + decision?: 'approve' | 'reject' | 'feedback'; + batchId?: string }",
+        "callSites": [
+          "src/workflow/artifacts/provenance/types.ts",
+          "src/workflow/artifacts/provenance/schema.ts",
+          "src/workflow/artifacts/provenance/tool.ts",
+          "src/workflow/artifacts/provenance/writer.ts",
+          "src/workflow/artifacts/format/bindings.ts",
+          "src/workflow/artifacts/define.ts",
+          "src/workflow/artifacts/hld.ts",
+          "src/workflow/artifacts/lld.ts",
+          "src/workflow/artifacts/plan.ts"
+        ]
+      },
+      {
+        "entity": "ArtifactReviewView",
+        "change": "field-add",
+        "details": "docPath, contentVersion, feedback?, reviewer and state are added; every existing field is unchanged. DocsContent in the plugin mirrors them by indexing the daemon type, as it does for the structured records.",
+        "schemaDiff": "ArtifactReviewView { artifactId; kind; renderedMarkdown; openQuestions; approvable; blockReason?; functionalDefinition?; erDefinition?; sequenceDefinition?; uxDefinition?; companions?; + docPath: string; + contentVersion: string; + feedback?: readonly FeedbackEntry[]; + reviewer: { name; source }; + state: 'pending' | 'approved' | 'rejected' }",
+        "callSites": [
+          "src/workflow/artifact-content.ts",
+          "vscode-plugin/src/chat/docs-review-client.ts",
+          "vscode-plugin/src/chat/docs-review-panel.ts"
+        ]
+      },
+      {
+        "entity": "Webview protocol of the review pane (vscode-plugin/src/chat/protocol.ts)",
+        "change": "field-modify",
+        "details": "'docs-decision' changes from { artifactId, accept, note? } to { artifactId, decision: 'approve' | 'reject' | 'feedback', comments: { comment; file?; version?; anchor? }[] }. 'docs-content' gains docPath, contentVersion, feedback, reviewer, state and documents: { title; type: 'markdown' | 'html'; relPath?; uri? }[]. A new host message 'docs-decision-result' { artifactId, ok, outcome?, recorded?, message } is added to the kind list. The 'theme' message is no longer posted to this pane. The webview and the host ship in one plugin build, so there is no mixed-version case.",
+        "callSites": [
+          "vscode-plugin/src/chat/protocol.ts",
+          "vscode-plugin/src/chat/docs-review-panel.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon is older than the plugin and does not know 'workflow.reviewDecision'",
+          "detection": "The IPC answers an unknown-method error, which client.decide throws",
+          "response": "The host posts 'docs-decision-result' with ok false and the message; nothing is saved and no chat message is sent",
+          "userImpact": "A line in the pane says the decision could not be recorded and names the cause; the drafts stay",
+          "recoverable": true
+        },
+        {
+          "scenario": "An approval is withheld by the review gate",
+          "detection": "approveWorkflowTarget returns nothing in approved[] and an entry in skipped[] for this artifact",
+          "response": "The result's outcome is 'withheld' with the skip reason; the comments are saved with decision 'feedback'; the artifact stays pending",
+          "userImpact": "The pane says the document was not approved and why; the comments are in its history as feedback; the chat message says the approval was withheld",
+          "recoverable": true
+        },
+        {
+          "scenario": "The decision took effect but the comments could not be written",
+          "detection": "appendFeedbackBatch throws after approve or reject returned",
+          "response": "The result carries the outcome and commentsError with recorded 0; the host reports ok with the error text, and the webview keeps the drafts",
+          "userImpact": "The pane says the document was approved (or rejected) and that the comments were not saved; pressing send feedback sends them again, which is allowed in any state",
+          "recoverable": true
+        },
+        {
+          "scenario": "The artifact was approved or rejected elsewhere while the pane had it open",
+          "detection": "handleReviewDecision reads meta.approvedAt and meta.rejectedAt before acting and finds one set for an approve or reject",
+          "response": "{ error } naming the state; nothing is written; the host re-reads the pending list and the document",
+          "userImpact": "A line says the document is no longer awaiting review; the drafts stay and can be sent as feedback",
+          "recoverable": true
+        },
+        {
+          "scenario": "A comment names a file that is not this artifact's document",
+          "detection": "handleReviewDecision compares each comment's file with the .md's repo-relative path and the relPath of each companion in the artifact's body",
+          "response": "{ error } naming the file; nothing is written",
+          "userImpact": "None in normal use: the pane only sends the paths the view gave it",
+          "recoverable": true
+        },
+        {
+          "scenario": "The chat cannot take the message",
+          "detection": "notifyChat is absent, throws, or answers 'unavailable'",
+          "response": "The host catches a throw and logs it; the decision and the comments stay saved; the result line says the chat message was not sent",
+          "userImpact": "The decision is recorded; the assistant is not told, and the user can tell it in the chat",
+          "recoverable": true
+        },
+        {
+          "scenario": "The chat panel is disposed while a message is waiting for a running turn",
+          "detection": "The host's dispose path runs with a non-empty list",
+          "response": "The list is dropped and a warning is logged with the number of messages dropped",
+          "userImpact": "The decision is saved; the assistant is not told",
+          "recoverable": true
+        },
+        {
+          "scenario": "An HTML companion cannot be shown",
+          "detection": "companionUri is absent or returns undefined (the path is not an .html file under the repo's docs/ folder), or the frame's load event does not arrive within five seconds",
+          "response": "The tab shows the file's repo-relative path and a line saying it cannot be shown in this pane",
+          "userImpact": "The reviewer can still comment on that document as a whole and open the file from the explorer",
+          "recoverable": true
+        },
+        {
+          "scenario": "The markdown renderer fails for a document",
+          "detection": "renderMarkdownBody reports a degradation, as today",
+          "response": "The body is shown as plain text with the existing notice; inline comment selection is turned off for that document and saved inline comments are listed in the whole-document strip with their quotes",
+          "userImpact": "The document is readable and whole-document comments still work",
+          "recoverable": true
+        },
+        {
+          "scenario": "The stored feedback list holds an entry the pane cannot read",
+          "detection": "The webview checks each entry for a string author, timestamp and comment before drawing it",
+          "response": "That entry is skipped and the strip's summary line says how many entries could not be shown",
+          "userImpact": "The other comments are shown",
+          "recoverable": true
+        },
+        {
+          "scenario": "The git user cannot be read",
+          "detection": "The lookup's git call fails or returns an empty name",
+          "response": "The OS login is used; if that also fails the author is 'unknown' and reviewer.source says so",
+          "userImpact": "The panel shows the name comments will be saved under before anything is sent",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Approve or reject with no drafts and an empty whole-document field",
+          "expected": "One call with an empty comments list; the decision is recorded, no feedback entry is written, and the chat message is the decision line alone"
+        },
+        {
+          "input": "Send feedback with no comment",
+          "expected": "Refused in the webview with a line of text; no message is posted to the host"
+        },
+        {
+          "input": "A selection that crosses two blocks, or lies in the Feedback section or in a thread card",
+          "expected": "No comment button is offered"
+        },
+        {
+          "input": "The same quote occurs several times in a section",
+          "expected": "The prefix and suffix pick the occurrence; if they no longer match, the first occurrence in that section is used"
+        },
+        {
+          "input": "A saved inline comment whose quote is gone after a revision",
+          "expected": "Listed in the whole-document strip, tagged 'on an earlier revision', with its quote, author, time and decision"
+        },
+        {
+          "input": "A revision that leaves a commented passage unchanged",
+          "expected": "The comment is placed on the passage again and is not tagged as earlier"
+        },
+        {
+          "input": "Two selections that overlap an existing mark",
+          "expected": "A selection that would cut through an existing mark is not offered a comment button; a selection wholly inside one opens that thread"
+        },
+        {
+          "input": "A document with 300 saved comments",
+          "expected": "All are placed or listed; the strip scrolls inside its own height and the comment panel stays visible"
+        },
+        {
+          "input": "A document re-authored through the workflow",
+          "expected": "Its feedback list is carried into the new JSON in the same order and its Feedback section is rendered from it"
+        },
+        {
+          "input": "A reviewer presses a second button before the first answer arrives",
+          "expected": "The three buttons are disabled from the press until 'docs-decision-result' arrives"
+        },
+        {
+          "input": "The pane is hidden and shown again with drafts",
+          "expected": "The drafts and the whole-document field are restored from the webview's saved state for that artifact"
+        },
+        {
+          "input": "A decision is sent while a chat turn is running, then another",
+          "expected": "Both messages wait and are run one after the other, in order, after the turn ends"
+        },
+        {
+          "input": "An artifact kind with no feedback field in its type (SPEC, ISSUE, CR)",
+          "expected": "Comments are saved in body.feedback of its JSON all the same; its .md shows them only if that kind's renderer has a Feedback section"
+        },
+        {
+          "input": "A read-only open of an approved document",
+          "expected": "History is shown; send feedback is offered; approve and reject are not"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "workflow.pending, workflow.artifactContent, workflow.approve and workflow.resolveComment keep their request and response shapes, which the JetBrains plugin and the CLI read",
+          "source": "c1"
+        },
+        {
+          "text": "appendFeedback is append-only: it never edits or removes an entry and touches no key but body.feedback",
+          "source": "c3"
+        },
+        {
+          "text": "An artifact with no feedback renders with no Feedback section, and existing entries render as they do today",
+          "source": "c2"
+        },
+        {
+          "text": "An artifact is pending only while meta.approvedAt and meta.rejectedAt are both absent, and a rejected DEF, LLD or PLAN stops its downstream stages",
+          "source": "c3"
+        },
+        {
+          "text": "The review view accepts only a .md that resolves under docs/",
+          "source": "c3"
+        },
+        {
+          "text": "The pane's shell is one inline script under a nonce CSP with no remote origin, and artifact text reaches the DOM as text",
+          "source": "c4"
+        },
+        {
+          "text": "The functional-requirement, diagram and experience renderers of the pane keep working, drawing only from --it-* variables",
+          "source": "c4"
+        },
+        {
+          "text": "A message the user types in the chat supersedes a running turn as today",
+          "source": "c4"
+        },
+        {
+          "text": "The delivery board opens an artifact in the pane through openArtifact({ artifactId, mdPath })",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through tsx; tests sit in __tests__ beside the code (*.test.ts), in src/ for the daemon and in vscode-plugin/src/ for the plugin. Webview scripts are run in a fake DOM as the existing pane and chat shell tests do.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The feedback record: the batch append, the carry-forward helper, the renderer and the accepted shape.",
+          "subjects": [
+            "feedback: appendFeedbackBatch writes every entry in one write with ids and one timestamp, changes no other key, and writes nothing when any entry is invalid",
+            "feedback: an entry with an anchor, a decision and a batchId is accepted by the schema and by coerceRequest, and an entry without them is still valid",
+            "feedback: feedbackBodyLines shows the decision and the quoted text of an entry that has them and renders an old entry byte-identically",
+            "feedback: priorFeedback returns the stored list, and an empty list for a missing, unreadable or feedback-less artifact"
+          ],
+          "fixturesNeeded": [
+            "A temporary artifact JSON under a .insrc/artifacts folder"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The review decision core in the daemon, over temporary artifacts and injected approve, reject and author functions.",
+          "subjects": [
+            "review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason",
+            "review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject",
+            "review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused",
+            "review decision: a decision with no comments writes no feedback entry",
+            "review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing",
+            "review decision: a failing comment write after the decision took effect reports the outcome with commentsError",
+            "review decision: the author is the git user name, else the OS login, else unknown, and is never taken from the request"
+          ],
+          "fixturesNeeded": [
+            "Temporary repository folder with docs/ and .insrc/artifacts holding a pending artifact and its .md"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The review view's new fields.",
+          "subjects": [
+            "review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The daemon's handler map and the shapes other clients read.",
+          "subjects": [
+            "daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged",
+            "plugin protocol: 'docs-decision-result' is a host message, and 'docs-decision' carries a decision and a comments list"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Re-authoring keeps comments: the design finalizers carry the stored feedback into the new artifact.",
+          "subjects": [
+            "finalize: a re-authored DEF, HLD, LLD and PLAN each keep the feedback entries of the artifact they replace, in order, and render them in the Feedback section; a first authoring has none"
+          ],
+          "fixturesNeeded": [
+            "A prior artifact JSON with two feedback entries at the path the finalizer writes"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The plugin's client and the chat host's new method.",
+          "subjects": [
+            "docs review client: decide calls 'workflow.reviewDecision' once with the resolved .md path and throws on the error arm; content forwards the new view fields",
+            "chat host: submitExternal runs the message at once when no turn is running, queues it behind a running turn and runs queued messages in order when the turn ends, errors or is stopped",
+            "chat host: submitExternal opens a closed panel, answers unavailable with no CLI or blank text, never supersedes a running turn, and drops its list on dispose with a warning"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The pane's host over a fake client and a fake channel.",
+          "subjects": [
+            "docs review host: a docs-decision calls decide once with every comment, posts docs-decision-result, re-reads the list and the document, and hands the chat one message with the decision and the numbered comments",
+            "docs review host: a decision with no comments sends the chat the decision line alone",
+            "docs review host: a failing decide posts a failed result, sends no chat message and keeps the open document",
+            "docs review host: a withheld approval and a commentsError are each reported in the result and in the chat message",
+            "docs review host: docs-content carries the feedback list, the reviewer, the state and one document entry per HTML companion with its webview address",
+            "docs review host: an absent, throwing or unavailable notifyChat leaves the decision recorded and says so in the result"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The pane's webview script in a fake DOM.",
+          "subjects": [
+            "docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch",
+            "docs review shell: selecting text in one block and adding a comment makes a draft with a quote, section, prefix and suffix; a selection across blocks, in the Feedback section or cutting an existing mark offers no button",
+            "docs review shell: the three buttons post one docs-decision with every draft and the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing",
+            "docs review shell: drafts are cleared on a successful result, kept on a failed one or one with commentsError, and restored from the saved state when the shell is rebuilt",
+            "docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order",
+            "docs review shell: an HTML document is shown in a frame with sandbox allow-scripts and the given address, and a document without an address shows its path and a line of text",
+            "docs review shell: author, comment and quote text are set as text, never as markup",
+            "docs review shell: the existing section chooser, functional-requirement, diagram and experience renderers still draw"
+          ],
+          "fixturesNeeded": [
+            "The fake DOM helper the existing shell tests use, extended with a selection and a range"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "What a fake DOM cannot show, checked in a real browser and in VS Code.",
+          "subjects": [
+            "Headless Chrome render of the real shell with a long document: the comment panel stays in view at the top and at the bottom of the scroll, and a screenshot matches the approved mock's layout",
+            "By hand in VS Code with a light and a dark theme: the pane follows the theme, an HTML companion with scripts is shown in its tab, an inline comment and a whole-document comment sent with reject are saved under the git user and appear in the chat as one message, and they are shown as history when the document is opened again",
+            "By hand in VS Code: a decision sent while a chat turn is running is delivered after that turn ends"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch",
+            "Headless Chrome render of the real shell with a long document: the comment panel stays in view at the top and at the bottom of the scroll, and a screenshot matches the approved mock's layout"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch",
+            "By hand in VS Code with a light and a dark theme: the pane follows the theme, an HTML companion with scripts is shown in its tab, an inline comment and a whole-document comment sent with reject are saved under the git user and appear in the chat as one message, and they are shown as history when the document is opened again"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "docs review shell: an HTML document is shown in a frame with sandbox allow-scripts and the given address, and a document without an address shows its path and a line of text",
+            "docs review host: docs-content carries the feedback list, the reviewer, the state and one document entry per HTML companion with its webview address",
+            "docs review shell: the existing section chooser, functional-requirement, diagram and experience renderers still draw"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "docs review shell: selecting text in one block and adding a comment makes a draft with a quote, section, prefix and suffix; a selection across blocks, in the Feedback section or cutting an existing mark offers no button"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "docs review shell: the three buttons post one docs-decision with every draft and the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing",
+            "docs review host: a docs-decision calls decide once with every comment, posts docs-decision-result, re-reads the list and the document, and hands the chat one message with the decision and the numbered comments",
+            "review decision: a decision with no comments writes no feedback entry",
+            "review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "review decision: the author is the git user name, else the OS login, else unknown, and is never taken from the request",
+            "feedback: appendFeedbackBatch writes every entry in one write with ids and one timestamp, changes no other key, and writes nothing when any entry is invalid"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order",
+            "finalize: a re-authored DEF, HLD, LLD and PLAN each keep the feedback entries of the artifact they replace, in order, and render them in the Feedback section; a first authoring has none",
+            "review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion"
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "docs review host: a decision with no comments sends the chat the decision line alone",
+            "chat host: submitExternal runs the message at once when no turn is running, queues it behind a running turn and runs queued messages in order when the turn ends, errors or is stopped",
+            "chat host: submitExternal opens a closed panel, answers unavailable with no CLI or blank text, never supersedes a running turn, and drops its list on dispose with a warning",
+            "By hand in VS Code: a decision sent while a chat turn is running is delivered after that turn ends"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The review pane lays out its list, document, note box and buttons in page flow, in the chat's terminal style, so the controls come after the whole document (analyze bundle 4). Approve calls workflow.approve; request changes calls workflow.resolveComment with an empty anchor, which turns the note into a resolved open question, and is offered only for DEF, HLD and LLD (bundles 1 and 4). The artifact JSON has a feedback list with author, time, target and comment, appended one entry at a time through artifact.feedback.append; the review view does not return it, nothing carries it into a re-authored artifact, and a reject exists only as a function the CLI calls (bundles 2 and 3). The chat host can be given a message only by its own webview, and a new message supersedes a running turn (bundle 4).",
+      "stateAfter": "The pane is a column with a fixed comment panel under one scrolling document, in VS Code theme variables, with one tab per document of the artifact (the markdown and each HTML companion in a sandboxed frame). A reviewer drafts inline and whole-document comments and sends them with approve, reject or send feedback through one daemon call, workflow.reviewDecision, which records the decision and then appends the comments to body.feedback with the author the daemon resolves, an anchor for inline comments, and the decision that took effect. The review view returns the feedback list, a content version, the reviewer and the state; the pane shows saved comments on their passages or in a strip, oldest first. Re-authoring an artifact carries its feedback forward. After a decision the pane hands the chat host a message through submitExternal, which waits for a running turn. The older IPCs and the feedback entries already saved are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional anchor, decision and batchId fields to the feedback entry's type, schema, request coercion and renderer, and add the batch append and the prior-feedback helper",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Carry the stored feedback into the new body in the five design finalizers",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add docPath, contentVersion, feedback, reviewer and state to the review view and export the user lookup",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the review decision core and register the 'workflow.reviewDecision' handler",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add submitExternal and its waiting list to the chat host",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Replace approve and comment in the plugin's review client with decide, change the 'docs-decision' message, add 'docs-decision-result', and move the host to the one call and the chat message",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Rebuild the pane's shell: the column layout, the theme variables, the document tabs and frame, the comment panel, inline comments and the history; wire notifyChat, companionUri and the panel's local resource root in extension.ts",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Update the daemon (push, update, restart) before installing the plugin build, then install the plugin and check by hand",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Every change to a shape other clients read is additive and optional: the three new fields of a feedback entry, the five new fields of the review view, and one new IPC method. workflow.pending, workflow.artifactContent, workflow.approve, workflow.resolveComment and artifact.feedback.append keep their requests, responses and behaviour, so the JetBrains plugin, the CLI and the MCP tools are unaffected. Feedback entries already saved stay valid and render as before. Comments saved from the pane's earlier request-changes button remain where they were written, as resolved open questions; they are not converted. The plugin's webview protocol changes inside one plugin build. A plugin newer than its daemon gets an unknown-method error on a decision and shows it without saving anything, so the daemon is updated first. Rolling back the plugin or the daemon leaves the saved entries in place; an older reader ignores the fields it does not know.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One review-decision call in the daemon over the existing feedback record",
+        "oneLineSummary": "A new IPC takes the decision and all new comments together; the daemon stamps the author, appends them to body.feedback and then approves or rejects.",
+        "approach": "FeedbackEntry gains three optional fields: anchor { quote, sectionSlug?, blockText? } for an inline comment, decision ('approve' | 'reject' | 'feedback') and batchId, and the existing target.version is filled with a content hash of the document the comment was made on. A new IPC workflow.reviewDecision { repo, mdPath, decision, comments[] } resolves the artifact as workflow.artifactContent does, resolves the author in the daemon (git user.name, else OS login), appends every comment in one write through a new appendFeedbackBatch in provenance/writer.ts, and only then calls the existing approve or reject function; it answers { decision, recorded, entries, approved?, skipped?, rejectedAt? }. The review view (ArtifactReviewView) gains feedback, contentVersion and reviewer. A second new IPC workflow.companionContent reads one HTML companion of an artifact under docs/. In the plugin the pane sends one docs-decision message with the drafts, the host calls the one IPC, re-reads the view, and hands a text summary to an injected notifyChat seam that extension.ts wires to a new chat host method which queues the message behind a running turn. workflow.resolveComment and artifact.feedback.append stay unchanged for their current callers.",
+        "pros": [
+          "Comments and the decision are saved by one daemon call, in a fixed order, so a failed save never leaves an approval without its comments",
+          "The author is stamped by the daemon from the repo, the same for every client",
+          "Reuses the feedback record, its writer, the approve and reject functions and the user lookup",
+          "Existing IPC shapes are untouched, so the JetBrains plugin and the CLI are unaffected",
+          "The saved entries show in each document's Feedback section through the existing renderers"
+        ],
+        "cons": [
+          "Two new IPC methods to keep in step with the IDE fork's mirrored types",
+          "The record's type, schema and renderer all need the new optional fields"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "The plugin composes existing calls",
+        "oneLineSummary": "The pane's host calls artifact.feedback.append once per comment, then workflow.approve or a thin new workflow.reject, and resolves the author itself.",
+        "approach": "FeedbackEntry gains the same optional anchor and decision fields, accepted by the existing artifact.feedback.append. The plugin's host resolves the author by running git config user.name in the workspace (else the OS user), appends each comment with one IPC call each, and then calls workflow.approve or a new workflow.reject that wraps rejectArtifactByJsonPath. The review view gains feedback so the pane can show history. The chat message is sent as in a1.",
+        "pros": [
+          "Only one new IPC method (reject)",
+          "The append call already exists and is tested"
+        ],
+        "cons": [
+          "Not one unit: a failure after some comments are saved leaves a partial batch, and a failure of the decision leaves comments with a decision that did not happen",
+          "Each append rewrites the whole artifact JSON, so ten comments are ten read-modify-write cycles",
+          "The author is decided by the client, so two clients can stamp different names for the same user",
+          "The plugin needs its own git lookup, duplicating the daemon's"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheaper, but it is partial on the two requirements that concern what is saved."
+      },
+      {
+        "id": "a3",
+        "name": "A separate comments file per artifact",
+        "oneLineSummary": "Review comments go to a new sidecar file beside the artifact JSON, with their own read and write calls.",
+        "approach": "A new file .insrc/artifacts/COMMENTS-<artifactId>.json holds review threads: each thread an anchor and a list of comments with author, time and decision. New IPCs workflow.comments.list and workflow.comments.submit read and write it; the decision is recorded as in a1. body.feedback is left as it is for the notes agents write.",
+        "pros": [
+          "A shape made for threads, free of the feedback record's existing fields",
+          "The artifact JSON is not rewritten when a comment is added"
+        ],
+        "cons": [
+          "A second store beside the one that already records author, time and comment on an artifact",
+          "Review comments would not appear in the document's Feedback section without a second renderer",
+          "New files to commit, locate and keep with their artifact when it is moved or re-authored",
+          "More new code and tests than extending the record"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Works but ignores the record that exists and costs the most."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Can a VS Code webview show a repository HTML file that carries its own scripts (the diagram companions are about 3 MB with inline scripts) inside a frame with sandbox 'allow-scripts', addressed through the webview's resource address? This was not run. Recommended: try it first in the build; if it does not work, show the file's path with a control that opens it in the system browser.",
+      "Should comments saved by the pane's earlier request-changes button, which are stored as resolved open questions, be shown in the new history? Recommended: no; they stay in the document's resolved questions."
+    ],
+    "sequenceDefinition": {
+      "id": "review-decision",
+      "narrative": "One press of reject with two drafted comments, from the pane to the saved entries and the chat. It shows the fixed order in the daemon (the decision first, the comments second), that the author is stamped by the daemon, and that the chat message waits for a running turn. (Grounding: c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, c17, c18, c19, c20, c21, c22, c23, c24, c25, c26, c27, c28.)",
+      "participants": [
+        {
+          "id": "reviewer",
+          "label": "Reviewer",
+          "description": "The person reading the document in the review pane."
+        },
+        {
+          "id": "webview",
+          "label": "Pane webview",
+          "description": "The pane's script: draws the document, keeps drafts, posts one message per decision."
+        },
+        {
+          "id": "host",
+          "label": "Pane host",
+          "description": "createDocsReviewHost: calls the daemon through the review client and tells the chat."
+        },
+        {
+          "id": "daemon",
+          "label": "Daemon",
+          "description": "The 'workflow.reviewDecision' handler and handleReviewDecision."
+        },
+        {
+          "id": "artifact",
+          "label": "Artifact JSON",
+          "description": "The artifact's file under .insrc/artifacts: meta and body.feedback."
+        },
+        {
+          "id": "chat",
+          "label": "Chat host",
+          "description": "createChatPanelHost: runs or queues a message handed in by submitExternal."
+        }
+      ],
+      "messages": [
+        {
+          "from": "reviewer",
+          "to": "webview",
+          "label": "select text, comment, add (twice)",
+          "kind": "call",
+          "description": "Two drafts are made; nothing is sent yet."
+        },
+        {
+          "from": "reviewer",
+          "to": "webview",
+          "label": "press reject",
+          "kind": "call",
+          "description": "The three buttons are disabled until the result arrives."
+        },
+        {
+          "from": "webview",
+          "to": "host",
+          "label": "docs-decision { decision: 'reject', comments[2] }",
+          "kind": "call",
+          "description": "One message with every draft and the whole-document comment."
+        },
+        {
+          "from": "host",
+          "to": "daemon",
+          "label": "workflow.reviewDecision",
+          "kind": "call",
+          "description": "One IPC call through client.decide."
+        },
+        {
+          "from": "daemon",
+          "to": "daemon",
+          "label": "validate, resolve the author (git user, else OS login)",
+          "kind": "recurse",
+          "description": "Nothing is written if the request is invalid."
+        },
+        {
+          "from": "daemon",
+          "to": "artifact",
+          "label": "rejectArtifactByJsonPath: meta.rejectedAt, rejectReason",
+          "kind": "call",
+          "description": "The decision is recorded first."
+        },
+        {
+          "from": "daemon",
+          "to": "artifact",
+          "label": "appendFeedbackBatch: 2 entries, decision reject",
+          "kind": "call",
+          "description": "One write; each entry has the author, the time, its anchor and the batch id."
+        },
+        {
+          "from": "daemon",
+          "to": "host",
+          "label": "{ outcome: 'rejected', recorded: 2, author }",
+          "kind": "return",
+          "description": "The result of the one call."
+        },
+        {
+          "from": "host",
+          "to": "webview",
+          "label": "docs-decision-result, then docs-list and docs-content",
+          "kind": "return",
+          "description": "The drafts are cleared on success; the document is re-read with its history."
+        },
+        {
+          "from": "host",
+          "to": "chat",
+          "label": "notifyChat(message) -> submitExternal",
+          "kind": "call",
+          "description": "The decision line and the numbered comments."
+        },
+        {
+          "from": "chat",
+          "to": "chat",
+          "label": "run now, or wait for the running turn to end",
+          "kind": "recurse",
+          "description": "A message from the pane never supersedes a running turn."
+        },
+        {
+          "from": "chat",
+          "to": "host",
+          "label": "'sent' | 'queued' | 'unavailable'",
+          "kind": "return",
+          "description": "Shown in the result line of the pane."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/rework-document-review-pane-fixed-decision-E202610138d4b90c9/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]: Modules and callers of the review flow: the daemon's review IPCs, the plugin's review pane, the chat host."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[1]: Callers of appendFeedback, rejectArtifactByJsonPath, handleArtifactContent and feedbackBodyLines; sites that name FeedbackEntry or the artifact.feedback.append IPC."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[2]: Behaviour of the functions the Story changes or calls, read in the source."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[3]: The review pane and the chat host as built."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/provenance/writer.ts:117-150",
+      "quotedText": "export function appendFeedback(req: AppendFeedbackRequest): AppendFeedbackResult {"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/provenance/types.ts:37-42",
+      "quotedText": "export interface FeedbackEntry extends ProvenanceAuthorship {"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/format/bindings.ts:81-89",
+      "quotedText": "export function feedbackBodyLines(feedback: FeedbackRecord | undefined): string[] {"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/artifact-content.ts:142-214",
+      "quotedText": "export function handleArtifactContent("
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:971-990",
+      "quotedText": "export function rejectArtifactByJsonPath(jsonPath: string, reason: string): RejectionResult {"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:638-652",
+      "quotedText": "'workflow.approve': async (params) => {"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:609-619",
+      "quotedText": "'artifact.feedback.append': async (params) => {"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/header.ts:127-141",
+      "quotedText": "function defaultGitUserName(repoPath: string): string | undefined {"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts:128-128",
+      "quotedText": "if (typeof meta['rejectedAt'] === 'string' && meta['rejectedAt'].length > 0) continue;"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-client.ts:42-55",
+      "quotedText": "export interface DocsReviewClient {"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:1220-1220",
+      "quotedText": "export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:28-28",
+      "quotedText": "const COMMENTABLE_KINDS = new Set(['DEF', 'HLD', 'LLD']);"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:124-135",
+      "quotedText": "export interface ChatPanelHost {"
+    },
+    {
+      "id": "c18",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts:2312-2312",
+      "quotedText": "async function finalizeStandaloneLld("
+    },
+    {
+      "id": "c19",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/types.ts:29-36",
+      "quotedText": "export interface CompanionArtifactRef {"
+    },
+    {
+      "id": "c20",
+      "kind": "code",
+      "ref": "src/workflow/resolve-comment.ts:132-132",
+      "quotedText": "export function handleResolveComment("
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "vscode-plugin/src/extension.ts:668-672",
+      "quotedText": "const reviewHost = createDocsReviewHost({"
+    },
+    {
+      "id": "c22",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/provenance/schema.ts:59-60",
+      "quotedText": "export const FEEDBACK_NEVER_AUTHOR_RULE ="
+    },
+    {
+      "id": "c23",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/provenance/tool.ts:85-85",
+      "quotedText": "export function coerceRequest(input: ToolInput): AppendFeedbackRequest {"
+    },
+    {
+      "id": "c24",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:826-826",
+      "quotedText": "export async function approveWorkflowTarget("
+    },
+    {
+      "id": "c25",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:1611-1611",
+      "quotedText": "const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;"
+    },
+    {
+      "id": "c26",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts:385-385",
+      "quotedText": "export async function finalizeArtifact("
+    },
+    {
+      "id": "c27",
+      "kind": "stakeholder",
+      "ref": "User request and decisions in chat, 2026-10-13: the seven requirements; the VS Code theme only with no light/dark switch; the comment panel styled like the chat panel with round icon-only buttons; the decision and new comments sent to the chat, with no comments only the decision; the artifact JSON to hold the comments; the recommended answers accepted (the pane records the decision, the chat message is submitted by itself, it waits for a running turn and opens a closed chat)."
+    },
+    {
+      "id": "c28",
+      "kind": "doc",
+      "ref": "docs/mocks/docs-review-pane.html",
+      "quotedText": "Mock of the reworked document viewer / approver pane (VS Code webview)."
+    }
+  ]
+}

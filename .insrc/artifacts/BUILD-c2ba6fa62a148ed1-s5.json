@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T12:33:07.673Z",
+    "updatedAt": "2026-10-13T12:39:56.293Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -18,9 +18,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "isModelCallFailure now recognises a failed call by its type or by the provider's own wording at the start of the message ('Model call failed: ' or a CLI wording); Ollama and socket texts quoted inside a message no longer count, and every consumer family still reports a real Ollama outage as the model being unavailable.",
+    "summary": "A failed model call in the shaper's tool loop or final structured emit is now reported as 'The model call for the tool loop failed: ...' / 'The model call for the final structured emit failed: ...', naming no provider the failure did not come from.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
     },
@@ -30,9 +34,9 @@
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:33:07.673Z"
+        "timestamp": "2026-10-13T12:39:56.293Z"
       }
     ],
-    "commit": "7589466b"
+    "commit": "9ebe0d95"
   }
 }

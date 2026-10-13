@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T12:33:07.673Z",
+    "updatedAt": "2026-10-13T12:39:56.293Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -330,6 +330,205 @@
               },
               {
                 "title": "an absent output of one of several producers is worded by its task and the others are said to be available; a name with no output keeps the old wording",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "9ebe0d95",
+        "ranAt": "2026-10-13T12:39:56.293Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-errors.test.ts",
+                "title": "ShaperLlmUnavailableError message names the call, never a provider",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 798,
+            "titles": [
+              {
+                "title": "stable stringify produces identical output for object key permutations",
+                "result": "pass"
+              },
+              {
+                "title": "stable stringify is order-stable for Maps with reverse insertion",
+                "result": "pass"
+              },
+              {
+                "title": "stable stringify treats different values as distinct",
+                "result": "pass"
+              },
+              {
+                "title": "stable stringify is deterministic for arrays (insertion order matters)",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(ECONNREFUSED) -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"Ollama is not running. Start it...\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"Model not found ...\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"fetch failed\") -> ShaperLlmUnavailableError (retries exhausted by provider)",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"Did not receive done...\") -> ShaperLlmUnavailableError (retries exhausted)",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"ECONNRESET\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"socket hang up\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(arbitrary other Error) -> original error",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(non-Error value) -> wraps in Error",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers on an all-empty bundle returns every layer",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers on a fully-populated bundle returns []",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers treats whitespace-only bodies as empty",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers preserves the spec render order in its return",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperLlmUnavailableError carries the call and the cause in its message",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperToolLoopExhausted carries the turn count in its message",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperSchemaUnrecoverable carries the retry count + reasons in its message",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperPromptMissingError carries the absolute prompt path",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: classification mode returns empty string",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: run mode returns empty string",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: task mode with empty upstream map returns empty string",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: task mode with one populated upstream renders a JSON block",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: null upstream value renders [unavailable: ...] marker",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: undefined upstream value also renders unavailable marker",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: mixed populated + null upstream renders both",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: upstream task ids are sorted alphabetically",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/shaper-errors.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 571,
+            "titles": [
+              {
+                "title": "ShaperLlmUnavailableError message names the call, never a provider",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperAnswerStepFailedError states its reason, keeps what the lookups found, and never reports retries",
+                "result": "pass"
+              },
+              {
+                "title": "the other new errors carry their detail and their own name",
+                "result": "pass"
+              },
+              {
+                "title": "a tool's output with no JSON form is described as text and never thrown into the tool loop",
                 "result": "pass"
               }
             ],

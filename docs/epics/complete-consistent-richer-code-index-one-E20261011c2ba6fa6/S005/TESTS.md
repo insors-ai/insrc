@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -68,3 +68,27 @@ Run at 2026-10-13T12:33:07.673Z on commit `7589466b`. Tests check: **passed**. 6
 | `src/analyze/context/__tests__/model-failure-callers.test.ts` | 0 | 3 | 0.7 s |  |
 | `src/analyze/context/__tests__/model-failure.test.ts` | 0 | 11 | 0.6 s |  |
 | `src/analyze/runtimes/shared/__tests__/aggregator.test.ts` | 0 | 23 | 0.5 s |  |
+
+## t3
+
+Run at 2026-10-13T12:39:56.293Z on commit `9ebe0d95`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept | `src/analyze/context/__tests__/driver-unit.test.ts` |
+| pass | ShaperLlmUnavailableError message names the call, never a provider | `src/analyze/context/__tests__/shaper-errors.test.ts` |
+
+**unit: classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...' | `src/analyze/context/__tests__/driver-unit.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/driver-unit.test.ts` | 0 | 31 | 0.8 s |  |
+| `src/analyze/context/__tests__/shaper-errors.test.ts` | 0 | 4 | 0.6 s |  |

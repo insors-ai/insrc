@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -312,3 +312,43 @@ Run at 2026-10-13T09:12:37.601Z on commit `08c30702`. Tests check: **passed**. 1
 | `vscode-plugin/src/chat/__tests__/edit-governor.test.ts` | 0 | 14 | 0.4 s |  |
 | `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` | 0 | 22 | 0.4 s |  |
 | `vscode-plugin/src/chat/__tests__/protocol.test.ts` | 0 | 10 | 0.3 s |  |
+
+## t7
+
+Run at 2026-10-13T09:17:32.367Z on commit `2cc4b881`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: diff sections: while the diff state is open the file-edit marker and the successful edit result write no row, and a failed edit pushes and posts the path marker then the error row**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff sections: while the diff state is open the file-edit marker and the successful edit result write no row, and a failed edit pushes and posts the path marker then the error row | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: diff sections: an edit whose path has no section after its check gets its path marker, posted as transcript-row, for a claude result, for a codex applied file-edit and at the end of the turn; an edit whose path has a section gets none**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff sections: an edit whose path has no section after its check gets its path marker, posted as transcript-row, for a claude result, for a codex applied file-edit and at the end of the turn; an edit whose path has a section gets none | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: diff sections: a chat switch in mid-turn settles the held paths, saves, abandons the governor's turn before the detach, and a check in flight then pushes and posts nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff sections: a chat switch in mid-turn settles the held paths, saves, abandons the governor's turn before the detach, and a check in flight then pushes and posts nothing | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: diff sections: the Stop control, a newer turn's start, a sink error and closing the panel each end the open diff state and settle its held paths**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff sections: the Stop control, a newer turn's start, a sink error and closing the panel each end the open diff state and settle its held paths | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**integration: diff sections: a followed turn writes and posts its rows as today and asks for no check, also while the governor still holds a snapshot**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | diff sections: a followed turn writes and posts its rows as today and asks for no check, also while the governor still holds a snapshot | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 154 | 3.8 s |  |

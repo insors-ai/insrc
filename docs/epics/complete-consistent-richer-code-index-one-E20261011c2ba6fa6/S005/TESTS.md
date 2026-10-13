@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 56 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 58 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -408,3 +408,25 @@ Run at 2026-10-13T14:40:25.910Z on commit `c411ab88`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/search-filter.test.ts` | 0 | 3 | 123.2 s |  |
+
+## t14
+
+Run at 2026-10-13T14:51:31.571Z on commit `6f82f3e0`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out | `src/daemon/tools/builtins/graph/__tests__/graph-guard.test.ts` |
+
+**integration: graph_query from a ready repository whose closure reaches a repository under index leaves that repository's entities out**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | graph_query from a ready repository whose closure reaches a repository under index leaves that repository's entities out | `src/daemon/tools/builtins/graph/__tests__/graph-guard.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/tools/builtins/graph/__tests__/graph-guard.test.ts` | 0 | 2 | 0.9 s |  |

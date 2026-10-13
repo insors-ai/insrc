@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T14:40:25.910Z",
+    "updatedAt": "2026-10-13T14:51:31.571Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -62,9 +62,13 @@
       {
         "id": "t13",
         "passed": true
+      },
+      {
+        "id": "t14",
+        "passed": true
       }
     ],
-    "summary": "Results that follow the graph or a closure across repositories now leave out a repository under index (its entities, and the repository itself), and search.query searches only the other repositories, answering rather than refusing.",
+    "summary": "The five built-in graph tools now refuse with 'repo-indexing: ...' when they name an entity or root in a repository under index, leave such a repository's entities out of their traversal results, and graph_search searches only the other repositories.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
     },
@@ -74,9 +78,9 @@
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T14:40:25.910Z"
+        "timestamp": "2026-10-13T14:51:31.571Z"
       }
     ],
-    "commit": "c411ab88"
+    "commit": "6f82f3e0"
   }
 }

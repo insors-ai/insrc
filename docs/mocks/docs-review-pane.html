@@ -5,18 +5,21 @@
 <title>Mock: document review pane</title>
 <!--
   Mock of the reworked document viewer / approver pane (VS Code webview).
-  Static and self-contained: no network, no build. In VS Code the --vscode-* variables come from
-  the active theme; here two sets (dark, light) stand in for them, switched by the toggle.
+  Static and self-contained: no network, no build. The pane uses the VS Code theme only: every
+  colour is a --vscode-* variable of the active theme (one stand-in set is defined here so the
+  mock can be opened in a browser). There is no light/dark switch of its own.
 
   What it shows:
     - the document rendered by its type (markdown here; the "HTML" tab shows an HTML document);
-    - a fixed bar at the bottom: comment box, Approve / Reject / Send feedback;
+    - a fixed comment panel at the bottom, styled like the chat panel's input: a rounded box with
+      the comment field and round, icon-only buttons (send feedback, reject, approve);
     - inline comments: select text in the document, press "Comment", type, "Add";
       new comments are drafts until one of the three buttons sends them all;
     - earlier comments: a marker in the margin, click to open; oldest first, with author and time.
 -->
 <style>
-  body.dark {
+  /* Stand-in values only: in VS Code every one of these comes from the active theme. */
+  body {
     --vscode-editor-background:#1f1f1f; --vscode-editor-foreground:#cccccc; --vscode-foreground:#cccccc;
     --vscode-descriptionForeground:#9d9d9d; --vscode-panel-border:#2b2b2b; --vscode-sideBar-background:#181818;
     --vscode-textLink-foreground:#4daafc; --vscode-textCodeBlock-background:#2b2b2b; --vscode-textBlockQuote-border:#616161;
@@ -29,19 +32,6 @@
     --vscode-editorGutter-commentRangeForeground:#37373d; --vscode-charts-yellow:#cca700; --vscode-charts-green:#89d185;
     --vscode-list-hoverBackground:#2a2d2e; --vscode-list-activeSelectionBackground:#04395e;
   }
-  body.light {
-    --vscode-editor-background:#ffffff; --vscode-editor-foreground:#3b3b3b; --vscode-foreground:#3b3b3b;
-    --vscode-descriptionForeground:#6b6b6b; --vscode-panel-border:#e5e5e5; --vscode-sideBar-background:#f8f8f8;
-    --vscode-textLink-foreground:#005fb8; --vscode-textCodeBlock-background:#f2f2f2; --vscode-textBlockQuote-border:#c8c8c8;
-    --vscode-button-background:#005fb8; --vscode-button-foreground:#ffffff; --vscode-button-hoverBackground:#0258a8;
-    --vscode-button-secondaryBackground:#e5e5e5; --vscode-button-secondaryForeground:#3b3b3b; --vscode-button-secondaryHoverBackground:#cccccc;
-    --vscode-input-background:#ffffff; --vscode-input-foreground:#3b3b3b; --vscode-input-border:#cecece; --vscode-focusBorder:#005fb8;
-    --vscode-badge-background:#cccccc; --vscode-badge-foreground:#3b3b3b; --vscode-errorForeground:#c72e0f;
-    --vscode-editor-findMatchHighlightBackground:rgba(234,92,0,.25); --vscode-editor-selectionBackground:#add6ff;
-    --vscode-editorWidget-background:#f8f8f8; --vscode-editorWidget-border:#c8c8c8; --vscode-widget-shadow:rgba(0,0,0,.16);
-    --vscode-editorGutter-commentRangeForeground:#d5d8e9; --vscode-charts-yellow:#bf8803; --vscode-charts-green:#388a34;
-    --vscode-list-hoverBackground:#f2f2f2; --vscode-list-activeSelectionBackground:#e8e8e8;
-  }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
@@ -50,6 +40,15 @@
     font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-size: 13px; line-height: 1.5;
   }
   button { font: inherit; cursor: pointer; border: 1px solid transparent; border-radius: 2px; padding: 4px 12px; }
+  /* Round, icon-only buttons, as in the chat panel. The name is in the tooltip and aria-label. */
+  .ic { width: 30px; height: 30px; padding: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border: 1px solid var(--vscode-editorWidget-border); }
+  .ic:hover { background: var(--vscode-button-secondaryHoverBackground); }
+  .ic:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 1px; }
+  .ic svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .ic.sm { width: 24px; height: 24px; } .ic.sm svg { width: 13px; height: 13px; }
+  .ic.approve { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border-color: transparent; }
+  .ic.approve:hover { background: var(--vscode-button-hoverBackground); }
+  .ic.reject { background: transparent; color: var(--vscode-errorForeground); border-color: var(--vscode-errorForeground); }
   .btn { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
   .btn:hover { background: var(--vscode-button-hoverBackground); }
   .btn2 { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
@@ -88,7 +87,7 @@
   mark.rv-anno.old { background: transparent; border-bottom-color: var(--vscode-descriptionForeground); }
   .rv-marker { position: absolute; right: 18px; width: 34px; height: 22px; display: flex; align-items: center; justify-content: center; gap: 3px; font-size: 11px; border-radius: 11px; cursor: pointer; background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border: 1px solid var(--vscode-editorWidget-border); }
   .rv-marker.draft { border-color: var(--vscode-charts-yellow); color: var(--vscode-charts-yellow); }
-  .rv-thread { margin: 6px 0 10px; border: 1px solid var(--vscode-editorWidget-border); border-left: 3px solid var(--vscode-charts-yellow); border-radius: 3px; background: var(--vscode-editorWidget-background); font-size: 13px; line-height: 1.45; }
+  .rv-thread { margin: 6px 0 10px; border: 1px solid var(--vscode-editorWidget-border); border-radius: 10px; overflow: hidden; background: var(--vscode-editorWidget-background); font-size: 13px; line-height: 1.45; }
   .rv-thread .q { padding: 6px 10px; color: var(--vscode-descriptionForeground); border-bottom: 1px solid var(--vscode-editorWidget-border); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .rv-c { padding: 7px 10px; border-bottom: 1px solid var(--vscode-editorWidget-border); }
   .rv-c:last-child { border-bottom: 0; }
@@ -98,10 +97,10 @@
   .rv-c .tag.approve { color: var(--vscode-charts-green); }
   .rv-c .tag.reject { color: var(--vscode-errorForeground); }
   .rv-c .x { float: right; background: transparent; color: var(--vscode-descriptionForeground); border: 0; padding: 0 4px; }
-  .rv-compose { padding: 8px 10px; display: flex; gap: 8px; align-items: flex-end; }
-  .rv-compose textarea, .rv-bar textarea { flex: 1; resize: vertical; min-height: 34px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 2px; padding: 5px 7px; font: inherit; }
-  textarea:focus { outline: 1px solid var(--vscode-focusBorder); }
-  .rv-pop { position: absolute; z-index: 5; display: none; background: var(--vscode-editorWidget-background); border: 1px solid var(--vscode-editorWidget-border); box-shadow: 0 2px 8px var(--vscode-widget-shadow); border-radius: 3px; padding: 3px; }
+  .rv-compose { padding: 6px 8px; display: flex; gap: 6px; align-items: center; }
+  .rv-compose textarea, .rv-bar textarea { flex: 1; min-width: 0; resize: none; background: transparent; color: var(--vscode-input-foreground); border: 0; outline: none; padding: 5px 4px; font: inherit; line-height: 1.5; }
+  .rv-compose textarea { height: 30px; }
+  .rv-pop { position: absolute; z-index: 5; display: none; background: var(--vscode-editorWidget-background); border: 1px solid var(--vscode-editorWidget-border); box-shadow: 0 2px 8px var(--vscode-widget-shadow); border-radius: 16px; padding: 3px; }
 
   /* ---- earlier general comments, above the bar ---- */
   .rv-hist { flex: 0 0 auto; border-top: 1px solid var(--vscode-panel-border); background: var(--vscode-sideBar-background); }
@@ -111,13 +110,15 @@
 
   /* ---- the fixed bar ---- */
   .rv-bar { flex: 0 0 auto; border-top: 1px solid var(--vscode-panel-border); background: var(--vscode-sideBar-background); padding: 8px 14px 10px; }
-  .rv-bar .row { display: flex; gap: 8px; align-items: flex-end; }
+  /* The composer: one rounded box holding the field and the buttons, as the chat panel's input. */
+  .rv-bar .row { display: flex; gap: 6px; align-items: flex-end; border: 1px solid var(--vscode-input-border); border-radius: 12px; background: var(--vscode-input-background); padding: 6px 8px 6px 10px; }
+  .rv-bar .row:focus-within { border-color: var(--vscode-focusBorder); }
   .rv-bar .meta { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; font-size: 12px; }
   .rv-bar .meta .sp { flex: 1; }
   .rv-toast { display: none; margin-top: 6px; font-size: 12px; color: var(--vscode-charts-green); }
 </style>
 </head>
-<body class="dark">
+<body>
 
 <div class="rv-head">
   <select aria-label="document">
@@ -130,12 +131,11 @@
   <span class="rv-tabs" title="mock only: the pane picks the viewer from the document's type">
     <button id="tab-md" class="on">Markdown document</button><button id="tab-html">HTML document</button>
   </span>
-  <button class="btn2" id="theme" title="mock only">light / dark</button>
 </div>
 
 <div class="rv-scroll" id="scroll">
   <div class="rv-doc" id="doc">
-    <div id="pop" class="rv-pop"><button class="btn2" id="pop-btn">💬 Comment</button></div>
+    <div id="pop" class="rv-pop"><button class="ic" id="pop-btn" aria-label="Comment on the selected text" title="Comment on the selected text"><svg viewBox="0 0 16 16"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg></button></div>
     <div id="md">
       <h1>LLD: Show each changed section of a turn as a diff widget</h1>
       <p><strong>Epic:</strong> <code>show-each-changed-section-turn-s</code> &nbsp; <strong>Story:</strong> <code>S001</code> &nbsp; <strong>Rollout:</strong> standalone</p>
@@ -188,9 +188,9 @@
   </div>
   <div class="row">
     <textarea id="general" rows="2" placeholder="Comment on the whole document (optional)…"></textarea>
-    <button class="btn2" data-d="feedback" title="Send the comments; the document stays pending">Send feedback</button>
-    <button class="btn-danger" data-d="reject" title="Send the comments and reject this revision">Reject</button>
-    <button class="btn" data-d="approve" title="Send the comments and approve">Approve</button>
+    <button class="ic" data-d="feedback" aria-label="Send feedback" title="Send feedback: sends the comments; the document stays pending"><svg viewBox="0 0 16 16"><path d="M2 8l11-5-4 11-2-4.5z"/></svg></button>
+    <button class="ic reject" data-d="reject" aria-label="Reject" title="Reject: sends the comments and rejects this revision"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    <button class="ic approve" data-d="approve" aria-label="Approve" title="Approve: sends the comments and approves"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5"/></svg></button>
   </div>
   <div class="rv-toast" id="toast"></div>
 </div>
@@ -225,7 +225,9 @@
       row.appendChild(el('div', '', c.text)); box.appendChild(row);
     });
     var comp = el('div', 'rv-compose'), ta = el('textarea'); ta.rows = 1; ta.placeholder = 'Reply or add a comment on this text…';
-    var add = el('button', 'btn2', 'Add'), close = el('button', 'btn2', 'Close');
+    var add = el('button', 'ic sm'), close = el('button', 'ic sm');
+    add.innerHTML = '<svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg>'; add.title = 'Add this comment as a draft'; add.setAttribute('aria-label', 'Add comment');
+    close.innerHTML = '<svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg>'; close.title = 'Close this thread'; close.setAttribute('aria-label', 'Close thread');
     add.onclick = function () { var v = ta.value.trim(); if (!v) return; threads[id].push({ who: ME, when: now(), draft: true, text: v }); mark.classList.remove('old'); mark.classList.add('draft'); openThread(id); refresh(); };
     close.onclick = function () { if (!threads[id].length) { unwrap(mark); delete threads[id]; } closeThread(id); refresh(); };
     comp.appendChild(ta); comp.appendChild(add); comp.appendChild(close); box.appendChild(comp);
@@ -290,7 +292,6 @@
     };
   });
 
-  document.getElementById('theme').onclick = function () { document.body.className = document.body.className === 'dark' ? 'light' : 'dark'; };
   function tab(html) { document.getElementById('md').style.display = html ? 'none' : ''; document.getElementById('html').style.display = html ? '' : 'none'; document.getElementById('tab-md').className = html ? '' : 'on'; document.getElementById('tab-html').className = html ? 'on' : ''; refresh(); if (html) doc.querySelectorAll('.rv-marker').forEach(function (m) { m.remove(); }); }
   document.getElementById('tab-md').onclick = function () { tab(false); };
   document.getElementById('tab-html').onclick = function () { tab(true); };

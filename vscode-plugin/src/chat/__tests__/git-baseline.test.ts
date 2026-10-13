@@ -16,7 +16,7 @@ interface Call { args: string[]; env: Record<string, string> | undefined }
 type Answer = { ok: boolean; stdout: string };
 
 /** A scripted git: `answer` sees each call and says what git printed. Records args and env. */
-function fake(answer: (args: string[], n: number) => Answer | undefined, opts?: { indexExists?: boolean }) {
+function fake(answer: (args: string[], n: number) => Answer | undefined, opts?: { indexExists?: boolean | undefined }) {
   const calls: Call[] = [];
   const copies: Array<[string, string]> = [];
   const removed: string[] = [];

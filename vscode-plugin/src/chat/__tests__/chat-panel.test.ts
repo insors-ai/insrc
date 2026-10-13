@@ -19,7 +19,7 @@ import { fakeAttachmentFs, type FakeAttachmentFs } from './fake-attachment-fs.js
 import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, RunOptions } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import { markerFor, WAITING_LABEL } from '../markers.js';
-import { fakeLiveProc, waitFor, type FakeLiveProc } from './fixtures.js';
+import { fakeLiveProc, patchOf, waitFor, type FakeLiveProc } from './fixtures.js';
 import type { DiffView } from '../edit-governor.js';
 import type { TranscriptEntry } from '../session-store.js';
 
@@ -839,10 +839,6 @@ function fakeGovernance(): FakeGov {
   };
   return { deps, disk, baseline, editorCalls, setDiffView: (v) => { view = v; }, setAvailable: (v) => { available = v; }, patch, checks, snapshots, released };
 }
-
-/** A patch with one section per [path, oldStart, text]. */
-const patchOf = (...sections: Array<[path: string, oldStart: number, text: string]>): string =>
-  sections.map(([p, start, text]) => [`diff --git a/${p} b/${p}`, `--- a/${p}`, `+++ b/${p}`, `@@ -${start},2 +${start},3 @@`, ' ctx', `+${text}`, ' ctx2', ''].join('\n')).join('');
 
 /** An adapter the test feeds one event at a time, so a check can finish before the next event. */
 function fedAdapter(): { adapter: StreamAdapter; feed: (ev: TurnEvent) => void; runs: () => number } {

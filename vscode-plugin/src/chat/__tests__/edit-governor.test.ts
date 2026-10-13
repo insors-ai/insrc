@@ -19,6 +19,7 @@ import {
   type DiffView,
 } from '../edit-governor.js';
 import type { SectionOp } from '../diff-sections.js';
+import { patchOf } from './fixtures.js';
 
 type Overflow = { readonly sections: number; readonly files: number } | undefined;
 
@@ -40,7 +41,7 @@ interface Harness {
   setView: (v: DiffView) => void;
 }
 
-function harness(opts?: { gitAvailable?: boolean; diffView?: DiffView }): Harness {
+function harness(opts?: { gitAvailable?: boolean | undefined; diffView?: DiffView | undefined }): Harness {
   const disk = new Map<string, string | undefined>();
   const baselineContent = new Map<string, string>();
   const shown: Harness['shown'] = [];
@@ -99,10 +100,6 @@ function harness(opts?: { gitAvailable?: boolean; diffView?: DiffView }): Harnes
   });
   return { gov, disk, baselineContent, shown, unreadable, editorCalls, notes, removed, warns, patch, changesCalls, released, setView: (v) => { view = v; } };
 }
-
-/** A patch with one section per [path, oldStart, text]. */
-const patchOf = (...sections: Array<[path: string, oldStart: number, text: string]>): string =>
-  sections.map(([p, start, text]) => [`diff --git a/${p} b/${p}`, `--- a/${p}`, `+++ b/${p}`, `@@ -${start},2 +${start},3 @@`, ' ctx', `+${text}`, ' ctx2', ''].join('\n')).join('');
 
 // ---- Story E20261013b2e8109f:S001 / t6: checks ----
 

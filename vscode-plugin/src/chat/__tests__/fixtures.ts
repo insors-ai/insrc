@@ -272,3 +272,7 @@ export const CODEX_PERMISSION_TURN: readonly string[] = [
   }),
   JSON.stringify({ type: 'turn.completed' }),
 ];
+
+/** A unified patch with one section per [path, oldStart, text] (Story E20261013b2e8109f:S001). */
+export const patchOf = (...sections: Array<[path: string, oldStart: number, text: string]>): string =>
+  sections.map(([p, start, text]) => [`diff --git a/${p} b/${p}`, `--- a/${p}`, `+++ b/${p}`, `@@ -${start},2 +${start},3 @@`, ' ctx', `+${text}`, ' ctx2', ''].join('\n')).join('');

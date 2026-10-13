@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1791807516019-sqsflh",
+    "runId": "cr-1791871238206-v6tv7x",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-10-12T12:18:36.031Z",
+    "createdAt": "2026-10-13T06:00:38.207Z",
     "model": "claude:opus",
-    "elapsedMs": 145102,
+    "elapsedMs": 119806,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "59da3204a44afd1b",
@@ -28,6 +28,8 @@
         "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
         "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
         "vscode-plugin/src/chat/__tests__/fake-attachment-fs.ts",
+        "vscode-plugin/src/chat/__tests__/fixtures.ts",
+        "vscode-plugin/src/chat/__tests__/live-cli.test.ts",
         "vscode-plugin/src/chat/__tests__/protocol.test.ts",
         "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
         "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
@@ -44,86 +46,53 @@
     "dimensions": [
       {
         "dimension": "adherence",
-        "findings": []
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1418",
+            "message": "The open-attachment handler resolves the id and calls att.open(ref.path) without first checking that the file still exists. The injected opener in extension.ts runs vscode.open directly and only logs a rejected command. For an attachment that is gone from disk, the click is therefore handed to VS Code (which may show its own file-not-found editor) rather than being detected by the host, logged and dropped. ChatAttachmentDeps has no stat seam and the host makes no stat call on the resolved path.",
+            "expectationRef": "LLD errorPaths.errorCases — 'An attached file is gone when the turn runs or when a chip is clicked': detection 'For a click, the host's stat of the resolved path fails'; response 'A click logs and does nothing.'"
+          }
+        ]
       },
       {
         "dimension": "conventions",
-        "findings": [
-          {
-            "dimension": "conventions",
-            "severity": "LOW",
-            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:3784",
-            "message": "`attachHarness(opts: { adapter?: StreamAdapter; wrapStore?: (store: AttachmentStore) => AttachmentStore } = {})` declares optional properties without the explicit `| undefined` the rule requires. Production code in the same module follows the rule (e.g. `runTurn` opts `suppressEcho?: boolean | undefined`, `attachments?: readonly AttachmentRef[] | undefined` in chat-panel.ts). Test-helper only, so low impact.",
-            "expectationRef": "strict-optional-indexed",
-            "confidence": "breach"
-          },
-          {
-            "dimension": "conventions",
-            "severity": "LOW",
-            "location": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts:40",
-            "message": "`runShell(opts: { attach?: boolean } = {})` declares the optional `attach` property without `| undefined`. Test-helper only.",
-            "expectationRef": "strict-optional-indexed",
-            "confidence": "breach"
-          },
-          {
-            "dimension": "conventions",
-            "severity": "LOW",
-            "location": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts:183",
-            "message": "`pasteEvent(items: Array<{ kind: string; type: string; file?: { type: string; name: string; dataUrl: string } }>)` declares the optional `file` property without `| undefined`. Test-helper only.",
-            "expectationRef": "strict-optional-indexed",
-            "confidence": "breach"
-          },
-          {
-            "dimension": "conventions",
-            "severity": "LOW",
-            "location": "vscode-plugin/src/chat/session-store.ts:273",
-            "message": "`createInMemoryChatSessionStore(deps?: { now?: () => string; genId?: () => string; maxSessions?: number })` (lines 273-275, and the same shape on `MementoStoreDeps` at lines 134/135/141) omits `| undefined` on optional properties, unlike `deriveChatTitle`'s `timeoutMs?: number | undefined` in cli-adapter.ts. Reported as an observation, not a breach: I could not confirm this Story introduced these lines (git blame was not available), and they look like they predate the attachment work.",
-            "expectationRef": "strict-optional-indexed",
-            "confidence": "observation"
-          }
-        ]
+        "findings": []
       },
       {
         "dimension": "coverage",
         "findings": [
           {
             "dimension": "coverage",
-            "severity": "HIGH",
-            "location": "vscode-plugin/src/chat/cli-adapter.ts:500",
-            "message": "Promised live test is missing. vscode-plugin/src/chat/__tests__/live-cli.test.ts holds four live tests (terminal sc2 event for claude and codex, claude review-mode approval, claude auto mode) and none builds a request with readDirs or asks about an image and a text file in the attachments directory. The `--add-dir` argv is only checked as a string by the unit test in cli-adapter.test.ts:1342; nothing checks that a real claude reads the attached files.",
-            "expectationRef": "live claude: with the argv the adapter builds for a request with readDirs, a prompt naming an image and a text file in that directory is answered from their content",
-            "confidence": "breach"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "HIGH",
-            "location": "vscode-plugin/src/chat/cli-adapter.ts:500",
-            "message": "Promised live test is missing. No test in live-cli.test.ts (or anywhere under vscode-plugin/src) runs a real codex turn against files in the attachments directory. The only codex coverage for this Story is the unit test 'codex argv is unchanged by readDirs' (cli-adapter.test.ts:1395), which shows the argv is unchanged, not that codex can read the attached files.",
-            "expectationRef": "live codex: with the argv the adapter builds, a prompt naming an image and a text file in the attachments directory is answered from their content",
-            "confidence": "breach"
-          },
-          {
-            "dimension": "coverage",
             "severity": "MED",
-            "location": "vscode-plugin/src/extension.ts:453",
-            "message": "Present but failing/unverified. I ran the whole plugin suite (`npx tsx --test 'src/**/__tests__/*.test.ts'` in vscode-plugin): 1161 tests, 1150 pass, 2 fail, 5 cancelled, 4 skipped. The 2 failures are the two manifest-catalog tests the plan excepts (794, 795). The 5 cancelled are not excepted: in src/__tests__/activation.test.ts, 'runReachabilityProbe degrades a hung probe to errored within the bounded deadline' ends with 'Promise resolution is still pending but the event loop has already resolved' and the four tests after it are cancelledByParent, including 'only extension.ts imports vscode…', which reads the extension.ts this Story changed. The same result reproduces running that file alone. activation.ts is not in this Story's changed set, so this is probably older than the Story, but I could not check git history to confirm; the promise 'every test passes apart from the two manifest-catalog tests' does not hold as run.",
-            "expectationRef": "whole plugin suite: every test passes apart from the two manifest-catalog tests that failed before this Story",
+            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:3828",
+            "message": "All 28 promised unit, integration and live tests are present by exact title in the changed test files (attachment-store, cli-adapter, protocol, session-file-store, render-registry, chat-panel, chat-shell, extension-chat-wiring, live-cli), but they are present but unverified: no build record is available and the suite was not run in this review, so no pass-state can be asserted.",
+            "expectationRef": "all promised unit/integration tests (pass-state)",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
-            "location": "vscode-plugin/src/extension.ts:453",
-            "message": "Present but unverified. The in-VS-Code smoke check is manual and there is no build record, so there is no evidence it was performed. Its parts are covered separately by passing automated tests (shell paste/chips at chat-shell.test.ts:199 and :339, host submit at chat-panel.test.ts:4064, wiring at extension-chat-wiring.test.ts:291), but 'the assistant answers from their content' is only reachable through this smoke check or the two missing live tests.",
-            "expectationRef": "in VS Code: pasting a screenshot and attaching a document show chips, the message shows them after sending, the assistant answers from their content, and a chip click opens the file",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/__tests__/live-cli.test.ts:136",
+            "message": "The two promised live tests (live claude, live codex) are present but unverified: both are skip-gated on the LIVE flag and on the CLI binary being installed, so a default suite run skips them, and there is no build record showing they ran or passed.",
+            "expectationRef": "live claude: with the argv the adapter builds for a request with readDirs, a prompt naming an image and a text file in that directory is answered from their content; live codex: with the argv the adapter builds, a prompt naming an image and a text file in the attachments directory is answered from their content",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1",
+            "message": "The two promised smoke checks have no automated test in the changed set and no build record recording that they were carried out: the manual VS Code check (paste a screenshot, attach a document, chips, answer from content, chip click opens the file) and the whole-plugin-suite run. Both are unverified, not confirmed missing — they are manual or run-level checks by nature.",
+            "expectationRef": "in VS Code: pasting a screenshot and attaching a document show chips, the message shows them after sending, the assistant answers from their content, and a chip click opens the file; whole plugin suite: every test passes apart from the two manifest-catalog tests that failed before this Story",
             "confidence": "observation"
           },
           {
             "dimension": "coverage",
             "severity": "LOW",
             "location": "vscode-plugin/src/chat/attachment-store.ts:1",
-            "message": "Grounding caveat, not a gap. The testsReaching edges are hollow for this Story: top-level `test(...)` callbacks are not graph entities, so symbols such as safeName, nextPath, writing, changePending, submitTurn, runTurn, handleMessage, base64Bytes and findAttachment show empty testsReaching although tests do drive them. I did not raise HIGH findings from those empty edges. Instead I checked the test files and ran the suite: all 26 promised unit and integration tests exist under their exact promised names (attachment-store.test.ts ×5, cli-adapter.test.ts ×2, protocol.test.ts, session-file-store.test.ts, render-registry.test.ts, chat-panel.test.ts ×12, chat-shell.test.ts ×3, extension-chat-wiring.test.ts) and all 26 passed in my run. This is by test name and pass state; I did not trace each changed symbol to an assertion.",
-            "expectationRef": "testsReaching edges for the Story's changed symbols",
+            "message": "The testsReaching grounding is hollow for this Story, so the empty edges are not reported as HIGH not-exercised gaps. The graph links only named helper functions; the top-level test(...) callbacks are anonymous and carry no edges, so symbols such as safeName, dirOf, nextPath, writing, changePending, submitTurn, runTurn, handleMessage, base64Bytes, findAttachment, postPending and the claude/codex argv builders show empty testsReaching even though titled tests in attachment-store.test.ts, chat-panel.test.ts, chat-shell.test.ts and cli-adapter.test.ts target exactly that behaviour (confirmed by a title search of the test files, not by reading test bodies or running them). Per-symbol coverage therefore cannot be confirmed from the graph; running the plugin suite is the way to settle it.",
+            "expectationRef": "testsReaching edges for the changed symbols in attachment-store.ts, chat-panel.ts and cli-adapter.ts",
             "confidence": "observation"
           }
         ]
@@ -133,11 +102,11 @@
         "findings": []
       }
     ],
-    "verdict": "block",
+    "verdict": "warn",
     "counts": {
-      "high": 2,
-      "med": 1,
-      "low": 6
+      "high": 0,
+      "med": 3,
+      "low": 2
     }
   }
 }

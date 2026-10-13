@@ -1407,3 +1407,56 @@ test('codex argv is unchanged by readDirs', async () => {
   }
   assert.deepEqual(await argv({ readDirs }), ['exec', '--json', '--', 'hi']);
 });
+
+// ---- ISSUE-2284d9b4: codex is started with its input closed ----
+
+test('codex is started with no input stream and claude keeps its input open; a decision for codex is reported as undeliverable and written nowhere', async () => {
+  // codex: the spawn asks for a closed input, on a fresh turn and on a resumed one.
+  for (const over of [{}, { resume: { provider: 'codex' as const, nativeSessionId: 'thread-1' } }]) {
+    const { deps, spawner } = depsFor(CODEX_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', ...over })));
+    assert.equal(spawner.calls[0]!.closeInput, true);
+  }
+  // claude: nothing changes; its decision relay writes to the input.
+  {
+    const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' })));
+    assert.ok(!('closeInput' in spawner.calls[0]!), 'claude is started as before');
+  }
+  // A codex approval request can be shown, but its answer cannot be written to the process.
+  const { deps, spawner, warns } = depsFor({ lines: CODEX_PERMISSION_TURN, hangUntilKilled: true });
+  const adapter = createProviderRegistry(deps).get('codex');
+  let asked = false;
+  for await (const ev of adapter.run(REQ({ provider: 'codex', permissionMode: 'manual' }))) {
+    if (ev.kind !== 'approval-request') continue;
+    asked = true;
+    adapter.decide(ev.turnId, ev.requestId, 'approve');
+    adapter.decide(ev.turnId, ev.requestId, 'approve'); // a second click is a no-op
+    await adapter.cancel(ev.turnId);
+  }
+  assert.ok(asked, 'the fixture raised an approval request');
+  assert.deepEqual(spawner.procs[0]!.writes(), [], 'nothing is written to a process started without an input');
+  assert.equal(warns.filter((w) => /\[chat:codex\] permission decision for .* undeliverable/.test(w)).length, 1);
+});
+
+test('the real spawner with closeInput starts a process that reads its input to the end at once; without it the process waits', async (t) => {
+  if (process.platform === 'win32') return t.diagnostic('uses sh');
+  // Like `codex exec`: read all input first, then answer.
+  const script = `cat >/dev/null; echo '{"answered":true}'`;
+  const closed = nodeSpawner('sh', ['-c', script], { cwd: process.cwd(), closeInput: true });
+  assert.equal(await closed.spawnError, undefined);
+  const lines: string[] = [];
+  for await (const l of closed.lines()) lines.push(l);
+  assert.deepEqual(lines, ['{"answered":true}']);
+  assert.equal((await closed.exit).code, 0);
+  // A write to a process with no input does nothing and does not throw.
+  assert.doesNotThrow(() => closed.write?.('late\n'));
+
+  // With the input left open the same process is still waiting, which is the defect.
+  const open = nodeSpawner('sh', ['-c', script], { cwd: process.cwd() });
+  assert.equal(await open.spawnError, undefined);
+  const outcome = await Promise.race([open.exit.then(() => 'exited'), tick(300).then(() => 'waiting')]);
+  assert.equal(outcome, 'waiting');
+  open.kill('SIGKILL');
+  await open.exit;
+});

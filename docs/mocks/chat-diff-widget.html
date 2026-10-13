@@ -6,8 +6,10 @@
 <!--
   Mock for review, 2026-10-13. Not shipped code.
 
-  One widget per change. A widget shows at most 8 diff lines until it is expanded.
-  Two changes to the same file are two widgets, in the order they were made.
+  One widget per section of a file's git diff against the start of the turn (decided 2026-10-13).
+  A widget shows at most 8 diff lines until it is expanded. Two separate changes in one file are
+  two widgets. The comparison runs after each tool call, for claude and codex alike; a section
+  that changes again is updated in place.
 
   Outside VS Code the --vscode-* theme variables do not exist, so this page defines a few
   sample themes itself (the buttons at the top). The widget's own rules use only the chat's
@@ -114,12 +116,13 @@ var CHANGES = [
     '+  readonly testedCommit?: string | undefined;',
     '+  readonly now: () => string;',
     ' }'] }] },
-  { path: 'vscode-plugin/src/workflow/runners/build/completion-record.ts', kind: 'edit', note: 'replace all', hunks: [
-    { start: 8, lines: [' import { join } from \'node:path\';', '-import { headCommit } from \'./git.js\';', '+import { headCommit, isAncestor } from \'./git.js\';', ' '] },
+  { path: 'vscode-plugin/src/workflow/runners/build/completion-record.ts', kind: 'edit', hunks: [
+    { start: 8, lines: [' import { join } from \'node:path\';', '-import { headCommit } from \'./git.js\';', '+import { headCommit, isAncestor } from \'./git.js\';', ' '] }] },
+  { path: 'vscode-plugin/src/workflow/runners/build/completion-record.ts', kind: 'edit', hunks: [
     { start: 57, lines: ['   const built = readBuild(dir);', '-  if (built.commit !== headCommit(repo)) return stale(built);', '+  if (!isAncestor(repo, built.commit, headCommit(repo))) return stale(built);', '   return fresh(built);'] }] },
   { path: 'vscode-plugin/src/workflow/runners/build/__tests__/standalone-record.test.ts', kind: 'new file', hunks: [{ start: 1, lines:
     ['/**', ' * The standalone build record names the commit its tests ran on.', ' */', 'import { test } from \'node:test\';', 'import assert from \'node:assert/strict\';', 'import { writeStandaloneRecord } from \'../standalone-record.js\';', '', 'test(\'the record carries the tested commit\', () => {', '  const out = writeStandaloneRecord({ ...INPUT, testedCommit: \'abc123\' });', '  assert.equal(out.commit, \'abc123\');', '});', '', 'test(\'with no tested commit it falls back to HEAD\', () => {', '  const out = writeStandaloneRecord(INPUT);', '  assert.equal(out.commit, HEAD);', '});'].map(function (l) { return '+' + l; }) }] },
-  { path: 'docs/workflow.md', kind: 'edit', hunks: [] },
+  { path: 'vscode-plugin/media/insrc-icon.png', kind: 'binary file', hunks: [] },
 ];
 
 var LIMIT = 8; // diff lines shown before the widget is expanded
@@ -134,7 +137,7 @@ function widget(change, nth, of) {
   head.appendChild(el('span', 'dw__glyph', '✎'));
   var path = el('span', 'dw__path'); var bdi = el('bdi', null, change.path); path.appendChild(bdi); path.title = change.path; head.appendChild(path);
   if (change.kind !== 'edit' || change.note) head.appendChild(el('span', 'dw__kind', change.note || change.kind));
-  if (of > 1) head.appendChild(el('span', 'dw__nth', 'change ' + nth + ' of ' + of));
+  if (of > 1) head.appendChild(el('span', 'dw__nth', nth + ' of ' + of));
   var adds = 0, dels = 0, total = 0;
   change.hunks.forEach(function (h) { h.lines.forEach(function (l) { total++; if (l[0] === '+') adds++; else if (l[0] === '-') dels++; }); });
   var stat = el('span', 'dw__stat'); stat.appendChild(el('span', 'a', '+' + adds)); stat.appendChild(document.createTextNode(' ')); stat.appendChild(el('span', 'd', '−' + dels)); head.appendChild(stat);
@@ -143,7 +146,7 @@ function widget(change, nth, of) {
   var body = el('div', 'dw__body'); box.appendChild(body);
   if (total === 0) {
     box.className += ' dw--empty'; chev.textContent = ' ';
-    body.textContent = 'changed (the assistant reported no diff for this edit)';
+    body.textContent = 'binary file changed';
     head.style.cursor = 'default';
     return box;
   }
@@ -187,14 +190,15 @@ function msg(role, label, text) {
 }
 
 var term = document.getElementById('term');
-term.appendChild(el('div', 'note', 'Each change the assistant makes is one widget, in the order it was made. A widget shows 8 diff lines; the arrow, the header or the "show more" line opens the rest. A change that fits in 8 lines has no arrow. The widget replaces the bare path line and the "file has been updated" line the chat shows today.'));
+term.appendChild(el('div', 'note', 'After each tool call the chat compares the files with how they were when the turn started. Each section of a file\u2019s diff is one widget. A widget shows 8 diff lines; the arrow, the header or the "show more" line opens the rest. A section that fits in 8 lines has no arrow. The widgets replace the bare path line and the "file has been updated" line the chat shows today.'));
 term.appendChild(msg('user', 'you ❯', 'record the commit the tests ran on, and write the record atomically'));
 term.appendChild(msg('assistant', '◆ claude', 'The record took HEAD at the moment it was started. I’ll take the tested commit as an input and write through a temporary file.'));
 var counts = {}; CHANGES.forEach(function (c) { counts[c.path] = (counts[c.path] || 0) + 1; });
 var seen = {};
 CHANGES.forEach(function (c) { seen[c.path] = (seen[c.path] || 0) + 1; term.appendChild(widget(c, seen[c.path], counts[c.path])); });
 term.appendChild(msg('assistant', '◆ claude', 'Done: two changes to standalone-record.ts, one to completion-record.ts in two places, and a new test file.'));
-term.appendChild(el('div', 'note', 'Shown above, top to bottom: a 15-line change (collapsed to 8); a second, short change to the same file (fits, no arrow); one edit that touched two places in a file (the dashed line marks the jump); a new file (all additions, collapsed to 8); and an edit for which no diff was reported (codex today).'));
+var over = el('div', 'dw dw--empty'); var ob = el('div', 'dw__body', 'and 184 more sections in 61 files: too many to show after one step'); over.appendChild(ob); term.appendChild(over);
+term.appendChild(el('div', 'note', 'Shown above, top to bottom: two sections of one file (the first is 15 lines, collapsed to 8; the second fits, no arrow); two sections of another file; a new file (all additions, collapsed to 8); a binary file; and the line shown when one step changes more than the chat will draw (for example a command that reformats the whole project).'));
 
 Array.prototype.forEach.call(document.querySelectorAll('.mockbar button'), function (b) {
   b.addEventListener('click', function () {

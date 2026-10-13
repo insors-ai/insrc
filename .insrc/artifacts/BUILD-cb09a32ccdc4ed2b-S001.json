@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "cb09a32ccdc4ed2b",
+    "storyId": "S001",
+    "createdAt": "2026-10-13T18:12:18.675Z",
+    "updatedAt": "2026-10-13T18:12:18.675Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "epicCreatedAt": "2026-10-13T17:09:23.324Z",
+    "epicSlug": "show-epic-s-own-records-its"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "An Epic's board screen now carries the Epic's own records: StagesBody gains epicRecords (EpicRecordsView: the Epic's id, its evidence rows, the opened read-only record), null on list screens; board-state fills it in the 'epic' case from the details callback, so the filter does not change it. recordOwnerId (new, beside currentItemId) gives the item whose records are on show, the Epic on its own board included, and the host passes it to memory.kept, so the details memory's existing openEvidence opens an Epic's record in the review pane or reads it. The webview draws the existing recordsTable in an 'epic-records' box before the totals line and the no-matches early return, and shares the opened-record drawing with a Story's tab (openedRecordBox). Tests: six in the new epic-records.test.ts, one per subject of the design; the board's 125 existing tests pass unchanged. Seven mutations of the new code each failed the tests. Plugin suite 1266 pass, 2 fail (existing manifest-catalog failures); plugin typecheck clean. The user checked it by hand in VS Code.",
+    "testRecord": {
+      "md": "docs/standalone/show-epic-s-own-records-its-E20261013cb09a32c/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/epic-records.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T18:12:18.675Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T18:12:18.675Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-model.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T18:12:18.675Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T18:12:18.675Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T18:12:18.675Z"
+      }
+    ],
+    "commit": "5ab1fd97"
+  }
+}

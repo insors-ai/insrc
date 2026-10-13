@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 53 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 57 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -372,3 +372,32 @@ Run at 2026-10-13T13:15:23.105Z on commit `c3181c44`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 210 | 18.8 s |  |
+
+## t11
+
+Run at 2026-10-13T13:26:57.647Z on commit `eae93703`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: docs review shell: selecting text in one block and adding a comment makes a draft with a quote, section, prefix and suffix; a selection across blocks, in the Feedback section or cutting an existing mark offers no button**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: selecting text in one block and adding a comment makes a draft with a quote, section, prefix and suffix; a selection across blocks, in the Feedback section or cutting an existing mark offers no button | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: the three buttons post one docs-decision with every draft and the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: the three buttons post one docs-decision with every draft and the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+| pass | docs review shell: each of the three buttons posts one docs-decision with the whole-document comment and is disabled until the result arrives, the result line is shown, and feedback with no comment posts nothing | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: drafts are cleared on a successful result, kept on a failed one or one with commentsError, and restored from the saved state when the shell is rebuilt**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: drafts are cleared on a successful result, kept on a failed one or one with commentsError, and restored from the saved state when the shell is rebuilt | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 213 | 19 s |  |

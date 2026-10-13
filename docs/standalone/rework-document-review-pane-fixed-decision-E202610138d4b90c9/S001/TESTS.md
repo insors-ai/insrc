@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 61 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 63 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -435,3 +435,29 @@ Run at 2026-10-13T13:49:35.582Z on commit `4efeb4a0`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 217 | 18.7 s |  |
+
+## t13
+
+Run at 2026-10-13T13:52:51.995Z on commit `2244a5b0`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**unit: review wiring: the review host is given notifyChat bound to the chat host's submitExternal and a readCompanion, and neither host module imports the other**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review wiring: the review host is given notifyChat bound to the chat host's submitExternal and a readCompanion, and neither host module imports the other | `vscode-plugin/src/chat/__tests__/review-wiring.test.ts` |
+
+**unit: review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB | `vscode-plugin/src/chat/__tests__/review-wiring.test.ts` |
+
+**smoke: Headless Chrome render of the real shell with a long document: the comment panel stays in view at the top and at the bottom of the scroll, and a screenshot matches the approved mock's layout**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-validate-output/t13/measure.json (document 21484 px in a 502 px region; comment panel at top 543, bottom 673 of a 673 px viewport at scrollTop 0, 10742 and 20982; header 0 to 41; the page does not scroll), /tmp/insrc-validate-output/t13/shell-top.png and shell-bottom.png (the same window at the top and the bottom of the scroll), shell-inline.png and shell-history.png (an inline draft with its thread; saved comments with a margin marker and the strip). Compared by eye with docs/mocks/docs-review-pane.html: header, one scrolling document, rounded comment box with three round icon buttons. Rendered outside VS Code with the CSP meta removed and stand-in theme values; the real webview is checked by hand in task 14.
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/review-wiring.test.ts` | 0 | 2 | 0.4 s |  |

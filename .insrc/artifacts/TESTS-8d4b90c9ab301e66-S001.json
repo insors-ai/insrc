@@ -4,7 +4,7 @@
     "epicHash": "8d4b90c9ab301e66",
     "storyId": "S001",
     "createdAt": "2026-10-13T12:12:45.679Z",
-    "updatedAt": "2026-10-13T13:49:35.582Z",
+    "updatedAt": "2026-10-13T13:52:51.995Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T11:21:58.998Z",
     "epicSlug": "rework-document-review-pane-fixed-decision"
@@ -6397,6 +6397,70 @@
               },
               {
                 "title": "docs review shell: a saved entry with no string author, timestamp or comment is skipped and the strip says how many could not be shown",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "2244a5b0",
+        "ranAt": "2026-10-13T13:52:51.995Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review wiring: the review host is given notifyChat bound to the chat host's submitExternal and a readCompanion, and neither host module imports the other",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+                "title": "review wiring: the review host is given notifyChat bound to the chat host's submitExternal and a readCompanion, and neither host module imports the other",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+                "title": "review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Headless Chrome render of the real shell with a long document: the comment panel stays in view at the top and at the bottom of the scroll, and a screenshot matches the approved mock's layout",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/insrc-validate-output/t13/measure.json (document 21484 px in a 502 px region; comment panel at top 543, bottom 673 of a 673 px viewport at scrollTop 0, 10742 and 20982; header 0 to 41; the page does not scroll), /tmp/insrc-validate-output/t13/shell-top.png and shell-bottom.png (the same window at the top and the bottom of the scroll), shell-inline.png and shell-history.png (an inline draft with its thread; saved comments with a margin marker and the strip). Compared by eye with docs/mocks/docs-review-pane.html: header, one scrolling document, rounded comment box with three round icon buttons. Rendered outside VS Code with the CSP meta removed and stand-in theme values; the real webview is checked by hand in task 14."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 375,
+            "titles": [
+              {
+                "title": "review wiring: the review host is given notifyChat bound to the chat host's submitExternal and a readCompanion, and neither host module imports the other",
+                "result": "pass"
+              },
+              {
+                "title": "review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB",
                 "result": "pass"
               }
             ],

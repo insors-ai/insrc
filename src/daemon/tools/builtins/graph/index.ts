@@ -15,6 +15,8 @@ import {
 import { getEntity } from '../../../../db/entities.js';
 import { embedQuery } from '../../../../indexer/embedder.js';
 import { registerTool } from '../../registry.js';
+import { guardSearchRequest, SearchRefusedError, underIndexFilter } from '../../../search-guard.js';
+import type { SearchRequestNames } from '../../../search-guard.js';
 import type { Entity, EntityKind } from '../../../../shared/types.js';
 import type { RelationKind } from '../../../../db/graph/keys.js';
 import type { TraversalOpts } from '../../../../db/graph/traversal.js';
@@ -37,6 +39,21 @@ function bool(input: ToolInput, key: string): boolean | undefined {
 
 function fail(id: string, msg: string): ToolResult {
   return { output: `[${id}] ${msg}`, format: 'text', success: false, error: msg };
+}
+
+/**
+ * The guard of the daemon's search requests (Epic c2ba6fa6, Story s5): a tool
+ * that names an entity, or roots, in a repository under index fails with the
+ * refusal ('repo-indexing: ...'); undefined when it may go on.
+ */
+async function refusedFor(id: string, names: SearchRequestNames): Promise<ToolResult | undefined> {
+  try {
+    await guardSearchRequest(names);
+    return undefined;
+  } catch (err) {
+    if (err instanceof SearchRefusedError) return fail(id, err.message);
+    throw err;
+  }
 }
 
 function shortEntity(e: Entity): Record<string, unknown> {
@@ -85,6 +102,8 @@ export const graphEntityTool: Tool = {
   async execute(input: ToolInput): Promise<ToolResult> {
     const id = str(input, 'id');
     if (!id) { return fail('graph_entity', 'id required'); }
+    const refused = await refusedFor('graph_entity', { entityIds: [id] });
+    if (refused !== undefined) return refused;
     const db = await getDb();
     const entity = await getEntity(db, id);
     const data: GraphEntityData = { entity };
@@ -137,7 +156,8 @@ export const graphSearchTool: Tool = {
     if (vec.length === 0) {
       return fail('graph_search', 'failed to embed query (Ollama unavailable?)');
     }
-    const hits = await searchEntities(db, vec, closure, limit);
+    // A repository under index is left out of the search; the others are searched.
+    const hits = await searchEntities(db, vec, (await underIndexFilter()).paths(closure), limit);
     const data: GraphSearchData = {
       query, limit,
       closureRepos: closure,
@@ -185,8 +205,10 @@ function buildNeighborsTool(direction: 'callers' | 'callees'): Tool {
       const entityId = str(input, 'entityId');
       if (!entityId) { return fail(id, 'entityId required'); }
       const includeBody = bool(input, 'fullBody') === true;
+      const refused = await refusedFor(id, { entityIds: [entityId] });
+      if (refused !== undefined) return refused;
       const db = await getDb();
-      const results = await fn(db, entityId);
+      const results = (await underIndexFilter()).entities(await fn(db, entityId) as Entity[]);
       const data: GraphNeighborsData = { entityId, direction, results: results.map(shortEntity) };
       const rendered = results.length === 0
         ? '_none_'
@@ -351,6 +373,8 @@ export const graphQueryTool: Tool = {
         case 'defined_in': {
           const fileId = str(input, 'fileEntityId');
           if (!fileId) return fail('graph_query', 'fileEntityId required for op=defined_in');
+          const refused = await refusedFor('graph_query', { entityIds: [fileId] });
+          if (refused !== undefined) return refused;
           const entities = await findDefinedIn(db, fileId);
           const data: GraphQueryData = {
             op: 'defined_in', total: entities.length,
@@ -365,7 +389,9 @@ export const graphQueryTool: Tool = {
         case 'imports': {
           const fileId = str(input, 'fileEntityId');
           if (!fileId) return fail('graph_query', 'fileEntityId required for op=imports');
-          const entities = await findImports(db, fileId);
+          const refused = await refusedFor('graph_query', { entityIds: [fileId] });
+          if (refused !== undefined) return refused;
+          const entities = (await underIndexFilter()).entities(await findImports(db, fileId) as Entity[]);
           const data: GraphQueryData = {
             op: 'imports', total: entities.length,
             entities: entities.slice(0, limit).map(shortEntity),
@@ -379,7 +405,9 @@ export const graphQueryTool: Tool = {
         case 'closure': {
           const roots = strArr(input, 'roots');
           if (roots === undefined) return fail('graph_query', 'roots required for op=closure');
-          const entities = await closureEntities(db, roots, opts);
+          const refused = await refusedFor('graph_query', { entityIds: roots });
+          if (refused !== undefined) return refused;
+          const entities = (await underIndexFilter()).entities(await closureEntities(db, roots, opts) as Entity[]);
           const data: GraphQueryData = {
             op: 'closure', total: entities.length,
             entities: entities.slice(0, limit).map(shortEntity),
@@ -394,7 +422,9 @@ export const graphQueryTool: Tool = {
           const roots = strArr(input, 'roots') ?? [];
           const candidateKinds = parseEntityKinds(input);
           if (candidateKinds === undefined) return fail('graph_query', 'candidateKinds required for op=unreachable');
-          const entities = await unreachableEntities(db, roots, candidateKinds, opts);
+          const refused = await refusedFor('graph_query', { entityIds: roots });
+          if (refused !== undefined) return refused;
+          const entities = (await underIndexFilter()).entities(await unreachableEntities(db, roots, candidateKinds, opts) as Entity[]);
           const data: GraphQueryData = {
             op: 'unreachable', total: entities.length,
             entities: entities.slice(0, limit).map(shortEntity),
@@ -408,7 +438,12 @@ export const graphQueryTool: Tool = {
         case 'scc': {
           const roots = strArr(input, 'roots');
           if (roots === undefined) return fail('graph_query', 'roots required for op=scc');
-          const components = await sccEntities(db, roots, opts);
+          const refused = await refusedFor('graph_query', { entityIds: roots });
+          if (refused !== undefined) return refused;
+          const filter = await underIndexFilter();
+          const components = (await sccEntities(db, roots, opts))
+            .map(c => filter.entities(c as Entity[]))
+            .filter(c => c.length > 0);
           // Cap by component count, not by total entity count, so each
           // component stays internally complete.
           const cappedComponents = components.slice(0, limit);

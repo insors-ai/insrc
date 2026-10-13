@@ -198,57 +198,61 @@ export const RENDER_REGISTRY_STYLE =
   // Story E2026101259da3204:S001: the attachment chips under a user message.
   `.insrc-attchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}` +
   `.insrc-bubble>.insrc-attchips:first-child{margin-top:0;}` +
-  `.insrc-attchip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:2px 8px;border:1px solid var(--border,#222a36);border-radius:4px;cursor:pointer;color:var(--fg);}` +
+  `.insrc-attchip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:2px 8px;border:1px solid var(--border-lit);border-radius:4px;cursor:pointer;color:var(--fg);}` +
   `.insrc-attchip:hover{border-color:var(--accent);}` +
-  `.insrc-attchip__glyph{color:var(--accent);flex:0 0 auto;}` +
+  `.insrc-attchip__glyph{color:var(--muted);flex:0 0 auto;}` +
   `.insrc-attchip__name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}` +
   `.insrc-attchip__size{color:var(--muted);flex:0 0 auto;}` +
   `.insrc-toolresult__cmd{color:var(--fg-strong);white-space:pre-wrap;word-break:break-word;}` +
   `.insrc-toolresult__prompt{color:var(--accent);}` +
-  `.insrc-toolresult__sep{height:1px;background:var(--border,#222a36);margin:6px 0;}` +
-  `.insrc-toolresult__out{color:var(--fg);white-space:pre-wrap;word-break:break-word;font-family:var(--font,monospace);}` +
+  `.insrc-toolresult__sep{height:1px;background:var(--border);margin:6px 0;}` +
+  `.insrc-toolresult__out{color:var(--fg);white-space:pre-wrap;word-break:break-word;font-family:var(--font);}` +
   // ISSUE-1163888072faa9f2: a tool row with its result attached stacks command / separator / output.
   // Doubled class so it outranks chat-panel's `.insrc-toolrow` rule, which is emitted AFTER this style.
   `.insrc-toolrow.insrc-toolrow--result{flex-direction:column;align-items:stretch;gap:0;}` +
   // S004: the in-chat permission-approval card (k6 i). Icon-only approve/deny buttons
   // (▹ green ✓ / red ✗); the whole card is bordered to read as an action, not prose.
-  `.insrc-approval{border:1px solid rgba(251,191,36,.45);border-radius:10px;background:linear-gradient(180deg,rgba(251,191,36,.09),rgba(251,191,36,.03));padding:11px 13px;margin:2px 0;display:flex;flex-direction:column;gap:9px;}` +
-  `.insrc-approval__title{font-weight:600;color:var(--amber);display:flex;align-items:center;gap:8px;}` +
+  `.insrc-approval{border:1px solid var(--warn-border);border-radius:10px;background:var(--warn-bg);padding:11px 13px;margin:2px 0;display:flex;flex-direction:column;gap:9px;}` +
+  `.insrc-approval__title{font-weight:600;color:var(--warn);display:flex;align-items:center;gap:8px;}` +
   // ISSUE-6a811b8a: the card's place in the approval queue ('1 of 3'), beside the title.
-  `.insrc-approval__pos{margin-left:auto;font-weight:400;font-size:12px;color:var(--muted,#9aa3ad);}` +
+  `.insrc-approval__pos{margin-left:auto;font-weight:400;font-size:12px;color:var(--muted);}` +
   `.insrc-approval__detail{color:var(--fg);font-size:13px;white-space:pre-wrap;word-break:break-word;}` +
   `.insrc-approval__actions{display:flex;gap:8px;flex-wrap:wrap;}` +
-  `.insrc-approval__btn{cursor:pointer;border:1px solid var(--border-lit);background:var(--panel);color:var(--fg);border-radius:7px;padding:4px 12px;line-height:1.4;font-size:13px;font-family:var(--font);}` +
-  `.insrc-approval__btn--approve{border-color:rgba(74,222,128,.5);color:#bff3d3;background:rgba(74,222,128,.12);}` +
-  `.insrc-approval__btn--deny{border-color:rgba(248,113,113,.5);color:#f6bcbc;background:rgba(248,113,113,.10);}` +
-  `.insrc-approval__btn:hover{filter:brightness(1.15);}` +
+  `.insrc-approval__btn{cursor:pointer;border:1px solid var(--border-lit);background:var(--btn2-bg);color:var(--btn2-fg);border-radius:7px;padding:4px 12px;line-height:1.4;font-size:13px;font-family:var(--font);}` +
+  `.insrc-approval__btn--approve{color:var(--btn-fg);background:var(--btn-bg);}` +
+  `.insrc-approval__btn--deny{color:var(--btn2-fg);background:var(--btn2-bg);}` +
+  `.insrc-approval__btn:hover{background:var(--btn2-hover);}.insrc-approval__btn--approve:hover{background:var(--btn-hover);}` +
   // S003 (dev-chat ux polish) ac1: the resolved approval-card states — recolour the (now button-less)
   // card to read as a settled decision, reusing the approve(green)/deny(red) tints.
-  `.insrc-approval--approved{border-color:rgba(74,222,128,.5);background:linear-gradient(180deg,rgba(74,222,128,.09),rgba(74,222,128,.03));}` +
-  `.insrc-approval--rejected{border-color:rgba(248,113,113,.5);background:linear-gradient(180deg,rgba(248,113,113,.09),rgba(248,113,113,.03));}` +
+  `.insrc-approval--approved{border-color:var(--pass);background:var(--code-bg);}` +
+  `.insrc-approval--rejected{border-color:var(--fail);background:var(--code-bg);}` +
   // S003 (dev-chat ux polish) t1: the persisted resolved-outcome chip — a tool name + a decided badge
   // (green approved / red rejected via the approval btn tints). Non-actionable (no buttons).
-  `.insrc-permoutcome{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:5px 11px;max-width:100%;}` +
+  `.insrc-permoutcome{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--border-lit);border-radius:8px;background:var(--code-bg);padding:5px 11px;max-width:100%;}` +
   `.insrc-permoutcome__tool{color:var(--fg-strong);font-family:var(--font);white-space:pre-wrap;word-break:break-word;}` +
   `.insrc-permoutcome__badge{border:1px solid var(--border-lit);border-radius:7px;padding:2px 9px;font-size:12px;line-height:1.4;}` +
+  // The decided badge carries the button class for its state; here it is a label, not a button:
+  // the theme's passed or failed colour on no ground.
+  `.insrc-permoutcome__badge.insrc-approval__btn--approve{color:var(--pass);border-color:var(--pass);background:transparent;}` +
+  `.insrc-permoutcome__badge.insrc-approval__btn--deny{color:var(--fail);border-color:var(--fail);background:transparent;}` +
   // S004 (dev-chat ux polish): the interactive selection widget (radio/checkbox chips + a confirm
   // button). Bordered like the approval card so it reads as an action; each option row is clickable,
   // the ▣/◉ glyph marks the selected state, and the confirm is disabled until ≥1 is chosen.
-  `.insrc-select{border:1px solid rgba(56,189,248,.42);border-radius:10px;background:linear-gradient(180deg,rgba(56,189,248,.08),rgba(56,189,248,.02));padding:11px 13px;margin:2px 0;display:flex;flex-direction:column;gap:9px;}` +
-  `.insrc-select__prompt{font-weight:600;color:var(--accent2);white-space:pre-wrap;word-break:break-word;}` +
+  `.insrc-select{border:1px solid var(--border-lit);border-radius:10px;background:var(--bg-inset);padding:11px 13px;margin:2px 0;display:flex;flex-direction:column;gap:9px;}` +
+  `.insrc-select__prompt{font-weight:600;color:var(--fg-strong);white-space:pre-wrap;word-break:break-word;}` +
   `.insrc-select__options{display:flex;flex-direction:column;gap:5px;}` +
-  `.insrc-select__opt{display:flex;align-items:flex-start;gap:8px;cursor:pointer;border:1px solid var(--border);border-radius:7px;background:var(--panel);padding:5px 10px;}` +
-  `.insrc-select__opt:hover{border-color:var(--accent2);}` +
-  `.insrc-select__opt--on{border-color:rgba(56,189,248,.6);background:rgba(56,189,248,.10);}` +
-  `.insrc-select__ctl{color:var(--accent2);flex:0 0 auto;line-height:1.5;user-select:none;}` +
+  `.insrc-select__opt{display:flex;align-items:flex-start;gap:8px;cursor:pointer;border:1px solid var(--check-border);border-radius:7px;background:var(--check-bg);padding:5px 10px;}` +
+  `.insrc-select__opt:hover{border-color:var(--focus);}` +
+  `.insrc-select__opt--on{border-color:var(--focus);outline:1px solid var(--focus);outline-offset:-2px;}` +
+  `.insrc-select__ctl{color:var(--check-fg);flex:0 0 auto;line-height:1.5;user-select:none;}` +
   `.insrc-select__label{color:var(--fg);white-space:pre-wrap;word-break:break-word;}` +
-  `.insrc-select__confirm{align-self:flex-start;cursor:pointer;border:1px solid rgba(56,189,248,.5);color:#bfe6fb;background:rgba(56,189,248,.12);border-radius:7px;padding:4px 14px;line-height:1.4;font-size:13px;font-family:var(--font);}` +
-  `.insrc-select__confirm:hover{filter:brightness(1.15);}` +
-  `.insrc-select__confirm--disabled{opacity:.45;cursor:default;filter:none;}` +
-  `.insrc-select--resolved{border-color:var(--border);background:#0a0d14;}` +
+  `.insrc-select__confirm{align-self:flex-start;cursor:pointer;border:1px solid var(--border-lit);color:var(--btn-fg);background:var(--btn-bg);border-radius:7px;padding:4px 14px;line-height:1.4;font-size:13px;font-family:var(--font);}` +
+  `.insrc-select__confirm:hover{background:var(--btn-hover);}` +
+  `.insrc-select__confirm--disabled{opacity:.45;cursor:default;}.insrc-select__confirm--disabled:hover{background:var(--btn-bg);}` +
+  `.insrc-select--resolved{border-color:var(--border-lit);background:var(--code-bg);}` +
   // S004: the persisted resolved-selection chip — a ✓ glyph + the chosen label(s). Non-actionable.
-  `.insrc-selectoutcome{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:5px 11px;max-width:100%;}` +
-  `.insrc-selectoutcome__icon{color:var(--accent);flex:0 0 auto;}` +
+  `.insrc-selectoutcome{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--border-lit);border-radius:8px;background:var(--code-bg);padding:5px 11px;max-width:100%;}` +
+  `.insrc-selectoutcome__icon{color:var(--pass);flex:0 0 auto;}` +
   `.insrc-selectoutcome__labels{color:var(--fg-strong);font-family:var(--font);white-space:pre-wrap;word-break:break-word;}`;
 
 /**
@@ -348,15 +352,17 @@ export function renderRegistryWebviewSource(): string {
     // burying the model's own answer behind a chevron was never its job. The user row keeps
     // collapsing when long (a deliberate narrowing: long pastes stay previewable). host.collapsible
     // itself is untouched and still serves tool-command, tool-result and caption rows.
-    `var content=inner||null;var longMsg=isLong(raw)&&role!=='assistant';` +
+    // A long assistant row gets the same chevron, but starts EXPANDED: the user can fold a long
+    // answer by hand, and it is never folded for them.
+    `var content=inner||null;var longMsg=isLong(raw);var folded=role!=='assistant';` +
     // A user message with files: its text (when it has any) in an element of its own, then the
     // chips under it. A message without files takes the unchanged path below.
     `var atts=role==='user'&&vm&&vm.meta&&vm.meta.attachments&&vm.meta.attachments.length>0?vm.meta.attachments:null;` +
     `if(atts&&!content){` +
-    `if(raw!==''){var t=document.createElement('div');t.className='insrc-bubble__text';t.textContent=raw;bubble.appendChild(longMsg?host.collapsible(t,{defaultCollapsed:true}):t);}` +
+    `if(raw!==''){var t=document.createElement('div');t.className='insrc-bubble__text';t.textContent=raw;bubble.appendChild(longMsg?host.collapsible(t,{defaultCollapsed:folded}):t);}` +
     `bubble.appendChild(attChips(atts));wrap.appendChild(bubble);return wrap;}` +
-    `if(content){bubble.appendChild(longMsg?host.collapsible(content,{defaultCollapsed:true}):content);}` +
-    `else if(longMsg){var c=document.createElement('div');c.textContent=raw;bubble.appendChild(host.collapsible(c,{defaultCollapsed:true}));}` +
+    `if(content){bubble.appendChild(longMsg?host.collapsible(content,{defaultCollapsed:folded}):content);}` +
+    `else if(longMsg){var c=document.createElement('div');c.textContent=raw;bubble.appendChild(host.collapsible(c,{defaultCollapsed:folded}));}` +
     `else{bubble.textContent=raw;}` +
     `wrap.appendChild(bubble);return wrap;}` +
     // S001 (bugfix): assistant content is rendered by the bundled `marked` library (GFM: tables,

@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "workflow": "brainstorm",
+    "runId": "wf-1791872401684-buzdrt",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T06:20:28.504Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 26819,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "specHash": "3d2161bcef24cecf",
+    "epicSlug": "dev-chat-follows-vs-code-theme",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-13T06:21:04.584Z"
+  },
+  "body": {
+    "title": "Dev chat follows the VS Code theme",
+    "category": "requirements",
+    "intent": "Restyle the insrc dev chat panel in the VS Code plugin, plus its shared row renderer and markdown styles, so every colour comes from VS Code theme variables (--vscode-*) and light, dark and high-contrast follow automatically. There are no fixed fallback colours and no color-mix tints. User and assistant messages differ by background variable. The header, input and status bars use the widget surface. Fonts are the theme's monospace editor font. The five markers use the theme's terminal palette plus errorForeground. The agreed variable mapping covers all other elements. The mapping agreed with the user on 2026-10-13: panel and transcript editor.background; body text editor.foreground; muted text descriptionForeground; borders panel.border, and contrastBorder in high contrast; header, input and status bars editorWidget.background with editorWidget.border; links textLink.foreground; selection editor.selectionBackground; user message chat.requestBackground and chat.requestBorder, falling back to editor.inactiveSelectionBackground and editorWidget.border; assistant message editor.background with editorWidget.border; tool row and result textCodeBlock.background with editorWidget.border; markers pending terminal.ansiMagenta, tool terminal.ansiCyan, edit terminal.ansiYellow, done terminal.ansiGreen, error errorForeground; diff lines diffEditor.insertedLineBackground and diffEditor.removedLineBackground; approval card inputValidation.warningBackground and inputValidation.warningBorder; approve and deny buttons button.background and button.secondaryBackground with their foregrounds; decided chips testing.iconPassed and testing.iconFailed; selection card editorWidget.background with checkbox.* controls and a button.* confirm; input text input.foreground and input.placeholderForeground; send control terminal.ansiGreen and stop errorForeground; status bar selects foreground with dropdown.background, dropdown.foreground and dropdown.border; auto-approve pill editorWarning.foreground; attachment chips editorWidget.border, descriptionForeground and errorForeground; progress dots progressBar.background; markdown textPreformat.*, textCodeBlock.background, textBlockQuote.* and textSeparator.foreground; focus outlines focusBorder.",
+    "scopeBoundary": "Layout, shapes and glyphs are unchanged. The forced dark colour scheme, the background gradients and the header dot's glow are removed. The docs-review panel is out of scope.",
+    "nonGoals": [
+      "Fixed or fallback hex/rgb colours, and color-mix derived tints",
+      "Changing layout, shapes, or glyphs",
+      "Changing fonts other than taking the theme's monospace editor font",
+      "Restyling the docs-review panel (out of scope for now)",
+      "Keeping the forced dark colour scheme, background gradients, or the header dot glow"
+    ],
+    "decisions": [],
+    "openItems": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1"
+    },
+    {
+      "id": "c2",
+      "kind": "stakeholder",
+      "ref": "User decisions in chat, 2026-10-13: theme variables only; different background variables per role; widget background for the bars; monospace; distinct marker colours from the theme palette; chat panel and markdown only"
+    }
+  ]
+}

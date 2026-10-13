@@ -1118,16 +1118,20 @@ test('S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (#insrc-prompt) is the
 
 test('S001 (74bc0120) ac5: the session dropdown cap doubles to 36ch; the rest of the chip is untouched', () => {
   const html = fidelityHtml();
-  const rule = /\.chrome #insrc-history\{([^}]*)\}/.exec(html);
-  assert.ok(rule, 'the .chrome #insrc-history rule is present');
+  // Story E202610137fefc3fc:S001: the chip is the wrapper around the select (so its colours and
+  // glyph can follow the theme); the cap, border, radius and padding live on it.
+  const rule = /\.histchip\{([^}]*)\}/.exec(html);
+  assert.ok(rule, 'the .histchip rule is present');
   const cap = /max-width:(\d+)ch/.exec(rule![1]!);
   assert.ok(cap, 'the rule declares a max-width in ch');
   assert.equal(Number(cap![1]), 36, 'the session dropdown spans 36ch');
   // The chip itself must survive the widening intact (the earlier 6d3f8bc1 / bd2d6b6a work).
-  assert.match(rule![1]!, /border:1px solid var\(--border\)/, 'chip border kept');
+  assert.match(rule![1]!, /border:1px solid var\(--dropdown-border\)/, 'chip border kept');
   assert.match(rule![1]!, /border-radius:6px/, 'chip radius kept');
-  assert.match(rule![1]!, /padding:3px 16px 3px 22px/, 'chip padding kept (icon still clears it)');
-  assert.match(rule![1]!, /background-position:left 6px center/, 'the glyph still sits inside the left padding');
+  assert.match(rule![1]!, /padding:3px \d+px 3px 22px/, 'chip padding kept (icon still clears it)');
+  assert.match(html, /\.histchip::before\{[^}]*left:6px;/, 'the glyph still sits inside the left padding');
+  // The select fills its chip and no longer carries the chip's own box.
+  assert.match(html, /\.chrome #insrc-history\{max-width:100%;\}/);
 });
 
 test('S001 (74bc0120) ac4: the no-CLI capability gate is the sole render-time disable and still wins', () => {
@@ -1450,31 +1454,38 @@ test('UI: the #insrc-history session dropdown carries a leading history/clock gl
   const html = fidelityHtml();
   // The #insrc-history rule adds a data-URI SVG icon as the first background layer + left padding to
   // clear it — so the dropdown is not just a bare down-arrow. Icon-only selects (provider/mode) keep the plain arrow.
-  const rule = html.slice(html.indexOf('.chrome #insrc-history{'));
+  // Story E202610137fefc3fc:S001: the chip is a wrapper around the select, and the glyph is a mask
+  // in the chip's ::before, filled with the current text colour so it follows the theme.
+  assert.match(html, /<span class="histchip"><select id="insrc-history" class="segsel [^"]*" aria-label="session"><option value="">new…<\/option><\/select><\/span>/, 'one wrapper holds the select');
+  const rule = html.slice(html.indexOf('.histchip{'));
   const decl = rule.slice(0, rule.indexOf('}') + 1);
-  assert.match(decl, /background-image:url\("data:image\/svg\+xml,/, 'the history dropdown has an inline SVG icon background');
-  assert.match(decl, /background-repeat:no-repeat,no-repeat,no-repeat/, 'three background layers: icon + the two arrow gradients');
+  const icon = /\.histchip::before\{([^}]*)\}/.exec(html);
+  assert.ok(icon, 'the chip draws its glyph in ::before');
+  assert.match(icon![1]!, /mask:url\("data:image\/svg\+xml,/, 'the glyph is an inline SVG mask');
+  assert.match(icon![1]!, /-webkit-mask:url\("data:image\/svg\+xml,/, 'with the prefixed form too');
+  assert.match(icon![1]!, /background-color:currentColor/, 'filled with the chip text colour, so it matches the label');
   // ISSUE-bd2d6b6a: the switcher is a CHIP, so icon + label + arrow read as ONE control. Without the
   // enclosure the three marks float on the chrome background and the dim detached icon reads as a
   // SECOND dropdown beside the label+arrow. Assert the enclosure and the icon's place inside it
   // together — either one alone permits the detached rendering that was reported.
-  assert.match(decl, /border:1px solid var\(--border\)/, 'the chip has a border');
+  assert.match(decl, /border:1px solid var\(--dropdown-border\)/, 'the chip has a border');
   assert.match(decl, /border-radius:6px/, 'the chip has a corner radius');
-  assert.match(decl, /background-color:rgba\(255,255,255,\.045\)/, 'the chip has a faint fill');
-  // Both bounds below are DERIVED from the declared rule, so they keep testing the real relationship
+  assert.match(decl, /background:var\(--dropdown-bg\)/, 'the chip has a ground from the theme');
+  // Both bounds below are DERIVED from the declared rules, so they keep testing the real relationship
   // if the padding is ever retuned — a hardcoded bound would silently stop measuring anything.
   const pad = /padding:\d+px (\d+)px \d+px (\d+)px/.exec(decl);
   assert.ok(pad, 'the chip declares four-value padding (the left value clears the icon)');
   const padLeft = Number(pad![2]);
-  const iconLeft = /background-position:left (\d+)px center/.exec(decl);
-  assert.ok(iconLeft, 'the icon is positioned from the left edge');
+  const iconLeft = /left:(\d+)px/.exec(icon![1]!);
+  const iconWidth = /width:(\d+)px/.exec(icon![1]!);
+  assert.ok(iconLeft && iconWidth, 'the icon is positioned from the left edge with a set width');
   const iconX = Number(iconLeft![1]);
-  // The 12px icon must sit INSIDE the chip's left padding: clear of the border, and ending before the
+  // The icon must sit INSIDE the chip's left padding: clear of the border, and ending before the
   // label starts. A bare-edge icon (the pre-fix left 2px) fails the first bound.
   assert.ok(iconX >= 4, `the icon clears the chip border (was left ${iconX}px)`);
-  assert.ok(iconX + 12 <= padLeft, `the label (padding-left ${padLeft}px) starts after the ${iconX}px icon`);
-  // The icon tone matches the label (--fg #c6cdd8), not --muted: a two-tone dimmer icon reads detached.
-  assert.match(decl, /stroke='%23c6cdd8'/, 'the glyph strokes the label tone, not --muted');
+  assert.ok(iconX + Number(iconWidth![1]) <= padLeft, `the label (padding-left ${padLeft}px) starts after the ${iconX}px icon`);
+  // No fixed stroke colour: the mask's shape is all that is used of the image.
+  assert.doesNotMatch(icon![1]!, /stroke='%23/, 'the glyph carries no colour of its own');
   // The footer selects KEEP the borderless seg language — the chip is the header switcher only.
   const segsel = html.slice(html.indexOf('.segsel{'));
   const segselDecl = segsel.slice(0, segsel.indexOf('}') + 1);

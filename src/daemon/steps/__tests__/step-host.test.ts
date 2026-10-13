@@ -122,7 +122,7 @@ test('equivalence: each of the seven tools through step.call returns the same en
 		const inputs: Record<string, unknown> = {
 			insrc_analyze:          { focus: 'how does x work' },
 			insrc_analyze_step:     { phase: 'start', focus: 'how does x work', repo },
-			insrc_workflow_step:    { phase: 'start', workflow: 'brainstorm', focus: 'an idea', repo },
+			insrc_workflow_step:    { phase: 'start', workflow: 'issue', focus: 'add a flag to the cli', repo },
 			insrc_build_step:       { phase: 'implement', target: 's1/t1', repo },
 			insrc_review_step:      { phase: 'start', artifact: join(dir, 's1.md'), repo },
 			insrc_code_review_step: { phase: 'start', epicHash: 'abcdabcdabcdabcd', storyId: 's1', repo },
@@ -159,6 +159,33 @@ test('equivalence: each of the seven tools through step.call returns the same en
 		await closeGraphStore();
 		await closeLanceConn();
 		if (envBefore !== undefined) process.env['INSRC_REPO'] = envBefore;
+		rmSync(home, { recursive: true, force: true });
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('the step host registers the workflow runners: a workflow run continues past its plan phase through step.call', { timeout: 60_000 }, async () => {
+	const home = mkdtempSync(join(tmpdir(), 'insrc-step-host-runners-'));
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-step-host-runners-repo-'));
+	setGraphStorePath(join(home, 'graph.lmdb'));
+	setLanceConnPath(join(home, 'lance'));
+	try {
+		const host = createStepCallHandler();
+		const context: StepCallContext = { cwd: process.cwd() };
+		const text = (frames: IpcStreamMessage[]): Record<string, unknown> => {
+			assert.equal(frames[0]!.stream, 'done', JSON.stringify(frames[0]!.data));
+			return JSON.parse((frames[0]!.data as StepEnvelope).content[0]!.text) as Record<string, unknown>;
+		};
+		const start = text(await collect(host, { tool: 'insrc_workflow_step', args: { phase: 'start', workflow: 'issue', focus: 'add a flag to the cli', repo }, context }));
+		assert.equal(start['next'], 'emit_plan');
+		// The issue workflow: its first step is a prompt for the controller, so no model is called
+		// (brainstorm's elicit runner drafts with a model and must not be used here).
+		const plan = { workflow: 'issue', steps: [{ id: 's1', runner: 'issue.capture', params: {} }, { id: 's2', runner: 'checklist.verify', params: {} }] };
+		const next = text(await collect(host, { tool: 'insrc_workflow_step', args: { phase: 'plan', plan, state: start['state'] }, context }));
+		assert.equal(next['next'], 'emit_step', JSON.stringify(next).slice(0, 300));
+	} finally {
+		await closeGraphStore();
+		await closeLanceConn();
 		rmSync(home, { recursive: true, force: true });
 		rmSync(repo, { recursive: true, force: true });
 	}

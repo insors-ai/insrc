@@ -29,6 +29,7 @@ import type { CodeReviewStepDeps } from './code-review-step/handler.js';
 import { handleReviewStep } from './review-step/handler.js';
 import { handleTriageStep } from './triage-step/handler.js';
 import { handleWorkflowStep } from './workflow-step/handler.js';
+import { registerWorkflowRunners } from '../../workflow/index.js';
 
 const log = getLogger('daemon:step-host');
 
@@ -54,6 +55,11 @@ export interface StepHostOptions {
 /** The table of the seven tools. Only the review and code-review waits take
  *  the signal; the other handlers run to completion. */
 export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepToolRunner> {
+	// The workflow step runs the workflow runners, which the daemon otherwise
+	// registers only for its own workflow requests (workflow-rpc.ts). The MCP
+	// server registered them at its start while it ran the step in-process.
+	// Idempotent.
+	registerWorkflowRunners();
 	const codeReviewBase = opts.codeReviewDeps ?? CODE_REVIEW_DEFAULT_DEPS;
 	const table: Record<StepToolName, StepToolRunner> = {
 		insrc_analyze:          (args) => runAnalyzeOneShot(args as AnalyzeOneShotArgs),

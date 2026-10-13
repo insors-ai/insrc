@@ -23,6 +23,7 @@ They are 9 tests in 4 files; a sweep below is "clean" when nothing else fails.
 | t9 | 2026-10-12 | 6689 | 6545 | 7 | 5 | 129 | none left from this task. Two source scans the task made stale failed and were updated in the task (both files then 9/9): the permitted-reader name now appears only at its definition (src/db/graph/__tests__/live-store-owner.test.ts), and no file under src/mcp, server.ts included, imports src/daemon/steps (src/daemon/steps/__tests__/workflow-rpc-imports.test.ts). The third extra failure is the delivery handlers test's git maintenance.lock flake seen at t8 |
 | t10 | 2026-10-12 | 6647 | 6505 | 5 | 5 | 129 | none from this task: the fifth failure is the MCPSection poll-interval timing flake (src/cli/panes/__tests__/MCPSection.test.ts), untouched by the task, 3 of 3 alone. 42 fewer tests than at t9: the deleted sampling-bridge, mcp-sampling-provider, sampler-context and sampler cases of shaper-provider |
 | t11 | 2026-10-12 | 6649 | 6508 | 4 | 5 | 129 | none: exactly the known failures and cancellations (Node v22.23.2, after the reader allowance was deleted) |
+| t12 | 2026-10-13 | 6655 | 6514 | 4 | 5 | 129 | none: exactly the known failures and cancellations. The 11 'cli-provider claude completed' log lines are the CliProvider tests' stand-in binaries (model null, under a second each); no test calls a real model |
 
 ## t9: provenance of the tool-surface golden file
 

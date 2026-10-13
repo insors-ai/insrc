@@ -121,8 +121,11 @@ export function forwardStep(
 				params: { tool, args: rawArgs, context },
 			}) + '\n');
 		});
-		socket.on('data', (chunk: Buffer) => {
-			buffer += chunk.toString();
+		// Decoded as a stream: a multi-byte character split across two chunks must
+		// not be decoded half by half (that turns it into replacement characters).
+		socket.setEncoding('utf8');
+		socket.on('data', (chunk: string) => {
+			buffer += chunk;
 			const lines = buffer.split('\n');
 			buffer = lines.pop() ?? '';
 			for (const line of lines) {

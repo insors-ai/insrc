@@ -189,3 +189,27 @@ test('MCP tool surface: the twelve tools keep their names, descriptions and inpu
 		}
 	} finally { await close(); }
 });
+
+test('forwarder: a multi-byte character split across two socket chunks arrives whole', async () => {
+	const text = 'before — after, ünïcödé ✓';
+	const frame = Buffer.from(JSON.stringify({ id: 1, stream: 'done', data: { content: [{ type: 'text', text }] } }) + '\n', 'utf8');
+	const dash = frame.indexOf(Buffer.from('—', 'utf8'));
+	assert.ok(dash > 0);
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-forward-utf8-'));
+	const path = join(dir, 'd.sock');
+	// A daemon stand-in that writes the frame in two chunks, the split inside the dash's three bytes.
+	const server = createServer((socket: Socket) => {
+		socket.once('data', () => {
+			socket.write(frame.subarray(0, dash + 1));
+			setTimeout(() => { socket.write(frame.subarray(dash + 1)); }, 20);
+		});
+	});
+	await new Promise<void>(r => server.listen(path, () => r()));
+	try {
+		const env = await forwardStep('insrc_triage', {}, {}, { connect: () => createConnection(path) });
+		assert.equal(env.content[0]!.text, text);
+	} finally {
+		await new Promise<void>(r => server.close(() => r()));
+		rmSync(dir, { recursive: true, force: true });
+	}
+});

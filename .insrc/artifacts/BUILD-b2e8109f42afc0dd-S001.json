@@ -4,7 +4,7 @@
     "epicHash": "b2e8109f42afc0dd",
     "storyId": "S001",
     "createdAt": "2026-10-13T08:48:39.843Z",
-    "updatedAt": "2026-10-13T08:51:32.861Z",
+    "updatedAt": "2026-10-13T08:54:46.910Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T07:52:45.476Z",
@@ -19,9 +19,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "The turn snapshot is now a git tree written through a private copy of the index; the baseline gained changes (the patch between the snapshot and the working tree) and release. Checked against real git in a plain repository, one with a split index, a linked worktree and one with no commit.",
+    "summary": "A claude Edit or Write result now carries editPath and isError; a codex file_change item gives one applied file-edit event per file it changed (a real recorded item is the unit fixture). Both live tests ran against the installed CLIs and passed.",
     "testRecord": {
       "md": "docs/standalone/show-each-changed-section-turn-s-E20261013b2e8109f/S001/TESTS.md"
     },
@@ -31,65 +35,107 @@
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T08:51:32.861Z"
+        "timestamp": "2026-10-13T08:54:46.910Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T08:54:46.910Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/codex-file-change-item.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T08:54:46.910Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T08:51:32.861Z"
+        "timestamp": "2026-10-13T08:54:46.910Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/edit-governor.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T08:51:32.861Z"
+        "timestamp": "2026-10-13T08:54:46.910Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T08:51:32.861Z"
+        "timestamp": "2026-10-13T08:54:46.910Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/git-baseline.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T08:51:32.861Z"
+        "timestamp": "2026-10-13T08:54:46.910Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/live-cli.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T08:54:46.910Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/real-git.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T08:54:46.910Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T08:54:46.910Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/diff-sections.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T08:51:32.861Z"
+        "timestamp": "2026-10-13T08:54:46.910Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/edit-governor.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T08:51:32.861Z"
+        "timestamp": "2026-10-13T08:54:46.910Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/git-baseline.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T08:51:32.861Z"
+        "timestamp": "2026-10-13T08:54:46.910Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/stream-events.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T08:54:46.910Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/extension.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T08:51:32.861Z"
+        "timestamp": "2026-10-13T08:54:46.910Z"
       }
     ],
-    "commit": "78676aa7"
+    "commit": "929eb1e1"
   }
 }

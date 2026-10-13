@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -98,3 +98,33 @@ Run at 2026-10-13T08:51:32.861Z on commit `78676aa7`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts` | 0 | 1 | 0.5 s |  |
 | `vscode-plugin/src/chat/__tests__/git-baseline.test.ts` | 0 | 4 | 0.3 s |  |
+
+## t3
+
+Run at 2026-10-13T08:54:46.910Z on commit `929eb1e1`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+
+**unit: claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither | `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` |
+
+**unit: codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied | `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` |
+
+**live: live claude: an Edit of a file in a temporary repository yields a tool-result with editPath and the baseline's changes hold the edited section**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-validate-output/diff-widget-t3-live.txt (INSRC_LIVE_TESTS=1 run of vscode-plugin/src/chat/__tests__/live-cli.test.ts on 2026-10-13, claude 2.1.296: pass in 7.3 s)
+
+**live: live codex: a patch of two files in a temporary repository yields two applied file-edit events with those files' paths**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-validate-output/diff-widget-t3-live.txt (INSRC_LIVE_TESTS=1 run of vscode-plugin/src/chat/__tests__/live-cli.test.ts on 2026-10-13, codex-cli 0.162.1: pass in 10.6 s)
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` | 0 | 82 | 1.3 s |  |

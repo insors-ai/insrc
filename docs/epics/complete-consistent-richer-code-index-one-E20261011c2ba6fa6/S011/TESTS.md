@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 95 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 101 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -390,3 +390,41 @@ Run at 2026-10-12T12:48:06.963Z on commit `d821cbc5`. Tests check: **passed**. 5
 | `src/db/graph/__tests__/live-store-refusal.test.ts` | 0 | 2 | 1 s |  |
 | `src/db/lance/__tests__/live-vector-store-owner.test.ts` | 0 | 2 | 0.7 s |  |
 | `src/mcp/__tests__/mcp-process-refused.test.ts` | 0 | 1 | 0.7 s |  |
+
+## t12
+
+Run at 2026-10-13T06:00:42.483Z on commit `f1b81679`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
+
+**integration: ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
+| pass | the step host registers the workflow runners: a workflow run continues past its plan phase through step.call | `src/daemon/steps/__tests__/step-host.test.ts` |
+
+**integration: ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
+| pass | forwarder: a multi-byte character split across two socket chunks arrives whole | `src/mcp/__tests__/forward-step.test.ts` |
+
+**integration: ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/step-host.test.ts` | 0 | 5 | 1.4 s |  |
+| `src/mcp/__tests__/forward-step.test.ts` | 0 | 4 | 1 s |  |
+| `src/mcp/__tests__/mcp-process-e2e.test.ts` | 0 | 4 | 4.3 s |  |

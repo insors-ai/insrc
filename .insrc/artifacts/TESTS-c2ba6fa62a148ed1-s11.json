@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s11",
     "createdAt": "2026-10-12T11:26:17.849Z",
-    "updatedAt": "2026-10-12T12:48:06.963Z",
+    "updatedAt": "2026-10-13T06:00:42.483Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -3499,6 +3499,157 @@
             "titles": [
               {
                 "title": "ac6: the MCP server's process is refused the live graph store and the live vector store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "f1b81679",
+        "ranAt": "2026-10-13T06:00:42.483Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "the step host registers the workflow runners: a workflow run continues past its plan phase through step.call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/step-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1443,
+            "titles": [
+              {
+                "title": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+                "result": "pass"
+              },
+              {
+                "title": "equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store",
+                "result": "pass"
+              },
+              {
+                "title": "the step host registers the workflow runners: a workflow run continues past its plan phase through step.call",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "state store miss: each of the four stores says the daemon was restarted and the run must be started again",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/forward-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1046,
+            "titles": [
+              {
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "MCP tool surface: the twelve tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4254,
+            "titles": [
+              {
+                "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
+                "result": "pass"
+              },
+              {
+                "title": "ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token",
+                "result": "pass"
+              },
+              {
+                "title": "ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
                 "result": "pass"
               }
             ],

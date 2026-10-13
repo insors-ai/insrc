@@ -103,6 +103,23 @@ test('shared review request: a transport that fails while it is still starting i
 	assert.deepEqual([f.state.ended, f.state.cancelled], [0, 1]);
 });
 
+test('shared review request: a transport that throws while opening settles unreachable and releases its wait timer and abort listener', async () => {
+	let cleared = 0;
+	const ac = new AbortController();
+	let listeners = 0;
+	const add = ac.signal.addEventListener.bind(ac.signal);
+	const remove = ac.signal.removeEventListener.bind(ac.signal);
+	ac.signal.addEventListener = ((...args: Parameters<typeof add>) => { listeners += 1; add(...args); }) as typeof add;
+	ac.signal.removeEventListener = ((...args: Parameters<typeof remove>) => { listeners -= 1; remove(...args); }) as typeof remove;
+	const throwsOnOpen = (): never => { throw new Error('connect EACCES /tmp/daemon.sock'); };
+	await assert.rejects(
+		runReviewStream('workflow.review', { timeoutMs: 60_000, signal: ac.signal }, throwsOnOpen, { setTimer: () => 'h', clearTimer: () => { cleared += 1; } }),
+		isFailure('unreachable', /^workflow\.review: cannot reach the daemon \(connect EACCES \/tmp\/daemon\.sock\)$/),
+	);
+	assert.equal(cleared, 1, 'the wait timer was cleared');
+	assert.equal(listeners, 0, 'the abort listener was removed');
+});
+
 test('shared review request: the two requests\' parameters, and neither client interprets frames on its own', () => {
 	assert.deepEqual(reviewArtifactRequestParams({ artifactPath: '/a.md' }), { artifactPath: '/a.md' });
 	assert.deepEqual(reviewArtifactRequestParams({ artifactPath: '/a.md', repo: '/r' }), { artifactPath: '/a.md', repo: '/r' });

@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-13T06:45:42.001Z  ·  **Updated:** 2026-10-13T06:46:35.572Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-13T06:45:42.001Z  ·  **Updated:** 2026-10-13T07:18:27.074Z
 
-**Commit:** 6d5b5b75
+**Commit:** e6ed9f33
 
 ## Scope
 
@@ -26,5 +26,5 @@ A long assistant response (more than 3 lines or 240 characters) now has the coll
 
 ## Changes
 
-- `vscode-plugin/src/chat/__tests__/render-registry.test.ts` — **insrc-build** (2026-10-13T06:46:35.572Z)
-- `vscode-plugin/src/chat/render-registry.ts` — **insrc-build** (2026-10-13T06:46:35.572Z)
+- `.insrc/artifacts/BUILD-7fefc3fc5c51793e-S001.json` — **insrc-build** (2026-10-13T07:18:27.074Z)
+- `docs/standalone/make-dev-chat-follow-vs-code-E202610137fefc3fc/S001/BUILD.md` — **insrc-build** (2026-10-13T07:18:27.074Z)

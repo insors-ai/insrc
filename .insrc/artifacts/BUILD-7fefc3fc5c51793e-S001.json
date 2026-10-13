@@ -4,13 +4,14 @@
     "epicHash": "7fefc3fc5c51793e",
     "storyId": "S001",
     "createdAt": "2026-10-13T06:59:58.048Z",
-    "updatedAt": "2026-10-13T07:11:30.909Z",
+    "updatedAt": "2026-10-13T07:18:26.361Z",
     "authoredBy": "controller",
     "standalone": true,
     "sizeClass": "small",
     "triageRationale": "One story in one module with one clear approach: the approved spec fixes which theme variable each component uses.",
     "epicCreatedAt": "2026-10-13T06:26:49.137Z",
-    "epicSlug": "make-dev-chat-follow-vs-code"
+    "epicSlug": "make-dev-chat-follow-vs-code",
+    "approvedAt": "2026-10-13T07:18:26.851Z"
   },
   "body": {
     "tasks": [
@@ -29,100 +30,128 @@
           "file": ".insrc/artifacts/BUILD-5ff61e5fdca3875d-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-5ff61e5fdca3875d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:18:26.361Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-7fefc3fc5c51793e-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-7fefc3fc5c51793e-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TESTS-5ff61e5fdca3875d-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": ".insrc/build-start/5ff61e5fdca3875d-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": "docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": "docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/TESTS.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-dev-chat-follow-vs-code-E202610137fefc3fc/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": "docs/standalone/make-dev-chat-follow-vs-code-E202610137fefc3fc/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-theme-before.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/markdown-style.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/render-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T07:11:30.909Z"
+        "timestamp": "2026-10-13T07:18:26.361Z"
       }
     ],
-    "commit": "2967b2b1"
+    "commit": "e6ed9f33"
   }
 }

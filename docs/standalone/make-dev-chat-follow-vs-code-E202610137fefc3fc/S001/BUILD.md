@@ -2,9 +2,9 @@
 
 # Build (standalone small) — Story S001
 
-**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-13T06:59:58.048Z  ·  **Updated:** 2026-10-13T07:11:30.909Z
+**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-13T06:59:58.048Z  ·  **Updated:** 2026-10-13T07:18:26.361Z
 
-**Commit:** 2967b2b1
+**Commit:** e6ed9f33
 
 ## Triage rationale
 
@@ -22,17 +22,21 @@ The dev chat's named colours hold VS Code theme variables, and every fixed colou
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-5ff61e5fdca3875d-S001.json` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `.insrc/artifacts/LLD-7fefc3fc5c51793e-S001.json` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `.insrc/artifacts/TESTS-5ff61e5fdca3875d-S001.json` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `.insrc/build-start/5ff61e5fdca3875d-S001.json` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/BUILD.md` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/TESTS.md` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `docs/standalone/make-dev-chat-follow-vs-code-E202610137fefc3fc/S001/LLD.md` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `vscode-plugin/src/chat/__tests__/chat-theme-before.json` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `vscode-plugin/src/chat/__tests__/render-registry.test.ts` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `vscode-plugin/src/chat/markdown-style.ts` — **insrc-build** (2026-10-13T07:11:30.909Z)
-- `vscode-plugin/src/chat/render-registry.ts` — **insrc-build** (2026-10-13T07:11:30.909Z)
+- `.insrc/artifacts/BUILD-5ff61e5fdca3875d-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `.insrc/artifacts/CR-5ff61e5fdca3875d-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `.insrc/artifacts/CR-7fefc3fc5c51793e-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `.insrc/artifacts/LLD-7fefc3fc5c51793e-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `.insrc/artifacts/TESTS-5ff61e5fdca3875d-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `.insrc/build-start/5ff61e5fdca3875d-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/BUILD.md` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/CR.md` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/TESTS.md` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `docs/standalone/make-dev-chat-follow-vs-code-E202610137fefc3fc/S001/CR.md` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `docs/standalone/make-dev-chat-follow-vs-code-E202610137fefc3fc/S001/LLD.md` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `vscode-plugin/src/chat/__tests__/chat-theme-before.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `vscode-plugin/src/chat/__tests__/render-registry.test.ts` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `vscode-plugin/src/chat/markdown-style.ts` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `vscode-plugin/src/chat/render-registry.ts` — **insrc-build** (2026-10-13T07:18:26.361Z)

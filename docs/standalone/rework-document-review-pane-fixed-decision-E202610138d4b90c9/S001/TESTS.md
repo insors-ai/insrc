@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -92,3 +92,61 @@ Run at 2026-10-13T12:22:06.311Z on commit `b4760e14`. Tests check: **passed**. 4
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/__tests__/artifact-content.test.ts` | 0 | 22 | 0.5 s |  |
 | `src/workflow/artifacts/companion/__tests__/header.test.ts` | 0 | 14 | 0.5 s |  |
+
+## t4
+
+Run at 2026-10-13T12:28:11.942Z on commit `4e4fca41`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason | `src/workflow/__tests__/review-decision.test.ts` |
+
+**unit: review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject | `src/workflow/__tests__/review-decision.test.ts` |
+
+**unit: review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused | `src/workflow/__tests__/review-decision.test.ts` |
+
+**unit: review decision: a decision with no comments writes no feedback entry**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review decision: a decision with no comments writes no feedback entry | `src/workflow/__tests__/review-decision.test.ts` |
+
+**unit: review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing | `src/workflow/__tests__/review-decision.test.ts` |
+
+**unit: review decision: a failing comment write after the decision took effect reports the outcome with commentsError**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review decision: a failing comment write after the decision took effect reports the outcome with commentsError | `src/workflow/__tests__/review-decision.test.ts` |
+
+**unit: review decision: the author is the one resolveReviewer gives and is never taken from the request**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review decision: the author is the one resolveReviewer gives and is never taken from the request | `src/workflow/__tests__/review-decision.test.ts` |
+
+**unit: daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged | `src/workflow/__tests__/review-decision.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/__tests__/review-decision.test.ts` | 0 | 8 | 0.5 s |  |

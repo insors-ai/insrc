@@ -4,7 +4,7 @@
     "epicHash": "8d4b90c9ab301e66",
     "storyId": "S001",
     "createdAt": "2026-10-13T12:12:45.679Z",
-    "updatedAt": "2026-10-13T12:22:06.311Z",
+    "updatedAt": "2026-10-13T12:28:11.942Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T11:21:58.998Z",
@@ -23,98 +23,123 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "resolveReviewer(repoPath, deps?) is exported from the companion header module (git user.name, else OS login, else unknown, with its source) and resolveCompanionHeader's user now comes from it. ArtifactReviewView gains docPath (repo-relative .md path), contentVersion (first 16 hex of the SHA-256 of the markdown; contentVersionOf is exported), feedback (absent when none), reviewer and state; handleArtifactContent takes an optional third argument with the reviewer lookups so tests can pin them. Suites: workflow, MCP and daemon tests with one process per file: 3004 tests, 2984 pass, 19 skipped, 1 fail. The one failure is src/daemon/db/__tests__/sqlite-driver.test.ts \"temporalTrend recovers slope/intercept/R²\", which fails the same way on the commit before this task and does not touch this code. Daemon and plugin typechecks are clean.",
+    "summary": "New src/workflow/review-decision.ts with handleReviewDecision(params, repoEnv, deps?) and the 'workflow.reviewDecision' handler in src/daemon/index.ts. It resolves the artifact from its .md with the same docs/ guard as workflow.artifactContent, validates the whole request first (decision, comments list, 200 comments, 10,000 characters, file is the .md or a listed companion, anchor shape, feedback needs a comment, approve and reject need a pending artifact), resolves the author with resolveReviewer, records the decision (approveWorkflowTarget for the one artifact, rejectArtifactByJsonPath with the first comment that has no anchor or the default reason, nothing for feedback) and then appends the comments in one appendFeedbackBatch call with kind comment, one batch id and the decision that took effect. Two things beyond the design's wording, both additive: the result carries an optional followOn (what the approval of a bugfix issue set off, as workflow.approve reports it), run after the comments are saved and never failing the decision; and docPathOf is exported from artifact-content.ts so the two modules compute the document path the same way. A malformed anchor is refused as an invalid request. Suites (workflow, MCP, daemon; one process per file): 1 failure, src/daemon/db/__tests__/sqlite-driver.test.ts \"temporalTrend recovers slope/intercept/R²\", which fails the same way without this task's changes. The runner's total count varied between runs of the same code (2958 to 3004 with --test-force-exit); the failure count did not.",
     "testRecord": {
       "md": "docs/standalone/rework-document-review-pane-fixed-decision-E202610138d4b90c9/S001/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:28:11.942Z"
+      },
+      {
+        "target": {
           "file": "src/workflow/__tests__/artifact-content.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/feedback-carry-finalize.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/review-decision.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:28:11.942Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-content.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/header.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/header.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/format/bindings.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/__tests__/review-fields.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/tool.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/writer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
       },
       {
         "target": {
           "file": "src/workflow/orchestrator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:22:06.311Z"
+        "timestamp": "2026-10-13T12:28:11.942Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-decision.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:28:11.942Z"
       }
     ],
-    "commit": "b4760e14"
+    "commit": "4e4fca41"
   }
 }

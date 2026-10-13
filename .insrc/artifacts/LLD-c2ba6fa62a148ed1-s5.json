@@ -1,0 +1,1216 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791876073725-do7qf3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-13T07:32:21.238Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 667303,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "hldEffectiveHash": "8ec1c5d92f54afdc0d6aef730ad53d5532a042d9e25ec6621e5ddebe2fabdff2",
+    "hldAmendmentsApplied": [
+      "AMD-c2ba6fa62a148ed1-1"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers FR001-FR004 and ac1-ac4 of Story s5 (DEF §6.5) and all four fix intents of ISSUE-e2bcadd9, and builds no stated non-goal.",
+          "evidence": "DEF.md:237-240 sets out ac1 (no largest-size announcement, same code and message), ac2 (a throwing last-indexed read gets a named cause and code), ac3 (the four ISSUE-e2bcadd9 reproductions) and ac4 (refuse with a named error and progress, no partial result). The design covers each one: refusal before measuring (§2.1, §2.11), index-state-read-failed / lookup-failed (§2.4, §3.3), tool-loop call naming, cache before scope, typed failure (§2.4-§2.6), and RepoIndexingError (§2.3, §2.8, §2.12). ISSUE.md fix intent 3 asks to keep 'the pairing check and the rule that the scope is resolved once'. The design keeps both on a miss. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md, docs/standalone/bug-four-defects-left-code-review-E20261007e2bcadd9/ISSUE.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "ac4's 'no partial result is returned' holds for every graph-reading request: results that reach a repository under index are filtered.",
+          "evidence": "§2.8 filters cross-repository results only for search.callers / search.callees / search.callers_nhop. Other handlers traverse the graph or a closure across repositories without any filter. entity.closure and entity.unreachable call closureEntities / unreachableEntities over edges (daemon/index.ts:1107-1141). repo.depends_on and repo.search_cross_repo resolve the DEPENDS_ON closure and search every repository in it (daemon/index.ts:1184-1212). search.closure returns resolveClosure. The design refuses these only when a ROOT or NAMED repository is under index. A ready repository whose closure includes a repository under index therefore still gets half-built rows from that repository. The same applies to graph_query in the built-in tools. [files: src/daemon/index.ts, src/daemon/tools/builtins/graph/index.ts]",
+          "action": "Extend the filtering postcondition of §2.8 / §2.12 to every traversal or closure result: entity.closure, entity.unreachable, repo.depends_on, repo.search_cross_repo, search.closure and graph_query. Either leave out the entities or repositories under index, or refuse. Add a test for each.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today runAnalyze measures the request and emits 'classified' before any scope refusal. The run-level resolveTaskScope check runs after buildRunBundle, in the plan stage, through scopeErrorMapping.",
+          "evidence": "orchestrator/driver.ts:319 `measureRequestScope(...)`, :325 `emit({ type: 'classified', intent, measure })`, :352 `shaper.buildRunBundle(...)`, :372-386 `if (intent.target !== 'generic') { await resolveTaskScope(intent.scopeRef, intent.target, 'the run') } catch { const scoped = scopeErrorMapping(err) ... failResult('plan', ...)`. One small difference: today's record fails at stage 'plan', but the design records it at 'classify'. The code, message and data are unchanged. [files: src/analyze/orchestrator/driver.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "runShaper resolves the scope before the cache lookup and reads freshness through resolveRepoLastIndexedAt directly, not PipelineSteps.lastIndexedAt. The real reader already swallows a failed registry read.",
+          "evidence": "context/driver.ts:350 `const scope = await prepareScope(...)`, :357 `await resolveRepoLastIndexedAt(freshnessPathOf(scope))`, :360 `readBundle(...)`. The code-only check is :379-381 `if (invocationMode === 'run' && shaperId === 'code') await ensureNonEmptyClosure(scope)`. The pipeline reads through `steps.lastIndexedAt` (:1471) and awaits executePlan bare (:1473). resolveRepoLastIndexedAt (:1158-1170) catches a listRepos failure and returns undefined. [files: src/analyze/context/driver.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "fullIndex sets status 'indexing' with no lastIndexed (so the row's lastIndexed becomes 0) and writes 'ready' or 'error' at the end. Start-up re-queues 'error' and 'indexing'-without-lastIndexed rows. The indexer runs in the daemon process, so an in-process run record is reachable by the analyzer and the search handlers.",
+          "evidence": "indexer/index.ts:596 `updateRepoStatus(this.db, repoPath, 'indexing')`, :726 'ready' with a timestamp, :735 `'error', undefined, msg`. The start-up re-queue is at :286-299. updateRepoStatus rebuilds lastIndexed from `parseOptionalTimestamp(lastIndexed)`, so 'indexing' clears it, which matches the design's cache-hit reasoning. daemon/index.ts:264 `const indexer = new IndexerService(...)` runs in-process. One minor naming slip: the class is IndexerService, not 'Indexer'. [files: src/indexer/index.ts, src/db/repos.ts, src/daemon/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ModelCallFailedError already exists with a `detail` field and the message 'Model call failed: <detail>'. isModelCallFailure already recognises it by type.",
+          "evidence": "agent/providers/model-call-error.ts:12-20 `super(`Model call failed: ${detail}`)`, `readonly detail`. model-failure.ts:68 `if (err instanceof ModelCallFailedError) return true;`. The design reuses it and adds start-of-message matching after RETRY_PREFIX (model-failure.ts:51). [files: src/agent/providers/model-call-error.ts, src/analyze/context/model-failure.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "scopeErrorMapping is the single mapping of the scope errors, shared by the run driver, the daemon RPC and the plan walk through taskRefusalMapping, so adding RepoIndexingError there reaches all three.",
+          "evidence": "invariants.ts:118-125 scopeErrorMapping and :137-141 taskRefusalMapping, which delegates to it. orchestrator/driver.ts:704 classifyShaperError calls scopeErrorMapping first. ScopeErrorCode (:100) is a closed union, so the design's union extension is needed and is listed in §3.6. [files: src/analyze/context/invariants.ts, src/analyze/orchestrator/driver.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The change to isModelCallFailure (Ollama and socket texts no longer matched anywhere in a message) has its callers inventoried.",
+          "evidence": "isModelCallFailure has seven consumers, not one: classifier/driver.ts:303, planner/driver.ts:516, summariser/driver.ts:368, runtimes/shared/aggregator.ts:355, context/synthesizer.ts:340, context/decomposer.ts:391, and context/driver.ts:1028. Today model-failure.ts:81-83 matches the OLLAMA_FAILURE_TEXTS anywhere because 'a socket error can be nested in another's message'. wrapOllamaError (ollama.ts:759-773) returns a plain Error for every failure except ECONNREFUSED and not-found. After the change, any Ollama transport error that reaches one of these six other callers without passing through the new ModelCallFailedError wrapping is reclassified from llm-unavailable to a shape failure. Examples are an error re-wrapped by an intermediate layer, or a stream error raised during iteration rather than creation. §3.x and §5 list none of these consumers, and no test covers them. [files: src/analyze/context/model-failure.ts, src/agent/providers/ollama.ts, src/analyze/classifier/driver.ts, src/analyze/planner/driver.ts, src/analyze/summariser/driver.ts, src/analyze/runtimes/shared/aggregator.ts, src/analyze/context/synthesizer.ts, src/analyze/context/decomposer.ts]",
+          "action": "Add the six other isModelCallFailure consumers to the change sites. State that every Ollama transport failure path (complete retry :328-347, stream :517 and :614-621, including errors thrown while iterating a stream) raises ModelCallFailedError. Add at least one test per consumer family, for example the classifier and the planner on a stand-in Ollama socket failure, proving an outage is still llm-unavailable.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The daemon requests §2.8 names all exist, and runAnalyze reaches runShaper only through shaper.buildRunBundle, whose ShapeOpts is passed through as RunShaperArgs.opts. That makes a ShapeOpts.scopeChecked flag a working channel.",
+          "evidence": "daemon/index.ts registers search.query :1048, search.closure :1060, search.callers :1065, search.callees :1070, locate.inferParents :1081, entity.summary :1102, entity.closure :1107, entity.unreachable :1123, repo.depends_on :1184, repo.search_cross_repo :1203, search.by_file :1216, search.callers_nhop :1221 and analyze.classify :1755. context/index.ts:111-121 `buildRunBundle: (input, opts: ShapeOpts) => runShaper({ ..., inputs: input, opts })`. computeCacheKey(promptContent, inputs) at context/driver.ts:338 excludes opts. graph_entity, graph_search, graph_callers, graph_callees and graph_query appear in tools/builtins/graph/index.ts. [files: src/daemon/index.ts, src/analyze/context/index.ts, src/analyze/context/driver.ts, src/daemon/tools/builtins/graph/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The structured-output retry helper today loses the error type of a throwing call, so keeping ModelCallFailedError through it is a real change site.",
+          "evidence": "structured-output.ts:197-207 catches the call's throw, keeps only `(err as Error).message` in lastErrors, and :220 throws `new Error(`structured-output: validation failed after ${maxAttempts} attempts: ...`)`. The type is lost, as the design states, and §2.6 changes it. [files: src/agent/providers/structured-output.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "decodeRepoRow builds the registry row from named fields, so lastRun must be copied explicitly, and an older daemon drops it on its next status write.",
+          "evidence": "db/graph/codec.ts:114-127 returns `{ id, kind, namespace?, path, name, addedAt, lastIndexed, status, errorMsg }` only. updateRepoStatus (repos.ts:260-267) does `{ ...row, status, lastIndexed, errorMsg }` from the decoded row, so an unknown field is lost unless the decoder copies it. This is exactly the design's backward-compat statement. [files: src/db/graph/codec.ts, src/db/repos.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The bundle schema's meta has additionalProperties: false, so repoPath must be added to the schema. A bundle missing meta.repoLastIndexedAt is already treated as stale, which matches the design's treatment of a missing repoPath as a miss.",
+          "evidence": "context/schema.ts:109-111 `meta: { ... additionalProperties: false`, with repoLastIndexedAt declared at :149. cache.ts:187-196 isStaleByIndexer returns true when meta.repoLastIndexedAt is undefined, but only when currentLastIndexedAt !== undefined (cache.ts:155). Today a 'connection' bundle is therefore served without a freshness check, matching the design's repoPath-null rule. [files: src/analyze/context/schema.ts, src/analyze/context/cache.ts, src/analyze/context/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s5 does not redesign anything owned by s1 (IndexState and completeness), s3 (the entity existence check) or s11 (step tools in the daemon). The HLD places s5 as independent in Phase A.",
+          "evidence": "HLD.md:45 'the truthful reads of index state (s5) ... do not depend on the commit and can be built in any order'. HLD.md:270 's5 is independent of both and may go before, between or after them'. The design adds lastRun on the registry row and an in-process IndexRunView. It does not touch the IndexState row or the completeness field (s1). It keeps ensureNonEmptyClosure's listEntitiesForRepo reader, leaving the existence check to s3. It relies on s11's in-daemon step tools, which are complete. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Over the request socket a handler's thrown error reaches the client as a plain string message, so RepoIndexingError must carry its code as a 'repo-indexing:' prefix in its message to be detectable.",
+          "evidence": "daemon/server.ts:71-77 failureMessage returns `err instanceof Error ? err.message : String(err)` (or a named LMDB lock message), and :197/:211 send `{ id, error: failureMessage(...) }`. A string is all the client gets, matching §2.8. [files: src/daemon/server.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A registry read failure or a pristine registry in ensureRepoQueryable is skipped, as ensureNonEmptyClosure does today, so the new check adds no new raw-error path.",
+          "evidence": "invariants.ts:186-213 catches the listRepos failure ('registry read failed; skipping invariant') and returns undefined when repos.length === 0. §2.3 copies the same skip. [files: src/analyze/context/invariants.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion maps to at least one named test that would fail without the change, including the ISSUE-e2bcadd9 reproductions (cache hit with a broken connections file, a validation message quoting 'ECONNREFUSED', a real outage behind the retry prefix).",
+          "evidence": "§5's acceptance mapping lists tests for ac1 (run order on both branches, docs, analyze.classify), ac2 (lastIndexedAt throw at both read sites, the mapping in classifyShaperError and the orchestrator), ac3 (all four reproductions from ISSUE.md:11-17, plus the typed-failure and retry-helper cases) and ac4 (status, cache-hit, search, built-in tool and indexer-record tests). The existing seams the tests rely on are real: RunShaperArgs.pipelineSteps (`args.pipelineSteps ?? REAL_PIPELINE_STEPS`, driver.ts:389), ensureNonEmptyClosure deps (invariants.ts:171) and _setTaskScopeDepsForTest (task-scope.ts:40). The test gap for the other isModelCallFailure consumers is reported under change-sites. [files: src/analyze/context/driver.ts, src/analyze/context/invariants.ts, src/analyze/runtimes/shared/task-scope.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 14,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-13T07:49:23.679Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-13T08:01:35.177Z",
+    "reviewOverride": {
+      "reason": "Stakeholder decision 2026-10-13 (option A): five daemon review rounds, every HIGH and MED finding applied (rounds 1-4 and both MEDs of round 5, commit 01d697a9); the rounds were narrowing and each surfaced new gaps rather than converging; anything further is to surface at the plan and code review.",
+      "at": "2026-10-13T08:01:35.177Z"
+    },
+    "questionResolutions": {
+      "q4e48e4a6": {
+        "question": "cd2 (partial): The search requests' params are given as 'as today' (each handler's existing typed params) rather than restated.",
+        "status": "resolved",
+        "choice": "Pin with a contract test",
+        "rationale": "Chosen by the user in chat on 2026-10-13: keep 'as today' in the LLD and add a plan task with a test asserting each guarded search request still accepts its existing params, so a change to a handler's params fails the test.",
+        "resolvedAt": "2026-10-13T08:05:11.933Z"
+      },
+      "qe4357416": {
+        "question": "alt2 (partial): The other Epic constraints (k1, k3, k4, k6-k11) are not scored one by one; none distinguishes the alternatives (no model calls, no kind bytes, no ignore rules are involved).",
+        "status": "resolved",
+        "choice": "Score only the borderline constraints",
+        "rationale": "Chosen by the user in chat on 2026-10-13. Done in commit 3bb70547: k1, k7 and k8 are scored per alternative in the LLD (a1 satisfies all three; a2 partial on k1 and k8; a3 violates k1); k3, k4, k6, k9, k10 and k11 are stated not to touch s5 in any alternative, each with its reason.",
+        "resolvedAt": "2026-10-13T08:10:32.060Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "A request about code the index does not hold is refused before the run announces any size, with the same code and message as today. A request about a repository that is being indexed, or whose last index ended in an error before it completed, is refused with a new named error, repo-indexing, that says how far the run got, at the analyzer's scope check and at the daemon's graph-reading search requests; requests about other repositories are answered as usual. The four context-builder defects of ISSUE-e2bcadd9 are closed: the tool loop names the call that failed, a failed read of the last-indexed time or a failed lookup is a named cause with its own code, a cached bundle is returned before the scope is resolved, and a failed model call is recognised from what the provider itself raised, not from text echoed in an answer."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Three layers, each depending only on the one below. Layer 1, the file commit: the store has one write operation for a file, which in a single LMDB transaction replaces the file's entities, replaces its relationships and its pending relationships, and advances the repository's generation and completeness counters. It grows out of the existing whole-file replacement (reindexFile), which already replaces a file's entities in one transaction but removes relationships only for entities that disappeared from the file; the commit goes further and replaces the outgoing relationships of every entity of the file. The indexer's refresh, the delete event and the repair all call it; a file is selected for it by one filter built from the repository's ignore files. A relationship is never dropped in the commit: when its target is not stored it becomes a pending row, and pending rows are completed only by the passes that own them: the cross-file pass for code symbols, and the two endpoint passes of the external-services Epic for theirs. Layer 2, the recorded state: one row per repository holds the generation and what is known to be incomplete (relationships awaiting a target that is in an indexed repository, relationships that could not be written, entities without vectors). The four repository status values keep their meaning; completeness is a separate field read from this row and shown wherever status is shown, so a repository with anything outstanding does not read as fully ready. Layer 3, derived data: evidence is a one-byte value on the relationship row, written in the commit, by the cross-file pass and by every other writer of a stored relationship; subsystem grouping, subsystem summaries and model-proposed document relationships are queued passes that start only from a repository whose state is complete, write their own tables, and stamp what they wrote with the generation it was computed from. All new stored data arrives as steps on the existing migration chain (SCHEMA_VERSION 4 onward); no existing edge key or kind byte changes.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [],
+        "internal": "The refusal, with a named error and its own code, of a search or analyze request about a repository whose status is indexing, at the analyzer's scope check and at the daemon's search requests, carrying the status and how far the run has got (files done of files selected, and when it began), read from the indexer's running job; the tools that rest on the analyzer (the workflow steps, triage, code review) pass that error on as it is. The order of the analyzer's run: the refusal of a scope the index does not hold comes before a size is announced, or the announcement says the size could not be counted. The named cause and error code for a failed read of the last-indexed time and for a failed lookup, and the three other defects of ISSUE-e2bcadd9 (the wrong provider named, the scope resolved before the cache, and failure text matched inside echoed output). This Story does not read IndexState: it works with the checks the analyzer has today, so that it stays independent of s1."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The rule that a relationship with an absent target becomes pending instead of being skipped, at each of the six places in src/db/relations.ts where one is lost today (the resolved write's skip on a missing endpoint and its skip on a kind with no byte, promoteToResolved, promoteResolvedBatch, and the pending write's discard of a row without its file or repository and of a row whose repository is not registered), each either kept as pending or counted as unwritable with a reason; the set of files whose parse or commit failed in a full index, persisted with their paths until they next commit; which fields of the state are recounted on open and which are persisted and carried over; the classification of a pending relationship as awaiting-target, ambiguous or no-candidate, with the external-service rows classed apart and the two endpoint passes counted in when a full index is finished; the class is stored on the pending row itself, in its existing free-form record, so no stored form changes, a row the cross-file pass has not yet attempted counts as awaiting-target, and the recount on open reads the stored class and does not run resolution again; the extension of the cross-file pass to complete relationships awaiting a target by id, for imports and the other code-symbol kinds as well as calls and inheritance, and to follow a re-exporting file to the function it re-exports; the lookup of pending rows by the id they await, with its migration step, and the pass after a file event visiting the rows that await an entity of the files just committed; the change of the reindex request so that it deletes the repository's rows in the graph store and the vector store and builds them again from every file, in place of today's skip of unchanged files, with no separate repair request, returning to pending the relationships that other repositories hold into the deleted entities, and its queuing by the migration for every repository indexed before this change, which starts as not complete; the storing of the repository entity so that the manifest step's dependency relationships are written; the measurement on this repository, before and after a repair, of the awaiting-target, ambiguous, no-candidate and unwritable counts, with unwritable expected to be zero; the IndexState row, its migration step, its recount on open, and the derivation of repository status from it, as a completeness field returned beside the unchanged status by the daemon's status and stats requests and shown in the CLI's repository pane and in both editor plugins; and the analyzer's read of it: an analyzer lookup that reads relationships of a repository that is not complete says so in its result, with the counts, so that an answer over an incomplete graph is not returned as a plain fact. The choice, in this Story's design, of the function reached only through a re-exporting file that the repair is measured on, since the issue's own example (pickScope) has been removed from the source. Raising the log level of a refused relationship from debug is internal. Until Story s2 lands, s1 applies its rule inside the existing separate writes."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The extension of the existing whole-file replacement into the file commit (relationships and pending rows in the same transaction as entities; outgoing relationships of surviving entities replaced, not only those of entities that disappeared; incoming relationships of a removed entity returned to pending), the move of the indexer's refresh and delete paths and of the clean-up pass's removal of a stored file onto it, and the retirement of the separate delete-then-upsert sequence in the indexer. The handling of vectors after the commit: writing the entity row with its embedding marker empty and setting it in a second transaction only after the vector write succeeds, counting an entity with an empty marker in IndexState, comparing entity ids with the vector table on open in both directions, so that a vector left behind by a failed removal is deleted before a plain insert can meet it, and the extension of the existing reembed job to run on daemon start and after an index, with a vector write for an entity whose marker is empty made an upsert, except for an entity first allocated in the same commit, which keeps the plain insert. Three things in that job change with it: it applies the embed step's own selection instead of forcing every entity, so empty-body entities (external endpoints, module stubs) stay unselected and uncounted; its update of an embedding writes the vector first and sets the marker in a second transaction, where today it sets the marker first; and the marker carries the model of the backend that is active, not one fixed name. Which entities count as unembedded (those the embed step selects) and the separate recorded reason when the embedding backend is unavailable. The count of a file whose commit fails on a file event. The queue rule that index jobs go ahead of other jobs and that a long job yields between its units, so that a commit is not held behind a model pass. How a reader sees the old or the new set during a commit is the store's ordinary transaction isolation and needs no new mechanism."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [],
+          "internal": "The by-file and by-repository index of entity rows, its migration step that builds it for an existing store, and its upkeep. No single entity-row write exists today: there are seven raw put and remove sites across src/db/entities.ts and src/db/graph/migrations.ts, and the existing name index is kept in step by a helper each site must remember to call. This Story introduces one put and one remove function for entity rows that maintain the name index and the new index together, routes every raw site through them, and adds a test that fails when a raw put or remove appears outside them. Upkeep therefore sits beneath every caller, so that neither today's writers nor the file commit need to know of it and this Story does not depend on s2. The two reads (findEntitiesByFile, listEntitiesForRepo) keep their results and their callers; a new existence check answers whether a repository holds any entity, and the analyzer's scope check uses it."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [],
+          "internal": "The cause, which ISSUE-0d577569 records as not known, was reproduced on 2026-10-11 and is not the system's semaphore limit, which the library's message names, but the loss of the daemon's own file lock on the store's lock file, after which another process that opens and closes the store removes the store's semaphores; the daemon's next write then fails with the library's message about the limit, and its exit hangs in the library's close. What in the daemon closes a second descriptor on the lock file is not yet identified. First, therefore, the remedy that does not depend on finding it: the live store is opened by the daemon alone, and any other process is refused it. Second, a bound on the whole shutdown including the store's close, so that a close that hangs ends in an exit. Third, recording a store failure of this kind and stating it in the daemon's status. None of this is consumed by another Story."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The in-process matcher of the gitignore grammar over nested ignore files and its conformance test against git; the move onto the one filter of every site that reads the list today in src/indexer/index.ts (the full walk, the start-up scan for changed files, the file event, the clean-up pass, and the two places that seed the list when a repository is registered), of the watcher, and of the analyzer's reader, its two exploration walkers and its infra walker (src/analyze/runtimes/infra/_shared.ts), each of which has its own list of names today, and of the indexer's source-root detection (src/indexer/source-roots.ts), whose own list would otherwise hide a package in a directory the filter includes; a search of the source for such lists found five more, in the daemon's four file-search tools (glob, grep, list-dir, recent under src/daemon/tools/builtins/search) and in the review probe (src/workflow/review/probe.ts), which search the working tree as text, do not decide what the index holds, and are deliberately left as they are; the filter keeps answering for a directory that holds an included file, as the analyzer's reader does now; the retirement of the bare-name list and of the ignore entry in the repository's .insrc config; the two built-in exclusions (generated or minified files, the .insrc directory) applied inside the filter so that the full walk and the file event no longer differ on them; the handling of a change to an ignore file as an event that removes and adds files, and the comparison by content hash of the clone's exclude file and the global ignore file, which the watcher cannot see, whenever the filter is used; the queued step that proposes a root ignore file with the cheap-tier model when a repository is added without one, its fallback, and the rule that an existing file is never written. Two points were decided by the stakeholder: the filter honours all three of git's ignore sources (the .gitignore files, the clone's exclude file, the user's global ignore file), and a file git tracks is indexed even when a rule matches it, so the filter takes git's list of tracked files as an input and a plain folder is filtered by the rules alone."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The one-byte encoding of evidence as the value of a relationship row; the points in the per-file resolver and the cross-file pass that decide 'extracted' or 'inferred' ('chosen' is reserved and not written, since an ambiguous relationship stays pending with its candidates); the passing of evidence as an argument to the store's resolved write and promote operations, so that the two endpoint passes write 'inferred' and the manifest step writes 'extracted' and no relationship written after this change reads 'unknown'; the carrying of evidence through the store's traversal reads and the daemon's caller and callee requests; the marking of inferred and chosen relationships in the analyzer's lookups and answers. No migration rewrites existing rows, since an empty value reads as 'unknown'."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "The grouping of a complete repository's code entities into subsystems, its determinism, the tables for membership, connections and summaries and their migration step; the queued pass and its trigger on a new generation; the cheap-tier summary of a subsystem whose membership changed; the daemon request that returns subsystems; the addition of subsystem context to the analyzer's context builder; the statement that groups rest on an incomplete or older graph. Which relationships count toward grouping, and with what weight by evidence, is decided here."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [
+            "sc2"
+          ],
+          "internal": "One reader per added language (Rust, C#, C, C++) in the existing parser registry with a guarded load, as the Kotlin reader has; the structured reading of SQL in place of the whole-file document, keeping the document entity for retrieval; any entity kinds this needs, appended to the fixed byte table without renumbering; the additions to the Language union; the daemon request that lists the languages read and why any was skipped. Each language can be delivered on its own."
+        },
+        {
+          "storyId": "s10",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The reading of links and references between documents, and from a document to code, as relationships of the existing REFERENCES kind written in the file commit with evidence 'extracted'; the queued mid-tier pass over new or changed documents and its own table of model-proposed relationships; the hand-checked set, the measurement, and the recorded figures that switch the capability on or leave it off; the merging of model-proposed relationships into reads with evidence 'model'; the status line when no CLI provider is available."
+        },
+        {
+          "storyId": "s11",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s11: The step tools run inside the daemon, and the MCP server opens no store"
+        }
+      ],
+      "rolloutPhase": "Phase A — a daemon that stays up and reads that tell the truth",
+      "nonFunctional": {
+        "performance": "Reading one file's entities costs in proportion to that file's rows, and one repository's in proportion to that repository's rows. A file commit is one write transaction whose size is bounded by one file. A first full index holds more pending rows than today until the cross-file pass runs, and that pass does more work; this is accepted under the accuracy rule. Index jobs take precedence in the queue and a derived pass yields between its units of work, so a commit waits for at most one unit of a pass. Model calls are serial; the mid-tier pass sends only new or changed documents. Vector writes keep the plain insert for entities first stored in the same commit, so a first full index writes vectors at today's cost; the upsert, which costs more against a large vector table, is used only for changed entities and for the backfill, and Story s2's design measures it on this repository.",
+        "security": "No store is opened outside the daemon and no model is reached except through the local provider or the CLI providers. The ignore-file proposal sends the model file names and manifest names, not file contents, and writes into the user's repository only when no root ignore file exists. Document text sent to the mid-tier model goes through the user's own CLI session, as other mid-tier calls do.",
+        "observability": "Repository status carries the completeness counts and the reason a repository is incomplete. A relationship the store refuses is logged at warn with its reason and counted, not logged at debug. A fallback ignore file, a skipped language reader, a store failure after its locks were taken away, and a model-proposed capability that is off each state their cause where status is read. Each derived row carries the generation it was computed from.",
+        "durability": "The file commit is atomic in LMDB: after a crash a file holds its old rows or its new rows. Vectors are written after the commit and may be missing after a crash; the gap is recorded by an empty embedding marker, checked against the vector table on open, and backfilled, and the repository reads as incomplete until it is, unless the embedding backend is unavailable, which is reported as its own reason. The IndexState fields that the tables can answer are recounted when the store is opened; the rest, including the paths of files that could not be committed, are persisted in the state row and survive a restart. Every new table and value arrives by a migration step applied on open; no existing key or kind byte changes, so an older store is brought forward without a re-index. Derived tables can be dropped and recomputed without loss."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "runAnalyze",
+          "signature": "runAnalyze(args: RunAnalyzeArgs, opts: RunAnalyzeOpts): Promise<RunAnalyzeResult>   // src/analyze/orchestrator/driver.ts; signature unchanged",
+          "parameters": [
+            {
+              "name": "args",
+              "type": "RunAnalyzeArgs",
+              "purpose": "As today: the prompt, the scope reference, optional target and size hints.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "RunAnalyzeOpts",
+              "purpose": "As today: run id, event sink, abort signal.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<RunAnalyzeResult>",
+            "meaning": "As today."
+          },
+          "errors": [
+            {
+              "type": "failure ScopeNotIndexedError (code as today)",
+              "condition": "The scope names code the index does not hold: the run ends at the classify stage with today's code and message, and no 'classified' event is emitted."
+            },
+            {
+              "type": "failure RepoIndexingError (code 'repo-indexing')",
+              "condition": "The scope's repository is being indexed, or its last index ended in an error before it completed (see ensureNonEmptyClosure)."
+            }
+          ],
+          "preconditions": [
+            "As today."
+          ],
+          "postconditions": [
+            "After classification (both branches: the classifier and the hinted target) and BEFORE measureRequestScope and the 'classified' event, the run makes the scope check it already makes later for a non-generic target, resolveTaskScope(intent.scopeRef, intent.target, 'the run') (src/analyze/runtimes/shared/task-scope.ts), which runs ensureNonEmptyClosure for every family that reads the stored graph (GRAPH_FAMILIES: code and docs); that check MOVES here from its place after the 'classified' event (orchestrator/driver.ts, the plan stage), keeping its failure handling through scopeErrorMapping. In the same place, ensureRepoQueryable runs for every non-generic source (so a data or infra request about a repository under index is refused too). A refusal ends the run with the same failure record, code and message as the moved check produces today; no size is measured or announced for it (stakeholder decision D1, 2026-10-13).",
+            "Its failures are coded through the orchestrator's own classifyShaperError (src/analyze/orchestrator/driver.ts), which takes the scope errors from scopeErrorMapping; RepoIndexingError therefore ends the run with code 'repo-indexing', and ShaperIndexStateReadError / ShaperLookupFailedError with 'index-state-read-failed' / 'lookup-failed', never 'internal-error'. RunErrorCode (src/analyze/orchestrator/types.ts) gains the three codes.",
+            "runShaper keeps its own checks for every other entry point (analyze.context.buildRun, the step tools). runAnalyze does not call runShaper directly: it calls shaper.buildRunBundle({ intent, measure }, { runId, onTrace }) (orchestrator/driver.ts), so it says that the scope was checked through a new option of ShapeOpts (src/analyze/context/types.ts), scopeChecked?: boolean, which the shaper factory (src/analyze/context/index.ts) passes on to runShaper as part of RunShaperArgs.opts. ShapeOpts is not part of the cache key (computeCacheKey hashes the prompt and the inputs only), so the flag does not change which bundle is cached."
+          ]
+        },
+        {
+          "name": "ensureNonEmptyClosure",
+          "signature": "ensureNonEmptyClosure(scope: ResolvedScope, deps?: Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo'> & { indexRun?: (repoPath: string) => IndexRunView | undefined }): Promise<string | undefined>",
+          "parameters": [
+            {
+              "name": "scope",
+              "type": "ResolvedScope",
+              "purpose": "As today.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "readers",
+              "purpose": "As today, plus the reader of the running index's progress (defaults to the daemon's in-process record).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<string | undefined>",
+            "meaning": "As today: the matching repository's path, or undefined for a connection scope."
+          },
+          "errors": [
+            {
+              "type": "RepoIndexingError (new, code 'repo-indexing')",
+              "condition": "Raised by ensureRepoQueryable, which ensureNonEmptyClosure calls first: see that entry."
+            },
+            {
+              "type": "ScopeNotIndexedError (unchanged)",
+              "condition": "As today for every other case: no registered repository contains the path, a 'pending' repository with no entities, or a 'ready' repository with no entities."
+            }
+          ],
+          "preconditions": [
+            "Runs in the daemon, where the running index's record lives."
+          ],
+          "postconditions": [
+            "It runs ensureRepoQueryable first, so a repository under index is refused with RepoIndexingError before the entity count is read; then the empty-closure check as today.",
+            "The registry-read-failed and pristine-registry skips are unchanged.",
+            "Its other caller, the plan walk, reaches it through resolveTaskScope (src/analyze/runtimes/shared/task-scope.ts); the walker (src/analyze/executor/walker.ts) records a refused task through taskRefusalMapping, which covers RepoIndexingError through scopeErrorMapping."
+          ]
+        },
+        {
+          "name": "ensureRepoQueryable (new, src/analyze/context/invariants.ts) and RepoIndexingError",
+          "signature": "ensureRepoQueryable(scope: ResolvedScope, deps?: { listRepos?: () => Promise<readonly RegisteredRepo[]>; indexRun?: (repoPath: string) => IndexRunView | undefined }): Promise<void>",
+          "parameters": [
+            {
+              "name": "scope",
+              "type": "ResolvedScope",
+              "purpose": "The request's resolved scope; a connection scope is not checked (it reads no repository's index).",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "readers",
+              "purpose": "The registry reader and the running index's record (defaults: the store and the daemon's in-process record).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves when the scope's repository is not under index."
+          },
+          "errors": [
+            {
+              "type": "RepoIndexingError (code 'repo-indexing'; data: repoPath, status, run figures)",
+              "condition": "The scope's repository (longest registered prefix) has status 'indexing', or status 'error'. For 'indexing' the figures come from the running record (began, files done of selected, or 'not yet counted'), or are stated as unknown when there is none (a daemon restarted mid-run). For 'error' they come from the row's lastRun when it is 'failed'; an 'error' row with no lastRun (written before this change) is treated as a failed run whose figures are unknown, with the row's errorMsg as its error."
+            }
+          ],
+          "preconditions": [
+            "Runs in the daemon, where the running index's record lives."
+          ],
+          "postconditions": [
+            "Called for EVERY kind of source: by runAnalyze and analyze.classify before measuring, by runShaper before building (and on a cache hit, see runShaper), and by ensureNonEmptyClosure; so a docs, data, infra or generic request about a repository under index is refused like a code one.",
+            "scopeErrorMapping (the one mapping of the scope errors) maps RepoIndexingError to code 'repo-indexing'; ScopeErrorCode and, through it, TaskRefusalCode gain the code.",
+            "When the registry read fails, or the registry is pristine (no repository registered), it does not refuse and does not throw: it logs and returns, the same skip ensureNonEmptyClosure makes today; the search requests' guard and the cache-hit check use it and so skip the same way (the request then proceeds as it does today)."
+          ]
+        },
+        {
+          "name": "runShaper",
+          "signature": "runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle>   // src/analyze/context/driver.ts; signature unchanged",
+          "parameters": [
+            {
+              "name": "args",
+              "type": "RunShaperArgs",
+              "purpose": "As today, plus an optional flag that the scope was already checked by runAnalyze.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<AnalyzeContextBundle>",
+            "meaning": "As today."
+          },
+          "errors": [
+            {
+              "type": "ShaperIndexStateReadError (new, code 'index-state-read-failed')",
+              "condition": "A read of the last-indexed time throws. The real reader (resolveRepoLastIndexedAt) already catches a failed registry read, logs it and answers undefined (no freshness check), and that stays; the cause covers any other throw. runShaper's own reads (the freshness watermark on a miss and on a cache hit) go through the same injectable reader as the pipeline's, PipelineSteps.lastIndexedAt, so both are covered by one seam and one cause."
+            },
+            {
+              "type": "ShaperLookupFailedError (new, code 'lookup-failed')",
+              "condition": "The lookup executor (steps.executePlan) throws."
+            },
+            {
+              "type": "as today",
+              "condition": "Every existing typed error, with its code and message."
+            }
+          ],
+          "preconditions": [
+            "As today."
+          ],
+          "postconditions": [
+            "The cache lookup comes first: the cache key does not depend on the resolved scope, so a cached bundle is looked up before the scope is resolved. Every bundle written records the repository it was built over (BundleMeta.repoPath, new). On a hit the bundle's repoPath is checked with ensureRepoQueryable (a bundle about a repository now under index is refused with RepoIndexingError, not served), and the freshness watermark is read for that repository; nothing else is resolved, so a failure to resolve something the cache does not depend on (another repository's connections file) cannot make the hit unreachable. A bundle built over no repository (a connection scope) records repoPath null and is served without either check, as today; a cached bundle with no repoPath key (written before this change) is treated as a miss. On a miss the scope is resolved once, ensureRepoQueryable runs for every source, and the pairing check, the code-only empty-closure check and the pipeline run as today.",
+            "A throw from the last-indexed read or from executePlan becomes a pipeline cause ('index-state-read-failed', 'lookup-failed') and so a typed error, never a raw rejection reported as 'internal-error'."
+          ]
+        },
+        {
+          "name": "classifyOllamaError",
+          "signature": "classifyOllamaError(err: unknown, call: ShaperModelCall): Error",
+          "parameters": [
+            {
+              "name": "err",
+              "type": "unknown",
+              "purpose": "The tool loop's failure.",
+              "optional": false
+            },
+            {
+              "name": "call",
+              "type": "ShaperModelCall",
+              "purpose": "The call that failed. Its two callers in src/analyze/context/driver.ts pass their own: the tool loop passes 'tool loop', and runFinalStructuredEmit (the final structured emit after the loop) passes 'final structured emit'; both are new members of ShaperModelCall.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Error",
+            "meaning": "A ShaperLlmUnavailableError worded by the call ('The model call for the tool loop failed: <detail>', 'The model call for the final structured emit failed: <detail>') when the error is a failed model call, else the error unchanged. The provider is named only through the failure's own detail, so Ollama appears only when the failure came from Ollama."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "No message built by the analyzer names a provider the failure did not come from."
+          ]
+        },
+        {
+          "name": "isModelCallFailure",
+          "signature": "isModelCallFailure(err: unknown): boolean   // src/analyze/context/model-failure.ts; signature unchanged",
+          "parameters": [
+            {
+              "name": "err",
+              "type": "unknown",
+              "purpose": "As today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "True when the call to the model failed: a ModelCallFailedError, or a message that BEGINS (after the retry helper's prefix) with a provider's own failure wording: the CLI wordings as today, and 'Model call failed: ', the message of a ModelCallFailedError."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Every Ollama transport failure path of the local provider raises ModelCallFailedError: the complete call with its retry, the stream's creation, and an error thrown while a stream is being iterated (src/agent/providers/ollama.ts, wrapOllamaError and every call site that rethrows a transport error).",
+            "The retry helper (src/agent/providers/structured-output.ts) keeps the type: when its last attempt threw a ModelCallFailedError it re-throws one (its detail prefixed with the helper's attempt count) instead of a plain Error, so the structured-emit path recognises a real outage by type; and a plain message that, after the helper's prefix, begins 'Model call failed: ' is recognised too.",
+            "The Ollama and socket texts are no longer matched anywhere inside a message: a validation message that quotes a value containing 'ECONNREFUSED', 'Model not found', 'EPIPE' or 'fetch failed' is a failure of shape.",
+            "isModelCallFailure has seven consumers, all reached by the same change and covered by it: src/analyze/classifier/driver.ts, src/analyze/planner/driver.ts, src/analyze/summariser/driver.ts, src/analyze/runtimes/shared/aggregator.ts, src/analyze/context/synthesizer.ts, src/analyze/context/decomposer.ts and src/analyze/context/driver.ts. A real Ollama outage reaching any of them stays a failed model call (llm-unavailable), since it arrives typed."
+          ]
+        },
+        {
+          "name": "fullIndex",
+          "signature": "private fullIndex(repoPath: string): Promise<void>   // src/indexer/index.ts, Indexer; signature unchanged",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "As today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "As today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "When it sets status 'indexing' it opens the repository's running record (began at; files selected once the walk has counted them; files done as each file finishes) in the daemon's in-process index-run record.",
+            "When it ends it writes the run's final figures once onto the registry row's lastRun (began, ended, files selected, files done, outcome 'completed' or 'failed', and the error for a failed run) in the same update that sets the status, and closes the running record (stakeholder decision D2, option B). No write happens per file."
+          ]
+        },
+        {
+          "name": "search.callers / search.callees / search.callers_nhop / search.by_file / search.closure / entity.summary / entity.closure / entity.unreachable / repo.depends_on / repo.search_cross_repo / locate.inferParents",
+          "signature": "daemon unary requests in src/daemon/index.ts; parameters and results unchanged",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "as today",
+              "purpose": "Each names its repository or repositories: by path (repoPath, repoId), by file (filePath), by entity (entityId, whose stored root path gives the repository), or by a list of entities (rootIds of entity.closure and entity.unreachable).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "as today",
+            "meaning": "As today for a repository that is not being indexed."
+          },
+          "errors": [
+            {
+              "type": "RepoIndexingError (code 'repo-indexing')",
+              "condition": "A named repository is under index (ensureRepoQueryable's rule and wording); for rootIds, the request is refused if ANY root's repository is under index. Over the request socket the error is a string, so it starts with its code: 'repo-indexing: ...'."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "No partial result is returned for a repository under index.",
+            "Every result that follows the graph or a closure across repositories leaves out the entities (or repositories) of a repository under index: search.callers / search.callees / search.callers_nhop, entity.closure, entity.unreachable, search.closure (resolveClosure), repo.depends_on and repo.search_cross_repo (the DEPENDS_ON closure). A request about a repository that is not under index is answered from the rest; a request that names a repository under index (or any root in one) is refused.",
+            "search.query, which searches every registered repository and names none, leaves repositories under index out of the set it searches and answers from the others; it does not refuse."
+          ]
+        },
+        {
+          "name": "classifyShaperError (both: src/daemon/analyze-rpc.ts and src/analyze/orchestrator/driver.ts)",
+          "signature": "classifyShaperError(err: unknown): { code: string; message: string; data?: unknown }   // src/daemon/analyze-rpc.ts",
+          "parameters": [
+            {
+              "name": "err",
+              "type": "unknown",
+              "purpose": "As today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ code, message, data? }",
+            "meaning": "As today, plus 'repo-indexing' (data: repository, status, run figures), 'index-state-read-failed' and 'lookup-failed', each with the error's own message."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Both mappings take the scope errors (now including RepoIndexingError) from scopeErrorMapping and map ShaperIndexStateReadError and ShaperLookupFailedError to their own codes; none of the three falls into 'internal-error'.",
+            "AnalyzeRpcErrorCode (analyze-rpc.ts) and RunErrorCode (orchestrator/types.ts) gain 'repo-indexing', 'index-state-read-failed' and 'lookup-failed'.",
+            "The step tools (the analyze step, the one-shot analyze) map RepoIndexingError to an error reply with code 'repo-indexing'; the workflow steps, triage and code review pass that reply on as it is."
+          ]
+        },
+        {
+          "name": "updateRepoStatus",
+          "signature": "updateRepoStatus(_db: DbClient, path: string, status: RegisteredRepo['status'], lastIndexed?: string, errorMsg?: string, lastRun?: RepoLastRun): Promise<void>   // src/db/repos.ts",
+          "parameters": [
+            {
+              "name": "lastRun",
+              "type": "RepoLastRun",
+              "purpose": "New, optional: the run's final figures, written with the final status. When omitted the row's existing lastRun is kept.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "As today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The row is rebuilt as today with lastRun set when given and kept otherwise; rowToRepo maps lastRun onto RegisteredRepo.lastRun."
+          ]
+        },
+        {
+          "name": "analyze.classify (daemon request, src/daemon/analyze-rpc.ts)",
+          "signature": "analyze.classify(params: { userPrompt: string; scopeRef: AnalyzeScopeRef; runId?: string }): Promise<{ ok: true; intent: ClassifiedIntent; measure: RequestMeasure } | { ok: false; error: { code: AnalyzeRpcErrorCode; message: string } }>   // shape unchanged",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "as today",
+              "purpose": "As today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "as today",
+            "meaning": "As today for a scope that passes the checks."
+          },
+          "errors": [
+            {
+              "type": "scope-not-indexed / repo-indexing (through scopeErrorMapping)",
+              "condition": "After the classifier names the scope and BEFORE measureRequestScope, the request runs the same checks as runAnalyze (resolveTaskScope for a non-generic target, ensureRepoQueryable for every non-generic source); a refused scope is answered with its code and message through scopeErrorMapping, and no size is returned for it."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "No request about a scope that will be refused is answered with a measured size (ac1 for the daemon's classify request too)."
+          ]
+        },
+        {
+          "name": "graph_entity / graph_search / graph_callers / graph_callees / graph_query (daemon built-in tools, src/daemon/tools/builtins/graph/index.ts)",
+          "signature": "registered daemon tools; inputs and results unchanged",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "as today",
+              "purpose": "Each names its repository through an entity id, an entity list or a search; graph_search searches across repositories like search.query.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ToolResult",
+            "meaning": "As today for repositories that are not under index."
+          },
+          "errors": [
+            {
+              "type": "ToolResult failure with the RepoIndexingError message (code 'repo-indexing' first)",
+              "condition": "The same rule as the search requests: a named entity's (or any root's) repository is under index."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The same guard and the same filtering as the daemon's search requests: refuse when a named repository (or any root) is under index, leave out of every traversal or closure result (graph_callers, graph_callees, graph_query) the entities of a repository under index, and have graph_search skip such repositories as search.query does.",
+            "The analyzer's lookups that use these tools are already refused upstream for a repository under index; the guard here covers a direct use of the tools."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "RepoRow / RegisteredRepo (the registry row)",
+        "change": "field-add",
+        "details": "An optional lastRun: RepoLastRun = { startedAt: number; endedAt: number; filesSelected: number; filesDone: number; outcome: 'completed' | 'failed'; error?: string } written once at the end of a full index, through updateRepoStatus's new optional argument. decodeRepoRow builds the row from named fields, so it is extended to copy lastRun explicitly (otherwise every status write would erase it); an older row decodes with lastRun undefined. No key, kind byte or existing field changes, and no migration step rewrites rows. Grounded by the analyze bundle c12: updateRepoStatus (src/db/repos.ts:243-269) and its only callers, Indexer.start and Indexer.fullIndex (src/indexer/index.ts:309, 596, 726, 735); rowToRepo (repos.ts:340-352); RepoRow, encodeRepoRow and decodeRepoRow (src/db/graph/codec.ts:89-127).",
+        "schemaDiff": "+ lastRun?: { startedAt: number; endedAt: number; filesSelected: number; filesDone: number; outcome: 'completed' | 'failed'; error?: string | undefined } | undefined",
+        "callSites": [
+          "src/db/graph/codec.ts",
+          "src/shared/types.ts",
+          "src/db/repos.ts",
+          "src/indexer/index.ts"
+        ]
+      },
+      {
+        "entity": "IndexRunView (the in-process running-index record)",
+        "change": "new",
+        "details": "Held in the daemon process, one per repository with a full index in progress: { repoPath, startedAt, filesSelected?, filesDone }. Written by fullIndex, read by ensureNonEmptyClosure and the search requests' guard; never stored.",
+        "callSites": [
+          "src/indexer/index.ts",
+          "src/analyze/context/invariants.ts",
+          "src/daemon/index.ts"
+        ]
+      },
+      {
+        "entity": "PIPELINE_CAUSES",
+        "change": "invariant-change",
+        "details": "Gains 'index-state-read-failed' and 'lookup-failed'; errorForPipelineCause gains one case for each (ShaperIndexStateReadError, ShaperLookupFailedError).",
+        "callSites": [
+          "src/analyze/context/driver.ts",
+          "src/daemon/analyze-rpc.ts"
+        ]
+      },
+      {
+        "entity": "ShaperModelCall",
+        "change": "field-modify",
+        "details": "'planning' | 'answer writing' gains 'tool loop' and 'final structured emit' (the two callers of classifyOllamaError); ShaperLlmUnavailableError is always built with a call, so its Ollama-specific wording is retired.",
+        "callSites": [
+          "src/analyze/context/driver.ts"
+        ]
+      },
+      {
+        "entity": "BundleMeta (the cached context bundle's meta)",
+        "change": "field-add",
+        "details": "repoPath: string | null, written on every bundle: the repository the bundle was built over, or null for a bundle built over no repository (a connection scope, whose freshness path is ''). On a cache hit, a string repoPath is checked with ensureRepoQueryable and its freshness watermark is read; null skips both, as today a connection scope skips the closure check and the freshness check. A cached bundle whose meta has no repoPath key at all (written before this change) is treated as a miss. The bundle schema (src/analyze/context/schema.ts) declares meta with additionalProperties: false, so repoPath is added to its meta properties as { type: ['string', 'null'] }, not required: an older cached bundle still validates and is then a miss by the absent-key rule; a freshly built bundle carrying repoPath passes validateBundleWithErrors on both the tool-loop path and the pipeline path (settlePipelineOutcome).",
+        "schemaDiff": "+ repoPath?: string | null   // absent = written before this change (miss); null = built over no repository",
+        "callSites": [
+          "src/analyze/context/types.ts",
+          "src/analyze/context/schema.ts",
+          "src/analyze/context/cache.ts",
+          "src/analyze/context/driver.ts"
+        ]
+      },
+      {
+        "entity": "ScopeErrorCode / TaskRefusalCode, RunErrorCode, AnalyzeRpcErrorCode",
+        "change": "invariant-change",
+        "details": "ScopeErrorCode (and so TaskRefusalCode) gains 'repo-indexing'; RunErrorCode and AnalyzeRpcErrorCode gain 'repo-indexing', 'index-state-read-failed' and 'lookup-failed'. scopeErrorMapping stays the one mapping of the scope errors, now four.",
+        "callSites": [
+          "src/analyze/context/invariants.ts",
+          "src/analyze/orchestrator/types.ts",
+          "src/analyze/orchestrator/driver.ts",
+          "src/daemon/analyze-rpc.ts",
+          "src/analyze/runtimes/shared/task-scope.ts",
+          "src/analyze/context/types.ts",
+          "src/analyze/context/index.ts",
+          "src/agent/providers/structured-output.ts",
+          "src/analyze/executor/walker.ts",
+          "src/daemon/tools/builtins/graph/index.ts",
+          "src/agent/providers/ollama.ts",
+          "src/analyze/classifier/driver.ts",
+          "src/analyze/planner/driver.ts",
+          "src/analyze/summariser/driver.ts",
+          "src/analyze/runtimes/shared/aggregator.ts",
+          "src/analyze/context/synthesizer.ts",
+          "src/analyze/context/decomposer.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A run's scope names a path no registered repository contains (or a 'pending'/'ready' repository with no entities).",
+          "detection": "resolveTaskScope (code and docs) and ensureRepoQueryable (every non-generic source), now called by runAnalyze right after classification and before measureRequestScope, throw ScopeNotIndexedError or RepoIndexingError.",
+          "response": "The run is recorded as failed at the classify stage with the same code and message as runShaper's refusal produces today; the run's 'done' carries the failure; no 'classified' event and no measure are emitted.",
+          "userImpact": "The caller is told the scope is not indexed and never sees the request announced as the largest size.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A request names a repository whose full index is in progress.",
+          "detection": "ensureNonEmptyClosure (analyzer) and the search requests' guard read the registry status 'indexing' and the daemon's in-process index-run record for that path.",
+          "response": "RepoIndexingError, code 'repo-indexing', stating the repository, that it is being indexed, when the run began and files done of files selected (or 'not yet counted' before the walk has counted them). The analyzer maps it to code 'repo-indexing' with the figures as data; the search requests answer with an error string that starts 'repo-indexing:'.",
+          "userImpact": "No answer from a half-built index; the user sees how far the index has got and can retry later.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A request names a repository whose last full index failed before it completed.",
+          "detection": "The registry row's status is 'error'; its lastRun.outcome is 'failed', or it has no lastRun (a row written before this change).",
+          "response": "RepoIndexingError, code 'repo-indexing', stating that the last index ended in an error, with lastRun's began, ended, files done of selected and error text, or, for a row without lastRun, figures unknown and the row's errorMsg.",
+          "userImpact": "The user learns the index is incomplete and why, instead of an answer from partial data or 'not indexed'.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon restarted during a full index: the row still says 'indexing' and there is no in-process record (until the start-up re-queue begins a new run).",
+          "detection": "Status 'indexing' with no IndexRunView for the path.",
+          "response": "RepoIndexingError stating that the repository is being indexed and that the run's figures are not known yet.",
+          "userImpact": "Refused, honestly, without invented figures; once the new run starts the figures appear.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The read of a repository's last-indexed time throws (store error) in runShaper's freshness step or inside the pipeline.",
+          "detection": "The awaited read rejects; it is caught where it is awaited.",
+          "response": "The pipeline cause 'index-state-read-failed' and ShaperIndexStateReadError with the read's own message; classifyShaperError maps it to code 'index-state-read-failed'.",
+          "userImpact": "A named cause instead of 'internal-error'.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The lookup executor (executePlan) throws (a lookup that crashes, a store error).",
+          "detection": "The awaited executePlan rejects; it is caught where it is awaited.",
+          "response": "The pipeline cause 'lookup-failed' and ShaperLookupFailedError with the executor's message; mapped to code 'lookup-failed'.",
+          "userImpact": "A named cause instead of 'internal-error'.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A model call in the tool loop fails, served by a CLI provider.",
+          "detection": "classifyOllamaError(err, 'tool loop') finds a failed model call (isModelCallFailure).",
+          "response": "ShaperLlmUnavailableError 'The model call for the tool loop failed: <the failure's own detail>'.",
+          "userImpact": "The message names the call and only the provider the failure came from.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The local provider cannot reach Ollama (connection refused, socket hang up, stream ended early).",
+          "detection": "wrapOllamaError and the provider's call sites raise ModelCallFailedError for a failed call; isModelCallFailure recognises the type, and the retry helper's prefix does not hide it.",
+          "response": "A failed model call, as today.",
+          "userImpact": "Unchanged: a real outage is still reported as the model being unavailable.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A cached bundle exists for a request about a repository that is now being reindexed (its lastIndexed is reset to 0 by the status write, so the freshness check alone would not reject it).",
+          "detection": "On the cache hit, ensureRepoQueryable runs for the bundle's recorded repoPath.",
+          "response": "RepoIndexingError; the cached bundle is not served.",
+          "userImpact": "No answer from a bundle that predates a reindex in progress.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A model answer that fails schema validation with a message quoting a value containing 'ECONNREFUSED' (no ' text=' marker).",
+          "expected": "A failure of shape (answer-invalid / schema), not a failed model call."
+        },
+        {
+          "input": "A cached bundle for a request whose scope is a connection, while another registered repository's connections file does not parse.",
+          "expected": "The cached bundle is returned; scope resolution, which would throw on the broken file, is not run on a hit."
+        },
+        {
+          "input": "A cached bundle for a repository that has since been reindexed (newer last-indexed time).",
+          "expected": "Freshness is checked against the repository the bundle records, as today; a stale bundle is a miss and the request is built normally."
+        },
+        {
+          "input": "search.query while one registered repository is being indexed.",
+          "expected": "Results from the other repositories only; no refusal, no rows from the repository under index."
+        },
+        {
+          "input": "A request with a hinted target (slash command) on an unindexed scope.",
+          "expected": "Refused before measuring, like the classifier branch, after hintedIntentBase's own checks."
+        },
+        {
+          "input": "A run for a non-code source (docs, data, infra, generic) whose scope is a repository being indexed.",
+          "expected": "A docs request is refused like code (resolveTaskScope checks both graph families, before measuring); a data, infra request about a repository under index is refused by ensureRepoQueryable; a generic intent has no family row and is not checked, as today."
+        },
+        {
+          "input": "A full index that completes: the row's lastRun gets outcome 'completed'.",
+          "expected": "Status 'ready'; requests answered; lastRun visible on the row for later reads."
+        },
+        {
+          "input": "A reindex (repo.reindex) of a 'ready' repository.",
+          "expected": "Status goes to 'indexing' and requests are refused with the new run's figures until it completes."
+        },
+        {
+          "input": "analyze.classify on a scope no registered repository contains.",
+          "expected": "Answered with code 'scope-not-indexed' and today's message; no measured size is returned."
+        },
+        {
+          "input": "entity.closure with rootIds in two repositories, one being indexed.",
+          "expected": "Refused with 'repo-indexing' (any root under index refuses the request)."
+        },
+        {
+          "input": "search.callers for an entity in a ready repository whose callers include entities of a repository being indexed.",
+          "expected": "The callers from the ready repository only; those of the repository under index are left out."
+        },
+        {
+          "input": "A cached bundle written before this change (no repoPath in its meta).",
+          "expected": "Treated as a miss; the request is built and the new bundle records repoPath."
+        },
+        {
+          "input": "The registry read throws while ensureRepoQueryable runs (in the analyzer, a search request or a cache hit).",
+          "expected": "No refusal and no raw error: the check is skipped and logged, as ensureNonEmptyClosure skips today, and the request proceeds."
+        },
+        {
+          "input": "A cached bundle for a connection scope (repoPath null).",
+          "expected": "Served without the indexing and freshness checks, as today."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A refused request keeps the code and message it has today (ScopeNotIndexedError's text, the run's failure record and its code), only earlier in the run.",
+          "source": "c1"
+        },
+        {
+          "text": "runShaper resolves the scope once for a request that is actually built, and checks the pairing of the scope's kind with the kind of source before building.",
+          "source": "c2"
+        },
+        {
+          "text": "Every way the pipeline declines to proceed is one member of PIPELINE_CAUSES with one case in errorForPipelineCause; no cause falls into a default error.",
+          "source": "c2"
+        },
+        {
+          "text": "A CLI provider's failure wording is recognised only at the start of the message, after the retry helper's prefix.",
+          "source": "c3"
+        },
+        {
+          "text": "The four repository status values keep their meaning; the start-up re-queue of a repository left 'indexing' without lastIndexed is unchanged.",
+          "source": "c4"
+        },
+        {
+          "text": "The search requests keep their parameters and results for a repository that is not being indexed.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx (npx tsx --test), under Node 22; stores on temporary paths (setGraphStorePath / useTemporaryLance), no model",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Each decision point on its own, with the existing seams (RunShaperArgs.pipelineSteps / scopeDeps, ensureNonEmptyClosure deps, stand-in providers).",
+          "subjects": [
+            "run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)",
+            "run order: the same on the hinted-target branch",
+            "run order: a request that passes the check still emits 'classified' with its measure, as before",
+            "ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message",
+            "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+            "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+            "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member",
+            "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept",
+            "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
+            "OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError",
+            "classifyShaperError: the three new errors map to 'repo-indexing' (with data), 'index-state-read-failed' and 'lookup-failed'",
+            "registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined",
+            "runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error'); index-state-read-failed and lookup-failed likewise",
+            "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'",
+            "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+            "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg",
+            "plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping",
+            "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one",
+            "ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)",
+            "isModelCallFailure: a ModelCallFailedError thrown on the last attempt of the retry helper is still a ModelCallFailedError (and a plain 'structured-output: ... attempts: Model call failed: ...' message is recognised); classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+            "runShaper: a connection-scope bundle (repoPath null) is served from cache; runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key",
+            "run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message",
+            "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+            "OllamaProvider: a socket failure during stream iteration is raised as ModelCallFailedError",
+            "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure"
+          ],
+          "fixturesNeeded": [
+            "a temporary graph store with registered repositories in each status",
+            "stand-in pipeline steps and scope readers",
+            "an in-process index-run record set by the test",
+            "a stand-in Ollama client that fails with a socket error"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The indexing refusal end to end in the daemon's code, and the indexer's record.",
+          "subjects": [
+            "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)",
+            "search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+            "search.query while one repository is being indexed returns rows from the other repositories only",
+            "analyze through the daemon (analyze.context.buildRun and the step tools via step.call) on a repository being indexed returns code 'repo-indexing' with the figures; the workflow step that reaches it passes the reply on unchanged",
+            "entity.closure / entity.unreachable with a root in a repository under index are refused; search.callers across repositories leaves out the entities of a repository under index",
+            "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out",
+            "entity.closure, entity.unreachable, search.closure, repo.depends_on, repo.search_cross_repo and graph_query from a ready repository whose closure reaches a repository under index leave that repository's entities out"
+          ],
+          "fixturesNeeded": [
+            "a temporary graph store and vector store",
+            "a small temporary repository indexed by the real indexer, with a hook that holds the walk mid-run"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal",
+            "run order: the same on the hinted-target branch",
+            "run order: a request that passes the check still emits 'classified' with its measure, as before",
+            "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'",
+            "run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+            "classifyShaperError: the three new errors map to 'repo-indexing' (with data), 'index-state-read-failed' and 'lookup-failed'",
+            "runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error'); index-state-read-failed and lookup-failed likewise"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama",
+            "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed')",
+            "runShaper cache order: a cache hit does not call scope resolution and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+            "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
+            "OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError",
+            "isModelCallFailure: a ModelCallFailedError thrown on the last attempt of the retry helper is still a ModelCallFailedError (and a plain 'structured-output: ... attempts: Model call failed: ...' message is recognised); classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+            "runShaper: a connection-scope bundle (repoPath null) is served from cache; runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key",
+            "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+            "OllamaProvider: a socket failure during stream iteration is raised as ModelCallFailedError",
+            "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'error' with a failed lastRun throws with its figures",
+            "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once",
+            "search requests about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+            "search.query while one repository is being indexed returns rows from the other repositories only",
+            "analyze through the daemon on a repository being indexed returns code 'repo-indexing' with the figures",
+            "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+            "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg",
+            "entity.closure / entity.unreachable with a root in a repository under index are refused; search.callers across repositories leaves out the entities of a repository under index",
+            "ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)",
+            "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out",
+            "entity.closure, entity.unreachable, search.closure, repo.depends_on, repo.search_cross_repo and graph_query from a ready repository whose closure reaches a repository under index leave that repository's entities out"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per the s1 bundles: runAnalyze measures the request and emits 'classified' (driver.ts:325) before runShaper's ensureNonEmptyClosure refuses an unindexed scope; runShaper resolves the scope before the cache lookup and awaits the last-indexed read and the lookup executor bare; the tool loop builds ShaperLlmUnavailableError without a call (Ollama wording); isModelCallFailure matches Ollama/socket texts anywhere outside ' text='. A repository being indexed is reported only by its registry status; its progress is only logged, and a request about it is answered from the half-built index (or, with no entities yet, refused as not indexed). The registry row has no record of the last run.",
+      "stateAfter": "A refused scope is refused before any size is measured or announced, with today's code and message. Requests about a repository under index (or whose last index failed) are refused with RepoIndexingError, code 'repo-indexing', carrying the run's figures from the daemon's in-process record or the row's lastRun; search.query skips such repositories. The last-indexed read and the lookup executor are named pipeline causes with their own codes; a cached bundle is returned without resolving the scope; the tool loop names the call; a failed model call is recognised from the provider's typed failure or the start of its own message.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Close ISSUE-e2bcadd9's four defects in the analyzer (tool-loop call name, the two named causes and their codes, cache before scope, the provider's typed failure and start-of-message matching), each with its test.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Move the scope refusal ahead of the measure and the 'classified' event in runAnalyze, keeping runShaper's own check for its other entry points and skipping it when the run already checked.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the optional lastRun field to the registry row's type and codec (decodeRepoRow copies it; older rows decode without it) and to updateRepoStatus as an optional argument mapped by rowToRepo; have the full index write it once at its end with the final status; add the in-process index-run record that the full index opens and closes.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add RepoIndexingError and ensureRepoQueryable; run it for every source at runAnalyze, analyze.classify, runShaper (including a cache hit, through BundleMeta.repoPath) and ensureNonEmptyClosure; add it to scopeErrorMapping and the code unions; add the guard to the graph-reading search requests (any root for rootIds; cross-repository results filtered) and have search.query skip repositories under index. The same guard is applied to the daemon's built-in graph tools.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Ship with the daemon update; no store migration and no re-index are needed.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No request parameter or result shape changes. A refused unindexed scope keeps its code and message (only earlier in the run, without the 'classified' event before it; analyze.classify answers it with its code instead of a measured size). New error codes ('repo-indexing', 'index-state-read-failed', 'lookup-failed') replace answers from a half-built index and 'internal-error' respectively; a client that matches error codes sees new values for those cases. The registry row's new optional lastRun is decoded explicitly by the new codec; an OLDER daemon's decoder builds the row from named fields only, so it drops lastRun, and its next status write erases it (a downgrade loses only the last run's figures). Cached bundles written before the change have no repoPath and are rebuilt once. The tool-loop failure message changes wording ('The model call for the tool loop failed: ...').",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Refuse before announcing; progress held by the daemon in memory",
+        "oneLineSummary": "The run checks the scope before it measures or emits 'classified'; the indexer records its running job's progress in an in-memory record in the daemon that one guard reads for the analyzer and the search requests.",
+        "approach": "ISSUE-a6940f8a: the run driver (src/analyze/orchestrator/driver.ts) calls the existing scope refusal (ensureNonEmptyClosure, extended by the indexing check below) right after classification and before measureRequestScope, so a refused request ends with today's code and message and no 'classified' event is emitted for it; runShaper keeps its own call for the other entry points. ac4: the full index (src/indexer/index.ts) writes, for the repository it is indexing, a progress record in the daemon process (started at, files selected, files done, and on failure the error and how far it got), cleared when the run completes; a single guard function, given a repository path, refuses with a new named error RepoIndexingError (its own code) when the repository's status is 'indexing', or 'error' with no completed index since, stating the status and the progress; the analyzer's scope check and the graph-reading search requests of src/daemon/index.ts call it. ISSUE-e2bcadd9: the tool loop's error names the call that failed; the last-indexed read and the lookup executor become named causes of the pipeline (and the last-indexed read in runShaper's own step is caught the same way); the cache lookup moves before scope resolution, with the freshness watermark read after a hit only for the hit's own repository; the Ollama and socket failure texts are matched only where the local provider writes them, not in validation text.\n\nBorderline Epic constraints, scored one by one (question qe4357416, 2026-10-13): k1 (accuracy over cost) satisfies: the refusal is exact, and with D2 the final figures survive a restart at the cost of one registry write per run. k7 (complete-and-consistent Stories before enriching ones) satisfies: s5 is a Phase A truthfulness Story and adds no enrichment. k8 (absorbed issues keep their identity) satisfies: ISSUE-a6940f8a and the four defects of ISSUE-e2bcadd9 are each named and closed as their issues state.\n\nThe remaining Epic constraints were checked and do not touch s5 in any alternative: k3 (no direct cloud REST: no model is called by any alternative), k4 (serial model calls: none made), k6 (fixed kind bytes: no entity or relation kind is added), k9 (model tiers: no model pass), k10 (the 95%/60% threshold for model-proposed document relationships: not involved), k11 (git ignore sources: no file selection changes). k2 and k5 were scored in the judgment.",
+        "pros": [
+          "The refused request is never announced with a size at all, the stronger of the two forms the requirement allows.",
+          "One guard serves every entry point, so analyzer and search requests refuse the same way with the same error.",
+          "No stored form changes; nothing to migrate; stays independent of s1's IndexState as the boundary requires."
+        ],
+        "cons": [
+          "Progress lives in memory: after a daemon restart during an index, the progress of the interrupted run is gone; the guard can say only that the repository is being indexed again (the start-up re-queue) without the previous run's figures.",
+          "The scope check runs twice for a run-mode request (run driver and runShaper) unless runShaper is told it was done."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Announce as uncounted; progress on the registry row",
+        "oneLineSummary": "The 'classified' event keeps its place but carries an explicit uncounted size when the measure was not determined; the indexer writes its progress onto the repository's registry row, which the guard reads.",
+        "approach": "ISSUE-a6940f8a: the order of the run is unchanged; when the measure is not determined the intent and the event carry the size as a distinct 'uncounted' value (or the event drops the size), so a consumer cannot mistake it for XL; the refusal still happens in runShaper. ac4: the registry row (RegisteredRepo) gains progress fields (started at, files selected, files done, last error) that the full index updates every N files and on completion or failure; the guard reads them from the store. ISSUE-e2bcadd9 as in a1.\n\nBorderline Epic constraints, scored one by one (question qe4357416, 2026-10-13): k1 partial: the figures survive a restart but cost a registry write every N files during the index, and the doomed request is still announced (with an 'uncounted' size), which is less exact than refusing first. k7 satisfies (no enrichment). k8 partial: ISSUE-a6940f8a is answered by its weaker form (announce as uncounted) rather than the refusal its fix intent prefers.",
+        "pros": [
+          "Progress survives a daemon restart and is visible to repo.list/status readers too.",
+          "The run's order is untouched, so no event-order tests change."
+        ],
+        "cons": [
+          "Adds a new size value (or an optional size) to ClassifiedIntent and the event, which every consumer of the intent and the size order must handle; a request that will be refused is still announced.",
+          "Writes to the registry row every N files during an index: extra write transactions on the store during the busiest time, and a registry-row change (a stored form) that the HLD otherwise leaves to s1's IndexState."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Meets the criteria but announces requests that will be refused and adds per-N-files writes during the busiest time; both points were decided against by the stakeholder."
+      },
+      {
+        "id": "a3",
+        "name": "Gate at the daemon's request entry, status only",
+        "oneLineSummary": "A wrapper around the daemon's search and analyze handlers refuses any request about a repository whose status is 'indexing' or 'error', from the registry status alone; the run's order changes as in a1.",
+        "approach": "ISSUE-a6940f8a as in a1. ac4: the handler map in src/daemon/index.ts wraps the graph-reading search requests and the analyze entry points (analyze.* and step.call's analyze tools) in a gate that resolves the request's repository and refuses with RepoIndexingError from the registry status; the message gives the status and lastIndexed, without a count of files. ISSUE-e2bcadd9 as in a1.\n\nBorderline Epic constraints, scored one by one (question qe4357416, 2026-10-13): k1 violates: without progress the refusal cannot say how far the run got, so the answer is less exact than ac4 requires. k7 satisfies (no enrichment). k8 satisfies: both issues are named and closed.",
+        "pros": [
+          "Smallest change to the indexer: none.",
+          "Requests are refused before any handler code runs."
+        ],
+        "cons": [
+          "Does not meet ac4's 'how far the run has got': the registry holds no progress.",
+          "Each wrapped request names its repository differently (repo, path, entity id, scope ref); resolving the repository at the entry duplicates the handlers' own resolution, and the workflow tools that reach the analyzer indirectly are missed unless the analyzer checks too."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheapest, but violates ac4 and duplicates each handler's repository resolution at the entry."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "cd2 (partial): The search requests' params are given as 'as today' (each handler's existing typed params) rather than restated.",
+      "alt2 (partial): The other Epic constraints (k1, k3, k4, k6-k11) are not scored one by one; none distinguishes the alternatives (no model calls, no kind bytes, no ignore rules are involved)."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1 context.assemble"
+    },
+    {
+      "id": "c2",
+      "kind": "step-output",
+      "ref": "s2-s3 alternatives and judgment"
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "s4 contract.detail"
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s5-s7 error paths, tests, migration"
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "Decisions D1 (refuse before announcing) and D2 (option B: progress in memory, final figures written once to the registry row), 2026-10-13"
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s8 checklist.verify"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "Daemon review of this LLD, 2026-10-13T07:32Z (block, 2 HIGH / 8 MED), all findings applied"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "Second daemon review of this LLD, 2026-10-13T07:36Z (block, 0 HIGH / 5 MED), all findings applied"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "Third daemon review of this LLD, 2026-10-13T07:40Z (block, 2 HIGH / 2 MED), all findings applied"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "Fourth daemon review of this LLD, 2026-10-13T07:43Z (block, 0 HIGH / 1 MED: the built-in graph tools), applied"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "Fifth daemon review of this LLD, 2026-10-13T07:49Z (block, 0 HIGH / 2 MED), both applied; approved with override by stakeholder decision (option A)"
+    },
+    {
+      "id": "c12",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze run of 2026-10-13 (repoIndexedAt 2026-10-13T07:18:15Z) on the registry write path: updateRepoStatus src/db/repos.ts:243-269 (entity 877c60e63174c429fc74456f54a23197), rowToRepo :340-352 (c12d844f45fbfad547c075f67867b636), RepoRow src/db/graph/codec.ts:89-103 (9251c46b4b951c5ab6c1d368803d1830), encodeRepoRow :105, decodeRepoRow :114-127 (86f01c917f0c419537284ed0b2e7af19), RegisteredRepo src/shared/types.ts:678-698; callers start (index.ts:246-335) and fullIndex (index.ts:594-738), confirmed by a text search: the four calls at src/indexer/index.ts:309, 596, 726, 735",
+      "quotedText": "updateRepoStatus(_db: DbClient, path: string, status: RegisteredRepo['status'], lastIndexed?: string, errorMsg?: string): Promise<void>"
+    }
+  ]
+}

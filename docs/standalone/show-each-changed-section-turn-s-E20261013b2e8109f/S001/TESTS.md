@@ -355,13 +355,13 @@ Run at 2026-10-13T09:17:32.367Z on commit `2cc4b881`. Tests check: **passed**. 5
 
 ## t8
 
-Run at 2026-10-13T10:00:49.273Z on commit `7dd39fd7`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+Run at 2026-10-13T10:02:28.748Z on commit `e0dd7dbf`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 the gate ran no test: every named test of this Task was reported by the builder
 
 **smoke: By hand in VS Code: a claude turn and a codex turn that each change two places in one file, change one of them again and add a file show one widget per section, folded to 8 lines, with the changed one updated in place, and the widgets show in their latest form after a window reload**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-validate-output/diff-widget-t8-hand-check.txt — the user confirmed the claude turn in VS Code; codex in the panel and the reload were NOT checked by hand and are covered by diff-widget-t8-live-codex.txt, diff-widget-t8-live-claude.txt and diff-widget-t8-real-shell-*.png in the same folder
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/insrc-validate-output/diff-widget-t8-hand-check.txt — the user confirmed the claude turn ("the demo edits show properly"), then, asked for the reload and the codex turn by hand in VS Code, answered "yes, shows up fine"; the answer did not list the two checks one by one
 
 **smoke: The whole plugin suite passes apart from the two manifest-catalog tests that fail before this change**
 

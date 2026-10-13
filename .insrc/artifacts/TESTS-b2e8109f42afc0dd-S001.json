@@ -4,7 +4,7 @@
     "epicHash": "b2e8109f42afc0dd",
     "storyId": "S001",
     "createdAt": "2026-10-13T08:48:39.843Z",
-    "updatedAt": "2026-10-13T10:00:49.273Z",
+    "updatedAt": "2026-10-13T10:02:28.748Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T07:52:45.476Z",
     "epicSlug": "show-each-changed-section-turn-s"
@@ -3342,8 +3342,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "7dd39fd7",
-        "ranAt": "2026-10-13T10:00:49.273Z",
+        "commit": "e0dd7dbf",
+        "ranAt": "2026-10-13T10:02:28.748Z",
         "testsPassed": true,
         "tests": [
           {
@@ -3354,7 +3354,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "/tmp/insrc-validate-output/diff-widget-t8-hand-check.txt — the user confirmed the claude turn in VS Code; codex in the panel and the reload were NOT checked by hand and are covered by diff-widget-t8-live-codex.txt, diff-widget-t8-live-claude.txt and diff-widget-t8-real-shell-*.png in the same folder"
+              "evidence": "/tmp/insrc-validate-output/diff-widget-t8-hand-check.txt — the user confirmed the claude turn (\"the demo edits show properly\"), then, asked for the reload and the codex turn by hand in VS Code, answered \"yes, shows up fine\"; the answer did not list the two checks one by one"
             }
           },
           {

@@ -38,11 +38,23 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The LLD designs every acceptance criterion of S005 (ac1 refuse an unindexed scope without announcing the largest size, keeping today's code and message; ac2 a failed last-indexed read becomes a named cause; ac3 the four ISSUE-e2bcadd9 reproductions; ac4 refuse with a named error and run progress while indexing or after a failed index) plus lc1.",
-          "evidence": "DEF.md:237-244 lists ac1-ac4 and lc1. The LLD covers them: \u00a72.1/\u00a72.11 refuse before measureRequestScope and the 'classified' event; \u00a72.4/\u00a73.3 add 'index-state-read-failed'; \u00a72.4-\u00a72.6 cover the four e2bcadd9 defects; \u00a72.3/\u00a72.7/\u00a72.8 add RepoIndexingError with figures from the run record or lastRun. Nothing listed under non-goals is built (no per-N-file progress writes, which were rejected under a2). [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
+          "premise": "The design covers FR001-FR004 and ac1-ac4 of Story s5 (DEF \u00a76.5) and all four fix intents of ISSUE-e2bcadd9, and builds no stated non-goal.",
+          "evidence": "DEF.md:237-240 sets out ac1 (no largest-size announcement, same code and message), ac2 (a throwing last-indexed read gets a named cause and code), ac3 (the four ISSUE-e2bcadd9 reproductions) and ac4 (refuse with a named error and progress, no partial result). The design covers each one: refusal before measuring (\u00a72.1, \u00a72.11), index-state-read-failed / lookup-failed (\u00a72.4, \u00a73.3), tool-loop call naming, cache before scope, typed failure (\u00a72.4-\u00a72.6), and RepoIndexingError (\u00a72.3, \u00a72.8, \u00a72.12). ISSUE.md fix intent 3 asks to keep 'the pairing check and the rule that the scope is resolved once'. The design keeps both on a miss. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md, docs/standalone/bug-four-defects-left-code-review-E20261007e2bcadd9/ISSUE.md]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "ac4's 'no partial result is returned' holds for every graph-reading request: results that reach a repository under index are filtered.",
+          "evidence": "\u00a72.8 filters cross-repository results only for search.callers / search.callees / search.callers_nhop. Other handlers traverse the graph or a closure across repositories without any filter. entity.closure and entity.unreachable call closureEntities / unreachableEntities over edges (daemon/index.ts:1107-1141). repo.depends_on and repo.search_cross_repo resolve the DEPENDS_ON closure and search every repository in it (daemon/index.ts:1184-1212). search.closure returns resolveClosure. The design refuses these only when a ROOT or NAMED repository is under index. A ready repository whose closure includes a repository under index therefore still gets half-built rows from that repository. The same applies to graph_query in the built-in tools. [files: src/daemon/index.ts, src/daemon/tools/builtins/graph/index.ts]",
+          "action": "Extend the filtering postcondition of \u00a72.8 / \u00a72.12 to every traversal or closure result: entity.closure, entity.unreachable, repo.depends_on, repo.search_cross_repo, search.closure and graph_query. Either leave out the entities or repositories under index, or refuse. Add a test for each.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "current-behaviour.1",
@@ -50,8 +62,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today runAnalyze measures the request and emits 'classified' before any scope refusal, and its resolveTaskScope check runs only after buildRunBundle, in the plan stage.",
-          "evidence": "orchestrator/driver.ts:319 `const measure = await measureRequestScope(...)`, :325 `emit({ type: 'classified', intent, measure })`, :352 `shaper.buildRunBundle(...)`, :372-386 `if (intent.target !== 'generic') { await resolveTaskScope(intent.scopeRef, intent.target, 'the run') ... failResult('plan', ...)`. [files: src/analyze/orchestrator/driver.ts]",
+          "premise": "Today runAnalyze measures the request and emits 'classified' before any scope refusal. The run-level resolveTaskScope check runs after buildRunBundle, in the plan stage, through scopeErrorMapping.",
+          "evidence": "orchestrator/driver.ts:319 `measureRequestScope(...)`, :325 `emit({ type: 'classified', intent, measure })`, :352 `shaper.buildRunBundle(...)`, :372-386 `if (intent.target !== 'generic') { await resolveTaskScope(intent.scopeRef, intent.target, 'the run') } catch { const scoped = scopeErrorMapping(err) ... failResult('plan', ...)`. One small difference: today's record fails at stage 'plan', but the design records it at 'classify'. The code, message and data are unchanged. [files: src/analyze/orchestrator/driver.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -62,8 +74,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today runShaper resolves the scope and reads the last-indexed time before the cache lookup, and awaits steps.lastIndexedAt and steps.executePlan bare inside the pipeline.",
-          "evidence": "context/driver.ts:350 `const scope = await prepareScope(...)`, :357 `await resolveRepoLastIndexedAt(freshnessPathOf(scope))`, :360 `readBundle(...)`; :1471 `await steps.lastIndexedAt(...)`, :1473 `await steps.executePlan({` with no catch. The cache key (computeCacheKey :532-544) hashes only the prompt and keyedInputs(inputs), not the resolved scope. [files: src/analyze/context/driver.ts]",
+          "premise": "runShaper resolves the scope before the cache lookup and reads freshness through resolveRepoLastIndexedAt directly, not PipelineSteps.lastIndexedAt. The real reader already swallows a failed registry read.",
+          "evidence": "context/driver.ts:350 `const scope = await prepareScope(...)`, :357 `await resolveRepoLastIndexedAt(freshnessPathOf(scope))`, :360 `readBundle(...)`. The code-only check is :379-381 `if (invocationMode === 'run' && shaperId === 'code') await ensureNonEmptyClosure(scope)`. The pipeline reads through `steps.lastIndexedAt` (:1471) and awaits executePlan bare (:1473). resolveRepoLastIndexedAt (:1158-1170) catches a listRepos failure and returns undefined. [files: src/analyze/context/driver.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -74,20 +86,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "isModelCallFailure matches the Ollama and socket texts anywhere in the message outside ' text=', and matches the CLI texts only at the start.",
-          "evidence": "model-failure.ts:75-83: CLI texts use `own.startsWith(text)`; for OLLAMA_FAILURE_TEXTS it uses `if (msg.includes(text)) return true;` with the comment 'matched anywhere -- outside a quoted answer'. [files: src/analyze/context/model-failure.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.4",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The status write that begins a full index resets lastIndexed to 0, so a freshness check alone would not reject a cached bundle during a reindex.",
-          "evidence": "indexer/index.ts:596 `await updateRepoStatus(this.db, repoPath, 'indexing');` (no lastIndexed). repos.ts:264 `lastIndexed: parseOptionalTimestamp(lastIndexed)` returns 0 for undefined. [files: src/indexer/index.ts, src/db/repos.ts]",
+          "premise": "fullIndex sets status 'indexing' with no lastIndexed (so the row's lastIndexed becomes 0) and writes 'ready' or 'error' at the end. Start-up re-queues 'error' and 'indexing'-without-lastIndexed rows. The indexer runs in the daemon process, so an in-process run record is reachable by the analyzer and the search handlers.",
+          "evidence": "indexer/index.ts:596 `updateRepoStatus(this.db, repoPath, 'indexing')`, :726 'ready' with a timestamp, :735 `'error', undefined, msg`. The start-up re-queue is at :286-299. updateRepoStatus rebuilds lastIndexed from `parseOptionalTimestamp(lastIndexed)`, so 'indexing' clears it, which matches the design's cache-hit reasoning. daemon/index.ts:264 `const indexer = new IndexerService(...)` runs in-process. One minor naming slip: the class is IndexerService, not 'Indexer'. [files: src/indexer/index.ts, src/db/repos.ts, src/daemon/index.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -98,8 +98,8 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "ModelCallFailedError already exists with the message 'Model call failed: <detail>', and isModelCallFailure already recognises it by type.",
-          "evidence": "model-call-error.ts:12-17 `export class ModelCallFailedError extends Error { ... super(`Model call failed: ${detail}`)`; model-failure.ts:68 `if (err instanceof ModelCallFailedError) return true;`. wrapOllamaError (ollama.ts:759-773) returns plain Errors today, so raising the typed error from the local provider is a new change, as the design states. [files: src/agent/providers/model-call-error.ts, src/agent/providers/ollama.ts]",
+          "premise": "ModelCallFailedError already exists with a `detail` field and the message 'Model call failed: <detail>'. isModelCallFailure already recognises it by type.",
+          "evidence": "agent/providers/model-call-error.ts:12-20 `super(`Model call failed: ${detail}`)`, `readonly detail`. model-failure.ts:68 `if (err instanceof ModelCallFailedError) return true;`. The design reuses it and adds start-of-message matching after RETRY_PREFIX (model-failure.ts:51). [files: src/agent/providers/model-call-error.ts, src/analyze/context/model-failure.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -110,20 +110,8 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The retry helper loses the error type today, so making it re-throw ModelCallFailedError is new work, as the design states.",
-          "evidence": "structured-output.ts:204-207 keeps only `msg = (err as Error).message` in lastErrors, and :220 throws `new Error(`structured-output: validation failed after ${maxAttempts} attempts: ...`)`. The type is dropped. [files: src/agent/providers/structured-output.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.3",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The seams the design extends exist: ShapeOpts (for scopeChecked), RunShaperArgs.pipelineSteps/scopeDeps, and PipelineSteps.lastIndexedAt.",
-          "evidence": "context/types.ts:110 `export interface ShapeOpts { readonly runId: string; readonly bypassCache?: boolean`; context/driver.ts:142-143 `pipelineSteps?`, `scopeDeps?`; :1258 `readonly lastIndexedAt: (scopePath: string) => Promise<number | undefined>`; :1587 `lastIndexedAt: resolveRepoLastIndexedAt`. [files: src/analyze/context/types.ts, src/analyze/context/driver.ts]",
+          "premise": "scopeErrorMapping is the single mapping of the scope errors, shared by the run driver, the daemon RPC and the plan walk through taskRefusalMapping, so adding RepoIndexingError there reaches all three.",
+          "evidence": "invariants.ts:118-125 scopeErrorMapping and :137-141 taskRefusalMapping, which delegates to it. orchestrator/driver.ts:704 classifyShaperError calls scopeErrorMapping first. ScopeErrorCode (:100) is a closed union, so the design's union extension is needed and is listed in \u00a73.6. [files: src/analyze/context/invariants.ts, src/analyze/orchestrator/driver.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -134,9 +122,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "The guarded inventory (\u00a72.8) covers every daemon surface that reads a repository's stored graph for a search, so no partial result for a repository under index escapes.",
-          "evidence": "All 12 listed handlers exist in daemon/index.ts:1048-1221. The built-in graph tools also read the graph directly and are not in the inventory: src/daemon/tools/builtins/graph/index.ts:10-14 imports `searchEntities, findCallers, findCallees, findDefinedIn, findImports, closureEntities, unreachableEntities, sccEntities` and calls `findCallers`/`findCallees` at :169. These are registered daemon tools that agents and the tool loop use. They would still answer from a half-built index. ac4 covers 'a search request'. [files: src/daemon/tools/builtins/graph/index.ts, src/daemon/index.ts]",
-          "action": "Either add the built-in graph tools (graph/index.ts) to the guarded set, with the same any-root and cross-repository filtering, or state in the LLD that they are out of scope and why.",
+          "premise": "The change to isModelCallFailure (Ollama and socket texts no longer matched anywhere in a message) has its callers inventoried.",
+          "evidence": "isModelCallFailure has seven consumers, not one: classifier/driver.ts:303, planner/driver.ts:516, summariser/driver.ts:368, runtimes/shared/aggregator.ts:355, context/synthesizer.ts:340, context/decomposer.ts:391, and context/driver.ts:1028. Today model-failure.ts:81-83 matches the OLLAMA_FAILURE_TEXTS anywhere because 'a socket error can be nested in another's message'. wrapOllamaError (ollama.ts:759-773) returns a plain Error for every failure except ECONNREFUSED and not-found. After the change, any Ollama transport error that reaches one of these six other callers without passing through the new ModelCallFailedError wrapping is reclassified from llm-unavailable to a shape failure. Examples are an error re-wrapped by an intermediate layer, or a stream error raised during iteration rather than creation. \u00a73.x and \u00a75 list none of these consumers, and no test covers them. [files: src/analyze/context/model-failure.ts, src/agent/providers/ollama.ts, src/analyze/classifier/driver.ts, src/analyze/planner/driver.ts, src/analyze/summariser/driver.ts, src/analyze/runtimes/shared/aggregator.ts, src/analyze/context/synthesizer.ts, src/analyze/context/decomposer.ts]",
+          "action": "Add the six other isModelCallFailure consumers to the change sites. State that every Ollama transport failure path (complete retry :328-347, stream :517 and :614-621, including errors thrown while iterating a stream) raises ModelCallFailedError. Add at least one test per consumer family, for example the classifier and the planner on a stand-in Ollama socket failure, proving an outage is still llm-unavailable.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -146,8 +134,20 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "updateRepoStatus's callers are covered: the full index passes lastRun, and every other status write keeps the stored lastRun.",
-          "evidence": "There are three callers outside tests: indexer/index.ts:309 (start-up delta, 'ready' with a timestamp), :596 ('indexing'), :726/:735 ('ready'/'error' at the end of fullIndex). \u00a72.10 says that when lastRun is omitted the stored one is kept, so the :309 write keeps it. \u00a72.7 writes it at :726/:735. [files: src/indexer/index.ts, src/db/repos.ts]",
+          "premise": "The daemon requests \u00a72.8 names all exist, and runAnalyze reaches runShaper only through shaper.buildRunBundle, whose ShapeOpts is passed through as RunShaperArgs.opts. That makes a ShapeOpts.scopeChecked flag a working channel.",
+          "evidence": "daemon/index.ts registers search.query :1048, search.closure :1060, search.callers :1065, search.callees :1070, locate.inferParents :1081, entity.summary :1102, entity.closure :1107, entity.unreachable :1123, repo.depends_on :1184, repo.search_cross_repo :1203, search.by_file :1216, search.callers_nhop :1221 and analyze.classify :1755. context/index.ts:111-121 `buildRunBundle: (input, opts: ShapeOpts) => runShaper({ ..., inputs: input, opts })`. computeCacheKey(promptContent, inputs) at context/driver.ts:338 excludes opts. graph_entity, graph_search, graph_callers, graph_callees and graph_query appear in tools/builtins/graph/index.ts. [files: src/daemon/index.ts, src/analyze/context/index.ts, src/analyze/context/driver.ts, src/daemon/tools/builtins/graph/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The structured-output retry helper today loses the error type of a throwing call, so keeping ModelCallFailedError through it is a real change site.",
+          "evidence": "structured-output.ts:197-207 catches the call's throw, keeps only `(err as Error).message` in lastErrors, and :220 throws `new Error(`structured-output: validation failed after ${maxAttempts} attempts: ...`)`. The type is lost, as the design states, and \u00a72.6 changes it. [files: src/agent/providers/structured-output.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -158,8 +158,8 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "decodeRepoRow builds the row from named fields, so lastRun must be copied explicitly or every status write would erase it, and an older row decodes without it.",
-          "evidence": "codec.ts:114-127 returns `{ id, kind, ...namespace, path, name, addedAt, lastIndexed, status, errorMsg }` only. updateRepoStatus (repos.ts:260-267) spreads that decoded row into the next write. RepoRow (codec.ts:89-103) has no lastRun today. [files: src/db/graph/codec.ts, src/db/repos.ts]",
+          "premise": "decodeRepoRow builds the registry row from named fields, so lastRun must be copied explicitly, and an older daemon drops it on its next status write.",
+          "evidence": "db/graph/codec.ts:114-127 returns `{ id, kind, namespace?, path, name, addedAt, lastIndexed, status, errorMsg }` only. updateRepoStatus (repos.ts:260-267) does `{ ...row, status, lastIndexed, errorMsg }` from the decoded row, so an unknown field is lost unless the decoder copies it. This is exactly the design's backward-compat statement. [files: src/db/graph/codec.ts, src/db/repos.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -170,8 +170,8 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The bundle schema's meta has additionalProperties false, so repoPath must be added to its properties as optional, or new bundles fail validation.",
-          "evidence": "schema.ts:109-111 `meta: { ... additionalProperties: false`. Today meta is stamped at driver.ts:401-408 (pipeline path) and after the tool loop (~:458). \u00a73.5 adds repoPath to both paths as optional `['string','null']`. [files: src/analyze/context/schema.ts, src/analyze/context/driver.ts]",
+          "premise": "The bundle schema's meta has additionalProperties: false, so repoPath must be added to the schema. A bundle missing meta.repoLastIndexedAt is already treated as stale, which matches the design's treatment of a missing repoPath as a miss.",
+          "evidence": "context/schema.ts:109-111 `meta: { ... additionalProperties: false`, with repoLastIndexedAt declared at :149. cache.ts:187-196 isStaleByIndexer returns true when meta.repoLastIndexedAt is undefined, but only when currentLastIndexedAt !== undefined (cache.ts:155). Today a 'connection' bundle is therefore served without a freshness check, matching the design's repoPath-null rule. [files: src/analyze/context/schema.ts, src/analyze/context/cache.ts, src/analyze/context/types.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -182,8 +182,8 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The lastRun field on the registry row and the in-memory run record do not redesign s1's IndexState and completeness field, or s3's existence check.",
-          "evidence": "s1 owns the IndexState row and the completeness field returned beside status. s3 owns the entity-existence check used by the scope check. The LLD adds a separate optional RepoRow.lastRun (codec.ts RepoRow) and an in-process IndexRunView. ensureNonEmptyClosure keeps its existing entity count (invariants.ts:169-247) and only adds ensureRepoQueryable before it. Neither touches IndexState or the entity index. [files: src/db/graph/codec.ts, src/analyze/context/invariants.ts]",
+          "premise": "s5 does not redesign anything owned by s1 (IndexState and completeness), s3 (the entity existence check) or s11 (step tools in the daemon). The HLD places s5 as independent in Phase A.",
+          "evidence": "HLD.md:45 'the truthful reads of index state (s5) ... do not depend on the commit and can be built in any order'. HLD.md:270 's5 is independent of both and may go before, between or after them'. The design adds lastRun on the registry row and an in-process IndexRunView. It does not touch the IndexState row or the completeness field (s1). It keeps ensureNonEmptyClosure's listEntitiesForRepo reader, leaving the existence check to s3. It relies on s11's in-daemon step tools, which are complete. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -194,8 +194,20 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "After a daemon restart, a row left 'indexing' (or 'error') is re-queued at start-up, so the 'figures not known' refusal is transient and the stated handling holds.",
-          "evidence": "indexer/index.ts:290-299: 'pending', 'error', and 'indexing' && !lastIndexed are re-queued with `this.queue.enqueue({ kind: 'full', repoPath: repo.path })`. Because :596 resets lastIndexed, every interrupted run matches. The figures-unknown path in \u00a74 therefore lasts only until the new run opens its record. [files: src/indexer/index.ts]",
+          "premise": "Over the request socket a handler's thrown error reaches the client as a plain string message, so RepoIndexingError must carry its code as a 'repo-indexing:' prefix in its message to be detectable.",
+          "evidence": "daemon/server.ts:71-77 failureMessage returns `err instanceof Error ? err.message : String(err)` (or a named LMDB lock message), and :197/:211 send `{ id, error: failureMessage(...) }`. A string is all the client gets, matching \u00a72.8. [files: src/daemon/server.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A registry read failure or a pristine registry in ensureRepoQueryable is skipped, as ensureNonEmptyClosure does today, so the new check adds no new raw-error path.",
+          "evidence": "invariants.ts:186-213 catches the listRepos failure ('registry read failed; skipping invariant') and returns undefined when repos.length === 0. \u00a72.3 copies the same skip. [files: src/analyze/context/invariants.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -206,8 +218,8 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each of ac1-ac4 maps to named tests, and the unit seams those tests rely on exist.",
-          "evidence": "The \u00a75 acceptance table maps ac1-ac4 to at least one test each. The seams exist: RunShaperArgs.pipelineSteps/scopeDeps (context/driver.ts:142-143), `_setTaskScopeDepsForTest` (task-scope.ts:40), `_classifyOllamaErrorForTest` / `_computeCacheKeyForTest` (context/driver.ts:1682-1683), `_classifyShaperErrorForTest` (orchestrator/driver.ts:843; analyze-rpc.ts:1019). [files: src/analyze/context/driver.ts, src/analyze/runtimes/shared/task-scope.ts, src/daemon/analyze-rpc.ts]",
+          "premise": "Each acceptance criterion maps to at least one named test that would fail without the change, including the ISSUE-e2bcadd9 reproductions (cache hit with a broken connections file, a validation message quoting 'ECONNREFUSED', a real outage behind the retry prefix).",
+          "evidence": "\u00a75's acceptance mapping lists tests for ac1 (run order on both branches, docs, analyze.classify), ac2 (lastIndexedAt throw at both read sites, the mapping in classifyShaperError and the orchestrator), ac3 (all four reproductions from ISSUE.md:11-17, plus the typed-failure and retry-helper cases) and ac4 (status, cache-hit, search, built-in tool and indexer-record tests). The existing seams the tests rely on are real: RunShaperArgs.pipelineSteps (`args.pipelineSteps ?? REAL_PIPELINE_STEPS`, driver.ts:389), ensureNonEmptyClosure deps (invariants.ts:171) and _setTaskScopeDepsForTest (task-scope.ts:40). The test gap for the other isModelCallFailure consumers is reported under change-sites. [files: src/analyze/context/driver.ts, src/analyze/context/invariants.ts, src/analyze/runtimes/shared/task-scope.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -215,12 +227,12 @@
       ],
       "counts": {
         "high": 0,
-        "med": 1,
+        "med": 2,
         "low": 14,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-13T07:43:24.131Z",
+      "reviewedAt": "2026-10-13T07:49:23.679Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     }
@@ -533,9 +545,10 @@
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "The local provider's connection and stream failures are raised as ModelCallFailedError (src/agent/providers/ollama.ts wrapOllamaError and its call sites).",
+            "Every Ollama transport failure path of the local provider raises ModelCallFailedError: the complete call with its retry, the stream's creation, and an error thrown while a stream is being iterated (src/agent/providers/ollama.ts, wrapOllamaError and every call site that rethrows a transport error).",
             "The retry helper (src/agent/providers/structured-output.ts) keeps the type: when its last attempt threw a ModelCallFailedError it re-throws one (its detail prefixed with the helper's attempt count) instead of a plain Error, so the structured-emit path recognises a real outage by type; and a plain message that, after the helper's prefix, begins 'Model call failed: ' is recognised too.",
-            "The Ollama and socket texts are no longer matched anywhere inside a message: a validation message that quotes a value containing 'ECONNREFUSED', 'Model not found', 'EPIPE' or 'fetch failed' is a failure of shape."
+            "The Ollama and socket texts are no longer matched anywhere inside a message: a validation message that quotes a value containing 'ECONNREFUSED', 'Model not found', 'EPIPE' or 'fetch failed' is a failure of shape.",
+            "isModelCallFailure has seven consumers, all reached by the same change and covered by it: src/analyze/classifier/driver.ts, src/analyze/planner/driver.ts, src/analyze/summariser/driver.ts, src/analyze/runtimes/shared/aggregator.ts, src/analyze/context/synthesizer.ts, src/analyze/context/decomposer.ts and src/analyze/context/driver.ts. A real Ollama outage reaching any of them stays a failed model call (llm-unavailable), since it arrives typed."
           ]
         },
         {
@@ -584,7 +597,7 @@
           "preconditions": [],
           "postconditions": [
             "No partial result is returned for a repository under index.",
-            "A result that reaches into another repository (search.callers / search.callees / search.callers_nhop following edges across repositories) leaves out the entities whose repository is under index; the request about a repository that is not under index is answered from the rest.",
+            "Every result that follows the graph or a closure across repositories leaves out the entities (or repositories) of a repository under index: search.callers / search.callees / search.callers_nhop, entity.closure, entity.unreachable, search.closure (resolveClosure), repo.depends_on and repo.search_cross_repo (the DEPENDS_ON closure). A request about a repository that is not under index is answered from the rest; a request that names a repository under index (or any root in one) is refused.",
             "search.query, which searches every registered repository and names none, leaves repositories under index out of the set it searches and answers from the others; it does not refuse."
           ]
         },
@@ -681,7 +694,7 @@
           ],
           "preconditions": [],
           "postconditions": [
-            "The same guard and the same filtering as the daemon's search requests: refuse when a named repository is under index, leave out of a result the entities of a repository under index, and have graph_search skip such repositories as search.query does.",
+            "The same guard and the same filtering as the daemon's search requests: refuse when a named repository (or any root) is under index, leave out of every traversal or closure result (graph_callers, graph_callees, graph_query) the entities of a repository under index, and have graph_search skip such repositories as search.query does.",
             "The analyzer's lookups that use these tools are already refused upstream for a repository under index; the guard here covers a direct use of the tools."
           ]
         }
@@ -753,7 +766,14 @@
           "src/analyze/context/index.ts",
           "src/agent/providers/structured-output.ts",
           "src/analyze/executor/walker.ts",
-          "src/daemon/tools/builtins/graph/index.ts"
+          "src/daemon/tools/builtins/graph/index.ts",
+          "src/agent/providers/ollama.ts",
+          "src/analyze/classifier/driver.ts",
+          "src/analyze/planner/driver.ts",
+          "src/analyze/summariser/driver.ts",
+          "src/analyze/runtimes/shared/aggregator.ts",
+          "src/analyze/context/synthesizer.ts",
+          "src/analyze/context/decomposer.ts"
         ]
       }
     ],
@@ -938,7 +958,9 @@
             "isModelCallFailure: a ModelCallFailedError thrown on the last attempt of the retry helper is still a ModelCallFailedError (and a plain 'structured-output: ... attempts: Model call failed: ...' message is recognised); classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
             "runShaper: a connection-scope bundle (repoPath null) is served from cache; runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key",
             "run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message",
-            "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates"
+            "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+            "OllamaProvider: a socket failure during stream iteration is raised as ModelCallFailedError",
+            "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure"
           ],
           "fixturesNeeded": [
             "a temporary graph store with registered repositories in each status",
@@ -956,7 +978,8 @@
             "search.query while one repository is being indexed returns rows from the other repositories only",
             "analyze through the daemon (analyze.context.buildRun and the step tools via step.call) on a repository being indexed returns code 'repo-indexing' with the figures; the workflow step that reaches it passes the reply on unchanged",
             "entity.closure / entity.unreachable with a root in a repository under index are refused; search.callers across repositories leaves out the entities of a repository under index",
-            "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out"
+            "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out",
+            "entity.closure, entity.unreachable, search.closure, repo.depends_on, repo.search_cross_repo and graph_query from a ready repository whose closure reaches a repository under index leave that repository's entities out"
           ],
           "fixturesNeeded": [
             "a temporary graph store and vector store",
@@ -993,7 +1016,9 @@
             "OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError",
             "isModelCallFailure: a ModelCallFailedError thrown on the last attempt of the retry helper is still a ModelCallFailedError (and a plain 'structured-output: ... attempts: Model call failed: ...' message is recognised); classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
             "runShaper: a connection-scope bundle (repoPath null) is served from cache; runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key",
-            "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates"
+            "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+            "OllamaProvider: a socket failure during stream iteration is raised as ModelCallFailedError",
+            "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure"
           ]
         },
         {
@@ -1008,7 +1033,8 @@
             "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg",
             "entity.closure / entity.unreachable with a root in a repository under index are refused; search.callers across repositories leaves out the entities of a repository under index",
             "ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)",
-            "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out"
+            "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out",
+            "entity.closure, entity.unreachable, search.closure, repo.depends_on, repo.search_cross_repo and graph_query from a ready repository whose closure reaches a repository under index leave that repository's entities out"
           ]
         }
       ]
@@ -1154,6 +1180,11 @@
       "id": "c10",
       "kind": "prior-artifact",
       "ref": "Fourth daemon review of this LLD, 2026-10-13T07:43Z (block, 0 HIGH / 1 MED: the built-in graph tools), applied"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "Fifth daemon review of this LLD, 2026-10-13T07:49Z (block, 0 HIGH / 2 MED), both applied; approved with override by stakeholder decision (option A)"
     }
   ]
 }

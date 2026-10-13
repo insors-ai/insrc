@@ -19,7 +19,7 @@ import { runWithClientProviderContext } from '../../analyze/context/shaper-provi
 import type { AnalyzeShaperProviderKind } from '../../config/analyze.js';
 import { renderAnalyzeFailure, renderBundleAsMarkdown } from './bundle-md.js';
 
-const log = getLogger('mcp:server');
+const log = getLogger('daemon:step-analyze-oneshot');
 
 /**
  * The run-level request the one-shot tool sends for a call.
@@ -53,7 +53,6 @@ export interface AnalyzeOneShotArgs {
 export interface AnalyzeOneShotDeps {
 	/** For the log line only. */
 	readonly clientName?: string | undefined;
-	readonly samplingSupported?: boolean | undefined;
 	readonly clientDefault?: AnalyzeShaperProviderKind | undefined;
 	/** Runs the build under the caller's provider context. Defaults to the
 	 *  client provider context of `clientDefault`, or of the step context's client. */
@@ -62,10 +61,27 @@ export interface AnalyzeOneShotDeps {
 	readonly buildRun?: typeof buildRun | undefined;
 }
 
+const TARGETS = ['code', 'docs', 'data', 'infra', 'generic'] as const;
+const SIZES   = ['XS', 'S', 'M', 'L', 'XL'] as const;
+
+/** The tool's arguments, checked: a message naming the first bad field, or the args.
+ *  The MCP registration validates them too, but step.call takes them raw. */
+export function checkOneShotArgs(raw: unknown): AnalyzeOneShotArgs | string {
+	if (typeof raw !== 'object' || raw === null) return 'insrc_analyze: the arguments must be an object';
+	const a = raw as Record<string, unknown>;
+	if (typeof a['focus'] !== 'string' || a['focus'].trim().length === 0) return 'insrc_analyze: `focus` (a non-empty string) is required';
+	if (a['repo'] !== undefined && typeof a['repo'] !== 'string') return 'insrc_analyze: `repo` must be a string';
+	if (a['target'] !== undefined && !(TARGETS as readonly unknown[]).includes(a['target'])) return `insrc_analyze: \`target\` must be one of ${TARGETS.join(', ')}`;
+	if (a['scope'] !== undefined && !(SIZES as readonly unknown[]).includes(a['scope'])) return `insrc_analyze: \`scope\` must be one of ${SIZES.join(', ')}`;
+	return a as unknown as AnalyzeOneShotArgs;
+}
+
 export async function runAnalyzeOneShot(
-	args: AnalyzeOneShotArgs,
+	rawArgs: unknown,
 	deps: AnalyzeOneShotDeps = {},
 ): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }> {
+	const args = checkOneShotArgs(rawArgs);
+	if (typeof args === 'string') return errorResult(args);
 	// Resolve the repo path: explicit param > CWD-contained registered repo >
 	// INSRC_REPO env > fail (session-aware; see resolve-repo.ts).
 	const repoPath = await resolveRepoPath(args.repo);
@@ -92,7 +108,6 @@ export async function runAnalyzeOneShot(
 			sizeHint: args.scope ?? '(none)',
 			focus:  intent.focus.slice(0, 80),
 			client: deps.clientName ?? '(unknown)',
-			samplingSupported: deps.samplingSupported ?? false,
 			clientDefault: clientDefault ?? '(none)',
 		},
 		'insrc_analyze: dispatching',

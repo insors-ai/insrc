@@ -21,7 +21,6 @@ import { getLogger } from '../../shared/logger.js';
 import { runInStepContext } from '../../shared/step-context.js';
 import type { StepCallContext, StepToolName } from '../../shared/step-context.js';
 import { runAnalyzeOneShot } from './analyze-oneshot.js';
-import type { AnalyzeOneShotArgs } from './analyze-oneshot.js';
 import { handleAnalyzeStep } from './analyze-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
 import { DEFAULT_DEPS as CODE_REVIEW_DEFAULT_DEPS, handleCodeReviewStep, withStepClient } from './code-review-step/handler.js';
@@ -62,7 +61,7 @@ export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepTo
 	registerWorkflowRunners();
 	const codeReviewBase = opts.codeReviewDeps ?? CODE_REVIEW_DEFAULT_DEPS;
 	const table: Record<StepToolName, StepToolRunner> = {
-		insrc_analyze:          (args) => runAnalyzeOneShot(args as AnalyzeOneShotArgs),
+		insrc_analyze:          (args) => runAnalyzeOneShot(args),
 		insrc_analyze_step:     (args) => handleAnalyzeStep(args),
 		insrc_workflow_step:    (args) => handleWorkflowStep(args),
 		insrc_build_step:       (args) => handleBuildStep(args),

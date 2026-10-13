@@ -29,7 +29,7 @@ import type { WorkflowReviewDone } from '../../workflow-review-rpc.js';
 import { handleCodeReviewStep } from '../code-review-step/handler.js';
 import type { CodeReviewStepDeps } from '../code-review-step/handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../code-review-step/state-store.js';
-import { createInDaemonClient, installStepDaemonClient } from '../daemon-client.js';
+import { createInDaemonClient, installStepDaemonClient, waitText } from '../daemon-client.js';
 import type { InDaemonClientDeps, StepDaemonClient } from '../daemon-client.js';
 import { handleReviewStep } from '../review-step/handler.js';
 import { _clearReviewStateStoreForTests } from '../review-step/state-store.js';
@@ -289,4 +289,26 @@ test("no loopback: during a moved review or code-review call the daemon's reques
 		proto.connect = original;
 		fx.cleanup();
 	}
+});
+
+test('in-daemon client: a stream handler that throws synchronously settles the request as daemon-error and releases its wait', async () => {
+	let cleared = 0;
+	const deps: InDaemonClientDeps = { setTimer: () => 'timer', clearTimer: () => { cleared += 1; } };
+	const throwsNow = (() => { throw new Error('thrown before any await'); }) as unknown as StreamHandler;
+	const ac = new AbortController();
+	const client = createInDaemonClient({}, { 'workflow.review': throwsNow }, deps);
+	await assert.rejects(client.reviewArtifactStream({ artifactPath: '/a.md' }, { timeoutMs: 60_000, signal: ac.signal }),
+		(e: unknown) => e instanceof ReviewStreamError && e.failure === 'daemon-error' && e.message === 'thrown before any await');
+	assert.equal(cleared, 1, 'the wait timer was cleared');
+	// The abort listener was removed: aborting now has nothing to settle and does not throw.
+	ac.abort();
+});
+
+test('in-daemon client: the wait limit is named in minutes from one minute up and in seconds below', () => {
+	assert.equal(waitText(30 * 60_000), '30 minutes');
+	assert.equal(waitText(60_000), '1 minute');
+	assert.equal(waitText(90_000), '2 minutes');
+	assert.equal(waitText(20_000), '20 seconds');
+	assert.equal(waitText(1_000), '1 second');
+	assert.equal(waitText(10), '1 second');
 });

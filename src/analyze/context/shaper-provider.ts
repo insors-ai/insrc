@@ -163,7 +163,7 @@ export function resolveRoleProvider(
  * Pure resolution of the effective shaper KIND, in strict priority order:
  *
  *   per-repo override > explicit global config > per-run caller > 'ollama'
- * *
+ *
  * `globalExplicit` is `cfg.shaperProvider` ONLY when the operator explicitly
  * set `models.tiers.core.runner` (i.e. `cfg.shaperProviderExplicit`);
  * otherwise pass `undefined` so a defaulted-'ollama' global does not pre-empt

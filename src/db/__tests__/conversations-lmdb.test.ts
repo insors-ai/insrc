@@ -7,21 +7,6 @@
  */
 
 import { test } from 'node:test';
-import { after as afterAllLance } from 'node:test';
-import { mkdtempSync as mkdtempSyncLance, rmSync as rmSyncLance } from 'node:fs';
-import { tmpdir as tmpdirLance } from 'node:os';
-import { join as joinLance } from 'node:path';
-import { closeLanceConn as closeLanceConnForTest, setLanceConnPath as setLanceConnPathForTest } from '../lance/conn.js';
-
-// This file reaches the vector store through code that takes no path. Give it a
-// temporary one: the vector store at the default path belongs to the daemon
-// alone (Epic c2ba6fa6, Story s11).
-const LANCE_DIR = mkdtempSyncLance(joinLance(tmpdirLance(), 'insrc-test-lance-'));
-setLanceConnPathForTest(joinLance(LANCE_DIR, 'lance'));
-afterAllLance(async () => {
-	await closeLanceConnForTest();
-	rmSyncLance(LANCE_DIR, { recursive: true, force: true });
-});
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -55,6 +40,12 @@ import {
 	resetTableCaches,
 	type TurnRecord,
 } from '../conversations.js';
+
+import { useTemporaryLance } from '../lance/__tests__/helpers/temp-lance.js';
+
+// This file reaches the vector store through code that takes no path; it gets a
+// temporary one (the default path belongs to the daemon alone).
+useTemporaryLance();
 
 let dir: string;
 

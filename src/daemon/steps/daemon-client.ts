@@ -71,6 +71,16 @@ export interface InDaemonClientDeps {
 	readonly clearTimer?: ((handle: unknown) => void) | undefined;
 }
 
+/** A wait limit in words: minutes from one minute up, seconds below. */
+export function waitText(ms: number): string {
+	if (ms >= 60_000) {
+		const min = Math.round(ms / 60_000);
+		return `${min} minute${min === 1 ? '' : 's'}`;
+	}
+	const sec = Math.max(1, Math.round(ms / 1000));
+	return `${sec} second${sec === 1 ? '' : 's'}`;
+}
+
 /** The client that calls the daemon's own request handlers in-process. */
 export function createInDaemonClient(
 	unary:  RpcHandlers,
@@ -115,7 +125,7 @@ export function createInDaemonClient(
 				return;
 			}
 			timer = setTimer(
-				() => failWith('timeout', `${method}: no result from the daemon within ${Math.round(opts.timeoutMs / 60_000)} minutes`),
+				() => failWith('timeout', `${method}: no result from the daemon within ${waitText(opts.timeoutMs)}`),
 				opts.timeoutMs,
 			);
 
@@ -132,7 +142,9 @@ export function createInDaemonClient(
 				// Any other kind: ignored, as the socket client does.
 			};
 
-			handler(params, send, inner.signal).then(
+			// Called through a resolved promise so a handler that throws synchronously
+			// settles here too, and the timer and abort listener are released.
+			Promise.resolve().then(() => handler(params, send, inner.signal)).then(
 				() => {
 					// Over the socket a handler that ends without a final frame leaves
 					// the client waiting; in-process there is nothing left to wait for.

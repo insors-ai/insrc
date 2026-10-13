@@ -318,3 +318,25 @@ test('state store miss: each of the four stores says the daemon was restarted an
 		});
 	}
 });
+
+test('insrc_analyze through step.call refuses bad arguments with a clear error, not a step-failed frame', async () => {
+	const host = createStepCallHandler(stepToolTable());
+	const context: StepCallContext = { cwd: process.cwd() };
+	const cases: [unknown, RegExp][] = [
+		[{}, /`focus` \(a non-empty string\) is required/],
+		[{ focus: '   ' }, /`focus` \(a non-empty string\) is required/],
+		[{ focus: 7 }, /`focus` \(a non-empty string\) is required/],
+		[{ focus: 'q', repo: 3 }, /`repo` must be a string/],
+		[{ focus: 'q', target: 'sql' }, /`target` must be one of code, docs, data, infra, generic/],
+		[{ focus: 'q', scope: 'XXL' }, /`scope` must be one of XS, S, M, L, XL/],
+		['not an object', /the arguments must be an object/],
+	];
+	for (const [args, message] of cases) {
+		const frames = await collect(host, { tool: 'insrc_analyze', args, context });
+		assert.equal(frames.length, 1);
+		assert.equal(frames[0]!.stream, 'done', `${JSON.stringify(args)}: ${JSON.stringify(frames[0]!.data)}`);
+		const env = frames[0]!.data as StepEnvelope;
+		assert.equal(env.isError, true);
+		assert.match(env.content[0]!.text, message, JSON.stringify(args));
+	}
+});

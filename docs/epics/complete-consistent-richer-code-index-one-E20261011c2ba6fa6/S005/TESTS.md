@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -155,3 +155,31 @@ Run at 2026-10-13T13:01:23.220Z on commit `a73aee5a`. Tests check: **passed**. 3
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/repos-lmdb.test.ts` | 0 | 26 | 2.7 s |  |
 | `src/db/graph/__tests__/codec.test.ts` | 0 | 20 | 0.4 s |  |
+
+## t6
+
+Run at 2026-10-13T13:05:58.188Z on commit `c9614ed3`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted) | `src/indexer/__tests__/index-run-record.test.ts` |
+
+**integration: reindex of a ready repository: status indexing and the running record carries the new run's figures**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reindex of a ready repository: status indexing and the running record carries the new run's figures | `src/indexer/__tests__/index-run-record.test.ts` |
+
+**unit: start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged | `src/indexer/__tests__/index-run-record.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/index-run-record.test.ts` | 0 | 3 | 1.1 s |  |

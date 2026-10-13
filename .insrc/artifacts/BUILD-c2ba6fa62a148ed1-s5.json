@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T13:01:23.220Z",
+    "updatedAt": "2026-10-13T13:05:58.188Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -30,9 +30,13 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "The registry row now carries an optional lastRun with the last full index's final figures; it round-trips through the codec, older rows decode without it, and a status write that omits it keeps the stored one.",
+    "summary": "A full index now keeps an in-memory record of how far it has got (began, files selected, files done) and writes the run's final figures onto the registry row once, with its final status ('completed' with 'ready', 'failed' with the error with 'error'); the start-up re-queue is unchanged. A file's own error is caught and the file skipped, so a run that fails does so at a later step (manifest, clean-up, cross-file pass), after the walk.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
     },
@@ -42,9 +46,9 @@
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T13:01:23.220Z"
+        "timestamp": "2026-10-13T13:05:58.188Z"
       }
     ],
-    "commit": "a73aee5a"
+    "commit": "c9614ed3"
   }
 }

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T13:01:23.220Z",
+    "updatedAt": "2026-10-13T13:05:58.188Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1028,6 +1028,76 @@
               },
               {
                 "title": "large body in entity row round-trips correctly",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "c9614ed3",
+        "ranAt": "2026-10-13T13:05:58.188Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/index-run-record.test.ts",
+                "title": "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reindex of a ready repository: status indexing and the running record carries the new run's figures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/index-run-record.test.ts",
+                "title": "reindex of a ready repository: status indexing and the running record carries the new run's figures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/index-run-record.test.ts",
+                "title": "start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/index-run-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1124,
+            "titles": [
+              {
+                "title": "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)",
+                "result": "pass"
+              },
+              {
+                "title": "reindex of a ready repository: status indexing and the running record carries the new run's figures",
+                "result": "pass"
+              },
+              {
+                "title": "start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged",
                 "result": "pass"
               }
             ],

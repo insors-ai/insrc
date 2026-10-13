@@ -1208,6 +1208,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *       ended here: a rebuilt shell has no base to add to, so the test that
  *       summed it now checks what still holds, that each source string is
  *       inlined verbatim and once.
+ *   E202610138d4b90c9:S001/t10 (+3297 chars, +3303 bytes): one tab per document of the
+ *       artifact in the header, and the view of an HTML document (its path, a
+ *       line when it cannot be shown, and the host of its sandboxed frame).
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -1221,9 +1224,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  92305,
-  bytes:  92350,
-  sha256: '41c9bab757d11772fa587a065e78bbcc8eb840cb2f6ef744a1143f9c4162ca23',
+  chars:  95602,
+  bytes:  95653,
+  sha256: 'da995d5fa3b97a8441de98cf4f2985ddb2cf76d7768b88c7d4c91522dfe9b9e9',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1805,6 +1808,13 @@ interface WebviewRun {
   list: BodyStub;
   /** The comment panel and the header's text. */
   bar: { approve: BodyStub; reject: BodyStub; feedback: BodyStub; field: BodyStub; result: BodyStub; state: BodyStub; kind: BodyStub; who: BodyStub };
+  /** The tabs in the header, and the two views of the scrolling region. */
+  tabs: BodyStub;
+  md: BodyStub;
+  html: BodyStub;
+  htmlPath: BodyStub;
+  htmlNote: BodyStub;
+  frameHost: BodyStub;
   /** How each decision button stands. */
   controls(): { approve: ControlMode; reject: ControlMode; feedback: ControlMode };
 }
@@ -1838,7 +1848,8 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
     'insrc-docs-experience',
     // The header and the comment panel of the rebuilt shell (E202610138d4b90c9:S001).
     'insrc-rv-kind', 'insrc-rv-state', 'insrc-rv-who', 'insrc-rv-field', 'insrc-rv-result',
-    'insrc-rv-approve', 'insrc-rv-reject', 'insrc-rv-feedback'];
+    'insrc-rv-approve', 'insrc-rv-reject', 'insrc-rv-feedback',
+    'insrc-rv-tabs', 'insrc-rv-md', 'insrc-rv-html', 'insrc-rv-html-path', 'insrc-rv-html-note', 'insrc-rv-frame'];
   const byId: Record<string, BodyStub> = {};
   for (const id of ids) byId[id] = bodyStub('div', id);
   byId['insrc-rv-field']!.value = '';
@@ -1848,11 +1859,10 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
   let onMessage: ((e: { data: unknown }) => void) | undefined;
   const doc = {
     getElementById: (id: string) => byId[id] ?? null,
+    // The stub records listeners, so a test can fire a created control (a tab).
     createElement: (t: string) => {
       created.push(t);
-      const n = bodyStub(t) as BodyStub & { addEventListener(): void; innerHTML: string };
-      n.addEventListener = () => {};
-      return n;
+      return bodyStub(t);
     },
     // Present so an SVG build inside the real bootstrap works, and so a test can
     // count what the slot path created — ac2 is proved by the ABSENCE of calls.
@@ -1897,6 +1907,8 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
       field: byId['insrc-rv-field']!, result: byId['insrc-rv-result']!,
       state: byId['insrc-rv-state']!, kind: byId['insrc-rv-kind']!, who: byId['insrc-rv-who']!,
     },
+    tabs: byId['insrc-rv-tabs']!, md: byId['insrc-rv-md']!, html: byId['insrc-rv-html']!,
+    htmlPath: byId['insrc-rv-html-path']!, htmlNote: byId['insrc-rv-html-note']!, frameHost: byId['insrc-rv-frame']!,
     controls: () => ({
       approve: controlMode(byId['insrc-rv-approve']!),
       reject: controlMode(byId['insrc-rv-reject']!),
@@ -5728,7 +5740,14 @@ test("docs review shell: the comment panel and the header are outside the one sc
   // No theme message and no switch of its own: the host posts none, and the shell has
   // neither a handler for one, nor a control, nor a colour-scheme rule.
   assert.deepEqual(fc.posted.filter((p) => p.payload.type === 'theme'), [], 'no theme message is posted');
-  assert.doesNotMatch(html, /type==='theme'|prefers-color-scheme|color-scheme|data-theme/);
+  assert.doesNotMatch(html, /type==='theme'|prefers-color-scheme|data-theme/);
+  // The one place a colour scheme is named is the FRAME of an HTML document: that page is
+  // a standalone document with its own palette, written for a light page, so its frame
+  // is given the system's page colour for a light scheme. It is not a switch: it does
+  // not follow, or change, the theme of the pane.
+  assert.equal(count(html, /color-scheme/g), 1);
+  assert.match(css, /\.rv-frame\{[^}]*color-scheme:light;background:Canvas;\}/);
+  assert.equal(count(css, /\bCanvas\b/g), 1, 'and the system page colour is used nowhere else');
   assert.doesNotMatch(markup, /theme/i, 'no theme control in the markup');
 });
 
@@ -5888,4 +5907,150 @@ test('docs review shell: the shell is one inline script under a nonce CSP with n
   // A pure function of its nonce, which is what a recorded baseline rests on.
   assert.equal(html, renderShellFor(SHELL_BASELINE.nonce));
   assert.notEqual(html, renderShellFor('OTHER-NONCE'));
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610138d4b90c9:S001 t10 — one tab per document; an HTML document is shown
+// as the page itself, in a sandboxed frame.
+// ---------------------------------------------------------------------------
+
+const TAB_SEQ = 'docs/epics/x/S007/sequence-diagram.html';
+const TAB_UX = 'docs/epics/x/S007/ux-mock.html';
+const TAB_DOC = {
+  artifactId: 'LLD-abc-s7', markdown: '# Doc\n\nBody.\n', openQuestions: [], blocked: false,
+  contentVersion: '0123456789abcdef', state: 'pending',
+  documents: [
+    { title: 'LLD.md', type: 'markdown', relPath: 'docs/epics/x/S007/LLD.md' },
+    { title: 'Sequence diagram', type: 'html', relPath: TAB_SEQ },
+    { title: 'UX mock', type: 'html', relPath: TAB_UX },
+  ],
+};
+const TAB_PAGE = '<!doctype html><html><body><h1>Sequence</h1><script nonce="WV">draw()</script></body></html>';
+const postedOf = (w: WebviewRun, type: string): Array<Record<string, unknown>> =>
+  w.posted.map((p) => (p as { payload: Record<string, unknown> }).payload).filter((p) => p['type'] === type);
+const shownView = (w: WebviewRun): 'markdown' | 'html' | 'both' | 'neither' => {
+  const md = w.md.style['display'] !== 'none';
+  const html = w.html.style['display'] !== 'none';
+  return md && html ? 'both' : md ? 'markdown' : html ? 'html' : 'neither';
+};
+
+test("docs review shell: an HTML document's tab posts open-companion, and docs-companion sets the text as the srcdoc of a frame with sandbox allow-scripts and shows the file's path; with no html it shows the path and a line of text", () => {
+  const w = runWebview();
+  assert.equal(shownView(w), 'markdown', 'before any document, the markdown view');
+  w.deliver(TAB_DOC);
+  assert.equal(shownView(w), 'markdown', 'a document opens on its markdown');
+  assert.deepEqual(postedOf(w, 'open-companion'), [], 'nothing is asked for until a tab is chosen');
+
+  // Choosing the HTML document's tab asks the host for that file.
+  fire(w.tabs.children[1]!, 'click');
+  assert.deepEqual(postedOf(w, 'open-companion'), [{ type: 'open-companion', artifactId: 'LLD-abc-s7', relPath: TAB_SEQ }]);
+  assert.equal(shownView(w), 'html');
+  assert.equal(w.htmlPath.textContent, TAB_SEQ, "the file's path is shown");
+  assert.equal(w.htmlNote.textContent, 'Loading…');
+  assert.equal(w.frameHost.children.length, 0, 'no frame until the text arrives');
+
+  // An answer for another file, or another artifact, is not this tab's.
+  w.send('docs-companion', { artifactId: 'LLD-abc-s7', relPath: TAB_UX, html: TAB_PAGE });
+  w.send('docs-companion', { artifactId: 'PLAN-abc-s7', relPath: TAB_SEQ, html: TAB_PAGE });
+  assert.equal(w.frameHost.children.length, 0);
+
+  // The text becomes the srcdoc of ONE frame that may run scripts and nothing else.
+  w.send('docs-companion', { artifactId: 'LLD-abc-s7', relPath: TAB_SEQ, html: TAB_PAGE });
+  assert.equal(w.frameHost.children.length, 1);
+  const frame = w.frameHost.children[0]!;
+  assert.equal(frame.tagName, 'iframe');
+  assert.equal(frame.attrs['sandbox'], 'allow-scripts', 'scripts, and nothing else: no same-origin, forms, popups or navigation');
+  assert.equal(frame.attrs['srcdoc'], TAB_PAGE, 'the posted text, unchanged');
+  assert.equal(frame.attrs['src'], undefined, 'set from the text, not loaded by address');
+  const order = frame.writes.map((x) => x.prop);
+  assert.ok(order.indexOf('attr:sandbox') >= 0 && order.indexOf('attr:sandbox') < order.indexOf('attr:srcdoc'), 'the sandbox is set before the text');
+  assert.equal(w.htmlNote.textContent, '', 'the loading line is gone');
+  assert.equal(w.htmlPath.textContent, TAB_SEQ, 'the path stays above the frame');
+  // The page's markup exists only as the frame's srcdoc: it never became markup of the shell.
+  for (const n of [w.html, w.htmlPath, w.htmlNote, w.frameHost, frame, w.body, w.md]) {
+    assert.ok(!n.writes.some((x) => x.prop === 'innerHTML' && String(x.value).includes('Sequence')), 'never assigned as markup');
+  }
+  assert.ok(!allOf(w.html).some((n) => n.textContent.includes('<h1>')), 'and never set as text either');
+
+  // The host posts the artifact again (after a decision): the tab and its frame stay.
+  w.deliver(TAB_DOC);
+  assert.equal(shownView(w), 'html');
+  assert.equal(w.frameHost.children[0], frame, 'the same frame: the page is not loaded again');
+  assert.equal(postedOf(w, 'open-companion').length, 1);
+
+  // With no html: the path, and a line of text; no frame.
+  fire(w.tabs.children[2]!, 'click');
+  assert.deepEqual(postedOf(w, 'open-companion').at(-1), { type: 'open-companion', artifactId: 'LLD-abc-s7', relPath: TAB_UX });
+  assert.equal(w.frameHost.children.length, 0, 'the earlier page is gone at once');
+  w.send('docs-companion', { artifactId: 'LLD-abc-s7', relPath: TAB_SEQ, html: TAB_PAGE }); // a late answer for the tab just left
+  assert.equal(w.frameHost.children.length, 0);
+  w.send('docs-companion', { artifactId: 'LLD-abc-s7', relPath: TAB_UX });
+  assert.equal(w.htmlPath.textContent, TAB_UX);
+  assert.equal(w.htmlNote.textContent, 'This document cannot be shown here. Open the file to see it.');
+  assert.equal(w.frameHost.children.length, 0);
+  // Text that is not a string is treated the same way.
+  w.send('docs-companion', { artifactId: 'LLD-abc-s7', relPath: TAB_UX, html: 7 });
+  assert.equal(w.frameHost.children.length, 0);
+
+  // Back to the markdown: the frame is dropped and nothing is asked for.
+  const asked = postedOf(w, 'open-companion').length;
+  fire(w.tabs.children[0]!, 'click');
+  assert.equal(shownView(w), 'markdown');
+  assert.equal(w.frameHost.children.length, 0);
+  assert.equal(postedOf(w, 'open-companion').length, asked);
+  // Another artifact opens on its markdown, whatever tab the last one was on.
+  fire(w.tabs.children[1]!, 'click');
+  w.deliver({ ...TAB_DOC, artifactId: 'HLD-abc' });
+  assert.equal(shownView(w), 'markdown');
+  // And an HTML document that is no longer listed goes back to the markdown too.
+  fire(w.tabs.children[1]!, 'click');
+  w.deliver({ ...TAB_DOC, artifactId: 'HLD-abc', documents: [TAB_DOC.documents[0], TAB_DOC.documents[2]] });
+  assert.equal(shownView(w), 'markdown');
+});
+
+test('docs review shell: there is one tab per document, the markdown first, and a comment sent from an HTML tab names that file and has no anchor', () => {
+  const w = runWebview();
+  w.deliver(TAB_DOC);
+  const tabs = (): Array<{ text: string; on: boolean; selected: string | undefined; title: string | undefined; role: string | undefined }> =>
+    w.tabs.children.map((b) => ({ text: b.textContent, on: b.className === 'rv-tab rv-on', selected: b.attrs['aria-selected'], title: b.attrs['title'], role: b.attrs['role'] }));
+  assert.deepEqual(tabs(), [
+    { text: 'LLD.md', on: true, selected: 'true', title: undefined, role: 'tab' },
+    { text: 'Sequence diagram', on: false, selected: 'false', title: TAB_SEQ, role: 'tab' },
+    { text: 'UX mock', on: false, selected: 'false', title: TAB_UX, role: 'tab' },
+  ], 'one tab per document, the markdown first, each HTML document by its title');
+  assert.ok(w.tabs.children.every((b) => b.tagName === 'button' && !b.writes.some((x) => x.prop === 'innerHTML')), 'titles are set as text');
+  assert.notEqual(w.tabs.style['display'], 'none');
+
+  // A comment written on an HTML document's tab is on that file: no anchor, no version.
+  fire(w.tabs.children[1]!, 'click');
+  assert.deepEqual(tabs().map((t) => t.on), [false, true, false]);
+  assert.equal(w.bar.field.attrs['placeholder'], `Comment on ${TAB_SEQ} (optional)…`);
+  w.bar.field.value = 'The arrow to the daemon is missing.';
+  fire(w.bar.feedback, 'click');
+  assert.deepEqual(postedOf(w, 'docs-decision'), [{
+    type: 'docs-decision', artifactId: 'LLD-abc-s7', decision: 'feedback',
+    comments: [{ comment: 'The arrow to the daemon is missing.', file: TAB_SEQ }],
+  }]);
+  const sent = postedOf(w, 'docs-decision')[0]!['comments'] as Array<Record<string, unknown>>;
+  assert.deepEqual(Object.keys(sent[0]!).sort(), ['comment', 'file'], 'the file, and neither an anchor nor a version');
+  w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: true, outcome: 'recorded', recorded: 1, message: 'Feedback sent.' });
+
+  // On the markdown the same field is a comment on the document: its version, and no file.
+  fire(w.tabs.children[0]!, 'click');
+  assert.equal(w.bar.field.attrs['placeholder'], 'Comment on the whole document (optional)…');
+  w.bar.field.value = 'Needs an owner.';
+  fire(w.bar.reject, 'click');
+  assert.deepEqual(postedOf(w, 'docs-decision').at(-1), {
+    type: 'docs-decision', artifactId: 'LLD-abc-s7', decision: 'reject',
+    comments: [{ comment: 'Needs an owner.', version: '0123456789abcdef' }],
+  });
+
+  // One document, none listed, or a list that is not a list: nothing to choose, so no tab.
+  for (const documents of [[TAB_DOC.documents[0]], [], undefined, 'x']) {
+    const one = runWebview();
+    one.deliver({ ...TAB_DOC, documents });
+    assert.equal(one.tabs.children.length, 0);
+    assert.equal(one.tabs.style['display'], 'none');
+    assert.equal(shownView(one), 'markdown');
+  }
 });

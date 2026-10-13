@@ -1628,8 +1628,24 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.rv-dim{color:var(--vscode-descriptionForeground);}.rv-sp{flex:1;}` +
       `.rv-badge{background:var(--vscode-badge-background);color:var(--vscode-badge-foreground);border-radius:10px;padding:0 7px;font-size:11px;}` +
       // The header: which document, its kind and its state.
-      `.rv-head{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:6px 14px;border-bottom:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);}` +
+      `.rv-head{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 14px;border-bottom:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);}` +
       `.rv-head select{background:var(--vscode-dropdown-background);color:var(--vscode-dropdown-foreground);border:1px solid var(--vscode-dropdown-border);border-radius:2px;padding:3px 6px;font:inherit;max-width:60%;}` +
+      // One tab per document of the artifact: the markdown, then each HTML document.
+      `.rv-tabs{display:flex;gap:2px;flex-wrap:wrap;}` +
+      `.rv-tab{background:none;color:var(--vscode-descriptionForeground);border:0;border-bottom:2px solid var(--vscode-sideBar-background);border-radius:0;padding:3px 8px;font:inherit;cursor:pointer;}` +
+      `.rv-tab.rv-on{color:var(--vscode-foreground);border-bottom-color:var(--vscode-focusBorder);}` +
+      `.rv-tab:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:-1px;}` +
+      // An HTML document fills the region: its path, a line when it cannot be shown, and
+      // the frame that holds the page.
+      `.rv-html{height:100%;display:flex;flex-direction:column;gap:6px;padding:8px 14px 10px;}` +
+      `.rv-html-note{color:var(--vscode-descriptionForeground);}` +
+      `.rv-frame-host{flex:1 1 auto;min-height:0;}` +
+      // The page in the frame is a STANDALONE document with its own palette, written for
+      // a light page, and most set no background of their own: over the pane's dark
+      // editor background their dark text would be unreadable. So the frame is given the
+      // system's own page colour for a light scheme (`Canvas`), which is what such a page
+      // gets when it is opened by itself. A system colour, not a literal one.
+      `.rv-frame{display:block;width:100%;height:100%;border:1px solid var(--vscode-panel-border);border-radius:4px;color-scheme:light;background:Canvas;}` +
       // The document: the one scrolling region.
       `.rv-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;}` +
       `.rv-doc{position:relative;max-width:900px;margin:0 auto;padding:12px 28px 40px;color:var(--vscode-editor-foreground);}` +
@@ -1805,10 +1821,21 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `const fieldEl=document.getElementById('insrc-rv-field');` +
       `const resultEl=document.getElementById('insrc-rv-result');` +
       `const btn={approve:document.getElementById('insrc-rv-approve'),reject:document.getElementById('insrc-rv-reject'),feedback:document.getElementById('insrc-rv-feedback')};` +
+      // The tabs, and the two views of the region: the markdown document's hosts, and an
+      // HTML document's path, note and frame.
+      `const tabsEl=document.getElementById('insrc-rv-tabs');` +
+      `const mdEl=document.getElementById('insrc-rv-md');` +
+      `const htmlEl=document.getElementById('insrc-rv-html');` +
+      `const htmlPathEl=document.getElementById('insrc-rv-html-path');` +
+      `const htmlNoteEl=document.getElementById('insrc-rv-html-note');` +
+      `const frameHostEl=document.getElementById('insrc-rv-frame');` +
       // current: the id of the document shown. shown: its last docs-content message.
       // busy: a decision was posted and its result has not arrived. sent: how many
       // comments that decision carried.
       `var current='';var items=[];var shown=null;var busy=false;var sent=0;` +
+      // docs: the documents of the artifact shown. tab: the repo-relative path of the HTML
+      // document on show, or '' for the markdown.
+      `var docs=[];var tab='';` +
       // docs-list: one option per document awaiting review (textContent only, no markup).
       // The document shown is always an option, so the select names it even when it is
       // not awaiting review.
@@ -1843,13 +1870,45 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // feedback with no comment posts nothing.
       `function rvSend(decision){if(busy||!shown||!shown.artifactId)return;` +
       `var text=String(fieldEl.value||'').trim();var comments=[];` +
-      `if(text){var c={comment:text};if(typeof shown.contentVersion==='string')c.version=shown.contentVersion;comments.push(c);}` +
+      // On an HTML document's tab the comment is on that file: it names the file and has
+      // no anchor and no version (the version is the markdown's). On the markdown it
+      // carries the version the reviewer saw.
+      `if(text){var c={comment:text};if(tab)c.file=tab;else if(typeof shown.contentVersion==='string')c.version=shown.contentVersion;comments.push(c);}` +
       `if(decision==='feedback'&&!comments.length){rvSetResult('Write a comment before sending feedback.','rv-err');return;}` +
       `busy=true;sent=comments.length;renderBar();rvSetResult('Sending…','');` +
       `vs.postMessage({v:1,payload:{type:'docs-decision',artifactId:shown.artifactId,decision:decision,comments:comments}});}` +
       `btn.approve.addEventListener('click',function(){rvSend('approve');});` +
       `btn.reject.addEventListener('click',function(){rvSend('reject');});` +
       `btn.feedback.addEventListener('click',function(){rvSend('feedback');});` +
+      // The tabs: one per document, the markdown first. With one document there is
+      // nothing to choose and no tab is shown. Titles are set as text.
+      `function rvTabs(){while(tabsEl.firstChild)tabsEl.removeChild(tabsEl.firstChild);` +
+      `tabsEl.style.display=docs.length>1?'':'none';if(docs.length<2)return;` +
+      `docs.forEach(function(d){var rel=d.type==='html'?String(d.relPath||''):'';var on=rel===tab;` +
+      `var b=document.createElement('button');b.className='rv-tab'+(on?' rv-on':'');b.textContent=String(d.title||rel||'Document');` +
+      `b.setAttribute('type','button');b.setAttribute('role','tab');b.setAttribute('aria-selected',on?'true':'false');` +
+      `if(rel)b.setAttribute('title',rel);` +
+      `b.addEventListener('click',function(){rvShowTab(rel);});tabsEl.appendChild(b);});}` +
+      `function rvDropFrame(){while(frameHostEl.firstChild)frameHostEl.removeChild(frameHostEl.firstChild);}` +
+      // Show the markdown ('') or one HTML document. An HTML document is asked for from
+      // the host each time its tab is chosen; until the answer arrives the tab shows its
+      // path and a line.
+      `function rvShowTab(rel){tab=rel;rvTabs();mdEl.style.display=rel?'none':'';htmlEl.style.display=rel?'':'none';rvDropFrame();` +
+      `fieldEl.setAttribute('placeholder',rel?'Comment on '+rel+' (optional)…':'Comment on the whole document (optional)…');` +
+      `if(!rel||!shown)return;` +
+      `htmlPathEl.textContent=rel;htmlNoteEl.textContent='Loading…';` +
+      `vs.postMessage({v:1,payload:{type:'open-companion',artifactId:shown.artifactId,relPath:rel}});}` +
+      // The host's answer. The page's text becomes the srcdoc of a frame that may run
+      // scripts and NOTHING else: no same-origin, no forms, no popups, no top navigation.
+      // The sandbox is set before the text, and both before the frame joins the document.
+      // The frame inherits this page's CSP, so the page's scripts run only because the
+      // host gave them this page's nonce, and it can load nothing from the network. With
+      // no text the tab says the document cannot be shown and keeps its path.
+      `function rvCompanion(m){if(!shown||m.artifactId!==shown.artifactId||m.relPath!==tab||!tab)return;rvDropFrame();` +
+      `if(typeof m.html!=='string'){htmlNoteEl.textContent='This document cannot be shown here. Open the file to see it.';return;}` +
+      `htmlNoteEl.textContent='';` +
+      `var f=document.createElement('iframe');f.className='rv-frame';f.setAttribute('sandbox','allow-scripts');f.setAttribute('title',tab);` +
+      `f.setAttribute('srcdoc',m.html);frameHostEl.appendChild(f);}` +
       // The result of a decision: the buttons work again and the line says what happened.
       // The field is cleared only when the decision was recorded with every comment.
       `function rvResult(m){if(!shown||m.artifactId!==shown.artifactId)return;busy=false;` +
@@ -1953,12 +2012,18 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // to a rebuilt shell) keeps all three.
       `var same=!!shown&&shown.artifactId===m.artifactId;shown=m;current=m.artifactId||'';` +
       `if(!same){busy=false;fieldEl.value='';rvSetResult('','');}` +
+      // The documents of this artifact. Another artifact, or an HTML document that is no
+      // longer listed, goes back to the markdown; a re-post of the same artifact keeps the
+      // tab on show, and its frame.
+      `docs=Array.isArray(m.documents)?m.documents:[];` +
+      `if(!same||!tab||!docs.some(function(d){return d&&d.type==='html'&&d.relPath===tab;})){rvShowTab('');}else{rvTabs();}` +
       `renderList(items);renderBar();}` +
       `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
       `if(m.type==='docs-list'){renderList(m.artifacts);}` +
       `else if(m.type==='docs-content'){renderContent(m);}` +
-      `else if(m.type==='docs-decision-result'){rvResult(m);}});` +
-      `listEl.appendChild(rvOption('','Loading the documents awaiting review…'));renderBar();` +
+      `else if(m.type==='docs-decision-result'){rvResult(m);}` +
+      `else if(m.type==='docs-companion'){rvCompanion(m);}});` +
+      `listEl.appendChild(rvOption('','Loading the documents awaiting review…'));rvShowTab('');renderBar();` +
       // request the pending list as soon as the script is live.
       `vs.postMessage({v:1,payload:{type:'open-doc',artifactId:''}});`;
     return (
@@ -1972,9 +2037,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `<span id="insrc-rv-kind" class="rv-badge"></span>` +
       `<span id="insrc-rv-state" class="rv-dim"></span>` +
       `<span class="rv-sp"></span>` +
+      `<span id="insrc-rv-tabs" class="rv-tabs" role="tablist" aria-label="documents of this artifact"></span>` +
       `</div>` +
       // The one scrolling region: everything of the document, and nothing else.
-      `<div id="insrc-rv-scroll" class="rv-scroll"><div class="rv-doc">` +
+      `<div id="insrc-rv-scroll" class="rv-scroll"><div id="insrc-rv-md" class="rv-doc">` +
       // t6: the section chooser and the ac3 notice. Both are filled by DOM
       // construction with textContent — never markup — and the chooser host stays
       // EMPTY (no control at all) for a document with no headings.
@@ -1991,6 +2057,14 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `<div id="insrc-docs-experience" aria-label="experience mock"></div>` +
       `<div id="insrc-docs-body" class="insrc-docs-content" aria-label="artifact body"></div>` +
       `<div id="insrc-docs-oq" aria-label="open questions"></div>` +
+      `</div>` +
+      // An HTML document of the artifact: its path, a line when it cannot be shown, and
+      // the host its frame is put into. The frame itself is made by the script, so the
+      // markup holds no element that loads anything.
+      `<div id="insrc-rv-html" class="rv-html">` +
+      `<div id="insrc-rv-html-path" class="rv-dim"></div>` +
+      `<div id="insrc-rv-html-note" class="rv-html-note" aria-live="polite"></div>` +
+      `<div id="insrc-rv-frame" class="rv-frame-host"></div>` +
       `</div></div>` +
       // The comment panel: outside the scrolling region, so it is in view at every scroll
       // position. Icon-only buttons; each one's name is its title and aria-label.

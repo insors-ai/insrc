@@ -145,6 +145,7 @@ export type AnalyzeRpcResponse = AnalyzeRpcOk | AnalyzeRpcErr;
 export type AnalyzeRpcErrorCode =
 	| 'invalid-params'
 	| 'scope-not-indexed'
+	| 'repo-indexing'
 	| 'shaper-llm-unavailable'
 	| 'shaper-tool-loop-exhausted'
 	| 'shaper-schema-unrecoverable'

@@ -19,15 +19,20 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { addRepo } from '../../../db/repos.js';
+import { addRepo, updateRepoStatus } from '../../../db/repos.js';
 import { upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 
 import {
+	RepoIndexingError,
 	ScopeNotIndexedError,
 	ensureNonEmptyClosure,
+	ensureRepoQueryable,
+	scopeErrorMapping,
 } from '../invariants.js';
+import { bumpIndexRunDone, closeIndexRun, openIndexRun, setIndexRunSelected } from '../../../indexer/run-record.js';
+import { resolveTaskScope } from '../../runtimes/shared/task-scope.js';
 import type { ClassifiedIntent } from '../types.js';
 import { ScopeRefUnresolvedError } from '../invariants.js';
 import { resolveScope, type ResolvedScope } from '../scope.js';
@@ -321,5 +326,118 @@ test('symbol exception: in an indexed repo a symbol resolves to its stored entit
 	await assert.rejects(
 		() => resolveScope({ kind: 'symbol', value: `${repoPath}/index.ts#missing` }),
 		(err: unknown) => err instanceof ScopeRefUnresolvedError,
+	);
+});
+
+// ---------------------------------------------------------------------------
+// A repository under index (Epic c2ba6fa6, Story s5, Task t7)
+// ---------------------------------------------------------------------------
+
+async function registerWith(path: string, status: RegisteredRepo['status'], extra: Partial<RegisteredRepo> = {}, entities = false): Promise<void> {
+	await addRepo(null, { path, name: path, addedAt: '2026-01-01T00:00:00.000Z', status, ...extra });
+	if (extra.lastRun !== undefined || extra.errorMsg !== undefined) {
+		await updateRepoStatus(null, path, status, extra.lastIndexed, extra.errorMsg, extra.lastRun);
+	}
+	if (entities) await upsertEntities(null, [makeEntity(path, `${path}/index.ts`)]);
+}
+
+async function refusal(run: () => Promise<unknown>): Promise<RepoIndexingError> {
+	try { await run(); } catch (err) {
+		assert.ok(err instanceof RepoIndexingError, `expected RepoIndexingError, got ${String(err)}`);
+		return err;
+	}
+	assert.fail('expected a refusal');
+}
+
+test("ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message", async () => {
+	const began = Date.UTC(2026, 9, 13, 9, 30);
+	for (const withEntities of [true, false]) {
+		const repo = `/indexing/${withEntities ? 'with' : 'without'}`;
+		await registerWith(repo, 'indexing', {}, withEntities);
+		openIndexRun(repo, began);
+		setIndexRunSelected(repo, 120);
+		for (let i = 0; i < 37; i++) bumpIndexRunDone(repo);
+		try {
+			const err = await refusal(() => ensureNonEmptyClosure(scopeOf(codeIntent(`${repo}/src`, 'module'))));
+			assert.deepEqual(err.data, { repoPath: repo, status: 'indexing', run: { startedAt: began, filesSelected: 120, filesDone: 37 } });
+			assert.equal(err.message,
+				`The repository ${repo} is being indexed: the run began at 2026-10-13T09:30:00.000Z, 37 of 120 files done. Retry once the index is ready.`);
+		} finally {
+			closeIndexRun(repo);
+		}
+	}
+
+	// 'indexing' with no running record (a daemon restarted mid-run).
+	await registerWith('/indexing/norecord', 'indexing');
+	const unknown = await refusal(() => ensureNonEmptyClosure(scopeOf(codeIntent('/indexing/norecord'))));
+	assert.deepEqual(unknown.data, { repoPath: '/indexing/norecord', status: 'indexing', run: null });
+	assert.match(unknown.message, /is being indexed; how far the run has got is not known yet/);
+
+	// 'indexing' before the walk has counted its files.
+	await registerWith('/indexing/uncounted', 'indexing');
+	openIndexRun('/indexing/uncounted', began);
+	try {
+		const uncounted = await refusal(() => ensureNonEmptyClosure(scopeOf(codeIntent('/indexing/uncounted'))));
+		assert.match(uncounted.message, /the files to index are not yet counted/);
+	} finally {
+		closeIndexRun('/indexing/uncounted');
+	}
+
+	// 'error' with a failed lastRun.
+	const lastRun = { startedAt: began, endedAt: began + 60_000, filesSelected: 120, filesDone: 3, outcome: 'failed' as const, error: 'disk full' };
+	await registerWith('/failed/run', 'error', { errorMsg: 'disk full', lastRun }, true);
+	const failed = await refusal(() => ensureNonEmptyClosure(scopeOf(codeIntent('/failed/run'))));
+	assert.deepEqual(failed.data, { repoPath: '/failed/run', status: 'error', run: { startedAt: began, endedAt: began + 60_000, filesSelected: 120, filesDone: 3, error: 'disk full' } });
+	assert.equal(failed.message,
+		'The last index of the repository /failed/run ended in an error before it completed: it began at 2026-10-13T09:30:00.000Z, ended at 2026-10-13T09:31:00.000Z, 3 of 120 files done. Error: disk full Re-index the repository.');
+
+	// 'pending' and 'ready' with no entities: as today.
+	for (const status of ['pending', 'ready'] as const) {
+		const repo = `/empty/${status}`;
+		await registerWith(repo, status);
+		await assert.rejects(() => ensureNonEmptyClosure(scopeOf(codeIntent(repo))), (err: unknown) =>
+			err instanceof ScopeNotIndexedError
+			&& err.message === `Scope ${repo} produced an empty graph closure. Registered repo: ${repo}. Reason: registered repo has zero indexed entities (status: ${status}). Run \`insrc repo add <path>\` and let the indexer finish (status: 'ready') before re-running analyze.`);
+	}
+});
+
+test("ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg", async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'analyze-under-index-'));
+	try {
+		await registerWith(repo, 'indexing', {}, true);
+		// The docs, data and infra families resolve their scope through
+		// resolveTaskScope, which refuses for each of them. A generic intent
+		// names no family: its run is not checked (runAnalyze, Task t9).
+		for (const family of ['docs', 'data', 'infra'] as const) {
+			const err = await refusal(() => resolveTaskScope({ kind: 'repo', value: repo }, family, `${family}.task`));
+			assert.equal(err.data.status, 'indexing', family);
+			assert.equal(scopeErrorMapping(err)?.code, 'repo-indexing', family);
+		}
+		// A connection scope reads no repository's index: not checked.
+		await ensureRepoQueryable({ kind: 'connection', value: 'ledger-db', repoPath: repo, lookupPath: repo, connectionId: 'ledger-db' });
+
+		// An 'error' row written before lastRun existed.
+		await updateRepoStatus(null, repo, 'error', undefined, 'resolver exception: x is undefined');
+		const old = await refusal(() => ensureRepoQueryable(scopeOf(codeIntent(repo))));
+		assert.deepEqual(old.data, { repoPath: repo, status: 'error', run: { error: 'resolver exception: x is undefined' } });
+		assert.match(old.message, /ended in an error before it completed; how far it got is not known\. Error: resolver exception: x is undefined/);
+
+		// A ready repository is answered.
+		await updateRepoStatus(null, repo, 'ready', '2026-10-13T10:00:00.000Z');
+		await ensureRepoQueryable(scopeOf(codeIntent(repo)));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)', async () => {
+	await ensureRepoQueryable(scopeOf(codeIntent('/x/app')), { listRepos: async () => { throw new Error('registry down'); } });
+	await ensureRepoQueryable(scopeOf(codeIntent('/x/app')), { listRepos: async () => [] });
+	// Against the real (pristine) sandbox store too.
+	await ensureRepoQueryable(scopeOf(codeIntent('/x/app')));
+	// And the same stand-in registry that refuses when it is read.
+	await assert.rejects(
+		() => ensureRepoQueryable(scopeOf(codeIntent('/x/app')), { listRepos: async () => [{ path: '/x/app', name: 'x', addedAt: '', status: 'indexing' } as RegisteredRepo], indexRun: () => undefined }),
+		RepoIndexingError,
 	);
 });

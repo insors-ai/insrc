@@ -21,6 +21,7 @@ import {
 	ShaperToolLoopExhausted,
 } from '../../context/driver.js';
 import {
+	RepoIndexingError,
 	ScopeKindTargetMismatchError,
 	ScopeNotIndexedError,
 	ScopeRefUnresolvedError,
@@ -83,6 +84,19 @@ test('the cause codes are declared in both lists', () => {
 		'lookup-failed',
 		'run-abandoned',
 	]);
+});
+
+test("classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings", () => {
+	const indexing = new RepoIndexingError({ repoPath: '/r/app', status: 'indexing', run: { startedAt: 1_760_000_000_000, filesSelected: 10, filesDone: 4 } });
+	const failed = new RepoIndexingError({ repoPath: '/r/app', status: 'error', run: null });
+	for (const err of [indexing, failed]) {
+		for (const [side, f] of [['plan tree', planTreeClassify], ['daemon', daemonClassify]] as const) {
+			const out = f(err) as { code: string; message: string; data?: unknown };
+			assert.equal(out.code, 'repo-indexing', side);
+			assert.equal(out.message, err.message, side);
+			assert.deepEqual(out.data, err.data, `${side}: the repository, its status and the run figures`);
+		}
+	}
 });
 
 test('classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings', () => {

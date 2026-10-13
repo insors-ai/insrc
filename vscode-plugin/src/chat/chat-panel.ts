@@ -632,6 +632,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `body.vscode-light{color-scheme:light;}body.vscode-dark{color-scheme:dark;}body.vscode-high-contrast{color-scheme:dark;}body.vscode-high-contrast-light{color-scheme:light;}` +
       `*{box-sizing:border-box;}html,body{height:100%;width:100%;}` +
       `body{margin:0;padding:0;display:flex;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased;}` +
+      // The body carries the shared sheet's `.insrc-term` class, whose rule out-ranks a plain `body`
+      // rule and paints from that sheet's own tokens (theme variables with fixed fallbacks). This
+      // rule out-ranks it in turn, so the body's ground, text and font come from the layer above.
+      `body.insrc-term{background:var(--bg);color:var(--fg);font-family:var(--font);}` +
       `::selection{background:var(--sel);}a{color:var(--link);}` +
       // Full-bleed: the .box IS the whole panel (approved --panel surface), edge to edge — no floating
       // card border/radius/shadow (that framing was the mock's page card; in-panel it fills).
@@ -724,7 +728,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.histchip::before{content:"";position:absolute;left:6px;top:50%;width:12px;height:12px;margin-top:-6px;background-color:currentColor;pointer-events:none;` +
       `-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 8a5.5 5.5 0 1 0 1.6-3.9'/%3E%3Cpath d='M2.4 3.1v2.2h2.2'/%3E%3Cpath d='M8 5.2V8l2 1.2'/%3E%3C/svg%3E") center/12px 12px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 8a5.5 5.5 0 1 0 1.6-3.9'/%3E%3Cpath d='M2.4 3.1v2.2h2.2'/%3E%3Cpath d='M8 5.2V8l2 1.2'/%3E%3C/svg%3E") center/12px 12px no-repeat;}` +
       `.chrome #insrc-history{max-width:100%;}` +
-      `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;}` +
+      // The ground and text are set here too: the shared sheet's `.insrc-term-diff` rule would paint them.
+      `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;background:var(--panel);color:var(--fg);}` +
       `.insrc-diff-path{color:var(--dim);padding:4px 10px;background:var(--bg-inset);border-bottom:1px solid var(--border);}` +
       `.insrc-diff-add{background:var(--add-bg);outline:1px solid var(--add-border);outline-offset:-1px;color:var(--fg-strong);padding:0 10px;}` +
       `.insrc-diff-del{background:var(--del-bg);outline:1px solid var(--del-border);outline-offset:-1px;color:var(--fg);padding:0 10px;}` +

@@ -218,6 +218,19 @@ test('chat theme: each component uses the name the mapping gives it (bars, trans
   // panel and transcript: the editor ground, flat
   has('body', 'background:var(--bg)', 'color:var(--fg)', 'font-family:var(--font)');
   has('#insrc-term', 'background:var(--panel)');
+  // The shared sheet paints `.insrc-term` (the body's class) and `.insrc-term-diff` from its own
+  // tokens. The chat's rules must win over both: a more specific body rule, and a diff rule that
+  // comes later in the document with the same specificity.
+  has('body.insrc-term', 'background:var(--bg)', 'color:var(--fg)', 'font-family:var(--font)');
+  has('.insrc-term-diff', 'background:var(--panel)', 'color:var(--fg)', 'border:1px solid var(--border-lit)');
+  const sheet = styleBlocks(shellHtml())[0]!;
+  const html = shellHtml();
+  assert.ok(html.indexOf(sheet) < html.indexOf(style), "the chat's style comes after the shared sheet");
+  // The selects carry a surface class the shared sheet also paints; `.segsel`, later in the
+  // document with the same specificity, sets all three properties that rule sets.
+  assert.match(html, /<select id="insrc-provider" class="segsel insrc-term-[\w-]+"/);
+  assert.match(sheet, /\.insrc-term-[\w-]+ \{ display: block; background: var\(--it-bg\); color: var\(--it-fg\); border: 1px solid var\(--it-border\); \}/);
+  has('.segsel', 'background:transparent', 'border:none', 'color:var(--fg)');
   // bars: the widget ground with the widget border
   has('.chrome', 'background:var(--bg-inset)', 'border-bottom:1px solid var(--border-lit)');
   has('.inputbar', 'background:var(--bg-inset)', 'border-top:1px solid var(--border-lit)');
@@ -330,6 +343,7 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '.insrc-permoutcome__badge.insrc-approval__btn--approve',
     '.insrc-permoutcome__badge.insrc-approval__btn--deny',
     '.insrc-select__confirm--disabled:hover',
+    'body.insrc-term',
     'body.vscode-dark',
     'body.vscode-high-contrast',
     'body.vscode-high-contrast-light',

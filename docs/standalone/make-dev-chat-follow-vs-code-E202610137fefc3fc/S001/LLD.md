@@ -227,3 +227,26 @@ The shared terminal token set, which maps nine roles to theme variables with lit
 - **[[c2]]** `code` `vscode-plugin/src/chat/render-registry.ts:189` — "export const RENDER_REGISTRY_STYLE ="
 - **[[c3]]** `code` `vscode-plugin/src/chat/markdown-style.ts:121` — "export const DOCS_REVIEW_MARKDOWN_TOKENS: MarkdownStyleTokens = {"
 - **[[c4]]** `code` `vscode-plugin/src/chat/design-tokens.ts:174` — "export function renderTerminalStyle(theme: TerminalTheme = terminalTheme): string {"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 2 could not be verified · 11 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-13T07:05:32.151Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | MED | The shell's `:root` layer is the one place the chat's colours are chosen: every colour the chat shows comes from a name in that layer, with no literal fallback. | The chat document also embeds the shared sheet, and two of its rules out-rank or supplement the shell. The body is `<body class="insrc-term">` (chat-panel.ts:980), and design-tokens.ts:183-203 gives `.insrc-term { ... font-family: var(--it-font); font-size: var(--it-size); line-height: var(--it-line); background: var(--it-bg); color: var(--it-fg); }`. A class selector beats the shell's element rule `body{...background:var(--bg);color:var(--fg);font-family:var(--font);...}` (line 634), so the body's ground, text colour and font are the sheet's `--it-*` values, e.g. `--it-bg: var(--vscode-editor-background, #0b0e14)`, each with a fixed literal fallback. The diff container carries `.insrc-term-diff`, which design-tokens.ts:207 paints with `background: var(--it-bg); color: var(--it-fg)`; the shell's own `.insrc-term-diff` rule (line 727) sets only border, radius, margin and overflow. The code comment at chat-panel.ts:974-979 describes this same class-over-`body` mechanism. In VS Code the result is the same theme variables, so nothing looks wrong, but the design's inventory misses it, and the test `has('body', 'background:var(--bg)', ...)` checks that the declaration is present, not that it wins. [files: vscode-plugin/src/chat/design-tokens.ts, vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/__tests__/chat-theme.test.ts] | Either state the exception in the design (the body and the diff container are painted by the shared sheet's `.insrc-term` and `.insrc-term-diff` rules, which resolve to the same theme variables), or have the shell out-rank them (for example a `body.insrc-term` rule and a ground and colour on the shell's `.insrc-term-diff` rule) and add a test that the winning declaration is a name. |
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| coverage-of-intent | The two departures from the approved SPEC (one color-mix for the assistant ground, and the assistant bubble taking chat.requestBorder instead of editorWidget.border) rest on a user decision of 2026-10-13 that overrides the SPEC. | The SPEC still lists as a non-goal "Fixed or fallback hex/rgb colours, and color-mix derived tints" and maps "assistant message editor.background with editorWidget.border"; its `decisions` array is empty. The override is asserted only by the design itself, by a code comment at chat-panel.ts:606-608 ("The one derived colour, asked for by the user on 2026-10-13") and by commit subjects (f2289cf0, 5744d9e3, 157634e5 "revise the dev chat theme design with the user's decisions made during the build"). No approved artifact I could read records the user's decision itself. [files: .insrc/artifacts/SPEC-3d2161bcef24cecf.json, vscode-plugin/src/chat/chat-panel.ts] | Confirm with the user that both departures are theirs, and record them where the SPEC is read (amend the SPEC's non-goal and assistant-message mapping, or add the decisions to it) so the design no longer contradicts its upstream. |
+| error-paths | The facts about VS Code and the browser the error handling rests on are true: every `--vscode-*` name in the mapping exists, a high-contrast light body also carries the plain `vscode-high-contrast` class, and a CSS mask data URI is governed by `img-src`. | These are properties of VS Code and the browser, not of this repository; nothing in the repo (no VS Code source, no theme dump) lets me confirm them. The tests only compare the names with the design's own list, so a name spelt as designed that VS Code does not define would pass. The design says the same: "can only be seen in the panel". [files: vscode-plugin/src/chat/chat-panel.ts] | Keep the smoke test in VS Code as the proof, including one high-contrast light theme to confirm the colour-scheme rule order. |

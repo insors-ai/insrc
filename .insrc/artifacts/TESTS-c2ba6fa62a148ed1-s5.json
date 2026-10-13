@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T14:10:42.058Z",
+    "updatedAt": "2026-10-13T14:40:25.910Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1940,6 +1940,76 @@
             "titles": [
               {
                 "title": "search request contract: each guarded search request accepts its existing params and answers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "c411ab88",
+        "ranAt": "2026-10-13T14:40:25.910Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "search.callers across repositories leaves out the entities of a repository under index",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-filter.test.ts",
+                "title": "search.callers across repositories leaves out the entities of a repository under index",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "search.query while one repository is being indexed returns rows from the other repositories only",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-filter.test.ts",
+                "title": "search.query while one repository is being indexed returns rows from the other repositories only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-filter.test.ts",
+                "title": "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/search-filter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 123189,
+            "titles": [
+              {
+                "title": "search.callers across repositories leaves out the entities of a repository under index",
+                "result": "pass"
+              },
+              {
+                "title": "search.query while one repository is being indexed returns rows from the other repositories only",
+                "result": "pass"
+              },
+              {
+                "title": "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out",
                 "result": "pass"
               }
             ],

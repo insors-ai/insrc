@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T14:10:42.058Z
+**Standalone:** no  ·  **Created:** 2026-10-13T11:53:21.419Z  ·  **Updated:** 2026-10-13T14:40:25.910Z
 
-**Commit:** e9eaa614
+**Commit:** c411ab88
 
 ## Summary
 
-The daemon's eleven graph-reading search requests that name a repository now refuse with 'repo-indexing: ...' (with how far the run has got) when that repository, or any root's, is under index; requests about ready repositories are answered as before, and an unreadable or empty registry refuses nothing.
+Results that follow the graph or a closure across repositories now leave out a repository under index (its entities, and the repository itself), and search.query searches only the other repositories, answering rather than refusing.
 
 ## Tasks validated
 
@@ -24,9 +24,10 @@ The daemon's eleven graph-reading search requests that name a repository now ref
 - ✓ `t10`
 - ✓ `t11`
 - ✓ `t12`
+- ✓ `t13`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T14:10:42.058Z)
+- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-13T14:40:25.910Z)

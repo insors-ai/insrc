@@ -4,7 +4,7 @@
     "epicHash": "7fefc3fc5c51793e",
     "storyId": "S001",
     "createdAt": "2026-10-13T06:59:58.048Z",
-    "updatedAt": "2026-10-13T06:59:58.048Z",
+    "updatedAt": "2026-10-13T07:11:30.909Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T06:26:49.137Z",
     "epicSlug": "make-dev-chat-follow-vs-code"
@@ -13,18 +13,18 @@
     "tasks": [
       {
         "taskId": "S001",
-        "commit": "f2289cf0",
-        "ranAt": "2026-10-13T06:59:58.048Z",
+        "commit": "2967b2b1",
+        "ranAt": "2026-10-13T07:11:30.909Z",
         "testsPassed": true,
         "tests": [
           {
-            "name": "chat theme: the chat's own style has no hex, rgb, rgba, hsl or color-mix value, no radial gradient, no var() with a literal fallback, and no forced colour scheme; a linear gradient is built only from names and transparent",
+            "name": "chat theme: the chat's own style has no hex, rgb, rgba or hsl value, no radial gradient and no var() with a literal fallback; its only color-mix is the assistant message's ground, declared once; the colour scheme follows the theme kind; a linear gradient is built only from names and transparent",
             "level": "unit",
             "source": "mapping",
             "cases": [
               {
                 "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
-                "title": "chat theme: the chat's own style has no hex, rgb, rgba, hsl or color-mix value, no radial gradient, no var() with a literal fallback, and no forced colour scheme; a linear gradient is built only from names and transparent",
+                "title": "chat theme: the chat's own style has no hex, rgb, rgba or hsl value, no radial gradient and no var() with a literal fallback; its only color-mix is the assistant message's ground, declared once; the colour scheme follows the theme kind; a linear gradient is built only from names and transparent",
                 "result": "pass"
               }
             ],
@@ -44,13 +44,13 @@
             "files": []
           },
           {
-            "name": "chat theme: the named layer refers only to the theme variables of the approved mapping, and every optional one falls back to another theme variable",
+            "name": "chat theme: every name but the one derived ground holds a theme variable of this design's mapping, and every optional one falls back to another theme variable",
             "level": "unit",
             "source": "mapping",
             "cases": [
               {
                 "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
-                "title": "chat theme: the named layer refers only to the theme variables of the approved mapping, and every optional one falls back to another theme variable",
+                "title": "chat theme: every name but the one derived ground holds a theme variable of this design's mapping, and every optional one falls back to another theme variable",
                 "result": "pass"
               }
             ],
@@ -93,40 +93,40 @@
             "files": []
           },
           {
-            "name": "chat theme: selectors, class names and element ids of the shell and the row renderer are the same as before the change, and the shell is still one nonce'd inline script under the same policy",
+            "name": "chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy",
             "level": "integration",
             "source": "mapping",
             "cases": [
               {
                 "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
-                "title": "chat theme: selectors, class names and element ids of the shell and the row renderer are the same as before the change, and the shell is still one nonce'd inline script under the same policy",
+                "title": "chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy",
                 "result": "pass"
               }
             ],
             "files": []
           },
           {
-            "name": "chat theme: the docs-review panel's rendered document, the shared token sheet and the docs-review markdown rules are byte-identical to before the change",
+            "name": "chat theme: the shared token sheet and the docs-review markdown rules are byte-identical to before the change, and the docs-review panel uses none of the chat's three style sources",
             "level": "integration",
             "source": "mapping",
             "cases": [
               {
                 "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
-                "title": "chat theme: the docs-review panel's rendered document, the shared token sheet and the docs-review markdown rules are byte-identical to before the change",
+                "title": "chat theme: the shared token sheet and the docs-review markdown rules are byte-identical to before the change, and the docs-review panel uses none of the chat's three style sources",
                 "result": "pass"
               }
             ],
             "files": []
           },
           {
-            "name": "in VS Code: with a dark, a light and a high-contrast theme the chat follows the theme with no leftover dark panel, user and assistant messages are told apart, markers are distinct, the approval and selection cards, diff, tool rows, attachment chips, selects and markdown read well, and switching theme repaints the open chat",
+            "name": "in VS Code: in the user's own theme and the other themes the user tries, the chat follows the theme with no leftover dark panel, both message bubbles have a visible edge, and the rows, cards and controls read well",
             "level": "smoke",
             "source": "mapping",
             "cases": [],
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "/tmp/insrc-validate-output/chat-theme-smoke.md: after install of 0.5.14 from f2289cf0 and a reload the user wrote 'checked with different themes, working fine'. The user did not say which themes, so a high-contrast theme is not confirmed by eye; its behaviour rests on the unit tests. Whole plugin suite on f2289cf0: /tmp/insrc-validate-output/chat-theme-plugin-suite.tap (1172 tests, 1164 pass, 6 skipped, 2 fail: the manifest-catalog tests that failed before)."
+              "evidence": "/tmp/insrc-validate-output/chat-theme-smoke.md: in the user's own theme (Atom Material) the user first reported the assistant message had no outline; after the darker ground (5744d9e3) and the shared message border (f2289cf0) and a reload the user wrote 'checked with different themes, working fine'. The user did not name the other themes; a high-contrast theme is not confirmed by eye, which the revised design does not require. Whole plugin suite on a68b0832: /tmp/insrc-validate-output/chat-theme-plugin-suite.tap (1172 tests, 1164 pass, 6 skipped, 2 fail: the manifest-catalog tests that failed before)."
             }
           }
         ],
@@ -135,7 +135,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2748,
+            "durationMs": 2697,
             "titles": [
               {
                 "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",
@@ -736,10 +736,10 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 403,
+            "durationMs": 402,
             "titles": [
               {
-                "title": "chat theme: the chat's own style has no hex, rgb, rgba, hsl or color-mix value, no radial gradient, no var() with a literal fallback, and no forced colour scheme; a linear gradient is built only from names and transparent",
+                "title": "chat theme: the chat's own style has no hex, rgb, rgba or hsl value, no radial gradient and no var() with a literal fallback; its only color-mix is the assistant message's ground, declared once; the colour scheme follows the theme kind; a linear gradient is built only from names and transparent",
                 "result": "pass"
               },
               {
@@ -747,7 +747,7 @@
                 "result": "pass"
               },
               {
-                "title": "chat theme: the named layer refers only to the theme variables of the approved mapping, and every optional one falls back to another theme variable",
+                "title": "chat theme: every name but the one derived ground holds a theme variable of this design's mapping, and every optional one falls back to another theme variable",
                 "result": "pass"
               },
               {
@@ -759,11 +759,11 @@
                 "result": "pass"
               },
               {
-                "title": "chat theme: selectors, class names and element ids of the shell and the row renderer are the same as before the change, and the shell is still one nonce'd inline script under the same policy",
+                "title": "chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy",
                 "result": "pass"
               },
               {
-                "title": "chat theme: the docs-review panel's rendered document, the shared token sheet and the docs-review markdown rules are byte-identical to before the change",
+                "title": "chat theme: the shared token sheet and the docs-review markdown rules are byte-identical to before the change, and the docs-review panel uses none of the chat's three style sources",
                 "result": "pass"
               }
             ],

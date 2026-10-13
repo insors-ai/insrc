@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791875615293-ry7z6v",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T07:13:35.294Z",
+    "model": "claude:opus",
+    "elapsedMs": 30504,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5ff61e5fdca3875d",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-13T06:45:42.001Z",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "5ff61e5fdca3875d",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+        "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/render-registry.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1",
+            "message": "renderShell has an empty testsReaching set, so the graph records no test reaching the function that assembles the chat shell (style blocks, surface class, webview sources). It is probably exercised indirectly: its caller createChatPanelHost is reached by the chat-theme test helper shellHtml, and renderShell is a closure inside that host. The graph does not record that inner edge, so this is reported as an unconfirmed gap rather than a proven breach. Whether a test actually drives the shell render (via wireChannel) cannot be confirmed from the grounding.",
+            "expectationRef": "renderShell",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts:1",
+            "message": "Tests are present but unverified. chat-theme.test.ts reaches createChatPanelHost through shellHtml, and render-registry.test.ts reaches renderRegistryWebviewSource through makeRegistry, but no build record is available, so neither suite's pass-state can be confirmed. Run `npx tsx --test` on both files before treating the theme behaviour as covered.",
+            "expectationRef": "createChatPanelHost, renderRegistryWebviewSource",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/render-registry.ts:1",
+            "message": "toViewModel has an empty testsReaching set. The grounding lists every symbol in the touched files and does not mark which ones this Story changed, so it is unclear whether toViewModel is changed behaviour or an untouched neighbour. If this Story modified it, no test reaches it; if not, this is out of scope. The other chat-panel.ts closures with empty testsReaching (handleMessage, runTurn, the approval and attachment helpers) are not reported for the same reason: they look like unchanged neighbours of a theme change, and the grounding cannot show otherwise.",
+            "expectationRef": "toViewModel",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 1
+    }
+  }
+}

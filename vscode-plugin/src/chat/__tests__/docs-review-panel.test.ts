@@ -13,6 +13,7 @@ import type { TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE, companionVisualKind } from '../docs-review-panel.js';
 import type { StructuredRenderer, CompanionSlotState, CompanionRefKind } from '../docs-review-panel.js';
+import { DOCS_COMMENTS_SOURCE } from '../docs-review-comments.js';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -1211,6 +1212,10 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *   E202610138d4b90c9:S001/t10 (+3297 chars, +3303 bytes): one tab per document of the
  *       artifact in the header, and the view of an HTML document (its path, a
  *       line when it cannot be shown, and the host of its sandboxed frame).
+ *   E202610138d4b90c9:S001/t11 (+17462 chars, +17470 bytes): DOCS_COMMENTS_SOURCE, the sixth source
+ *       string (the text model of the rendered document, anchors and the inline
+ *       drafts), its styles, the comment button a selection offers, and the line
+ *       that counts the drafts.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -1224,9 +1229,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  95602,
-  bytes:  95653,
-  sha256: 'da995d5fa3b97a8441de98cf4f2985ddb2cf76d7768b88c7d4c91522dfe9b9e9',
+  chars:  113064,
+  bytes:  113123,
+  sha256: '0c87cda39d337eb42037f91fc0cc0f18a014d00db69eb1769ec1b4659c522226',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1808,6 +1813,14 @@ interface WebviewRun {
   list: BodyStub;
   /** The comment panel and the header's text. */
   bar: { approve: BodyStub; reject: BodyStub; feedback: BodyStub; field: BodyStub; result: BodyStub; state: BodyStub; kind: BodyStub; who: BodyStub };
+  /** The comment button a selection offers, its own button, and the line that counts the drafts. */
+  pop: BodyStub;
+  popBtn: BodyStub;
+  drafts: BodyStub;
+  /** Make a selection (or clear it with null) and let the script hear of it, as a mouse-up does. */
+  select(range: { startContainer: BodyStub; startOffset: number; endContainer: BodyStub; endOffset: number } | null): void;
+  /** The webview's saved state. */
+  saved: { state: unknown };
   /** The tabs in the header, and the two views of the scrolling region. */
   tabs: BodyStub;
   md: BodyStub;
@@ -1819,7 +1832,7 @@ interface WebviewRun {
   controls(): { approve: ControlMode; reject: ControlMode; feedback: ControlMode };
 }
 /** Evaluate the REAL bootstrap from the emitted shell against DOM stubs. */
-function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?: boolean | undefined; breakDiagram?: boolean | undefined; breakExperience?: boolean | undefined; countCreates?: boolean | undefined } = {}): WebviewRun {
+function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?: boolean | undefined; breakDiagram?: boolean | undefined; breakExperience?: boolean | undefined; countCreates?: boolean | undefined; saved?: { state: unknown } | undefined; textNodes?: boolean | undefined } = {}): WebviewRun {
   const fc = fakeChannel();
   const { client } = fakeClient();
   createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'WV' }).open();
@@ -1849,15 +1862,38 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
     // The header and the comment panel of the rebuilt shell (E202610138d4b90c9:S001).
     'insrc-rv-kind', 'insrc-rv-state', 'insrc-rv-who', 'insrc-rv-field', 'insrc-rv-result',
     'insrc-rv-approve', 'insrc-rv-reject', 'insrc-rv-feedback',
-    'insrc-rv-tabs', 'insrc-rv-md', 'insrc-rv-html', 'insrc-rv-html-path', 'insrc-rv-html-note', 'insrc-rv-frame'];
+    'insrc-rv-tabs', 'insrc-rv-md', 'insrc-rv-html', 'insrc-rv-html-path', 'insrc-rv-html-note', 'insrc-rv-frame',
+    'insrc-rv-pop', 'insrc-rv-pop-btn', 'insrc-rv-drafts'];
   const byId: Record<string, BodyStub> = {};
   for (const id of ids) byId[id] = bodyStub('div', id);
   byId['insrc-rv-field']!.value = '';
+  // The stub's innerHTML makes elements that hold their text but no text NODE, where a
+  // real page has one. The inline comments work on text nodes, so a test of them asks
+  // for each rendered block to be given its text as a node, as the real DOM has it.
+  if (opts.textNodes) {
+    const body = byId['insrc-docs-body']!;
+    const own = Object.getOwnPropertyDescriptor(body, 'innerHTML')!;
+    Object.defineProperty(body, 'innerHTML', {
+      configurable: true,
+      get: () => own.get!.call(body) as string,
+      set: (v: string) => {
+        own.set!.call(body, v);
+        for (const c of body.children) if (c.nodeType === 1 && c.children.length === 0 && c.textContent !== '') c.appendChild(textNode(c.textContent));
+      },
+    });
+  }
 
   const posted: unknown[] = [];
   const created: string[] = [];
   let onMessage: ((e: { data: unknown }) => void) | undefined;
+  // What the script reads as the page's selection, and the listeners it puts on the document.
+  let selection: unknown = null;
+  const docListeners: Record<string, Array<(e?: unknown) => void>> = {};
+  // The webview's saved state: a test passes one store to two runs to rebuild the shell.
+  const saved = opts.saved ?? { state: undefined };
   const doc = {
+    addEventListener: (type: string, l: (e?: unknown) => void) => { (docListeners[type] ??= []).push(l); },
+    createTextNode: (data: string) => textNode(data),
     getElementById: (id: string) => byId[id] ?? null,
     // The stub records listeners, so a test can fire a created control (a tab).
     createElement: (t: string) => {
@@ -1873,7 +1909,10 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
       return n;
     },
   };
-  const win = { addEventListener: (_t: string, l: (e: { data: unknown }) => void) => { onMessage = l; } };
+  const win = {
+    addEventListener: (_t: string, l: (e: { data: unknown }) => void) => { onMessage = l; },
+    getSelection: () => selection,
+  };
   // `undefined` here is the POINT of the degraded case, so it is selected by an
   // explicit flag rather than by passing undefined — which would fall through to
   // the default and silently test the happy path instead.
@@ -1891,7 +1930,11 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
   };
   // eslint-disable-next-line no-new-func
   new Function('document', 'window', 'marked', 'acquireVsCodeApi', script)(
-    doc, win, marked, () => ({ postMessage: (m: unknown) => { posted.push(m); } }),
+    doc, win, marked, () => ({
+      postMessage: (m: unknown) => { posted.push(m); },
+      getState: () => saved.state,
+      setState: (v: unknown) => { saved.state = JSON.parse(JSON.stringify(v)); },
+    }),
   );
 
   return {
@@ -1907,6 +1950,12 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
       field: byId['insrc-rv-field']!, result: byId['insrc-rv-result']!,
       state: byId['insrc-rv-state']!, kind: byId['insrc-rv-kind']!, who: byId['insrc-rv-who']!,
     },
+    pop: byId['insrc-rv-pop']!, popBtn: byId['insrc-rv-pop-btn']!, drafts: byId['insrc-rv-drafts']!,
+    select: (range) => {
+      selection = range === null ? null : { isCollapsed: false, rangeCount: 1, getRangeAt: () => range, removeAllRanges: () => { selection = null; } };
+      for (const l of docListeners['mouseup'] ?? []) l({ target: byId['insrc-docs-body'] });
+    },
+    saved,
     tabs: byId['insrc-rv-tabs']!, md: byId['insrc-rv-md']!, html: byId['insrc-rv-html']!,
     htmlPath: byId['insrc-rv-html-path']!, htmlNote: byId['insrc-rv-html-note']!, frameHost: byId['insrc-rv-frame']!,
     controls: () => ({
@@ -3874,7 +3923,7 @@ test('t1/t2: the shell matches the pin, and NOTHING reads either new field yet',
   assert.match(html, /function uxRenderCard\(/, 'the renderer is inlined');
 });
 
-test('the shell inlines each of the five source strings verbatim and exactly once, with the ux CSS fragment', () => {
+test('the shell inlines each of its source strings verbatim and exactly once, with the ux CSS fragment', () => {
   const html = renderShellFor(SHELL_BASELINE.nonce);
 
   // Until E202610138d4b90c9:S001 rebuilt the shell this test summed a base pin and
@@ -3884,11 +3933,12 @@ test('the shell inlines each of the five source strings verbatim and exactly onc
   for (const [name, source] of [
     ['DOCS_BODY_RENDERER_SOURCE', DOCS_BODY_RENDERER_SOURCE], ['DOCS_SECTIONS_SOURCE', DOCS_SECTIONS_SOURCE],
     ['DOCS_FR_SOURCE', DOCS_FR_SOURCE], ['DOCS_DIAGRAM_SOURCE', DOCS_DIAGRAM_SOURCE], ['DOCS_UX_SOURCE', DOCS_UX_SOURCE],
+    ['DOCS_COMMENTS_SOURCE', DOCS_COMMENTS_SOURCE],
   ] as const) {
     assert.equal(html.split(source).length - 1, 1, `${name} is inlined verbatim, once`);
   }
   // In the order the bootstrap relies on: each later string may call an earlier one.
-  const at = [DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE].map((x) => html.indexOf(x));
+  const at = [DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE, DOCS_COMMENTS_SOURCE].map((x) => html.indexOf(x));
   assert.deepEqual([...at].sort((a, b) => a - b), at, 'in their declared order');
   // And the ux CSS fragment is still in the shell, between its first and last rule.
   const cssStart = html.indexOf('.ux-card{');
@@ -6053,4 +6103,329 @@ test('docs review shell: there is one tab per document, the markdown first, and 
     assert.equal(one.tabs.style['display'], 'none');
     assert.equal(shownView(one), 'markdown');
   }
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610138d4b90c9:S001 t11 — inline comments as drafts.
+// ---------------------------------------------------------------------------
+
+const INLINE_LONG = 'Before the passage there is rather a lot of text, more than forty characters of it; the passage itself; and after it there is again a good deal more text than forty characters.';
+const INLINE_MD = [
+  '# Low-level design', '', 'Intro.', '',
+  '## Summary', '', 'The header is cut to 8 lines until expanded.', '', 'Second paragraph here.', '', INLINE_LONG, '',
+  '## Feedback', '', 'A saved comment is listed here.', '',
+  '## After', '', 'Text after the feedback section.', '',
+].join('\n');
+const INLINE_DOC = {
+  artifactId: 'LLD-abc-s7', markdown: INLINE_MD, openQuestions: [], blocked: false,
+  sections: deriveSectionIndex(INLINE_MD), contentVersion: '0123456789abcdef', state: 'pending',
+  reviewer: { name: 'Rev Iewer', source: 'git' },
+};
+/** The rendered block whose text is exactly this. */
+const blockOf = (w: WebviewRun, text: string): BodyStub => {
+  const b = w.body.children.find((c) => c.nodeType === 1 && inlineText(c) === text);
+  assert.ok(b, `a block with the text: ${text}`);
+  return b!;
+};
+/** A block's text as the page shows it: its text nodes and those inside its marks, in order. */
+const inlineText = (n: BodyStub): string =>
+  n.nodeType === 3 ? n.data : n.children.length === 0 ? n.textContent : n.children.map(inlineText).join('');
+const marksIn = (n: BodyStub): BodyStub[] => allOf(n).filter((x) => x.tagName === 'mark');
+const cardsIn = (w: WebviewRun): BodyStub[] => w.body.children.filter((c) => c.className === 'rv-thread');
+/** Select a piece of a block's text, which is one text node while the block has no mark. */
+function selectIn(w: WebviewRun, block: BodyStub, piece: string): void {
+  const node = block.children.find((c) => c.nodeType === 3 && c.data.includes(piece));
+  assert.ok(node, `a text node holding: ${piece}`);
+  const at = node!.data.indexOf(piece);
+  w.select({ startContainer: node!, startOffset: at, endContainer: node!, endOffset: at + piece.length });
+}
+/** Select text, press the comment button, write a comment in the thread and add it. */
+function draftOn(w: WebviewRun, blockText: string, piece: string, comment: string): BodyStub {
+  const block = blockOf(w, blockText);
+  selectIn(w, block, piece);
+  assert.equal(w.pop.style['display'], 'block', `the comment button is offered for: ${piece}`);
+  fire(w.popBtn, 'click');
+  const card = cardsIn(w).at(-1)!;
+  addInCard(card, comment);
+  return block;
+}
+/** Write a comment in an open thread card and press its add button. */
+function addInCard(card: BodyStub, comment: string): void {
+  const field = allOf(card).find((n) => n.tagName === 'textarea')!;
+  field.value = comment;
+  fire(allOf(card).find((n) => n.attrs['aria-label'] === 'Add this comment as a draft')!, 'click');
+}
+const SUMMARY_P = 'The header is cut to 8 lines until expanded.';
+const NO_DRAFTS = 'Select text in the document to comment on it.';
+
+test('docs review shell: selecting text in one block and adding a comment makes a draft with a quote, section, prefix and suffix; a selection across blocks, in the Feedback section or cutting an existing mark offers no button', () => {
+  const w = runWebview({ textNodes: true });
+  w.deliver(INLINE_DOC);
+  assert.equal(w.pop.style['display'], 'none', 'no button before there is a selection');
+  assert.equal(w.drafts.textContent, NO_DRAFTS);
+
+  // A selection inside one block offers the button; pressing it marks the passage and
+  // opens its thread card under the block, with a field.
+  const p = blockOf(w, SUMMARY_P);
+  selectIn(w, p, 'cut to 8 lines');
+  assert.equal(w.pop.style['display'], 'block');
+  fire(w.popBtn, 'click');
+  assert.equal(w.pop.style['display'], 'none', 'the button goes once it is pressed');
+  assert.deepEqual(p.children.map((c) => (c.nodeType === 3 ? `text:${c.data}` : `${c.tagName}.${c.className}:${inlineText(c)}`)),
+    ['text:The header is ', 'mark.rv-anno rv-draft:cut to 8 lines', 'text: until expanded.'], 'the passage is marked, and the text around it is unchanged');
+  assert.equal(inlineText(p), SUMMARY_P);
+  const card = cardsIn(w)[0]!;
+  assert.equal(p.nextSibling, card, 'the thread card is under the block');
+  assert.equal(card.children[0]!.textContent, '\u201ccut to 8 lines\u201d', 'it quotes the passage');
+  assert.ok(allOf(card).some((n) => n.tagName === 'textarea'), 'and has a field');
+  assert.deepEqual(allOf(card).filter((n) => n.tagName === 'button').map((b) => b.attrs['aria-label']), ['Add this comment as a draft', 'Close'], 'with round add and close buttons, named by their labels');
+  assert.equal(w.drafts.textContent, NO_DRAFTS, 'a marked passage with no comment is not yet a draft');
+
+  // An added comment is a draft: tagged, under the reviewer's name, removable.
+  addInCard(card, 'Say what the <b>header</b> shows.');
+  const open = cardsIn(w)[0]!;
+  const row = open.children[1]!;
+  assert.deepEqual(row.children.map((c) => [c.tagName, c.className, c.textContent]), [
+    ['button', 'rv-x', '\u2715'],
+    ['span', 'rv-who', 'Rev Iewer'],
+    ['span', 'rv-tag rv-tag-draft', 'draft, not sent'],
+    ['div', 'rv-text', 'Say what the <b>header</b> shows.'],
+  ]);
+  assert.equal(row.children[0]!.attrs['aria-label'], 'Remove this draft');
+  assert.equal(w.drafts.textContent, '1 inline comment drafted. Sent with the button you press.');
+  // Comment and quote are set as text: nothing in the card, the mark or the body was assigned as markup.
+  for (const n of [...allOf(open), ...marksIn(p)]) assert.ok(!n.writes.some((x) => x.prop === 'innerHTML' || x.prop === 'outerHTML'), 'no markup is assigned');
+  assert.ok(!w.body.writes.some((x) => x.prop === 'innerHTML' && String(x.value).includes('<b>header</b>')));
+
+  // The draft is sent with its anchor: the quote, the section above it, and the text on each side.
+  fire(w.bar.feedback, 'click');
+  assert.deepEqual(postedOf(w, 'docs-decision'), [{
+    type: 'docs-decision', artifactId: 'LLD-abc-s7', decision: 'feedback',
+    comments: [{
+      comment: 'Say what the <b>header</b> shows.',
+      anchor: { quote: 'cut to 8 lines', sectionSlug: 'summary', prefix: 'The header is ', suffix: ' until expanded.' },
+      version: '0123456789abcdef',
+    }],
+  }]);
+  w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: false, message: 'Nothing was recorded: daemon down' });
+
+  // The text on each side is at most 40 characters, and a selection's outer spaces are not part of the quote.
+  const long = blockOf(w, INLINE_LONG);
+  selectIn(w, long, ' the passage itself; ');
+  fire(w.popBtn, 'click');
+  addInCard(cardsIn(w).at(-1)!, 'Which passage?');
+  fire(w.bar.feedback, 'click');
+  const second = (postedOf(w, 'docs-decision').at(-1)!['comments'] as Array<{ anchor: Record<string, string> }>)[1]!.anchor;
+  const at = INLINE_LONG.indexOf('the passage itself;');
+  assert.deepEqual(second, {
+    quote: 'the passage itself;', sectionSlug: 'summary',
+    prefix: INLINE_LONG.slice(at - 40, at), suffix: INLINE_LONG.slice(at + 'the passage itself;'.length, at + 'the passage itself;'.length + 40),
+  });
+  assert.equal(second['prefix']!.length, 40);
+  assert.equal(second['suffix']!.length, 40);
+  w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: false, message: 'Nothing was recorded.' });
+
+  // NO BUTTON: across two blocks.
+  const p2 = blockOf(w, 'Second paragraph here.');
+  w.select({ startContainer: p.children[0]!, startOffset: 4, endContainer: p2.children[0]!, endOffset: 6 });
+  assert.equal(w.pop.style['display'], 'none', 'a selection across blocks');
+  // In the document's own Feedback section.
+  selectIn(w, blockOf(w, 'A saved comment is listed here.'), 'saved comment');
+  assert.equal(w.pop.style['display'], 'none', 'a selection in the Feedback section');
+  // The section after it is ordinary text again.
+  selectIn(w, blockOf(w, 'Text after the feedback section.'), 'after the feedback');
+  assert.equal(w.pop.style['display'], 'block', 'the section after Feedback can be commented on');
+  w.select(null);
+  assert.equal(w.pop.style['display'], 'none', 'no selection');
+  // Cutting an existing mark: starting inside it, ending inside it, or spanning it.
+  const mark = marksIn(p)[0]!;
+  const inMark = mark.children[0]!;
+  const before = p.children[0]!;
+  const after = p.children[2]!;
+  w.select({ startContainer: inMark, startOffset: 2, endContainer: after, endOffset: 4 });
+  assert.equal(w.pop.style['display'], 'none', 'starting inside a mark');
+  w.select({ startContainer: before, startOffset: 4, endContainer: inMark, endOffset: 3 });
+  assert.equal(w.pop.style['display'], 'none', 'ending inside a mark');
+  w.select({ startContainer: before, startOffset: 4, endContainer: after, endOffset: 4 });
+  assert.equal(w.pop.style['display'], 'none', 'spanning a mark');
+  w.select({ startContainer: after, startOffset: 1, endContainer: after, endOffset: 6 });
+  assert.equal(w.pop.style['display'], 'block', 'beside the mark, in the same block, is fine');
+  // Blank, and longer than a quote may be.
+  w.select({ startContainer: after, startOffset: 0, endContainer: after, endOffset: 1 });
+  assert.equal(w.pop.style['display'], 'none', 'only a space');
+  const big = runWebview({ textNodes: true });
+  const bigText = 'x'.repeat(600);
+  big.deliver({ ...INLINE_DOC, markdown: `# T\n\n${bigText}\n`, sections: deriveSectionIndex(`# T\n\n${bigText}\n`) });
+  const bigNode = blockOf(big, bigText).children[0]!;
+  big.select({ startContainer: bigNode, startOffset: 0, endContainer: bigNode, endOffset: 501 });
+  assert.equal(big.pop.style['display'], 'none', 'more than 500 characters');
+  big.select({ startContainer: bigNode, startOffset: 0, endContainer: bigNode, endOffset: 500 });
+  assert.equal(big.pop.style['display'], 'block', '500 characters is allowed');
+
+  // A click on a marked passage closes its thread, and opens it again. (A plain click
+  // leaves no selection; with text still selected the click is the end of a selection.)
+  assert.equal(cardsIn(w).length, 2);
+  fire(w.body, 'click', { target: inMark });
+  assert.equal(cardsIn(w).length, 2, 'while text is selected, a click on a mark does nothing');
+  w.select(null);
+  fire(w.body, 'click', { target: inMark });
+  assert.equal(cardsIn(w).length, 1);
+  fire(w.body, 'click', { target: mark });
+  assert.equal(cardsIn(w).length, 2);
+  assert.equal(p.nextSibling!.className, 'rv-thread');
+  // Removing a passage's only draft takes the thread and the mark away; the text is whole again.
+  fire(allOf(p.nextSibling!).find((n) => n.className === 'rv-x')!, 'click');
+  assert.equal(marksIn(p).length, 0);
+  assert.equal(inlineText(p), SUMMARY_P);
+  assert.equal(cardsIn(w).length, 1);
+  assert.equal(w.drafts.textContent, '1 inline comment drafted. Sent with the button you press.');
+  // Closing a thread that has no comment takes its mark away too.
+  selectIn(w, p2, 'paragraph');
+  fire(w.popBtn, 'click');
+  assert.equal(marksIn(p2).length, 1);
+  fire(allOf(p2.nextSibling!).find((n) => n.attrs['aria-label'] === 'Close')!, 'click');
+  assert.equal(marksIn(p2).length, 0);
+  assert.equal(inlineText(p2), 'Second paragraph here.');
+});
+
+test('docs review shell: the three buttons post one docs-decision with every draft and the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing', () => {
+  const ALL_OFF = { approve: 'off', reject: 'off', feedback: 'off' };
+  for (const decision of ['approve', 'reject', 'feedback'] as const) {
+    const w = runWebview({ textNodes: true });
+    w.deliver(INLINE_DOC);
+    const p = draftOn(w, SUMMARY_P, 'cut to 8 lines', 'First on the header.');
+    addInCard(p.nextSibling!, 'Second on the header.');
+    draftOn(w, 'Second paragraph here.', 'paragraph', 'On the second paragraph.');
+    assert.equal(w.drafts.textContent, '3 inline comments drafted. Sent with the button you press.');
+    w.bar.field.value = 'On the whole document.';
+    fire(w.bar[decision], 'click');
+    const header = { quote: 'cut to 8 lines', sectionSlug: 'summary', prefix: 'The header is ', suffix: ' until expanded.' };
+    assert.deepEqual(postedOf(w, 'docs-decision'), [{
+      type: 'docs-decision', artifactId: 'LLD-abc-s7', decision,
+      comments: [
+        { comment: 'First on the header.', anchor: header, version: '0123456789abcdef' },
+        { comment: 'Second on the header.', anchor: header, version: '0123456789abcdef' },
+        { comment: 'On the second paragraph.', anchor: { quote: 'paragraph', sectionSlug: 'summary', prefix: 'Second ', suffix: ' here.' }, version: '0123456789abcdef' },
+        { comment: 'On the whole document.', version: '0123456789abcdef' },
+      ],
+    }], `${decision}: one decision with every draft, then the whole-document comment`);
+    assert.deepEqual(w.controls(), ALL_OFF, `${decision}: disabled until the result arrives`);
+    fire(w.bar.approve, 'click');
+    fire(w.bar.feedback, 'click');
+    assert.equal(postedOf(w, 'docs-decision').length, 1, 'nothing more is posted meanwhile');
+    w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: true, outcome: 'recorded', recorded: 4, message: 'Done. 4 comments saved.' });
+    assert.deepEqual(w.controls(), ALL_ON);
+  }
+
+  // Send feedback with no comment of either kind posts nothing.
+  const none = runWebview({ textNodes: true });
+  none.deliver(INLINE_DOC);
+  fire(none.bar.feedback, 'click');
+  assert.deepEqual(postedOf(none, 'docs-decision'), []);
+  assert.equal(none.bar.result.textContent, 'Write a comment before sending feedback.');
+  // A passage that is marked but has no comment is not a comment.
+  selectIn(none, blockOf(none, SUMMARY_P), 'cut to 8 lines');
+  fire(none.popBtn, 'click');
+  fire(none.bar.feedback, 'click');
+  assert.deepEqual(postedOf(none, 'docs-decision'), []);
+  // One inline draft is enough: the whole-document field may stay empty.
+  addInCard(cardsIn(none)[0]!, 'Only inline.');
+  fire(none.bar.feedback, 'click');
+  assert.deepEqual((postedOf(none, 'docs-decision')[0]!['comments'] as unknown[]).length, 1);
+});
+
+test('docs review shell: drafts are cleared on a successful result, kept on a failed one or one with commentsError, and restored from the saved state when the shell is rebuilt', () => {
+  const stored = (w: WebviewRun): unknown => ((w.saved.state as { rv?: Record<string, unknown> } | undefined)?.rv ?? {})['LLD-abc-s7'];
+
+  // Kept on a failed result, and on one whose comments were not saved.
+  for (const result of [
+    { ok: false, message: 'Nothing was recorded: daemon down' },
+    { ok: true, outcome: 'approved', recorded: 0, message: 'Approved. The comments were not saved: cannot write the artifact.' },
+  ]) {
+    const w = runWebview({ textNodes: true });
+    w.deliver(INLINE_DOC);
+    const p = draftOn(w, SUMMARY_P, 'cut to 8 lines', 'Say what the header shows.');
+    w.bar.field.value = 'Overall.';
+    fire(w.bar.approve, 'click');
+    w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ...result });
+    assert.equal(marksIn(p).length, 1, 'the mark stays');
+    assert.equal(cardsIn(w).length, 1, 'and its thread');
+    assert.equal(w.bar.field.value, 'Overall.');
+    assert.equal(w.drafts.textContent, '1 inline comment drafted. Sent with the button you press.');
+    assert.ok(stored(w), 'and it is still in the saved state');
+    // So the same comments can be sent again.
+    fire(w.bar.feedback, 'click');
+    assert.deepEqual(postedOf(w, 'docs-decision').at(-1)!['comments'], postedOf(w, 'docs-decision')[0]!['comments']);
+  }
+
+  // Cleared on a successful result: from the document, the panel and the saved state.
+  const w = runWebview({ textNodes: true });
+  w.deliver(INLINE_DOC);
+  const p = draftOn(w, SUMMARY_P, 'cut to 8 lines', 'Say what the header shows.');
+  draftOn(w, 'Second paragraph here.', 'paragraph', 'And this.');
+  w.bar.field.value = 'Overall.';
+  fire(w.bar.field, 'input');
+  assert.deepEqual(stored(w), {
+    field: 'Overall.',
+    drafts: [
+      { anchor: { quote: 'cut to 8 lines', sectionSlug: 'summary', prefix: 'The header is ', suffix: ' until expanded.' }, text: 'Say what the header shows.' },
+      { anchor: { quote: 'paragraph', sectionSlug: 'summary', prefix: 'Second ', suffix: ' here.' }, text: 'And this.' },
+    ],
+  }, 'the drafts and the field are kept in the saved state, under the artifact');
+  fire(w.bar.reject, 'click');
+  w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: true, outcome: 'rejected', recorded: 3, message: 'Rejected. 3 comments saved.' });
+  assert.equal(marksIn(w.body).length, 0, 'no mark is left');
+  assert.equal(cardsIn(w).length, 0, 'no thread');
+  assert.equal(inlineText(p), SUMMARY_P, 'the text is whole again');
+  assert.equal(w.bar.field.value, '');
+  assert.equal(w.drafts.textContent, NO_DRAFTS);
+  assert.equal(stored(w), undefined, 'and nothing of them in the saved state');
+  fire(w.bar.feedback, 'click');
+  assert.equal(postedOf(w, 'docs-decision').length, 1, 'there is nothing left to send');
+
+  // Restored when the shell is rebuilt: a new run over the same saved state.
+  const first = runWebview({ textNodes: true });
+  first.deliver(INLINE_DOC);
+  draftOn(first, SUMMARY_P, 'cut to 8 lines', 'Say what the header shows.');
+  first.bar.field.value = 'Overall.';
+  fire(first.bar.field, 'input');
+  const rebuilt = runWebview({ textNodes: true, saved: first.saved });
+  assert.equal(marksIn(rebuilt.body).length, 0);
+  rebuilt.deliver(INLINE_DOC); // the host posts the open document again
+  const rp = blockOf(rebuilt, SUMMARY_P);
+  assert.deepEqual(marksIn(rp).map((m) => [m.className, inlineText(m)]), [['rv-anno rv-draft', 'cut to 8 lines']], 'the draft is back on its passage');
+  assert.equal(rebuilt.bar.field.value, 'Overall.', 'and the whole-document field');
+  assert.equal(rebuilt.drafts.textContent, '1 inline comment drafted. Sent with the button you press.');
+  fire(rebuilt.body, 'click', { target: marksIn(rp)[0]! });
+  assert.equal(allOf(cardsIn(rebuilt)[0]!).find((n) => n.className === 'rv-text')!.textContent, 'Say what the header shows.');
+  fire(rebuilt.bar.approve, 'click');
+  assert.deepEqual(postedOf(rebuilt, 'docs-decision')[0]!['comments'], [
+    { comment: 'Say what the header shows.', anchor: { quote: 'cut to 8 lines', sectionSlug: 'summary', prefix: 'The header is ', suffix: ' until expanded.' }, version: '0123456789abcdef' },
+    { comment: 'Overall.', version: '0123456789abcdef' },
+  ]);
+  rebuilt.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: false, message: 'Nothing was recorded.' });
+
+  // Kept per artifact: another document has its own, and coming back finds these again.
+  rebuilt.deliver({ ...INLINE_DOC, artifactId: 'PLAN-abc-s7' });
+  assert.equal(marksIn(rebuilt.body).length, 0);
+  assert.equal(rebuilt.bar.field.value, '');
+  assert.equal(rebuilt.drafts.textContent, NO_DRAFTS);
+  rebuilt.deliver(INLINE_DOC);
+  assert.equal(marksIn(rebuilt.body).length, 1);
+  assert.equal(rebuilt.bar.field.value, 'Overall.');
+
+  // The same document posted again (after a decision): the marks and an open thread are put back.
+  fire(rebuilt.body, 'click', { target: marksIn(blockOf(rebuilt, SUMMARY_P))[0]! });
+  assert.equal(cardsIn(rebuilt).length, 1);
+  rebuilt.deliver(INLINE_DOC);
+  assert.equal(marksIn(rebuilt.body).length, 1);
+  assert.equal(cardsIn(rebuilt).length, 1, 'the thread that was open is open again');
+
+  // The document was revised and the passage is gone: the draft is kept, said to be without a place, and still sent.
+  const revised = INLINE_MD.replace('cut to 8 lines', 'folded');
+  rebuilt.deliver({ ...INLINE_DOC, markdown: revised, sections: deriveSectionIndex(revised), contentVersion: 'fedcba9876543210' });
+  assert.equal(marksIn(rebuilt.body).length, 0);
+  assert.equal(rebuilt.drafts.textContent, '1 inline comment drafted (1 on text that is no longer in the document). Sent with the button you press.');
+  fire(rebuilt.bar.feedback, 'click');
+  assert.equal((postedOf(rebuilt, 'docs-decision').at(-1)!['comments'] as Array<{ anchor?: { quote: string } }>)[0]!.anchor!.quote, 'cut to 8 lines');
 });

@@ -19,6 +19,7 @@ import { attr, type ChatPanelChannel, type ChatPanelLogger } from './chat-panel.
 import type { DocsReviewClient, DocsContent, ReviewDecision, ReviewDecisionComment, ReviewDecisionResult } from './docs-review-client.js';
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-style.js';
+import { DOCS_COMMENTS_SOURCE } from './docs-review-comments.js';
 import { deriveSectionIndex, createSectionResolver, type SectionIndex } from './docs-sections.js';
 
 /**
@@ -1669,6 +1670,23 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.rv-ic.rv-reject{background:none;color:var(--vscode-errorForeground);border-color:var(--vscode-errorForeground);}` +
       `.rv-result{margin-top:6px;font-size:12px;min-height:18px;color:var(--vscode-descriptionForeground);}` +
       `.rv-result.rv-ok{color:var(--vscode-charts-green);}.rv-result.rv-err{color:var(--vscode-errorForeground);}` +
+      // Inline comments. A marked passage, dashed while its comment is a draft; the round
+      // button a selection offers; and the thread card under the passage's block.
+      `mark.rv-anno{background:var(--vscode-editor-findMatchHighlightBackground);color:inherit;border-bottom:2px solid var(--vscode-editorWarning-foreground);border-radius:2px;cursor:pointer;}` +
+      `mark.rv-anno.rv-draft{border-bottom-style:dashed;}` +
+      `.rv-pop{position:absolute;z-index:5;display:none;background:var(--vscode-editorWidget-background);border:1px solid var(--vscode-editorWidget-border);box-shadow:0 2px 8px var(--vscode-widget-shadow);border-radius:16px;padding:3px;}` +
+      `.rv-thread{margin:6px 0 10px;border:1px solid var(--vscode-editorWidget-border);border-radius:10px;overflow:hidden;background:var(--vscode-editorWidget-background);` +
+      `color:var(--vscode-foreground);font-family:var(--vscode-font-family);font-size:13px;line-height:1.45;white-space:normal;}` +
+      `.rv-q{padding:6px 10px;color:var(--vscode-descriptionForeground);border-bottom:1px solid var(--vscode-editorWidget-border);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}` +
+      `.rv-c{padding:7px 10px;border-bottom:1px solid var(--vscode-editorWidget-border);}` +
+      `.rv-who{font-weight:600;}` +
+      `.rv-tag{color:var(--vscode-descriptionForeground);font-size:11px;margin-left:6px;}` +
+      `.rv-tag-draft{color:var(--vscode-editorWarning-foreground);}` +
+      `.rv-text{white-space:pre-wrap;overflow-wrap:anywhere;}` +
+      `.rv-x{float:right;background:none;color:var(--vscode-descriptionForeground);border:0;padding:0 4px;cursor:pointer;font:inherit;}` +
+      `.rv-compose{padding:6px 8px;display:flex;gap:6px;align-items:center;}` +
+      `.rv-compose textarea{flex:1;min-width:0;resize:none;height:30px;background:none;color:var(--vscode-input-foreground);border:0;outline:none;padding:5px 4px;font:inherit;line-height:1.5;}` +
+      `.rv-ic.rv-sm{width:24px;height:24px;}.rv-ic.rv-sm svg{width:13px;height:13px;}` +
       // The rendered document reads as an editor preview: headings in the editor's own
       // foreground with a rule under the first two levels, code in the editor's font.
       `#insrc-docs-body{font-size:14px;line-height:1.6;}` +
@@ -1829,6 +1847,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `const htmlPathEl=document.getElementById('insrc-rv-html-path');` +
       `const htmlNoteEl=document.getElementById('insrc-rv-html-note');` +
       `const frameHostEl=document.getElementById('insrc-rv-frame');` +
+      // Inline comments: the button a selection offers, and the line that counts the drafts.
+      `const popEl=document.getElementById('insrc-rv-pop');` +
+      `const popBtn=document.getElementById('insrc-rv-pop-btn');` +
+      `const draftsEl=document.getElementById('insrc-rv-drafts');` +
       // current: the id of the document shown. shown: its last docs-content message.
       // busy: a decision was posted and its result has not arrived. sent: how many
       // comments that decision carried.
@@ -1865,11 +1887,12 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `stateEl.textContent=!has?'':pend?(m.blocked?'pending review · blocked: it cannot be approved':'pending review'):` +
       `((m.state==='approved'?'approved':m.state==='rejected'?'rejected':'not awaiting review')+' · feedback only');` +
       `var r=m&&m.reviewer;whoEl.textContent=(r&&typeof r.name==='string')?('as '+r.name+(r.source==='git'?' (git user)':r.source==='os'?' (OS user)':'')):'';}` +
-      // One decision: the button pressed and the comment on the whole document, when there
-      // is one. Nothing is posted while an earlier decision is unanswered, and send
-      // feedback with no comment posts nothing.
+      // One decision: the button pressed, every inline draft, and the comment on the whole
+      // document when there is one. Nothing is posted while an earlier decision is
+      // unanswered, and send feedback with no comment at all posts nothing.
       `function rvSend(decision){if(busy||!shown||!shown.artifactId)return;` +
-      `var text=String(fieldEl.value||'').trim();var comments=[];` +
+      // Every draft goes with the decision, then the comment on the whole document.
+      `var text=String(fieldEl.value||'').trim();var comments=rvDraftComments();` +
       // On an HTML document's tab the comment is on that file: it names the file and has
       // no anchor and no version (the version is the markdown's). On the markdown it
       // carries the version the reviewer saw.
@@ -1895,6 +1918,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // path and a line.
       `function rvShowTab(rel){tab=rel;rvTabs();mdEl.style.display=rel?'none':'';htmlEl.style.display=rel?'':'none';rvDropFrame();` +
       `fieldEl.setAttribute('placeholder',rel?'Comment on '+rel+' (optional)…':'Comment on the whole document (optional)…');` +
+      `rvHidePop();rvSync();` +
       `if(!rel||!shown)return;` +
       `htmlPathEl.textContent=rel;htmlNoteEl.textContent='Loading…';` +
       `vs.postMessage({v:1,payload:{type:'open-companion',artifactId:shown.artifactId,relPath:rel}});}` +
@@ -1910,9 +1934,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `var f=document.createElement('iframe');f.className='rv-frame';f.setAttribute('sandbox','allow-scripts');f.setAttribute('title',tab);` +
       `f.setAttribute('srcdoc',m.html);frameHostEl.appendChild(f);}` +
       // The result of a decision: the buttons work again and the line says what happened.
-      // The field is cleared only when the decision was recorded with every comment.
       `function rvResult(m){if(!shown||m.artifactId!==shown.artifactId)return;busy=false;` +
-      `if(m.ok&&m.recorded===sent)fieldEl.value='';` +
+      // Recorded with every comment: the drafts and the field are done with. Otherwise
+      // (not recorded, or the comments were not saved) they are all kept, to send again.
+      `if(m.ok&&m.recorded===sent){rvClearDrafts();fieldEl.value='';rvSync();}` +
       `renderBar();rvSetResult(String(m.message||''),m.ok?'rv-ok':'rv-err');}` +
       // docs-content: render the verbatim body + open questions, then the header and
       // the comment panel for this document.
@@ -1930,6 +1955,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // calls them yet, so the rendered surface is unchanged but for the added
       // source text — which is why SHELL_BASELINE moves in THIS commit.
       DOCS_UX_SOURCE +
+      // Story E202610138d4b90c9:S001 — the SIXTH source string in the same single nonce'd
+      // script: the text model of the rendered document, anchors, and the inline drafts.
+      DOCS_COMMENTS_SOURCE +
       `function renderContent(m){var r=renderMarkdownBody(bodyEl,m.markdown||'');` +
       // Stamp FIRST, and let the stamped count gate the chooser. On the degraded
       // path the body is plain text with no heading elements, so nothing can be
@@ -2007,16 +2035,19 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `renderDegradationNotice(noticeEl,(m.degradation&&m.degradation.degraded)?m.degradation:(r.degradation&&r.degradation.degraded)?r.degradation:(fr.degradation||r.degradation));` +
       `while(oqEl.firstChild)oqEl.removeChild(oqEl.firstChild);` +
       `(m.openQuestions||[]).forEach(function(q){var d=document.createElement('div');d.className='insrc-docs-oq-item';d.textContent='? '+q;oqEl.appendChild(d);});` +
-      // The document shown changed: an unanswered decision, the field and the result line
-      // belonged to the earlier one. A re-post of the SAME document (after a decision, or
-      // to a rebuilt shell) keeps all three.
+      // The document shown changed: an unanswered decision and the result line belonged to
+      // the earlier one. A re-post of the SAME document (after a decision, or to a rebuilt
+      // shell) keeps them, and the field and the drafts with them.
       `var same=!!shown&&shown.artifactId===m.artifactId;shown=m;current=m.artifactId||'';` +
-      `if(!same){busy=false;fieldEl.value='';rvSetResult('','');}` +
+      // Its field and its drafts come from the saved state, where they are kept per artifact.
+      `if(!same){busy=false;rvSetResult('','');rvLoad();}` +
       // The documents of this artifact. Another artifact, or an HTML document that is no
       // longer listed, goes back to the markdown; a re-post of the same artifact keeps the
       // tab on show, and its frame.
       `docs=Array.isArray(m.documents)?m.documents:[];` +
       `if(!same||!tab||!docs.some(function(d){return d&&d.type==='html'&&d.relPath===tab;})){rvShowTab('');}else{rvTabs();}` +
+      // The body was rendered again: every draft's mark is put back on its passage.
+      `rvHidePop();rvPlaceDrafts();rvSync();` +
       `renderList(items);renderBar();}` +
       `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
       `if(m.type==='docs-list'){renderList(m.artifacts);}` +
@@ -2041,6 +2072,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `</div>` +
       // The one scrolling region: everything of the document, and nothing else.
       `<div id="insrc-rv-scroll" class="rv-scroll"><div id="insrc-rv-md" class="rv-doc">` +
+      // The round button a selection offers; placed at the selection by the script.
+      `<div id="insrc-rv-pop" class="rv-pop"><button id="insrc-rv-pop-btn" type="button" class="rv-ic" aria-label="Comment on the selected text" title="Comment on the selected text">` +
+      `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg></button></div>` +
       // t6: the section chooser and the ac3 notice. Both are filled by DOM
       // construction with textContent — never markup — and the chooser host stays
       // EMPTY (no control at all) for a document with no headings.
@@ -2069,9 +2103,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // The comment panel: outside the scrolling region, so it is in view at every scroll
       // position. Icon-only buttons; each one's name is its title and aria-label.
       `<div id="insrc-rv-bar" class="rv-bar">` +
-      `<div class="rv-meta"><span class="rv-sp"></span><span id="insrc-rv-who" class="rv-dim"></span></div>` +
+      `<div class="rv-meta"><span id="insrc-rv-drafts" class="rv-dim"></span><span class="rv-sp"></span><span id="insrc-rv-who" class="rv-dim"></span></div>` +
       `<div class="rv-row">` +
-      `<textarea id="insrc-rv-field" rows="2" aria-label="Comment on the whole document" placeholder="Comment on the whole document (optional)…"></textarea>` +
+      `<textarea id="insrc-rv-field" rows="2" maxlength="10000" aria-label="Comment on the whole document" placeholder="Comment on the whole document (optional)…"></textarea>` +
       `<button id="insrc-rv-feedback" type="button" class="rv-ic" aria-label="Send feedback" title="Send feedback: sends the comment; the document's state does not change">` +
       `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 8l11-5-4 11-2-4.5z"/></svg></button>` +
       `<button id="insrc-rv-reject" type="button" class="rv-ic rv-reject" aria-label="Reject" title="Reject: sends the comment and rejects this revision">` +

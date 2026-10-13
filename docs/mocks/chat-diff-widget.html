@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>insrc dev chat: diff widget mock</title>
+<!--
+  Mock for review, 2026-10-13. Not shipped code.
+
+  One widget per change. A widget shows at most 8 diff lines until it is expanded.
+  Two changes to the same file are two widgets, in the order they were made.
+
+  Outside VS Code the --vscode-* theme variables do not exist, so this page defines a few
+  sample themes itself (the buttons at the top). The widget's own rules use only the chat's
+  colour names (--panel, --code-bg, --add-bg, ...), exactly as the chat panel does.
+-->
+<style>
+  /* Sample themes: the values VS Code would supply. */
+  body.t-dark   { --vscode-editor-background:#1f1f1f; --vscode-editor-foreground:#cccccc; --vscode-editorWidget-background:#202020; --vscode-editorWidget-border:#313131; --vscode-panel-border:#2b2b2b; --vscode-descriptionForeground:#9d9d9d; --vscode-textCodeBlock-background:#2b2b2b; --vscode-diffEditor-insertedLineBackground:#9bb95533; --vscode-diffEditor-removedLineBackground:#ff000033; --vscode-chat-requestBackground:#ffffff0d; --vscode-chat-requestBorder:#ffffff1a; --vscode-terminal-ansiGreen:#0dbc79; --vscode-terminal-ansiYellow:#e5e510; --vscode-terminal-ansiMagenta:#bc3fbc; --vscode-terminal-ansiBlue:#2472c8; --vscode-errorForeground:#f85149; --vscode-testing-iconPassed:#73c991; --vscode-focusBorder:#0078d4; --vscode-textLink-foreground:#4daafc; color-scheme:dark; }
+  body.t-light  { --vscode-editor-background:#ffffff; --vscode-editor-foreground:#3b3b3b; --vscode-editorWidget-background:#f8f8f8; --vscode-editorWidget-border:#c8c8c8; --vscode-panel-border:#e5e5e5; --vscode-descriptionForeground:#717171; --vscode-textCodeBlock-background:#dcdcdc66; --vscode-diffEditor-insertedLineBackground:#9bb95533; --vscode-diffEditor-removedLineBackground:#ff000033; --vscode-chat-requestBackground:#0000000a; --vscode-chat-requestBorder:#0000001a; --vscode-terminal-ansiGreen:#107c10; --vscode-terminal-ansiYellow:#949800; --vscode-terminal-ansiMagenta:#bc05bc; --vscode-terminal-ansiBlue:#0451a5; --vscode-errorForeground:#f85149; --vscode-testing-iconPassed:#388a34; --vscode-focusBorder:#005fb8; --vscode-textLink-foreground:#005fb8; color-scheme:light; }
+  body.t-atom   { --vscode-editor-background:#263238; --vscode-editor-foreground:#d4d4d4; --vscode-editorWidget-background:#232e33; --vscode-editorWidget-border:#29363d; --vscode-panel-border:#232e33; --vscode-descriptionForeground:#d4d4d4b3; --vscode-textCodeBlock-background:#0a0a0a66; --vscode-diffEditor-insertedLineBackground:#00ff001a; --vscode-diffEditor-removedLineBackground:#ff00001a; --vscode-chat-requestBackground:#ffffff0d; --vscode-chat-requestBorder:#ffffff1a; --vscode-terminal-ansiGreen:#cddc39; --vscode-terminal-ansiYellow:#ffcb43; --vscode-terminal-ansiMagenta:#e23673; --vscode-terminal-ansiBlue:#4fb6f7; --vscode-errorForeground:#f48771; --vscode-testing-iconPassed:#73c991; --vscode-focusBorder:#2c383d; --vscode-textLink-foreground:#3794ff; color-scheme:dark; }
+  body.t-hc     { --vscode-editor-background:#000000; --vscode-editor-foreground:#ffffff; --vscode-editorWidget-background:#0c141f; --vscode-contrastBorder:#6fc3df; --vscode-panel-border:#6fc3df; --vscode-descriptionForeground:#ffffffb3; --vscode-textCodeBlock-background:#000000; --vscode-diffEditor-insertedTextBorder:#33ff2eff; --vscode-diffEditor-removedTextBorder:#ff008f; --vscode-chat-requestBackground:#000000; --vscode-terminal-ansiGreen:#0dbc79; --vscode-terminal-ansiYellow:#e5e510; --vscode-terminal-ansiMagenta:#bc3fbc; --vscode-terminal-ansiBlue:#2472c8; --vscode-errorForeground:#f48771; --vscode-testing-iconPassed:#89d185; --vscode-focusBorder:#f38518; --vscode-textLink-foreground:#21a6ff; color-scheme:dark; }
+
+  /* The chat's named layer (as in the panel). */
+  body {
+    --font: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+    --bg: var(--vscode-editor-background); --panel: var(--vscode-editor-background);
+    --bg-inset: var(--vscode-editorWidget-background);
+    --assistant-bg: color-mix(in srgb, var(--vscode-editor-background) 90%, black);
+    --code-bg: var(--vscode-textCodeBlock-background);
+    --user-bg: var(--vscode-chat-requestBackground);
+    --add-bg: var(--vscode-diffEditor-insertedLineBackground); --del-bg: var(--vscode-diffEditor-removedLineBackground);
+    --add-border: var(--vscode-diffEditor-insertedTextBorder, transparent); --del-border: var(--vscode-diffEditor-removedTextBorder, transparent);
+    --fg: var(--vscode-editor-foreground); --muted: var(--vscode-descriptionForeground);
+    --border: var(--vscode-contrastBorder, var(--vscode-panel-border));
+    --border-lit: var(--vscode-contrastBorder, var(--vscode-editorWidget-border, var(--vscode-panel-border)));
+    --msg-border: var(--vscode-contrastBorder, var(--vscode-chat-requestBorder, var(--vscode-editorWidget-border)));
+    --accent: var(--vscode-terminal-ansiGreen); --amber: var(--vscode-terminal-ansiYellow);
+    --magenta: var(--vscode-terminal-ansiMagenta); --user: var(--vscode-terminal-ansiBlue);
+    --red: var(--vscode-errorForeground); --pass: var(--vscode-testing-iconPassed);
+    --focus: var(--vscode-focusBorder); --link: var(--vscode-textLink-foreground);
+    margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 13px; line-height: 20px;
+  }
+  .mockbar { position: sticky; top: 0; z-index: 2; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 14px; background: var(--bg-inset); border-bottom: 1px solid var(--border-lit); font-size: 12px; color: var(--muted); }
+  .mockbar button { font: inherit; padding: 2px 10px; border-radius: 4px; border: 1px solid var(--border-lit); background: transparent; color: var(--fg); cursor: pointer; }
+  .mockbar button.on { border-color: var(--focus); outline: 1px solid var(--focus); }
+  .term { max-width: 900px; margin: 0 auto; padding: 16px 14px 60px; display: flex; flex-direction: column; gap: 14px; }
+  .note { color: var(--muted); font-size: 12px; border-left: 2px solid var(--border-lit); padding-left: 10px; }
+  .who { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .msg { display: flex; flex-direction: column; gap: 4px; }
+  .msg.user { align-items: flex-end; } .msg.user .who { color: var(--user); } .msg.assistant .who { color: var(--magenta); }
+  .bubble { border: 1px solid var(--msg-border); padding: 9px 12px; border-radius: 10px; }
+  .msg.user .bubble { background: var(--user-bg); border-radius: 10px 10px 2px 10px; }
+  .msg.assistant .bubble { background: var(--assistant-bg); border-radius: 2px 10px 10px 10px; }
+
+  /* ---- the diff widget ---- */
+  .dw { flex: 0 0 auto; border: 1px solid var(--border-lit); border-radius: 8px; background: var(--code-bg); overflow: hidden; }
+  .dw__head { display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: var(--bg-inset); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
+  .dw__head:focus-visible { outline: 1px solid var(--focus); outline-offset: -1px; }
+  .dw__chev { color: var(--muted); flex: 0 0 auto; width: 1em; }
+  .dw__glyph { color: var(--amber); flex: 0 0 auto; }
+  /* A long path is cut at the front, so the file name stays readable. */
+  .dw__path { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+  .dw__path bdi { color: var(--fg); }
+  .dw__kind, .dw__nth { color: var(--muted); font-size: 11.5px; flex: 0 0 auto; }
+  .dw__stat { flex: 0 0 auto; font-size: 11.5px; } .dw__stat .a { color: var(--pass); } .dw__stat .d { color: var(--red); }
+  .dw__body { overflow-x: auto; }
+  .dw__line { display: flex; white-space: pre; }
+  .dw__num { flex: 0 0 4ch; text-align: right; padding-right: 1ch; color: var(--muted); opacity: .7; user-select: none; }
+  .dw__sign { flex: 0 0 2ch; text-align: center; user-select: none; }
+  .dw__text { flex: 1 0 auto; padding-right: 10px; }
+  .dw__line.add { background: var(--add-bg); outline: 1px solid var(--add-border); outline-offset: -1px; } .dw__line.add .dw__sign { color: var(--pass); }
+  .dw__line.del { background: var(--del-bg); outline: 1px solid var(--del-border); outline-offset: -1px; } .dw__line.del .dw__sign { color: var(--red); }
+  .dw__line.ctx { color: var(--muted); }
+  .dw__gap { color: var(--muted); padding: 0 10px; border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); font-size: 11.5px; }
+  .dw__more { display: block; width: 100%; text-align: left; font: inherit; font-size: 11.5px; padding: 3px 10px; color: var(--link); background: var(--bg-inset); border: 0; border-top: 1px solid var(--border); cursor: pointer; }
+  .dw__more:hover { text-decoration: underline; }
+  .dw--empty .dw__body { padding: 4px 10px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body class="t-atom">
+<div class="mockbar">
+  <span>Mock: diff widget in the dev chat. Sample theme:</span>
+  <button data-t="t-atom" class="on">Atom Material (yours)</button>
+  <button data-t="t-dark">Dark Modern</button>
+  <button data-t="t-light">Light Modern</button>
+  <button data-t="t-hc">High contrast</button>
+</div>
+<div class="term" id="term"></div>
+
+<script>
+// The mock's data: one entry per change, in the order the assistant made them.
+var FILE = 'vscode-plugin/src/workflow/runners/build/standalone-record.ts';
+var CHANGES = [
+  { path: FILE, kind: 'edit', hunks: [{ start: 41, lines: [
+    ' export function writeStandaloneRecord(input: RecordInput): RecordResult {',
+    '   const dir = recordDir(input.repoPath, input.epicHash);',
+    '-  const commit = headCommit(input.repoPath);',
+    '-  const record = { ...input.body, commit };',
+    '+  // The commit the tests ran on, not the one HEAD pointed at when the record was started.',
+    '+  const commit = input.testedCommit ?? headCommit(input.repoPath);',
+    '+  const record = { ...input.body, commit, recordedAt: input.now() };',
+    '   mkdirSync(dir, { recursive: true });',
+    '   const path = join(dir, \'BUILD.json\');',
+    '-  writeFileSync(path, JSON.stringify(record));',
+    '+  const tmp = `${path}.tmp`;',
+    '+  writeFileSync(tmp, JSON.stringify(record, null, 2));',
+    '+  renameSync(tmp, path);',
+    '   return { path, commit };',
+    ' }'] }] },
+  { path: FILE, kind: 'edit', hunks: [{ start: 12, lines: [
+    ' export interface RecordInput {',
+    '   readonly repoPath: string;',
+    '   readonly epicHash: string;',
+    '+  readonly testedCommit?: string | undefined;',
+    '+  readonly now: () => string;',
+    ' }'] }] },
+  { path: 'vscode-plugin/src/workflow/runners/build/completion-record.ts', kind: 'edit', note: 'replace all', hunks: [
+    { start: 8, lines: [' import { join } from \'node:path\';', '-import { headCommit } from \'./git.js\';', '+import { headCommit, isAncestor } from \'./git.js\';', ' '] },
+    { start: 57, lines: ['   const built = readBuild(dir);', '-  if (built.commit !== headCommit(repo)) return stale(built);', '+  if (!isAncestor(repo, built.commit, headCommit(repo))) return stale(built);', '   return fresh(built);'] }] },
+  { path: 'vscode-plugin/src/workflow/runners/build/__tests__/standalone-record.test.ts', kind: 'new file', hunks: [{ start: 1, lines:
+    ['/**', ' * The standalone build record names the commit its tests ran on.', ' */', 'import { test } from \'node:test\';', 'import assert from \'node:assert/strict\';', 'import { writeStandaloneRecord } from \'../standalone-record.js\';', '', 'test(\'the record carries the tested commit\', () => {', '  const out = writeStandaloneRecord({ ...INPUT, testedCommit: \'abc123\' });', '  assert.equal(out.commit, \'abc123\');', '});', '', 'test(\'with no tested commit it falls back to HEAD\', () => {', '  const out = writeStandaloneRecord(INPUT);', '  assert.equal(out.commit, HEAD);', '});'].map(function (l) { return '+' + l; }) }] },
+  { path: 'docs/workflow.md', kind: 'edit', hunks: [] },
+];
+
+var LIMIT = 8; // diff lines shown before the widget is expanded
+
+function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+function widget(change, nth, of) {
+  var box = el('div', 'dw');
+  var head = el('div', 'dw__head'); head.tabIndex = 0; head.setAttribute('role', 'button');
+  var chev = el('span', 'dw__chev');
+  head.appendChild(chev);
+  head.appendChild(el('span', 'dw__glyph', '✎'));
+  var path = el('span', 'dw__path'); var bdi = el('bdi', null, change.path); path.appendChild(bdi); path.title = change.path; head.appendChild(path);
+  if (change.kind !== 'edit' || change.note) head.appendChild(el('span', 'dw__kind', change.note || change.kind));
+  if (of > 1) head.appendChild(el('span', 'dw__nth', 'change ' + nth + ' of ' + of));
+  var adds = 0, dels = 0, total = 0;
+  change.hunks.forEach(function (h) { h.lines.forEach(function (l) { total++; if (l[0] === '+') adds++; else if (l[0] === '-') dels++; }); });
+  var stat = el('span', 'dw__stat'); stat.appendChild(el('span', 'a', '+' + adds)); stat.appendChild(document.createTextNode(' ')); stat.appendChild(el('span', 'd', '−' + dels)); head.appendChild(stat);
+  box.appendChild(head);
+
+  var body = el('div', 'dw__body'); box.appendChild(body);
+  if (total === 0) {
+    box.className += ' dw--empty'; chev.textContent = ' ';
+    body.textContent = 'changed (the assistant reported no diff for this edit)';
+    head.style.cursor = 'default';
+    return box;
+  }
+  var rows = [];
+  change.hunks.forEach(function (h, hi) {
+    if (hi > 0) rows.push(el('div', 'dw__gap', '⋯  line ' + h.start));
+    var oldNo = h.start, newNo = h.start;
+    h.lines.forEach(function (l) {
+      var c = l[0], row = el('div', 'dw__line ' + (c === '+' ? 'add' : c === '-' ? 'del' : 'ctx'));
+      row.appendChild(el('span', 'dw__num', c === '-' ? String(oldNo) : String(newNo)));
+      row.appendChild(el('span', 'dw__sign', c === ' ' ? '' : c === '-' ? '−' : '+'));
+      row.appendChild(el('span', 'dw__text', l.slice(1)));
+      if (c === '-') oldNo++; else if (c === '+') newNo++; else { oldNo++; newNo++; }
+      row.dataset.diff = '1'; rows.push(row);
+    });
+  });
+  rows.forEach(function (r) { body.appendChild(r); });
+  var more = el('button', 'dw__more'); more.type = 'button';
+  var long = total > LIMIT, open = false;
+  function paint() {
+    var shown = 0;
+    rows.forEach(function (r) {
+      if (r.dataset.diff) { shown++; r.style.display = (open || shown <= LIMIT) ? '' : 'none'; }
+      else r.style.display = (open || shown < LIMIT) ? '' : 'none';
+    });
+    chev.textContent = long ? (open ? '▾' : '▸') : ' ';
+    more.textContent = open ? 'show less' : 'show ' + (total - LIMIT) + ' more line' + (total - LIMIT === 1 ? '' : 's');
+  }
+  if (long) {
+    box.appendChild(more);
+    var toggle = function () { open = !open; paint(); };
+    head.addEventListener('click', toggle); more.addEventListener('click', toggle);
+    head.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+  } else { head.style.cursor = 'default'; }
+  paint();
+  return box;
+}
+
+function msg(role, label, text) {
+  var m = el('div', 'msg ' + role); m.appendChild(el('div', 'who', label)); m.appendChild(el('div', 'bubble', text)); return m;
+}
+
+var term = document.getElementById('term');
+term.appendChild(el('div', 'note', 'Each change the assistant makes is one widget, in the order it was made. A widget shows 8 diff lines; the arrow, the header or the "show more" line opens the rest. A change that fits in 8 lines has no arrow. The widget replaces the bare path line and the "file has been updated" line the chat shows today.'));
+term.appendChild(msg('user', 'you ❯', 'record the commit the tests ran on, and write the record atomically'));
+term.appendChild(msg('assistant', '◆ claude', 'The record took HEAD at the moment it was started. I’ll take the tested commit as an input and write through a temporary file.'));
+var counts = {}; CHANGES.forEach(function (c) { counts[c.path] = (counts[c.path] || 0) + 1; });
+var seen = {};
+CHANGES.forEach(function (c) { seen[c.path] = (seen[c.path] || 0) + 1; term.appendChild(widget(c, seen[c.path], counts[c.path])); });
+term.appendChild(msg('assistant', '◆ claude', 'Done: two changes to standalone-record.ts, one to completion-record.ts in two places, and a new test file.'));
+term.appendChild(el('div', 'note', 'Shown above, top to bottom: a 15-line change (collapsed to 8); a second, short change to the same file (fits, no arrow); one edit that touched two places in a file (the dashed line marks the jump); a new file (all additions, collapsed to 8); and an edit for which no diff was reported (codex today).'));
+
+Array.prototype.forEach.call(document.querySelectorAll('.mockbar button'), function (b) {
+  b.addEventListener('click', function () {
+    document.body.className = b.dataset.t;
+    Array.prototype.forEach.call(document.querySelectorAll('.mockbar button'), function (x) { x.classList.toggle('on', x === b); });
+  });
+});
+</script>
+</body>
+</html>

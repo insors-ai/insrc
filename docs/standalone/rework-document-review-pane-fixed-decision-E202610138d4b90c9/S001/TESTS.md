@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 45 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -245,3 +245,72 @@ Run at 2026-10-13T12:43:36.906Z on commit `347bb43b`. Tests check: **passed**. 2
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/docs-review-client.test.ts` | 0 | 13 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/protocol.test.ts` | 0 | 11 | 0.3 s |  |
+
+## t8
+
+Run at 2026-10-13T12:53:02.450Z on commit `abbe50c1`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: docs review host: a docs-decision calls decide once with the open document's docPath and every comment, posts docs-decision-result, re-reads the list and the document by docPath, and hands the chat one message with the decision and the numbered comments**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review host: a docs-decision calls decide once with the open document's docPath and every comment, posts docs-decision-result, re-reads the list and the document by docPath, and hands the chat one message with the decision and the numbered comments | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` |
+| pass | docs-decision approve records the decision through client.decide by the document's path and re-fetches pending | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+| pass | docs-decision reject and feedback send their comments through the same client.decide call and re-fetch | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review host: a decision with no comments sends the chat the decision line alone**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review host: a decision with no comments sends the chat the decision line alone | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` |
+
+**integration: docs review host: send feedback works on a read-only open and on a document just approved, while approve and reject are refused for a document that is not pending or not the open one**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review host: send feedback works on a read-only open and on a document just approved, while approve and reject are refused for a document that is not pending or not the open one | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` |
+| pass | a docs-decision in the earlier accept/note shape, or for a document that was never opened, reaches no daemon call | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review host: a failing decide posts a failed result, sends no chat message and keeps the open document**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review host: a failing decide posts a failed result, sends no chat message and keeps the open document | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` |
+
+**integration: docs review host: a withheld approval and a commentsError are each reported in the result and in the chat message**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review host: a withheld approval and a commentsError are each reported in the result and in the chat message | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` |
+| pass | a withheld approval surfaces the reason non-lossily and stays pending | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review host: docs-content carries the feedback list, the reviewer, the state and one document entry per HTML companion**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review host: docs-content carries the feedback list, the reviewer, the state and one document entry per HTML companion | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` |
+
+**integration: docs review host: open-companion for one of the document's companions posts docs-companion with the file's text and the shell's nonce on every script tag that had none; for any other path, or when the read fails, it posts docs-companion with no html**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review host: open-companion for one of the document's companions posts docs-companion with the file's text and the shell's nonce on every script tag that had none; for any other path, or when the read fails, it posts docs-companion with no html | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` |
+
+**integration: docs review host: an absent, throwing or unavailable notifyChat leaves the decision recorded and says so in the result**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review host: an absent, throwing or unavailable notifyChat leaves the decision recorded and says so in the result | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` |
+
+**integration: docs review host: a boot ping while a document is open re-posts that document by its path, for a pending document and for one that is no longer pending**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review host: a boot ping while a document is open re-posts that document by its path, for a pending document and for one that is no longer pending | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` | 0 | 9 | 0.7 s |  |
+| `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 204 | 18.6 s |  |

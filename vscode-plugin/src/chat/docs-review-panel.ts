@@ -1,14 +1,17 @@
 /**
- * Story E20260925edb76e2e:S007 / t3 — the docs-review webview host.
+ * Story E20260925edb76e2e:S007 / t3 — the docs-review webview host; reworked by
+ * Story E202610138d4b90c9:S001.
  *
  * A vscode-free, deps-injected factory (mirrors createChatPanelHost): it renders
- * the terminal-styled 'docs-review' surface (one nonce'd inline script under a
- * strict per-render CSP, textContent/className only — the S003 shell invariants),
- * lists the daemon's PENDING tracked artifacts, opens one on demand, and drives
- * the approve / request-changes decision through the DocsReviewClient. It is a
- * PASSTHROUGH observer of the tracked-workflow flow (k8): it never runs a
- * workflow itself — it only reads pending()/content() and calls the daemon's own
- * approve()/comment() IPCs on daemon-tracked artifacts (k5). Persists nothing (k3).
+ * the review pane (one nonce'd inline script under a strict per-render CSP,
+ * textContent/className only — the S003 shell invariants; a column with a fixed
+ * comment panel under one scrolling document, in VS Code theme variables), lists
+ * the daemon's PENDING tracked artifacts, opens one on demand, and sends the
+ * reviewer's decision and comments through the DocsReviewClient's one decide()
+ * call. It is a PASSTHROUGH observer of the tracked-workflow flow (k8): it never
+ * runs a workflow itself — it only reads pending()/content() and calls the
+ * daemon's own review-decision IPC on daemon-tracked artifacts (k5). It keeps
+ * which document is open and nothing else (k3).
  * All vscode API lives behind the injected {@link ChatPanelChannel}.
  */
 import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary, type RenderDegradation, type DocsDocumentTab } from './protocol.js';

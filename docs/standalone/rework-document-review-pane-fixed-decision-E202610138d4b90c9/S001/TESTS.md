@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 45 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 51 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -314,3 +314,39 @@ Run at 2026-10-13T12:53:02.450Z on commit `abbe50c1`. Tests check: **passed**. 1
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` | 0 | 9 | 0.7 s |  |
 | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 204 | 18.6 s |  |
+
+## t9
+
+Run at 2026-10-13T13:07:10.483Z on commit `e0d1a19f`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: each of the three buttons posts one docs-decision with the whole-document comment and is disabled until the result arrives, the result line is shown, and feedback with no comment posts nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: each of the three buttons posts one docs-decision with the whole-document comment and is disabled until the result arrives, the result line is shown, and feedback with no comment posts nothing | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: the existing section chooser, functional-requirement, diagram and experience renderers still draw**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: the existing section chooser, functional-requirement, diagram and experience renderers still draw | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**integration: docs review shell: the shell is one inline script under a nonce CSP with no remote origin, and its recorded baseline is that of the new shell**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docs review shell: the shell is one inline script under a nonce CSP with no remote origin, and its recorded baseline is that of the new shell | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+| pass | rendered shell: one nonce, unwidened CSP, the review pane body, guardMd present, no remote origin | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+| pass | the shell inlines each of the five source strings verbatim and exactly once, with the ux CSS fragment | `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 208 | 18.5 s |  |

@@ -29,20 +29,21 @@ import { ScopeKindTargetMismatchError } from '../../../analyze/context/invariant
 import type { ScopeDeps } from '../../../analyze/context/scope.js';
 import { prepareDecompose } from '../../../analyze/context/decomposer.js';
 import type { AnalyzeTarget, ClassifiedIntent } from '../../../shared/analyze-types.js';
-import type { RegisteredRepo } from '../../../shared/types.js';
+import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 import { handleAnalyzeStep } from '../analyze-step/handler.js';
 import { stepScope } from '../analyze-step/scope.js';
 import { decodeState, encodeState, STATE_VERSION, type StepStatePayload } from '../analyze-step/state.js';
 
 const REPO = '/work/app';
 
-function deps(): ScopeDeps & { calls: string[] } {
+/** Stand-in readers: one registered, ready and indexed repository (one stored entity). */
+function deps(repoPath = REPO): ScopeDeps & { calls: string[] } {
 	const calls: string[] = [];
 	return {
 		calls,
-		listRepos:           async () => { calls.push('listRepos'); return [{ path: REPO, status: 'ready' } as unknown as RegisteredRepo]; },
+		listRepos:           async () => { calls.push('listRepos'); return [{ path: repoPath, status: 'ready' } as unknown as RegisteredRepo]; },
 		findEntitiesByFile:  async () => { calls.push('findEntitiesByFile'); return []; },
-		listEntitiesForRepo: async () => { calls.push('listEntitiesForRepo'); return []; },
+		listEntitiesForRepo: async () => { calls.push('listEntitiesForRepo'); return [{ id: 'e1', repo: repoPath } as unknown as Entity]; },
 		loadConnections:     async () => {
 			calls.push('loadConnections');
 			return { file: { connections: [] }, resolved: [], warnings: [] } as unknown as LoadedConnections;
@@ -148,7 +149,7 @@ test('the real start phase builds a workspace scope, for every kind of source, a
 
 		// And that token drives the later phases' scope: resolved again
 		// from its intent, to the directory its repoPath names.
-		const again = await stepScope(state.intent, deps());
+		const again = await stepScope(state.intent, deps(repo));
 		assert.equal(again.lookupPath, state.repoPath, target);
 	}
 });

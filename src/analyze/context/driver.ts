@@ -290,7 +290,6 @@ export class ShaperInvalidInputError extends Error {
 	}
 }
 
-/** The plan about to be executed has no lookups. */
 /** A read of the scope's last-indexed time failed (a store error), so the
  *  freshness of a cached bundle or of a lookup could not be established. */
 export class ShaperIndexStateReadError extends Error {
@@ -308,6 +307,7 @@ export class ShaperLookupFailedError extends Error {
 	}
 }
 
+/** The plan about to be executed has no lookups. */
 export class ShaperNoPlanError extends Error {
 	constructor(detail: string) {
 		super(`No plan could be made for this request: ${detail}`);
@@ -353,24 +353,37 @@ function bundleRepoPathOf(scope: ResolvedScope): string | null {
 }
 
 /**
+ * Whether runShaper checks the index state of a request's scope itself: a run
+ * of any source but the generic one, unless its caller checked the scope
+ * already (runAnalyze, before it measured). Classification and task modes are
+ * not checked: by the time a task fires, the run-mode invocation has checked
+ * its scope. A cache hit and a miss decide by this one rule, so a warm cache
+ * never answers differently from a cold one.
+ */
+function checksScopeState(invocationMode: RunShaperArgs['invocationMode'], shaperId: RunShaperArgs['shaperId'], opts: ShapeOpts): boolean {
+	return invocationMode === 'run' && opts.scopeChecked !== true && shaperId !== 'generic';
+}
+
+/**
  * Whether a cached bundle may be served, judged from what it recorded,
  * without resolving the request's scope:
  *   - no repoPath key (written before it was recorded): a miss;
  *   - repoPath null (built over no repository): served, as today;
  *   - a repository: refused with RepoIndexingError when it is now under index
- *     (unless the caller checked the scope already), and a miss when its
- *     last-indexed time has moved past the bundle's.
+ *     and the request is one whose scope runShaper checks (checksScopeState),
+ *     as a miss would be; a miss when its last-indexed time has moved past the
+ *     bundle's.
  */
 async function servedFromCache(
 	bundle:        AnalyzeContextBundle,
-	opts:          ShapeOpts,
+	checksScope:   boolean,
 	lastIndexedOf: (path: string) => Promise<number | undefined>,
 ): Promise<boolean> {
 	const meta = bundle.meta;
 	if (meta === undefined || !('repoPath' in meta) || meta.repoPath === undefined) return false;
 	if (meta.repoPath === null) return true;
 	const repo = meta.repoPath;
-	if (opts.scopeChecked !== true) {
+	if (checksScope) {
 		await ensureRepoQueryable({ kind: 'repo', value: repo, repoPath: repo, lookupPath: repo });
 	}
 	const current = await lastIndexedOf(repo);
@@ -412,7 +425,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// something the cache does not depend on cannot make a hit unreachable.
 	const cached = readBundle(runId, cacheKey, opts);
 	if (cached !== null) {
-		const served = await servedFromCache(cached, opts, lastIndexedOf);
+		const served = await servedFromCache(cached, checksScopeState(invocationMode, shaperId, opts), lastIndexedOf);
 		if (served) {
 			log.debug(
 				{ runId, mode: invocationMode, shaperId, file: cacheFilePathFor(runId, cacheKey) },
@@ -439,10 +452,10 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	//     empty-closure check, which makes the under-index check first).
 	// classification + task modes skip both: by the time a task fires,
 	// the run-mode invocation has already checked its scope.
-	if (invocationMode === 'run' && opts.scopeChecked !== true) {
+	if (checksScopeState(invocationMode, shaperId, opts)) {
 		if (shaperId === 'code') {
 			await ensureNonEmptyClosure(scope);
-		} else if (shaperId !== 'generic') {
+		} else {
 			await ensureRepoQueryable(scope);
 		}
 	}

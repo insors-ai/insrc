@@ -21,9 +21,12 @@
 
 import { getEntity } from '../db/entities.js';
 import { listRepos } from '../db/repos.js';
-import { ensureRepoQueryable, RepoIndexingError } from '../analyze/context/invariants.js';
+import { ensureRepoQueryable, isUnderIndex, RepoIndexingError } from '../analyze/context/invariants.js';
 import type { IndexRunView } from '../indexer/run-record.js';
+import { getLogger } from '../shared/logger.js';
 import type { RegisteredRepo } from '../shared/types.js';
+
+const log = getLogger('search-guard');
 
 /** What a request names its repositories by. */
 export interface SearchRequestNames {
@@ -66,7 +69,15 @@ export async function guardSearchRequest(names: SearchRequestNames, deps: Search
 	const entityRepo = deps.entityRepo ?? storedRepoOf;
 	for (const id of names.entityIds ?? []) {
 		if (typeof id !== 'string' || id === '') continue;
-		const repo = await entityRepo(id);
+		let repo: string | undefined;
+		try {
+			repo = await entityRepo(id);
+		} catch (err) {
+			// A store read that fails names nothing, as a registry read that fails
+			// refuses nothing: the request is answered as before the guard existed.
+			log.debug({ entityId: id, err: (err as Error).message }, 'guardSearchRequest: entity read failed; not guarded by it');
+			continue;
+		}
 		if (repo !== undefined) paths.add(repo);
 	}
 	for (const path of paths) {
@@ -103,7 +114,7 @@ export async function underIndexFilter(deps: Pick<SearchGuardDeps, 'listRepos'> 
 	} catch {
 		registered = [];
 	}
-	const repos = new Set(registered.filter(r => r.status === 'indexing' || r.status === 'error').map(r => r.path));
+	const repos = new Set(registered.filter(isUnderIndex).map(r => r.path));
 	return {
 		repos,
 		entities: rows => rows.filter(e => e.repo === undefined || !repos.has(e.repo)),

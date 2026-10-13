@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s5",
     "createdAt": "2026-10-13T11:53:21.419Z",
-    "updatedAt": "2026-10-13T16:00:42.703Z",
+    "updatedAt": "2026-10-13T19:41:57.790Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -70,21 +70,613 @@
       {
         "id": "t15",
         "passed": true
+      },
+      {
+        "id": "t16",
+        "passed": true
       }
     ],
-    "summary": "An analysis asked of the daemon about a repository being indexed is now refused with 'repo-indexing' and how far the run has got whichever way it is asked: analyze.context.buildRun, insrc_analyze and insrc_analyze_step through step.call (the step tool gained the check it lacked), and a workflow step's grounding, which passes the code and message on unchanged.",
+    "summary": "Shipped s5: the installed daemon was updated to e5e374b5 and restarted with no store migration and no re-index. Smoke 1 first failed on the step tool (it announced XL for an unindexed path), fixed as ISSUE-7c255f61, then passed; smoke 2 and 3 passed on a reindex of AFM. Results in S005/smoke.md.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/BUILD-7c255f612a40e0eb-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-c9d0c355d4719346-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-7c255f612a40e0eb-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-c2ba6fa62a148ed1-s5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-c9d0c355d4719346-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-0c845762241ba26c.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-61045de91faef1a0.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-7c255f612a40e0eb.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-83c85f38afad7843.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-c9d0c355d4719346.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-7c255f612a40e0eb-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-c9d0c355d4719346-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/7c255f612a40e0eb-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/c9d0c355d4719346-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/smoke.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/keep-chat-turn-s-reply-when-E2026101383c85f38/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/refuse-docs-request-scope-index-does-E202610130c845762/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/refuse-unindexed-scope-analyze-step-tool-E202610137c255f61/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/refuse-unindexed-scope-analyze-step-tool-E202610137c255f61/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/refuse-unindexed-scope-analyze-step-tool-E202610137c255f61/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/refuse-unindexed-scope-analyze-step-tool-E202610137c255f61/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/release-review-wait-timer-when-transport-E20261013c9d0c355/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/release-review-wait-timer-when-transport-E20261013c9d0c355/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/release-review-wait-timer-when-transport-E20261013c9d0c355/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/release-review-wait-timer-when-transport-E20261013c9d0c355/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/model-call-error.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/ollama.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-output.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/driver-unit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/invariants.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/model-failure-callers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/model-failure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/shaper-errors.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/invariants.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/model-failure.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/executor/__tests__/walker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/executor-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/hinted-branch.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/live-runs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/orchestrator.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/run-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/run-order.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/shaper-causes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/__tests__/driver-unit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/task-scope.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/analyze-run-empty-prompt.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/helpers/seeded-daemon.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/search-filter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/search-guard-rule.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/search-guard.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/search-request-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/analyze-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/search-guard.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/analyze-step-scope.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/repo-indexing-steps.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/analyze-step/handler.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/analyze-step/scope.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/graph/__tests__/graph-guard.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/graph/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/repos-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/codec.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/codec.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/db/repos.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/index-run-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/run-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/review-stream.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:41:57.790Z"
+      },
+      {
+        "target": {
           "file": "vscode-plugin/package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T16:00:42.703Z"
+        "timestamp": "2026-10-13T19:41:57.790Z"
       }
     ],
-    "commit": "c3832632"
+    "commit": "96d4c105"
   }
 }

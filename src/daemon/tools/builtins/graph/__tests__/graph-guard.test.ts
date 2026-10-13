@@ -39,7 +39,7 @@ let home: string;
 let stub: Server;
 let tools: { entity: Tool; search: Tool; callers: Tool; callees: Tool; query: Tool };
 let updateRepoStatus: (db: null, path: string, status: 'ready' | 'indexing', lastIndexed?: string) => Promise<void>;
-const ids = { fnA: '', fnX: '', fileX: '' };
+const ids = { fnA: '', fnX: '', fileX: '', fileA: '', fileB: '' };
 const deps = { closureRepos: [A, X] } as unknown as ToolDeps;
 
 function axis(i: number): number[] {
@@ -97,12 +97,17 @@ test.before(async () => {
 	const fnA = ent(A, `${A}/a.ts`, 'function', 'fnA');
 	const fnX = ent(X, `${X}/x.ts`, 'function', 'fnX');
 	const fileX = ent(X, `${X}/x.ts`, 'file', 'x.ts');
-	Object.assign(ids, { fnA: fnA.id, fnX: fnX.id, fileX: fileX.id });
-	await upsertEntities(null, [fnA, fnX, fileX]);
+	const fileA = ent(A, `${A}/a.ts`, 'file', 'a.ts');
+	const fileB = ent(A, `${A}/b.ts`, 'file', 'b.ts');
+	Object.assign(ids, { fnA: fnA.id, fnX: fnX.id, fileX: fileX.id, fileA: fileA.id, fileB: fileB.id });
+	await upsertEntities(null, [fnA, fnX, fileX, fileA, fileB]);
 	await upsertRelations(null, [
 		{ kind: 'CALLS', from: fnA.id, to: fnX.id, resolved: true },
 		{ kind: 'CALLS', from: fnX.id, to: fnA.id, resolved: true },
 		{ kind: 'DEFINES', from: fileX.id, to: fnX.id, resolved: true },
+		// a.ts imports b.ts (same repository) and x.ts (the repository that goes under index).
+		{ kind: 'IMPORTS', from: fileA.id, to: fileB.id, resolved: true },
+		{ kind: 'IMPORTS', from: fileA.id, to: fileX.id, resolved: true },
 	]);
 	await addEntityEmbeddings([
 		{ id: fnA.id, embedding: axis(0), repo: A, kind: 'function', artifact: false },
@@ -175,6 +180,27 @@ test("graph_query from a ready repository whose closure reaches a repository und
 		assert.ok(!idsIn(callers, 'results').includes(ids.fnX), 'graph_callers: X left out');
 		const scc = await tools.query.execute({ op: 'scc', roots: [ids.fnA], kindFilter: ['CALLS'] }, deps);
 		assert.ok(!JSON.stringify(scc.data).includes(ids.fnX), 'graph_query scc: X left out');
+	} finally {
+		await updateRepoStatus(null, X, 'ready', '2026-10-13T00:00:00.000Z');
+	}
+});
+
+test("graph_search reports as closureRepos the repositories it searched, leaving out one under index; graph_query op=imports refuses a file under index and leaves such a repository's files out of another file's imports", async () => {
+	// While X is ready: both repositories searched; a.ts imports b.ts and x.ts.
+	const before = await tools.search.execute({ query: 'q', limit: 10 }, deps);
+	assert.deepEqual((before.data as { closureRepos: string[] }).closureRepos, [A, X]);
+	const importsBefore = await tools.query.execute({ op: 'imports', fileEntityId: ids.fileA }, deps);
+	assert.deepEqual(idsIn(importsBefore, 'entities').sort(), [ids.fileB, ids.fileX].sort());
+
+	await updateRepoStatus(null, X, 'indexing');
+	try {
+		const during = await tools.search.execute({ query: 'q', limit: 10 }, deps);
+		assert.deepEqual((during.data as { closureRepos: string[] }).closureRepos, [A], 'the searched repositories only');
+		assert.match(during.output ?? '', /across 1 repo\(s\)/);
+		await refused(tools.query, { op: 'imports', fileEntityId: ids.fileX }, 'graph_query imports of a file under index');
+		const importsDuring = await tools.query.execute({ op: 'imports', fileEntityId: ids.fileA }, deps);
+		assert.equal(importsDuring.success, true);
+		assert.deepEqual(idsIn(importsDuring, 'entities'), [ids.fileB], 'x.ts left out');
 	} finally {
 		await updateRepoStatus(null, X, 'ready', '2026-10-13T00:00:00.000Z');
 	}

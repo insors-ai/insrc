@@ -291,6 +291,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     readonly key: string;
     /** Section id -> the sid of its first row and the section as last pushed. */
     readonly sections: Map<number, { readonly sid: string; section: DiffSection }>;
+    /** Edited paths whose path line is held back until the check after the edit: path -> its marker row's text. */
+    readonly held: Map<string, string>;
     /** The turn's terminal event has passed: rows that arrive now are saved at once. */
     afterTerminal: boolean;
     ended: boolean;
@@ -298,7 +300,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   let diffTurn: DiffTurn | undefined;
   let diffTurnSeq = 0;
   const openDiffTurn = (s: ChatSession): DiffTurn => {
-    const dt: DiffTurn = { session: s, key: `d${Date.now().toString(36)}${(diffTurnSeq++).toString(36)}`, sections: new Map(), afterTerminal: false, ended: false };
+    const dt: DiffTurn = { session: s, key: `d${Date.now().toString(36)}${(diffTurnSeq++).toString(36)}`, sections: new Map(), held: new Map(), afterTerminal: false, ended: false };
     diffTurn = dt;
     return dt;
   };
@@ -310,6 +312,37 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   };
   const pushMarker = (dt: DiffTurn, text: string): void => pushRow(dt, { role: 'marker', text, cssClass: MARKER_CLASS.edit, at: now() });
   const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
+  /** The text of the marker row a 'file-edit' event of this path writes. */
+  const pathLine = (path: string): string => markerFor({ kind: 'file-edit', turnId: '', path, diff: { path, hunks: [] } })?.label ?? path;
+  /** Settle one held path: it gets its path line when no section of the turn is in that file. */
+  const settlePath = (dt: DiffTurn, path: string): void => {
+    const text = dt.held.get(path);
+    if (dt.ended || text === undefined) return;
+    dt.held.delete(path);
+    let shown = false;
+    try {
+      shown = governor !== undefined && deps.editGovernance !== undefined && governor.sectionPaths().has(deps.editGovernance.relPath(path));
+    } catch (err) {
+      warnGovernor('sectionPaths', err);
+    }
+    if (!shown) pushMarker(dt, text);
+  };
+  const settleHeld = (dt: DiffTurn): void => {
+    for (const path of [...dt.held.keys()]) settlePath(dt, path);
+  };
+  /**
+   * End the open diff state on any exit other than the turn's own end: a detach, a stop, an error
+   * or the next turn's start. Held paths are settled at once against the sections known now, the
+   * session is saved and the governor's turn is abandoned, so a check in flight shows nothing.
+   */
+  const endDiffTurn = (): void => {
+    const dt = diffTurn;
+    if (dt === undefined || dt.ended) return;
+    settleHeld(dt);
+    dt.ended = true;
+    trySave(dt.session);
+    if (governor !== undefined) governor.abandonTurn().catch((err: unknown) => warnGovernor('abandonTurn', err));
+  };
 
   let governor: EditGovernor | undefined;
   if (deps.editGovernance !== undefined) {
@@ -1150,6 +1183,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // separate edit-review gate is retired, Claude-Code style).
       beforeRun: async () => {
         if (governor === undefined) return;
+        endDiffTurn(); // a turn that never reached its end still holds a diff state: end it first
         await governor.beginTurn({ mode: 'auto', cwd: deps.cwd() });
         // Story E20261013b2e8109f:S001: in a git folder with the chat view on, this turn's changes
         // are shown as sections; the turn gets its own diff state.
@@ -1165,9 +1199,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       onEvent: (ev) => {
         // ISSUE-6a811b8a: an approval-request is queued, not posted; only the queue head is shown.
         // Story E20261012ddc4ede1:S001: write the row first, then post the event with its index.
-        const rowIndex = appendEvent(s, ev);
-        if (ev.kind === 'approval-request') enqueueApproval(ev);
-        else postLive(ev, rowIndex);
+        // Story E20261013b2e8109f:S001: while this turn's diff state is open an edit's path line and
+        // its successful result are held back (the sections show the change); a failed edit shows
+        // its path, then its error.
+        const open = dt !== undefined && !dt.ended ? dt : undefined;
+        const edited = open !== undefined && ev.kind === 'tool-result' && ev.editPath !== undefined ? ev.editPath : undefined;
+        if (open !== undefined && ev.kind === 'file-edit') {
+          open.held.set(ev.path, markerFor(ev)?.label ?? ev.path);
+        } else if (open !== undefined && edited !== undefined && ev.kind === 'tool-result' && ev.isError !== true) {
+          if (!open.held.has(edited)) open.held.set(edited, pathLine(edited));
+        } else {
+          if (open !== undefined && edited !== undefined) {
+            open.held.delete(edited);
+            pushMarker(open, pathLine(edited));
+          }
+          const rowIndex = appendEvent(s, ev);
+          if (ev.kind === 'approval-request') enqueueApproval(ev);
+          else postLive(ev, rowIndex);
+        }
         // ISSUE-6a811b8a: the turn's end lets its batch of turn-ended requests complete.
         if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
         // S004 (dev-chat ux polish): remember a surfaced selection request's options (keyed by
@@ -1181,8 +1230,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (governor !== undefined && ev.kind === 'file-edit') governor.observe(ev.path).catch((err: unknown) => warnGovernor('observe', err));
         // Story E20261013b2e8109f:S001: a tool call ended or a patch landed: look for what changed.
         // Fired and forgotten, like observe: the turn loop never waits for git.
-        if (governor !== undefined && dt !== undefined && !dt.ended && (ev.kind === 'file-edit' || ev.kind === 'tool-result')) {
-          governor.check().catch((err: unknown) => warnGovernor('check', err));
+        // A held path is settled after the check that follows the end of its edit: an applied
+        // patch (codex) at its event, a claude edit at its successful result.
+        if (governor !== undefined && open !== undefined && (ev.kind === 'file-edit' || ev.kind === 'tool-result')) {
+          const done = ev.kind === 'file-edit' ? (ev.applied === true ? ev.path : undefined) : ev.isError !== true ? edited : undefined;
+          governor.check()
+            .catch((err: unknown) => warnGovernor('check', err))
+            .then(() => {
+              if (done === undefined || open.ended) return;
+              settlePath(open, done);
+              if (open.afterTerminal) trySave(open.session);
+            })
+            .catch((err: unknown) => warnGovernor('settle', err));
         }
       },
       onTerminal: () => {
@@ -1195,16 +1254,27 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (governor !== undefined) {
           governor.resolveTurn()
             .catch((err: unknown) => warnGovernor('resolveTurn', err))
-            .then(() => { if (ending !== undefined) ending.ended = true; })
-            .catch(() => {});
+            .then(() => {
+              if (ending === undefined || ending.ended) return;
+              settleHeld(ending); // whatever is still held gets its path line now
+              ending.ended = true;
+              trySave(ending.session);
+            })
+            .catch((err: unknown) => warnGovernor('settle', err));
         }
         postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
       },
-      onError: (message, turnId) => post({ type: 'turn-event', event: { kind: 'error', turnId, message } }),
+      onError: (message, turnId) => {
+        endDiffTurn();
+        post({ type: 'turn-event', event: { kind: 'error', turnId, message } });
+      },
     };
     // Single-in-flight per panel: the newest message wins. start drops a turn still waiting for
     // the lock and stops the previous turn posting (the transcript never interleaves); the previous
     // turn's process is NOT killed: this turn waits for it.
+    // Story E20261013b2e8109f:S001: start() stops the previous turn reporting to its sink at once,
+    // while this turn's beforeRun may wait for that turn's process: settle its held paths now.
+    endDiffTurn();
     await turns.start(s, req, sink);
   }
 
@@ -1304,6 +1374,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.
         // Idempotent when no turn is active (stop() no-ops).
         rejectQueuedApprovals(); // ISSUE-6a811b8a: Stop rejects the requests still waiting
+        endDiffTurn();
         void turns.stop();
         return;
       case 'new-chat': {
@@ -1316,6 +1387,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         }
         // Switching the active session stops following any in-flight turn first, or its deltas
         // would paint into the newly-restored session's view (a session-file turn keeps running).
+        endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
         void turns.detach();
         turns.invalidate();
         dropQueuedApprovals(); // ISSUE-6a811b8a: a chat switch drops the waiting requests
@@ -1338,6 +1410,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           postHistory();
           return;
         }
+        endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
         void turns.detach();
         turns.invalidate();
         dropQueuedApprovals(); // ISSUE-6a811b8a: a chat switch drops the waiting requests
@@ -1567,6 +1640,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     disposed = false;
     channel = ch;
     channel.onDidDispose(() => {
+      endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
       void turns.detach();
       dropQueuedApprovals();
       disposed = true;
@@ -1590,6 +1664,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // A restored panel arrived. Supersede any live channel (kill its in-flight turn + dispose
       // it) so exactly one channel remains, then wire the restored one in place.
       if (channel !== undefined) {
+        endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
         void turns.detach();
         try {
           channel.dispose();
@@ -1601,6 +1676,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       wireChannel(ch);
     },
     dispose(): void {
+      endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
       void turns.detach();
       dropQueuedApprovals();
       disposed = true;

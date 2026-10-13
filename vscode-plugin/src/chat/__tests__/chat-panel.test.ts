@@ -1162,6 +1162,286 @@ test("diff sections: the restored window and an older page carry each section's 
   }
 });
 
+// ---- Story E20261013b2e8109f:S001 / t7: held path lines, settling, and ending the diff state ----
+
+const editResult = (path: string, output = `The file ${path} has been updated`, isError = false): TurnEvent =>
+  ({ kind: 'tool-result', turnId: 't1', output, editPath: path, ...(isError ? { isError: true } : {}) }) as TurnEvent;
+const applied = (path: string): TurnEvent => ({ kind: 'file-edit', turnId: 't1', path, diff: { path, hunks: [] }, applied: true });
+const pathLabel = (path: string): string => markerFor(fileEdit(path))!.label;
+const markerTexts = (rows: readonly TranscriptEntry[]): string[] => rows.filter((r) => r.role === 'marker').map((r) => (r as { text: string }).text);
+
+test('diff sections: while the diff state is open the file-edit marker and the successful edit result write no row, and a failed edit pushes and posts the path marker then the error row', async () => {
+  const fc = fakeChannel();
+  const gov = fakeGovernance();
+  const fed = fedAdapter();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: fed.adapter }, ['claude']), store, cwd: () => '/repo', editGovernance: gov.deps });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => fed.runs() === 1);
+
+  // A successful edit: its section is the only thing shown.
+  gov.patch.next = patchOf(['src/a.ts', 1, 'x']);
+  fed.feed(fileEdit('src/a.ts'));
+  fed.feed(editResult('src/a.ts'));
+  await waitFor(() => transcriptRows(fc).length === 1);
+  await settleDiff();
+  assert.equal(transcriptRows(fc)[0]!.row.role, 'diff');
+  assert.deepEqual(turnEvents(fc).filter((e) => e.kind === 'file-edit' || e.kind === 'tool-result'), [], 'neither event is posted');
+  assert.equal(transcriptRows(fc).length, 1, 'and no path line follows, the path has a section');
+
+  // A failed edit: the path line, then the error.
+  fed.feed(fileEdit('src/b.ts'));
+  fed.feed(editResult('src/b.ts', 'String to replace not found in file', true));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'tool-result'));
+  const marker = transcriptRows(fc).find((p) => p.row.role === 'marker')!;
+  assert.deepEqual({ ...marker.row, at: 0 }, { role: 'marker', text: pathLabel('src/b.ts'), cssClass: markerFor(fileEdit('src/b.ts'))!.cssClass, at: 0 });
+  const errorPost = fc.posted.find((m) => m.payload.type === 'turn-event' && (m.payload['event'] as TurnEvent).kind === 'tool-result')!;
+  assert.equal(errorPost.payload['rowIndex'], marker.rowIndex + 1, 'the error row follows the path line');
+  assert.ok(fc.posted.indexOf(errorPost) > fc.posted.findIndex((m) => m.payload.type === 'transcript-row' && (m.payload['row'] as TranscriptEntry).role === 'marker'));
+  assert.equal(turnEvents(fc).some((e) => e.kind === 'file-edit'), false, 'the failed edit\'s own file-edit event is not posted either');
+
+  // A result that is no edit is written as today.
+  fed.feed(toolResult('listing'));
+  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'tool-result').length === 2);
+  gov.patch.next = patchOf(['src/a.ts', 1, 'x']);
+  fed.feed(DONE);
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  await settleDiff();
+  const transcript = store.get(store.list()[0]!.id)!.transcript;
+  assert.deepEqual(transcript.filter((r) => r.role !== 'user').map((r) => r.role), ['diff', 'marker', 'tool-result', 'tool-result', 'marker']);
+  assert.deepEqual(transcript.filter((r) => r.role === 'tool-result').map((r) => (r as { output: string }).output), ['String to replace not found in file', 'listing']);
+  assert.equal(markerTexts(transcript).includes(pathLabel('src/a.ts')), false, 'no path line for the successful edit');
+  assert.equal(markerTexts(transcript).filter((t) => t === pathLabel('src/b.ts')).length, 1, 'one path line for the failed edit, not a second at the end');
+  for (const p of transcriptRows(fc)) assert.deepEqual(transcript[p.rowIndex], p.row);
+});
+
+test('diff sections: an edit whose path has no section after its check gets its path marker, posted as transcript-row, for a claude result, for a codex applied file-edit and at the end of the turn; an edit whose path has a section gets none', async () => {
+  const fc = fakeChannel();
+  const gov = fakeGovernance();
+  const fed = fedAdapter();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: fed.adapter }, ['claude']), store, cwd: () => '/repo', editGovernance: gov.deps });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => fed.runs() === 1);
+  const texts = (): string[] => markerTexts(transcriptRows(fc).map((p) => p.row));
+
+  // claude: the edit of a file git ignores. Held at the call, settled after the check at its result.
+  fed.feed(fileEdit('ignored/x.log'));
+  await waitFor(() => gov.checks.count === 1);
+  await settleDiff();
+  assert.deepEqual(texts(), [], 'held while the edit has not ended');
+  fed.feed(editResult('ignored/x.log'));
+  await waitFor(() => texts().length === 1);
+  assert.deepEqual(texts(), [pathLabel('ignored/x.log')]);
+
+  // codex: an applied patch is settled after the check at its own event; the path is absolute.
+  fed.feed(applied('/repo/out/y.bin'));
+  await waitFor(() => texts().length === 2);
+  assert.equal(texts()[1], pathLabel('/repo/out/y.bin'));
+
+  // A path with a section gets none: codex (absolute path, the section's is relative) and claude.
+  gov.patch.next = patchOf(['src/a.ts', 1, 'x'], ['src/c.ts', 1, 'y']);
+  fed.feed(applied('/repo/src/a.ts'));
+  await waitFor(() => transcriptRows(fc).filter((p) => p.row.role === 'diff').length === 2);
+  fed.feed(fileEdit('src/c.ts'));
+  fed.feed(editResult('src/c.ts'));
+  await waitFor(() => gov.checks.count === 6);
+  await settleDiff();
+  assert.equal(texts().length, 2, 'no path line for a path that has a section');
+
+  // The end of the turn: an edit whose result never came is settled after the last check.
+  fed.feed(fileEdit('src/never.ts'));
+  fed.feed(fileEdit('src/a.ts'));
+  await waitFor(() => gov.checks.count === 8);
+  await settleDiff();
+  assert.equal(texts().length, 2, 'both still held');
+  fed.feed(DONE);
+  await waitFor(() => texts().length === 3);
+  await settleDiff();
+  assert.deepEqual(texts(), [pathLabel('ignored/x.log'), pathLabel('/repo/out/y.bin'), pathLabel('src/never.ts')]);
+  const transcript = store.get(store.list()[0]!.id)!.transcript;
+  for (const p of transcriptRows(fc)) assert.deepEqual(transcript[p.rowIndex], p.row);
+  assert.equal(turnEvents(fc).some((e) => e.kind === 'file-edit' || e.kind === 'tool-result'), false);
+  assert.equal(gov.released.count, 1);
+});
+
+test("diff sections: a chat switch in mid-turn settles the held paths, saves, abandons the governor's turn before the detach, and a check in flight then pushes and posts nothing", async () => {
+  const fake = fakeSessionFs();
+  const store = createFileChatSessionStore({ root: '/sessions', fs: fake.fs });
+  const diskRows = (id: string): TranscriptEntry[] =>
+    (fake.files.get(`/sessions/${id}${ROWS_SUFFIX}`) ?? '').split('\n').filter((l) => l !== '').map((l) => JSON.parse(l) as TranscriptEntry);
+  const fc = fakeChannel();
+  const gov = fakeGovernance();
+  const fed = fedAdapter();
+  const order: string[] = [];
+  const release = gov.deps.baseline.release;
+  const deps: ChatEditGovernanceDeps = { ...gov.deps, baseline: { ...gov.deps.baseline, release: async (h) => { order.push('release'); await release(h); } } };
+  const adapter: StreamAdapter = { ...fed.adapter, cancel: (id) => { order.push('cancel'); return fed.adapter.cancel(id); } };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', editGovernance: deps });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => fed.runs() === 1);
+  fed.feed(fileEdit('src/held.ts'));
+  await waitFor(() => gov.checks.count === 1);
+  // A check is in flight when the chat is switched.
+  let open!: (v: string) => void;
+  gov.patch.next = () => new Promise<string>((r) => { open = r; });
+  fed.feed(toolResult());
+  await waitFor(() => gov.checks.count === 2);
+  await settleDiff();
+  assert.equal(transcriptRows(fc).length, 0);
+
+  fc.send(env('new-chat', { provider: 'claude' }));
+  // At once: the held path's line is pushed and posted before the new chat is shown.
+  const rows = transcriptRows(fc);
+  assert.equal(rows.length, 1);
+  assert.equal((rows[0]!.row as { text: string }).text, pathLabel('src/held.ts'));
+  const markerAt = fc.posted.findIndex((m) => m.payload.type === 'transcript-row');
+  const restoredAt = fc.posted.map((m) => m.payload.type).lastIndexOf('session-restored');
+  assert.ok(markerAt < restoredAt, 'posted while its session was still the one shown');
+  await waitFor(() => gov.released.count === 1);
+  await waitFor(() => order.includes('cancel'));
+  assert.deepEqual(order.slice(0, 2), ['release', 'cancel'], "the governor's turn is abandoned before the detach");
+  const id = store.list()[0]!.id;
+  assert.ok(markerTexts(diskRows(id)).includes(pathLabel('src/held.ts')), 'saved');
+
+  // The check in flight answers now: nothing is pushed or posted.
+  const before = JSON.stringify(store.get(id)!.transcript);
+  open(patchOf(['src/held.ts', 1, 'late'], ['src/other.ts', 1, 'late']));
+  await settleDiff();
+  assert.equal(transcriptRows(fc).length, 1);
+  assert.equal(JSON.stringify(store.get(id)!.transcript), before);
+  assert.equal(diffRowsOf(store.get(id)!.transcript).length, 0);
+  assert.equal(gov.checks.count, 2, 'no last check');
+  assert.equal(gov.released.count, 1);
+});
+
+test('diff sections: the Stop control, a newer turn\'s start, a sink error and closing the panel each end the open diff state and settle its held paths', async () => {
+  const start = async (adapterOf?: (fed: ReturnType<typeof fedAdapter>) => StreamAdapter) => {
+    const fc = fakeChannel();
+    const gov = fakeGovernance();
+    const fed = fedAdapter();
+    const store = createInMemoryChatSessionStore();
+    const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapterOf?.(fed) ?? fed.adapter }, ['claude']), store, cwd: () => '/repo', editGovernance: gov.deps, logger: { warn: () => {}, error: () => {} } });
+    host.open();
+    fc.send(env('submit-turn', { text: 'go' }));
+    await waitFor(() => fed.runs() === 1);
+    fed.feed(fileEdit('src/held.ts'));
+    await waitFor(() => gov.checks.count === 1);
+    await settleDiff();
+    assert.equal(transcriptRows(fc).length, 0, 'held');
+    return { fc, gov, fed, store, host };
+  };
+  const ended = async (h: Awaited<ReturnType<typeof start>>, why: string): Promise<void> => {
+    await waitFor(() => h.gov.released.count === 1);
+    const transcript = h.store.get(h.store.list()[0]!.id)!.transcript;
+    assert.equal(markerTexts(transcript).filter((t) => t === pathLabel('src/held.ts')).length, 1, `${why}: the held path got its line`);
+    assert.equal(h.gov.checks.count, 1, `${why}: no last check`);
+    // A late answer or a later event of that turn is no longer held and adds no section.
+    h.gov.patch.next = patchOf(['src/held.ts', 1, 'late']);
+    await settleDiff();
+    assert.equal(diffRowsOf(transcript).length, 0, why);
+  };
+
+  // The Stop control.
+  const stop = await start();
+  stop.fc.send(env('cancel-turn'));
+  assert.equal(transcriptRows(stop.fc).length, 1, 'settled at once, and posted');
+  await ended(stop, 'stop');
+
+  // Closing the panel.
+  const close = await start();
+  close.fc.fireDispose();
+  await ended(close, 'close');
+
+  // A sink error: the adapter fails after the edit.
+  let fail!: () => void;
+  const failing = new Promise<void>((r) => { fail = r; });
+  const err = await start((fed) => ({
+    ...fed.adapter,
+    async *run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+      const it = fed.adapter.run(req, opts)[Symbol.asyncIterator]();
+      const first = await it.next();
+      if (first.done !== true) yield first.value;
+      await failing;
+      throw new Error('the CLI died');
+    },
+  }));
+  fail();
+  await waitFor(() => turnEvents(err.fc).some((e) => e.kind === 'error'));
+  const markerAt = err.fc.posted.findIndex((m) => m.payload.type === 'transcript-row');
+  const errorAt = err.fc.posted.findIndex((m) => m.payload.type === 'turn-event' && (m.payload['event'] as TurnEvent).kind === 'error');
+  assert.ok(markerAt !== -1 && markerAt < errorAt, 'the path line comes before the error');
+  await ended(err, 'error');
+
+  // A newer turn's start. The first turn is superseded: its sink is no longer called, not even at
+  // its end, and the new turn starts once the first one's output has ended.
+  const newer = await start();
+  newer.fc.send(env('submit-turn', { text: 'second' }));
+  await settleDiff();
+  assert.equal(transcriptRows(newer.fc).length, 1, 'settled when the newer message arrived, without waiting for the first turn to end');
+  newer.fed.feed(DONE);
+  await waitFor(() => newer.gov.snapshots.count === 2);
+  assert.equal(newer.gov.checks.count, 1, 'the superseded turn ran no last check');
+  await waitFor(() => newer.gov.released.count >= 1);
+  const transcript = newer.store.get(newer.store.list()[0]!.id)!.transcript;
+  assert.equal(markerTexts(transcript).filter((t) => t === pathLabel('src/held.ts')).length, 1, 'the held path got its line');
+  // The new turn has its own diff state: its sections get a new key.
+  newer.gov.patch.next = patchOf(['src/n.ts', 1, 'new turn']);
+  await waitFor(() => newer.fed.runs() === 2);
+  newer.fed.feed(toolResult());
+  await waitFor(() => diffRowsOf(transcript).length === 1);
+  newer.gov.patch.next = patchOf(['src/n.ts', 1, 'new turn']);
+  newer.fed.feed(DONE);
+  await waitFor(() => newer.gov.released.count === 2);
+});
+
+test('diff sections: a followed turn writes and posts its rows as today and asks for no check, also while the governor still holds a snapshot', async () => {
+  const events: TurnEvent[] = [fileEdit('src/a.ts'), editResult('src/a.ts'), editResult('src/b.ts', 'no such file', true), { kind: 'done', turnId: 't1', ok: true }];
+  // A host with governance follows a saved turn (as after a reload): no diff state was ever made.
+  const followed = async (prepare?: (h: { fc: FakeChannel; gov: FakeGov; fed: ReturnType<typeof fedAdapter> }) => Promise<void>) => {
+    const { store, id } = storeWithLiveTurn(1);
+    const resume = resumeAdapter(events);
+    const fed = fedAdapter();
+    const adapter: StreamAdapter = { ...fed.adapter, resume: resume.adapter.resume! };
+    const fc = fakeChannel();
+    const gov = fakeGovernance();
+    gov.patch.next = patchOf(['src/a.ts', 1, 'x']);
+    const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', editGovernance: gov.deps, hostPid: 2, isAlive: (pid) => pid === 2 });
+    host.open();
+    await prepare?.({ fc, gov, fed });
+    const checksBefore = gov.checks.count;
+    const postedBefore = fc.posted.length;
+    fc.send(env('open-chat', { chatId: id }));
+    await waitFor(() => store.get(id)?.liveTurn === undefined);
+    await settleDiff();
+    const rows = store.get(id)!.transcript;
+    assert.deepEqual(rows.slice(2).map((r) => r.role), ['marker', 'tool-result', 'tool-result', 'marker'], 'the path line and both result rows, as today');
+    assert.equal((rows[2] as { text: string }).text, pathLabel('src/a.ts'));
+    const after = fc.posted.slice(postedBefore);
+    assert.deepEqual(after.filter((m) => m.payload.type === 'turn-event').map((m) => (m.payload['event'] as TurnEvent).kind), ['file-edit', 'tool-result', 'tool-result', 'done']);
+    assert.equal(after.some((m) => m.payload.type === 'transcript-row'), false, 'no row is pushed outside the event path');
+    assert.equal(gov.checks.count, checksBefore, 'no check is asked for');
+    assert.equal(diffRowsOf(rows).length, 0);
+    return { gov };
+  };
+  await followed();
+
+  // The same while the governor still holds the snapshot of a turn this host started in another
+  // chat: that turn's diff state is ended by the chat switch, and the followed turn is untouched.
+  const held = await followed(async ({ fc, gov, fed }) => {
+    fc.send(env('submit-turn', { text: 'go' }));
+    await waitFor(() => fed.runs() === 1);
+    fed.feed(toolResult());
+    await waitFor(() => gov.checks.count === 1);
+    await waitFor(() => transcriptRows(fc).length === 1);
+    assert.equal(gov.released.count, 0, 'the snapshot is held');
+  });
+  assert.equal(held.gov.snapshots.count, 1);
+});
+
 test('S006 integration: set-edit-mode updates + persists session.editMode', async () => {
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();

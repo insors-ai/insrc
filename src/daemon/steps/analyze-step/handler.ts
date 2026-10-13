@@ -12,6 +12,7 @@
  * See docs/plans/mcp-multi-turn-analyze.md for the full protocol.
  */
 
+import { RepoIndexingError } from '../../../analyze/context/invariants.js';
 import { appendFileSync } from 'node:fs';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -105,6 +106,9 @@ async function dispatch(input: unknown): Promise<StepOutput> {
 				);
 		}
 	} catch (err) {
+		// A repository under index: its own code and message, which say how far
+		// the run has got. Retryable: the index ends.
+		if (err instanceof RepoIndexingError) return errorResult('repo-indexing', err.message, true);
 		const msg = err instanceof Error ? err.message : String(err);
 		log.warn({ phase: step.phase, err: msg }, 'insrc_analyze_step: uncaught error');
 		return errorResult('internal', msg, false);

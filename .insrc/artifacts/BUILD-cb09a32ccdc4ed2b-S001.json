@@ -4,12 +4,13 @@
     "epicHash": "cb09a32ccdc4ed2b",
     "storyId": "S001",
     "createdAt": "2026-10-13T18:12:18.675Z",
-    "updatedAt": "2026-10-13T18:12:18.675Z",
+    "updatedAt": "2026-10-13T18:46:58.274Z",
     "authoredBy": "controller",
     "standalone": true,
     "sizeClass": "small",
     "epicCreatedAt": "2026-10-13T17:09:23.324Z",
-    "epicSlug": "show-epic-s-own-records-its"
+    "epicSlug": "show-epic-s-own-records-its",
+    "approvedAt": "2026-10-13T18:46:58.679Z"
   },
   "body": {
     "tasks": [
@@ -25,40 +26,54 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/CR-cb09a32ccdc4ed2b-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T18:46:58.274Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/show-epic-s-own-records-its-E20261013cb09a32c/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T18:46:58.274Z"
+      },
+      {
+        "target": {
           "file": "vscode-plugin/src/delivery/__tests__/epic-records.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T18:12:18.675Z"
+        "timestamp": "2026-10-13T18:46:58.274Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/delivery/board-host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T18:12:18.675Z"
+        "timestamp": "2026-10-13T18:46:58.274Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/delivery/board-model.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T18:12:18.675Z"
+        "timestamp": "2026-10-13T18:46:58.274Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/delivery/board-protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T18:12:18.675Z"
+        "timestamp": "2026-10-13T18:46:58.274Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/delivery/board-state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T18:12:18.675Z"
+        "timestamp": "2026-10-13T18:46:58.274Z"
       }
     ],
-    "commit": "5ab1fd97"
+    "commit": "b1c2f5d9"
   }
 }

@@ -2,9 +2,9 @@
 
 # Build (standalone small) — Story S001
 
-**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-13T18:12:18.675Z  ·  **Updated:** 2026-10-13T18:12:18.675Z
+**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-13T18:12:18.675Z  ·  **Updated:** 2026-10-13T18:46:58.274Z
 
-**Commit:** 5ab1fd97
+**Commit:** b1c2f5d9
 
 ## Summary
 
@@ -18,8 +18,10 @@ An Epic's board screen now carries the Epic's own records: StagesBody gains epic
 
 ## Changes
 
-- `vscode-plugin/src/delivery/__tests__/epic-records.test.ts` — **insrc-build** (2026-10-13T18:12:18.675Z)
-- `vscode-plugin/src/delivery/board-host.ts` — **insrc-build** (2026-10-13T18:12:18.675Z)
-- `vscode-plugin/src/delivery/board-model.ts` — **insrc-build** (2026-10-13T18:12:18.675Z)
-- `vscode-plugin/src/delivery/board-protocol.ts` — **insrc-build** (2026-10-13T18:12:18.675Z)
-- `vscode-plugin/src/delivery/board-state.ts` — **insrc-build** (2026-10-13T18:12:18.675Z)
+- `.insrc/artifacts/CR-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T18:46:58.274Z)
+- `docs/standalone/show-epic-s-own-records-its-E20261013cb09a32c/S001/CR.md` — **insrc-build** (2026-10-13T18:46:58.274Z)
+- `vscode-plugin/src/delivery/__tests__/epic-records.test.ts` — **insrc-build** (2026-10-13T18:46:58.274Z)
+- `vscode-plugin/src/delivery/board-host.ts` — **insrc-build** (2026-10-13T18:46:58.274Z)
+- `vscode-plugin/src/delivery/board-model.ts` — **insrc-build** (2026-10-13T18:46:58.274Z)
+- `vscode-plugin/src/delivery/board-protocol.ts` — **insrc-build** (2026-10-13T18:46:58.274Z)
+- `vscode-plugin/src/delivery/board-state.ts` — **insrc-build** (2026-10-13T18:46:58.274Z)

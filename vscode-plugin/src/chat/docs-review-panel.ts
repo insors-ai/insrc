@@ -12,9 +12,9 @@
  * All vscode API lives behind the injected {@link ChatPanelChannel}.
  */
 import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
-import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary, type RenderDegradation } from './protocol.js';
+import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary, type RenderDegradation, type DocsDocumentTab } from './protocol.js';
 import { attr, type ChatPanelChannel, type ChatPanelLogger } from './chat-panel.js';
-import type { DocsReviewClient, DocsContent, ReviewDecision, ReviewDecisionComment } from './docs-review-client.js';
+import type { DocsReviewClient, DocsContent, ReviewDecision, ReviewDecisionComment, ReviewDecisionResult } from './docs-review-client.js';
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-style.js';
 import { deriveSectionIndex, createSectionResolver, type SectionIndex } from './docs-sections.js';
@@ -34,6 +34,31 @@ export interface DocsReviewHostDeps {
   readonly theme?: TerminalTheme;
   readonly logger?: ChatPanelLogger;
   readonly genNonce?: () => string;
+  /**
+   * Story E202610138d4b90c9:S001: hands a decision message to the chat. Absent means no
+   * chat message is sent. It never undoes a decision: a throw or 'unavailable' is only
+   * reported in the pane.
+   */
+  readonly notifyChat?: ((text: string) => 'sent' | 'queued' | 'unavailable') | undefined;
+  /**
+   * Story E202610138d4b90c9:S001: the text of an HTML companion, by its repo-relative
+   * path; undefined when it may not or cannot be read. Absent means no companion is shown.
+   */
+  readonly readCompanion?: ((relPath: string) => Promise<string | undefined>) | undefined;
+}
+
+/** What the chat hand-over of a decision came to. */
+type ChatHandOver = 'sent' | 'queued' | 'unavailable' | 'failed' | 'none';
+
+/** The document the pane shows, as the host last read it. */
+interface OpenDocument {
+  readonly artifactId: string;
+  /** Repo-relative .md path: what the document is re-read and decided by. */
+  readonly docPath: string | undefined;
+  /** Repo-relative paths of its HTML companions. */
+  readonly companions: readonly string[];
+  readonly kind: string | undefined;
+  readonly title: string | undefined;
 }
 
 export interface DocsReviewHost {
@@ -1239,9 +1264,13 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   // LAST, not whichever content IPC completes last. A separate counter from refreshSeq,
   // because a list refresh (every decision triggers one) must not discard an open.
   let openSeq = 0;
-  // Story E202610138d4b90c9:S001: the repo-relative .md path of each document read, by
-  // artifact id. A decision is sent to the daemon by this path, never by the id.
-  const docPaths = new Map<string, string>();
+  // Story E202610138d4b90c9:S001: the document the pane shows. A decision is acted on for
+  // this document only and is sent, like its re-read, by its path, never by its id, so
+  // neither depends on the document still being pending.
+  let opened: OpenDocument | undefined;
+  // The nonce of the shell last rendered: an HTML companion's scripts run in its frame only
+  // when they carry it.
+  let shellNonce = '';
 
   const post = (msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
@@ -1342,7 +1371,19 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     try {
       const content = await deps.client.content(opts.path ?? artifactId);
       if (mySeq !== openSeq) return; // superseded by a newer open — drop this response
-      if (content.docPath !== undefined && content.docPath !== '') docPaths.set(artifactId, content.docPath);
+      const docPath = content.docPath !== undefined && content.docPath !== '' ? content.docPath : opts.path;
+      const htmlCompanions = htmlCompanionsOf(content.companions);
+      opened = {
+        artifactId,
+        docPath,
+        companions: htmlCompanions.map((c) => c.relPath),
+        kind: opts.kind ?? pending.get(artifactId)?.kind ?? (opened?.artifactId === artifactId ? opened.kind : undefined),
+        title: pending.get(artifactId)?.title ?? (opened?.artifactId === artifactId ? opened.title : undefined),
+      };
+      const documents: DocsDocumentTab[] = [
+        { title: docPath !== undefined ? baseName(docPath) : 'Document', type: 'markdown', ...(docPath !== undefined ? { relPath: docPath } : {}) },
+        ...htmlCompanions.map((c): DocsDocumentTab => ({ title: c.title, type: 'html', relPath: c.relPath })),
+      ];
       // t5 — derive the index ONCE per opened document (not per interaction) and
       // post it on the SAME message as the markdown it came from. Deriving it
       // here, from `content.markdown`, is what makes the two inseparable.
@@ -1423,12 +1464,24 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
           ? { uxDefinition: content.uxDefinition }
           : {}),
         ...(experienceAnchorSlug !== undefined ? { experienceAnchorSlug } : {}),
+        // Story E202610138d4b90c9:S001 — the saved comments and what the pane needs to
+        // save new ones, forwarded by reference like the records above, and one entry per
+        // document of the artifact.
+        ...(content.docPath !== undefined ? { docPath: content.docPath } : {}),
+        ...(content.contentVersion !== undefined ? { contentVersion: content.contentVersion } : {}),
+        ...(content.feedback !== undefined ? { feedback: content.feedback } : {}),
+        ...(content.reviewer !== undefined ? { reviewer: content.reviewer } : {}),
+        ...(content.state !== undefined ? { state: content.state } : {}),
+        documents,
       });
     } catch (err) {
       log.warn(`[docs-review] content ${artifactId} failed: ${String(err)}`);
       // A superseded open's failure is not the CURRENT document's failure: posting it
       // would replace the document the reviewer is on with another one's error.
       if (mySeq !== openSeq) return;
+      // The pane now shows this failure. A failed re-read of the open document keeps what
+      // the host knows of it; a failed open of another one leaves nothing open.
+      if (opened?.artifactId !== artifactId) opened = undefined;
       // A content-load failure means the reviewer never saw the body — suppress approve
       // (blocked:true) so the review gate is not defeated; request-changes stays available.
       post({
@@ -1444,44 +1497,115 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   }
 
   /**
+   * Re-read the open document by its path, after the pending list was re-read: read-only
+   * when it is no longer awaiting review. Used after a decision and when a rebuilt shell
+   * sends its boot ping.
+   */
+  async function reopen(): Promise<void> {
+    const o = opened;
+    if (o === undefined) return;
+    const awaiting = pending.get(o.artifactId);
+    const kind = awaiting?.kind ?? o.kind;
+    if (o.docPath !== undefined) {
+      await openDoc(o.artifactId, { path: o.docPath, ...(kind !== undefined ? { kind } : {}), readOnly: awaiting === undefined });
+    } else if (awaiting !== undefined) {
+      await openDoc(o.artifactId);
+    }
+  }
+
+  /** A decision that was not recorded: one line for the pane. Nothing was written. */
+  function refuse(artifactId: string, message: string): void {
+    post({ type: 'docs-decision-result', artifactId, ok: false, message });
+  }
+
+  /** Hand the chat a decision message; whatever happens, the decision stays recorded. */
+  function handOver(text: string): ChatHandOver {
+    if (deps.notifyChat === undefined) return 'none';
+    try {
+      return deps.notifyChat(text);
+    } catch (err) {
+      log.warn(`[docs-review] the chat could not be told of a decision: ${String(err)}`);
+      return 'failed';
+    }
+  }
+
+  /**
    * Story E202610138d4b90c9:S001: one decision, one daemon call. The daemon records the
-   * decision first and then the comments, so nothing here is done in two steps.
+   * decision first and then the comments, so nothing here is done in two steps. It is acted
+   * on for the open document only; approve and reject also need it to be awaiting review,
+   * and send feedback does not.
    */
   async function decide(artifactId: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<void> {
-    const commentable = COMMENTABLE_KINDS.has(pending.get(artifactId)?.kind ?? '');
+    const o = opened;
+    if (o === undefined || o.artifactId !== artifactId) {
+      log.warn(`[docs-review] docs-decision: ${artifactId} is not the open document`);
+      refuse(artifactId, 'Nothing was recorded: open the document before deciding on it.');
+      void refreshPending();
+      return;
+    }
+    if (decision !== 'feedback' && !pending.has(artifactId)) {
+      log.warn(`[docs-review] docs-decision: ${artifactId} is not awaiting review`);
+      refuse(artifactId, `Nothing was recorded: this document is not awaiting review, so it cannot be ${decision === 'approve' ? 'approved' : 'rejected'}. Feedback can still be sent.`);
+      await refreshPending();
+      await reopen();
+      return;
+    }
+    if (o.docPath === undefined) {
+      refuse(artifactId, "Nothing was recorded: the daemon did not name this document's path. Update the daemon and try again.");
+      return;
+    }
+    let res: ReviewDecisionResult;
     try {
-      const docPath = docPaths.get(artifactId);
-      if (docPath === undefined) throw new Error('open the document before deciding on it');
-      const res = await deps.client.decide(docPath, decision, comments);
-      // A review block-verdict is NOT an error — the daemon answers 'withheld' with the
-      // reason (k5, daemon-enforced). Surface it inline; the artifact stays pending.
-      if (res.outcome === 'withheld') {
-        post({
-          type: 'docs-content',
-          artifactId,
-          markdown: `not approved (blocked): ${res.reason ?? 'the review gate withheld the approval'}`,
-          openQuestions: [],
-          blocked: true,
-          commentable,
-        });
-      }
+      res = await deps.client.decide(o.docPath, decision, comments);
     } catch (err) {
       log.warn(`[docs-review] decision ${artifactId} failed: ${String(err)}`);
-      post({
-        type: 'docs-content',
-        artifactId,
-        markdown: `decision failed: ${errText(err)}`,
-        openQuestions: [],
-        blocked: true,
-        commentable,
-      });
+      refuse(artifactId, `Nothing was recorded: ${errText(err)}`);
+      // Re-fetch so the list reflects real approval state (k5 — never a client-side guess).
+      // The document is re-read only when its place in the list changed, so a daemon that
+      // is down does not replace the document the reviewer is on with an error.
+      const was = pending.has(artifactId);
+      await refreshPending();
+      if (pending.has(artifactId) !== was) await reopen();
+      return;
     }
-    // Re-fetch so the list reflects real approval state (k5 — never a client-side guess).
+    const chat = handOver(decisionChatMessage(o, res, comments));
+    post({
+      type: 'docs-decision-result',
+      artifactId,
+      ok: true,
+      outcome: res.outcome,
+      recorded: res.recorded,
+      message: decisionResultLine(res, comments.length, chat),
+    });
     await refreshPending();
+    await reopen();
+  }
+
+  /**
+   * Story E202610138d4b90c9:S001: the text of one HTML document of the open artifact, for
+   * the pane's frame. Only a companion the open document lists is read. The frame inherits
+   * the shell's CSP, so the page's scripts are given the shell's nonce. Any other path, an
+   * absent reader or a failed read is answered with no html, and the pane shows the path.
+   */
+  async function openCompanion(artifactId: string, relPath: string): Promise<void> {
+    const o = opened;
+    let html: string | undefined;
+    if (o === undefined || o.artifactId !== artifactId || !o.companions.includes(relPath)) {
+      log.warn(`[docs-review] open-companion: ${relPath} is not a document of the open artifact`);
+    } else if (deps.readCompanion !== undefined) {
+      try {
+        const text = await deps.readCompanion(relPath);
+        if (typeof text === 'string') html = stampScriptNonce(text, shellNonce);
+      } catch (err) {
+        log.warn(`[docs-review] companion ${relPath} could not be read: ${String(err)}`);
+      }
+    }
+    post({ type: 'docs-companion', artifactId, relPath, ...(html !== undefined ? { html } : {}) });
   }
 
   const renderShell = (): string => {
     const nonce = genNonce();
+    shellNonce = nonce;
     const style = renderStyle(theme);
     // The markdown element rules the rendered body needs. renderStyle emits CSS
     // custom properties and surface classes only — no element rules — and the
@@ -1784,8 +1908,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       case 'open-doc':
         if (typeof msg.artifactId !== 'string') return;
         // The webview's boot ping (empty id) means "load the list"; a real id opens a doc.
+        // A rebuilt shell (the pane hidden and shown again) sends the ping too and has lost
+        // its document: the open one is posted again, by its path, pending or not.
         if (msg.artifactId === '') {
-          void refreshPending();
+          void refreshPending().then(reopen);
         } else if (pending.has(msg.artifactId)) {
           void openDoc(msg.artifactId);
         } else {
@@ -1796,13 +1922,11 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         return;
       case 'docs-decision':
         if (typeof msg.artifactId !== 'string' || !isReviewDecision(msg.decision) || !Array.isArray(msg.comments)) return;
-        // Only act on a live pending artifact (k5); a stale decision -> refresh, drop.
-        if (!pending.has(msg.artifactId)) {
-          log.warn(`[docs-review] docs-decision: unknown/stale artifact ${msg.artifactId}`);
-          void refreshPending();
-          return;
-        }
         void decide(msg.artifactId, msg.decision, msg.comments);
+        return;
+      case 'open-companion':
+        if (typeof msg.artifactId !== 'string' || typeof msg.relPath !== 'string') return;
+        void openCompanion(msg.artifactId, msg.relPath);
         return;
       default:
         // any chat-slice / forward variant: accepted-but-ignored seam — never an error.
@@ -1823,7 +1947,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         disposed = true;
         channel = undefined;
         pending.clear();
-        docPaths.clear();
+        opened = undefined;
       });
       channel.onMessage(handleMessage);
       channel.setHtml(renderShell());
@@ -1841,7 +1965,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       channel?.dispose();
       channel = undefined;
       pending.clear();
-      docPaths.clear();
+      opened = undefined;
     },
   };
   return host;
@@ -1849,6 +1973,100 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
 
 function isReviewDecision(v: unknown): v is ReviewDecision {
   return v === 'approve' || v === 'reject' || v === 'feedback';
+}
+
+function baseName(path: string): string {
+  return path.slice(path.lastIndexOf('/') + 1);
+}
+
+/**
+ * The HTML companions among an artifact's companion refs, each once, in order. The refs
+ * are not validated on the read path, so anything that is not a ref with a path ending in
+ * .html is skipped rather than trusted.
+ */
+function htmlCompanionsOf(companions: DocsContent['companions']): Array<{ readonly relPath: string; readonly title: string }> {
+  const out: Array<{ readonly relPath: string; readonly title: string }> = [];
+  if (!Array.isArray(companions)) return out;
+  for (const c of companions as readonly unknown[]) {
+    if (typeof c !== 'object' || c === null) continue;
+    const relPath = (c as { relPath?: unknown }).relPath;
+    const title = (c as { title?: unknown }).title;
+    if (typeof relPath !== 'string' || !/\.html$/i.test(relPath)) continue;
+    if (out.some((x) => x.relPath === relPath)) continue;
+    out.push({ relPath, title: typeof title === 'string' && title.trim() !== '' ? title : baseName(relPath) });
+  }
+  return out;
+}
+
+/**
+ * Give every script tag that has no nonce the given one. An HTML companion is shown as the
+ * srcdoc of a frame that inherits the pane's CSP, so only scripts carrying the pane's nonce
+ * run there.
+ */
+export function stampScriptNonce(html: string, nonce: string): string {
+  return html.replace(/<script\b(?![^>]*\bnonce\s*=)/gi, `<script nonce="${attr(nonce)}"`);
+}
+
+const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
+const noFullStop = (text: string): string => text.trim().replace(/\.+$/, '');
+const oneLine = (text: string, max: number): string => {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  return flat.length > max ? `${flat.slice(0, max)}…` : flat;
+};
+
+/** The line the pane shows after a decision the daemon recorded. */
+function decisionResultLine(res: ReviewDecisionResult, sent: number, chat: ChatHandOver): string {
+  const parts: string[] = [];
+  const asFeedback = res.outcome === 'withheld' ? ' as feedback' : '';
+  switch (res.outcome) {
+    case 'approved': parts.push('Approved.'); break;
+    case 'rejected': parts.push('Rejected.'); break;
+    case 'withheld': parts.push(`Not approved: ${noFullStop(res.reason ?? 'the review gate withheld the approval')}.`); break;
+    case 'recorded': parts.push('Feedback sent.'); break;
+  }
+  if (res.commentsError !== undefined) {
+    parts.push(`The ${sent === 1 ? 'comment was' : 'comments were'} not saved: ${noFullStop(res.commentsError)}.`);
+  } else if (sent > 0) {
+    parts.push(`${plural(res.recorded, 'comment')} saved${asFeedback}.`);
+  }
+  switch (chat) {
+    case 'sent': parts.push('The chat has been told.'); break;
+    case 'queued': parts.push('The chat will be told when it is free.'); break;
+    case 'unavailable': parts.push('The chat could not be told: no chat is available.'); break;
+    case 'failed': parts.push('The chat could not be told.'); break;
+    case 'none': parts.push('No chat message was sent.'); break;
+  }
+  return parts.join(' ');
+}
+
+/**
+ * The one message the chat is handed after a decision: the decision and its outcome, the
+ * artifact, the reviewer, and the new comments numbered in order, each with its quote and
+ * section when it has them. With no comments it is the decision line alone.
+ */
+function decisionChatMessage(o: OpenDocument, res: ReviewDecisionResult, comments: readonly ReviewDecisionComment[]): string {
+  const what = `${res.artifactId}${o.title !== undefined && o.title !== '' ? ` "${o.title}"` : ''}${o.docPath !== undefined ? ` (${o.docPath})` : ''}`;
+  let head: string;
+  switch (res.outcome) {
+    case 'approved': head = `Review decision: approved ${what}, by ${res.author}.`; break;
+    case 'rejected': head = `Review decision: rejected ${what}, by ${res.author}.`; break;
+    case 'withheld': head = `Review decision: the approval of ${what} by ${res.author} was withheld: ${noFullStop(res.reason ?? 'the review gate withheld it')}.`; break;
+    case 'recorded': head = `Review feedback on ${what}, by ${res.author}.`; break;
+  }
+  if (comments.length === 0) return head;
+  const lines = [head];
+  if (res.commentsError !== undefined) lines.push(`The comments below could not be saved: ${noFullStop(res.commentsError)}.`);
+  else if (res.outcome === 'withheld') lines.push('The comments below were saved as feedback.');
+  lines.push('Comments:');
+  comments.forEach((c, i) => {
+    const quote = typeof c.anchor?.quote === 'string' ? c.anchor.quote : undefined;
+    const section = typeof c.anchor?.sectionSlug === 'string' && c.anchor.sectionSlug !== '' ? ` (section ${c.anchor.sectionSlug})` : '';
+    const where = quote !== undefined
+      ? `On "${oneLine(quote, 120)}"${section}: `
+      : typeof c.file === 'string' && c.file !== '' && c.file !== o.docPath ? `On ${c.file}: ` : '';
+    lines.push(`${i + 1}. ${where}${String(c.comment).trim()}`);
+  });
+  return lines.join('\n');
 }
 
 function errText(err: unknown): string {

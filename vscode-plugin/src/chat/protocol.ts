@@ -41,6 +41,14 @@ export interface Envelope<T> {
   readonly payload: T;
 }
 
+/** One document of an artifact as the review pane lists it: the markdown, or an HTML companion. */
+export interface DocsDocumentTab {
+  readonly title: string;
+  readonly type: 'markdown' | 'html';
+  /** Repo-relative path; always set for an HTML companion. */
+  readonly relPath?: string | undefined;
+}
+
 /** A daemon-tracked artifact awaiting review — the shape the docs-list variant carries (S007 fills the pane). */
 export interface DocsArtifactSummary {
   readonly id: string;
@@ -173,6 +181,16 @@ export type HostToWebview =
       // review, so the webview shows the document with no approve or request-changes
       // control. Absent on every other open.
       readonly readOnly?: boolean | undefined;
+      // Story E202610138d4b90c9:S001 (additive): what the pane saves and shows comments
+      // with, forwarded from DocsContent on the same terms as the records above, and
+      // `documents`: one entry per document of the artifact, the markdown first, then each
+      // HTML companion. Each is an absent key when there is none.
+      readonly docPath?: DocsContent['docPath'];
+      readonly contentVersion?: DocsContent['contentVersion'];
+      readonly feedback?: DocsContent['feedback'];
+      readonly reviewer?: DocsContent['reviewer'];
+      readonly state?: DocsContent['state'];
+      readonly documents?: readonly DocsDocumentTab[] | undefined;
     }
   // S001 sc2 (additive): the live echo of the user's prompt on submit, so it appears
   // during the turn (not only on a later session-restored replay). `key` is the row's

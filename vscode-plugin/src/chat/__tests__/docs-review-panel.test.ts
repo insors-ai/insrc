@@ -243,8 +243,9 @@ test('a docs-decision in the earlier accept/note shape, or for a document that w
   fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
   await tick();
   assert.deepEqual(calls.decide, []);
-  const failed = fc.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!;
-  assert.match(String(failed.payload.markdown), /decision failed: open the document before deciding on it/);
+  const refused = fc.posted.filter((p) => p.payload.type === 'docs-decision-result').at(-1)!;
+  assert.equal(refused.payload['ok'], false);
+  assert.match(String(refused.payload['message']), /Nothing was recorded: open the document before deciding on it/);
 });
 
 test('a withheld approval surfaces the reason non-lossily and stays pending', async () => {
@@ -259,9 +260,10 @@ test('a withheld approval surfaces the reason non-lossily and stays pending', as
   await tick();
   fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
   await tick();
-  const blocked = fc.posted.filter((p) => p.payload.type === 'docs-content').find((p) => p.payload.blocked === true);
-  assert.ok(blocked, 'posted a blocked docs-content notice');
-  assert.match(String(blocked!.payload.markdown), /unresolved HIGH finding/, 'relays the daemon skip reason');
+  const result = fc.posted.filter((p) => p.payload.type === 'docs-decision-result').at(-1)!;
+  assert.equal(result.payload['ok'], true, 'a withheld approval is an answer, not a failure');
+  assert.equal(result.payload['outcome'], 'withheld');
+  assert.match(String(result.payload['message']), /Not approved: unresolved HIGH finding\./, 'relays the daemon skip reason');
   assert.ok(calls.pending >= 2, 'still re-fetches pending (artifact stays pending)');
 });
 

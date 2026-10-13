@@ -4,11 +4,12 @@
     "epicHash": "1f74c81f507dbe78",
     "storyId": "S001",
     "createdAt": "2026-10-13T16:14:59.110Z",
-    "updatedAt": "2026-10-13T19:26:08.094Z",
+    "updatedAt": "2026-10-13T19:32:23.180Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T14:35:06.077Z",
-    "epicSlug": "review-pane-document-table-search-live"
+    "epicSlug": "review-pane-document-table-search-live",
+    "approvedAt": "2026-10-13T19:32:23.357Z"
   },
   "body": {
     "tasks": [
@@ -47,30 +48,16 @@
           "file": ".insrc/artifacts/BUILD-e62a9269a7cb9550-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T19:26:08.094Z"
-      },
-      {
-        "target": {
-          "file": ".insrc/artifacts/TESTS-e62a9269a7cb9550-S001.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-13T19:26:08.094Z"
+        "timestamp": "2026-10-13T19:32:23.180Z"
       },
       {
         "target": {
           "file": "docs/standalone/open-document-presented-approval-review-pane-E20261013e62a9269/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T19:26:08.094Z"
-      },
-      {
-        "target": {
-          "file": "docs/standalone/open-document-presented-approval-review-pane-E20261013e62a9269/S001/TESTS.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-13T19:26:08.094Z"
+        "timestamp": "2026-10-13T19:32:23.180Z"
       }
     ],
-    "commit": "bd3a9e47"
+    "commit": "e6a58336"
   }
 }

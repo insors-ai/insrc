@@ -12,7 +12,7 @@ The file is left from an earlier classifier that sized every kind of request on 
 
 ## Fix intent
 
-The sources no longer hold the unused size scale, its helper functions, the two unused types, or the two class lists nothing imports. The `ClassChoice` type the brainstorm workflow uses stays available to it. No behaviour changes: the build and every suite pass as before.
+Delete the leftover code of the old request-size classifier: its seven-step size scale, the helper functions for that scale, two types only it used, and two category-list files that nothing imports. Keep the `ClassChoice` type, which the brainstorm workflow still uses. Nothing the system does changes; the build and all tests pass as before.
 
 ## Citations
 

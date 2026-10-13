@@ -21,20 +21,24 @@ interface FakeChannel {
   posted: Payload[];
   send(type: string, extra?: Record<string, unknown>): void;
   html(): string;
+  /** The user closes the panel. */
+  close(): void;
 }
 function fakeChannel(): FakeChannel {
   const posted: Payload[] = [];
   let onMsg: ((m: unknown) => void) | undefined;
+  let onClose: (() => void) | undefined;
   let html = '';
   return {
     posted,
     html: () => html,
+    close: () => onClose?.(),
     send: (type, extra = {}) => onMsg?.({ v: 1, payload: { type, ...extra } }),
     channel: {
       setHtml: (h) => { html = h; },
       postMessage: (m) => { posted.push((m as { payload: Payload }).payload); },
       onMessage: (l) => { onMsg = l; },
-      onDidDispose: () => {},
+      onDidDispose: (l) => { onClose = l; },
       reveal: () => {},
       dispose: () => {},
     },
@@ -83,6 +87,10 @@ function harness(o: {
   notifyChat?: DocsReviewHostDeps['notifyChat'] | 'absent';
   readCompanion?: DocsReviewHostDeps['readCompanion'] | 'absent';
   nonce?: string;
+  /** More deps for the host (the watcher and the timer). */
+  deps?: Partial<DocsReviewHostDeps>;
+  /** Called at the start of every pending read. */
+  onPending?: () => void;
 } = {}): Harness {
   const fc = fakeChannel();
   let pending = o.pending ?? [LLD];
@@ -93,7 +101,7 @@ function harness(o: {
   const companionReads: string[] = [];
   const warnings: string[] = [];
   const client: DocsReviewClient = {
-    async pending() { pendingReads += 1; return pending; },
+    async pending() { pendingReads += 1; o.onPending?.(); return pending; },
     async content(idOrPath) {
       content.push(idOrPath);
       const path = pathOf(idOrPath);
@@ -126,6 +134,7 @@ function harness(o: {
     logger: { warn: (m) => void warnings.push(m), error: () => {} },
     ...(notifyChat !== undefined ? { notifyChat } : {}),
     ...(readCompanion !== undefined ? { readCompanion } : {}),
+    ...(o.deps ?? {}),
   });
   const of = (type: string) => (): Payload[] => fc.posted.filter((p) => p.type === type);
   return {
@@ -520,4 +529,264 @@ test('docs review host: a boot ping while a document is open re-posts that docum
     assert.ok(h.pendingReads() > reads);
     assert.deepEqual(h.content, []);
   }
+});
+
+// Story E202610131f74c81f:S001 t2: the host forwards the summaries as the client gave them.
+test('docs review host: docs-list carries openQuestions and workItemId', async () => {
+  const rich = { ...LLD, openQuestions: 3, workItemId: 'E20261013abc:S007' };
+  const h = harness({ pending: [rich, PLAN] });
+  h.host.open();
+  await settle();
+  const list = h.fc.posted.filter((p) => p.type === 'docs-list').at(-1)!;
+  assert.deepEqual(list['artifacts'], [rich, PLAN], 'unchanged, and a summary without them has no such keys');
+  assert.equal((list['artifacts'] as unknown[])[0], rich, 'forwarded by reference');
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610131f74c81f:S001 t3 — the host watches the open document, reloads it after a
+// change, and marks what it posts.
+// ---------------------------------------------------------------------------
+
+interface FakeWatch { readonly paths: readonly string[]; readonly change: () => void; disposed: boolean }
+interface WatchKit {
+  readonly watches: FakeWatch[];
+  /** The timers started and not cancelled or run, with their delays. */
+  readonly timers: Array<{ readonly ms: number; readonly fn: () => void }>;
+  readonly deps: Partial<DocsReviewHostDeps>;
+  live(): FakeWatch[];
+  /** Run the waiting timer, as the quiet period ending. */
+  runTimer(): Promise<void>;
+}
+function watchKit(): WatchKit {
+  const watches: FakeWatch[] = [];
+  const timers: WatchKit['timers'] = [];
+  return {
+    watches, timers,
+    live: () => watches.filter((w) => !w.disposed),
+    runTimer: async () => {
+      assert.equal(timers.length, 1, 'one quiet period is running');
+      const t = timers.shift()!;
+      t.fn();
+      await settle();
+    },
+    deps: {
+      watchDocument: (paths, onChange) => {
+        const w: FakeWatch = { paths: [...paths], change: onChange, disposed: false };
+        watches.push(w);
+        return { dispose: () => { w.disposed = true; } };
+      },
+      setTimer: (fn, ms) => {
+        const t = { ms, fn };
+        timers.push(t);
+        return { cancel: () => { const i = timers.indexOf(t); if (i >= 0) timers.splice(i, 1); } };
+      },
+    },
+  };
+}
+const LLD_JSON = '.insrc/artifacts/LLD-abc-s7.json';
+
+test("docs review host: opening a document watches its markdown file and its artifact JSON, and the watch is disposed wherever the open document's record is replaced or cleared: another document, a failed open of another, the panel closing and dispose", async () => {
+  const kit = watchKit();
+  const ISSUE: DocsArtifactSummary = { id: 'ISSUE-x', kind: 'ISSUE', title: 'Unreadable', status: 'pending' };
+  const h = await openOnLld({
+    pending: [LLD, PLAN, ISSUE], deps: kit.deps,
+    content: (path) => { if (path === 'ISSUE-x') throw new Error('cannot read'); return {}; },
+  });
+  assert.deepEqual(kit.watches.map((w) => w.paths), [[LLD_PATH, LLD_JSON]], 'the markdown file and the artifact record');
+  assert.equal(kit.live().length, 1);
+
+  // The same document read again (the boot ping): the watch is kept, not ended and restarted.
+  h.fc.send('open-doc', { artifactId: '' });
+  await settle();
+  assert.equal(kit.watches.length, 1);
+  assert.equal(kit.watches[0]!.disposed, false);
+
+  // Another document: the earlier watch ends and one starts for the new document.
+  h.fc.send('open-doc', { artifactId: PLAN.id });
+  await settle();
+  assert.equal(kit.watches[0]!.disposed, true);
+  assert.deepEqual(kit.live().map((w) => w.paths), [[`${DIR}/PLAN.md`, '.insrc/artifacts/PLAN-abc-s7.json']]);
+  // A change reported by the watch the host no longer holds does nothing.
+  kit.watches[0]!.change();
+  assert.equal(kit.timers.length, 0);
+
+  // A failed open of another document clears the record: nothing is open, nothing is watched.
+  h.fc.send('open-doc', { artifactId: ISSUE.id });
+  await settle();
+  assert.equal(kit.live().length, 0, 'the watch ends with the record');
+  assert.equal(kit.watches.length, 2, 'and none is started for the document that could not be read');
+
+  // The panel closing.
+  h.fc.send('open-doc', { artifactId: LLD.id });
+  await settle();
+  assert.equal(kit.live().length, 1);
+  kit.live()[0]!.change();
+  assert.equal(kit.timers.length, 1);
+  h.fc.close();
+  assert.equal(kit.live().length, 0, 'closing the panel ends the watch');
+  assert.equal(kit.timers.length, 0, 'and the quiet period that was running');
+
+  // dispose().
+  const kit2 = watchKit();
+  const h2 = await openOnLld({ deps: kit2.deps });
+  assert.equal(kit2.live().length, 1);
+  h2.host.dispose();
+  assert.equal(kit2.live().length, 0);
+  // A document the daemon names no path for is not watched.
+  const kit3 = watchKit();
+  await openOnLld({ deps: kit3.deps, content: () => ({ docPath: undefined as never }) });
+  assert.equal(kit3.watches.length, 0);
+});
+
+test('docs review host: a burst of changes causes one re-read of the list and of the open document by its path after the quiet period, marked changed; a change during a decision is acted on when the decision settles, whether it was recorded, refused or failed', async () => {
+  // A burst: one quiet period, restarted by each change, then one re-read.
+  {
+    const kit = watchKit();
+    const h = await openOnLld({ deps: kit.deps });
+    const reads = h.pendingReads();
+    const w = kit.live()[0]!;
+    w.change(); w.change(); w.change();
+    assert.deepEqual(kit.timers.map((t) => t.ms), [300], 'one quiet period of 300 ms, restarted by each change');
+    assert.deepEqual(h.content, [LLD.id], 'nothing is read while the files are still changing');
+    await kit.runTimer();
+    assert.equal(h.pendingReads(), reads + 1, 'the list is read once');
+    assert.deepEqual(h.content, [LLD.id, LLD_PATH], 'and the document once, by its path');
+    const again = h.contents().at(-1)!;
+    assert.equal(again['changed'], true, 'marked as a reload after a change');
+    assert.equal('reveal' in again, false);
+    assert.equal(kit.timers.length, 0);
+    assert.equal(kit.live().length, 1, 'the watch is still the same one');
+    assert.equal(kit.live()[0], w);
+  }
+
+  // During a decision, recorded or failed in the daemon: remembered, and acted on when it settles.
+  for (const outcome of ['recorded', 'failed'] as const) {
+    const kit = watchKit();
+    let fired = false;
+    const h = await openOnLld({
+      deps: kit.deps,
+      decide: () => {
+        // The file changes while the daemon is handling the decision.
+        kit.live()[0]!.change();
+        fired = true;
+        if (outcome === 'failed') throw new Error('daemon down');
+        return {};
+      },
+    });
+    h.fc.send('docs-decision', { artifactId: LLD.id, decision: 'feedback', comments: [WHOLE] });
+    await settle();
+    assert.equal(fired, true);
+    assert.equal(h.results().at(-1)!['ok'], outcome === 'recorded');
+    assert.deepEqual(kit.timers.map((t) => t.ms), [300], `${outcome}: the quiet period starts once the decision has settled, not during it`);
+    const before = h.content.length;
+    await kit.runTimer();
+    assert.equal(h.content.length, before + 1, `${outcome}: the change is acted on`);
+    assert.equal(h.content.at(-1), LLD_PATH);
+    assert.equal(h.contents().at(-1)!['changed'], true);
+    if (outcome === 'failed') assert.equal(before, 1, 'a failed decision did not read the document again itself, so without this the change would be lost');
+  }
+  // Refused by the host (approve on a document that is no longer awaiting review).
+  {
+    const kit = watchKit();
+    let fire = false;
+    const h = await openOnLld({ deps: kit.deps, onPending: () => { if (fire) { fire = false; kit.live()[0]!.change(); } } });
+    h.setPending([]);
+    h.fc.send('open-doc', { artifactId: '' }); // the pane learns it is no longer pending
+    await settle();
+    fire = true; // the change arrives during the refusal's own list read
+    h.fc.send('docs-decision', { artifactId: LLD.id, decision: 'approve', comments: [] });
+    assert.equal(kit.timers.length, 0, 'not while the decision is being handled');
+    await settle();
+    assert.equal(h.results().at(-1)!['ok'], false);
+    assert.equal(h.decide.length, 0);
+    assert.deepEqual(kit.timers.map((t) => t.ms), [300], 'refused: acted on when it settles');
+    await kit.runTimer();
+    assert.equal(h.contents().at(-1)!['changed'], true);
+  }
+  // No change during a decision: no quiet period afterwards.
+  {
+    const kit = watchKit();
+    const h = await openOnLld({ deps: kit.deps });
+    h.fc.send('docs-decision', { artifactId: LLD.id, decision: 'feedback', comments: [WHOLE] });
+    await settle();
+    assert.equal(kit.timers.length, 0);
+    assert.equal('changed' in h.contents().at(-1)!, false, "the decision's own re-read is not marked changed");
+  }
+});
+
+test('docs review host: a watcher or disposer that throws is logged and the document is still shown; with no watcher dep nothing is watched', async () => {
+  // The watcher cannot be started.
+  const failing = await openOnLld({ deps: { watchDocument: () => { throw new Error('ENOSPC: watcher limit'); } } });
+  assert.equal(failing.contents().at(-1)!['markdown'], `# body of ${LLD_PATH}`, 'the document is shown as usual');
+  assert.ok(failing.warnings.some((w) => /LLD\.md is not watched for changes: Error: ENOSPC/.test(w)));
+  failing.fc.send('docs-decision', { artifactId: LLD.id, decision: 'feedback', comments: [WHOLE] });
+  await settle();
+  assert.equal(failing.results().at(-1)!['ok'], true, 'and the pane works as before');
+
+  // A disposer that throws: logged, and the host goes on to the next document.
+  const kit = watchKit();
+  let n = 0;
+  const h = await openOnLld({
+    pending: [LLD, PLAN],
+    deps: { ...kit.deps, watchDocument: (paths, onChange) => { n += 1; const w = kit.deps.watchDocument!(paths, onChange); return n === 1 ? { dispose: () => { throw new Error('already gone'); } } : w; } },
+  });
+  h.fc.send('open-doc', { artifactId: PLAN.id });
+  await settle();
+  assert.ok(h.warnings.some((w) => /could not be ended: Error: already gone/.test(w)));
+  assert.equal(h.contents().at(-1)!['artifactId'], PLAN.id);
+  assert.deepEqual(kit.watches.at(-1)!.paths, [`${DIR}/PLAN.md`, '.insrc/artifacts/PLAN-abc-s7.json'], 'the next document is watched');
+  // The earlier watch's late report is ignored: it is not the one the host holds.
+  kit.watches[0]!.change();
+  assert.equal(kit.timers.length, 0);
+
+  // No watcher dep: nothing is watched, and nothing breaks.
+  const none = await openOnLld();
+  assert.equal(none.contents().length, 1);
+  none.host.dispose();
+});
+
+test('docs review host: docs-content carries reveal for a list-row open and for openArtifact, on the content and on the unavailable content of a failed read alike, and not for a re-read after a decision, on the boot ping or from the watch', async () => {
+  const kit = watchKit();
+  const h = await openOnLld({ deps: kit.deps });
+  assert.equal(h.contents().at(-1)!['reveal'], true, 'a list-row open');
+  // Re-reads: after a decision, on the boot ping, from the watch.
+  h.fc.send('docs-decision', { artifactId: LLD.id, decision: 'feedback', comments: [WHOLE] });
+  await settle();
+  assert.equal('reveal' in h.contents().at(-1)!, false, 'after a decision');
+  h.fc.send('open-doc', { artifactId: '' });
+  await settle();
+  assert.equal('reveal' in h.contents().at(-1)!, false, 'on the boot ping');
+  kit.live()[0]!.change();
+  await kit.runTimer();
+  assert.deepEqual(['reveal' in h.contents().at(-1)!, h.contents().at(-1)!['changed']], [false, true], 'from the watch');
+
+  // openArtifact: a pending one, and one that is not awaiting review.
+  const board = harness();
+  board.host.openArtifact({ artifactId: LLD.id, mdPath: LLD_PATH });
+  await settle();
+  assert.equal(board.contents().at(-1)!['reveal'], true);
+  board.host.openArtifact({ artifactId: 'BUILD-abc-s7', mdPath: BUILD_PATH });
+  await settle();
+  assert.deepEqual([board.contents().at(-1)!['reveal'], board.contents().at(-1)!['readOnly']], [true, true]);
+
+  // A failed read of an asked-for open carries it too, so the error is brought into view.
+  const failing = harness({ content: () => { throw new Error('cannot read'); } });
+  failing.host.open();
+  await settle();
+  failing.fc.send('open-doc', { artifactId: LLD.id });
+  await settle();
+  const failed = failing.contents().at(-1)!;
+  assert.match(String(failed['markdown']), /^unavailable: cannot read/);
+  assert.equal(failed['reveal'], true, 'a list row whose read failed');
+  failing.host.openArtifact({ artifactId: 'BUILD-abc-s7', mdPath: BUILD_PATH });
+  await settle();
+  assert.equal(failing.contents().at(-1)!['reveal'], true, 'openArtifact whose read failed');
+  // A failed RE-read does not: the reviewer is left where they are.
+  let fail = false;
+  const later = await openOnLld({ content: () => { if (fail) throw new Error('gone'); return {}; } });
+  fail = true;
+  later.fc.send('open-doc', { artifactId: '' });
+  await settle();
+  assert.match(String(later.contents().at(-1)!['markdown']), /^unavailable: gone/);
+  assert.equal('reveal' in later.contents().at(-1)!, false);
 });

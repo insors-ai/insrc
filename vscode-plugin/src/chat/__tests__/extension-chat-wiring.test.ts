@@ -167,7 +167,8 @@ test('S007: extension.ts wires the docs-review host inside the chat gate over th
   assert.ok(block, 'the chatEnabled block is present');
   const b = block![1]!;
   assert.match(b, /createDocsReviewHost\(\{/, 'builds the docs-review host inside the flag gate');
-  assert.match(b, /createDocsReviewClient\(client\)/, 'the client is built over the shared daemon IPC client (no new capability, k5)');
+  // Over the shared daemon IPC client, naming the workspace folder as the repository on every call.
+  assert.match(b, /createDocsReviewClient\(client, \{ repo: \(\) => vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \}\)/, 'the client is built over the shared daemon IPC client (k5)');
   assert.match(b, /commands\.register\(\{ id: 'insrc\.chat\.docsReview'/, 'registers the docs-review command');
 });
 

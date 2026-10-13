@@ -56,6 +56,11 @@ export interface DocsReviewClient {
   /** All daemon-tracked pending artifacts, mapped to the sc3 summary shape. */
   pending(): Promise<DocsArtifactSummary[]>;
   /**
+   * Story E20261013e62a9269:S001: each pending document's id with its .md path (one with no
+   * path is skipped), in the daemon's order. It leaves what pending() retained alone.
+   */
+  pendingDocuments(): Promise<Array<{ readonly id: string; readonly mdPath: string }>>;
+  /**
    * One artifact's verbatim rendered body + open questions + block state. The arg is the
    * artifact's id (the sc3 summary drops mdPath, so the client resolves the .md path the
    * daemon needs from the id->mdPath map pending() retained; a raw path is accepted too).
@@ -68,6 +73,11 @@ export interface DocsReviewClient {
    * the review gate withheld is not an error: it comes back as outcome 'withheld'.
    */
   decide(mdPath: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<ReviewDecisionResult>;
+}
+
+export interface DocsReviewClientOptions {
+  /** The repository the pane reviews: the workspace folder. */
+  readonly repo?: (() => string | undefined) | undefined;
 }
 
 /** The `{ error }` arm every daemon review IPC may return in place of a result. */
@@ -86,7 +96,14 @@ function isError(v: unknown): v is DaemonError {
  * than a blank pane. A review-blocked artifact is NOT an error — decide()
  * surfaces it as outcome 'withheld' with the reason, which the host relays.
  */
-export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
+export function createDocsReviewClient(client: IpcClient, opts: DocsReviewClientOptions = {}): DocsReviewClient {
+  // Every call names the repository, so the pane does not depend on the daemon having a
+  // default one (a daemon started outside the IDE has none). Absent when no folder is open:
+  // the daemon then answers with its own "repo is required" error, which the pane shows.
+  const where = (): { repo?: string } => {
+    const repo = opts.repo?.();
+    return typeof repo === 'string' && repo !== '' ? { repo } : {};
+  };
   // id -> mdPath, retained across pending() so content() can resolve the .md
   // path the daemon requires from the artifactId the host holds (k5, daemon-tracked only).
   const mdPathById = new Map<string, string>();
@@ -96,6 +113,7 @@ export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
     async pending(): Promise<DocsArtifactSummary[]> {
       const res = await client.rpc<{ artifacts: readonly PendingArtifact[] } | DaemonError>(
         'workflow.pending',
+        where(),
       );
       if (isError(res)) throw new Error(res.error);
       mdPathById.clear();
@@ -107,13 +125,24 @@ export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
         kind: a.kind,
         title: a.title,
         status: a.state,
+        ...(typeof a.openQuestionCount === 'number' ? { openQuestions: a.openQuestionCount } : {}),
+        ...(typeof a.workItemId === 'string' && a.workItemId !== '' ? { workItemId: a.workItemId } : {}),
       }));
+    },
+
+    async pendingDocuments(): Promise<Array<{ readonly id: string; readonly mdPath: string }>> {
+      const res = await client.rpc<{ artifacts: readonly PendingArtifact[] } | DaemonError>(
+        'workflow.pending',
+        where(),
+      );
+      if (isError(res)) throw new Error(res.error);
+      return res.artifacts.filter((a) => typeof a.mdPath === 'string' && a.mdPath !== '').map((a) => ({ id: a.artifactId, mdPath: a.mdPath }));
     },
 
     async content(idOrPath: string): Promise<DocsContent> {
       const res = await client.rpc<ArtifactReviewView | DaemonError>(
         'workflow.artifactContent',
-        { mdPath: resolvePath(idOrPath) },
+        { ...where(), mdPath: resolvePath(idOrPath) },
       );
       if (isError(res)) throw new Error(res.error);
       return {
@@ -141,7 +170,7 @@ export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
       // longer in the pending list can still be sent feedback.
       const res = await client.rpc<ReviewDecisionResult | DaemonError>(
         'workflow.reviewDecision',
-        { mdPath, decision, comments: [...comments] },
+        { ...where(), mdPath, decision, comments: [...comments] },
       );
       if (isError(res)) throw new Error(res.error);
       return res;

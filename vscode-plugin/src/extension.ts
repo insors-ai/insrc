@@ -59,6 +59,7 @@ import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitl
 import type { DiffView } from './chat/edit-governor.js';
 import { createDocsReviewHost, type DocsReviewHost } from './chat/docs-review-panel.js';
 import { createDocsReviewClient } from './chat/docs-review-client.js';
+import { createReviewPresenter } from './chat/review-presenter.js';
 import { createCompanionReader } from './chat/companion-reader.js';
 import { createGitBaseline } from './chat/git-baseline.js';
 import { registerDeliveryBoard } from './delivery/board-wiring.js';
@@ -564,6 +565,15 @@ export function activate(context: vscode.ExtensionContext): void {
       chatGroupLock.attach(panel);
       return webviewChannel(panel);
     };
+    // Story E20261013e62a9269:S001: a document a chat turn presents for approval is opened in the
+    // review pane, quietly. The review host is made below; the presenter reaches it when a
+    // document is presented, by which time it exists.
+    const reviewClient = createDocsReviewClient(client, { repo: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath });
+    const reviewPresenter = createReviewPresenter({
+      pendingDocuments: () => reviewClient.pendingDocuments(),
+      open: (target) => docsReviewHost?.openArtifact({ ...target, quiet: true }),
+      log: panelLog,
+    });
     const chatHost = createChatPanelHost({
       attachments: {
         store: chatAttachments,
@@ -632,6 +642,7 @@ export function activate(context: vscode.ExtensionContext): void {
       // One CLI process per chat session, across windows and reloads: each lease is mirrored in a
       // lock file under ~/.insrc/chat-locks naming the CLI's pid. A new turn waits for it and
       // stops it only after insrc.chat.turnLockTimeoutMs.
+      presenter: reviewPresenter,
       sessionLocks: createFileSessionLocks({ fs: nodeFsp, lockDir: join(PATHS.insrc, 'chat-locks'), hostPid: process.pid, logger: panelLog }),
       turnLockTimeoutMs: () =>
         Math.max(1000, vscode.workspace.getConfiguration().get<number>('insrc.chat.turnLockTimeoutMs') ?? DEFAULT_TURN_LOCK_TIMEOUT_MS),
@@ -666,9 +677,34 @@ export function activate(context: vscode.ExtensionContext): void {
     // daemon-tracked pending artifacts (k5), reuses the same webview channel seam, and
     // persists nothing extension-side (k3). Gated behind the same insrc.chat.enabled flag.
     const reviewHost = createDocsReviewHost({
-      client: createDocsReviewClient(client),
-      createPanel: ({ viewType, title }) =>
-        webviewChannel(vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true })),
+      client: reviewClient,
+      createPanel: ({ viewType, title, quiet }) => {
+        // Story E20261013e62a9269:S001: a pane the chat opens on a presented document goes beside
+        // the chat and leaves the cursor there; the command and the board open it as before.
+        const panel = quiet === true
+          ? vscode.window.createWebviewPanel(viewType, title, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true }, { enableScripts: true })
+          : vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
+        // Story E202610131f74c81f:S001: the pane's own tab icon, as the delivery board has its own.
+        panel.iconPath = {
+          light: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-review-icon.svg')),
+          dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-review-icon-dark.svg')),
+        };
+        return webviewChannel(panel);
+      },
+      // Story E202610131f74c81f:S001: the open document's files are watched, so a document
+      // revised outside the pane is shown without reopening it.
+      watchDocument: (relPaths, onChange) => {
+        const folder = vscode.workspace.workspaceFolders?.[0];
+        if (folder === undefined) return { dispose: () => {} };
+        const watchers = relPaths.map((rel) => {
+          const w = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, rel));
+          w.onDidChange(onChange);
+          w.onDidCreate(onChange);
+          w.onDidDelete(onChange);
+          return w;
+        });
+        return { dispose: () => { for (const w of watchers) w.dispose(); } };
+      },
       // Story E202610138d4b90c9:S001: a decision and its comments are handed to the chat as
       // one message, which waits its turn there; and an artifact's HTML documents are read
       // from the workspace folder's docs/ directory for the pane's frame. The two hosts

@@ -225,11 +225,24 @@ export interface StageSectionView {
   readonly hint: string | null;
 }
 
+/**
+ * Story E20261013cb09a32c:S001: an epic's own records (its DEF, HLD, amendments and spec) as
+ * its board shows them. `itemId` is the epic's id, sent back by a row's button; the rows and
+ * the opened read-only record are those of a story's Records table.
+ */
+export interface EpicRecordsView {
+  readonly itemId: string;
+  readonly evidence: readonly EvidenceRowView[];
+  readonly openedRecord: { readonly artifactId: string; readonly text: string } | null;
+}
+
 /** A board screen (All work, Standalone, or one epic's board): six stage sections. */
 export interface StagesBody {
   readonly kind: 'stages';
   /** The epic's own row (the same numbers as on Epics) on an epic's board; null otherwise. */
   readonly epic: EpicRollupRowView | null;
+  /** Story E20261013cb09a32c:S001: the epic's own records on an epic's board; null otherwise. */
+  readonly epicRecords: EpicRecordsView | null;
   readonly totalsLabel: string;
   /** True when Needs attention is on, so the totals line offers Show all. */
   readonly showAll: boolean;

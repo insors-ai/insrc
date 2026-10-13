@@ -27,6 +27,10 @@ test("review wiring: the review host is given notifyChat bound to the chat host'
   assert.match(block!, /notifyChat: \(text\) => chatHost\.submitExternal\(text\),/, "notifyChat hands the message to the chat host's submitExternal");
   assert.match(block!, /readCompanion: createCompanionReader\(\{ root: \(\) => vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \}\),/, 'readCompanion reads under the first workspace folder');
   assert.match(ext, /import \{ createCompanionReader \} from '\.\/chat\/companion-reader\.js';/);
+  // The pane names the workspace folder to the daemon on every call, so it does not depend on the daemon's default.
+  // (Story E20261013e62a9269:S001: the client is made once, before the chat host, and shared with the presenter.)
+  assert.match(ext, /const reviewClient = createDocsReviewClient\(client, \{ repo: \(\) => vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \}\);/);
+  assert.match(block!, /client: reviewClient,/);
   // Both hosts are built in the same gated block, the chat host first, so the binding is to a host that exists.
   assert.ok(ext.indexOf('const chatHost = createChatPanelHost({') > 0);
   assert.ok(ext.indexOf('const chatHost = createChatPanelHost({') < ext.indexOf('const reviewHost = createDocsReviewHost({'));
@@ -105,4 +109,66 @@ test("review wiring: readCompanion answers the text of an .html file under the w
     rmSync(root, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });
   }
+});
+
+// Story E202610131f74c81f:S001 t3: the pane's tab icon and the watcher of the open document.
+test("review wiring: extension.ts sets the review panel's iconPath to the pair and gives the review host a watchDocument bound to file watchers under the workspace folder", () => {
+  const ext = code(read('..', '..', 'extension.ts'));
+  const block = /createDocsReviewHost\(\{([\s\S]*?)\n    \}\);/.exec(ext)?.[1];
+  assert.ok(block, 'the review host is built in extension.ts');
+  // The icon is set on the vscode panel before it is wrapped as a channel.
+  const create = /createPanel: \(\{ viewType, title, quiet \}\) => \{([\s\S]*?)\n      \},/.exec(block!)?.[1];
+  assert.ok(create, 'createPanel builds the panel itself');
+  // Story E20261013e62a9269:S001: without quiet the pane is created as before, in the active column.
+  assert.match(create!, /: vscode\.window\.createWebviewPanel\(viewType, title, vscode\.ViewColumn\.Active, \{ enableScripts: true \}\);/);
+  assert.match(create!, /panel\.iconPath = \{\s*light: vscode\.Uri\.file\(join\(context\.extensionPath, 'media', 'insrc-review-icon\.svg'\)\),\s*dark: vscode\.Uri\.file\(join\(context\.extensionPath, 'media', 'insrc-review-icon-dark\.svg'\)\),\s*\};/);
+  assert.ok(create!.indexOf('panel.iconPath') < create!.indexOf('return webviewChannel(panel);'), 'before it is wrapped');
+  // The watcher: one VS Code file watcher per path, under the first workspace folder, all three events, disposed together.
+  const watch = /watchDocument: \(relPaths, onChange\) => \{([\s\S]*?)\n      \},/.exec(block!)?.[1];
+  assert.ok(watch, 'the host is given watchDocument');
+  assert.match(watch!, /const folder = vscode\.workspace\.workspaceFolders\?\.\[0\];/);
+  assert.match(watch!, /if \(folder === undefined\) return \{ dispose: \(\) => \{\} \};/, 'with no folder it watches nothing and still answers a disposer');
+  assert.match(watch!, /vscode\.workspace\.createFileSystemWatcher\(new vscode\.RelativePattern\(folder, rel\)\)/);
+  for (const ev of ['onDidChange', 'onDidCreate', 'onDidDelete']) assert.match(watch!, new RegExp(`w\\.${ev}\\(onChange\\);`), `${ev} reports a change`);
+  assert.match(watch!, /return \{ dispose: \(\) => \{ for \(const w of watchers\) w\.dispose\(\); \} \};/);
+  // The host itself stays free of vscode.
+  assert.doesNotMatch(code(read('..', 'docs-review-panel.ts')), /from 'vscode'/);
+});
+
+// Story E20261013e62a9269:S001: a document the chat presents is opened in the review pane.
+test("extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in the active column without quiet and beside without focus with it; there is no presenter when the review pane is not created", () => {
+  const ext = code(read('..', '..', 'extension.ts'));
+  assert.match(ext, /import \{ createReviewPresenter \} from '\.\/chat\/review-presenter\.js';/);
+  // The presenter: the pending list from the review client, the open through the review host, quietly.
+  const made = /const reviewPresenter = createReviewPresenter\(\{([\s\S]*?)\n    \}\);/.exec(ext)?.[1];
+  assert.ok(made, 'the presenter is built in extension.ts');
+  assert.match(made!, /pendingDocuments: \(\) => reviewClient\.pendingDocuments\(\),/);
+  assert.match(made!, /open: \(target\) => docsReviewHost\?\.openArtifact\(\{ \.\.\.target, quiet: true \}\),/, "the target's id and path, as the list gave them, with quiet");
+  assert.match(made!, /log: panelLog,/);
+  // It is given to the chat host,
+  const chat = /const chatHost = createChatPanelHost\(\{([\s\S]*?)\n    \}\);/.exec(ext)?.[1];
+  assert.ok(chat);
+  assert.match(chat!, /presenter: reviewPresenter,/);
+  // and reaches the review host through the variable the review host is assigned to once made.
+  assert.match(ext, /docsReviewHost = reviewHost;/);
+  // No presenter without the review pane: both are made in the one block the chat's flag gates,
+  // the presenter before the chat host and the review host after it; the presenter is made nowhere else.
+  const iPresenter = ext.indexOf('const reviewPresenter = createReviewPresenter({');
+  const iChat = ext.indexOf('const chatHost = createChatPanelHost({');
+  const iReview = ext.indexOf('const reviewHost = createDocsReviewHost({');
+  assert.ok(iPresenter > 0 && iPresenter < iChat && iChat < iReview);
+  assert.equal(ext.split('createReviewPresenter(').length - 1, 1);
+  assert.equal(ext.split('createChatPanelHost(').length - 1, 1, 'one chat host, so one place a presenter could be given');
+  const gate = ext.lastIndexOf("if (", iPresenter);
+  assert.ok(gate > 0 && ext.slice(gate, iPresenter).split('\n  }\n').length === 1, 'still inside the block that the chat flag opens');
+  assert.ok(ext.indexOf('const reviewHost = createDocsReviewHost({') < ext.indexOf('docsReviewHost = reviewHost;'));
+
+  // The pane's creation: quiet goes beside the chat without focus; otherwise the active column, as before.
+  const block = /createDocsReviewHost\(\{([\s\S]*?)\n    \}\);/.exec(ext)?.[1];
+  const create = /createPanel: \(\{ viewType, title, quiet \}\) => \{([\s\S]*?)\n      \},/.exec(block!)?.[1];
+  assert.ok(create);
+  assert.match(create!, /const panel = quiet === true\s*\? vscode\.window\.createWebviewPanel\(viewType, title, \{ viewColumn: vscode\.ViewColumn\.Beside, preserveFocus: true \}, \{ enableScripts: true \}\)\s*: vscode\.window\.createWebviewPanel\(viewType, title, vscode\.ViewColumn\.Active, \{ enableScripts: true \}\);/);
+  // The channel's reveal passes preserveFocus on to the panel, and reveals as before without it.
+  const channel = code(read('..', 'webview-channel.ts'));
+  assert.match(channel, /reveal: \(opts\) => \(opts\?\.preserveFocus === true \? panel\.reveal\(undefined, true\) : panel\.reveal\(\)\),/);
 });

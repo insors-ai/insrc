@@ -99,7 +99,11 @@
       {
         "command": "insrc.chat.docsReview",
         "title": "Review pending documents",
-        "category": "insrc"
+        "category": "insrc",
+        "icon": {
+          "light": "media/insrc-review-icon.svg",
+          "dark": "media/insrc-review-icon-dark.svg"
+        }
       },
       {
         "command": "insrc.delivery.openBoard",

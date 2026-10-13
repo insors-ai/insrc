@@ -1,0 +1,790 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791912226419-3iyvlb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T17:23:46.435Z",
+    "epicCreatedAt": "2026-10-13T17:16:26.246Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 14,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e62a9269a7cb9550",
+    "epicSlug": "open-document-presented-approval-review-pane",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1791912226419-3iyvlb",
+    "hldEffectiveHash": "e5eb37a3afce41a8cbde31d11030d4aa3293a4be854f910f810356e0b96bc76d",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story in the plugin's chat. The review pane can already be opened on a document and brought into view; the chat host already sees every tool result of a turn and has one caller. The work is to notice, during a chat turn, that a document now awaits approval, and to ask the review pane to open it once. A few files in one module, one design choice (what the signal is), a small number of tasks. No daemon change is expected.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac1/ac2: end() in a finally around the existing `await run` in startTurn runs exactly once for a turn that completed, failed, was stopped or was superseded, so the end-of-turn rule covers documents that became pending without a pendingApproval tool result.",
+          "evidence": "chat-panel.ts:1354-1356 is the single `const run = turns.start(s, req, sink); started(); await run;` site. turn-lifecycle.ts:242-255 start() awaits run() in try/finally; run() returns on every path: lock wait dropped (227, 235-238), aborted setup (321), detach (338), output ended (339-358), superseded terminal (365-369), terminal (375-383), and a throwing sink/adapter is caught at 386-393. The two early returns that refuse a message are chat-panel.ts:1199 and 1202, before turns.start. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/turn-lifecycle.ts]",
+          "action": "None. Note for the builder: a detach (window reload / chat switch, turn-lifecycle.ts:329-334) also resolves `run`, so end() fires then while the CLI keeps writing; the lazily begun followed turn takes over from its first event, as the design states.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac3: when the review pane is not available the chat host gets no presenter and behaves as today.",
+          "evidence": "extension.ts builds the chat host (567-638) and the review host (668-703) inside the same insrc.chat.enabled block, so there is no runtime state with a chat host and no review host; with the flag off neither exists. An optional deps.presenter that is absent leaves startTurn/followLiveTurn untouched. [files: vscode-plugin/src/extension.ts]",
+          "action": "State in the LLD that the 'no presenter' case is the chat-disabled case (no chat host either), so the wiring test 'there is no presenter when the review pane is not created' asserts the source gate, not a runtime branch.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A superseded turn's events never reach its sink (turn-lifecycle.ts:361-374 drops them before sink.onEvent).",
+          "evidence": "turn-lifecycle.ts:365-372: `if (!isCurrent(myGen)) { if (isTerminal(ev)) { endTurn(ev, it); trySave(s); break; } continue; }` precedes `sink.onEvent(ev)` at 374. The superseded loop keeps reading until its terminal event, then run() returns, so the old turn's `await run` resolves after the newer turn began. [files: vscode-plugin/src/chat/turn-lifecycle.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "followLiveTurn is asked for on every webview 'ready', and turns.follow returns without following while this window runs the turn, so a presented turn must begin lazily on the first follow event.",
+          "evidence": "chat-panel.ts:1436-1442 `case 'ready': ... postInitialState();` and postInitialState ends with `followLiveTurn(session)` at 691 (also called on a chat switch at 1505). turn-lifecycle.ts:403: `if (live === undefined || following?.sessionId === s.id || runningTurns.has(live.cursor.turnId)) return;` and 404 returns when another live window owns it. The follow sink has onEvent/onEnd(outcome) (chat-panel.ts:619-644), with outcome 'ended' | 'failed'. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/turn-lifecycle.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The review host's createPanel in extension.ts creates the pane with ViewColumn.Active today, one createPanel serves every open, and review-wiring.test.ts lines 118-120 pin that source.",
+          "evidence": "extension.ts:670-671 `createPanel: ({ viewType, title }) => { const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });`. review-wiring.test.ts:118 regex `/createPanel: \\(\\{ viewType, title \\}\\) => \\{([\\s\\S]*?)\\n      \\},/` and 120 matches the exact createWebviewPanel line. docs-review-panel.ts:2349-2368 open() reveals an existing channel or calls deps.createPanel; openArtifact (2369-2372) calls host.open() then openArtifactFrom. [files: vscode-plugin/src/extension.ts, vscode-plugin/src/chat/__tests__/review-wiring.test.ts, vscode-plugin/src/chat/docs-review-panel.ts]",
+          "action": "None; the Story restates the test as the design says (the destructured `{ viewType, title }` parameter in the regex changes too once `quiet` is read).",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A pendingApproval.artifactPath and the pending list's mdPath are the same absolute path for the same document, so an equality match finds it.",
+          "evidence": "synthesize.ts:109-110 `pendingApproval: { artifactPath: paths.md` with paths from pathsForWorkflow (storage.ts:889); e.g. lldArtifactPaths (storage.ts:710) returns `resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'LLD', workItemKind, epicSlug ?? epicHash)`. pending.ts:188-196 deriveMdPath calls the same resolveArtifactMdPath(repoPath, identity, kind, workItemKind, slug) with `slug = meta.epicSlug ?? hash`; path-scheme.ts:106/138 join from repoPath, so both are absolute. pendingApproval is emitted only at synthesize.ts:109. [files: src/daemon/steps/workflow-step/phases/synthesize.ts, src/workflow/pending.ts, src/workflow/storage.ts, src/workflow/path-scheme.ts]",
+          "action": "None for DEF/HLD/LLD/PLAN. The match assumes the plugin's workspace folder is the repo the tool ran on (docs-review-client.ts:98-101 sends the folder as repo).",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.5",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The equality match also holds for a brainstorm SPEC.",
+          "evidence": "storage.ts:911-915 writes a brainstorm SPEC with workItemKind forced to 'standalone' (`specArtifactPaths(repoPath, specHash, createdAtISO, 'standalone', epicSlug)`), while pending.ts:192 derives the kind from the record: `meta['standalone'] === true ? 'standalone' : 'epic'`. I did not read where the SPEC's meta is stamped, so I could not confirm meta.standalone is true on a SPEC; if it is not, the list path is under docs/epics and neither the equality nor the '/'-tail tolerance matches. [files: src/workflow/storage.ts, src/workflow/pending.ts]",
+          "action": "Check a SPEC's meta.standalone. If it can be absent, the SPEC is still opened by the end-of-turn rule (its id is new), only later than at the tool result; say so in the edge cases or match on the artifact id as a second key.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "pendingDocuments(), review-presenter.ts / createReviewPresenter and a preserveFocus reveal do not exist yet in the plugin.",
+          "evidence": "Grep for `pendingDocuments|review-presenter|createReviewPresenter|preserveFocus` over vscode-plugin/src returns no files. DocsReviewClient (docs-review-client.ts:55-71) has only pending(), content(), decide(); pending() maps to DocsArtifactSummary and drops mdPath, keeping it only in the private mdPathById map (104, 117). [files: vscode-plugin/src/chat/docs-review-client.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The plugin's vscode.d.ts lacks the showOptions object form and reveal's preserveFocus, and may already have ViewColumn.Beside.",
+          "evidence": "vscode.d.ts:60-65 `enum ViewColumn { Active = -1, Beside = -2, One = 1, Two = 2 }` (Beside is present); :88 `reveal(viewColumn?: ViewColumn): void;`; :129-134 createWebviewPanel takes `showOptions: ViewColumn`. extension.ts:625 already uses ViewColumn.Beside for the chat panel. [files: vscode-plugin/src/vscode.d.ts]",
+          "action": "None; only the two declarations are added.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A 'tool-result' turn event carries the tool's text in `output` and `isError`, and a workflow tool's result text is JSON carrying the pendingApproval block.",
+          "evidence": "stream-events.ts:82-85 `kind: 'tool-result'; turnId; command?; output: string`. cli-adapter.ts:639-650 builds it from claude's tool_result block: `output = coerceToolResultOutput(block['content'])` (267-275 joins the text blocks) and `isError: true` when `is_error`. The MCP server returns the result as one text block of JSON (server.ts:1074/1122 `JSON.stringify(result, null, 2)`; step tools forward the daemon's text at 1042). Not confirmed: that the CLI passes a very large result (the synthesize result carries `markdown` and `artifact`, synthesize.ts:103-107) through whole; a clipped or file-redirected result would not parse. [files: vscode-plugin/src/chat/stream-events.ts, vscode-plugin/src/chat/cli-adapter.ts, src/mcp/server.ts]",
+          "action": "Keep the end-of-turn rule as the stated fallback for a result that does not parse; the design's edge case 'a tool result is large' should say the fallback applies when the CLI does not pass the text whole.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Making ChatPanelChannel.reveal take an optional argument leaves every existing caller and implementer unchanged, and webview-channel.ts is the one production implementer.",
+          "evidence": "Interface at chat-panel.ts:49 `reveal(): void;`. One production implementer: webview-channel.ts:43 `reveal: () => panel.reveal()`. Callers: chat-panel.ts:1748, board-host.ts:721, docs-review-panel.ts:2352, all `channel.reveal()`. extension.ts:342 and panels/webview-host.ts:172/179 belong to the separate panels/types.ts:110 interface. A zero-argument fake still satisfies the widened signature. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/webview-channel.ts, vscode-plugin/src/delivery/board-host.ts]",
+          "action": "Name in the LLD that WebviewPanelLike.reveal (webview-channel.ts:22, `reveal(): void`) is widened to `reveal(viewColumn?: unknown, preserveFocus?: boolean)` in the same file, or `panel.reveal(undefined, true)` does not typecheck.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Adding optional `quiet` to openArtifact's target and createPanel's opts does not break the delivery board's callers.",
+          "evidence": "board-host.ts:61 and details-memory.ts:62 declare `reviewPane?: { openArtifact(target: { readonly artifactId: string; readonly mdPath: string }): void }` structurally, and details-memory.ts:173 calls `openArtifact({ artifactId, mdPath: entry.mdPath })`; a host method that also accepts an optional `quiet` is assignable. DocsReviewHostDeps.createPanel is at docs-review-panel.ts:35 with one production caller (2356) and one provider (extension.ts:670). [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/delivery/details-memory.ts, vscode-plugin/src/chat/docs-review-panel.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "extension.ts can pass a presenter to createChatPanelHost that is wired to the review host's openArtifact and the review client's pendingDocuments.",
+          "evidence": "It can, but the design does not name two things the wiring needs: the chat host is constructed at extension.ts:567, before the review host at 668, and the review client is created inline as the review host's `client` at 669 with no binding of its own. The reverse link already uses a late-bound closure (`notifyChat: (text) => chatHost.submitExternal(text)`, 697). [files: vscode-plugin/src/extension.ts]",
+          "action": "Add to step 4: hoist `createDocsReviewClient(...)` to a const above the chat host (or make a second client; pendingDocuments keeps no state), and have the presenter's `open` close over a `let reviewHost` assigned after it is built, since the presenter is only called during a turn.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Nothing stored changes: the presenter is called beside, not inside, the path that writes transcript rows and posts events, and no daemon call or shape is added.",
+          "evidence": "Rows and posts are made by `appendEvent(s, ev)` / `postLive(ev, rowIndex)` in the run sink (chat-panel.ts:1289-1291) and the follow sink (624-629); a toolResult(ev.output) call ahead of them reads the event only. pendingDocuments reuses the existing `workflow.pending` RPC and PendingArtifact.mdPath (pending.ts:46), where '' means unresolvable (docs-review-client.ts:115-117 already skips it), so no IPC shape changes and an older daemon answers the same call. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/docs-review-client.ts, src/workflow/pending.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A presenter that throws must be caught by the chat host's own wrapper, because an uncaught throw in the run sink's onEvent would fail the turn.",
+          "evidence": "turn-lifecycle.ts:374 calls `sink.onEvent(ev)` unguarded inside the try whose catch (386-393) does `finishIterator(iterator)` and `reportError(sink, ...)`: a throw there ends the turn as an error. Only the follow path guards it (437-441, logs 'an event was not handled'). The design wraps every presenter call in the host and has the presenter return at once and never throw, with failed reads and a throwing open logged; that is sufficient for both paths. [files: vscode-plugin/src/chat/turn-lifecycle.ts, vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "None. Keep the wrapper around begin() too: it sits before turns.start, where a throw would reject runTurn, which is fired with `void`.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion maps to named tests that can be written in the plugin's existing test files and style.",
+          "evidence": "The acceptance table maps ac1, ac2 and ac3 each to unit and integration subjects. The test files they extend exist: vscode-plugin/src/chat/__tests__/chat-panel.test.ts, docs-review-client.test.ts, docs-review-panel.test.ts, review-wiring.test.ts, turn-lifecycle.test.ts. Every seam under test is injected (createPanel, client, channel, turns via providers), so quiet/preserveFocus is observable on a fake. I did not read the fakes inside those tests. 'The chat keeps keyboard focus' in a real window is covered only by the hand check, which is the most a node test can do here. [files: vscode-plugin/src/chat/__tests__/chat-panel.test.ts, vscode-plugin/src/chat/__tests__/review-wiring.test.ts, vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts, vscode-plugin/src/chat/__tests__/docs-review-client.test.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 16,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-13T17:23:46.815Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-13T17:29:09.068Z",
+    "rangeBase": "62a651d6966f36b0519a59f1b7da851a37f3b4d4"
+  },
+  "body": {
+    "summary": {
+      "prose": "When the assistant in the chat produces a document that needs your approval, the review pane now opens on that document by itself; you no longer run the review command and look for it in the table. It opens once per turn for each document, beside the chat and without taking the cursor out of the chat box. If a turn produces several documents they are opened one after another, so the last is the one on show and the others are in the pane's table. A turn that was picked up again after a window reload opens what it produces from then on; a document it wrote before the reload is in the table. Acceptance: ac1, a document a chat turn presents for approval is opened in the review pane without any action, whether a workflow tool call wrote it or it became pending some other way during the turn, for a turn the window runs and for one it picks up again; ac2, each document is opened once per turn, the chat keeps keyboard focus, and re-reads or re-renders of the pane open nothing; ac3, nothing happens when the review pane is not available, and a failure to read the pending list never disturbs the chat turn.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone Story — no parent HLD. Designed directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Dev chat: a document presented for approval is opened in the review pane automatically"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "createReviewPresenter",
+          "signature": "createReviewPresenter(deps: { pendingDocuments(): Promise<readonly { id: string; mdPath: string }[]>; open(target: { artifactId: string; mdPath: string }): void; log: ChatPanelLogger }): ReviewPresenter",
+          "parameters": [
+            {
+              "name": "deps.pendingDocuments",
+              "type": "() => Promise<readonly { id: string; mdPath: string }[]>",
+              "purpose": "The documents awaiting approval, each with its path; wired to the review client's new pendingDocuments()."
+            },
+            {
+              "name": "deps.open",
+              "type": "(target: { artifactId: string; mdPath: string }) => void",
+              "purpose": "Opens the review pane on one document; wired to the review host's openArtifact with quiet set."
+            },
+            {
+              "name": "deps.log",
+              "type": "ChatPanelLogger",
+              "purpose": "Where a failed pending read or a throwing open is recorded."
+            }
+          ],
+          "returns": {
+            "type": "ReviewPresenter { begin(): PresentedTurn }; PresentedTurn { toolResult(output: string): void; end(): void }",
+            "meaning": "New module vscode-plugin/src/chat/review-presenter.ts, free of vscode. begin() starts one turn's state and returns its handle, which becomes the newest. When the previous newest handle has ended (or there is none) the state is fresh: the set of ids this turn opened is empty and `before`, the ids pending now, is read at once. When the previous newest handle has NOT ended (the user sent a message while a turn was still running), the new handle takes over that handle's `before` and its opened set instead of reading anew, so whatever the earlier turn makes pending is still new to the later one. toolResult(output): when the text contains 'pendingApproval' and parses as a JSON object whose pendingApproval.artifactPath is a non-empty string, it reads the pending list and opens the document whose mdPath EQUALS that path (both are absolute paths the daemon resolves the same way); as tolerance only, a list path that is the block's path's tail after a '/' also matches. It opens nothing when this turn already opened that id. end(): when this handle is still the newest, it reads the pending list and opens each document whose id is not in `before` and was not opened by this turn, in the list's order; when a later begin() has happened it opens nothing: the later handle carries its state on and its own end opens what is new. end() a second time does nothing. Every call of a handle is queued behind that handle's earlier calls, including the read begin() started, so a slow read cannot reorder them. Calls return at once and never throw to the caller."
+          },
+          "errors": [
+            {
+              "type": "none thrown",
+              "condition": "A pending read that fails or throws, and an open that throws, are logged; nothing is opened for that call. If the read in begin() failed, `before` is unknown and end() opens nothing, while toolResult still works."
+            }
+          ],
+          "preconditions": [
+            "The chat host calls begin() once per turn and end() once on its handle"
+          ],
+          "postconditions": [
+            "A turn opens a document at most once",
+            "A document that was pending before the turn is opened only if a tool result of the turn names it",
+            "Text that is not JSON, JSON without the block, and a path that matches no pending document open nothing",
+            "A later turn may open the same document again when it is presented again",
+            "With overlapping turns (begin A, begin B, end A, end B) A's end opens nothing and B's end opens every document that became pending since A began and was not opened yet"
+          ]
+        },
+        {
+          "name": "createChatPanelHost (deps.presenter)",
+          "signature": "deps.presenter?: ReviewPresenter | undefined",
+          "parameters": [
+            {
+              "name": "deps.presenter",
+              "type": "ReviewPresenter | undefined",
+              "purpose": "Optional. The chat host begins a presented turn for every turn it runs and for every turn it follows."
+            }
+          ],
+          "returns": {
+            "type": "ChatPanelHost",
+            "meaning": "RUN TURN, in startTurn: after the two early returns that refuse a message before any run, and just before turns.start, `const shown = presenter?.begin()`. In the run sink's onEvent, a 'tool-result' event whose isError is not true calls shown.toolResult(ev.output), before the existing handling and whatever that handling does with the event (held back for a diff or posted). A turn that was superseded gets no more events at its sink (turn-lifecycle.ts:361-374 drops them before sink.onEvent), so its later tool results are not passed; what it writes afterwards is opened by the end of the turn that superseded it, which took over its state. shown.end() is in a finally around the existing `await run`, which is the one site that runs for a turn that completed, failed, was stopped or was superseded. FOLLOWED TURN, in followLiveTurn (this window's own saved turn picked up after a window reload or a switch back to the chat, or one whose owner is gone): the presented turn is begun LAZILY, on the follow sink's first onEvent, never when the follow is asked for: followLiveTurn is asked for on every webview 'ready' (chat-panel.ts:691, 1436-1442) and turns.follow returns without following while this window runs the turn (turn-lifecycle.ts:403), so a request alone must not begin anything. toolResult is passed in the sink's onEvent the same way; end() is called in the sink's onEnd when the outcome is 'ended' and a turn was begun. A follow whose outcome is not 'ended' (a failed resume leaves the turn for a later follow) ends nothing. For a followed turn `before` is the list at its first event, so a document the turn wrote before the reload is not opened by the end rule (it is in the table); one it writes afterwards is. Each presenter call is wrapped so a throw is logged and the turn goes on."
+          },
+          "errors": [
+            {
+              "type": "none thrown",
+              "condition": "A throwing presenter is caught and logged."
+            }
+          ],
+          "preconditions": [
+            "None: with no presenter the host behaves as today"
+          ],
+          "postconditions": [
+            "The events posted to the chat's webview and the transcript rows are exactly as before",
+            "end() is called once per run turn, also when the turn failed, was stopped or was superseded",
+            "A message refused before any run begins no presented turn"
+          ]
+        },
+        {
+          "name": "DocsReviewHost.openArtifact (quiet), createPanel (quiet), ChatPanelChannel.reveal (preserveFocus)",
+          "signature": "openArtifact(target: { artifactId: string; mdPath: string; quiet?: boolean | undefined }): void; createPanel(opts: { viewType: string; title: string; quiet?: boolean | undefined }): ChatPanelChannel; reveal(opts?: { preserveFocus?: boolean | undefined }): void",
+          "parameters": [
+            {
+              "name": "target.quiet",
+              "type": "boolean | undefined",
+              "purpose": "The pane is shown without taking keyboard focus. Absent or false: as today (the review command and the delivery board)."
+            },
+            {
+              "name": "createPanel opts.quiet",
+              "type": "boolean | undefined",
+              "purpose": "The review host passes it on when it has to create the pane for a quiet open. extension.ts then creates the panel with { viewColumn: ViewColumn.Beside, preserveFocus: true }; without it, with ViewColumn.Active exactly as today."
+            },
+            {
+              "name": "reveal opts.preserveFocus",
+              "type": "boolean | undefined",
+              "purpose": "An optional argument on the shared channel interface. webview-channel.ts calls panel.reveal(undefined, true) when it is set and panel.reveal() otherwise, so every existing caller is unchanged."
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The host's open() gains an internal quiet argument: with no pane it calls createPanel({ viewType, title, quiet: true }); with a pane it calls channel.reveal({ preserveFocus: true }), so a pane that is a background tab is brought to the front of its group without moving the cursor out of the chat. The document is then opened with reveal as today, so the pane's document view shows it. The plugin's vscode.d.ts gains the two forms it does not declare yet: createWebviewPanel's showOptions as ViewColumn | { viewColumn: ViewColumn; preserveFocus?: boolean }, reveal(viewColumn?, preserveFocus?) and ViewColumn.Beside if absent. The reviewer's drafts on another document are kept, as they are saved per document."
+          },
+          "errors": [
+            {
+              "type": "none thrown",
+              "condition": "A failed read of the document is shown in the pane as a failed open is today."
+            }
+          ],
+          "preconditions": [
+            "The review host exists (the chat is enabled)"
+          ],
+          "postconditions": [
+            "The review command and the delivery board create the pane in the active column with focus and reveal it with focus, as before",
+            "A quiet open never moves keyboard focus",
+            "review-wiring.test.ts, which pins the source of the review host's createPanel in extension.ts (its lines 118-120 match `createPanel: ({ viewType, title }) => {` and the createWebviewPanel call with ViewColumn.Active), is restated in this Story: the non-quiet branch still creates with ViewColumn.Active and { enableScripts: true }; the quiet branch with { viewColumn: ViewColumn.Beside, preserveFocus: true }"
+          ]
+        },
+        {
+          "name": "DocsReviewClient.pendingDocuments",
+          "signature": "pendingDocuments(): Promise<readonly { id: string; mdPath: string }[]>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<readonly { id: string; mdPath: string }[]>",
+            "meaning": "One workflow.pending call (with the workspace folder as repo, as every call of the client); each pending artifact with a non-empty mdPath, in the daemon's order. It does not touch the id-to-path map that pending() keeps."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "The daemon answers with an error, as pending() throws today; the presenter logs it."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "pending() and content() are unchanged"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewPresenter",
+        "change": "new-entity",
+        "details": "In-memory only, per turn: the ids pending when the turn began and the ids the turn opened; plus which handle is the newest. Nothing is stored and no daemon shape changes.",
+        "schemaDiff": "+ ReviewPresenter { begin(): PresentedTurn }; + PresentedTurn { toolResult(output: string); end() }",
+        "callSites": [
+          "vscode-plugin/src/chat/review-presenter.ts",
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/extension.ts"
+        ]
+      },
+      {
+        "entity": "ChatPanelChannel / DocsReviewHostDeps.createPanel",
+        "change": "field-add",
+        "details": "Two optional arguments on in-process interfaces: reveal(opts?: { preserveFocus? }) and createPanel's opts.quiet. Existing callers pass neither.",
+        "schemaDiff": "reveal(): void -> reveal(opts?: { preserveFocus?: boolean }): void; createPanel(opts: { viewType; title; + quiet?: boolean })",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/webview-channel.ts",
+          "vscode-plugin/src/chat/docs-review-panel.ts",
+          "vscode-plugin/src/extension.ts",
+          "vscode-plugin/src/vscode.d.ts",
+          "vscode-plugin/src/chat/__tests__/review-wiring.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The pending list cannot be read at the start of a turn",
+          "detection": "pendingDocuments rejects",
+          "response": "Logged; the presenter marks what was pending before as unknown",
+          "userImpact": "Documents named by a tool result still open; a document that only became pending by another route is not opened this turn and is in the pane's table",
+          "recoverable": true
+        },
+        {
+          "scenario": "The pending list cannot be read for a tool result or at the turn's end",
+          "detection": "pendingDocuments rejects",
+          "response": "Logged; nothing is opened for that call",
+          "userImpact": "The document is not opened by itself; the assistant's message still names it and the table lists it",
+          "recoverable": true
+        },
+        {
+          "scenario": "Opening the pane throws",
+          "detection": "deps.open throws",
+          "response": "Caught and logged; the id is still marked opened so it is not retried in a loop",
+          "userImpact": "The chat turn is not disturbed",
+          "recoverable": true
+        },
+        {
+          "scenario": "The review pane is not available (the review host was not created)",
+          "detection": "extension.ts passes no presenter",
+          "response": "The chat host makes no presenter calls",
+          "userImpact": "As today",
+          "recoverable": true
+        },
+        {
+          "scenario": "The presenter itself throws synchronously",
+          "detection": "The chat host's wrapper catches it",
+          "response": "Logged; the turn goes on",
+          "userImpact": "None",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A tool result names a document that is no longer pending (it was approved in the same turn)",
+          "expected": "No pending document has that path, so nothing is opened"
+        },
+        {
+          "input": "A revision of a document that was already pending before the turn",
+          "expected": "Opened when the tool result names it; not opened by the end-of-turn rule, since its id was pending before"
+        },
+        {
+          "input": "Two documents are presented in one turn",
+          "expected": "Each is opened as it is presented; the last is the one on show and the others are in the table"
+        },
+        {
+          "input": "The same document is named by two tool results of one turn",
+          "expected": "Opened once"
+        },
+        {
+          "input": "The assistant drives a workflow from a shell script, so no tool result carries the block",
+          "expected": "The document is opened at the turn's end, as it became pending during the turn"
+        },
+        {
+          "input": "A tool result is large (the document's markdown rides with it)",
+          "expected": "Parsed once as JSON; text that does not contain the word pendingApproval is not parsed at all"
+        },
+        {
+          "input": "A tool result of an ordinary tool whose text happens to be JSON with other keys",
+          "expected": "Nothing is opened"
+        },
+        {
+          "input": "The reviewer has drafts on another document in the pane when a new one is opened",
+          "expected": "The drafts are kept with their document, as on any change of document"
+        },
+        {
+          "input": "A pending document with no path",
+          "expected": "Skipped by pendingDocuments; it cannot be opened"
+        },
+        {
+          "input": "A message sent from the review pane starts a chat turn (a decision)",
+          "expected": "It is a turn like any other; approving a document makes nothing new pending, so nothing opens unless the turn produces a document"
+        },
+        {
+          "input": "A turn is stopped or fails",
+          "expected": "Its end still runs (the finally around the run); documents that became pending in it are opened if it is still the newest turn"
+        },
+        {
+          "input": "A turn is superseded: the user sends another message while it runs, and its process ends after the next turn began",
+          "expected": "Its later events never reach its sink, so its later tool results are not seen. The turn that superseded it took over its start list and what it opened, so a document the old turn writes at any time is opened at the newer turn's end if no tool result opened it first. The old turn's own end opens nothing"
+        },
+        {
+          "input": "A turn picked up after a window reload or a switch back to the chat (a followed turn)",
+          "expected": "A presented turn begins on the follow's first event: tool results from then on open what they name, and at its end documents that became pending since that first event are opened. A document it wrote before the reload is not opened by itself; it is in the table"
+        },
+        {
+          "input": "A follow that does not start (another live window owns the turn) or a resume that fails",
+          "expected": "Nothing is begun (no event arrives) or nothing is ended; nothing is opened by the end rule, and the run turn's own handle, if there is one, is untouched"
+        },
+        {
+          "input": "The pane exists but is a background tab when a document is presented",
+          "expected": "It is brought to the front of its group with the cursor left where it was"
+        },
+        {
+          "input": "The review command or the delivery board opens the pane",
+          "expected": "As before: the active column, with focus"
+        },
+        {
+          "input": "The chat tab is hidden and shown again while a turn runs (a webview 'ready', which asks for a follow that does not start)",
+          "expected": "No presented turn is begun and no pending read is made; the run turn's end still opens what became pending"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The chat's posted events and transcript rows are unchanged by the presenter",
+          "source": "c1"
+        },
+        {
+          "text": "Only a chat turn's events call the presenter; the review pane's own re-reads and re-renders never do",
+          "source": "c2"
+        },
+        {
+          "text": "The plugin reaches the daemon only through its client; no new daemon call or shape",
+          "source": "c3"
+        },
+        {
+          "text": "The review host stays free of vscode; the pane is created by the injected createPanel",
+          "source": "c2"
+        },
+        {
+          "text": "The delivery board's openArtifact behaves as before",
+          "source": "c2"
+        },
+        {
+          "text": "A failure in presenting never fails or delays a chat turn",
+          "source": "c1"
+        },
+        {
+          "text": "Every existing caller of reveal() and createPanel behaves as before; the new arguments are optional",
+          "source": "c9"
+        },
+        {
+          "text": "A stopped or superseded turn still reports nothing more to the webview",
+          "source": "c8"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The presenter's rule, with absolute paths as the daemon gives them, and the client's new call.",
+          "subjects": [
+            "review presenter: a tool result that carries a pendingApproval path opens the pending document with that absolute path once; the same path again in the turn does not; a path that is not pending, a result with no such block and one that is not JSON open nothing",
+            "review presenter: at the end of a turn each document that became pending during the turn and was not opened yet is opened; a document pending before the turn is not; a failed pending read opens nothing and is logged",
+            "review presenter: a later turn opens a document again when it is presented again; several documents in one turn are opened in order, so the last presented is the one on show",
+            "review presenter: a turn begun while the one before it has not ended takes over that turn's start list and what it opened; the earlier turn's end then opens nothing and the later turn's end opens what became pending since the earlier one began",
+            "docs review client: pendingDocuments returns each pending document's id and path and skips one with no path"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The chat host's call sites for run and followed turns, the review host's quiet open and the wiring.",
+          "subjects": [
+            "chat host: a run turn begins a presenter turn just before it starts, passes each tool result that is not an error, and ends it once when the run is over, also for a turn that failed, was stopped or was superseded; a message refused before any run begins none; a presenter that throws does not disturb the turn",
+            "chat host: a followed turn begins a presenter turn on its first event, not when the follow is asked for, passes its tool results and ends it when the follow ended; a ready message during a run turn begins nothing, and the run turn's end still opens a newly pending document",
+            "extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in the active column without quiet and beside without focus with it; there is no presenter when the review pane is not created",
+            "docs review host: openArtifact with quiet creates the pane with quiet when there is none and reveals an existing one without taking focus; without quiet both are as before",
+            "chat host: a superseded turn's later tool results are not passed to the presenter, and a document it writes afterwards is opened at the end of the turn that superseded it"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "The suite and a hand check in VS Code.",
+          "subjects": [
+            "The plugin's whole test suite and typecheck pass apart from failures that exist before this Story",
+            "By hand in VS Code: a workflow run in the chat that writes a document awaiting approval opens the review pane on that document without any action, once, with the cursor left in the chat; a second document in a later turn replaces it"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "review presenter: a tool result that carries a pendingApproval path opens the pending document with that absolute path once; the same path again in the turn does not; a path that is not pending, a result with no such block and one that is not JSON open nothing",
+            "review presenter: at the end of a turn each document that became pending during the turn and was not opened yet is opened; a document pending before the turn is not; a failed pending read opens nothing and is logged",
+            "chat host: a run turn begins a presenter turn just before it starts, passes each tool result that is not an error, and ends it once when the run is over, also for a turn that failed, was stopped or was superseded; a message refused before any run begins none; a presenter that throws does not disturb the turn",
+            "chat host: a followed turn begins a presenter turn on its first event, not when the follow is asked for, passes its tool results and ends it when the follow ended; a ready message during a run turn begins nothing, and the run turn's end still opens a newly pending document",
+            "extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in the active column without quiet and beside without focus with it; there is no presenter when the review pane is not created",
+            "By hand in VS Code: a workflow run in the chat that writes a document awaiting approval opens the review pane on that document without any action, once, with the cursor left in the chat; a second document in a later turn replaces it",
+            "chat host: a superseded turn's later tool results are not passed to the presenter, and a document it writes afterwards is opened at the end of the turn that superseded it"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "review presenter: a tool result that carries a pendingApproval path opens the pending document with that absolute path once; the same path again in the turn does not; a path that is not pending, a result with no such block and one that is not JSON open nothing",
+            "review presenter: a later turn opens a document again when it is presented again; several documents in one turn are opened in order, so the last presented is the one on show",
+            "review presenter: a turn begun while the one before it has not ended takes over that turn's start list and what it opened; the earlier turn's end then opens nothing and the later turn's end opens what became pending since the earlier one began",
+            "docs review host: openArtifact with quiet creates the pane with quiet when there is none and reveals an existing one without taking focus; without quiet both are as before",
+            "By hand in VS Code: a workflow run in the chat that writes a document awaiting approval opens the review pane on that document without any action, once, with the cursor left in the chat; a second document in a later turn replaces it"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "review presenter: at the end of a turn each document that became pending during the turn and was not opened yet is opened; a document pending before the turn is not; a failed pending read opens nothing and is logged",
+            "chat host: a run turn begins a presenter turn just before it starts, passes each tool result that is not an error, and ends it once when the run is over, also for a turn that failed, was stopped or was superseded; a message refused before any run begins none; a presenter that throws does not disturb the turn",
+            "extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in the active column without quiet and beside without focus with it; there is no presenter when the review pane is not created",
+            "The plugin's whole test suite and typecheck pass apart from failures that exist before this Story"
+          ]
+        }
+      ],
+      "testFramework": "node:test run with tsx (npx tsx --test), as the plugin's chat tests are, with the fake channel, fake client and fake turn events those tests already use"
+    },
+    "migration": {
+      "stateBefore": "A document awaiting approval is shown in the review pane only when the user runs the review command and picks it, or opens it from the delivery board. The chat host passes tool results to its webview and transcript only.",
+      "stateAfter": "The chat host tells a presenter about each run turn's start, tool results and end; the presenter opens presented documents in the review pane, once per turn each, without taking focus.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add pendingDocuments() to the review client",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add review-presenter.ts with its rule",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the optional reveal argument to the channel, the quiet option to createPanel and openArtifact, and the two declarations to vscode.d.ts",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Begin, feed and end a presented turn from the chat host's run turn and followed turn, and wire the presenter in extension.ts",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Run the suite, build, package and install the plugin; check by hand",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Plugin only. No daemon call, IPC shape or stored record changes. With no presenter wired the chat behaves exactly as before.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "A presenter fed by the chat turn: the tool result's path, and the pending list at the turn's end",
+        "oneLineSummary": "The chat host tells a small presenter about each tool result and the turn's end; the presenter opens what was presented, once per turn",
+        "approach": "A new module, review-presenter.ts, holds the rule. The chat host calls it at three points of a turn it runs: the start (the presenter reads the pending list and remembers which documents were already pending), each tool result (when the result's text is JSON carrying pendingApproval.artifactPath, the presenter re-reads the pending list and opens the pending document with that path), and the end (it re-reads the list and opens every document that became pending during the turn and was not opened yet in it). Opening goes through the review host's openArtifact with a new quiet flag, so the pane is created or updated without pulling keyboard focus from the chat. The client gains pendingDocuments() to give ids with paths.",
+        "pros": [
+          "Covers a document written by a workflow tool call (seen at once, including a revision of a document that was already pending) and one produced any other way during the turn (seen at the turn's end): build and code review records, and workflows driven from a script",
+          "Plugin only; the daemon and its tool contract are unchanged",
+          "The rule is in one small module with no VS Code or webview dependency, so it is tested directly",
+          "Each document is opened once per turn; a re-read or re-render of the pane never calls the presenter"
+        ],
+        "cons": [
+          "Reads the pending list once at the start and end of every turn and once per presenting tool result",
+          "A document produced outside any chat turn (another terminal) is not opened"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Parse the tool result only",
+        "oneLineSummary": "Open the document named by a tool result's pendingApproval block",
+        "approach": "The chat host looks for pendingApproval.artifactPath in each tool result and opens that path in the review pane.",
+        "pros": [
+          "Smallest change",
+          "No pending-list reads"
+        ],
+        "cons": [
+          "Misses every document that awaits approval without such a block: a build record, a code review record, and any workflow driven from a script inside the turn",
+          "Opens by path without knowing the artifact's id, so the pane cannot tell pending from read-only without another read anyway"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Simplest, but leaves out documents that are presented without the block."
+      },
+      {
+        "id": "a3",
+        "name": "The review pane watches the pending list",
+        "oneLineSummary": "The pane's host polls the pending list and opens whatever is new",
+        "approach": "The review host polls workflow.pending on a timer (or watches .insrc/artifacts) and opens any new pending document, whether or not a chat turn made it.",
+        "pros": [
+          "Also catches documents made outside the chat"
+        ],
+        "cons": [
+          "Opens documents the user was not presented with (another session's work, a batch of 200 code review records), which is not what was asked",
+          "A timer or a watch on a directory of several hundred files runs all the time",
+          "A revision of an already-pending document is not seen",
+          "The pane would have to exist before anything is presented"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Opens too much and at the wrong times."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-client.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/extension.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/steps/workflow-step/phases/synthesize.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/turn-lifecycle.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/webview-channel.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/workflow/path-scheme.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 1 of this LLD, 2026-10-13: block, 4 medium (the pending list's path is absolute, not repo-relative; a followed turn is this window's own turn, not another window's; one createPanel serves every open, so focus and column cannot change for all; the turn's start and end had no named call sites and overlapping turns were not safe)"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 2 of this LLD, 2026-10-13: block, 3 medium (a follow is asked for on every webview ready, so beginning a presented turn there demotes the run turn; a superseded turn's events never reach its sink; review-wiring.test.ts pins the createPanel source that changes)"
+    }
+  ]
+}

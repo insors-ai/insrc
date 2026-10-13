@@ -34,13 +34,13 @@ const PENDING = {
   ],
 };
 
-test('pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status)', async () => {
+test('pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status, and the open-question count)', async () => {
   const { client } = fakeIpc((m) => (m === 'workflow.pending' ? PENDING : { error: 'x' }));
   const c = createDocsReviewClient(client);
   const list = await c.pending();
   assert.deepEqual(list, [
-    { id: 'LLD-abc-s7', kind: 'LLD', title: 'Docs review pane', status: 'pending' },
-    { id: 'PLAN-abc-s7', kind: 'PLAN', title: 'Docs review plan', status: 'pending' },
+    { id: 'LLD-abc-s7', kind: 'LLD', title: 'Docs review pane', status: 'pending', openQuestions: 1 },
+    { id: 'PLAN-abc-s7', kind: 'PLAN', title: 'Docs review plan', status: 'pending', openQuestions: 0 },
   ]);
 });
 
@@ -313,4 +313,79 @@ test('t2/s3: DocsContent indexes sequenceDefinition off ArtifactReviewView rathe
       `${k} must be declared as ArtifactReviewView['${k}']`,
     );
   }
+});
+
+// Found in the hand check of E202610138d4b90c9:S001: a daemon started outside the IDE has
+// no default repository, and the pane sent none, so its list read failed with "repo is required".
+test('every call names the repository it is given, and none when no folder is open', async () => {
+  const answer = (m: string): unknown =>
+    m === 'workflow.pending' ? PENDING
+      : m === 'workflow.artifactContent' ? { artifactId: 'x', kind: 'LLD', renderedMarkdown: 'b', openQuestions: [], approvable: true }
+        : { artifactId: 'x', decision: 'feedback', outcome: 'recorded', recorded: 1, entryIds: ['e1'], author: 'A' };
+  const { client, calls } = fakeIpc(answer);
+  let repo: string | undefined = '/work/repo';
+  const c = createDocsReviewClient(client, { repo: () => repo });
+  await c.pending();
+  await c.content('LLD-abc-s7');
+  await c.decide('docs/x/LLD.md', 'feedback', [{ comment: 'c' }]);
+  assert.deepEqual(calls.map((x) => x.params), [
+    { repo: '/work/repo' },
+    { repo: '/work/repo', mdPath: 'docs/epics/x/S007/LLD.md' },
+    { repo: '/work/repo', mdPath: 'docs/x/LLD.md', decision: 'feedback', comments: [{ comment: 'c' }] },
+  ]);
+  // No folder open: the key is absent, so the daemon's own default (or its error) applies.
+  for (const none of [undefined, '']) {
+    repo = none;
+    calls.length = 0;
+    await c.pending();
+    await c.content('docs/x/LLD.md');
+    assert.deepEqual(calls.map((x) => x.params), [{}, { mdPath: 'docs/x/LLD.md' }]);
+  }
+});
+
+// Story E202610131f74c81f:S001 t2: what the pane's table shows beside the title.
+test('docs review client: pending forwards openQuestions and workItemId when the daemon gives them and leaves them absent otherwise', async () => {
+  const { client } = fakeIpc(() => ({
+    artifacts: [
+      { artifactId: 'LLD-abc-s7', kind: 'LLD', title: 'With both', mdPath: 'docs/x/LLD.md', workItemId: 'E20261013abc:S007', openQuestionCount: 3, state: 'pending' },
+      { artifactId: 'CR-abc-S001', kind: 'CR', title: 'No work item', mdPath: 'docs/x/CR.md', openQuestionCount: 0, state: 'pending' },
+      { artifactId: 'DEF-old', kind: 'DEF', title: 'From an older daemon', mdPath: 'docs/x/DEF.md', state: 'pending' },
+      { artifactId: 'ISSUE-odd', kind: 'ISSUE', title: 'Odd values', mdPath: '', workItemId: '', openQuestionCount: '2', state: 'pending' },
+    ],
+  }));
+  const list = await createDocsReviewClient(client).pending();
+  assert.deepEqual(list, [
+    { id: 'LLD-abc-s7', kind: 'LLD', title: 'With both', status: 'pending', openQuestions: 3, workItemId: 'E20261013abc:S007' },
+    { id: 'CR-abc-S001', kind: 'CR', title: 'No work item', status: 'pending', openQuestions: 0 },
+    { id: 'DEF-old', kind: 'DEF', title: 'From an older daemon', status: 'pending' },
+    { id: 'ISSUE-odd', kind: 'ISSUE', title: 'Odd values', status: 'pending' },
+  ], 'a count of 0 is given; an absent, empty or wrongly typed value is an absent key');
+  for (const key of ['openQuestions', 'workItemId']) assert.equal(key in list[2]!, false);
+});
+
+// Story E20261013e62a9269:S001: what the review presenter reads.
+test("docs review client: pendingDocuments returns each pending document's id and path and skips one with no path", async () => {
+  const LIST = {
+    artifacts: [
+      { artifactId: 'LLD-abc-s7', kind: 'LLD', title: 'A', mdPath: '/repo/docs/epics/x/S007/LLD.md', openQuestionCount: 1, state: 'pending' },
+      { artifactId: 'CR-abc-s7', kind: 'CR', title: 'B', mdPath: '', openQuestionCount: 0, state: 'pending' },
+      { artifactId: 'PLAN-abc-s7', kind: 'PLAN', title: 'C', mdPath: '/repo/docs/epics/x/S007/PLAN.md', openQuestionCount: 0, state: 'pending' },
+    ],
+  };
+  const { client, calls } = fakeIpc((method) => (method === 'workflow.pending' ? LIST : { error: 'unexpected' }));
+  const c = createDocsReviewClient(client, { repo: () => '/repo' });
+  assert.deepEqual(await c.pendingDocuments(), [
+    { id: 'LLD-abc-s7', mdPath: '/repo/docs/epics/x/S007/LLD.md' },
+    { id: 'PLAN-abc-s7', mdPath: '/repo/docs/epics/x/S007/PLAN.md' },
+  ], "in the daemon's order, the one with no path skipped");
+  assert.deepEqual(calls, [{ method: 'workflow.pending', params: { repo: '/repo' } }], 'one call, naming the workspace folder');
+  // It leaves alone what pending() retained: content() by id still resolves through pending()'s map only.
+  const fresh = fakeIpc((method, params) => (method === 'workflow.pending' ? LIST : { renderedMarkdown: '# x', openQuestions: [], blocked: false, echo: params }));
+  const c2 = createDocsReviewClient(fresh.client, { repo: () => '/repo' });
+  await c2.pendingDocuments();
+  await c2.content('LLD-abc-s7');
+  assert.deepEqual((fresh.calls.at(-1)!.params as { mdPath: string }).mdPath, 'LLD-abc-s7', 'pendingDocuments did not fill the id-to-path map');
+  // The daemon's error is thrown, as pending() throws it.
+  const bad = fakeIpc(() => ({ error: 'workflow.pending: `repo` is required' }));
+  await assert.rejects(() => createDocsReviewClient(bad.client).pendingDocuments(), /repo` is required/);
 });

@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE, companionVisualKind } from '../docs-review-panel.js';
 import type { StructuredRenderer, CompanionSlotState, CompanionRefKind } from '../docs-review-panel.js';
 import { DOCS_COMMENTS_SOURCE } from '../docs-review-comments.js';
+import { DOCS_LIST_SOURCE } from '../docs-review-list.js';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -1219,6 +1220,17 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *   E202610138d4b90c9:S001/t12 (+8232 chars, +8238 bytes): the saved comments. The comment source
  *       gains the threads of saved comments, the margin markers and the strip; the
  *       shell gains the strip's markup above the comment panel and their styles.
+ *   E202610138d4b90c9:S001/t14 hand check (+76 chars): no comment button is offered
+ *       while no document is open (the pane then shows a notice, not a document).
+ *   E202610131f74c81f:S001/t4 (+10042 chars): the list view. DOCS_LIST_SOURCE, the seventh source
+ *       string (the table with search, type filter and paging, and which view is on
+ *       show); the list view's markup and styles; a back button and the title in the
+ *       header in place of the select of documents.
+ *   E202610131f74c81f:S001/t5 (+283 chars): the reload in place. A content for the document
+ *       already shown keeps the scroll position of the document region, and one marked
+ *       changed with a different version says the document changed on disk.
+ *   E202610138d4b90c9:S001 hand check (+224 chars): a diagram or mock that has its own tab is
+ *       not also drawn inside the markdown.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -1232,9 +1244,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  121296,
-  bytes:  121361,
-  sha256: '194ae044e5f5e4ef164a73b02f51b170fd9fad085422d28fe204ced39d4d2336',
+  chars:  131921,
+  bytes:  131985,
+  sha256: '832b34e59721345683d125a52b1acffc48ed700311096e057577d7592a1ce25e',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1814,6 +1826,8 @@ interface WebviewRun {
   send(type: string, payload: Record<string, unknown>): void;
   /** The select of documents in the header. */
   list: BodyStub;
+  /** The document's scrolling region. */
+  scroll: BodyStub;
   /** The comment panel and the header's text. */
   bar: { approve: BodyStub; reject: BodyStub; feedback: BodyStub; field: BodyStub; result: BodyStub; state: BodyStub; kind: BodyStub; who: BodyStub };
   /** The comment button a selection offers, its own button, and the line that counts the drafts. */
@@ -1828,6 +1842,12 @@ interface WebviewRun {
   select(range: { startContainer: BodyStub; startOffset: number; endContainer: BodyStub; endOffset: number } | null): void;
   /** The webview's saved state. */
   saved: { state: unknown };
+  /** The list view: which view is on show, and its controls. */
+  lv: {
+    view(): 'list' | 'doc' | 'neither';
+    q: BodyStub; suggest: BodyStub; kind: BodyStub; count: BodyStub; note: BodyStub;
+    prev: BodyStub; next: BodyStub; page: BodyStub; back: BodyStub; title: BodyStub; rows: BodyStub;
+  };
   /** The tabs in the header, and the two views of the scrolling region. */
   tabs: BodyStub;
   md: BodyStub;
@@ -1871,10 +1891,16 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
     'insrc-rv-approve', 'insrc-rv-reject', 'insrc-rv-feedback',
     'insrc-rv-tabs', 'insrc-rv-md', 'insrc-rv-html', 'insrc-rv-html-path', 'insrc-rv-html-note', 'insrc-rv-frame',
     'insrc-rv-pop', 'insrc-rv-pop-btn', 'insrc-rv-drafts',
-    'insrc-rv-hist', 'insrc-rv-hist-sum', 'insrc-rv-hist-list'];
+    'insrc-rv-hist', 'insrc-rv-hist-sum', 'insrc-rv-hist-list',
+    // The two views and the list view's controls (E202610131f74c81f:S001).
+    'insrc-rv-listview', 'insrc-rv-docview', 'insrc-rv-q', 'insrc-rv-suggest', 'insrc-rv-kindsel', 'insrc-rv-count',
+    'insrc-rv-listnote', 'insrc-rv-prev', 'insrc-rv-next', 'insrc-rv-page', 'insrc-rv-back', 'insrc-rv-title',
+    // The document's scrolling region.
+    'insrc-rv-scroll'];
   const byId: Record<string, BodyStub> = {};
   for (const id of ids) byId[id] = bodyStub('div', id);
   byId['insrc-rv-field']!.value = '';
+  byId['insrc-rv-q']!.value = '';
   // The stub's innerHTML makes elements that hold their text but no text NODE, where a
   // real page has one. The inline comments work on text nodes, so a test of them asks
   // for each rendered block to be given its text as a node, as the real DOM has it.
@@ -1953,6 +1979,7 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
     deliver: (payload) => onMessage?.({ data: { v: 1, payload: { type: 'docs-content', ...payload } } }),
     send: (type, payload) => onMessage?.({ data: { v: 1, payload: { type, ...payload } } }),
     list: byId['insrc-docs-list']!,
+    scroll: byId['insrc-rv-scroll']!,
     bar: {
       approve: byId['insrc-rv-approve']!, reject: byId['insrc-rv-reject']!, feedback: byId['insrc-rv-feedback']!,
       field: byId['insrc-rv-field']!, result: byId['insrc-rv-result']!,
@@ -1965,6 +1992,12 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
       for (const l of docListeners['mouseup'] ?? []) l({ target: byId['insrc-docs-body'] });
     },
     saved,
+    lv: {
+      view: () => (byId['insrc-rv-docview']!.style['display'] === 'flex' ? 'doc' : byId['insrc-rv-listview']!.style['display'] === 'flex' ? 'list' : 'neither'),
+      q: byId['insrc-rv-q']!, suggest: byId['insrc-rv-suggest']!, kind: byId['insrc-rv-kindsel']!, count: byId['insrc-rv-count']!,
+      note: byId['insrc-rv-listnote']!, prev: byId['insrc-rv-prev']!, next: byId['insrc-rv-next']!, page: byId['insrc-rv-page']!,
+      back: byId['insrc-rv-back']!, title: byId['insrc-rv-title']!, rows: byId['insrc-docs-list']!,
+    },
     tabs: byId['insrc-rv-tabs']!, md: byId['insrc-rv-md']!, html: byId['insrc-rv-html']!,
     htmlPath: byId['insrc-rv-html-path']!, htmlNote: byId['insrc-rv-html-note']!, frameHost: byId['insrc-rv-frame']!,
     controls: () => ({
@@ -3942,12 +3975,12 @@ test('the shell inlines each of its source strings verbatim and exactly once, wi
   for (const [name, source] of [
     ['DOCS_BODY_RENDERER_SOURCE', DOCS_BODY_RENDERER_SOURCE], ['DOCS_SECTIONS_SOURCE', DOCS_SECTIONS_SOURCE],
     ['DOCS_FR_SOURCE', DOCS_FR_SOURCE], ['DOCS_DIAGRAM_SOURCE', DOCS_DIAGRAM_SOURCE], ['DOCS_UX_SOURCE', DOCS_UX_SOURCE],
-    ['DOCS_COMMENTS_SOURCE', DOCS_COMMENTS_SOURCE],
+    ['DOCS_COMMENTS_SOURCE', DOCS_COMMENTS_SOURCE], ['DOCS_LIST_SOURCE', DOCS_LIST_SOURCE],
   ] as const) {
     assert.equal(html.split(source).length - 1, 1, `${name} is inlined verbatim, once`);
   }
   // In the order the bootstrap relies on: each later string may call an earlier one.
-  const at = [DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE, DOCS_COMMENTS_SOURCE].map((x) => html.indexOf(x));
+  const at = [DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE, DOCS_COMMENTS_SOURCE, DOCS_LIST_SOURCE].map((x) => html.indexOf(x));
   assert.deepEqual([...at].sort((a, b) => a - b), at, 'in their declared order');
   // And the ux CSS fragment is still in the shell, between its first and last rule.
   const cssStart = html.indexOf('.ux-card{');
@@ -5752,7 +5785,7 @@ test("docs review shell: the comment panel and the header are outside the one sc
     assert.ok(region.includes(`id="${id}"`), `${id} is inside the scrolling region`);
     assert.ok(!head.includes(`id="${id}"`) && !bar.includes(`id="${id}"`));
   }
-  for (const id of ['insrc-docs-list', 'insrc-rv-kind', 'insrc-rv-state']) {
+  for (const id of ['insrc-rv-back', 'insrc-rv-title', 'insrc-rv-kind', 'insrc-rv-state']) {
     assert.ok(head.includes(`id="${id}"`), `${id} is in the header`);
     assert.ok(!region.includes(`id="${id}"`), `${id} is outside the scrolling region`);
   }
@@ -5774,9 +5807,13 @@ test("docs review shell: the comment panel and the header are outside the one sc
   // comments, which is capped so a long history cannot take the document's room.
   assert.ok(css.includes('.rv-hist-list{max-height:170px;overflow-y:auto;'), "the strip's list is capped and scrolls on its own");
   assert.ok(css.includes('.rv-hist{flex:0 0 auto;'), 'and the strip keeps its own height');
-  assert.equal(count(css, /overflow-y\s*:/g), 2, 'the document region and that list are the only vertical scrollers');
+  // And, in the list view, the table (E202610131f74c81f:S001); nothing else scrolls.
+  assert.ok(css.includes('.rv-tablewrap{flex:1 1 auto;min-height:0;overflow-y:auto;}'), "the list view's table scrolls on its own");
+  assert.equal(count(css, /overflow-y\s*:/g), 3, 'the document region, the strip list and the table are the only vertical scrollers');
   assert.equal(count(css, /overflow\s*:\s*(?:auto|scroll)/g), 0, 'and nothing else scrolls both ways');
-  assert.doesNotMatch(css, /position\s*:\s*(?:fixed|sticky)/, 'the panel is held by the layout, not pinned over the document');
+  assert.doesNotMatch(css, /position\s*:\s*fixed/, 'the panel is held by the layout, not pinned over the document');
+  // The one sticky thing is the table's header row, inside the table's own scrolling region.
+  assert.deepEqual(css.match(/[^{}]*\{[^{}]*position\s*:\s*sticky[^{}]*\}/g)?.map((r) => r.slice(0, r.indexOf('{'))), ['.rv-table th']);
 
   // THE THEME. Every --it-* token a rule uses is defined on the body from a VS Code
   // theme variable, so none can resolve to nothing.
@@ -5940,7 +5977,7 @@ test('docs review shell: the existing section chooser, functional-requirement, d
   assert.equal(w.notice.children.length, 0, 'nothing degraded');
   // And the header and the comment panel are filled for the same document.
   assert.deepEqual(w.controls(), ALL_ON);
-  assert.equal(w.list.value, 'LLD-abc-s7', 'the select names the document shown');
+  assert.equal(w.lv.title.textContent, 'LLD-abc-s7', 'the header names the document shown');
 });
 
 test('docs review shell: the shell is one inline script under a nonce CSP with no remote origin, and its recorded baseline is that of the new shell', async () => {
@@ -5968,7 +6005,7 @@ test('docs review shell: the shell is one inline script under a nonce CSP with n
   // And it is this shell: the comment panel is in it, the old controls are not.
   assert.ok(html.includes('<div id="insrc-rv-bar" class="rv-bar">'));
   assert.ok(html.includes('<body class="insrc-rv">'));
-  for (const gone of ['insrc-docs-actions', 'insrc-docs-note', 'request changes', 'insrc-term']) {
+  for (const gone of ['insrc-docs-actions', 'insrc-docs-note', 'request changes', 'insrc-term', '<select id="insrc-docs-list"']) {
     assert.ok(!html.includes(gone), `${gone} is not in the rebuilt shell`);
   }
   // A pure function of its nonce, which is what a recorded baseline rests on.
@@ -6683,4 +6720,523 @@ test('docs review shell: a saved entry with no string author, timestamp or comme
     assert.deepEqual(odd.controls(), ALL_ON, 'the document is still shown and can be decided on');
     assert.ok(odd.body.children.length > 3);
   }
+});
+
+// Found in the hand check of E202610138d4b90c9:S001: with no document open the pane shows
+// a notice as its body, and selecting that text offered the comment button.
+test('docs review shell: no comment button is offered while no document is open', () => {
+  const w = runWebview({ textNodes: true });
+  // The host's notice of a failed list read is not a document: nothing is rendered as one.
+  w.deliver({ artifactId: '', markdown: 'docs-review unavailable: workflow.pending: repo is required', openQuestions: [], blocked: false });
+  assert.equal(w.body.children.length, 0, 'the notice is not put in the document body, so there is no text to select');
+  assert.equal(w.pop.style['display'], 'none');
+  assert.deepEqual(w.controls(), { approve: 'off', reject: 'off', feedback: 'off' });
+  // With a document open a selection in it is offered the button.
+  w.deliver(INLINE_DOC);
+  selectIn(w, blockOf(w, SUMMARY_P), 'cut to 8 lines');
+  assert.equal(w.pop.style['display'], 'block');
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610131f74c81f:S001 t4 — the list view: a paged table with search and a type
+// filter in place of the dropdown, and the two views.
+// ---------------------------------------------------------------------------
+
+interface ListDoc { id: string; kind: string; title: string; status: string; openQuestions?: number; workItemId?: string }
+/** 60 pending documents, deliberately out of order: 2 DEF, 3 LLD, 30 ISSUE, 24 CR and one of a type the pane does not know. */
+const LIST_DOCS: ListDoc[] = [
+  ...Array.from({ length: 24 }, (_, i): ListDoc => ({ id: `CR-${String(i).padStart(3, '0')}`, kind: 'CR', title: `Code review ${String(24 - i).padStart(2, '0')}`, status: 'pending', openQuestions: 0 })),
+  { id: 'ZETA-1', kind: 'ZETA', title: 'A type the pane does not know', status: 'pending' },
+  ...Array.from({ length: 30 }, (_, i): ListDoc => ({ id: `ISSUE-${String(i).padStart(3, '0')}`, kind: 'ISSUE', title: `issue ${String(30 - i).padStart(2, '0')} about the Daemon`, status: 'pending', openQuestions: i % 3 })),
+  { id: 'LLD-b', kind: 'LLD', title: 'beta design', status: 'pending', openQuestions: 2, workItemId: 'E20261013bbbb:S002' },
+  { id: 'LLD-a', kind: 'LLD', title: 'Alpha design', status: 'pending', openQuestions: 1, workItemId: 'E20261013aaaa:S001' },
+  { id: 'LLD-c', kind: 'LLD', title: 'Gamma design of the review pane', status: 'pending', workItemId: 'E20261013cccc:S003' },
+  { id: 'DEF-2', kind: 'DEF', title: 'Second epic', status: 'pending', openQuestions: 0 },
+  { id: 'DEF-1', kind: 'DEF', title: 'First epic', status: 'pending', openQuestions: 4, workItemId: 'E20261013dddd' },
+];
+/** The rows on show: type, title, id, open questions. */
+const listRows = (w: WebviewRun): string[][] =>
+  w.lv.rows.children.map((tr) => [tr.children[0]!.children[0]!.textContent, tr.children[1]!.children[0]!.textContent, tr.children[2]!.textContent, tr.children[3]!.textContent]);
+const rowButton = (w: WebviewRun, title: string): BodyStub => w.lv.rows.children.map((tr) => tr.children[1]!.children[0]!).find((b) => b.textContent === title)!;
+const pagerOf = (w: WebviewRun): [string, boolean, boolean] =>
+  [w.lv.page.textContent, (w.lv.prev as unknown as { disabled: boolean }).disabled, (w.lv.next as unknown as { disabled: boolean }).disabled];
+function listed(o: Parameters<typeof runWebview>[0] = {}): WebviewRun {
+  const w = runWebview(o);
+  w.send('docs-list', { artifacts: LIST_DOCS });
+  return w;
+}
+const typeText = (w: WebviewRun, text: string): void => { w.lv.q.value = text; fire(w.lv.q, 'input'); };
+const chooseKind = (w: WebviewRun, kind: string): void => { w.lv.kind.value = kind; fire(w.lv.kind, 'change'); };
+const listSaved = (w: WebviewRun): unknown => (w.saved.state as { list?: unknown } | undefined)?.list;
+
+test('docs review shell: the list view shows 25 rows a page ordered by type then title, and the pager moves between pages and is disabled at the ends', () => {
+  const w = runWebview();
+  assert.equal(w.lv.view(), 'list', 'the pane opens on the list');
+  assert.equal(w.lv.note.textContent, 'Loading the documents awaiting review\u2026');
+  w.send('docs-list', { artifacts: LIST_DOCS });
+  assert.equal(w.lv.note.style['display'], 'none');
+  assert.equal(w.lv.count.textContent, '60 of 60 documents');
+
+  // Page 1: the known types in their order (DEF, LLD, then ISSUE), each by title without regard to case.
+  const first = listRows(w);
+  assert.equal(first.length, 25);
+  assert.deepEqual(first.slice(0, 6), [
+    ['DEF', 'First epic', 'E20261013dddd', '4'],
+    ['DEF', 'Second epic', 'DEF-2', '0'],
+    ['LLD', 'Alpha design', 'E20261013aaaa:S001', '1'],
+    ['LLD', 'beta design', 'E20261013bbbb:S002', '2'],
+    ['LLD', 'Gamma design of the review pane', 'E20261013cccc:S003', ''],
+    ['ISSUE', 'issue 01 about the Daemon', 'ISSUE-029', '2'],
+  ], 'the id is the work item id when there is one; a missing open-question count is an empty cell');
+  assert.deepEqual(first.slice(5).map((r) => r[1]), Array.from({ length: 20 }, (_, i) => `issue ${String(i + 1).padStart(2, '0')} about the Daemon`));
+  assert.deepEqual(pagerOf(w), ['Page 1 of 3', true, false], 'previous is disabled on the first page');
+
+  fire(w.lv.next, 'click');
+  const second = listRows(w);
+  assert.equal(second.length, 25);
+  assert.deepEqual([second[0]![1], second[9]![1], second[10]![0], second[10]![1]], ['issue 21 about the Daemon', 'issue 30 about the Daemon', 'CR', 'Code review 01']);
+  assert.deepEqual(pagerOf(w), ['Page 2 of 3', false, false]);
+
+  fire(w.lv.next, 'click');
+  const third = listRows(w);
+  assert.equal(third.length, 10, 'the last page holds the rest');
+  assert.deepEqual(third.at(-1), ['ZETA', 'A type the pane does not know', 'ZETA-1', ''], 'a type the pane does not know comes after the known ones');
+  assert.deepEqual(pagerOf(w), ['Page 3 of 3', false, true], 'next is disabled on the last page');
+  fire(w.lv.next, 'click');
+  assert.deepEqual(pagerOf(w), ['Page 3 of 3', false, true], 'and pressing it there goes nowhere');
+  fire(w.lv.prev, 'click');
+  fire(w.lv.prev, 'click');
+  fire(w.lv.prev, 'click');
+  assert.deepEqual(pagerOf(w), ['Page 1 of 3', true, false]);
+  assert.deepEqual(listRows(w), first);
+
+  // A list that shrinks under the reviewer: the page beyond the last becomes the last.
+  fire(w.lv.next, 'click');
+  fire(w.lv.next, 'click');
+  w.send('docs-list', { artifacts: LIST_DOCS.slice(0, 30) });
+  assert.deepEqual(pagerOf(w), ['Page 2 of 2', false, true]);
+  // Nothing awaiting review.
+  w.send('docs-list', { artifacts: [] });
+  assert.equal(listRows(w).length, 0);
+  assert.equal(w.lv.note.textContent, 'No documents are awaiting review.');
+  assert.deepEqual(pagerOf(w), ['Page 1 of 1', true, true]);
+  assert.equal(w.lv.count.textContent, '0 of 0 documents');
+});
+
+test('docs review shell: the search matches every word in the title, id or work item id without regard to case, the type select filters with counts, and either change goes to page 1', () => {
+  const w = listed();
+  // The type select: all, then each type present with its count, in table order.
+  assert.deepEqual(w.lv.kind.children.map((o) => [o.value, o.textContent]), [
+    ['', 'All types (60)'], ['DEF', 'DEF (2)'], ['LLD', 'LLD (3)'], ['ISSUE', 'ISSUE (30)'], ['CR', 'CR (24)'], ['ZETA', 'ZETA (1)'],
+  ]);
+
+  // Every word must occur; case does not matter; surrounding spaces are ignored.
+  typeText(w, '  DESIGN  ');
+  assert.deepEqual(listRows(w).map((r) => r[1]), ['Alpha design', 'beta design', 'Gamma design of the review pane']);
+  assert.equal(w.lv.count.textContent, '3 of 60 documents');
+  typeText(w, 'design REVIEW');
+  assert.deepEqual(listRows(w).map((r) => r[1]), ['Gamma design of the review pane'], 'both words, in either order');
+  typeText(w, 'review design pane');
+  assert.equal(listRows(w).length, 1);
+  // In the artifact id, and in the work item id.
+  typeText(w, 'issue-007');
+  assert.deepEqual(listRows(w).map((r) => r[2]), ['ISSUE-007']);
+  typeText(w, 'e20261013bbbb');
+  assert.deepEqual(listRows(w).map((r) => r[1]), ['beta design']);
+  typeText(w, 'bbbb:s002 beta');
+  assert.equal(listRows(w).length, 1, 'words may be found in different fields');
+  // Nothing matches: the toolbar stays and the view says so.
+  typeText(w, 'no such thing');
+  assert.equal(listRows(w).length, 0);
+  assert.equal(w.lv.note.textContent, 'No document matches.');
+  assert.notEqual(w.lv.note.style['display'], 'none');
+  assert.deepEqual(pagerOf(w), ['Page 1 of 1', true, true]);
+  assert.equal(w.lv.kind.children.length, 6, 'the type select is still there');
+  typeText(w, '');
+  assert.equal(w.lv.count.textContent, '60 of 60 documents');
+
+  // The type filter, and the search inside it.
+  chooseKind(w, 'ISSUE');
+  assert.equal(w.lv.count.textContent, '30 of 60 documents');
+  assert.ok(listRows(w).every((r) => r[0] === 'ISSUE'));
+  assert.deepEqual(pagerOf(w), ['Page 1 of 2', true, false]);
+  typeText(w, 'design');
+  assert.equal(listRows(w).length, 0, 'the search looks only at the chosen type');
+  typeText(w, 'daemon 3');
+  // ("3" is in the title of 03, 13, 23 and 30, and in the id of ISSUE-003, -013 and -023, which are 27, 17 and 07.)
+  assert.deepEqual(listRows(w).map((r) => r[1]), ['issue 03 about the Daemon', 'issue 07 about the Daemon', 'issue 13 about the Daemon', 'issue 17 about the Daemon', 'issue 23 about the Daemon', 'issue 27 about the Daemon', 'issue 30 about the Daemon']);
+  typeText(w, '');
+
+  // Either change goes back to page 1.
+  fire(w.lv.next, 'click');
+  assert.equal(w.lv.page.textContent, 'Page 2 of 2');
+  typeText(w, 'issue');
+  assert.equal(w.lv.page.textContent, 'Page 1 of 2', 'typing goes to page 1');
+  fire(w.lv.next, 'click');
+  chooseKind(w, '');
+  assert.equal(w.lv.page.textContent, 'Page 1 of 2', 'so does choosing a type');
+  assert.equal(w.lv.count.textContent, '30 of 60 documents', 'the search is kept across a change of type');
+  // A chosen type that no pending document has any more is all types.
+  typeText(w, '');
+  chooseKind(w, 'ZETA');
+  assert.equal(w.lv.count.textContent, '1 of 60 documents');
+  w.send('docs-list', { artifacts: LIST_DOCS.filter((d) => d.kind !== 'ZETA') });
+  assert.equal(w.lv.count.textContent, '59 of 59 documents');
+  assert.equal(w.lv.kind.value, '');
+});
+
+test('docs review shell: the datalist offers at most 50 titles and ids of the chosen type', () => {
+  const w = listed();
+  const offered = (): string[] => w.lv.suggest.children.map((o) => o.value);
+  // All types: the first documents in table order, a title then its id, 50 in all.
+  assert.equal(offered().length, 50);
+  assert.deepEqual(offered().slice(0, 6), ['First epic', 'E20261013dddd', 'Second epic', 'DEF-2', 'Alpha design', 'E20261013aaaa:S001']);
+  assert.ok(w.lv.suggest.children.every((o) => o.tagName === 'option'));
+  // One type: its titles and ids only.
+  chooseKind(w, 'LLD');
+  assert.deepEqual(offered(), ['Alpha design', 'E20261013aaaa:S001', 'beta design', 'E20261013bbbb:S002', 'Gamma design of the review pane', 'E20261013cccc:S003']);
+  chooseKind(w, 'ISSUE');
+  assert.equal(offered().length, 50, '30 issues have 60 titles and ids; 50 are offered');
+  assert.ok(offered().every((t) => /^issue \d\d about the Daemon$|^ISSUE-\d{3}$/.test(t)));
+  // The search still looks at all of them, not only those offered.
+  typeText(w, 'issue 30');
+  assert.deepEqual(listRows(w).map((r) => r[1]), ['issue 30 about the Daemon']);
+  // Typing does not rebuild the suggestions (that would close the list the reviewer is choosing from).
+  const before = w.lv.suggest.children[0];
+  typeText(w, 'issue 2');
+  assert.equal(w.lv.suggest.children[0], before);
+});
+
+test("docs review shell: pressing a row's title posts open-doc, a content with reveal switches to the document view (an unavailable one too), a content without it never changes the view, and the back button returns to the list with the document and its drafts kept", () => {
+  const w = listed({ textNodes: true });
+  const DOC = { ...INLINE_DOC, artifactId: 'LLD-a' };
+  fire(rowButton(w, 'Alpha design'), 'click');
+  assert.deepEqual(postedOf(w, 'open-doc').at(-1), { type: 'open-doc', artifactId: 'LLD-a' });
+  assert.equal(w.lv.view(), 'list', 'still the list until the document arrives');
+
+  // The document the reviewer asked for: brought into view.
+  w.deliver({ ...DOC, reveal: true });
+  assert.equal(w.lv.view(), 'doc');
+  assert.equal(w.lv.title.textContent, 'Alpha design', 'the header names it by its title');
+  assert.equal(w.bar.kind.textContent, 'LLD');
+  draftOn(w, SUMMARY_P, 'cut to 8 lines', 'Say what the header shows.');
+  w.bar.field.value = 'Overall.';
+  fire(w.bar.field, 'input');
+
+  // Back: the list again, as it was; the document and its drafts are kept.
+  fire(w.lv.back, 'click');
+  assert.equal(w.lv.view(), 'list');
+  assert.equal(listRows(w).length, 25);
+  assert.equal(marksIn(w.body).length, 1, 'the draft is still on its passage');
+  assert.equal(w.bar.field.value, 'Overall.');
+
+  // A content without reveal never changes the view: a re-read of the held document,
+  w.deliver({ ...DOC, contentVersion: 'fedcba9876543210' });
+  assert.equal(w.lv.view(), 'list', 'a re-read does not pull the reviewer off the list');
+  assert.equal(marksIn(w.body).length, 1, 'and what is held is brought up to date, drafts and all');
+  // or even of another one.
+  w.deliver({ ...DOC, artifactId: 'LLD-b' });
+  assert.equal(w.lv.view(), 'list');
+  // Nor does it leave the document view when that is on show.
+  w.deliver({ ...DOC, reveal: true });
+  assert.equal(w.lv.view(), 'doc');
+  assert.equal(marksIn(w.body).length, 1, 'the drafts came back with the document');
+  w.deliver(DOC);
+  assert.equal(w.lv.view(), 'doc');
+
+  // An asked-for open whose read failed is brought into view too, so the error is seen.
+  fire(w.lv.back, 'click');
+  w.deliver({ artifactId: 'LLD-c', markdown: 'unavailable: cannot read', openQuestions: [], blocked: true, reveal: true });
+  assert.equal(w.lv.view(), 'doc');
+  assert.equal(w.lv.title.textContent, 'Gamma design of the review pane');
+  assert.equal(w.controls().approve, 'off');
+  // A document that is not in the list (opened from the delivery board) is named by its id.
+  w.deliver({ ...DOC, artifactId: 'BUILD-zzz', readOnly: true, reveal: true });
+  assert.equal(w.lv.title.textContent, 'BUILD-zzz');
+  fire(w.lv.back, 'click');
+  assert.equal(w.lv.view(), 'list', 'and back shows the documents awaiting review');
+  assert.ok(!listRows(w).some((r) => r[2] === 'BUILD-zzz'));
+});
+
+test('docs review shell: the search, type, page and the view on show are restored from the saved state when the shell is rebuilt, a re-post to the rebuilt shell does not leave the list view, a draft saved after the list state keeps it and the reverse, and a saved state of another shape gives the defaults', () => {
+  const DOC = { ...INLINE_DOC, artifactId: 'LLD-a' };
+  const first = listed({ textNodes: true });
+  chooseKind(first, 'ISSUE');
+  typeText(first, 'daemon');
+  fire(first.lv.next, 'click');
+  assert.deepEqual(listSaved(first), { q: 'daemon', kind: 'ISSUE', page: 2, view: 'list' });
+
+  // BOTH WRITERS keep each other's key. A draft saved after the list state:
+  first.deliver({ ...DOC, reveal: true });
+  draftOn(first, SUMMARY_P, 'cut to 8 lines', 'Say what the header shows.');
+  const state = first.saved.state as { rv: Record<string, unknown>; list: unknown };
+  assert.deepEqual(state.list, { q: 'daemon', kind: 'ISSUE', page: 2, view: 'doc' }, 'the list state is still there after a draft was saved');
+  assert.ok(state.rv['LLD-a']);
+  // and the list state saved after a draft:
+  fire(first.lv.back, 'click');
+  fire(first.lv.prev, 'click');
+  const later = first.saved.state as { rv: Record<string, unknown>; list: unknown };
+  assert.deepEqual(later.list, { q: 'daemon', kind: 'ISSUE', page: 1, view: 'list' });
+  assert.ok(later.rv['LLD-a'], 'the draft is still there after the list state was saved');
+  fire(first.lv.next, 'click');
+
+  // The shell is rebuilt (the tab was hidden and shown): a new run over the same saved state.
+  const rebuilt = runWebview({ textNodes: true, saved: first.saved });
+  assert.equal(rebuilt.lv.view(), 'list');
+  assert.equal(rebuilt.lv.q.value, 'daemon', 'the search text is back in the field');
+  rebuilt.send('docs-list', { artifacts: LIST_DOCS });
+  assert.equal(rebuilt.lv.kind.value, 'ISSUE');
+  assert.deepEqual(pagerOf(rebuilt), ['Page 2 of 2', false, true]);
+  assert.equal(rebuilt.lv.count.textContent, '30 of 60 documents');
+  // The host posts the open document again on the boot ping: the reviewer stays on the list.
+  rebuilt.deliver(DOC);
+  assert.equal(rebuilt.lv.view(), 'list', 'a re-post does not leave the list view');
+  assert.equal(marksIn(rebuilt.body).length, 1, 'the document is held, with its draft');
+
+  // On the document view when the tab was hidden: restored to it once the document arrives.
+  const onDoc = listed({ textNodes: true });
+  onDoc.deliver({ ...DOC, reveal: true });
+  const again = runWebview({ textNodes: true, saved: onDoc.saved });
+  assert.equal(again.lv.view(), 'list', 'no document is held yet, so the list is shown');
+  again.send('docs-list', { artifacts: LIST_DOCS });
+  again.deliver(DOC);
+  assert.equal(again.lv.view(), 'doc', 'the document view is restored when the document is re-posted');
+
+  // A saved state of another shape gives the defaults, part by part.
+  for (const bad of [undefined, null, 'x', { list: 'x' }, { list: null }, { list: { q: 7, kind: null, page: 0, view: 'grid' } }, { list: { page: 2.5 } }, { list: { page: '3' } }]) {
+    const w = runWebview({ saved: { state: bad } });
+    w.send('docs-list', { artifacts: LIST_DOCS });
+    assert.equal(w.lv.view(), 'list');
+    assert.equal(w.lv.q.value, '');
+    assert.equal(w.lv.kind.value, '');
+    assert.deepEqual(pagerOf(w), ['Page 1 of 3', true, false], JSON.stringify(bad));
+  }
+  // What is good in it is used: a page alone, and a type that is still there.
+  const partial = runWebview({ saved: { state: { list: { q: 3, kind: 'CR', page: 9, view: 'list' } } } });
+  partial.send('docs-list', { artifacts: LIST_DOCS });
+  assert.equal(partial.lv.kind.value, 'CR');
+  assert.deepEqual(pagerOf(partial), ['Page 1 of 1', true, true], 'a page beyond the last is the last');
+  assert.deepEqual(listSaved(partial), { q: '', kind: 'CR', page: 1, view: 'list' }, 'and the saved page is corrected');
+});
+
+test("docs review shell: the list view's table is its own scrolling region, the toolbar and pager are outside it, titles and ids are set as text, and the recorded baseline is that of the new shell", async () => {
+  const { createHash } = await import('node:crypto');
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+  const markup = html.slice(html.indexOf('<body'), html.indexOf('<script'));
+  const css = shellCss(html);
+
+  // THE LIST VIEW, by position: toolbar, notice line, the table's region, pager; then the document view.
+  const iList = markup.indexOf('<div id="insrc-rv-listview" class="rv-listview">');
+  const iTool = markup.indexOf('<div class="rv-tool">');
+  const iWrap = markup.indexOf('<div class="rv-tablewrap">');
+  const iPager = markup.indexOf('<div class="rv-pager">');
+  const iDoc = markup.indexOf('<div id="insrc-rv-docview" class="rv-docview">');
+  assert.ok(iList > 0 && iTool > iList && iWrap > iTool && iPager > iWrap && iDoc > iPager, 'toolbar, table, pager, then the document view');
+  const tool = markup.slice(iTool, iWrap);
+  const wrap = markup.slice(iWrap, iPager);
+  const pager = markup.slice(iPager, iDoc);
+  assert.ok(wrap.endsWith('</table></div>'), "the table's region is closed before the pager opens");
+  for (const id of ['insrc-rv-q', 'insrc-rv-suggest', 'insrc-rv-kindsel', 'insrc-rv-count', 'insrc-rv-listnote']) {
+    assert.ok(tool.includes(`id="${id}"`) && !wrap.includes(`id="${id}"`), `${id} is above the table, outside its region`);
+  }
+  for (const id of ['insrc-rv-prev', 'insrc-rv-page', 'insrc-rv-next']) {
+    assert.ok(pager.includes(`id="${id}"`) && !wrap.includes(`id="${id}"`), `${id} is under the table, outside its region`);
+  }
+  assert.ok(wrap.includes('<tbody id="insrc-docs-list">'), 'the rows are inside it');
+  assert.match(wrap, /<thead><tr><th>Type<\/th><th>Title<\/th><th>Id<\/th><th>Open questions<\/th><\/tr><\/thead>/);
+  // The rules: each view fills the pane as a column; the toolbar and pager keep their height; the table's region takes the rest and scrolls.
+  assert.ok(css.includes('.rv-listview,.rv-docview{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}'));
+  assert.ok(css.includes('.rv-tool{flex:0 0 auto;'));
+  assert.ok(css.includes('.rv-pager{flex:0 0 auto;'));
+  assert.ok(css.includes('.rv-tablewrap{flex:1 1 auto;min-height:0;overflow-y:auto;}'));
+  // The search field completes from the datalist, and the dropdown of documents is gone.
+  assert.match(tool, /<input id="insrc-rv-q" type="search" list="insrc-rv-suggest" autocomplete="off" aria-label="Search documents"/);
+  assert.match(tool, /<datalist id="insrc-rv-suggest"><\/datalist>/);
+  assert.ok(!markup.includes('<select id="insrc-docs-list"'));
+  // The pager's and the header's buttons are round and icon-only, named by label and title.
+  for (const [id, label] of [['insrc-rv-prev', 'Previous page'], ['insrc-rv-next', 'Next page'], ['insrc-rv-back', 'Back to the list']] as const) {
+    assert.match(markup, new RegExp(`<button id="${id}" type="button" class="rv-ic rv-sm" aria-label="${label}" title="${label}"><svg `));
+  }
+
+  // Titles and ids are set as text: nothing in a row is assigned as markup, and no element is made from them.
+  const w = runWebview();
+  const made = w.created.length;
+  w.send('docs-list', { artifacts: [
+    { id: '<img src=x onerror=alert(1)>', kind: '<b>K</b>', title: '<script>alert(1)</script> & "quoted"', status: 'pending', workItemId: '<i>w</i>', openQuestions: 1 },
+    { id: 'LLD-plain', kind: 'LLD', title: 'x'.repeat(300), status: 'pending' },
+  ] });
+  assert.deepEqual(listRows(w), [
+    ['LLD', 'x'.repeat(300), 'LLD-plain', ''],
+    ['<b>K</b>', '<script>alert(1)</script> & "quoted"', '<i>w</i>', '1'],
+  ]);
+  const touched = [...allOf(w.lv.rows), ...allOf(w.lv.kind), ...allOf(w.lv.suggest), w.lv.count, w.lv.note, w.lv.page];
+  for (const n of touched) assert.ok(!n.writes.some((x) => x.prop === 'innerHTML' || x.prop === 'outerHTML'), `${n.tagName} was never assigned markup`);
+  const tags = new Set(w.created.slice(made));
+  for (const tag of ['script', 'img', 'b', 'i', 'a']) assert.ok(!tags.has(tag), `no <${tag}> element was created`);
+  assert.equal(w.lv.suggest.children[0]!.value, 'x'.repeat(300), 'a suggestion is a value, not markup');
+  assert.equal(w.lv.kind.children[2]!.textContent, '<b>K</b> (1)');
+
+  // And the recorded baseline is that of this shell.
+  assert.equal(createHash('sha256').update(html, 'utf8').digest('hex'), SHELL_BASELINE.sha256);
+  assert.equal(html.length, SHELL_BASELINE.chars);
+  assert.ok(html.includes(DOCS_LIST_SOURCE), 'the list source is inlined');
+});
+
+test("docs review shell: the host's notice of a failed read is shown in the list view's notice line, does not change the view, and is cleared by the next list that carries documents", () => {
+  const NOTICE = { artifactId: '', markdown: 'docs-review unavailable: workflow.pending: `repo` is required', openQuestions: [], blocked: false };
+  // The pane opens and the list cannot be read: the host posts the empty list and its notice.
+  const w = runWebview({ textNodes: true });
+  w.send('docs-list', { artifacts: [] });
+  assert.equal(w.lv.note.textContent, 'No documents are awaiting review.');
+  w.deliver(NOTICE);
+  assert.equal(w.lv.view(), 'list', 'the notice does not change the view');
+  assert.equal(w.lv.note.textContent, NOTICE.markdown, 'it is shown in place of the no-documents line');
+  assert.equal(w.lv.note.className, 'rv-listnote rv-err');
+  assert.notEqual(w.lv.note.style['display'], 'none');
+  assert.ok(!w.lv.note.writes.some((x) => x.prop === 'innerHTML'), 'as text');
+  assert.equal(w.body.children.length, 0, 'and not as a document');
+  assert.equal(w.lv.kind.children.length, 1, 'the toolbar stays');
+  // An empty list does not clear it; a list that carries documents does.
+  w.send('docs-list', { artifacts: [] });
+  assert.equal(w.lv.note.textContent, NOTICE.markdown);
+  w.send('docs-list', { artifacts: LIST_DOCS });
+  assert.equal(w.lv.note.style['display'], 'none');
+  assert.equal(w.lv.note.className, 'rv-listnote');
+  assert.equal(listRows(w).length, 25);
+
+  // While a document is on show: the notice does not take the reviewer off it, nor replace it.
+  const d = listed({ textNodes: true });
+  d.deliver({ ...INLINE_DOC, artifactId: 'LLD-a', reveal: true });
+  d.deliver(NOTICE);
+  assert.equal(d.lv.view(), 'doc');
+  assert.ok(d.body.children.length > 3, 'the document is still there');
+  assert.equal(d.lv.title.textContent, 'Alpha design');
+  fire(d.lv.back, 'click');
+  assert.equal(d.lv.note.textContent, NOTICE.markdown, 'it is waiting on the list view');
+  // The next document the reviewer opens clears it.
+  d.deliver({ ...INLINE_DOC, artifactId: 'LLD-b', reveal: true });
+  fire(d.lv.back, 'click');
+  assert.equal(d.lv.note.style['display'], 'none');
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610131f74c81f:S001 t5 — a content for the document already shown is a reload
+// in place.
+// ---------------------------------------------------------------------------
+
+test("docs review shell: a reload marked changed keeps the scroll position and the drafts and says the document changed; a reload after the shell's own decision keeps the decision's result line", () => {
+  const CHANGED_LINE = 'This document changed on disk and was reloaded.';
+  const w = listed({ textNodes: true });
+  const scroll = w.scroll as unknown as { scrollTop: number };
+  // As a browser does: rendering the body again puts its region back at the top.
+  const own = Object.getOwnPropertyDescriptor(w.body, 'innerHTML')!;
+  Object.defineProperty(w.body, 'innerHTML', {
+    configurable: true,
+    get: () => own.get!.call(w.body) as string,
+    set: (v: string) => { own.set!.call(w.body, v); scroll.scrollTop = 0; },
+  });
+  const DOC = { ...INLINE_DOC, artifactId: 'LLD-a' };
+  const revised = INLINE_MD.replace('# ', '# Revised: ');
+  const REVISED = { ...DOC, markdown: revised, sections: deriveSectionIndex(revised), contentVersion: 'fedcba9876543210' };
+
+  scroll.scrollTop = 77;
+  w.deliver({ ...DOC, reveal: true });
+  assert.equal(scroll.scrollTop, 0, 'a document newly opened starts where the render left it');
+  draftOn(w, SUMMARY_P, 'cut to 8 lines', 'Say what the header shows.');
+  w.bar.field.value = 'Overall.';
+  fire(w.bar.field, 'input');
+  scroll.scrollTop = 420;
+
+  // THE RELOAD: the file changed on disk, the host re-read it and marked the content changed.
+  w.deliver({ ...REVISED, changed: true });
+  assert.equal(scroll.scrollTop, 420, 'the scroll position is kept');
+  assert.equal(marksIn(w.body).length, 1, 'the draft is put back on its passage');
+  assert.equal(w.drafts.textContent, '1 inline comment drafted. Sent with the button you press.');
+  assert.equal(w.bar.field.value, 'Overall.', 'the whole-document field is untouched');
+  assert.equal(w.bar.result.textContent, CHANGED_LINE);
+  assert.equal(w.bar.result.className, 'rv-result', 'said plainly, not as an error or a success');
+  assert.equal(w.lv.view(), 'doc');
+  assert.ok(w.body.children.some((c) => c.textContent.startsWith('Revised: ')), 'and the new text is shown');
+
+  // The line is only for a reload marked changed WITH a different version.
+  const line = (first: Record<string, unknown>, then: Record<string, unknown>): string => {
+    const x = runWebview({ textNodes: true });
+    x.deliver({ ...first, reveal: true });
+    x.deliver(then);
+    return x.bar.result.textContent;
+  };
+  assert.equal(line(DOC, { ...DOC, changed: true }), '', 'marked changed, the same version: nothing is said');
+  assert.equal(line(DOC, REVISED), '', 'a different version, not marked changed: nothing is said');
+  assert.equal(line(DOC, { ...REVISED, changed: 'yes' }), '', 'changed must be true itself');
+  assert.equal(line(DOC, { ...REVISED, changed: true }), CHANGED_LINE);
+  assert.equal(line({ ...DOC, artifactId: 'LLD-b' }, { ...REVISED, changed: true }), '', 'another document is not a reload');
+  // Without a version on either side there is nothing to compare: nothing is said.
+  const { contentVersion: _a, ...BARE } = DOC;
+  assert.equal(line(BARE, { ...BARE, changed: true }), '');
+
+  // The scroll position is kept on every reload of the shown document, marked or not,
+  scroll.scrollTop = 133;
+  w.deliver(REVISED);
+  assert.equal(scroll.scrollTop, 133);
+  // and not carried over to another document.
+  w.deliver({ ...DOC, artifactId: 'LLD-b', reveal: true });
+  assert.equal(scroll.scrollTop, 0);
+
+  // THE SHELL'S OWN DECISION: its re-read is not marked changed, so the result line stays
+  // whatever the version; the watch's report of the same write then carries the version
+  // already shown and says nothing either.
+  w.deliver({ ...DOC, reveal: true });
+  w.bar.field.value = 'Please revise.';
+  fire(w.bar.field, 'input');
+  scroll.scrollTop = 250;
+  fire(w.bar.feedback, 'click');
+  assert.equal(w.bar.result.textContent, 'Sending…');
+  const RESULT = 'Done. 1 comment saved. The chat has been told.';
+  w.send('docs-decision-result', { artifactId: 'LLD-a', ok: true, outcome: 'recorded', recorded: 1, message: RESULT });
+  w.deliver(REVISED);
+  assert.equal(w.bar.result.textContent, RESULT, "the decision's own re-read keeps its result line");
+  assert.equal(w.bar.result.className, 'rv-result rv-ok');
+  assert.equal(scroll.scrollTop, 250);
+  w.deliver({ ...REVISED, changed: true });
+  assert.equal(w.bar.result.textContent, RESULT, 'the watch reporting that same write changes nothing');
+  // A later change from outside does replace it.
+  w.deliver({ ...DOC, contentVersion: '1111111111111111', changed: true });
+  assert.equal(w.bar.result.textContent, CHANGED_LINE);
+  assert.equal(scroll.scrollTop, 250);
+});
+
+// Found in the hand check of E202610138d4b90c9:S001: the diagram and the mock were drawn
+// inside the markdown as well as offered as tabs.
+test('docs review shell: a diagram or mock that has its own tab is not also drawn inside the markdown; one with no tab still is', () => {
+  const [UX, SEQ] = COMPANIONS as [typeof COMPANIONS[number], typeof COMPANIONS[number]];
+  const BASE = {
+    artifactId: 'LLD-abc-s7', markdown: '# Doc\n\nBody.\n', openQuestions: [], blocked: false,
+    sequenceDefinition: SEQ_RECORD, uxDefinition: UX_RECORD, companions: COMPANIONS,
+  };
+  const MD = { title: 'LLD.md', type: 'markdown', relPath: 'docs/epics/x/S002/LLD.md' };
+  const tabOf = (c: { relPath: string; title: string }): Record<string, unknown> => ({ title: c.title, type: 'html', relPath: c.relPath });
+  const drawn = (documents?: unknown): [boolean, boolean, number] => {
+    const w = runWebview();
+    w.deliver({ ...BASE, ...(documents !== undefined ? { documents } : {}) });
+    return [w.diagram.children.length > 0, w.experience.children.length > 0, w.tabs.children.length];
+  };
+  // No tabs (a host that sends no documents, or only the markdown): both are drawn in the body, as before.
+  assert.deepEqual(drawn(), [true, true, 0]);
+  assert.deepEqual(drawn([MD]), [true, true, 0]);
+  // Both offered as tabs: neither is drawn in the body.
+  assert.deepEqual(drawn([MD, tabOf(UX), tabOf(SEQ)]), [false, false, 3]);
+  // One offered as a tab: only the other is drawn in the body.
+  assert.deepEqual(drawn([MD, tabOf(SEQ)]), [false, true, 2]);
+  assert.deepEqual(drawn([MD, tabOf(UX)]), [true, false, 2]);
+  // A tab for some other file does not hide either; nor does a documents value of another shape.
+  assert.deepEqual(drawn([MD, { title: 'Other', type: 'html', relPath: 'docs/epics/x/S002/other.html' }]), [true, true, 2]);
+  assert.deepEqual(drawn('x').slice(0, 2), [true, true]);
+  assert.deepEqual(drawn([{ title: 'x', type: 'markdown', relPath: SEQ.relPath }]).slice(0, 2), [true, true], 'a markdown tab of that path is not its HTML tab');
+
+  // The same document posted again with its tabs: what was drawn in the body is taken out.
+  const w = runWebview();
+  w.deliver(BASE);
+  assert.ok(w.diagram.children.length > 0 && w.experience.children.length > 0);
+  w.deliver({ ...BASE, documents: [MD, tabOf(UX), tabOf(SEQ)] });
+  assert.deepEqual([w.diagram.children.length, w.experience.children.length], [0, 0]);
 });

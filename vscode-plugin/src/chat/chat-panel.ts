@@ -30,6 +30,7 @@ import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type TurnSink } from './turn-lifecycle.js';
 import type { ChatSessionStore, ChatSession, TranscriptEntry } from './session-store.js';
 import type { TurnEvent } from './stream-events.js';
+import type { PresentedTurn, ReviewPresenter } from './review-presenter.js';
 import {
   createEditGovernor,
   type EditGovernor,
@@ -46,7 +47,8 @@ export interface ChatPanelChannel {
   postMessage(message: unknown): void;
   onMessage(listener: (message: unknown) => void): void;
   onDidDispose(listener: () => void): void;
-  reveal(): void;
+  /** Story E20261013e62a9269:S001: with preserveFocus the panel is shown without taking keyboard focus. */
+  reveal(opts?: { readonly preserveFocus?: boolean | undefined }): void;
   dispose(): void;
 }
 
@@ -111,6 +113,12 @@ export interface ChatPanelHostDeps {
    * vscode module. Absent -> no attach button, no chip row, and the attachment messages are ignored.
    */
   readonly attachments?: ChatAttachmentDeps | undefined;
+  /**
+   * Story E20261013e62a9269:S001: opens a document a turn presents for approval in the review
+   * pane. A turn this host runs begins a presented turn just before it starts and ends it when
+   * its run is over; a followed turn begins one on its first event. Absent -> nothing is presented.
+   */
+  readonly presenter?: ReviewPresenter | undefined;
 }
 
 export interface ChatAttachmentDeps {
@@ -612,12 +620,46 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * host once the owner's extension host is gone (it then takes ownership). Events after the cursor
    * are posted (while the session is shown) and appended; the cursor is cleared at the end.
    */
+  // Story E20261013e62a9269:S001: the presenter's three calls. A presenter that throws is
+  // logged and the turn goes on.
+  const beginPresented = (): PresentedTurn | undefined => {
+    if (deps.presenter === undefined) return undefined;
+    try {
+      return deps.presenter.begin();
+    } catch (err) {
+      log.error(`chat: the review presenter failed to begin a turn: ${err instanceof Error ? err.message : String(err)}`);
+      return undefined;
+    }
+  };
+  const presentResult = (shown: PresentedTurn | undefined, ev: TurnEvent): void => {
+    if (shown === undefined || ev.kind !== 'tool-result' || ev.isError === true) return;
+    try {
+      shown.toolResult(ev.output);
+    } catch (err) {
+      log.error(`chat: the review presenter failed on a tool result: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  const endPresented = (shown: PresentedTurn | undefined): void => {
+    if (shown === undefined) return;
+    try {
+      shown.end();
+    } catch (err) {
+      log.error(`chat: the review presenter failed to end a turn: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
   const followLiveTurn = (s: ChatSession): void => {
     // ISSUE-6a811b8a: the turns this follow raised approval requests for, so its end ends their batch
     // even when the output ends without a terminal event.
     const followedTurns = new Set<string>();
+    // Story E20261013e62a9269:S001: begun on the follow's first event, never when the follow is
+    // asked for: this is asked for on every webview ready, and turns.follow returns without
+    // following while this host runs the turn, whose own presented turn must stay the newest.
+    let shown: PresentedTurn | undefined;
     turns.follow(s, {
       onEvent: (ev) => {
+        if (shown === undefined) shown = beginPresented();
+        presentResult(shown, ev);
         // A followed turn's approval requests go through the queue like a live one's.
         // Story E20261012ddc4ede1:S001: write the row first, then post the event with the row's
         // index. The write does not depend on whether the session is shown.
@@ -632,6 +674,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       },
       onEnd: (outcome) => {
         // A failed resume leaves the turn's cursor saved for a later follow; nothing has ended.
+        if (outcome === 'ended') endPresented(shown);
         if (outcome === 'ended' && session === s) {
           for (const turnId of followedTurns) approvals.endTurn(turnId);
           runCompletedBatch();
@@ -1241,6 +1284,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       att !== undefined && s.transcript.some((r) => r.role === 'user' && r.attachments !== undefined && r.attachments.length > 0)
         ? { readDirs: [att.store.dirOf(s.id)] }
         : {};
+    // Story E20261013e62a9269:S001: this turn as the review presenter sees it, begun once the
+    // message is accepted and before the turn starts.
+    const shown = beginPresented();
     const req = s.nativeSessionId !== undefined
       ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, ...readable, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
       : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, ...readable };
@@ -1270,6 +1316,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         dt = active ? openDiffTurn(s) : undefined;
       },
       onEvent: (ev) => {
+        // Story E20261013e62a9269:S001: before anything else, and whatever is done with the event below.
+        presentResult(shown, ev);
         // ISSUE-6a811b8a: an approval-request is queued, not posted; only the queue head is shown.
         // Story E20261012ddc4ede1:S001: write the row first, then post the event with its index.
         // Story E20261013b2e8109f:S001: while this turn's diff state is open an edit's path line and
@@ -1353,7 +1401,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     endDiffTurn();
     const run = turns.start(s, req, sink);
     started();
-    await run;
+    // Story E20261013e62a9269:S001: the one place that is reached for a turn that completed,
+    // failed, was stopped or was superseded.
+    try {
+      await run;
+    } finally {
+      endPresented(shown);
+    }
   }
 
   // Story E2026101259da3204:S001: a submit while the attachment seams are present. Submits run one

@@ -349,11 +349,22 @@ export async function ensureRepoQueryable(
 	refuseIfUnderIndex(repo, deps?.indexRun);
 }
 
+/**
+ * Whether a registered repository is under index: being indexed, or its last
+ * index ended in an error before it completed. The ONE statement of the rule:
+ * the refusal below and the search requests' result filtering
+ * (src/daemon/search-guard.ts underIndexFilter) both read it.
+ */
+export function isUnderIndex(repo: Pick<RegisteredRepo, 'status'>): boolean {
+	return repo.status === 'indexing' || repo.status === 'error';
+}
+
 /** The rule itself, for a repository already found in the registry. */
 function refuseIfUnderIndex(
 	repo:     RegisteredRepo,
 	indexRun: ((repoPath: string) => IndexRunView | undefined) | undefined,
 ): void {
+	if (!isUnderIndex(repo)) return;
 	if (repo.status === 'indexing') {
 		const view = (indexRun ?? readIndexRun)(repo.path);
 		throw new RepoIndexingError({

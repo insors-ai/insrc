@@ -124,6 +124,7 @@ export const graphEntityTool: Tool = {
 interface GraphSearchData {
   query: string;
   limit: number;
+  /** The repositories searched: the closure less any repository under index. */
   closureRepos: readonly string[];
   results: ReturnType<typeof shortEntity>[];
 }
@@ -157,17 +158,18 @@ export const graphSearchTool: Tool = {
       return fail('graph_search', 'failed to embed query (Ollama unavailable?)');
     }
     // A repository under index is left out of the search; the others are searched.
-    const hits = await searchEntities(db, vec, (await underIndexFilter()).paths(closure), limit);
+    const searched = (await underIndexFilter()).paths(closure);
+    const hits = await searchEntities(db, vec, searched, limit);
     const data: GraphSearchData = {
       query, limit,
-      closureRepos: closure,
+      closureRepos: searched,
       results: hits.map(shortEntity),
     };
     const rendered = hits.length === 0
       ? '_no matches_'
       : hits.map((e, i) => `${i + 1}. ${renderEntity(e, false)}`).join('\n\n');
     return {
-      output: `**${hits.length}** hit(s) for \`${query}\` across ${closure.length} repo(s).\n\n${rendered}`,
+      output: `**${hits.length}** hit(s) for \`${query}\` across ${searched.length} repo(s).\n\n${rendered}`,
       format: 'markdown', success: true, data,
     };
   },

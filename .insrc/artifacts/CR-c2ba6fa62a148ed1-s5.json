@@ -1,0 +1,257 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791919588424-6sxsec",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-13T19:26:28.778Z",
+    "model": "claude:opus",
+    "elapsedMs": 169656,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+        "src/agent/providers/model-call-error.ts",
+        "src/agent/providers/ollama.ts",
+        "src/agent/providers/structured-output.ts",
+        "src/analyze/context/__tests__/driver-unit.test.ts",
+        "src/analyze/context/__tests__/invariants.test.ts",
+        "src/analyze/context/__tests__/model-failure-callers.test.ts",
+        "src/analyze/context/__tests__/model-failure.test.ts",
+        "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+        "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+        "src/analyze/context/__tests__/shaper-errors.test.ts",
+        "src/analyze/context/driver.ts",
+        "src/analyze/context/invariants.ts",
+        "src/analyze/context/model-failure.ts",
+        "src/analyze/context/schema.ts",
+        "src/analyze/context/types.ts",
+        "src/analyze/executor/__tests__/walker.test.ts",
+        "src/analyze/explore/__tests__/executor-lmdb.test.ts",
+        "src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+        "src/analyze/orchestrator/__tests__/live-runs.test.ts",
+        "src/analyze/orchestrator/__tests__/orchestrator.test.ts",
+        "src/analyze/orchestrator/__tests__/run-measure.test.ts",
+        "src/analyze/orchestrator/__tests__/run-order.test.ts",
+        "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+        "src/analyze/orchestrator/__tests__/shaper-causes.test.ts",
+        "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+        "src/analyze/orchestrator/driver.ts",
+        "src/analyze/orchestrator/types.ts",
+        "src/analyze/planner/__tests__/driver-unit.test.ts",
+        "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+        "src/analyze/runtimes/shared/task-scope.ts",
+        "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+        "src/daemon/__tests__/analyze-run-empty-prompt.test.ts",
+        "src/daemon/__tests__/helpers/seeded-daemon.ts",
+        "src/daemon/__tests__/search-filter.test.ts",
+        "src/daemon/__tests__/search-guard.test.ts",
+        "src/daemon/__tests__/search-request-contract.test.ts",
+        "src/daemon/analyze-rpc.ts",
+        "src/daemon/index.ts",
+        "src/daemon/search-guard.ts",
+        "src/daemon/steps/__tests__/analyze-step-scope.test.ts",
+        "src/daemon/steps/__tests__/repo-indexing-steps.test.ts",
+        "src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts",
+        "src/daemon/steps/analyze-step/handler.ts",
+        "src/daemon/steps/analyze-step/scope.ts",
+        "src/daemon/tools/builtins/graph/__tests__/graph-guard.test.ts",
+        "src/daemon/tools/builtins/graph/index.ts",
+        "src/db/__tests__/repos-lmdb.test.ts",
+        "src/db/graph/__tests__/codec.test.ts",
+        "src/db/graph/codec.ts",
+        "src/db/repos.ts",
+        "src/indexer/__tests__/index-run-record.test.ts",
+        "src/indexer/index.ts",
+        "src/indexer/run-record.ts",
+        "src/shared/__tests__/review-stream.test.ts",
+        "src/shared/review-stream.ts",
+        "src/shared/types.ts",
+        "vscode-plugin/package-lock.json"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/analyze/context/driver.ts:441",
+            "message": "On a cache miss, runShaper runs ensureRepoQueryable only in run mode and skips the generic shaper (`shaperId !== 'generic'`). The LLD's ensureRepoQueryable postcondition says it is called for every kind of source, including generic. Its test-strategy item is named 'a docs / data / infra / generic run on a repository under index is refused', but the test with that name in invariants.test.ts says a generic run is not checked, and run-order.test.ts asserts the same. Plan t7's acceptance check ('a generic intent ... not checked') matches the code, so the approved documents contradict each other on this point. As it stands, the code and its test follow the plan and not the LLD postcondition the test is named after.",
+            "expectationRef": "LLD ensureRepoQueryable postcondition: 'Called for EVERY kind of source ... so a docs, data, infra or generic request about a repository under index is refused like a code one'; runShaper postcondition 'On a miss ... ensureRepoQueryable runs for every source'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/daemon/search-guard.ts:53",
+            "message": "guardSearchRequest finds an entity's repository with getEntity and does not catch a store failure there, so a failed read rejects the request with a raw error. Every other read the guard makes is skipped and logged when it fails (ensureRepoQueryable, underIndexFilter). The LLD says the search requests' guard does not refuse and does not throw when it cannot read, and the request proceeds as it does today.",
+            "expectationRef": "LLD ensureRepoQueryable postcondition: 'When the registry read fails ... it does not refuse and does not throw ... the search requests' guard and the cache-hit check use it and so skip the same way'; plan t12 acceptance 'A registry read that throws skips the guard and the request is answered as today'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/shared/review-stream.ts:222",
+            "message": "The Story's changed set contains work that is not in its plan or LLD. runReviewStream now catches a transport that throws while opening and settles it as 'unreachable', with a test for it. vscode-plugin/package-lock.json has a version bump. No task t1–t16 covers either change, and neither is part of Story s5's boundary (analyzer refusal, repo-indexing, ISSUE-e2bcadd9 defects).",
+            "expectationRef": "PLAN tasks t1–t16 and the LLD boundary for s5 (the changes the Story is approved to make)"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/context/driver.ts:293",
+            "message": "The two new error classes (ShaperIndexStateReadError, ShaperLookupFailedError) were inserted between ShaperNoPlanError and its doc comment. The comment '/** The plan about to be executed has no lookups. */' now sits directly on top of ShaperIndexStateReadError's own doc comment, giving two stacked doc comments, and ShaperNoPlanError is left with none. Every other Shaper*Error class in this file has a single doc comment directly above it. Fix: move the two new classes above the comment, or move the comment back down to ShaperNoPlanError.",
+            "expectationRef": "module-idiom: one doc comment per error class",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/steps/analyze-step/handler.ts:15",
+            "message": "The new project import `import { scopeErrorMapping } from '../../../analyze/context/invariants.js'` was placed above the `node:fs` import. Elsewhere in the touched modules, node: built-ins come first and project imports follow (for example the logger import just below).",
+            "expectationRef": "module-idiom: import grouping (node built-ins before project imports)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/orchestrator/driver.ts:48",
+            "message": "ShaperIndexStateReadError and ShaperLookupFailedError were added after ShaperNoPlanError, which breaks the alphabetical order of the Shaper* import list. The same happens in src/daemon/analyze-rpc.ts (around line 75) and in the run-shaper-wiring test import. Other import lists in the touched modules, such as pipeline-outcome.test.ts and shaper-error-mapping.test.ts, keep these names in alphabetical order.",
+            "expectationRef": "module-idiom: alphabetised named imports",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/orchestrator/driver.ts:319",
+            "message": "The target is narrowed through a separate boolean (`scopeChecked`), so the code needs a cast: `unsized.target as Exclude<typeof unsized.target, 'generic'>`. The equivalent check in src/daemon/analyze-rpc.ts writes `if (unsized.target !== 'generic')` inline and narrows without a cast. Keeping the inline comparison and computing the flag separately would avoid the cast.",
+            "expectationRef": "module-idiom: narrowing over type assertions",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/context/__tests__/invariants.test.ts:404",
+            "message": "The promised test says a 'docs / data / infra / generic run on a repository under index is refused'. The test that is present checks only docs, data and infra. It states in a comment that a generic intent is not checked, and the implementation (runShaper skips shaperId 'generic'; runAnalyze/stepScope skip target 'generic') does not refuse generic. So the plan's promise about generic has no test, and the code does the opposite of what the plan's wording says. Either amend the plan to drop generic, or add a test that pins the intended generic behaviour (run-order.test.ts checks only that generic is not checked).",
+            "expectationRef": "ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/graph/index.ts:389",
+            "message": "New behaviour in graph_query op=imports has no test: the refusedFor guard on fileEntityId and the underIndexFilter on findImports results. graph-guard.test.ts exercises defined_in, closure, unreachable and scc, but not imports. Removing the imports guard or filter would leave every test green.",
+            "expectationRef": "graphQueryTool op=imports (guard + underIndexFilter)",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts:66",
+            "message": "Two promised test names do not appear word for word: 'OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError' and 'OllamaProvider: a socket failure during stream iteration is raised as ModelCallFailedError'. Their behaviour is covered by differently-named tests in this file: 'stream creation and stream iteration failures…', 'completeStructured failures on the call and during iteration…' and 'complete() raises a connection refused and a socket hang up…'. Between them these iterate ECONNREFUSED, socket hang up, fetch failed, terminated and 'Did not receive done' at both call and iteration. Present under other names, not missing.",
+            "expectationRef": "OllamaProvider: a connection refused / socket hang up / stream ended early is raised as ModelCallFailedError; OllamaProvider: a socket failure during stream iteration is raised as ModelCallFailedError",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/search-guard.ts:1",
+            "message": "The two promised smoke tests (installed daemon: an analyze on an unindexed path is refused before any size is announced; a request during a reindex is refused with 'repo-indexing' and its figures, and afterwards the row shows lastRun) are not automated tests in the changed set. They exist only as manual records in docs/epics/…E20261011c2ba6fa6/S005/smoke.md (commit b899aaf3), which logs smokes 1–3 passing on the installed daemon. They are present as a manual record, but no build record confirms them.",
+            "expectationRef": "installed daemon: an analyze on an unindexed path is refused before any size is announced; installed daemon: a request during a reindex is refused with 'repo-indexing' and its figures; after it the row shows lastRun",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/context/driver.ts:1",
+            "message": "No build record was supplied, so the pass-state of every promised test is unverified. All the other promised unit and integration tests are present by name in the diff. Every changed symbol has an empty testsReaching list. That is because these are diff-fallback file entities with no graph edges (grounding is hollow for just-created or just-changed files), and the changed behaviour is directly exercised by the tests present in the diff. So the empty lists are not reported as not-exercised gaps. Confirm by running the suites under Node 22.",
+            "expectationRef": "all promised tests (pass-state)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:376",
+            "message": "servedFromCache runs the under-index refusal (ensureRepoQueryable) on every cache hit unless opts.scopeChecked is true, and it does this for every invocation mode and shaper. A cache miss runs the check only for invocationMode 'run' with a non-generic shaper. So the result now depends on whether the cache is warm. Example: a generic run (runAnalyze passes scopeChecked:false for generic, as run-order.test asserts) about a repository that is now 'indexing' or 'error' gets built on a miss but throws RepoIndexingError on a hit. Classification-mode and task-mode hits are refused the same way, even though the miss path skips them by design. Fix: apply the same mode and shaper condition in servedFromCache that step (4.5) applies on the miss path.",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/search-guard.ts:104",
+            "message": "underIndexFilter writes its own copy of the under-index rule (status === 'indexing' || status === 'error'). refuseIfUnderIndex in invariants.ts encodes the same rule separately, and the guard's doc says it uses the analyzer's own rule. If the rule changes in one place only (for example, an 'error' row whose lastRun completed is no longer refused), refusals and result filtering will disagree. A repository could then be answered when named directly but silently dropped from cross-repository results, or the reverse. Export a single predicate from invariants.ts and use it in both places.",
+            "counterpartRef": "refuseIfUnderIndex (src/analyze/context/invariants.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/search-guard.ts:62",
+            "message": "guardSearchRequest makes one getEntity read per entity id, then calls ensureRepoQueryable once per distinct path, and each of those calls reads the whole registry again (listRepos). The handlers then call underIndexFilter, which reads the registry once more. entity.closure, entity.unreachable and graph_query with many roots therefore do O(roots) store reads before the traversal starts. Read the registry once and check every path against that single snapshot.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/analyze-rpc.ts:354",
+            "message": "The 'check the scope before measuring' block is now written out twice: here in analyze.classify, and in runStages in the orchestrator. Both do the same steps: the generic skip, resolveTaskScope, scopeErrorMapping, and rethrowing anything else. A shared helper that returns the mapped refusal or undefined would stop the two paths from drifting apart, for example if one gains a new excluded target and the other does not.",
+            "counterpartRef": "runStages (src/analyze/orchestrator/driver.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/driver.ts:293",
+            "message": "The new error classes were inserted between the existing doc comment '/** The plan about to be executed has no lookups. */' and ShaperNoPlanError. That comment now sits orphaned above ShaperIndexStateReadError's own JSDoc, and ShaperNoPlanError has lost its doc comment.",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/graph/index.ts:162",
+            "message": "graph_search now searches the filtered closure (repositories under index left out), but GraphSearchData.closureRepos still reports the unfiltered closure. A caller reading closureRepos would believe a repository was searched when it was not.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/__tests__/run-shaper-wiring.test.ts:540",
+            "message": "The last test sets the shared fixture repository to 'indexing' and never restores it to 'ready'. Any later test in the file, or a reordering of tests, that reads that repository will see it under index and be refused. The other tests in this diff restore the status in a finally block.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 3,
+      "low": 16
+    }
+  }
+}

@@ -443,7 +443,7 @@ function forbiddenScopeDeps(): { deps: NonNullable<Parameters<typeof runShaper>[
 	return { deps: { listRepos: no('listRepos'), findEntitiesByFile: no('findEntitiesByFile'), listEntitiesForRepo: no('listEntitiesForRepo'), loadConnections: no('loadConnections') }, reached };
 }
 
-function callWith(intent: ClassifiedIntent, id: string, steps: PipelineSteps, extra: Partial<Parameters<typeof runShaper>[0]> = {}, shaper: 'code' | 'data' = 'code') {
+function callWith(intent: ClassifiedIntent, id: string, steps: PipelineSteps, extra: Partial<Parameters<typeof runShaper>[0]> = {}, shaper: 'code' | 'data' | 'generic' = 'code') {
 	return runShaper({
 		promptPath: `prompts/analyze/${shaper}.system.md`, invocationMode: 'run', shaperId: shaper,
 		inputs: { intent }, opts: { runId: id }, provider: forbiddenLoop().provider, pipelineSteps: steps, ...extra,
@@ -451,7 +451,7 @@ function callWith(intent: ClassifiedIntent, id: string, steps: PipelineSteps, ex
 }
 
 /** A cached bundle for `intent` in `id`'s run slot, written the way runShaper writes one. */
-function seedBundle(id: string, intent: ClassifiedIntent, meta: Record<string, unknown>, shaper: 'code' | 'data' = 'code'): void {
+function seedBundle(id: string, intent: ClassifiedIntent, meta: Record<string, unknown>, shaper: 'code' | 'data' | 'generic' = 'code'): void {
 	const prompt = readFileSync(join(REPO_ROOT, `src/prompts/analyze/${shaper}.system.md`), 'utf8');
 	const bundle = { ...RAW, summary: 'CACHED', meta: { mode: 'run', shaper, toolCalls: 1, modelId: 'm', emptyLayers: [], schemaVersion: 2, ...meta } };
 	writeBundle(id, { mode: 'run', hash: _computeCacheKeyForTest(prompt, { intent }) }, bundle as unknown as AnalyzeContextBundle);
@@ -548,4 +548,26 @@ test('runShaper: a connection-scope bundle (repoPath null) is served from cache 
 	const served = await callWith(conn, id, standIns({ lastIndexedAt: async () => { freshnessReads += 1; throw new Error('must not be read'); } }).steps, {}, 'data');
 	assert.equal(served.summary, 'CACHED');
 	assert.equal(freshnessReads, 0);
+});
+
+test('runShaper: a cache hit decides the index state by the same rule as a miss: a generic run, or a run whose caller checked the scope, about a repository being indexed is served from a warm cache as it would be built from a cold one; a code run is refused', async () => {
+	await updateRepoStatus(null, repo, 'indexing');
+
+	// A generic run is not checked on a miss (step 4.5), so a hit is not refused either.
+	const generic = unfocused({ kind: 'repo', value: repo }, 'generic');
+	const gid = runId('cache-generic-indexing');
+	seedBundle(gid, generic, { repoPath: repo }, 'generic');
+	const servedGeneric = await callWith(generic, gid, standIns().steps, {}, 'generic');
+	assert.equal(servedGeneric.summary, 'CACHED', 'generic: served, not refused');
+
+	// A run whose caller checked the scope already (runAnalyze) is not checked again.
+	const code = unfocused({ kind: 'repo', value: repo });
+	const cid = runId('cache-checked-indexing');
+	seedBundle(cid, code, { repoPath: repo });
+	const servedChecked = await callWith(code, cid, standIns().steps, { opts: { runId: cid, scopeChecked: true } });
+	assert.equal(servedChecked.summary, 'CACHED', 'scopeChecked: served, not refused');
+
+	// The same code run with no prior check is refused, warm as cold.
+	const refused = await callWith(code, cid, standIns().steps).then(() => undefined, (e: unknown) => e);
+	assert.ok(refused instanceof RepoIndexingError, String(refused));
 });
